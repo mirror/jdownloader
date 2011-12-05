@@ -66,17 +66,13 @@ public class FilesHackCom extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://www.fileshack.com/extras/tos.x";
-    }
-
-    @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(file\\.|file_download\\.)", "file\\."));
     }
 
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), fileshackservers, FILESHACK_SERVERS, JDL.L("plugins.host.FilesHackCom.servers", "Use this server:")).setDefaultValue(0));
+    @Override
+    public String getAGBLink() {
+        return "http://www.fileshack.com/extras/tos.x";
     }
 
     // thx to jiaz & bogdan.solga for the help ;)
@@ -101,17 +97,8 @@ public class FilesHackCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("File was deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<dt>Filename</dt>.*?<dd title=\"(.*?)\"").getMatch(0);
-        String filesize = br.getRegex("<dt>Size</dt>.*?<dd>.*?\\((.*?)\\)</dd>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filesize = filesize.replace(",", "");
-        link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
     }
 
     @Override
@@ -194,6 +181,20 @@ public class FilesHackCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("File was deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<dt>Filename</dt>.*?<dd title=\"(.*?)\"").getMatch(0);
+        String filesize = br.getRegex("<dt>Size</dt>.*?<dd>.*?\\((.*?)\\)</dd>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filesize = filesize.replace(",", "");
+        link.setName(filename);
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void reset() {
 
     }
@@ -203,9 +204,8 @@ public class FilesHackCom extends PluginForHost {
 
     }
 
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), fileshackservers, FILESHACK_SERVERS, JDL.L("plugins.host.FilesHackCom.servers", "Use this server:")).setDefaultValue(0));
     }
 
 }

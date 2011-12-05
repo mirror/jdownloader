@@ -42,21 +42,8 @@ public class DopeRomsCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getHeaders().put("Referer", link.getDownloadURL());
-        br.getPage("http://www.doperoms.com/set_language.php?lang=EN");
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.doperoms.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<H1>(.*?) <br/><font").getMatch(0);
-        String filesize = br.getRegex("<br/>File Size: (.*?)<br/>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        String md5 = br.getRegex(">MD5 Checksum: ([a-z0-9]+)<br/><br").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -83,12 +70,25 @@ public class DopeRomsCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getHeaders().put("Referer", link.getDownloadURL());
+        br.getPage("http://www.doperoms.com/set_language.php?lang=EN");
+        br.getPage(link.getDownloadURL());
+        if (br.getURL().equals("http://www.doperoms.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<H1>(.*?) <br/><font").getMatch(0);
+        String filesize = br.getRegex("<br/>File Size: (.*?)<br/>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        String md5 = br.getRegex(">MD5 Checksum: ([a-z0-9]+)<br/><br").getMatch(0);
+        if (md5 != null) link.setMD5Hash(md5);
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public void reset() {
     }
 
     @Override

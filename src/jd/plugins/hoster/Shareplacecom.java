@@ -44,40 +44,18 @@ public class Shareplacecom extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://shareplace.com/rules.php";
-    }
-
-    @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("\\.org", ".com"));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        url = downloadLink.getDownloadURL();
-        setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCustomCharset("UTF-8");
-        br.setFollowRedirects(true);
-        br.getPage(url);
-        if (br.getRedirectLocation() == null) {
+    public String getAGBLink() {
+        return "http://shareplace.com/rules.php";
+    }
 
-            String iframe = url = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
-            br.getPage(iframe);
-            if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String filename = br.getRegex("Filename:</font></b>(.*?)<b><br>").getMatch(0).trim();
-            String filesize = br.getRegex("Filesize.*?b>(.*?)<b>").getMatch(0);
-            if (filesize == null) filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            downloadLink.setFinalFileName(filename.trim());
-            if (filesize != null) {
-                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-            }
-            return AvailableStatus.TRUE;
-        } else {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -129,8 +107,30 @@ public class Shareplacecom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        url = downloadLink.getDownloadURL();
+        setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setCustomCharset("UTF-8");
+        br.setFollowRedirects(true);
+        br.getPage(url);
+        if (br.getRedirectLocation() == null) {
+
+            String iframe = url = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
+            br.getPage(iframe);
+            if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String filename = br.getRegex("Filename:</font></b>(.*?)<b><br>").getMatch(0).trim();
+            String filesize = br.getRegex("Filesize.*?b>(.*?)<b>").getMatch(0);
+            if (filesize == null) filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            downloadLink.setFinalFileName(filename.trim());
+            if (filesize != null) {
+                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+            }
+            return AvailableStatus.TRUE;
+        } else {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     @Override
@@ -138,10 +138,10 @@ public class Shareplacecom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

@@ -30,8 +30,15 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dataup.de", "dataup.to" }, urls = { "http://[\\w\\.]*?dataup\\.de/\\d+/(.*)", "http://[\\w\\.]*?dataup\\.to/\\d+/." }, flags = { 0, 0 })
 public class Dataupde extends PluginForHost {
+    private static final String FILESIZEREGEX = "Gr\\&ouml;\\&szlig;e: (.*?)<br";
+
     public Dataupde(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink downloadLink) {
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replace(".de/", ".to/"));
     }
 
     @Override
@@ -39,23 +46,9 @@ public class Dataupde extends PluginForHost {
         return "http://dataup.to/agb";
     }
 
-    private static final String FILESIZEREGEX = "Gr\\&ouml;\\&szlig;e: (.*?)<br";
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Die Datei wird gerade verarbeitet und steht in wenigen Minuten bereit\\!</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("class=\"box_header\"><h1>Download: (.*?)</h1></div>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("Name: (.*?)<br />").getMatch(0);
-            if (filename == null) filename = br.getRegex("Stream: (.*?)</").getMatch(0);
-        }
-        String filesize = br.getRegex(FILESIZEREGEX).getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -90,13 +83,20 @@ public class Dataupde extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink downloadLink) {
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replace(".de/", ".to/"));
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("Die Datei wird gerade verarbeitet und steht in wenigen Minuten bereit\\!</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("class=\"box_header\"><h1>Download: (.*?)</h1></div>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("Name: (.*?)<br />").getMatch(0);
+            if (filename == null) filename = br.getRegex("Stream: (.*?)</").getMatch(0);
+        }
+        String filesize = br.getRegex(FILESIZEREGEX).getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -104,10 +104,10 @@ public class Dataupde extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

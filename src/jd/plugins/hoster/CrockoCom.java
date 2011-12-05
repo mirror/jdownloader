@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
@@ -43,41 +44,19 @@ public class CrockoCom extends PluginForHost {
 
     private static Boolean longwait = null;
 
+    private static final String MAINPAGE     = "http://www.crocko.com/";
+
+    private static final String FILENOTFOUND = "Requested file is deleted";
+
+    private static final String ONLY4PREMIUM = ">You need Premium membership to download this file";
+
     public CrockoCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.crocko.com/billing");
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://www.crocko.com/de/privacy.html";
-    }
-
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("easy-share.com/", "crocko.com/"));
-    }
-
-    private static final String MAINPAGE     = "http://www.crocko.com/";
-    private static final String FILENOTFOUND = "Requested file is deleted";
-    private static final String ONLY4PREMIUM = ">You need Premium membership to download this file";
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCookie(MAINPAGE, "language", "en");
-        br.getPage(MAINPAGE);
-        br.setDebug(true);
-        br.postPage("http://www.crocko.com/accounts/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=1");
-        String acc = br.getCookie(MAINPAGE, "ACCOUNT");
-        String prem = br.getCookie(MAINPAGE, "PREMIUM");
-        if (acc == null && prem == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (acc != null && prem == null) {
-            /*
-             * buggy easyshare server, login does not work always, it needs
-             * PREMIUM cookie
-             */
-            br.setCookie(MAINPAGE, "PREMIUM", acc);
-        }
     }
 
     @Override
@@ -118,32 +97,13 @@ public class CrockoCom extends PluginForHost {
         ai.setStatus("Premium User");
         return ai;
     }
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        correctDownloadLink(downloadLink);
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        URLConnectionAdapter con = null;
-        try {
-            br.setCookie(MAINPAGE, "language", "en");
-            con = br.openGetConnection(downloadLink.getDownloadURL());
-            if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            br.followConnection();
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
-        if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Download:<.*?strong>(.*?)</strong").getMatch(0);
-        String filesize = br.getRegex("Download:<.*?inner\">(.*?)<").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = filename.replaceAll("<br>", "");
-        downloadLink.setName(Encoding.htmlDecode(filename.trim()));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim() + "b"));
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://www.crocko.com/de/privacy.html";
+    }
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -255,9 +215,60 @@ public class CrockoCom extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCookie(MAINPAGE, "language", "en");
+        br.getPage(MAINPAGE);
+        br.setDebug(true);
+        br.postPage("http://www.crocko.com/accounts/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=1");
+        String acc = br.getCookie(MAINPAGE, "ACCOUNT");
+        String prem = br.getCookie(MAINPAGE, "PREMIUM");
+        if (acc == null && prem == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (acc != null && prem == null) {
+            /*
+             * buggy easyshare server, login does not work always, it needs
+             * PREMIUM cookie
+             */
+            br.setCookie(MAINPAGE, "PREMIUM", acc);
+        }
+    }
+
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        correctDownloadLink(downloadLink);
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        URLConnectionAdapter con = null;
+        try {
+            br.setCookie(MAINPAGE, "language", "en");
+            con = br.openGetConnection(downloadLink.getDownloadURL());
+            if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+        if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("Download:<.*?strong>(.*?)</strong").getMatch(0);
+        String filesize = br.getRegex("Download:<.*?inner\">(.*?)<").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = filename.replaceAll("<br>", "");
+        downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim() + "b"));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -265,10 +276,10 @@ public class CrockoCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

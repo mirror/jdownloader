@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -40,45 +41,55 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
 
+    private static final String CAPTCHATEXT    = "hitfile\\.net/captcha/";
+
+    private static final String RECAPTCHATEXT  = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+
+    private static final String WAITTIMEREGEX1 = "limit: (\\d+)";
+
+    private static final String WAITTIMEREGEX2 = "id=\\'timeout\\'>(\\d+)</span>";
+
+    public static final Object  LOCK           = new Object();
+    private static final String MAINPAGE       = "http://hitfile.net/";
+    private static final String ENPAGE         = "http://hitfile.net/lang/en";
     public HitFileNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://hitfile.net/premium/emoney/5");
     }
-
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("Account: <b>premium</b> \\(<a href=\\'/premium\\'>(.*?)</a>\\)").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", null));
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
     @Override
     public String getAGBLink() {
         return "http://hitfile.net/rules";
     }
-
-    private static final String CAPTCHATEXT    = "hitfile\\.net/captcha/";
-    private static final String RECAPTCHATEXT  = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static final String WAITTIMEREGEX1 = "limit: (\\d+)";
-    private static final String WAITTIMEREGEX2 = "id=\\'timeout\\'>(\\d+)</span>";
-    public static final Object  LOCK           = new Object();
-    private static final String MAINPAGE       = "http://hitfile.net/";
-    private static final String ENPAGE         = "http://hitfile.net/lang/en";
-
-    // Also check TurboBitNet plugin if this one is broken
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException, InterruptedException {
-        synchronized (LOCK) {
-            if (this.isAborted(link)) return AvailableStatus.TRUE;
-            /* wait 3 seconds between filechecks, otherwise they'll block our IP */
-            Thread.sleep(3000);
-        }
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getHeaders().put("Referer", link.getDownloadURL());
-        br.getPage(ENPAGE);
-        if (!br.getURL().equals(link.getDownloadURL())) br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<h1>File was not found|It could possibly be deleted\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex fileInfo = br.getRegex("class=\\'file-icon\\d+ [a-z0-9]+\\'></span><span>(.*?)</span>[\n\t\r ]+<span style=\"color: #626262; font-weight: bold; font-size: 14px;\">\\((.*?)\\)</span>");
-        String filename = fileInfo.getMatch(0);
-        String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -159,39 +170,6 @@ public class HitFileNet extends PluginForHost {
         dl.startDownload();
     }
 
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(MAINPAGE);
-        br.setCookie(MAINPAGE, "user_lang", "en");
-        br.postPage("http://hitfile.net/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=");
-        if ((br.getCookie(MAINPAGE, "kohanasession") == null && br.getCookie(MAINPAGE, "sid") == null)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("Account: <b>premium</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        account.setValid(true);
-        ai.setUnlimitedTraffic();
-        String expire = br.getRegex("Account: <b>premium</b> \\(<a href=\\'/premium\\'>(.*?)</a>\\)").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", null));
-        }
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
@@ -220,18 +198,51 @@ public class HitFileNet extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(MAINPAGE);
+        br.setCookie(MAINPAGE, "user_lang", "en");
+        br.postPage("http://hitfile.net/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=");
+        if ((br.getCookie(MAINPAGE, "kohanasession") == null && br.getCookie(MAINPAGE, "sid") == null)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("Account: <b>premium</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    // Also check TurboBitNet plugin if this one is broken
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException, InterruptedException {
+        synchronized (LOCK) {
+            if (this.isAborted(link)) return AvailableStatus.TRUE;
+            /* wait 3 seconds between filechecks, otherwise they'll block our IP */
+            Thread.sleep(3000);
+        }
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getHeaders().put("Referer", link.getDownloadURL());
+        br.getPage(ENPAGE);
+        if (!br.getURL().equals(link.getDownloadURL())) br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(<h1>File was not found|It could possibly be deleted\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Regex fileInfo = br.getRegex("class=\\'file-icon\\d+ [a-z0-9]+\\'></span><span>(.*?)</span>[\n\t\r ]+<span style=\"color: #626262; font-weight: bold; font-size: 14px;\">\\((.*?)\\)</span>");
+        String filename = fileInfo.getMatch(0);
+        String filesize = fileInfo.getMatch(1);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

@@ -43,17 +43,8 @@ public class ImageNetzDe extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Diese Datei existiert nicht mehr")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex fileInfo = br.getRegex("<td height=\"22\" class=\"main\"><div align=\"left\"></div>[\t\n\r ]+<div align=\"left\">(.*?)</div></td>[\t\n\r ]+<td height=\"22\" class=\"main\"><div align=\"center\">(.*?)</div></td>");
-        String filename = fileInfo.getMatch(0);
-        String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -71,12 +62,21 @@ public class ImageNetzDe extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML(">Diese Datei existiert nicht mehr")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Regex fileInfo = br.getRegex("<td height=\"22\" class=\"main\"><div align=\"left\"></div>[\t\n\r ]+<div align=\"left\">(.*?)</div></td>[\t\n\r ]+<td height=\"22\" class=\"main\"><div align=\"center\">(.*?)</div></td>");
+        String filename = fileInfo.getMatch(0);
+        String filesize = fileInfo.getMatch(1);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.controlling.AccountController;
 import jd.gui.UserIO;
 import jd.http.Browser;
@@ -156,10 +157,6 @@ public class FileServeCom extends PluginForHost {
         link.setUrlDownload("http://fileserve.com/file/" + getID(link));
     }
 
-    private String getID(final DownloadLink link) {
-        return new Regex(link.getDownloadURL(), this.FILEIDREGEX).getMatch(0);
-    }
-
     private void correctHeaders(Browser brrr) {
         brrr.getHeaders().put("User-Agent", agent);
         brrr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
@@ -167,19 +164,6 @@ public class FileServeCom extends PluginForHost {
         brrr.getHeaders().put("Accept-Encoding", "gzip");
         brrr.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
         brrr.getHeaders().put("Referer", "");
-    }
-
-    private void setAjaxHeaders(Browser brrr) {
-        brrr.getHeaders().put("Accept", "application/json, text/javascript, */*");
-        brrr.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-        brrr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        this.requestFileInformation(downloadLink);
-        boolean direct = getDownloadUrlPage(downloadLink);
-        this.doFree(downloadLink, direct);
     }
 
     public void doFree(final DownloadLink downloadLink, boolean direct) throws Exception, PluginException {
@@ -305,8 +289,46 @@ public class FileServeCom extends PluginForHost {
     }
 
     @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            loginAPI(br, account);
+        } catch (PluginException e) {
+            try {
+                logger.warning("API login failed, trying login via website!");
+                loginSite(account, true);
+            } catch (PluginException e2) {
+                account.setValid(false);
+            }
+        }
+        if (account.getAccountInfo() != null) {
+            return account.getAccountInfo();
+        } else {
+            return ai;
+        }
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://www.fileserve.com/terms.php";
+    }
+
+    private boolean getDownloadUrlPage(DownloadLink downloadLink) throws IOException {
+        // To get the english language
+        boolean b = br.isFollowingRedirects();
+        br.setFollowRedirects(false);
+        try {
+            br.postPage(downloadLink.getDownloadURL(), "locale=en-us");
+        } finally {
+            br.setFollowRedirects(b);
+        }
+        if (br.getRedirectLocation() != null) { return true; }
+        if (!br.getURL().equals(downloadLink.getDownloadURL())) br.getPage(downloadLink.getDownloadURL());
+        return false;
+    }
+
+    private String getID(final DownloadLink link) {
+        return new Regex(link.getDownloadURL(), this.FILEIDREGEX).getMatch(0);
     }
 
     @Override
@@ -314,16 +336,24 @@ public class FileServeCom extends PluginForHost {
         return 1;
     }
 
-    private void handleErrorsShowDialog(Account blocked) throws Exception {
-        int ret = -100;
-        UserIO.setCountdownTime(120);
-        ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_LARGE, "FileServe landing error 612(Account '" + blocked.getUser() + "' blocked)!", "It seems like your account has been blocked by fileserve.\r\nTo unblock it, please visit the fileserve Supportforum and contact the User \"RickyFS\".\r\nBy clicking on OK a browser instance will open which leads to the fileserve Supportforum.\r\n\r\nYour premium account has been deactivated in JD to prevent further problems.\r\nIf you leave it that way JDownloader will continue to download as a free user from fileserve.com.\r\n\r\nJDTeam", null, "OK", "Cancel");
-        if (ret != -100) {
-            if (UserIO.isOK(ret)) {
-                LocalBrowser.openDefaultURL(new URL("http://www.wjunction.com/95-file-hosts-official-support/35113-fileserve-make-money-upto-%2425-per-1000-downloads-official-thread.html"));
-            } else {
-                return;
-            }
+    private void handleCaptchaErrors(Browser br2, DownloadLink downloadLink) throws IOException, PluginException {
+        // Handles captcha errors and additionsl limits
+        logger.info("Checking captcha errors...");
+        if (br.containsHTML("No htmlCode read")) {
+            logger.info("Unexpected captcha error happened");
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        String fail = br2.getRegex("\"(fail|error)\":\"(.*?)\"").getMatch(1);
+        String waittime = br2.getRegex("\"(waitTime|msg)\":(\\d+)").getMatch(1);
+        if (fail != null && waittime != null) {
+            if (fail.equals("captcha-fail") || fail.equals("captchaFail")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many wrong captcha attempts!", 10 * 60 * 1000l);
+            br2.postPage(downloadLink.getDownloadURL(), "checkDownload=showError&errorType=" + fail + "&waitTime=" + waittime);
+            // Just an additional check
+            if (br2.containsHTML("Please retry later\\.<") || br2.containsHTML(">Your IP has failed the captcha too many times")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many wrong captcha attempts!", 10 * 60 * 1000l);
+        } else if (fail != null) {
+            // This could be a limit message which appears after posting this,
+            // it should then be handled with handleErrors
+            br2.postPage(downloadLink.getDownloadURL(), "checkDownload=showError&errorType=" + fail);
         }
     }
 
@@ -361,25 +391,24 @@ public class FileServeCom extends PluginForHost {
         }
     }
 
-    private void handleCaptchaErrors(Browser br2, DownloadLink downloadLink) throws IOException, PluginException {
-        // Handles captcha errors and additionsl limits
-        logger.info("Checking captcha errors...");
-        if (br.containsHTML("No htmlCode read")) {
-            logger.info("Unexpected captcha error happened");
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+    private void handleErrorsShowDialog(Account blocked) throws Exception {
+        int ret = -100;
+        UserIO.setCountdownTime(120);
+        ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_LARGE, "FileServe landing error 612(Account '" + blocked.getUser() + "' blocked)!", "It seems like your account has been blocked by fileserve.\r\nTo unblock it, please visit the fileserve Supportforum and contact the User \"RickyFS\".\r\nBy clicking on OK a browser instance will open which leads to the fileserve Supportforum.\r\n\r\nYour premium account has been deactivated in JD to prevent further problems.\r\nIf you leave it that way JDownloader will continue to download as a free user from fileserve.com.\r\n\r\nJDTeam", null, "OK", "Cancel");
+        if (ret != -100) {
+            if (UserIO.isOK(ret)) {
+                LocalBrowser.openDefaultURL(new URL("http://www.wjunction.com/95-file-hosts-official-support/35113-fileserve-make-money-upto-%2425-per-1000-downloads-official-thread.html"));
+            } else {
+                return;
+            }
         }
-        String fail = br2.getRegex("\"(fail|error)\":\"(.*?)\"").getMatch(1);
-        String waittime = br2.getRegex("\"(waitTime|msg)\":(\\d+)").getMatch(1);
-        if (fail != null && waittime != null) {
-            if (fail.equals("captcha-fail") || fail.equals("captchaFail")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many wrong captcha attempts!", 10 * 60 * 1000l);
-            br2.postPage(downloadLink.getDownloadURL(), "checkDownload=showError&errorType=" + fail + "&waitTime=" + waittime);
-            // Just an additional check
-            if (br2.containsHTML("Please retry later\\.<") || br2.containsHTML(">Your IP has failed the captcha too many times")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many wrong captcha attempts!", 10 * 60 * 1000l);
-        } else if (fail != null) {
-            // This could be a limit message which appears after posting this,
-            // it should then be handled with handleErrors
-            br2.postPage(downloadLink.getDownloadURL(), "checkDownload=showError&errorType=" + fail);
-        }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        this.requestFileInformation(downloadLink);
+        boolean direct = getDownloadUrlPage(downloadLink);
+        this.doFree(downloadLink, direct);
     }
 
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
@@ -437,24 +466,14 @@ public class FileServeCom extends PluginForHost {
         this.dl.startDownload();
     }
 
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        try {
-            loginAPI(br, account);
-        } catch (PluginException e) {
-            try {
-                logger.warning("API login failed, trying login via website!");
-                loginSite(account, true);
-            } catch (PluginException e2) {
-                account.setValid(false);
-            }
-        }
-        if (account.getAccountInfo() != null) {
-            return account.getAccountInfo();
-        } else {
-            return ai;
-        }
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     private Browser loginAPI(final Browser useBr, final Account account) throws IOException, PluginException {
@@ -558,26 +577,18 @@ public class FileServeCom extends PluginForHost {
         return link.getAvailableStatus();
     }
 
-    private boolean getDownloadUrlPage(DownloadLink downloadLink) throws IOException {
-        // To get the english language
-        boolean b = br.isFollowingRedirects();
-        br.setFollowRedirects(false);
-        try {
-            br.postPage(downloadLink.getDownloadURL(), "locale=en-us");
-        } finally {
-            br.setFollowRedirects(b);
-        }
-        if (br.getRedirectLocation() != null) { return true; }
-        if (!br.getURL().equals(downloadLink.getDownloadURL())) br.getPage(downloadLink.getDownloadURL());
-        return false;
-    }
-
     @Override
     public void reset() {
     }
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+    }
+
+    private void setAjaxHeaders(Browser brrr) {
+        brrr.getHeaders().put("Accept", "application/json, text/javascript, */*");
+        brrr.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+        brrr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
     }
 
 }

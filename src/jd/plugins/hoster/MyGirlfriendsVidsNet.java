@@ -32,20 +32,36 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mygirlfriendvids.net" }, urls = { "http://(www\\.)?mygirlfriendvidsdecrypted\\.net/\\d+/.*?\\.html" }, flags = { 0 })
 public class MyGirlfriendsVidsNet extends PluginForHost {
 
+    private String DLLINK = null;
+
     public MyGirlfriendsVidsNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    public void correctDownloadLink(DownloadLink link) {
+        // Links come from a decrypter
+        link.setUrlDownload(link.getDownloadURL().replace("mygirlfriendvidsdecrypted.net/", "mygirlfriendvids.net/"));
+    }
 
     @Override
     public String getAGBLink() {
         return "http://www.mygirlfriendvids.net/DMCA.html";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        // Links come from a decrypter
-        link.setUrlDownload(link.getDownloadURL().replace("mygirlfriendvidsdecrypted.net/", "mygirlfriendvids.net/"));
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -82,30 +98,14 @@ public class MyGirlfriendsVidsNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

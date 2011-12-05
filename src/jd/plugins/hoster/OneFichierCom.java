@@ -40,18 +40,18 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
 
+    private static AtomicInteger maxPrem = new AtomicInteger(1);
+
+    private static final String PASSWORDTEXT = "(Accessing this file is protected by password|Please put it on the box bellow)";
+
+    private static final String PREMIUMPAGE  = "https://www.1fichier.com/en/login.pl";
+
+    private static final String MAINPAGE     = "www.1fichier.com";
+
     public OneFichierCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.1fichier.com/en/register.pl");
     }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.1fichier.com/en/cgu.html";
-    }
-
-    private static AtomicInteger maxPrem = new AtomicInteger(1);
-
     public void correctDownloadLink(DownloadLink link) {
         // Note: We cannot replace all domains with "1fichier.com" because the
         // downloadlinks are always bind to a domains
@@ -62,47 +62,6 @@ public class OneFichierCom extends PluginForHost {
             link.setUrlDownload("http://" + idhostandName.getMatch(0) + "." + idhostandName.getMatch(1) + "/en/index.html");
         }
     }
-
-    private static final String PASSWORDTEXT = "(Accessing this file is protected by password|Please put it on the box bellow)";
-    private static final String PREMIUMPAGE  = "https://www.1fichier.com/en/login.pl";
-    private static final String MAINPAGE     = "www.1fichier.com";
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        prepareBrowser(br);
-        br.setFollowRedirects(false);
-        br.setCustomCharset("utf-8");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(The requested file could not be found|The file may has been deleted by its owner|Le fichier demandé n\\'existe pas\\.|Il a pu être supprimé par son propriétaire\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>Téléchargement du fichier : (.*?)</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("content=\"Téléchargement du fichier (.*?)\">").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("(>Cliquez ici pour télécharger|>Click here to download) (.*?)</a>").getMatch(1);
-                if (filename == null) {
-                    filename = br.getRegex("\">(Nom du fichier :|File name :)</th>[\t\r\n ]+<td>(.*?)</td>").getMatch(1);
-                    if (filename == null) filename = br.getRegex("<title>Download of (.*?)</title>").getMatch(0);
-                }
-            }
-        }
-        String filesize = br.getRegex("<th>(Taille :|File size :)</th>[\t\n\r ]+<td>(.*?)</td>").getMatch(1);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        if (filesize != null) {
-            filesize = filesize.replace("Go", "Gb").replace("Mo", "Mb").replace("Ko", "Kb");
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        if (br.containsHTML(PASSWORDTEXT)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onefichiercom.passwordprotected", "This link is password protected"));
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
-    }
-
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         String passCode = null;
         // Their limit is just very short so a 30 second waittime for all
@@ -128,13 +87,6 @@ public class OneFichierCom extends PluginForHost {
             downloadLink.setProperty("pass", passCode);
         }
         dl.startDownload();
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        prepareBrowser(br);
-        br.postPage(PREMIUMPAGE, "mail=" + Encoding.urlEncode(account.getUser()) + " &pass=" + Encoding.urlEncode(account.getPass()) + "&secure=on&Login=Login");
-        if (br.getCookie(MAINPAGE, "SID") == null || br.getCookie(MAINPAGE, "SID").equals("")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -174,17 +126,39 @@ public class OneFichierCom extends PluginForHost {
         return ai;
     }
 
-    private void prepareBrowser(final Browser br) {
-        try {
-            if (br == null) { return; }
-            br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.16) Gecko/20110323 Ubuntu/10.10 (maverick) Firefox/3.6.16");
-            br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-            br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
-            br.getHeaders().put("Pragma", null);
-            br.getHeaders().put("Cache-Control", null);
-        } catch (Throwable e) {
-            /* setCookie throws exception in 09580 */
+    @Override
+    public String getAGBLink() {
+        return "http://www.1fichier.com/en/cgu.html";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    private String handlePassword(DownloadLink downloadLink, String passCode) throws IOException, PluginException {
+        logger.info("This link seems to be password protected, continuing...");
+        if (downloadLink.getStringProperty("pass", null) == null) {
+            passCode = Plugin.getUserInput("Password?", downloadLink);
+        } else {
+            /* gespeicherten PassCode holen */
+            passCode = downloadLink.getStringProperty("pass", null);
         }
+        br.postPage(br.getURL(), "pass=" + passCode);
+        if (br.containsHTML(PASSWORDTEXT)) throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
+        return passCode;
     }
 
     @Override
@@ -222,32 +196,58 @@ public class OneFichierCom extends PluginForHost {
         }
     }
 
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        prepareBrowser(br);
+        br.postPage(PREMIUMPAGE, "mail=" + Encoding.urlEncode(account.getUser()) + " &pass=" + Encoding.urlEncode(account.getPass()) + "&secure=on&Login=Login");
+        if (br.getCookie(MAINPAGE, "SID") == null || br.getCookie(MAINPAGE, "SID").equals("")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    private String handlePassword(DownloadLink downloadLink, String passCode) throws IOException, PluginException {
-        logger.info("This link seems to be password protected, continuing...");
-        if (downloadLink.getStringProperty("pass", null) == null) {
-            passCode = Plugin.getUserInput("Password?", downloadLink);
-        } else {
-            /* gespeicherten PassCode holen */
-            passCode = downloadLink.getStringProperty("pass", null);
+    private void prepareBrowser(final Browser br) {
+        try {
+            if (br == null) { return; }
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.16) Gecko/20110323 Ubuntu/10.10 (maverick) Firefox/3.6.16");
+            br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
+            br.getHeaders().put("Pragma", null);
+            br.getHeaders().put("Cache-Control", null);
+        } catch (Throwable e) {
+            /* setCookie throws exception in 09580 */
         }
-        br.postPage(br.getURL(), "pass=" + passCode);
-        if (br.containsHTML(PASSWORDTEXT)) throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
-        return passCode;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        prepareBrowser(br);
+        br.setFollowRedirects(false);
+        br.setCustomCharset("utf-8");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(The requested file could not be found|The file may has been deleted by its owner|Le fichier demandé n\\'existe pas\\.|Il a pu être supprimé par son propriétaire\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>Téléchargement du fichier : (.*?)</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("content=\"Téléchargement du fichier (.*?)\">").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("(>Cliquez ici pour télécharger|>Click here to download) (.*?)</a>").getMatch(1);
+                if (filename == null) {
+                    filename = br.getRegex("\">(Nom du fichier :|File name :)</th>[\t\r\n ]+<td>(.*?)</td>").getMatch(1);
+                    if (filename == null) filename = br.getRegex("<title>Download of (.*?)</title>").getMatch(0);
+                }
+            }
+        }
+        String filesize = br.getRegex("<th>(Taille :|File size :)</th>[\t\n\r ]+<td>(.*?)</td>").getMatch(1);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        if (filesize != null) {
+            filesize = filesize.replace("Go", "Gb").replace("Mo", "Mb").replace("Ko", "Kb");
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        if (br.containsHTML(PASSWORDTEXT)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onefichiercom.passwordprotected", "This link is password protected"));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

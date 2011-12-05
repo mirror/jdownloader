@@ -36,42 +36,42 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unibytes.com" }, urls = { "http://[\\w\\.]*?unibytes\\.com/.+" }, flags = { 2 })
 public class UniBytesCom extends PluginForHost {
 
+    private static final String CAPTCHATEXT      = "captcha\\.jpg";
+
+    private static final String FATALSERVERERROR = "<u>The requested resource \\(\\) is not available\\.</u>";
+
+    private static final String MAINPAGE         = "http://www.unibytes.com/";
+
     public UniBytesCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.unibytes.com/vippay");
     }
-
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Premium User");
+        return ai;
+    }
     @Override
     public String getAGBLink() {
         return "http://www.unibytes.com/page/terms";
     }
 
-    private static final String CAPTCHATEXT      = "captcha\\.jpg";
-    private static final String FATALSERVERERROR = "<u>The requested resource \\(\\) is not available\\.</u>";
-    private static final String MAINPAGE         = "http://www.unibytes.com/";
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        // Use the english language
-        br.setCookie(MAINPAGE, "lang", "en");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<p>File not found or removed</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(FATALSERVERERROR)) return AvailableStatus.UNCHECKABLE;
-        String filename = br.getRegex("id=\"fileName\" style=\"[^\"\\']+\">(.*?)</span>").getMatch(0);
-        String filesize = br.getRegex("\\((\\d+\\.\\d+ [A-Za-z]+)\\)</h3><script>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("</span>[\t\n\r ]+\\((.*?)\\)</h3><script>").getMatch(0);
-        if (filename == null || filesize == null) {
-            // Leave this in
-            logger.warning("Fatal error happened in the availableCheck...");
-            logger.warning("Filename = " + filename);
-            logger.warning("Filesize = " + filesize);
-            logger.warning(br.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -133,27 +133,6 @@ public class UniBytesCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setCookie(MAINPAGE, "lang", "en");
-        br.postPage(MAINPAGE, "lb_login=" + Encoding.urlEncode(account.getUser()) + "&lb_password=" + Encoding.urlEncode(account.getPass()) + "&lb_remember=true");
-        if (br.getCookie(MAINPAGE, "hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        ai.setUnlimitedTraffic();
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
@@ -188,18 +167,44 @@ public class UniBytesCom extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setCookie(MAINPAGE, "lang", "en");
+        br.postPage(MAINPAGE, "lb_login=" + Encoding.urlEncode(account.getUser()) + "&lb_password=" + Encoding.urlEncode(account.getPass()) + "&lb_remember=true");
+        if (br.getCookie(MAINPAGE, "hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        // Use the english language
+        br.setCookie(MAINPAGE, "lang", "en");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("<p>File not found or removed</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(FATALSERVERERROR)) return AvailableStatus.UNCHECKABLE;
+        String filename = br.getRegex("id=\"fileName\" style=\"[^\"\\']+\">(.*?)</span>").getMatch(0);
+        String filesize = br.getRegex("\\((\\d+\\.\\d+ [A-Za-z]+)\\)</h3><script>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("</span>[\t\n\r ]+\\((.*?)\\)</h3><script>").getMatch(0);
+        if (filename == null || filesize == null) {
+            // Leave this in
+            logger.warning("Fatal error happened in the availableCheck...");
+            logger.warning("Filename = " + filename);
+            logger.warning("Filesize = " + filesize);
+            logger.warning(br.toString());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

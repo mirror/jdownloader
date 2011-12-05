@@ -33,6 +33,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebrella.com" }, urls = { "http://[\\w\\.]*?filebrella\\.com/download/[a-z0-9]+" }, flags = { 0 })
 public class FileBrellaCom extends PluginForHost {
 
+    private static final String CAPTCHATEXT   = "images/verification\\.php";
+
+    private static final String CAPTCHAFAILED = "status success=\"false\">";
+
     public FileBrellaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,22 +45,9 @@ public class FileBrellaCom extends PluginForHost {
     public String getAGBLink() {
         return "http://www.filebrella.com/terms.php";
     }
-
-    private static final String CAPTCHATEXT   = "images/verification\\.php";
-    private static final String CAPTCHAFAILED = "status success=\"false\">";
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<title>FileBrella \\[File Deleted\\]</title>|<div class=\"title\">File Deleted</div>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"title\">.*?</div>[\t\n\r ]+<div>[a-z0-9]+_(.*?)</div>").getMatch(0);
-        if (filename == null || filename.equals("")) filename = br.getRegex("<title>FileBrella \\[[a-z0-9]+_(.*?)\\]</title>").getMatch(0);
-        String filesize = br.getRegex("/> Filesize: (.*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -82,13 +73,27 @@ public class FileBrellaCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(<title>FileBrella \\[File Deleted\\]</title>|<div class=\"title\">File Deleted</div>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<div class=\"title\">.*?</div>[\t\n\r ]+<div>[a-z0-9]+_(.*?)</div>").getMatch(0);
+        if (filename == null || filename.equals("")) filename = br.getRegex("<title>FileBrella \\[[a-z0-9]+_(.*?)\\]</title>").getMatch(0);
+        String filesize = br.getRegex("/> Filesize: (.*?)</div>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

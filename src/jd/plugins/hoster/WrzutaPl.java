@@ -50,25 +50,8 @@ public class WrzutaPl extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Nie odnaleziono pliku.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filename = (Encoding.htmlDecode(br.getRegex(Pattern.compile("anie</h3>\\s+<h2>(.*?)</h2>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
-        if (filename == null) filename = (Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>WRZUTA - (.*?)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
-        String filesize = br.getRegex(Pattern.compile("Rozmiar: <strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (filesize == null) filesize = br.getRegex(Pattern.compile("<span id=\"file_info_size\">[\t\n\r ]+<strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filetype = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/([^/]*)").getMatch(0);
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
-        if (downloadLink.getIntegerProperty("nameextra", -1) != -1) filename = filename + "_" + downloadLink.getIntegerProperty("nameextra", -1);
-        // Set the ending if the file doesn't have it but don't set it as a
-        // final filename as it could be wrong!
-        if (downloadLink.getDownloadURL().contains("/audio/") && !filename.contains(".mp3"))
-            downloadLink.setName(Encoding.htmlDecode(filename.trim() + ".mp3"));
-        else
-            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -137,8 +120,25 @@ public class WrzutaPl extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Nie odnaleziono pliku.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filename = (Encoding.htmlDecode(br.getRegex(Pattern.compile("anie</h3>\\s+<h2>(.*?)</h2>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+        if (filename == null) filename = (Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>WRZUTA - (.*?)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+        String filesize = br.getRegex(Pattern.compile("Rozmiar: <strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (filesize == null) filesize = br.getRegex(Pattern.compile("<span id=\"file_info_size\">[\t\n\r ]+<strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filetype = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/([^/]*)").getMatch(0);
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        if (downloadLink.getIntegerProperty("nameextra", -1) != -1) filename = filename + "_" + downloadLink.getIntegerProperty("nameextra", -1);
+        // Set the ending if the file doesn't have it but don't set it as a
+        // final filename as it could be wrong!
+        if (downloadLink.getDownloadURL().contains("/audio/") && !filename.contains(".mp3"))
+            downloadLink.setName(Encoding.htmlDecode(filename.trim() + ".mp3"));
+        else
+            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -146,10 +146,10 @@ public class WrzutaPl extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

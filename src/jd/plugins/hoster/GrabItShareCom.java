@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -36,9 +37,32 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grabitshare.com" }, urls = { "http://(www\\.)?grabitshare\\.com/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 0 })
 public class GrabItShareCom extends PluginForHost {
 
+    private static final String COOKIE_HOST      = "http://grabitshare.com";
+
+    private static final String IPBLOCKED        = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP|\">Dostigli ste download limit\\. Pričekajte 1h za nastavak)";
+
+    private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+
+    private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
+
     public GrabItShareCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/register.php?g=3");
+    }
+    private String findLink() throws Exception {
+        String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+\\&a=[a-z0-9]+\\&t=[a-z0-9]+.*?)(\\'|\")").getMatch(0);
+        if (finalLink == null) {
+            String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+            if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (String alink : sitelinks) {
+                alink = Encoding.htmlDecode(alink);
+                if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
+                    finalLink = alink;
+                    break;
+                }
+            }
+        }
+        return finalLink;
     }
 
     // MhfScriptBasic 1.2, added new filesize-/name regexes & limit-reached text
@@ -46,40 +70,9 @@ public class GrabItShareCom extends PluginForHost {
     public String getAGBLink() {
         return COOKIE_HOST + "/rules.php";
     }
-
-    private static final String COOKIE_HOST      = "http://grabitshare.com";
-    private static final String IPBLOCKED        = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP|\">Dostigli ste download limit\\. Pričekajte 1h za nastavak)";
-
-    private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCustomCharset("utf-8");
-        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
-        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
-        br.getPage(parameter.getDownloadURL());
-        String newlink = br.getRegex("<p>The document has moved <a href=\"(.*?)\">here</a>\\.</p>").getMatch(0);
-        if (newlink != null) {
-            logger.info("This link has moved, trying to find and set the new link...");
-            newlink = newlink.replaceAll("(\\&amp;|setlang=en)", "");
-            parameter.setUrlDownload(newlink);
-            br.getPage(newlink);
-        }
-        if (br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("title=\"Click this to report (.*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("<p align=\"center\"><b><font size=\"4\">(.*?)</font><font").getMatch(0);
-        String filesize = br.getRegex("<b>(File size|Filesize):</b></td>[\r\t\n ]+<td align=([\r\t\n ]+|(\")?left(\")?)>(.*?)</td>").getMatch(4);
-        if (filesize == null) {
-            filesize = br.getRegex("<b>\\&#4324;\\&#4304;\\&#4312;\\&#4314;\\&#4312;\\&#4321; \\&#4310;\\&#4317;\\&#4315;\\&#4304;:</b></td>[\t\r\n ]+<td align=left>(.*?)</td>").getMatch(0);
-            if (filesize == null) filesize = br.getRegex("</font><font size=\"5\">\\&nbsp;</font>(.*?)\\&nbsp;\\&nbsp;").getMatch(0);
-        }
-        if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setFinalFileName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -167,20 +160,43 @@ public class GrabItShareCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String findLink() throws Exception {
-        String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+\\&a=[a-z0-9]+\\&t=[a-z0-9]+.*?)(\\'|\")").getMatch(0);
-        if (finalLink == null) {
-            String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-            if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            for (String alink : sitelinks) {
-                alink = Encoding.htmlDecode(alink);
-                if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
-                    finalLink = alink;
-                    break;
-                }
-            }
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCustomCharset("utf-8");
+        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
+        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
+        br.getPage(parameter.getDownloadURL());
+        String newlink = br.getRegex("<p>The document has moved <a href=\"(.*?)\">here</a>\\.</p>").getMatch(0);
+        if (newlink != null) {
+            logger.info("This link has moved, trying to find and set the new link...");
+            newlink = newlink.replaceAll("(\\&amp;|setlang=en)", "");
+            parameter.setUrlDownload(newlink);
+            br.getPage(newlink);
         }
-        return finalLink;
+        if (br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("title=\"Click this to report (.*?)\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("<p align=\"center\"><b><font size=\"4\">(.*?)</font><font").getMatch(0);
+        String filesize = br.getRegex("<b>(File size|Filesize):</b></td>[\r\t\n ]+<td align=([\r\t\n ]+|(\")?left(\")?)>(.*?)</td>").getMatch(4);
+        if (filesize == null) {
+            filesize = br.getRegex("<b>\\&#4324;\\&#4304;\\&#4312;\\&#4314;\\&#4312;\\&#4321; \\&#4310;\\&#4317;\\&#4315;\\&#4304;:</b></td>[\t\r\n ]+<td align=left>(.*?)</td>").getMatch(0);
+            if (filesize == null) filesize = br.getRegex("</font><font size=\"5\">\\&nbsp;</font>(.*?)\\&nbsp;\\&nbsp;").getMatch(0);
+        }
+        if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setFinalFileName(filename.trim());
+        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -189,11 +205,6 @@ public class GrabItShareCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
 }

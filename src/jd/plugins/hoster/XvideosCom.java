@@ -39,6 +39,23 @@ public class XvideosCom extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
+    }
+
+    @Override
+    public void handleFree(DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        br.setFollowRedirects(false);
+        String dllink = br.getRegex("flv_url=(.*?)\\&").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = Encoding.htmlDecode(dllink);
+        link.setFinalFileName(null);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl.startDownload();
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
@@ -63,28 +80,11 @@ public class XvideosCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        br.setFollowRedirects(false);
-        String dllink = br.getRegex("flv_url=(.*?)\\&").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = Encoding.htmlDecode(dllink);
-        link.setFinalFileName(null);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
     }
 
 }

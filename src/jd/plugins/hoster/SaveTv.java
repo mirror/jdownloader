@@ -41,13 +41,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save.tv" }, urls = { "http://[\\w\\.]*?(save\\.tv|free\\.save\\.tv)/STV/M/obj/user/usShowVideoArchiveDetail\\.cfm\\?TelecastID=\\d+" }, flags = { 2 })
 public class SaveTv extends PluginForHost {
 
-    public SaveTv(PluginWrapper wrapper) {
-        super(wrapper);
-        this.enablePremium("https://www.save.tv/stv/s/obj/registration/RegPage1.cfm");
-        setConfigElements();
-    }
-
     private static final String NORANDOMNUMBERS         = "NORANDOMNUMBERS";
+
     private static final String USEORIGINALFILENAME     = "USEORIGINALFILENAME";
     private static final String PREFERADSFREE           = "PREFERADSFREE";
     private static final String ADSFREEAVAILABLE        = "for=\"archive-layer-adfree\">Schnittliste vor dem Download / Streaming anwenden<";
@@ -57,110 +52,10 @@ public class SaveTv extends PluginForHost {
     private static final String PREMIUMPOSTPAGE         = "https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM";
     private static final String PREFERH264MOBILE        = "PREFERH264MOBILE";
     private static final String PREFERH264MOBILETEXT    = "H.264 Mobile Videos bevorzugen (diese sind kleiner)";
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.NORANDOMNUMBERS, JDL.L("plugins.hoster.SaveTv.DontModifyFilename", "Keine Zufallszahlen an Dateinamen anhängen (kann Probleme verursachen)")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEORIGINALFILENAME, JDL.L("plugins.hoster.SaveTv.UseOriginalFilename", "Original Dateinamen verwenden (erst beim Download sichtbar)")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERADSFREE, JDL.L("plugins.hoster.SaveTv.PreferAdFreeVideos", "Geschnittene Videos (Videos ohne Werbung) bevorzugen")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERH264MOBILE, JDL.L("plugins.hoster.SaveTv.PreferH264MobileVideos", PREFERH264MOBILETEXT)).setDefaultValue(false));
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://free.save.tv/STV/S/misc/miscShowTermsConditionsInMainFrame.cfm";
-    }
-
-    public void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        for (int i = 0; i <= 1; i++) {
-            String acctype = this.getPluginConfig().getStringProperty("premium", null);
-            if (acctype != null) {
-                extendedLogin("http://www.save.tv/STV/S/misc/home.cfm?", PREMIUMPOSTPAGE, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
-                break;
-            } else {
-                extendedLogin("http://free.save.tv/", FREEPOSTPAGE, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
-                if (br.containsHTML("id=\"loginform\"")) {
-                    this.getPluginConfig().setProperty("premium", "1");
-                    this.getPluginConfig().save();
-                    continue;
-                }
-                this.getPluginConfig().setProperty("premium", Property.NULL);
-                this.getPluginConfig().save();
-                break;
-            }
-        }
-        if (!br.containsHTML("<frame") || br.containsHTML("Bitte verifizieren Sie Ihre Logindaten")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        String acctype = this.getPluginConfig().getStringProperty("premium", null);
-        if (acctype != null) {
-            ai.setStatus("Premium save.tv User");
-        } else {
-            ai.setStatus("Free save.tv User");
-        }
-        String tic = br.getRegex("tic=(\\d+)").getMatch(0);
-        if (tic != null) {
-            String ticlink = "http://free.save.tv/STV/M/obj/user/usShowVideoArchive.cfm?&sk=JOE&tic=";
-            if (acctype != null) ticlink = "http://save.tv/STV/M/obj/user/usShowVideoArchive.cfm?&sk=JOE&tic=";
-            br.getPage(ticlink + tic);
-            String minsleft = br.getRegex("Restzeit.*?(\\d+).*?Min").getMatch(0);
-            logger.info("The user got " + minsleft + " minutes left to record");
-        }
-        ai.setUnlimitedTraffic();
-        account.setValid(true);
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        login(account);
-        String addedlink = downloadLink.getDownloadURL();
-        if (this.getPluginConfig().getStringProperty("premium", null) != null) {
-            addedlink = addedlink.replace("free.save.tv", "save.tv");
-        } else {
-            if (!addedlink.contains("free.save.tv")) addedlink = addedlink.replace("save.tv", "free.save.tv");
-        }
-        logger.info("Added link = " + addedlink);
-        br.getPage(addedlink);
-        // On their page this step is made by java script but leaving some vars
-        // out, it still works :D
-        boolean preferAdsFree = getPluginConfig().getBooleanProperty(PREFERADSFREE);
-        boolean preferMobileVids = getPluginConfig().getBooleanProperty(PREFERH264MOBILE);
-        String downloadWithoutAds = "false";
-        String preferMobileVideos = "c0-param1=number:0";
-        if (preferMobileVids) preferMobileVideos = "c0-param1=number:1";
-        if (preferAdsFree) downloadWithoutAds = "true";
-        String postThat = "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + new Regex(addedlink, "TelecastID=(\\d+)").getMatch(0) + "&" + preferMobileVideos + "&c0-param2=boolean:" + downloadWithoutAds + "&xml=true&";
-        br.postPage("http://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?null.GetDownloadUrl", postThat);
-        String dllink = br.getRegex("\\[ \\'OK\\',\\'(http://.*?)\\',\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\\'(http://.*?/\\?m=dl)\\'").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (dllink) is null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        logger.info("Final downloadlink = " + dllink + " starting download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        boolean useOriginalFilename = getPluginConfig().getBooleanProperty(USEORIGINALFILENAME);
-        if (useOriginalFilename)
-            downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
-        else
-            downloadLink.setFinalFileName(downloadLink.getName());
-        dl.startDownload();
+    public SaveTv(PluginWrapper wrapper) {
+        super(wrapper);
+        this.enablePremium("https://www.save.tv/stv/s/obj/registration/RegPage1.cfm");
+        setConfigElements();
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
@@ -228,8 +123,116 @@ public class SaveTv extends PluginForHost {
     }
 
     @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String acctype = this.getPluginConfig().getStringProperty("premium", null);
+        if (acctype != null) {
+            ai.setStatus("Premium save.tv User");
+        } else {
+            ai.setStatus("Free save.tv User");
+        }
+        String tic = br.getRegex("tic=(\\d+)").getMatch(0);
+        if (tic != null) {
+            String ticlink = "http://free.save.tv/STV/M/obj/user/usShowVideoArchive.cfm?&sk=JOE&tic=";
+            if (acctype != null) ticlink = "http://save.tv/STV/M/obj/user/usShowVideoArchive.cfm?&sk=JOE&tic=";
+            br.getPage(ticlink + tic);
+            String minsleft = br.getRegex("Restzeit.*?(\\d+).*?Min").getMatch(0);
+            logger.info("The user got " + minsleft + " minutes left to record");
+        }
+        ai.setUnlimitedTraffic();
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://free.save.tv/STV/S/misc/miscShowTermsConditionsInMainFrame.cfm";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        String addedlink = downloadLink.getDownloadURL();
+        if (this.getPluginConfig().getStringProperty("premium", null) != null) {
+            addedlink = addedlink.replace("free.save.tv", "save.tv");
+        } else {
+            if (!addedlink.contains("free.save.tv")) addedlink = addedlink.replace("save.tv", "free.save.tv");
+        }
+        logger.info("Added link = " + addedlink);
+        br.getPage(addedlink);
+        // On their page this step is made by java script but leaving some vars
+        // out, it still works :D
+        boolean preferAdsFree = getPluginConfig().getBooleanProperty(PREFERADSFREE);
+        boolean preferMobileVids = getPluginConfig().getBooleanProperty(PREFERH264MOBILE);
+        String downloadWithoutAds = "false";
+        String preferMobileVideos = "c0-param1=number:0";
+        if (preferMobileVids) preferMobileVideos = "c0-param1=number:1";
+        if (preferAdsFree) downloadWithoutAds = "true";
+        String postThat = "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + new Regex(addedlink, "TelecastID=(\\d+)").getMatch(0) + "&" + preferMobileVideos + "&c0-param2=boolean:" + downloadWithoutAds + "&xml=true&";
+        br.postPage("http://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?null.GetDownloadUrl", postThat);
+        String dllink = br.getRegex("\\[ \\'OK\\',\\'(http://.*?)\\',\\'").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\\'(http://.*?/\\?m=dl)\\'").getMatch(0);
+        if (dllink == null) {
+            logger.warning("Final downloadlink (dllink) is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        logger.info("Final downloadlink = " + dllink + " starting download...");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        boolean useOriginalFilename = getPluginConfig().getBooleanProperty(USEORIGINALFILENAME);
+        if (useOriginalFilename)
+            downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        else
+            downloadLink.setFinalFileName(downloadLink.getName());
+        dl.startDownload();
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        for (int i = 0; i <= 1; i++) {
+            String acctype = this.getPluginConfig().getStringProperty("premium", null);
+            if (acctype != null) {
+                extendedLogin("http://www.save.tv/STV/S/misc/home.cfm?", PREMIUMPOSTPAGE, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
+                break;
+            } else {
+                extendedLogin("http://free.save.tv/", FREEPOSTPAGE, Encoding.urlEncode(account.getUser()), Encoding.urlEncode(account.getPass()));
+                if (br.containsHTML("id=\"loginform\"")) {
+                    this.getPluginConfig().setProperty("premium", "1");
+                    this.getPluginConfig().save();
+                    continue;
+                }
+                this.getPluginConfig().setProperty("premium", Property.NULL);
+                this.getPluginConfig().save();
+                break;
+            }
+        }
+        if (!br.containsHTML("<frame") || br.containsHTML("Bitte verifizieren Sie Ihre Logindaten")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -242,20 +245,17 @@ public class SaveTv extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void resetDownloadlink(DownloadLink link) {
     }
 
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.NORANDOMNUMBERS, JDL.L("plugins.hoster.SaveTv.DontModifyFilename", "Keine Zufallszahlen an Dateinamen anhängen (kann Probleme verursachen)")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEORIGINALFILENAME, JDL.L("plugins.hoster.SaveTv.UseOriginalFilename", "Original Dateinamen verwenden (erst beim Download sichtbar)")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERADSFREE, JDL.L("plugins.hoster.SaveTv.PreferAdFreeVideos", "Geschnittene Videos (Videos ohne Werbung) bevorzugen")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERH264MOBILE, JDL.L("plugins.hoster.SaveTv.PreferH264MobileVideos", PREFERH264MOBILETEXT)).setDefaultValue(false));
     }
 }

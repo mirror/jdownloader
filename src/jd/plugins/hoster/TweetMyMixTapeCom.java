@@ -40,24 +40,8 @@ public class TweetMyMixTapeCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("tweetmymixtape.com/Song-Removed.htm") || br.containsHTML("(>Default Page Title<|>This song was removed by us or the artist|>Song Removed\\!<|>You will redirected to the homepage in|>If you are not redirected,)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("src=\"/frontpages/images/leftside\\.png\" alt=\"\" /><h1>(.*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\" />").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>(.*?) by ").getMatch(0);
-            }
-        }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (br.containsHTML("(/playvideo\\.aspx\\?videokey|>Loading the video player<)"))
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
-        else
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -83,12 +67,28 @@ public class TweetMyMixTapeCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        if (br.getURL().contains("tweetmymixtape.com/Song-Removed.htm") || br.containsHTML("(>Default Page Title<|>This song was removed by us or the artist|>Song Removed\\!<|>You will redirected to the homepage in|>If you are not redirected,)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("src=\"/frontpages/images/leftside\\.png\" alt=\"\" /><h1>(.*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\" />").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?) by ").getMatch(0);
+            }
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("(/playvideo\\.aspx\\?videokey|>Loading the video player<)"))
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+        else
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

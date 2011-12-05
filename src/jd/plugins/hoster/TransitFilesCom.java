@@ -45,29 +45,15 @@ public class TransitFilesCom extends PluginForHost {
         return "http://transitfiles.com/tos";
     }
 
+    private String getCaptchaLink() {
+        String captchaLink = br.getRegex("<div class=\"anti_robot\">[\t\n\r ]+<img src=\"(/.*?)\"").getMatch(0);
+        if (captchaLink == null) captchaLink = br.getRegex("\"(/captchadl\\.php\\?[a-z0-9]+)\"").getMatch(0);
+        return captchaLink;
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.setCookie("http://transitfiles.com/", "lang", "en");
-        br.getPage(link.getDownloadURL());
-        // This is their API, it also works for multiple links but doesn't show
-        // the filename!
-        // br.postPage("http://api.transitfiles.com/linktester.php", "linktest="
-        // + link.getDownloadURL());
-        if (br.containsHTML("(>The following download is not available on our server|<title>TransitFiles \\- File Sharing made easy\\!</title>|>The link file above no longer exists\\. This could be due to several reasons|>The file link is invalid<|>The uploader has deleted the file in question or change the access rights<|>The file was illegal and was deleted by our staff<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"nom_de_fichier\">(.*?)</div>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("\\$\\(\"#inputrenamelinked\"\\)\\.val\\(\"(.*?)\"\\);").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>(.*?) \\- TransitFiles</title>").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex(">Filesize: </span><strong>(.*?)</strong>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -111,19 +97,38 @@ public class TransitFilesCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getCaptchaLink() {
-        String captchaLink = br.getRegex("<div class=\"anti_robot\">[\t\n\r ]+<img src=\"(/.*?)\"").getMatch(0);
-        if (captchaLink == null) captchaLink = br.getRegex("\"(/captchadl\\.php\\?[a-z0-9]+)\"").getMatch(0);
-        return captchaLink;
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.setCookie("http://transitfiles.com/", "lang", "en");
+        br.getPage(link.getDownloadURL());
+        // This is their API, it also works for multiple links but doesn't show
+        // the filename!
+        // br.postPage("http://api.transitfiles.com/linktester.php", "linktest="
+        // + link.getDownloadURL());
+        if (br.containsHTML("(>The following download is not available on our server|<title>TransitFiles \\- File Sharing made easy\\!</title>|>The link file above no longer exists\\. This could be due to several reasons|>The file link is invalid<|>The uploader has deleted the file in question or change the access rights<|>The file was illegal and was deleted by our staff<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<div class=\"nom_de_fichier\">(.*?)</div>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("\\$\\(\"#inputrenamelinked\"\\)\\.val\\(\"(.*?)\"\\);").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?) \\- TransitFiles</title>").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex(">Filesize: </span><strong>(.*?)</strong>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

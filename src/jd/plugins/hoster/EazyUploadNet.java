@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.config.Property;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
@@ -39,27 +40,18 @@ public class EazyUploadNet extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://www.eazyupload.net/terms.php";
-    }
-
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("/download", ""));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(Unknown link|>An error has occured while trying to serve your request<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<b>Filename</b></td><td>(.*?)</td>").getMatch(0);
-        String filesize = br.getRegex("<b>Size</b></td><td>(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://www.eazyupload.net/terms.php";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -103,13 +95,32 @@ public class EazyUploadNet extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(Unknown link|>An error has occured while trying to serve your request<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<b>Filename</b></td><td>(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex("<b>Size</b></td><td>(.*?)</td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

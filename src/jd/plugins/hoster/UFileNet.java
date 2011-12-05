@@ -41,6 +41,29 @@ public class UFileNet extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 4;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        String dllink = br.getRegex("\\\\\"(download\\.php\\?call=.*?)\\\\\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = "http://www.u-file.net/" + dllink;
+        sleep(16 * 1000l, downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        long size = dl.getConnection().getLongContentLength();
+        if (size == 23056508) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error or file offline!");
+        if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("Server is now very busy")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         String passCode = null;
@@ -103,30 +126,7 @@ public class UFileNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String dllink = br.getRegex("\\\\\"(download\\.php\\?call=.*?)\\\\\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://www.u-file.net/" + dllink;
-        sleep(16 * 1000l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        long size = dl.getConnection().getLongContentLength();
-        if (size == 23056508) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error or file offline!");
-        if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("Server is now very busy")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 4;
     }
 
     @Override

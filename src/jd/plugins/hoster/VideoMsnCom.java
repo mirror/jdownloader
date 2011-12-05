@@ -33,16 +33,43 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.msn.com" }, urls = { "http://(www\\.)?video\\.de\\.msn\\.com/watch/video/[a-z0-9\\-]+/[a-z0-9]+" }, flags = { 0 })
 public class VideoMsnCom extends PluginForHost {
 
+    private String DLLINK = null;
+
     public VideoMsnCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String decodeHex(String s) {
+        final String[] damnHex = new Regex(s, "\\\\x(.{2})").getColumn(0);
+        if (damnHex != null) {
+            for (String hex : damnHex) {
+                char chr = (char) Integer.parseInt(hex, 16);
+                s = s.replace(hex, String.valueOf(chr));
+            }
+        }
+        return s;
+    }
 
     @Override
     public String getAGBLink() {
         /** No correct TOSlink found */
         return "http://de.msn.com/impressum.aspx";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -91,42 +118,15 @@ public class VideoMsnCom extends PluginForHost {
         }
     }
 
-    private String decodeHex(String s) {
-        final String[] damnHex = new Regex(s, "\\\\x(.{2})").getColumn(0);
-        if (damnHex != null) {
-            for (String hex : damnHex) {
-                char chr = (char) Integer.parseInt(hex, 16);
-                s = s.replace(hex, String.valueOf(chr));
-            }
-        }
-        return s;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
     @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

@@ -32,16 +32,33 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extremetube.com" }, urls = { "http://(www\\.)?extremetube\\.com/video/[a-z0-9\\-]+" }, flags = { 0 })
 public class ExtremeTubeCom extends PluginForHost {
 
+    private String DLLINK = null;
+
     public ExtremeTubeCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(5 * 1000l);
     }
 
-    private String DLLINK = null;
-
     @Override
     public String getAGBLink() {
         return "http://www.extremetube.com/information#terms-conditions";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        // More simultan downloads are possible but cause more and more errors!
+        return 5;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -78,31 +95,14 @@ public class ExtremeTubeCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        // More simultan downloads are possible but cause more and more errors!
-        return 5;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

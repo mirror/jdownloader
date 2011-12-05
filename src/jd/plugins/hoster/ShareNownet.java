@@ -44,23 +44,39 @@ public class ShareNownet extends PluginForHost {
     }
 
     @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        try {
+            isExpired(account);
+        } catch (PluginException e) {
+            ai.setExpired(true);
+            return ai;
+        }
+        String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0).trim();
+        String days = new Regex(validUntil, "([\\d]+) ?Tage").getMatch(0);
+        String hours = new Regex(validUntil, "([\\d]+) ?Stunde").getMatch(0);
+        long res = 0;
+        if (days != null) res += Long.parseLong(days.trim()) * 24 * 60 * 60 * 1000;
+        if (hours != null) res += Long.parseLong(hours.trim()) * 60 * 60 * 1000;
+        res += System.currentTimeMillis();
+        ai.setValidUntil(res);
+        return ai;
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://share-now.net/agb.php";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Datei existiert nicht oder")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)\\| share-now\\.net </title>").getMatch(0);
-        if (filename == null || filename.equals("")) filename = br.getRegex("class=\"style.*?>.*?<br />(.*?)</span>").getMatch(0);
-        String filesize = br.getRegex("content=\".*?Filesize:(.*?)-").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        downloadLink.setName(filename.trim());
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -94,12 +110,9 @@ public class ShareNownet extends PluginForHost {
         dl.startDownload();
     }
 
-    private void login(Account account) throws IOException, PluginException {
-        setBrowserExclusive();
-        br.getPage("http://share-now.net/?lang=de");
-        br.postPage("http://share-now.net/?lang=de", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&loginuser=1");
-        if (br.getCookie("http://share-now.net", "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (br.getCookie("http://share-now.net", "pass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     private void isExpired(Account account) throws IOException, PluginException {
@@ -108,35 +121,27 @@ public class ShareNownet extends PluginForHost {
         if (validUntil != null && new Regex(validUntil.trim(), "kein").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        try {
-            isExpired(account);
-        } catch (PluginException e) {
-            ai.setExpired(true);
-            return ai;
-        }
-        String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0).trim();
-        String days = new Regex(validUntil, "([\\d]+) ?Tage").getMatch(0);
-        String hours = new Regex(validUntil, "([\\d]+) ?Stunde").getMatch(0);
-        long res = 0;
-        if (days != null) res += Long.parseLong(days.trim()) * 24 * 60 * 60 * 1000;
-        if (hours != null) res += Long.parseLong(hours.trim()) * 60 * 60 * 1000;
-        res += System.currentTimeMillis();
-        ai.setValidUntil(res);
-        return ai;
+    private void login(Account account) throws IOException, PluginException {
+        setBrowserExclusive();
+        br.getPage("http://share-now.net/?lang=de");
+        br.postPage("http://share-now.net/?lang=de", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&loginuser=1");
+        if (br.getCookie("http://share-now.net", "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://share-now.net", "pass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Datei existiert nicht oder")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?)\\| share-now\\.net </title>").getMatch(0);
+        if (filename == null || filename.equals("")) filename = br.getRegex("class=\"style.*?>.*?<br />(.*?)</span>").getMatch(0);
+        String filesize = br.getRegex("content=\".*?Filesize:(.*?)-").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        downloadLink.setName(filename.trim());
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -144,11 +149,11 @@ public class ShareNownet extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

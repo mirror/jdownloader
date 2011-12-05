@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
@@ -463,6 +464,16 @@ public class HotFileCom extends PluginForHost {
         urlFileName = Encoding.htmlDecode(urlFileName);
         downloadLink.setFinalFileName(urlFileName);
         dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @SuppressWarnings("unchecked")

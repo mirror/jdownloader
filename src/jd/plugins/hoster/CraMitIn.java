@@ -24,6 +24,7 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -46,91 +47,71 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cramit.in" }, urls = { "http://[\\w\\.]*?(cramit\\.in|cramitin\\.(net|eu|us))/[a-z0-9]{12}" }, flags = { 2 })
 public class CraMitIn extends PluginForHost {
 
+    private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
+
+    public String               brbefore    = "";
+
+    private static final String COOKIE_HOST = "http://cramit.in";
+
+    public boolean              nopremium   = false;
+
     public CraMitIn(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-
-    // XfileSharingProBasic Version 1.6, modified handleFree & useragent,
-    // modified all
-    @Override
-    public String getAGBLink() {
-        return COOKIE_HOST + "/tos.html";
+    public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
+        // Some waittimes...
+        if (brbefore.contains("You have to wait")) {
+            int minutes = 0, seconds = 0, hours = 0;
+            String tmphrs = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
+            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+            String tmpmin = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
+            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+            String tmpsec = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+seconds?").getMatch(0);
+            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+            int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+            logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+        }
+        if (brbefore.contains("You have reached the download-limit")) {
+            String tmphrs = new Regex(brbefore, "\\s+(\\d+)\\s+hours?").getMatch(0);
+            String tmpmin = new Regex(brbefore, "\\s+(\\d+)\\s+minutes?").getMatch(0);
+            String tmpsec = new Regex(brbefore, "\\s+(\\d+)\\s+seconds?").getMatch(0);
+            String tmpdays = new Regex(brbefore, "\\s+(\\d+)\\s+days?").getMatch(0);
+            if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
+            } else {
+                int minutes = 0, seconds = 0, hours = 0, days = 0;
+                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+                if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+                if (tmpdays != null) days = Integer.parseInt(tmpdays);
+                int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+                logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+            }
+        }
+        // Errorhandling for only-premium links
+        if (brbefore.contains("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
+            String filesizelimit = new Regex(brbefore, "You can download files up to(.*?)only").getMatch(0);
+            if (filesizelimit != null) {
+                filesizelimit = filesizelimit.trim();
+                logger.warning("As free user you can download files up to " + filesizelimit + " only");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
+            } else {
+                logger.warning("Only downloadable via premium");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
+            }
+        }
+        if (brbefore.contains(">Skipped countdown<")) {
+            logger.info("Server says that the countdown was skipped, please check if this could be true!");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror");
+        }
     }
-
-    public String               brbefore    = "";
-    private static final String COOKIE_HOST = "http://cramit.in";
-    public boolean              nopremium   = false;
-
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("cramitin\\.(net|eu|us)", "cramit.in"));
     }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setFollowRedirects(false);
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getPage(link.getDownloadURL());
-        doSomething();
-        if (brbefore.contains("class=\"err\">This server is in maintenance mode")) {
-            logger.info("File " + link.getDownloadURL() + " is on a server which is in maintenance mode!");
-            return AvailableStatus.UNCHECKABLE;
-        }
-        String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
-                        if (filename == null) {
-                            filename = br.getRegex("File Name.*?nowrap>(.*?)</td").getMatch(0);
-                        }
-                    }
-                }
-            }
-        }
-        String filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("</font>(</a>)?[ ]+\\((.*?)\\)(.*?)</font>").getMatch(1);
-            if (filesize == null) {
-                filesize = br.getRegex(">http://cramit\\.in/[a-z0-9]{12}</font> \\((.*?)\\)</font>").getMatch(0);
-                if (filesize == null) {
-                    filesize = br.getRegex("class=\"green\">http://cramit\\.in/[a-z0-9]{12}</span></a>( )?\\((.*?)\\)</div>").getMatch(1);
-                    if (filesize == null) {
-                        filesize = br.getRegex(">http://cramit\\.in/[a-z0-9]{12}</a></span><small> \\((.*?)\\)</small>").getMatch(0);
-                        if (filesize == null) filesize = br.getRegex("\\(([0-9\\.]+ Mb)\\)").getMatch(0);
-                    }
-                }
-            }
-        }
-        if (brbefore.contains("<b>File Not Found</b><br><br>") && (filename == null || filename.matches(""))) {
-            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (filename == null || filename.equals("")) {
-            if (brbefore.contains("You have reached the download-limit")) {
-                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-                return AvailableStatus.UNCHECKABLE;
-            }
-            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(filename.trim());
-        if (filesize != null && !filesize.equals("")) {
-            logger.info("Filesize found, filesize = " + filesize);
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        return AvailableStatus.TRUE;
-    }
-
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         doSomething();
         if (brbefore.contains("class=\"err\">This server is in maintenance mode")) {
@@ -318,27 +299,22 @@ public class CraMitIn extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.setDebug(true);
-        br.getPage(COOKIE_HOST + "/login.html");
-        Form loginform = br.getForm(0);
-        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        loginform.put("login", Encoding.urlEncode(account.getUser()));
-        loginform.put("password", Encoding.urlEncode(account.getPass()));
-        br.submitForm(loginform);
-        br.getPage(COOKIE_HOST + "/?op=my_account");
-        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("(value=\"Extend Premium Account\"|alt=\"EXTEND PREMIUM ACCOUNT\">|>Premium Account expires on)")) {
-            logger.info("Entered account is valid and it's a registered account.");
-            nopremium = true;
+    public void doSomething() throws NumberFormatException, PluginException {
+        brbefore = br.toString();
+        ArrayList<String> someStuff = new ArrayList<String>();
+        ArrayList<String> regexStuff = new ArrayList<String>();
+        regexStuff.add(Encoding.htmlDecode("%3C%21%28--.*%3F--%29%3E"));
+        regexStuff.add(Encoding.htmlDecode("(&lt;font color=#FCAF03&gt;.*?&lt;/font&gt;)"));
+        for (String aRegex : regexStuff) {
+            String lolz[] = br.getRegex(aRegex).getColumn(0);
+            if (lolz != null) {
+                for (String dingdang : lolz) {
+                    someStuff.add(dingdang);
+                }
+            }
+        }
+        for (String fun : someStuff) {
+            brbefore = brbefore.replace(fun, "");
         }
     }
 
@@ -393,6 +369,81 @@ public class CraMitIn extends PluginForHost {
             ai.setStatus("Registered (free) User");
         }
         return ai;
+    }
+
+    // XfileSharingProBasic Version 1.6, modified handleFree & useragent,
+    // modified all
+    @Override
+    public String getAGBLink() {
+        return COOKIE_HOST + "/tos.html";
+    }
+
+    public String getDllink() {
+        String dllink = br.getRegex("name=\"dl_link\" onclick=\"this\\.focus\\(\\);this\\.select\\(\\);\">(http://.*?)</textarea").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex(">This download will be available for your IP for the next 24 hours\\.</font></h3><BR>.*?ACTION=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://ns\\d+\\.ovh\\.net:\\d+/d/[a-z0-9]+/.+)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("doesn\\'t, please <span class=green><b><a href=\"(http://.*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("<meta http-equiv=REFRESH CONTENT=\"\\d+; url=(http://.*?)\"").getMatch(0);
+                        if (dllink == null) {
+                            dllink = br.getRegex("Please <span class=green><b><a href=\"(http://.*?)\"").getMatch(0);
+                            if (dllink == null) {
+                                dllink = br.getRegex("\"(http://iofa\\d+\\.cramit\\.in/free_p/cgi-bin/.*?)\"").getMatch(0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return dllink;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    public Form getTheForm(DownloadLink downloadLink) throws PluginException {
+        String rand = new Regex(brbefore, "name=\"rand\" value=\"(.*?)\"").getMatch(0);
+        if (rand == null) {
+            logger.warning("The rand string is null!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        Form DLForm = new Form();
+        DLForm.setMethod(MethodType.POST);
+        DLForm.put("op", "download2");
+        DLForm.put("down_direct", "1");
+        DLForm.put("method_free", "Free+Download");
+        DLForm.put("referer", downloadLink.getDownloadURL());
+        DLForm.put("id", new Regex(downloadLink.getDownloadURL(), "cramit\\.in/([a-z0-9]{12})").getMatch(0));
+        DLForm.put("rand", rand);
+        return DLForm;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
+        if (thelink.getStringProperty("pass", null) == null) {
+            passCode = getUserInput(null, thelink);
+        } else {
+            /* gespeicherten PassCode holen */
+            passCode = thelink.getStringProperty("pass", null);
+        }
+        pwform.put("password", passCode);
+        logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+        return passCode;
     }
 
     @Override
@@ -451,139 +502,99 @@ public class CraMitIn extends PluginForHost {
         }
     }
 
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setCookie(COOKIE_HOST, "lang", "english");
+        br.setDebug(true);
+        br.getPage(COOKIE_HOST + "/login.html");
+        Form loginform = br.getForm(0);
+        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        loginform.put("login", Encoding.urlEncode(account.getUser()));
+        loginform.put("password", Encoding.urlEncode(account.getPass()));
+        br.submitForm(loginform);
+        br.getPage(COOKIE_HOST + "/?op=my_account");
+        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("(value=\"Extend Premium Account\"|alt=\"EXTEND PREMIUM ACCOUNT\">|>Premium Account expires on)")) {
+            logger.info("Entered account is valid and it's a registered account.");
+            nopremium = true;
+        }
     }
 
     @Override
-    public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
-    public String getDllink() {
-        String dllink = br.getRegex("name=\"dl_link\" onclick=\"this\\.focus\\(\\);this\\.select\\(\\);\">(http://.*?)</textarea").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex(">This download will be available for your IP for the next 24 hours\\.</font></h3><BR>.*?ACTION=\"(http://.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("\"(http://ns\\d+\\.ovh\\.net:\\d+/d/[a-z0-9]+/.+)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("doesn\\'t, please <span class=green><b><a href=\"(http://.*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = br.getRegex("<meta http-equiv=REFRESH CONTENT=\"\\d+; url=(http://.*?)\"").getMatch(0);
-                        if (dllink == null) {
-                            dllink = br.getRegex("Please <span class=green><b><a href=\"(http://.*?)\"").getMatch(0);
-                            if (dllink == null) {
-                                dllink = br.getRegex("\"(http://iofa\\d+\\.cramit\\.in/free_p/cgi-bin/.*?)\"").getMatch(0);
-                            }
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setFollowRedirects(false);
+        br.setCookie(COOKIE_HOST, "lang", "english");
+        br.getPage(link.getDownloadURL());
+        doSomething();
+        if (brbefore.contains("class=\"err\">This server is in maintenance mode")) {
+            logger.info("File " + link.getDownloadURL() + " is on a server which is in maintenance mode!");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
+                        if (filename == null) {
+                            filename = br.getRegex("File Name.*?nowrap>(.*?)</td").getMatch(0);
                         }
                     }
                 }
             }
         }
-        return dllink;
-    }
-
-    public Form getTheForm(DownloadLink downloadLink) throws PluginException {
-        String rand = new Regex(brbefore, "name=\"rand\" value=\"(.*?)\"").getMatch(0);
-        if (rand == null) {
-            logger.warning("The rand string is null!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        Form DLForm = new Form();
-        DLForm.setMethod(MethodType.POST);
-        DLForm.put("op", "download2");
-        DLForm.put("down_direct", "1");
-        DLForm.put("method_free", "Free+Download");
-        DLForm.put("referer", downloadLink.getDownloadURL());
-        DLForm.put("id", new Regex(downloadLink.getDownloadURL(), "cramit\\.in/([a-z0-9]{12})").getMatch(0));
-        DLForm.put("rand", rand);
-        return DLForm;
-    }
-
-    public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
-        if (thelink.getStringProperty("pass", null) == null) {
-            passCode = getUserInput(null, thelink);
-        } else {
-            /* gespeicherten PassCode holen */
-            passCode = thelink.getStringProperty("pass", null);
-        }
-        pwform.put("password", passCode);
-        logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-        return passCode;
-    }
-
-    public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
-        // Some waittimes...
-        if (brbefore.contains("You have to wait")) {
-            int minutes = 0, seconds = 0, hours = 0;
-            String tmphrs = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
-            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-            String tmpmin = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
-            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-            String tmpsec = new Regex(brbefore, "You have to wait.*?\\s+(\\d+)\\s+seconds?").getMatch(0);
-            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-            int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-            logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-        }
-        if (brbefore.contains("You have reached the download-limit")) {
-            String tmphrs = new Regex(brbefore, "\\s+(\\d+)\\s+hours?").getMatch(0);
-            String tmpmin = new Regex(brbefore, "\\s+(\\d+)\\s+minutes?").getMatch(0);
-            String tmpsec = new Regex(brbefore, "\\s+(\\d+)\\s+seconds?").getMatch(0);
-            String tmpdays = new Regex(brbefore, "\\s+(\\d+)\\s+days?").getMatch(0);
-            if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
-            } else {
-                int minutes = 0, seconds = 0, hours = 0, days = 0;
-                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                if (tmpdays != null) days = Integer.parseInt(tmpdays);
-                int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-                logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-            }
-        }
-        // Errorhandling for only-premium links
-        if (brbefore.contains("(You can download files up to.*?only|Upgrade your account to download bigger files|This file reached max downloads)")) {
-            String filesizelimit = new Regex(brbefore, "You can download files up to(.*?)only").getMatch(0);
-            if (filesizelimit != null) {
-                filesizelimit = filesizelimit.trim();
-                logger.warning("As free user you can download files up to " + filesizelimit + " only");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
-            } else {
-                logger.warning("Only downloadable via premium");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
-            }
-        }
-        if (brbefore.contains(">Skipped countdown<")) {
-            logger.info("Server says that the countdown was skipped, please check if this could be true!");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror");
-        }
-    }
-
-    public void doSomething() throws NumberFormatException, PluginException {
-        brbefore = br.toString();
-        ArrayList<String> someStuff = new ArrayList<String>();
-        ArrayList<String> regexStuff = new ArrayList<String>();
-        regexStuff.add(Encoding.htmlDecode("%3C%21%28--.*%3F--%29%3E"));
-        regexStuff.add(Encoding.htmlDecode("(&lt;font color=#FCAF03&gt;.*?&lt;/font&gt;)"));
-        for (String aRegex : regexStuff) {
-            String lolz[] = br.getRegex(aRegex).getColumn(0);
-            if (lolz != null) {
-                for (String dingdang : lolz) {
-                    someStuff.add(dingdang);
+        String filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("</font>(</a>)?[ ]+\\((.*?)\\)(.*?)</font>").getMatch(1);
+            if (filesize == null) {
+                filesize = br.getRegex(">http://cramit\\.in/[a-z0-9]{12}</font> \\((.*?)\\)</font>").getMatch(0);
+                if (filesize == null) {
+                    filesize = br.getRegex("class=\"green\">http://cramit\\.in/[a-z0-9]{12}</span></a>( )?\\((.*?)\\)</div>").getMatch(1);
+                    if (filesize == null) {
+                        filesize = br.getRegex(">http://cramit\\.in/[a-z0-9]{12}</a></span><small> \\((.*?)\\)</small>").getMatch(0);
+                        if (filesize == null) filesize = br.getRegex("\\(([0-9\\.]+ Mb)\\)").getMatch(0);
+                    }
                 }
             }
         }
-        for (String fun : someStuff) {
-            brbefore = brbefore.replace(fun, "");
+        if (brbefore.contains("<b>File Not Found</b><br><br>") && (filename == null || filename.matches(""))) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (filename == null || filename.equals("")) {
+            if (brbefore.contains("You have reached the download-limit")) {
+                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        link.setName(filename.trim());
+        if (filesize != null && !filesize.equals("")) {
+            logger.info("Filesize found, filesize = " + filesize);
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

@@ -37,45 +37,60 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com" }, urls = { "http://(www\\.)?i\\-filezdecrypted\\.com/downloads/i/\\d+/f/.+" }, flags = { 2 })
 public class IFilezCom extends PluginForHost {
 
+    private static final String CAPTCHATEXT          = "includes/vvc\\.php\\?vvcid=";
+
+    private static final String MAINPAGE             = "http://i-filez.com/";
+
+    private static final String ONLY4PREMIUM         = ">Owner of the file is restricted to download this file only Premium users";
+
+    private static final String ONLY4PREMIUMUSERTEXT = "Only downloadable for premium users";
+
     public IFilezCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE + "premium");
         // Would be needed if multiple free-downloads were possible
         // this.setStartIntervall(11 * 1000l);
     }
-
     public void correctDownloadLink(DownloadLink link) {
         // Links come from a decrypter
         link.setUrlDownload(link.getDownloadURL().replace("i-filezdecrypted.com/", "i-filez.com/"));
     }
-
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("href=\\'/myspace/space/premium\\'>(\\d{2}\\.\\d{2}\\.\\d{4} \\d{2}:\\d{2}:\\d{2})</a></div").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy hh:mm:ss", null));
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
     @Override
     public String getAGBLink() {
         return "http://i-filez.com/terms";
     }
 
-    private static final String CAPTCHATEXT          = "includes/vvc\\.php\\?vvcid=";
-    private static final String MAINPAGE             = "http://i-filez.com/";
-    private static final String ONLY4PREMIUM         = ">Owner of the file is restricted to download this file only Premium users";
-    private static final String ONLY4PREMIUMUSERTEXT = "Only downloadable for premium users";
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        // Set English language
-        br.setCookie(MAINPAGE, "sdlanguageid", "2");
-        br.setCustomCharset("utf-8");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Файл не найден в базе i-filez\\.com\\. Возможно Вы неправильно указали ссылку\\.<|>File was not found in the i-filez\\.com database|It is possible that you provided wrong link\\.</p>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = new Regex(link.getDownloadURL(), "i-filez\\.com/downloads/i/\\d+/f/(.+)").getMatch(0);
-        String filesize = br.getRegex("<th>Size:</th>[\r\t\n ]+<td>(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim().replace(".html", "")));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        String md5 = br.getRegex("<th>MD5:</th>[\r\t\n ]+<td>([a-z0-9]{32})</td>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
-        if (br.containsHTML(ONLY4PREMIUM)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanPremiumDownloadNum() {
+        // Max 2 connections at all, more only possible with luck
+        return 1;
     }
 
     @Override
@@ -120,43 +135,6 @@ public class IFilezCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        // Set English language
-        br.setCookie(MAINPAGE, "sdlanguageid", "2");
-        br.setCustomCharset("utf-8");
-        br.postPage(MAINPAGE, "login=login&loginusername=" + Encoding.urlEncode(account.getUser()) + "&loginpassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&rememberme=on");
-        // Language not English? Change setting and go on!
-        if (!"2".equals(br.getCookie(MAINPAGE, "sdlanguageid"))) {
-            br.setCookie(MAINPAGE, "sdlanguageid", "2");
-            br.getPage(MAINPAGE);
-        }
-        if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null || !br.containsHTML(">Premium account till")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        account.setValid(true);
-        ai.setUnlimitedTraffic();
-        String expire = br.getRegex("href=\\'/myspace/space/premium\\'>(\\d{2}\\.\\d{2}\\.\\d{4} \\d{2}:\\d{2}:\\d{2})</a></div").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy hh:mm:ss", null));
-        }
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
@@ -179,19 +157,46 @@ public class IFilezCom extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        // Set English language
+        br.setCookie(MAINPAGE, "sdlanguageid", "2");
+        br.setCustomCharset("utf-8");
+        br.postPage(MAINPAGE, "login=login&loginusername=" + Encoding.urlEncode(account.getUser()) + "&loginpassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&rememberme=on");
+        // Language not English? Change setting and go on!
+        if (!"2".equals(br.getCookie(MAINPAGE, "sdlanguageid"))) {
+            br.setCookie(MAINPAGE, "sdlanguageid", "2");
+            br.getPage(MAINPAGE);
+        }
+        if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null || !br.containsHTML(">Premium account till")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        // Max 2 connections at all, more only possible with luck
-        return 1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        // Set English language
+        br.setCookie(MAINPAGE, "sdlanguageid", "2");
+        br.setCustomCharset("utf-8");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>Файл не найден в базе i-filez\\.com\\. Возможно Вы неправильно указали ссылку\\.<|>File was not found in the i-filez\\.com database|It is possible that you provided wrong link\\.</p>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = new Regex(link.getDownloadURL(), "i-filez\\.com/downloads/i/\\d+/f/(.+)").getMatch(0);
+        String filesize = br.getRegex("<th>Size:</th>[\r\t\n ]+<td>(.*?)</td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim().replace(".html", "")));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        String md5 = br.getRegex("<th>MD5:</th>[\r\t\n ]+<td>([a-z0-9]{32})</td>").getMatch(0);
+        if (md5 != null) link.setMD5Hash(md5);
+        if (br.containsHTML(ONLY4PREMIUM)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

@@ -43,24 +43,8 @@ public class GigaUpFr extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCustomCharset("UTF-8");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(Le fichier que vous tentez.*?harger.*?existe pas|Le code de vérification entré est incorrecte|Fichier supprimé car non utilisé sur une période trop longue|Le fichier a.*?sign.*?ill.*?gal|Vous ne pouvez télécharger ce fichier car il est \"Supprimé automatiquement\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) \\| GigaUP\\.fr</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<div class=\"text_t\">(.*?)</div>").getMatch(0);
-        String filesize = br.getRegex("<br />Taille de (.*?)<br").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename);
-        if (filesize != null) {
-            filesize = filesize.replace("Mo", "Mb");
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        String md5 = br.getRegex("Md5Sum : ([a-z0-9]+)").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 4;
     }
 
     @Override
@@ -92,13 +76,34 @@ public class GigaUpFr extends PluginForHost {
         }
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 4;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCustomCharset("UTF-8");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(Le fichier que vous tentez.*?harger.*?existe pas|Le code de vérification entré est incorrecte|Fichier supprimé car non utilisé sur une période trop longue|Le fichier a.*?sign.*?ill.*?gal|Vous ne pouvez télécharger ce fichier car il est \"Supprimé automatiquement\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?) \\| GigaUP\\.fr</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<div class=\"text_t\">(.*?)</div>").getMatch(0);
+        String filesize = br.getRegex("<br />Taille de (.*?)<br").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename);
+        if (filesize != null) {
+            filesize = filesize.replace("Mo", "Mb");
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        String md5 = br.getRegex("Md5Sum : ([a-z0-9]+)").getMatch(0);
+        if (md5 != null) link.setMD5Hash(md5);
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

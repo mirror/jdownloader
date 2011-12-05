@@ -44,24 +44,37 @@ public class QuickShareCz extends PluginForHost {
     }
 
     @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://www.quickshare.cz/premium");
+        String trafficleft = br.getRegex("Stav kreditu: <strong>(.*?)</strong>").getMatch(0);
+        if (trafficleft != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+        }
+        ai.setStatus("Premium User");
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://www.quickshare.cz/podminky-pouziti";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Takov. soubor neexistuje")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("Název: <strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (filename == null) filename = br.getRegex("var ID3 = '(.*?)';").getMatch(0);
-        String filesize = br.getRegex("<br>Velikost: <strong>(.*?)<br>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filesize = filesize.replaceAll("</strong>", "");
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -88,33 +101,6 @@ public class QuickShareCz extends PluginForHost {
 
     }
 
-    public void login(Account account) throws Exception {
-        setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage("http://www.quickshare.cz/premium");
-        br.postPage("http://www.quickshare.cz/html/prihlaseni_process.php", "jmeno=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()) + "&akce=P%C5%99ihl%C3%A1sit");
-        if (br.getRedirectLocation() == null || !br.getRedirectLocation().contains("premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        br.getPage("http://www.quickshare.cz/premium");
-        String trafficleft = br.getRegex("Stav kreditu: <strong>(.*?)</strong>").getMatch(0);
-        if (trafficleft != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
-        }
-        ai.setStatus("Premium User");
-        account.setValid(true);
-        return ai;
-    }
-
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
@@ -134,14 +120,28 @@ public class QuickShareCz extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    public void login(Account account) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage("http://www.quickshare.cz/premium");
+        br.postPage("http://www.quickshare.cz/html/prihlaseni_process.php", "jmeno=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()) + "&akce=P%C5%99ihl%C3%A1sit");
+        if (br.getRedirectLocation() == null || !br.getRedirectLocation().contains("premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Takov. soubor neexistuje")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("Název: <strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (filename == null) filename = br.getRegex("var ID3 = '(.*?)';").getMatch(0);
+        String filesize = br.getRegex("<br>Velikost: <strong>(.*?)<br>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filesize = filesize.replaceAll("</strong>", "");
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -149,10 +149,10 @@ public class QuickShareCz extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

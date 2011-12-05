@@ -43,15 +43,8 @@ public class HostUjeNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
-        this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Podany plik nie zosta? odnaleziony")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String[] infos = br.getRegex("<b>Plik:</b> (.*?)<br><b>Rozmiar:</b> (.*?)<br>").getRow(0);
-        if (infos == null || infos[0] == null || infos[1] == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(infos[0].trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(infos[1].trim()));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -71,9 +64,21 @@ public class HostUjeNet extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+        this.setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Podany plik nie zosta? odnaleziony")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String[] infos = br.getRegex("<b>Plik:</b> (.*?)<br><b>Rozmiar:</b> (.*?)<br>").getRow(0);
+        if (infos == null || infos[0] == null || infos[1] == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(infos[0].trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(infos[1].trim()));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -81,11 +86,11 @@ public class HostUjeNet extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

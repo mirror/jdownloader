@@ -25,73 +25,29 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?(motherless\\.com/(movies|thumbs).*|(premium)?motherlesspictures(media)?\\.com/[a-zA-Z0-9/\\.]+|motherlessvideos\\.com/[a-zA-Z0-9]+)" }, flags = { 2 })
 public class MotherLessCom extends PluginForHost {
 
+    private static final String SUBSCRIBEFAILED     = "Failed to subscribe to the owner of the video";
+
+    private static final String ONLY4REGISTEREDTEXT = "This link is only downloadable for registered users.";
+
+    private String              DLLINK              = null;
     public MotherLessCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(2500l);
         this.enablePremium("http://motherless.com/register");
     }
-
-    public String getAGBLink() {
-        return "http://motherless.com/terms";
-    }
-
-    private static final String SUBSCRIBEFAILED     = "Failed to subscribe to the owner of the video";
-    private static final String ONLY4REGISTEREDTEXT = "This link is only downloadable for registered users.";
-    private String              DLLINK              = null;
-
     public void correctDownloadLink(DownloadLink link) {
         String theLink = link.getDownloadURL();
         theLink = theLink.replace("premium", "").replaceAll("(motherlesspictures|motherlessvideos)", "motherless");
         link.setUrlDownload(theLink);
-    }
-
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws IOException, PluginException {
-        if (parameter.getStringProperty("onlyregistered") != null) {
-            logger.info(ONLY4REGISTEREDTEXT);
-            parameter.getLinkStatus().setStatusText("This " + parameter.getStringProperty("dltype") + " link can only be downloaded by registered users");
-            return AvailableStatus.UNCHECKABLE;
-        }
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        if ("video".equals(parameter.getStringProperty("dltype"))) {
-            getVideoLink(parameter);
-        } else if ("image".equals(parameter.getStringProperty("dltype"))) {
-            getPictureLink(parameter);
-        }
-        if (DLLINK == null) DLLINK = parameter.getDownloadURL();
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(DLLINK);
-            if (con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String name = getFileNameFromHeader(con);
-            String name2 = new Regex(name, "/([^/].*?\\.flv)").getMatch(0);
-            if (name2 == null) name2 = name;
-            parameter.setName(name2);
-            parameter.setDownloadSize(con.getLongContentLength());
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
-    }
-
-    public void handleFree(DownloadLink link) throws Exception {
-        if (link.getStringProperty("onlyregistered") != null) {
-            logger.info(ONLY4REGISTEREDTEXT);
-            throw new PluginException(LinkStatus.ERROR_FATAL, ONLY4REGISTEREDTEXT);
-        }
-        doFree(link);
     }
 
     public void doFree(DownloadLink link) throws Exception {
@@ -124,12 +80,6 @@ public class MotherLessCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.postPage("http://motherless.com/auth/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=1&__remember_me=0");
-        if (br.getCookie("http://motherless.com/", "motherless_auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -142,6 +92,55 @@ public class MotherLessCom extends PluginForHost {
         account.setValid(true);
         ai.setStatus("Registered (free) User");
         return ai;
+    }
+
+    public String getAGBLink() {
+        return "http://motherless.com/terms";
+    }
+
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    private void getPictureLink(DownloadLink parameter) throws IOException, PluginException {
+        br.getPage(parameter.getDownloadURL());
+        DLLINK = br.getRegex("\"(http://members\\.motherless\\.com/img/.*?)\"").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("full_sized\\.jpg\" (.*?)\"(http://s\\d+\\.motherless\\.com/dev\\d+/\\d+/\\d+/\\d+/\\d+.*?)\"").getMatch(1);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("<div style=\"clear: left;\"></div>[\t\r\n ]+<img src=\"(http://.*?)\"").getMatch(0);
+                if (DLLINK == null) {
+                    DLLINK = br.getRegex("\\?full\">[\n\t\r ]+<img src=\"(?!http://motherless\\.com/images/full_sized\\.jpg)(http://.*?)\"").getMatch(0);
+                    if (DLLINK == null) {
+                        DLLINK = br.getRegex("\"(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\..{3,4})\"").getMatch(0);
+                    }
+                }
+            }
+        }
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    private void getVideoLink(DownloadLink parameter) throws IOException, PluginException {
+        br.getPage(parameter.getDownloadURL());
+        DLLINK = br.getRegex("addVariable\\(\\'file\\', \\'(http://.*?\\.flv)\\'\\)").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\.flv/[a-z0-9]+/[A-Z0-9]+\\.flv)").getMatch(0);
+        }
+        if (DLLINK != null && !DLLINK.contains("?start=0")) DLLINK += "?start=0";
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    public void handleFree(DownloadLink link) throws Exception {
+        if (link.getStringProperty("onlyregistered") != null) {
+            logger.info(ONLY4REGISTEREDTEXT);
+            throw new PluginException(LinkStatus.ERROR_FATAL, ONLY4REGISTEREDTEXT);
+        }
+        doFree(link);
     }
 
     @Override
@@ -164,41 +163,42 @@ public class MotherLessCom extends PluginForHost {
 
     }
 
-    private void getVideoLink(DownloadLink parameter) throws IOException, PluginException {
-        br.getPage(parameter.getDownloadURL());
-        DLLINK = br.getRegex("addVariable\\(\\'file\\', \\'(http://.*?\\.flv)\\'\\)").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\.flv/[a-z0-9]+/[A-Z0-9]+\\.flv)").getMatch(0);
-        }
-        if (DLLINK != null && !DLLINK.contains("?start=0")) DLLINK += "?start=0";
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.postPage("http://motherless.com/auth/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=1&__remember_me=0");
+        if (br.getCookie("http://motherless.com/", "motherless_auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    private void getPictureLink(DownloadLink parameter) throws IOException, PluginException {
-        br.getPage(parameter.getDownloadURL());
-        DLLINK = br.getRegex("\"(http://members\\.motherless\\.com/img/.*?)\"").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("full_sized\\.jpg\" (.*?)\"(http://s\\d+\\.motherless\\.com/dev\\d+/\\d+/\\d+/\\d+/\\d+.*?)\"").getMatch(1);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("<div style=\"clear: left;\"></div>[\t\r\n ]+<img src=\"(http://.*?)\"").getMatch(0);
-                if (DLLINK == null) {
-                    DLLINK = br.getRegex("\\?full\">[\n\t\r ]+<img src=\"(?!http://motherless\\.com/images/full_sized\\.jpg)(http://.*?)\"").getMatch(0);
-                    if (DLLINK == null) {
-                        DLLINK = br.getRegex("\"(http://s\\d+\\.motherlessmedia\\.com/dev[0-9/]+\\..{3,4})\"").getMatch(0);
-                    }
-                }
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws IOException, PluginException {
+        if (parameter.getStringProperty("onlyregistered") != null) {
+            logger.info(ONLY4REGISTEREDTEXT);
+            parameter.getLinkStatus().setStatusText("This " + parameter.getStringProperty("dltype") + " link can only be downloaded by registered users");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        if ("video".equals(parameter.getStringProperty("dltype"))) {
+            getVideoLink(parameter);
+        } else if ("image".equals(parameter.getStringProperty("dltype"))) {
+            getPictureLink(parameter);
+        }
+        if (DLLINK == null) DLLINK = parameter.getDownloadURL();
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(DLLINK);
+            if (con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String name = getFileNameFromHeader(con);
+            String name2 = new Regex(name, "/([^/].*?\\.flv)").getMatch(0);
+            if (name2 == null) name2 = name;
+            parameter.setName(name2);
+            parameter.setDownloadSize(con.getLongContentLength());
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
             }
         }
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     public void reset() {

@@ -42,6 +42,11 @@ public class DnbShareCom extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 15;
+    }
+
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         this.setBrowserExclusive();
@@ -84,11 +89,6 @@ public class DnbShareCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 15;
     }
 
 }

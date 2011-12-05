@@ -41,27 +41,8 @@ public class FurkNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("This torrent is not ready for")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "This is NO VALID LINK!"); }
-        String filename = br.getRegex("<title>(.*?) :: Furk.net</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("document\\.location\\.href='/registration\\?pfile=(.*?)'\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>(.*?) :: Furk\\.net</title>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-                }
-            }
-        }
-        String filesize = br.getRegex("align=\"center\">File size: <b>(.*?)</b><br").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<li>File size: <b>(.*?)</b></li>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        parameter.setName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -96,16 +77,35 @@ public class FurkNet extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("This torrent is not ready for")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "This is NO VALID LINK!"); }
+        String filename = br.getRegex("<title>(.*?) :: Furk.net</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("document\\.location\\.href='/registration\\?pfile=(.*?)'\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?) :: Furk\\.net</title>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+                }
+            }
+        }
+        String filesize = br.getRegex("align=\"center\">File size: <b>(.*?)</b><br").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<li>File size: <b>(.*?)</b></li>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        parameter.setName(filename.trim());
+        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void reset() {
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
 }

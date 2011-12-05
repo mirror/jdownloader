@@ -21,6 +21,11 @@ public class FreecasterTv extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
@@ -53,10 +58,5 @@ public class FreecasterTv extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setFinalFileName(link.getStringProperty("filename", "NA"));
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 }

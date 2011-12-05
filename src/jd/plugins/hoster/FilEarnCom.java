@@ -25,6 +25,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.config.Property;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
@@ -51,9 +52,64 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filearn.com" }, urls = { "http://(www\\.)?filearn\\.com/files/get/[A-Za-z0-9_\\-]+" }, flags = { 2 })
 public class FilEarnCom extends PluginForHost {
 
+    private static final String TOOMANYSIMLUTANDOWNLOADS = ">Only premium users can download more than one file at a time";
+
+    private static final String MAINPAGE                 = "http://filearn.com/";
+
+    private static final Object LOCK                     = new Object();
+
     public FilEarnCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.filearn.com/user/register");
+    }
+
+    private String execJS(String fun) throws Exception {
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        String returnVar = new Regex(fun, "return ([A-Za-z0-9]+);").getMatch(0);
+        if (returnVar == null) return null;
+        fun = "var iioo = false;" + fun.replace("return " + returnVar + ";", "var lol = " + returnVar + ";");
+        try {
+            result = engine.eval(fun);
+        } catch (final Exception e) {
+            JDLogger.exception(e);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return result.toString();
+    }
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setUnlimitedTraffic();
+        Regex damnExpireStuff = br.getRegex("<p>Premuim account will expire on <b>([A-Za-z]+ \\d+)[a-z]{0,5} (\\d{4}), at (\\d+:\\d+) CET</b>");
+        String monthAndDay = damnExpireStuff.getMatch(0);
+        String year = damnExpireStuff.getMatch(1);
+        String time = damnExpireStuff.getMatch(2);
+        if (monthAndDay == null && year == null && time == null) {
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(monthAndDay + " " + year + " " + time, "MMMM dd yyyy hh:mm", null));
+        }
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
+    }
+    private String getAction() throws Exception {
+        String jsCrap = br.getRegex("</span></code>[\t\n\r ]+<div>[\t\n\r ]+<script language=\"javascript\">[\t\n\r ]+function [A-Za-z0-9]+\\(iioo\\) \\{(.*?return .*?;)").getMatch(0);
+        String action = br.getRegex("\"(http://(www\\.)?filearn\\.com/files/gen/.*?)\"").getMatch(0);
+        if (jsCrap == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String actionPart = execJS(jsCrap);
+        if (actionPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return action + "/" + actionPart;
     }
 
     @Override
@@ -61,29 +117,14 @@ public class FilEarnCom extends PluginForHost {
         return "http://www.filearn.com/legal/tos";
     }
 
-    private static final String TOOMANYSIMLUTANDOWNLOADS = ">Only premium users can download more than one file at a time";
-    private static final String MAINPAGE                 = "http://filearn.com/";
-    private static final Object LOCK                     = new Object();
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(File Link Error<|Your file could not be found\\. Please check the download link\\.<|<title>File: Not Found \\- NoelShare</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<span id=\"name\">[\t\n\r ]+<nobr>(.*?)</nobr>").getMatch(0);
-        String filesize = br.getRegex("<span id=\"size\">(.*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = filename.trim();
-        // Check if decrypter also gave us a filename
-        String videarnName = link.getStringProperty("videarnname");
-        if (videarnName != null) {
-            String ext = filename.substring(filename.lastIndexOf("."));
-            if (ext == null) ext = "";
-            filename = videarnName + ext;
-        }
-        link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -150,21 +191,36 @@ public class FilEarnCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String execJS(String fun) throws Exception {
-        Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        String returnVar = new Regex(fun, "return ([A-Za-z0-9]+);").getMatch(0);
-        if (returnVar == null) return null;
-        fun = "var iioo = false;" + fun.replace("return " + returnVar + ";", "var lol = " + returnVar + ";");
-        try {
-            result = engine.eval(fun);
-        } catch (final Exception e) {
-            JDLogger.exception(e);
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        /** Don't use the saved cookies, maybe they cause errors */
+        login(account, true);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML(">Downloading disabled! We have detected multiple IP addresses accessing this account")) {
+            logger.info("Account blocked, disabling it!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        String action = getAction();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, action, "pass=&waited=1", true, -2);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            if (br.containsHTML(">Incorrect or expired download url<")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error (dl link expired, too many simultan downloads)", 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        return result.toString();
+        dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @SuppressWarnings("unchecked")
@@ -203,73 +259,28 @@ public class FilEarnCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        ai.setUnlimitedTraffic();
-        Regex damnExpireStuff = br.getRegex("<p>Premuim account will expire on <b>([A-Za-z]+ \\d+)[a-z]{0,5} (\\d{4}), at (\\d+:\\d+) CET</b>");
-        String monthAndDay = damnExpireStuff.getMatch(0);
-        String year = damnExpireStuff.getMatch(1);
-        String time = damnExpireStuff.getMatch(2);
-        if (monthAndDay == null && year == null && time == null) {
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(monthAndDay + " " + year + " " + time, "MMMM dd yyyy hh:mm", null));
-        }
-        account.setValid(true);
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        /** Don't use the saved cookies, maybe they cause errors */
-        login(account, true);
-        br.setFollowRedirects(false);
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Downloading disabled! We have detected multiple IP addresses accessing this account")) {
-            logger.info("Account blocked, disabling it!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.containsHTML("(File Link Error<|Your file could not be found\\. Please check the download link\\.<|<title>File: Not Found \\- NoelShare</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<span id=\"name\">[\t\n\r ]+<nobr>(.*?)</nobr>").getMatch(0);
+        String filesize = br.getRegex("<span id=\"size\">(.*?)</span>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = filename.trim();
+        // Check if decrypter also gave us a filename
+        String videarnName = link.getStringProperty("videarnname");
+        if (videarnName != null) {
+            String ext = filename.substring(filename.lastIndexOf("."));
+            if (ext == null) ext = "";
+            filename = videarnName + ext;
         }
-        String action = getAction();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, action, "pass=&waited=1", true, -2);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            if (br.containsHTML(">Incorrect or expired download url<")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error (dl link expired, too many simultan downloads)", 30 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    private String getAction() throws Exception {
-        String jsCrap = br.getRegex("</span></code>[\t\n\r ]+<div>[\t\n\r ]+<script language=\"javascript\">[\t\n\r ]+function [A-Za-z0-9]+\\(iioo\\) \\{(.*?return .*?;)").getMatch(0);
-        String action = br.getRegex("\"(http://(www\\.)?filearn\\.com/files/gen/.*?)\"").getMatch(0);
-        if (jsCrap == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String actionPart = execJS(jsCrap);
-        if (actionPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        return action + "/" + actionPart;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        link.setName(filename);
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

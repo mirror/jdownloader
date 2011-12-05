@@ -33,19 +33,44 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tumblr.com" }, urls = { "http://[\\w\\.]*?tumblr\\.com/post/\\d+" }, flags = { 0 })
 public class TumblrCom extends PluginForHost {
 
+    private String dllink = null;
+
+    private static final String FINALLINKREGEX = "audio_file=(http://.*?)\\&";
+
+    private static final String AUTH           = "P3BsZWFkPXBsZWFzZS1kb250LWRvd25sb2FkLXRoaXMtb3Itb3VyLWxhd3llcnMtd29udC1sZXQtdXMtaG9zdC1hdWRpbw==";
+
     public TumblrCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    private String dllink = null;
-
     @Override
     public String getAGBLink() {
         return "http://www.tumblr.com/terms_of_service";
     }
 
-    private static final String FINALLINKREGEX = "audio_file=(http://.*?)\\&";
-    private static final String AUTH = "P3BsZWFkPXBsZWFzZS1kb250LWRvd25sb2FkLXRoaXMtb3Itb3VyLWxhd3llcnMtd29udC1sZXQtdXMtaG9zdC1hdWRpbw==";
+    private void getDllink() throws IOException {
+        br.setFollowRedirects(false);
+        dllink = br.getRegex(FINALLINKREGEX).getMatch(0);
+        if (dllink != null) {
+            br.getPage(dllink + Encoding.Base64Decode(AUTH));
+            dllink = br.getRedirectLocation();
+        }
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
@@ -79,36 +104,11 @@ public class TumblrCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    private void getDllink() throws IOException {
-        br.setFollowRedirects(false);
-        dllink = br.getRegex(FINALLINKREGEX).getMatch(0);
-        if (dllink != null) {
-            br.getPage(dllink + Encoding.Base64Decode(AUTH));
-            dllink = br.getRedirectLocation();
-        }
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public void reset() {
     }
 
 }

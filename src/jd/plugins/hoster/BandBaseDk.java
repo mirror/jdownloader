@@ -41,20 +41,8 @@ public class BandBaseDk extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Der er desværre ingen tracks her\\.|id=\"MainContentPlaceHolder_Tracksl1_LabelNoTracks\")") || br.getURL().contains("bandbase.dk/Bands/Search/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("onmouseout=\"HidePlayerMenu\\(\\);\" name=\"\\d+\\|(.*?)\\|").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) af Backslash på BandBase[\t\n\r ]+</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String author = br.getRegex("name=\"author\" content=\"(.*?)\"").getMatch(0);
-        if (author != null)
-            link.setFinalFileName(Encoding.htmlDecode(author.trim()) + " - " + Encoding.htmlDecode(filename.trim()) + ".mp3");
-        else
-            link.setName(Encoding.htmlDecode(filename.trim()) + ".mp3");
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -79,12 +67,24 @@ public class BandBaseDk extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>Der er desværre ingen tracks her\\.|id=\"MainContentPlaceHolder_Tracksl1_LabelNoTracks\")") || br.getURL().contains("bandbase.dk/Bands/Search/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("onmouseout=\"HidePlayerMenu\\(\\);\" name=\"\\d+\\|(.*?)\\|").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>(.*?) af Backslash på BandBase[\t\n\r ]+</title>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String author = br.getRegex("name=\"author\" content=\"(.*?)\"").getMatch(0);
+        if (author != null)
+            link.setFinalFileName(Encoding.htmlDecode(author.trim()) + " - " + Encoding.htmlDecode(filename.trim()) + ".mp3");
+        else
+            link.setName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

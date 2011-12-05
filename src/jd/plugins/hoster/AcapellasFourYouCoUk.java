@@ -39,9 +39,28 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "acapellas4u.co.uk" }, urls = { "http://(www\\.)?acapellas4u\\.co\\.uk/\\d+\\-[a-z0-9\\-_]+" }, flags = { 2 })
 public class AcapellasFourYouCoUk extends PluginForHost {
 
+    private static final String MAINPAGE = "http://www.acapellas4u.co.uk/";
+
+    private static final Object LOCK     = new Object();
+
+    private static final String USERTEXT = "Only downloadable for registered users!";
     public AcapellasFourYouCoUk(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.acapellas4u.co.uk/ucp.php?mode=register");
+    }
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setUnlimitedTraffic();
+        account.setValid(true);
+        ai.setStatus("Registered (free) User");
+        return ai;
     }
 
     @Override
@@ -49,43 +68,46 @@ public class AcapellasFourYouCoUk extends PluginForHost {
         return "http://www.acapellas4u.co.uk/ucp.php?mode=terms";
     }
 
-    private static final String MAINPAGE = "http://www.acapellas4u.co.uk/";
-    private static final Object LOCK     = new Object();
-    private static final String USERTEXT = "Only downloadable for registered users!";
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null) {
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.acapellas4youcouk.only4registered", USERTEXT));
-            return AvailableStatus.TRUE;
-        }
-        login(aa, false);
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("/download_list.php") || br.containsHTML("<title>ACAPELLAS4U \\&bull; Browse Artists</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>ACAPELLAS4U \\&bull; File Download \\&bull; (.*?)</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("\"title\" : \"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("var idcomments_post_title = \\'(.*?)\\';").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<p><b>File Name: ([^\"\\']+)</b></p>").getMatch(0);
-                }
-            }
-        }
-        String filesize = br.getRegex("File Size: ([^<>\"\\']+)").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.acapellas4youcouk.only4registered", USERTEXT));
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        String hash = br.getRegex("filehash=([a-z0-9]+)").getMatch(0);
+        if (hash == null) {
+            hash = br.getRegex("\"unique_id\" : \"(.*?)\"").getMatch(0);
+            if (hash == null) {
+                hash = br.getRegex("var idcomments_post_id = \\'([a-z0-9]+)\\';").getMatch(0);
+                if (hash == null) {
+                    hash = br.getRegex("name=\"filehash\" type=\"hidden\" value=\"(.*?)\"").getMatch(0);
+                }
+            }
+        }
+        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.acapellas4u.co.uk/download_file.php?&filehash=" + hash + "&confirm=1/", false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @SuppressWarnings("unchecked")
@@ -122,58 +144,36 @@ public class AcapellasFourYouCoUk extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        this.setBrowserExclusive();
+        Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa == null) {
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.acapellas4youcouk.only4registered", USERTEXT));
+            return AvailableStatus.TRUE;
         }
-        ai.setUnlimitedTraffic();
-        account.setValid(true);
-        ai.setStatus("Registered (free) User");
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
+        login(aa, false);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        String hash = br.getRegex("filehash=([a-z0-9]+)").getMatch(0);
-        if (hash == null) {
-            hash = br.getRegex("\"unique_id\" : \"(.*?)\"").getMatch(0);
-            if (hash == null) {
-                hash = br.getRegex("var idcomments_post_id = \\'([a-z0-9]+)\\';").getMatch(0);
-                if (hash == null) {
-                    hash = br.getRegex("name=\"filehash\" type=\"hidden\" value=\"(.*?)\"").getMatch(0);
+        if (br.getURL().contains("/download_list.php") || br.containsHTML("<title>ACAPELLAS4U \\&bull; Browse Artists</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>ACAPELLAS4U \\&bull; File Download \\&bull; (.*?)</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("\"title\" : \"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("var idcomments_post_title = \\'(.*?)\\';").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<p><b>File Name: ([^\"\\']+)</b></p>").getMatch(0);
                 }
             }
         }
-        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.acapellas4u.co.uk/download_file.php?&filehash=" + hash + "&confirm=1/", false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        String filesize = br.getRegex("File Size: ([^<>\"\\']+)").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

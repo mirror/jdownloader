@@ -15,6 +15,8 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.google.com" }, urls = { "http://(www\\.)?video\\.google\\.com/videoplay\\?docid=\\-?\\d+" }, flags = { 0 })
 public class VideoGoogle extends PluginForHost {
 
+    private String DLLINK = null;
+
     public VideoGoogle(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -24,7 +26,10 @@ public class VideoGoogle extends PluginForHost {
         return "http://www.google.com/accounts/TOS?loc=ZZ&hl=en";
     }
 
-    private String DLLINK = null;
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
@@ -66,11 +71,6 @@ public class VideoGoogle extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

@@ -38,31 +38,53 @@ public class FileFlyerCom extends PluginForHost {
 
     private static final Object LOCK = new Object();
 
+    private static final String ONLY4PREMIUM = "(Access to old files is available to premium users only|>This is an Always Premium Download<|The requested file is over 1 GB and thus is available for download to premium users only|have no free download availability, unlike most other downloads on Fileflyer)";
+
     public FileFlyerCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setAccountwithoutUsername(true);
         this.enablePremium("http://www.fileflyer.com/");
     }
 
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        synchronized (LOCK) {
+            AccountInfo ai = new AccountInfo();
+            ai.setStatus("Status can only be checked while downloading!");
+            account.setValid(true);
+            return ai;
+        }
+    }
+
     public String getAGBLink() {
         return "http://www.fileflyer.com/legal/terms.aspx";
     }
 
-    private static final String ONLY4PREMIUM = "(Access to old files is available to premium users only|>This is an Always Premium Download<|The requested file is over 1 GB and thus is available for download to premium users only|have no free download availability, unlike most other downloads on Fileflyer)";
+    private String getDllink() {
+        String linkurl = br.getRegex(Pattern.compile("<a id=\"ItemsList_ctl00_(img|file)\".*href=\"([^\"\\'<>]+)\"")).getMatch(1);
+        if (linkurl == null) linkurl = br.getRegex(Pattern.compile("\"(http://dsa?\\d+\\.fileflyer\\.com/d/[a-z0-9\\-]+/[^\"\\'<>]+)\"")).getMatch(0);
+        return linkurl;
+    }
 
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @SuppressWarnings("deprecation")
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML(ONLY4PREMIUM)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.FileFlyerCom.errors.Only4Premium", "Only downloadable for premium users"));
+        if (br.containsHTML("serveroverload")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded!", 10 * 60 * 1000l);
+        if (br.containsHTML("access to the service may be unavailable for a while")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available", 30 * 60 * 1000l);
+        String linkurl = getDllink();
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        String filesize = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_size\">(.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        String name = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_file\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (name == null) name = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_img\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (br.containsHTML(ONLY4PREMIUM)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.FileFlyerCom.errors.Only4Premium", "Only downloadable for premium users"));
-        if (br.containsHTML("(class=\"handlink\">Expired</a>|class=\"handlink\">Removed</a>|>To report a bug ,press this link</a>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(name.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+        linkurl = Encoding.htmlDecode(linkurl);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
+        if (dl.getConnection().getContentType() == null || (dl.getConnection().getContentType().contains("html")) && dl.getConnection().getContentLength() < downloadLink.getDownloadSize() - 10) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @SuppressWarnings("deprecation")
@@ -103,41 +125,19 @@ public class FileFlyerCom extends PluginForHost {
         dl.startDownload();
     }
 
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        synchronized (LOCK) {
-            AccountInfo ai = new AccountInfo();
-            ai.setStatus("Status can only be checked while downloading!");
-            account.setValid(true);
-            return ai;
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (br.containsHTML(ONLY4PREMIUM)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.FileFlyerCom.errors.Only4Premium", "Only downloadable for premium users"));
-        if (br.containsHTML("serveroverload")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded!", 10 * 60 * 1000l);
-        if (br.containsHTML("access to the service may be unavailable for a while")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available", 30 * 60 * 1000l);
-        String linkurl = getDllink();
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        linkurl = Encoding.htmlDecode(linkurl);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
-        if (dl.getConnection().getContentType() == null || (dl.getConnection().getContentType().contains("html")) && dl.getConnection().getContentLength() < downloadLink.getDownloadSize() - 10) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    private String getDllink() {
-        String linkurl = br.getRegex(Pattern.compile("<a id=\"ItemsList_ctl00_(img|file)\".*href=\"([^\"\\'<>]+)\"")).getMatch(1);
-        if (linkurl == null) linkurl = br.getRegex(Pattern.compile("\"(http://dsa?\\d+\\.fileflyer\\.com/d/[a-z0-9\\-]+/[^\"\\'<>]+)\"")).getMatch(0);
-        return linkurl;
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        br.getPage(downloadLink.getDownloadURL());
+        String filesize = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_size\">(.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String name = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_file\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (name == null) name = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_img\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (br.containsHTML(ONLY4PREMIUM)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.FileFlyerCom.errors.Only4Premium", "Only downloadable for premium users"));
+        if (br.containsHTML("(class=\"handlink\">Expired</a>|class=\"handlink\">Removed</a>|>To report a bug ,press this link</a>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setName(name.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     public void reset() {

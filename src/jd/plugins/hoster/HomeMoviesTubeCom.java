@@ -32,15 +32,32 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homemoviestube.com" }, urls = { "http://(www\\.)?homemoviestube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class HomeMoviesTubeCom extends PluginForHost {
 
+    private String DLLINK = null;
+
     public HomeMoviesTubeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
-
     @Override
     public String getAGBLink() {
         return "http://www.homemoviestube.com/terms.php";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("(filthyrx.com , it's owners, designers, partners, representatives and this   web site are not responsible for any action taken by its members on this|Liability for any content contained in a post is the sole   responsibility of the person\\(s\\) who submitted them|material offensive or are not of legal age please leave now|EDIT PLAYER SKIN COLORS BELOW|ui\\.skin\\.colors\\.video)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -80,31 +97,14 @@ public class HomeMoviesTubeCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("(filthyrx.com , it's owners, designers, partners, representatives and this   web site are not responsible for any action taken by its members on this|Liability for any content contained in a post is the sole   responsibility of the person\\(s\\) who submitted them|material offensive or are not of legal age please leave now|EDIT PLAYER SKIN COLORS BELOW|ui\\.skin\\.colors\\.video)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

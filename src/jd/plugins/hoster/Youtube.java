@@ -56,27 +56,60 @@ public class Youtube extends PluginForHost {
     private static final String                              FAST_CHECK   = "FAST_CHECK2";
     private static HashMap<Account, HashMap<String, String>> loginCookies = new HashMap<Account, HashMap<String, String>>();
 
+    public static String unescape(final String s) {
+        char ch;
+        final StringBuilder sb = new StringBuilder();
+        int ii;
+        int i;
+        for (i = 0; i < s.length(); i++) {
+            ch = s.charAt(i);
+            switch (ch) {
+            case '\\':
+                ch = s.charAt(++i);
+                StringBuilder sb2 = null;
+                switch (ch) {
+                case 'u':
+                    /* unicode */
+                    sb2 = new StringBuilder();
+                    i++;
+                    ii = i + 4;
+                    for (; i < ii; i++) {
+                        ch = s.charAt(i);
+                        if (sb2.length() > 0 || ch != '0') {
+                            sb2.append(ch);
+                        }
+                    }
+                    i--;
+                    sb.append((char) Short.parseShort(sb2.toString(), 16));
+                    continue;
+                case 'x':
+                    /* normal hex coding */
+                    sb2 = new StringBuilder();
+                    i++;
+                    ii = i + 2;
+                    for (; i < ii; i++) {
+                        ch = s.charAt(i);
+                        sb2.append(ch);
+                    }
+                    i--;
+                    sb.append((char) Short.parseShort(sb2.toString(), 16));
+                    continue;
+                default:
+                    sb.append(ch);
+                    continue;
+                }
+
+            }
+            sb.append(ch);
+        }
+
+        return sb.toString();
+    }
+
     public Youtube(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.youtube.com/login?next=/index");
         setConfigElements();
-    }
-
-    @Override
-    public String getDescription() {
-        return "JDownloader's YouTube Plugin helps downloading VideoClip from youtube.com. YouTube provides different video formats and qualities. JDownloader is able to extract audio after download, and save it as mp3 file. \r\n - Hear your favourite YouTube Clips on your MP3 Player.";
-    }
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_CHECK, JDL.L("plugins.hoster.youtube.fast", "Fast LinkCheck?")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IDASFILENAME, JDL.L("plugins.hoster.youtube.idasfilename", "Use Video-ID as filename?")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_WEBM, JDL.L("plugins.hoster.youtube.checkwebm", "Grab WEBM?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MP4, JDL.L("plugins.hoster.youtube.checkmp4", "Grab MP4?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MP3, JDL.L("plugins.hoster.youtube.checkmp3", "Grab MP3?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_FLV, JDL.L("plugins.hoster.youtube.checkflv", "Grab FLV?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_3GP, JDL.L("plugins.hoster.youtube.check3gp", "Grab 3GP?")).setDefaultValue(true));
-
     }
 
     @Override
@@ -102,6 +135,11 @@ public class Youtube extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://youtube.com/t/terms";
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's YouTube Plugin helps downloading VideoClip from youtube.com. YouTube provides different video formats and qualities. JDownloader is able to extract audio after download, and save it as mp3 file. \r\n - Hear your favourite YouTube Clips on your MP3 Player.";
     }
 
     @Override
@@ -234,56 +272,6 @@ public class Youtube extends PluginForHost {
         }
     }
 
-    public static String unescape(final String s) {
-        char ch;
-        final StringBuilder sb = new StringBuilder();
-        int ii;
-        int i;
-        for (i = 0; i < s.length(); i++) {
-            ch = s.charAt(i);
-            switch (ch) {
-            case '\\':
-                ch = s.charAt(++i);
-                StringBuilder sb2 = null;
-                switch (ch) {
-                case 'u':
-                    /* unicode */
-                    sb2 = new StringBuilder();
-                    i++;
-                    ii = i + 4;
-                    for (; i < ii; i++) {
-                        ch = s.charAt(i);
-                        if (sb2.length() > 0 || ch != '0') {
-                            sb2.append(ch);
-                        }
-                    }
-                    i--;
-                    sb.append((char) Short.parseShort(sb2.toString(), 16));
-                    continue;
-                case 'x':
-                    /* normal hex coding */
-                    sb2 = new StringBuilder();
-                    i++;
-                    ii = i + 2;
-                    for (; i < ii; i++) {
-                        ch = s.charAt(i);
-                        sb2.append(ch);
-                    }
-                    i--;
-                    sb.append((char) Short.parseShort(sb2.toString(), 16));
-                    continue;
-                default:
-                    sb.append(ch);
-                    continue;
-                }
-
-            }
-            sb.append(ch);
-        }
-
-        return sb.toString();
-    }
-
     private void postprocess(final DownloadLink downloadLink) {
         if (downloadLink.getProperty("convertto") != null) {
             final DestinationFormat convertto = DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
@@ -337,5 +325,17 @@ public class Youtube extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_CHECK, JDL.L("plugins.hoster.youtube.fast", "Fast LinkCheck?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IDASFILENAME, JDL.L("plugins.hoster.youtube.idasfilename", "Use Video-ID as filename?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_WEBM, JDL.L("plugins.hoster.youtube.checkwebm", "Grab WEBM?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MP4, JDL.L("plugins.hoster.youtube.checkmp4", "Grab MP4?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MP3, JDL.L("plugins.hoster.youtube.checkmp3", "Grab MP3?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_FLV, JDL.L("plugins.hoster.youtube.checkflv", "Grab FLV?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_3GP, JDL.L("plugins.hoster.youtube.check3gp", "Grab 3GP?")).setDefaultValue(true));
+
     }
 }

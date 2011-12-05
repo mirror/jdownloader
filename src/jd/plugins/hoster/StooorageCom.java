@@ -44,6 +44,11 @@ public class StooorageCom extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         String url = br.getRegex("\"(http://(www\\.)?img\\d+\\.stooorage\\.com/images/.*?)\"").getMatch(0);
@@ -76,11 +81,6 @@ public class StooorageCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
 }

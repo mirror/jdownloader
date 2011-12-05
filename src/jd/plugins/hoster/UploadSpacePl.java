@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
@@ -46,23 +47,14 @@ public class UploadSpacePl extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        String id = new Regex(link.getDownloadURL(), "pl/plik([a-zA-Z0-9]+)").getMatch(0);
-        String ret = br.getPage("http://uploadspace.pl/api/file.php?id=" + id);
-        String[][] info = new Regex(ret, "(\\d+)," + id + ",(.*?),(\\d+)").getMatches();
-        if (info != null && info.length == 1 && info[0].length == 3) {
-            if ("0".equals(info[0][0])) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            link.setFinalFileName(info[0][1]);
-            link.setDownloadSize(SizeFormatter.getSize(info[0][2]));
-            return AvailableStatus.TRUE;
-        }
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(File not found|This file is either removed due to copyright claim or is deleted by the uploader)") || (!br.containsHTML("render.php"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = new Regex(link.getDownloadURL(), "uploadspace\\.pl/plik[a-zA-Z0-9]+/(.*?)\\.htm").getMatch(0);
-        if (filename != null) link.setName(filename);
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    public void handleErrors() throws PluginException {
+        String time2wait = br.getRegex("function starthtimer\\(\\)\\{.*?timerend=d\\.getTime\\(\\)\\+(\\d+);").getMatch(0);
+        if (time2wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(time2wait));
+        if (br.containsHTML(">You are currently downloading")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
     }
 
     @Override
@@ -115,19 +107,38 @@ public class UploadSpacePl extends PluginForHost {
         dl.startDownload();
     }
 
-    public void handleErrors() throws PluginException {
-        String time2wait = br.getRegex("function starthtimer\\(\\)\\{.*?timerend=d\\.getTime\\(\\)\\+(\\d+);").getMatch(0);
-        if (time2wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(time2wait));
-        if (br.containsHTML(">You are currently downloading")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        String id = new Regex(link.getDownloadURL(), "pl/plik([a-zA-Z0-9]+)").getMatch(0);
+        String ret = br.getPage("http://uploadspace.pl/api/file.php?id=" + id);
+        String[][] info = new Regex(ret, "(\\d+)," + id + ",(.*?),(\\d+)").getMatches();
+        if (info != null && info.length == 1 && info[0].length == 3) {
+            if ("0".equals(info[0][0])) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            link.setFinalFileName(info[0][1]);
+            link.setDownloadSize(SizeFormatter.getSize(info[0][2]));
+            return AvailableStatus.TRUE;
+        }
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(File not found|This file is either removed due to copyright claim or is deleted by the uploader)") || (!br.containsHTML("render.php"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = new Regex(link.getDownloadURL(), "uploadspace\\.pl/plik[a-zA-Z0-9]+/(.*?)\\.htm").getMatch(0);
+        if (filename != null) link.setName(filename);
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

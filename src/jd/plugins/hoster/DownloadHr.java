@@ -31,6 +31,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "download.hr" }, urls = { "http://(www\\.)?download\\.hr/software\\-.*?\\.html" }, flags = { 0 })
 public class DownloadHr extends PluginForHost {
 
+    private static final String MAINPAGE = "http://www.download.hr";
+
     public DownloadHr(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,7 +42,30 @@ public class DownloadHr extends PluginForHost {
         return "http://www.download.hr/about/impressum";
     }
 
-    private static final String MAINPAGE = "http://www.download.hr";
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        String fileID = br.getRegex("id=\"unit_long(\\d+)\"").getMatch(0);
+        if (fileID == null) fileID = br.getRegex("id=\"unit_ul(\\d+)\"").getMatch(0);
+        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Not neede (yet)
+        // br.getPage(downloadLink.getDownloadURL().replace("software-",
+        // "download-"));
+        br.getPage("http://www.download.hr/redirect.php?fileid=" + fileID);
+        String finallink = br.getRedirectLocation();
+        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -66,32 +91,7 @@ public class DownloadHr extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String fileID = br.getRegex("id=\"unit_long(\\d+)\"").getMatch(0);
-        if (fileID == null) fileID = br.getRegex("id=\"unit_ul(\\d+)\"").getMatch(0);
-        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Not neede (yet)
-        // br.getPage(downloadLink.getDownloadURL().replace("software-",
-        // "download-"));
-        br.getPage("http://www.download.hr/redirect.php?fileid=" + fileID);
-        String finallink = br.getRedirectLocation();
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

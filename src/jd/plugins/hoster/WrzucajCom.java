@@ -44,16 +44,8 @@ public class WrzucajCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("been deleted from server")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("Nazwa pliku: </td><td>(.*?) </td></tr>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        String filesize = br.getRegex("Rozmiar pliku:</td><td> (.*?)</td></tr>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
     }
 
     @Override
@@ -70,8 +62,16 @@ public class WrzucajCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("been deleted from server")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("Nazwa pliku: </td><td>(.*?) </td></tr>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String filesize = br.getRegex("Rozmiar pliku:</td><td> (.*?)</td></tr>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -79,10 +79,10 @@ public class WrzucajCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

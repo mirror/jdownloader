@@ -21,6 +21,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -41,64 +42,21 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.vnn.vn" }, urls = { "http://(www\\.)?megashare\\.vnn\\.vn/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 2 })
 public class MegaShareVnnVn extends PluginForHost {
 
+    private static boolean      FREE        = false;
+
+    private static final String COOKIE_HOST = "http://megashare.vnn.vn";
+
+    private static final String IPBLOCKED   = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
+
+    private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+
+    private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
     public MegaShareVnnVn(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/register.php?g=3");
     }
-
-    // MhfScriptBasic 1.1
-    @Override
-    public String getAGBLink() {
-        return COOKIE_HOST + "/rules.php";
-    }
-
-    private static boolean      FREE        = false;
-    private static final String COOKIE_HOST = "http://megashare.vnn.vn";
-    private static final String IPBLOCKED   = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
-
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL() + "&setlang=en");
-    }
-
-    private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
-        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
-        br.setCookie(COOKIE_HOST, "vdc2_mylang", "en");
-        br.getPage(parameter.getDownloadURL());
-        String newlink = br.getRegex("<p>The document has moved <a href=\"(.*?)\">here</a>\\.</p>").getMatch(0);
-        if (newlink != null) {
-            logger.info("This link has moved, trying to find and set the new link...");
-            newlink = newlink.replaceAll("(\\&amp;|setlang=en)", "");
-            parameter.setUrlDownload(newlink);
-            br.getPage(newlink);
-        }
-        if (br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<b>File name:</b></td>[\r\t\n ]+<td align=([\r\t\n ]+|left width=\\d+px)>(.*?)</td>").getMatch(1);
-        if (filename == null) {
-            filename = br.getRegex("\"Click (this to report for|Here to Report)(.*?)(\\!)?\"").getMatch(1);
-            if (filename == null) {
-                filename = br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("<b>(File size|Filesize):</b></td>[\r\t\n ]+<td align=([\r\t\n ]+|(\")?left(\")?)>(.*?)</td>").getMatch(4);
-        if (filesize == null) filesize = br.getRegex("<b>\\&#4324;\\&#4304;\\&#4312;\\&#4314;\\&#4312;\\&#4321; \\&#4310;\\&#4317;\\&#4315;\\&#4304;:</b></td>[\t\r\n ]+<td align=left>(.*?)</td>").getMatch(0);
-        if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setFinalFileName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        requestFileInformation(link);
-        doFree(link);
     }
 
     private void doFree(DownloadLink link) throws Exception {
@@ -183,29 +141,6 @@ public class MegaShareVnnVn extends PluginForHost {
         dl.startDownload();
     }
 
-    public void login(Account account) throws Exception {
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
-        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
-        br.setCookie(COOKIE_HOST, "vdc2_mylang", "en");
-        br.getPage(COOKIE_HOST + "/login.php");
-        Form form = br.getFormbyProperty("name", "lOGIN");
-        if (form == null) form = br.getForm(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        form.put("user", Encoding.urlEncode(account.getUser()));
-        form.put("pass", Encoding.urlEncode(account.getPass()));
-        // If the referer is still in the form (and if it is a valid
-        // downloadlink) the download starts directly after logging in so we
-        // MUST remove it!
-        form.remove("refer_url");
-        form.put("autologin", "0");
-        br.submitForm(form);
-        String premium = br.getRegex("<b>Your Package</b></td>.*?<b>(.*?)</b></A>").getMatch(0);
-        if (br.getCookie(COOKIE_HOST, "vdc2_passhash") == null || (br.getCookie(COOKIE_HOST, "vdc2_uid") == null || br.getCookie(COOKIE_HOST, "vdc2_uid").equals("0")) || premium == null || !new Regex(premium.trim(), "(Premium|Free Registered)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -250,6 +185,46 @@ public class MegaShareVnnVn extends PluginForHost {
             ai.setStatus("Premium User");
         account.setValid(true);
         return ai;
+    }
+    private String findLink() throws Exception {
+        String finalLink = null;
+        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (String alink : sitelinks) {
+            alink = Encoding.htmlDecode(alink);
+            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
+                finalLink = alink;
+                break;
+            }
+        }
+        if (finalLink == null) {
+            finalLink = br.getRegex("\\'(http://\\d+\\.\\d+\\.\\d+\\.\\d+/\\d+/getfile\\.php\\?id=.*?)\\'").getMatch(0);
+            if (finalLink == null) finalLink = br.getRegex("document\\.location=\\'(http://.*?)\\'").getMatch(0);
+        }
+        return finalLink;
+    }
+
+    // MhfScriptBasic 1.1
+    @Override
+    public String getAGBLink() {
+        return COOKIE_HOST + "/rules.php";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink link) throws Exception {
+        this.setBrowserExclusive();
+        requestFileInformation(link);
+        doFree(link);
     }
 
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
@@ -302,27 +277,68 @@ public class MegaShareVnnVn extends PluginForHost {
         }
     }
 
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
     }
 
-    private String findLink() throws Exception {
-        String finalLink = null;
-        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        for (String alink : sitelinks) {
-            alink = Encoding.htmlDecode(alink);
-            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
-                finalLink = alink;
-                break;
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    public void login(Account account) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
+        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
+        br.setCookie(COOKIE_HOST, "vdc2_mylang", "en");
+        br.getPage(COOKIE_HOST + "/login.php");
+        Form form = br.getFormbyProperty("name", "lOGIN");
+        if (form == null) form = br.getForm(0);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        form.put("user", Encoding.urlEncode(account.getUser()));
+        form.put("pass", Encoding.urlEncode(account.getPass()));
+        // If the referer is still in the form (and if it is a valid
+        // downloadlink) the download starts directly after logging in so we
+        // MUST remove it!
+        form.remove("refer_url");
+        form.put("autologin", "0");
+        br.submitForm(form);
+        String premium = br.getRegex("<b>Your Package</b></td>.*?<b>(.*?)</b></A>").getMatch(0);
+        if (br.getCookie(COOKIE_HOST, "vdc2_passhash") == null || (br.getCookie(COOKIE_HOST, "vdc2_uid") == null || br.getCookie(COOKIE_HOST, "vdc2_uid").equals("0")) || premium == null || !new Regex(premium.trim(), "(Premium|Free Registered)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
+        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
+        br.setCookie(COOKIE_HOST, "vdc2_mylang", "en");
+        br.getPage(parameter.getDownloadURL());
+        String newlink = br.getRegex("<p>The document has moved <a href=\"(.*?)\">here</a>\\.</p>").getMatch(0);
+        if (newlink != null) {
+            logger.info("This link has moved, trying to find and set the new link...");
+            newlink = newlink.replaceAll("(\\&amp;|setlang=en)", "");
+            parameter.setUrlDownload(newlink);
+            br.getPage(newlink);
+        }
+        if (br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<b>File name:</b></td>[\r\t\n ]+<td align=([\r\t\n ]+|left width=\\d+px)>(.*?)</td>").getMatch(1);
+        if (filename == null) {
+            filename = br.getRegex("\"Click (this to report for|Here to Report)(.*?)(\\!)?\"").getMatch(1);
+            if (filename == null) {
+                filename = br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
             }
         }
-        if (finalLink == null) {
-            finalLink = br.getRegex("\\'(http://\\d+\\.\\d+\\.\\d+\\.\\d+/\\d+/getfile\\.php\\?id=.*?)\\'").getMatch(0);
-            if (finalLink == null) finalLink = br.getRegex("document\\.location=\\'(http://.*?)\\'").getMatch(0);
-        }
-        return finalLink;
+        String filesize = br.getRegex("<b>(File size|Filesize):</b></td>[\r\t\n ]+<td align=([\r\t\n ]+|(\")?left(\")?)>(.*?)</td>").getMatch(4);
+        if (filesize == null) filesize = br.getRegex("<b>\\&#4324;\\&#4304;\\&#4312;\\&#4314;\\&#4312;\\&#4321; \\&#4310;\\&#4317;\\&#4315;\\&#4304;:</b></td>[\t\r\n ]+<td align=left>(.*?)</td>").getMatch(0);
+        if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setFinalFileName(filename.trim());
+        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -331,11 +347,6 @@ public class MegaShareVnnVn extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
 }

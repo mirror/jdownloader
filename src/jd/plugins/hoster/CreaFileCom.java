@@ -36,6 +36,11 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "creafile.com" }, urls = { "http://[\\w\\.]*?creafile\\.com/download/[a-z0-9]+" }, flags = { 0 })
 public class CreaFileCom extends PluginForHost {
 
+    private static final String WAIT1  = "WAIT1";
+
+    private static final String WAIT2  = "WAIT2";
+
+    private static final String CHUNKS = "CHUNKS2";
     public CreaFileCom(PluginWrapper wrapper) {
         super(wrapper);
         // this host blocks if there is no timegap between the simultan
@@ -43,43 +48,14 @@ public class CreaFileCom extends PluginForHost {
         this.setStartIntervall(15000l);
         setConfigElements();
     }
-
-    private static final String WAIT1  = "WAIT1";
-    private static final String WAIT2  = "WAIT2";
-    private static final String CHUNKS = "CHUNKS2";
-
-    private void setConfigElements() {
-        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, "Activate waittime1").setDefaultValue(false);
-        ConfigEntry cond1 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT2, "Activate waittime2").setDefaultValue(false);
-        ConfigEntry cond2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHUNKS, "Activate unlimited Max.Con. (speeds up the downloads but may causes errors)").setDefaultValue(false);
-        getConfig().addEntry(cond);
-        getConfig().addEntry(cond1);
-        getConfig().addEntry(cond2);
-    }
-
     @Override
     public String getAGBLink() {
         return "http://creafile.com/useragree.html";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCookie("http://creafile.com", "creafile_lang", "en");
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("File name :</strong></td>.*?<td colspan=\".*?>(.*?)</td>").getMatch(0).trim();
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filesize = br.getRegex("File size :</strong></td>.*?<td colspan=\"[0-9]\">(.*?)</td>").getMatch(0);
-        if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filesize = filesize.replaceAll("Г", "G");
-        filesize = filesize.replaceAll("М", "M");
-        filesize = filesize.replaceAll("к", "k");
-        filesize = filesize + "b";
-        link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -128,17 +104,46 @@ public class CreaFileCom extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCookie("http://creafile.com", "creafile_lang", "en");
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("File name :</strong></td>.*?<td colspan=\".*?>(.*?)</td>").getMatch(0).trim();
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex("File size :</strong></td>.*?<td colspan=\"[0-9]\">(.*?)</td>").getMatch(0);
+        if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filesize = filesize.replaceAll("Г", "G");
+        filesize = filesize.replaceAll("М", "M");
+        filesize = filesize.replaceAll("к", "k");
+        filesize = filesize + "b";
+        link.setName(filename);
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void reset() {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void resetDownloadlink(DownloadLink link) {
     }
 
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
+    private void setConfigElements() {
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, "Activate waittime1").setDefaultValue(false);
+        ConfigEntry cond1 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT2, "Activate waittime2").setDefaultValue(false);
+        ConfigEntry cond2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHUNKS, "Activate unlimited Max.Con. (speeds up the downloads but may causes errors)").setDefaultValue(false);
+        getConfig().addEntry(cond);
+        getConfig().addEntry(cond1);
+        getConfig().addEntry(cond2);
     }
 
 }

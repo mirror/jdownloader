@@ -41,19 +41,8 @@ public class DepoinDirCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.setCustomCharset("UTF-8");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(> Dosya Link Hatası<|<title>Dosya: Bulunamadı Depoindir\\.com \\- Dosya upload , File upload , Dosya Depoindir\\.com \\- Dosya upload</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<span id=\"name\">[\t\n\r ]+<nobr>(.*?) <img").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Dosya indir  Depoindir\\.com - Dosya upload , File upload , (.*?) Depoindir\\.com \\- Dosya upload , File upload , Dosya Depoindir\\.com \\- Dosya upload</title>").getMatch(0);
-        String filesize = br.getRegex("<span id=\"size\">(.*?)</span><br").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -73,12 +62,23 @@ public class DepoinDirCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.setCustomCharset("UTF-8");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(> Dosya Link Hatası<|<title>Dosya: Bulunamadı Depoindir\\.com \\- Dosya upload , File upload , Dosya Depoindir\\.com \\- Dosya upload</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<span id=\"name\">[\t\n\r ]+<nobr>(.*?) <img").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>Dosya indir  Depoindir\\.com - Dosya upload , File upload , (.*?) Depoindir\\.com \\- Dosya upload , File upload , Dosya Depoindir\\.com \\- Dosya upload</title>").getMatch(0);
+        String filesize = br.getRegex("<span id=\"size\">(.*?)</span><br").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public void reset() {
     }
 
     @Override

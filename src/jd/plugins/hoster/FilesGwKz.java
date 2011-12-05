@@ -34,38 +34,25 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.gw.kz" }, urls = { "http://[\\w\\.]*?files\\.(gw|gameworld)\\.kz/[a-z0-9]+\\.html" }, flags = { 0 })
 public class FilesGwKz extends PluginForHost {
 
+    private static final String PWPROTECTED = ">input password:</span>";
+
+    private static final String INDEXPAGE   = "http://files.gw.kz/index.php";
+
     public FilesGwKz(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://files.gw.kz/";
     }
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("gameworld.", "gw."));
     }
 
-    private static final String PWPROTECTED = ">input password:</span>";
-    private static final String INDEXPAGE   = "http://files.gw.kz/index.php";
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.setCookie("http://files.gw.kz", "gw_lang", "en");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Запрашиваемый вами файл не найден")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("class=\"span-d_name bold px14 p_l_3px\" title=\"(.*?)\"").getMatch(0);
-        String filesize = br.getRegex("<b>Size: </b>(.*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        String md5 = br.getRegex("<b>MD5: </b>(.*?)</span>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5.trim());
-        if (br.containsHTML(PWPROTECTED)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesgwkz.passwordprotectedlink", "This link is password protected"));
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://files.gw.kz/";
+    }
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -106,13 +93,31 @@ public class FilesGwKz extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.setCookie("http://files.gw.kz", "gw_lang", "en");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML(">Запрашиваемый вами файл не найден")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("class=\"span-d_name bold px14 p_l_3px\" title=\"(.*?)\"").getMatch(0);
+        String filesize = br.getRegex("<b>Size: </b>(.*?)</span>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        String md5 = br.getRegex("<b>MD5: </b>(.*?)</span>").getMatch(0);
+        if (md5 != null) link.setMD5Hash(md5.trim());
+        if (br.containsHTML(PWPROTECTED)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesgwkz.passwordprotectedlink", "This link is password protected"));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

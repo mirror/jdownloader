@@ -35,6 +35,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedude.com", "appscene.org" }, urls = { "http://(www\\.)?(appscene\\.org|filedude\\.com)/(download/[0-9a-zA-Z]+|download\\.php\\?id=\\d+)", "http://(www\\.)?bnladsgetzt32547uUNUSED_REGEX" }, flags = { 2, 2 })
 public class FileDudeCom extends PluginForHost {
+    private String              FILEDUDECAPTCHAREGEX = "\"(http://www.filedude\\.com/captcha/.*?\\.jpg)\"";
+
+    private static final String SERVERERROR          = "(>Not Found<|>404 Not Found<)";
+
     public FileDudeCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.filedude.com/premium");
@@ -45,21 +49,34 @@ public class FileDudeCom extends PluginForHost {
     }
 
     @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        String trafficleft = br.getRegex("\\(( [0-9]+ B )\\)").getMatch(0);
+        if (trafficleft == null) trafficleft = br.getRegex("Bandwidth remaining:(.*? GB)").getMatch(0);
+        if (trafficleft != null) ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+        ai.setStatus("Premium User");
+        return ai;
+    }
+    @Override
     public String getAGBLink() {
         return "http://www.filedude.com/terms";
     }
 
-    private String              FILEDUDECAPTCHAREGEX = "\"(http://www.filedude\\.com/captcha/.*?\\.jpg)\"";
-    private static final String SERVERERROR          = "(>Not Found<|>404 Not Found<)";
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        String url = downloadLink.getDownloadURL();
-        br.getPage(url);
-        if (br.containsHTML("or has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -98,31 +115,6 @@ public class FileDudeCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage("http://www.appscene.org/premium");
-        br.postPage("http://www.filedude.com/premium_login", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-        if (!br.containsHTML("Premium Area") || br.getCookie("http://www.filedude.com", "premium_id") == null || br.getCookie("http://www.filedude.com/", "premium_pass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        account.setValid(true);
-        String trafficleft = br.getRegex("\\(( [0-9]+ B )\\)").getMatch(0);
-        if (trafficleft == null) trafficleft = br.getRegex("Bandwidth remaining:(.*? GB)").getMatch(0);
-        if (trafficleft != null) ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
@@ -138,26 +130,39 @@ public class FileDudeCom extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage("http://www.appscene.org/premium");
+        br.postPage("http://www.filedude.com/premium_login", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+        if (!br.containsHTML("Premium Area") || br.getCookie("http://www.filedude.com", "premium_id") == null || br.getCookie("http://www.filedude.com/", "premium_pass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        String url = downloadLink.getDownloadURL();
+        br.getPage(url);
+        if (br.containsHTML("or has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public void resetPluginGlobals() {
     }
 
 }

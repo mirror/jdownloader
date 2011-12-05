@@ -38,9 +38,18 @@ public class SoundcloudCom extends PluginForHost {
         super(wrapper);
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("soundclouddecrypted", "soundcloud"));
+    }
+
     @Override
     public String getAGBLink() {
         return "http://soundcloud.com/terms-of-use";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -48,10 +57,6 @@ public class SoundcloudCom extends PluginForHost {
         requestFileInformation(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
         dl.startDownload();
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("soundclouddecrypted", "soundcloud"));
     }
 
     @Override
@@ -98,11 +103,6 @@ public class SoundcloudCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
 }

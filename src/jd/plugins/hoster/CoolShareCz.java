@@ -39,9 +39,33 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coolshare.cz" }, urls = { "http://(www\\.)?coolshare\\.cz/stahnout/\\d+" }, flags = { 2 })
 public class CoolShareCz extends PluginForHost {
 
+    private static final Object LOCK     = new Object();
+
+    private static final String MAINPAGE = "http://coolshare.cz";
+
     public CoolShareCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.coolshare.cz/platby/cenik");
+    }
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String availabletraffic = br.getRegex("\\((\\d+ B)\\)").getMatch(0);
+        if (availabletraffic == null) availabletraffic = br.getRegex("<p>Kredit: (.*?)</p>").getMatch(0);
+        if (availabletraffic != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+        } else {
+            ai.setUnlimitedTraffic();
+        }
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
     }
 
     @Override
@@ -49,21 +73,14 @@ public class CoolShareCz extends PluginForHost {
         return "http://www.coolshare.cz/kontakt";
     }
 
-    private static final Object LOCK     = new Object();
-    private static final String MAINPAGE = "http://coolshare.cz";
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<li>Nahráno dne <strong></strong></li>|<li>Velikost: <strong>0 B</strong>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        String filesize = br.getRegex("li>Velikost: <strong>(.*?)</strong>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -73,6 +90,27 @@ public class CoolShareCz extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("403 Pristup zakazan</h1>Vase IP adresa jiz stahuje")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        String dllink = br.getRegex("class=\"cleaner oddelovac\"><\\!\\-\\- \\-\\-></div>[\t\n\r ]+<p><a href=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://csd\\d+\\.coolshare\\.cz/dwn\\-premium\\.php\\?fid=\\d+\\&amp;uid=\\d+\\&amp;hid=[a-z0-9]+)\"").getMatch(0);
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -114,59 +152,21 @@ public class CoolShareCz extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        String availabletraffic = br.getRegex("\\((\\d+ B)\\)").getMatch(0);
-        if (availabletraffic == null) availabletraffic = br.getRegex("<p>Kredit: (.*?)</p>").getMatch(0);
-        if (availabletraffic != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-        account.setValid(true);
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("class=\"cleaner oddelovac\"><\\!\\-\\- \\-\\-></div>[\t\n\r ]+<p><a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://csd\\d+\\.coolshare\\.cz/dwn\\-premium\\.php\\?fid=\\d+\\&amp;uid=\\d+\\&amp;hid=[a-z0-9]+)\"").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        if (br.containsHTML("(<li>Nahráno dne <strong></strong></li>|<li>Velikost: <strong>0 B</strong>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        String filesize = br.getRegex("li>Velikost: <strong>(.*?)</strong>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

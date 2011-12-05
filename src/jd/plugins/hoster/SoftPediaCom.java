@@ -35,31 +35,32 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "softpedia.com" }, urls = { "http://(www\\.)?softpedia\\.com/(get/.+/.*?\\.shtml|progDownload/.*?-download-\\d+\\.(s)?html)" }, flags = { 2 })
 public class SoftPediaCom extends PluginForHost {
 
+    private static final String   SOFTPEDIASERVERS = "allservers";
+
+    private static final String   SERVER0          = "SP Mirror (US)";
+
+    private static final String   SERVER1          = "SP Mirror (RO)";
+    private static final String   SERVER2          = "Softpedia Mirror (US)";
+    private static final String   SERVER3          = "Softpedia Mirror (RO)";
+    /** The list of server values displayed to the user */
+    private static final String[] servers;
+    static {
+        servers = new String[] { SERVER0, SERVER1, SERVER2, SERVER3 };
+    }
+
     public SoftPediaCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        String fileID = new Regex(link.getDownloadURL(), "softpedia\\.com/progDownload/(.*?)-Download-\\d+\\.html").getMatch(0);
+        if (fileID != null) link.setUrlDownload("http://www.softpedia.com/get/Programming/" + fileID + ".shtml");
+    }
+
     @Override
     public String getAGBLink() {
         return "http://www.softpedia.com/user/terms.shtml";
-    }
-
-    private static final String   SOFTPEDIASERVERS = "allservers";
-    private static final String   SERVER0          = "SP Mirror (US)";
-    private static final String   SERVER1          = "SP Mirror (RO)";
-    private static final String   SERVER2          = "Softpedia Mirror (US)";
-    private static final String   SERVER3          = "Softpedia Mirror (RO)";
-
-    /** The list of server values displayed to the user */
-    private static final String[] servers;
-
-    static {
-        servers = new String[] { SERVER0, SERVER1, SERVER2, SERVER3 };
-    }
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SOFTPEDIASERVERS, servers, JDL.L("plugins.host.SoftPediaCom.servers", "Use this server:")).setDefaultValue(0));
     }
 
     private int getConfiguredServer() {
@@ -82,29 +83,9 @@ public class SoftPediaCom extends PluginForHost {
         }
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        String fileID = new Regex(link.getDownloadURL(), "softpedia\\.com/progDownload/(.*?)-Download-\\d+\\.html").getMatch(0);
-        if (fileID != null) link.setUrlDownload("http://www.softpedia.com/get/Programming/" + fileID + ".shtml");
-    }
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>404 \\- page not found</h2>|404error\\.gif\"></td>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("google_ad_section_start \\-\\-><h1>(.*?)<br/></h1><").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("style=\"padding\\-top: 15px;\">Softpedia guarantees that <b>(.*?)</b> is <b").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex(">yahooBuzzArticleHeadline = \"(.*?)\";").getMatch(0);
-                if (filename == null) filename = br.getRegex("<title>Download (.*?) Free \\- ").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("([0-9\\.]+ (MB|KB))").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -152,16 +133,35 @@ public class SoftPediaCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>404 \\- page not found</h2>|404error\\.gif\"></td>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("google_ad_section_start \\-\\-><h1>(.*?)<br/></h1><").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("style=\"padding\\-top: 15px;\">Softpedia guarantees that <b>(.*?)</b> is <b").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex(">yahooBuzzArticleHeadline = \"(.*?)\";").getMatch(0);
+                if (filename == null) filename = br.getRegex("<title>Download (.*?) Free \\- ").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex("([0-9\\.]+ (MB|KB))").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void reset() {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void resetDownloadlink(DownloadLink link) {
     }
 
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SOFTPEDIASERVERS, servers, JDL.L("plugins.host.SoftPediaCom.servers", "Use this server:")).setDefaultValue(0));
     }
 
 }

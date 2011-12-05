@@ -43,31 +43,47 @@ public class UploadComUa extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://upload.com.ua/rules.php";
-    }
-
-    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         String downloadlinklink = link.getDownloadURL().replaceAll("(link|get|stat)", "get");
         link.setUrlDownload(downloadlinklink + "?mode=free");
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(Файл не найден|>Файл удален</td>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("\">Скачать (.*?)</a>").getMatch(0);
-        String filesize = br.getRegex("file_size\">(.*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String md5 = br.getRegex("<b>Хэш \\(md5\\):</b></td>[\t\r\n ]+<td style=\"font-size: 11px;\">([a-z0-9]+)</td>").getMatch(0);
-        if (md5 != null) {
-            link.setMD5Hash(md5.trim());
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
         }
-        link.setFinalFileName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("Премиум до: <b>(.*?)</b>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy HH:mm:ss", null));
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://upload.com.ua/rules.php";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 8;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 3;
     }
 
     @Override
@@ -103,36 +119,6 @@ public class UploadComUa extends PluginForHost {
         dl.startDownload();
     }
 
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.getPage("http://upload.com.ua/");
-        br.postPage("http://upload.com.ua/#", "submit=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie("http://upload.com.ua", "premium") == null || !br.getCookie("http://upload.com.ua", "premium").equals("1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        account.setValid(true);
-        ai.setUnlimitedTraffic();
-        String expire = br.getRegex("Премиум до: <b>(.*?)</b>").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy HH:mm:ss", null));
-        }
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
@@ -149,18 +135,37 @@ public class UploadComUa extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.getPage("http://upload.com.ua/");
+        br.postPage("http://upload.com.ua/#", "submit=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        if (br.getCookie("http://upload.com.ua", "premium") == null || !br.getCookie("http://upload.com.ua", "premium").equals("1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return 3;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(Файл не найден|>Файл удален</td>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("\">Скачать (.*?)</a>").getMatch(0);
+        String filesize = br.getRegex("file_size\">(.*?)</div>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String md5 = br.getRegex("<b>Хэш \\(md5\\):</b></td>[\t\r\n ]+<td style=\"font-size: 11px;\">([a-z0-9]+)</td>").getMatch(0);
+        if (md5 != null) {
+            link.setMD5Hash(md5.trim());
+        }
+        link.setFinalFileName(filename);
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 8;
     }
 
     @Override

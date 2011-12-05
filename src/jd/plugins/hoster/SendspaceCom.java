@@ -47,32 +47,6 @@ public class SendspaceCom extends PluginForHost {
     }
 
     @Override
-    public void init() {
-        br.setRequestIntervalLimit(getHost(), 750);
-    }
-
-    // TODO: Add handling for password protected files for handle premium,
-    // actually it only works for handle free
-    @Override
-    public String getAGBLink() {
-        return "http://www.sendspace.com/terms.html";
-    }
-
-    public void login(Account account) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage("http://www.sendspace.com/login.html");
-        br.postPage("http://www.sendspace.com/login.html", "action=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=1&submit=login&openid_url=&action_type=login");
-        if (br.getCookie("http://www.sendspace.com", "ssal") == null || br.getCookie("http://www.sendspace.com", "ssal").equalsIgnoreCase("deleted")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    public boolean isPremium() throws IOException {
-        br.getPage("http://www.sendspace.com/mysendspace/myindex.html?l=1");
-        if (br.containsHTML("Your membership is valid for") || br.containsHTML("account needs to be renewed")) return true;
-        return false;
-    }
-
-    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -104,73 +78,43 @@ public class SendspaceCom extends PluginForHost {
         return ai;
     }
 
+    // TODO: Add handling for password protected files for handle premium,
+    // actually it only works for handle free
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account);
-        br.getPage(link.getDownloadURL());
-        String linkurl = br.getRegex("<a id=\"downlink\" class=\"mango\" href=\"(.*?)\"").getMatch(0);
-        if (linkurl == null) linkurl = br.getRegex("<a id=\"download_button\" href=\"(http://.*?)\"").getMatch(0);
-        if (linkurl == null) linkurl = br.getRegex("\"(http://fs\\d+n\\d+\\.sendspace\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 1);
-        dl.startDownload();
+    public String getAGBLink() {
+        return "http://www.sendspace.com/terms.html";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        String url = downloadLink.getDownloadURL();
-        if (!url.contains("/pro/dl/")) {
-            br.getPage(url);
-            if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) { return AvailableStatus.UNCHECKABLE; }
-            if (!br.containsHTML("the file you requested is not available")) {
-                String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);/* old */
-                if (infos == null) infos = br.getRegex("Download: <strong>(.*?)<.*?strong> \\((.*?)\\)<").getRow(0);/* new1 */
-                if (infos == null) infos = br.getRegex("Download <b>(.*?)<.*?File Size: (.*?)<").getRow(0);/* new2 */
-                if (infos != null) {
-                    /* old format */
-                    downloadLink.setName(Encoding.htmlDecode(infos[0]).trim());
-                    downloadLink.setDownloadSize(SizeFormatter.getSize(infos[1].trim().replaceAll(",", "\\.")));
-                    return AvailableStatus.TRUE;
-                } else {
-                    String filename = br.getRegex("<title>Download (.*?) from Sendspace\\.com \\- send big files the easy way</title>").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("<h2 class=\"bgray\"><b>(.*?)</b></h2>").getMatch(0);
-                        if (filename == null) filename = br.getRegex("title=\"download (.*?)\">Click here to start").getMatch(0);
-                    }
-                    String filesize = br.getRegex("<b>File Size:</b> (.*?)</div>").getMatch(0);
-                    if (filename != null && filesize != null) {
-                        downloadLink.setName(Encoding.htmlDecode(filename).trim());
-                        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",", "\\.")));
-                        return AvailableStatus.TRUE;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else {
-            br.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openGetConnection(url);
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                downloadLink.setName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                return AvailableStatus.TRUE;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 1;
+    }
+
+    private void handleErrors(boolean plugindefect) throws PluginException {
+        String error = br.getRegex("<div class=\"errorbox-bad\".*?>(.*?)</div>").getMatch(0);
+        if (error == null) error = br.getRegex("<div class=\"errorbox-bad\".*?>.*?>(.*?)</>").getMatch(0);
+        if (error == null && !plugindefect) return;
+        if (error == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.servererror", "Unknown server error"), 5 * 60 * 1000l);
+        logger.severe("Error: " + error);
+        if (error.contains("You cannot download more than one file at a time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "A download is still in progress", 10 * 60 * 1000l);
+        if (error.contains("You may now download the file")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 30 * 1000l); }
+        if (error.contains("full capacity")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.serverfull", "Free service capacity full"), 5 * 60 * 1000l); }
+        if (error.contains("this connection has reached the")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
+        if (error.contains("reached daily download") || error.contains("reached your daily download")) {
+            int wait = 60;
+            String untilh = br.getRegex("again in (\\d+)h:(\\d+)m").getMatch(0);
+            String untilm = br.getRegex("again in (\\d+)h:(\\d+)m").getMatch(1);
+            if (untilh != null) wait = Integer.parseInt(untilh) * 60;
+            if (untilm != null && untilh != null) wait = wait + Integer.parseInt(untilm);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily download limit", wait * 60 * 1000l);
         }
+        if (br.containsHTML("(>The file is not currently available|Our support staff have been notified and we hope to resolve the problem shortly)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.temporaryunavailable", "This file is not available at the moment!"));
+        if (plugindefect) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
@@ -258,36 +202,97 @@ public class SendspaceCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void handleErrors(boolean plugindefect) throws PluginException {
-        String error = br.getRegex("<div class=\"errorbox-bad\".*?>(.*?)</div>").getMatch(0);
-        if (error == null) error = br.getRegex("<div class=\"errorbox-bad\".*?>.*?>(.*?)</>").getMatch(0);
-        if (error == null && !plugindefect) return;
-        if (error == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.servererror", "Unknown server error"), 5 * 60 * 1000l);
-        logger.severe("Error: " + error);
-        if (error.contains("You cannot download more than one file at a time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "A download is still in progress", 10 * 60 * 1000l);
-        if (error.contains("You may now download the file")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 30 * 1000l); }
-        if (error.contains("full capacity")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.serverfull", "Free service capacity full"), 5 * 60 * 1000l); }
-        if (error.contains("this connection has reached the")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
-        if (error.contains("reached daily download") || error.contains("reached your daily download")) {
-            int wait = 60;
-            String untilh = br.getRegex("again in (\\d+)h:(\\d+)m").getMatch(0);
-            String untilm = br.getRegex("again in (\\d+)h:(\\d+)m").getMatch(1);
-            if (untilh != null) wait = Integer.parseInt(untilh) * 60;
-            if (untilm != null && untilh != null) wait = wait + Integer.parseInt(untilm);
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily download limit", wait * 60 * 1000l);
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.getPage(link.getDownloadURL());
+        String linkurl = br.getRegex("<a id=\"downlink\" class=\"mango\" href=\"(.*?)\"").getMatch(0);
+        if (linkurl == null) linkurl = br.getRegex("<a id=\"download_button\" href=\"(http://.*?)\"").getMatch(0);
+        if (linkurl == null) linkurl = br.getRegex("\"(http://fs\\d+n\\d+\\.sendspace\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 1);
+        dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    @Override
+    public void init() {
+        br.setRequestIntervalLimit(getHost(), 750);
+    }
+
+    public boolean isPremium() throws IOException {
+        br.getPage("http://www.sendspace.com/mysendspace/myindex.html?l=1");
+        if (br.containsHTML("Your membership is valid for") || br.containsHTML("account needs to be renewed")) return true;
+        return false;
+    }
+
+    public void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage("http://www.sendspace.com/login.html");
+        br.postPage("http://www.sendspace.com/login.html", "action=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=1&submit=login&openid_url=&action_type=login");
+        if (br.getCookie("http://www.sendspace.com", "ssal") == null || br.getCookie("http://www.sendspace.com", "ssal").equalsIgnoreCase("deleted")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        String url = downloadLink.getDownloadURL();
+        if (!url.contains("/pro/dl/")) {
+            br.getPage(url);
+            if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) { return AvailableStatus.UNCHECKABLE; }
+            if (!br.containsHTML("the file you requested is not available")) {
+                String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);/* old */
+                if (infos == null) infos = br.getRegex("Download: <strong>(.*?)<.*?strong> \\((.*?)\\)<").getRow(0);/* new1 */
+                if (infos == null) infos = br.getRegex("Download <b>(.*?)<.*?File Size: (.*?)<").getRow(0);/* new2 */
+                if (infos != null) {
+                    /* old format */
+                    downloadLink.setName(Encoding.htmlDecode(infos[0]).trim());
+                    downloadLink.setDownloadSize(SizeFormatter.getSize(infos[1].trim().replaceAll(",", "\\.")));
+                    return AvailableStatus.TRUE;
+                } else {
+                    String filename = br.getRegex("<title>Download (.*?) from Sendspace\\.com \\- send big files the easy way</title>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("<h2 class=\"bgray\"><b>(.*?)</b></h2>").getMatch(0);
+                        if (filename == null) filename = br.getRegex("title=\"download (.*?)\">Click here to start").getMatch(0);
+                    }
+                    String filesize = br.getRegex("<b>File Size:</b> (.*?)</div>").getMatch(0);
+                    if (filename != null && filesize != null) {
+                        downloadLink.setName(Encoding.htmlDecode(filename).trim());
+                        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",", "\\.")));
+                        return AvailableStatus.TRUE;
+                    }
+                }
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            br.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(url);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                downloadLink.setName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
         }
-        if (br.containsHTML("(>The file is not currently available|Our support staff have been notified and we hope to resolve the problem shortly)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sendspacecom.errors.temporaryunavailable", "This file is not available at the moment!"));
-        if (plugindefect) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
     }
 
     @Override

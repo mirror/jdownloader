@@ -42,46 +42,6 @@ public class JakFileCom extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://www.jakfile.com/terms";
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>LINK NOT AVAILABLE<|Invalid link<br>|File deleted by owner<br>|The file has been deleted because it was violating our <a)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(">File: </font><font style=\"font\\-size:16px\" color=\"#FFFFFF\" face=\"Arial\"><b>(.*?)</b>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<strong>Download Video:</strong>[\t\n\r ]+<a href=\"http://www\\d+\\.jakfile\\.com/get/[a-z0-9]+/[a-z0-9]+/(.*?)\"").getMatch(0);
-        String filesize = br.getRegex(">Size: </font><font style=\"font\\-size:14px\" color=\"#FFFFFF\" face=\"Arial\">(.*?)</font>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
-        String dllink = getDllink();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        // br.getPage(MAINPAGE);
-        br.postPage("http://www.jakfile.com/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&task=dologin&return=%2F");
-        if (!br.containsHTML("You are:\n +<b>Premium Member</b>") && !br.containsHTML("Account Type:\n +<br>\n +<b>Premium Member</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -111,6 +71,45 @@ public class JakFileCom extends PluginForHost {
     }
 
     @Override
+    public String getAGBLink() {
+        return "http://www.jakfile.com/terms";
+    }
+
+    private String getDllink() throws IOException, PluginException {
+        String nextPage = br.getRegex("\\' onclick=\"document\\.location=\\'(http://.*?)\\'").getMatch(0);
+        if (nextPage == null) nextPage = br.getRegex("\\'(http://(www\\.)jakfile\\.com/get/[a-z0-9]+/[a-z0-9]+/.*?)\\'").getMatch(0);
+        if (nextPage != null) br.getPage(nextPage);
+        String dllink = br.getRegex("style=\"text\\-align: left;\">Download</h1>[\t\n\r ]+<form[\t\n\r ]+action=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.jakfile\\.com/get/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!dllink.contains("jakfile.com/")) dllink = "http://www.jakfile.com/" + dllink + "?task=download&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100));
+        return dllink;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        br.setFollowRedirects(false);
+        String dllink = getDllink();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
@@ -130,29 +129,30 @@ public class JakFileCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getDllink() throws IOException, PluginException {
-        String nextPage = br.getRegex("\\' onclick=\"document\\.location=\\'(http://.*?)\\'").getMatch(0);
-        if (nextPage == null) nextPage = br.getRegex("\\'(http://(www\\.)jakfile\\.com/get/[a-z0-9]+/[a-z0-9]+/.*?)\\'").getMatch(0);
-        if (nextPage != null) br.getPage(nextPage);
-        String dllink = br.getRegex("style=\"text\\-align: left;\">Download</h1>[\t\n\r ]+<form[\t\n\r ]+action=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.jakfile\\.com/get/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (!dllink.contains("jakfile.com/")) dllink = "http://www.jakfile.com/" + dllink + "?task=download&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100));
-        return dllink;
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        // br.getPage(MAINPAGE);
+        br.postPage("http://www.jakfile.com/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&task=dologin&return=%2F");
+        if (!br.containsHTML("You are:\n +<b>Premium Member</b>") && !br.containsHTML("Account Type:\n +<br>\n +<b>Premium Member</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>LINK NOT AVAILABLE<|Invalid link<br>|File deleted by owner<br>|The file has been deleted because it was violating our <a)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex(">File: </font><font style=\"font\\-size:16px\" color=\"#FFFFFF\" face=\"Arial\"><b>(.*?)</b>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<strong>Download Video:</strong>[\t\n\r ]+<a href=\"http://www\\d+\\.jakfile\\.com/get/[a-z0-9]+/[a-z0-9]+/(.*?)\"").getMatch(0);
+        String filesize = br.getRegex(">Size: </font><font style=\"font\\-size:14px\" color=\"#FFFFFF\" face=\"Arial\">(.*?)</font>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

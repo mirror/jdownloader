@@ -44,25 +44,8 @@ public class MegaFileUploadCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<b>File name:</b></td>.*?<td align=left width=[0-9]+px>(.*?)</td>").getMatch(0);
-
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("\"Click this to report for (.*?)\"").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("<b>File size:</b></td>.*?<td align=left>(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // This hoster taggs the files (filenames) and by setting this name as
-        // the final filename no one will ever see these tags again
-        link.setFinalFileName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
     }
 
     @Override
@@ -111,13 +94,35 @@ public class MegaFileUploadCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<b>File name:</b></td>.*?<td align=left width=[0-9]+px>(.*?)</td>").getMatch(0);
+
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("\"Click this to report for (.*?)\"").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex("<b>File size:</b></td>.*?<td align=left>(.*?)</td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // This hoster taggs the files (filenames) and by setting this name as
+        // the final filename no one will ever see these tags again
+        link.setFinalFileName(filename);
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

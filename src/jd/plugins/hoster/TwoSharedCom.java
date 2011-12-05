@@ -153,6 +153,11 @@ public class TwoSharedCom extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
         br.setCookiesExclusive(true);

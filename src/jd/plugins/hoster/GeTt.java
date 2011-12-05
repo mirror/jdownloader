@@ -32,19 +32,37 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?api\\d+?\\.ge\\.tt/\\d/[A-Za-z0-9]+/.+" }, flags = { 0 })
 public class GeTt extends PluginForHost {
 
+    private String DLLINK = null;
+
+    private static final String LIMITREACHED         = "overloaded.html";
+
+    private static final String LIMITREACHEDUSERTEXT = "Traffic limit for this file is reached";
+
     public GeTt(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    private String DLLINK = null;
-
     @Override
     public String getAGBLink() {
         return "http://ge.tt/#terms";
     }
 
-    private static final String LIMITREACHED         = "overloaded.html";
-    private static final String LIMITREACHEDUSERTEXT = "Traffic limit for this file is reached";
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        // Limit is on the file, reconnect doesn't remove it
+        if (DLLINK.contains(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, LIMITREACHEDUSERTEXT, 30 * 60 * 1000l);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
@@ -81,32 +99,14 @@ public class GeTt extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        // Limit is on the file, reconnect doesn't remove it
-        if (DLLINK.contains(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, LIMITREACHEDUSERTEXT, 30 * 60 * 1000l);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

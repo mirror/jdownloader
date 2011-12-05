@@ -31,8 +31,14 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wisevid.com" }, urls = { "http://(www\\.)?wisevid\\.com/((play|gate-way)\\?v=[A-Za-z0-9_-]+|gateway\\.php\\?viewkey=[A-Za-z0-9_-]+)" }, flags = { 0 })
 public class WiseVidCom extends PluginForHost {
 
+    private String DLLINK = null;
+
     public WiseVidCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("gate-way", "play"));
     }
 
     @Override
@@ -40,10 +46,20 @@ public class WiseVidCom extends PluginForHost {
         return "http://www.wisevid.com/terms";
     }
 
-    private String DLLINK = null;
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("gate-way", "play"));
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -16);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -94,30 +110,14 @@ public class WiseVidCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -16);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

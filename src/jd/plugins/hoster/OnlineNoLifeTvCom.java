@@ -34,18 +34,48 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "online.nolife-tv.com" }, urls = { "http://(www\\.)?online\\.nolife\\-tv\\.com/index\\.php\\?id=\\d+" }, flags = { 0 })
 public class OnlineNoLifeTvCom extends PluginForHost {
 
+    private String              DLLINK              = null;
+
+    private static final String ONLYPREMIUMUSERTEXT = "Only downloadable for premium members";
+
+    private boolean             notDownloadable     = false;
     public OnlineNoLifeTvCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     @Override
     public String getAGBLink() {
         return "http://online.nolife-tv.com/";
     }
 
-    private String              DLLINK              = null;
-    private static final String ONLYPREMIUMUSERTEXT = "Only downloadable for premium members";
-    private boolean             notDownloadable     = false;
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (notDownloadable) throw new PluginException(LinkStatus.ERROR_FATAL, ONLYPREMIUMUSERTEXT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    private String nolifeDecode(final String input) {
+        String result = "";
+        final String key = "s8_dg2x-5sd1";
+        int i = 0;
+        int j = 0;
+        while (j < input.length()) {
+            i = input.codePointAt(j) ^ key.codePointAt(j % key.length());
+            result += String.valueOf((char) i);
+            j += 1;
+        }
+        return result;
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
@@ -94,44 +124,14 @@ public class OnlineNoLifeTvCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (notDownloadable) throw new PluginException(LinkStatus.ERROR_FATAL, ONLYPREMIUMUSERTEXT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    private String nolifeDecode(final String input) {
-        String result = "";
-        final String key = "s8_dg2x-5sd1";
-        int i = 0;
-        int j = 0;
-        while (j < input.length()) {
-            i = input.codePointAt(j) ^ key.codePointAt(j % key.length());
-            result += String.valueOf((char) i);
-            j += 1;
-        }
-        return result;
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

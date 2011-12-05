@@ -51,11 +51,6 @@ public class MegaVideo extends PluginForHost {
         this.enablePremium("http://www.megavideo.com/?c=premium");
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://www.megavideo.com/?c=terms";
-    }
-
     private void antiJDBlock(Browser br) {
         try {
             if (br == null) return;
@@ -67,260 +62,9 @@ public class MegaVideo extends PluginForHost {
         }
     }
 
-    public String getDownloadID(DownloadLink link) throws MalformedURLException {
-        String url = link.getDownloadURL().replace("/v/", "/?v=");
-        HashMap<String, String> p = Request.parseQuery(Encoding.htmlDecode(url));
-        String ret = p.get("v");
-        if (ret == null) {
-            try {
-                Browser br = new Browser();
-                antiJDBlock(br);
-                br.getPage(link.getDownloadURL());
-                ret = br.getRegex("previewplayer/\\?v=(.*?)&width").getMatch(0);
-            } catch (Exception e) {
-            }
-        }
-        if (ret == null) ret = "";
-        if (ret.length() > 8) {
-            ret = ret.substring(0, 8);
-        }
-        return ret.toUpperCase(Locale.ENGLISH);
-    }
-
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         link.setUrlDownload("http://www.megavideo.com/v/" + getDownloadID(link));
-    }
-
-    public void login(final Account account, final boolean cookielogin) throws IOException, PluginException {
-        String user = account.getStringProperty("user", null);
-        synchronized (LOGINLOCK) {
-            this.antiJDBlock(this.br);
-            if (cookielogin && user != null) {
-                this.br.setCookie("http://www.megavideo.com", "l", "en");
-                this.br.setCookie("http://www.megavideo.com", "user", user);
-                return;
-            } else {
-                if (account.getUser().trim().equalsIgnoreCase("cookie")) {
-                    this.setBrowserExclusive();
-                    this.br.setCookie("http://www.megavideo.com", "l", "en");
-                    this.br.setCookie("http://www.megavideo.com", "user", account.getPass());
-                    this.br.getPage("http://www.megavideo.com/");
-                } else {
-                    this.setBrowserExclusive();
-                    this.br.setCookie("http://www.megavideo.com", "l", "en");
-                    this.br.getPage("http://www.megavideo.com/?s=account");
-                    this.br.postPage("http://www.megavideo.com/?s=account", "login=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                }
-                user = this.br.getCookie("http://www.megavideo.com", "user");
-                this.br.setCookie("http://www.megavideo.com", "user", user);
-                account.setProperty("user", user);
-                if (user == null) {
-                    account.setProperty("ispremium", false);
-                    account.setProperty("typeknown", false);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            }
-        }
-    }
-
-    public boolean isPremium(final Account account, final Browser br, final boolean refresh, boolean cloneBrowser) throws IOException {
-        synchronized (LOGINLOCK) {
-            if (account == null) { return false; }
-            if (account.getBooleanProperty("typeknown", false) == false || refresh) {
-                final Browser brc;
-                if (cloneBrowser) {
-                    brc = br.cloneBrowser();
-                } else {
-                    brc = br;
-                }
-                this.antiJDBlock(brc);
-                brc.getPage("http://www.megavideo.com/?c=account");
-                final String type = brc.getRegex(Pattern.compile("Account type:.*?<b>([^</ ]+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-                if (type == null || type.equalsIgnoreCase("regular")) {
-                    account.setProperty("ispremium", false);
-                    if (type != null) {
-                        account.setProperty("typeknown", true);
-                    } else {
-                        account.setProperty("typeknown", false);
-                    }
-                    return false;
-                } else {
-                    account.setProperty("ispremium", true);
-                    account.setProperty("typeknown", true);
-                    return true;
-                }
-            } else {
-                return account.getBooleanProperty("ispremium", false);
-            }
-        }
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        this.setBrowserExclusive();
-        synchronized (LOGINLOCK) {
-            try {
-                this.login(account, false);
-            } catch (final PluginException e) {
-                account.setValid(false);
-                return ai;
-            }
-            if (!this.isPremium(account, this.br, true, false)) {
-                account.setValid(false);
-                ai.setStatus("Free Membership");
-                return ai;
-            }
-        }
-        br.getPage("http://www.megavideo.com/?c=account");
-        final String type = this.br.getRegex(Pattern.compile("Account type:.*?<b>([^</ ]+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (type != null && !type.contains("Lifetime")) {
-            ai.setStatus("Premium Membership");
-            final String days = this.br.getRegex("<b>Premium</b>.*?\\((\\d+) days remaining - <a").getMatch(0);
-            if (days != null && !days.equalsIgnoreCase("Unlimited")) {
-                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(days) * 24 * 60 * 60 * 1000);
-            } else if (days == null || days.equals("0")) {
-                final String hours = this.br.getRegex("<b>Premium</b>.*?\\((\\d+) hours remaining - <a").getMatch(0);
-                if (hours != null) {
-                    ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(hours) * 60 * 60 * 1000);
-                } else {
-                    ai.setExpired(true);
-                    account.setValid(false);
-                    return ai;
-                }
-            }
-        } else if (type != null && type.contains("Lifetime")) {
-            ai.setStatus("Lifetime Membership");
-        }
-        final String points = this.br.getRegex(Pattern.compile("Reward points available:.*?<strong>(\\d+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (points != null) {
-            ai.setPremiumPoints(Long.parseLong(points));
-        }
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        synchronized (LOGINLOCK) {
-            this.login(account, true);
-            if (!this.isPremium(account, this.br.cloneBrowser(), false, true)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-        }
-        br.getPage(downloadLink.getDownloadURL());
-        br.forceDebug(true);
-        Browser brc = br.cloneBrowser();
-        /* get original downloadlink */
-        brc.getPage("http://www.megavideo.com/xml/player_login.php?u=" + br.getCookie("http://www.megavideo.com", "user") + "&v=" + getDownloadID(downloadLink));
-        String url = Encoding.urlDecode(brc.getRegex("downloadurl=\"(.*?)\"").getMatch(0), true);
-        if (url == null) {
-            logger.info("Could not download original file, try to download normal one!");
-            this.handleFree(downloadLink);
-            return;
-        } else {
-            String name = downloadLink.getName();
-            String cpName = url.substring(url.lastIndexOf("/") + 1);
-            String useName = name;
-            if (name.startsWith("http_download")) {
-                /* replace fake filename with the one from url */
-                useName = Encoding.urlDecode(cpName, false);
-            }
-            downloadLink.setFinalFileName(useName);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
-            dl.startDownload();
-        }
-    }
-
-    @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        String url = null;
-        String ID = getDownloadID(link);
-        Browser brc = br.cloneBrowser();
-        brc.getPage("http://www.megavideo.com/xml/videolink.php?v=" + ID);
-        if (brc.containsHTML("hd=\"1\"")) {
-            /* hd link */
-            url = Encoding.urlDecode(brc.getRegex("hd_url=\"(.*?)\"").getMatch(0), true);
-        } else {
-            /* normal link */
-            String s = brc.getRegex("s=\"(\\d+)\"").getMatch(0);
-            String un = brc.getRegex("un=\"(.*?)\"").getMatch(0);
-            String k1 = brc.getRegex("k1=\"(\\d+)\"").getMatch(0);
-            String k2 = brc.getRegex("k2=\"(\\d+)\"").getMatch(0);
-            if (s == null || un == null || k1 == null || k2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            url = "http://www" + s + ".megavideo.com/files/" + decrypt(un, Integer.parseInt(k1), Integer.parseInt(k2)) + "/";
-        }
-        if (!link.getName().endsWith("." + JDIO.getFileExtension(link.getName()))) {
-            link.setName(link.getName() + ".flv");
-        }
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
-        if (dl.getConnection().getLongContentLength() == -1) {
-            /* no content length= waiting page */
-            DynByteBuffer buffer = new DynByteBuffer(1024);
-            int read = -1;
-            byte bytebuffer[] = new byte[1];
-            while ((read = dl.getConnection().getInputStream().read(bytebuffer)) != -1) {
-                /*
-                 * filter invalid chars
-                 */
-                if (read == 1) {
-                    if (bytebuffer[0] > 33) buffer.put(bytebuffer, read);
-                    if (buffer.position() > 8192) {
-                        logger.severe("more than 8kb loaded, but no content-length!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
-            }
-            String ret = buffer.toString();
-            String waittime = new Regex(ret, "wait(\\d+)").getMatch(0);
-            if (waittime != null) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-            }
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        antiJDBlock(br);
-        br.setFollowRedirects(false);
-        br.getPage(parameter.getDownloadURL());
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("unavailable")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Browser brc = br.cloneBrowser();
-        brc.getPage("http://www.megavideo.com/xml/videolink.php?v=" + getDownloadID(parameter));
-        String name = Encoding.htmlDecode(brc.getRegex("title=\"(.*?)\"").getMatch(0));
-        if (name != null) {
-            if (name.length() < 2) name = null;
-        }
-        if (name == null) {
-            name = Encoding.htmlDecode(br.getRegex("description=\"(.*?)\"").getMatch(0));
-        }
-        if (name != null) {
-            if (name.length() < 2) name = null;
-        }
-        if (name == null) {
-            name = "MegaVideoClip_" + System.currentTimeMillis();
-        }
-        if (brc.containsHTML("hd=\"1\"")) {
-            name = name + " (HD)";
-        }
-        if (brc.containsHTML("error=\"1\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String size = brc.getRegex("size=\"(\\d+)\"").getMatch(0);
-        if (size != null) parameter.setDownloadSize(Long.parseLong(size));
-        parameter.setName(Encoding.htmlDecode(name.trim()));
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void reset() {
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
     }
 
     /*
@@ -518,7 +262,263 @@ public class MegaVideo extends PluginForHost {
     }
 
     @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        this.setBrowserExclusive();
+        synchronized (LOGINLOCK) {
+            try {
+                this.login(account, false);
+            } catch (final PluginException e) {
+                account.setValid(false);
+                return ai;
+            }
+            if (!this.isPremium(account, this.br, true, false)) {
+                account.setValid(false);
+                ai.setStatus("Free Membership");
+                return ai;
+            }
+        }
+        br.getPage("http://www.megavideo.com/?c=account");
+        final String type = this.br.getRegex(Pattern.compile("Account type:.*?<b>([^</ ]+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (type != null && !type.contains("Lifetime")) {
+            ai.setStatus("Premium Membership");
+            final String days = this.br.getRegex("<b>Premium</b>.*?\\((\\d+) days remaining - <a").getMatch(0);
+            if (days != null && !days.equalsIgnoreCase("Unlimited")) {
+                ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(days) * 24 * 60 * 60 * 1000);
+            } else if (days == null || days.equals("0")) {
+                final String hours = this.br.getRegex("<b>Premium</b>.*?\\((\\d+) hours remaining - <a").getMatch(0);
+                if (hours != null) {
+                    ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(hours) * 60 * 60 * 1000);
+                } else {
+                    ai.setExpired(true);
+                    account.setValid(false);
+                    return ai;
+                }
+            }
+        } else if (type != null && type.contains("Lifetime")) {
+            ai.setStatus("Lifetime Membership");
+        }
+        final String points = this.br.getRegex(Pattern.compile("Reward points available:.*?<strong>(\\d+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (points != null) {
+            ai.setPremiumPoints(Long.parseLong(points));
+        }
+        return ai;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.megavideo.com/?c=terms";
+    }
+
+    public String getDownloadID(DownloadLink link) throws MalformedURLException {
+        String url = link.getDownloadURL().replace("/v/", "/?v=");
+        HashMap<String, String> p = Request.parseQuery(Encoding.htmlDecode(url));
+        String ret = p.get("v");
+        if (ret == null) {
+            try {
+                Browser br = new Browser();
+                antiJDBlock(br);
+                br.getPage(link.getDownloadURL());
+                ret = br.getRegex("previewplayer/\\?v=(.*?)&width").getMatch(0);
+            } catch (Exception e) {
+            }
+        }
+        if (ret == null) ret = "";
+        if (ret.length() > 8) {
+            ret = ret.substring(0, 8);
+        }
+        return ret.toUpperCase(Locale.ENGLISH);
+    }
+
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        String url = null;
+        String ID = getDownloadID(link);
+        Browser brc = br.cloneBrowser();
+        brc.getPage("http://www.megavideo.com/xml/videolink.php?v=" + ID);
+        if (brc.containsHTML("hd=\"1\"")) {
+            /* hd link */
+            url = Encoding.urlDecode(brc.getRegex("hd_url=\"(.*?)\"").getMatch(0), true);
+        } else {
+            /* normal link */
+            String s = brc.getRegex("s=\"(\\d+)\"").getMatch(0);
+            String un = brc.getRegex("un=\"(.*?)\"").getMatch(0);
+            String k1 = brc.getRegex("k1=\"(\\d+)\"").getMatch(0);
+            String k2 = brc.getRegex("k2=\"(\\d+)\"").getMatch(0);
+            if (s == null || un == null || k1 == null || k2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            url = "http://www" + s + ".megavideo.com/files/" + decrypt(un, Integer.parseInt(k1), Integer.parseInt(k2)) + "/";
+        }
+        if (!link.getName().endsWith("." + JDIO.getFileExtension(link.getName()))) {
+            link.setName(link.getName() + ".flv");
+        }
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
+        if (dl.getConnection().getLongContentLength() == -1) {
+            /* no content length= waiting page */
+            DynByteBuffer buffer = new DynByteBuffer(1024);
+            int read = -1;
+            byte bytebuffer[] = new byte[1];
+            while ((read = dl.getConnection().getInputStream().read(bytebuffer)) != -1) {
+                /*
+                 * filter invalid chars
+                 */
+                if (read == 1) {
+                    if (bytebuffer[0] > 33) buffer.put(bytebuffer, read);
+                    if (buffer.position() > 8192) {
+                        logger.severe("more than 8kb loaded, but no content-length!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+            }
+            String ret = buffer.toString();
+            String waittime = new Regex(ret, "wait(\\d+)").getMatch(0);
+            if (waittime != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            }
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        synchronized (LOGINLOCK) {
+            this.login(account, true);
+            if (!this.isPremium(account, this.br.cloneBrowser(), false, true)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        }
+        br.getPage(downloadLink.getDownloadURL());
+        br.forceDebug(true);
+        Browser brc = br.cloneBrowser();
+        /* get original downloadlink */
+        brc.getPage("http://www.megavideo.com/xml/player_login.php?u=" + br.getCookie("http://www.megavideo.com", "user") + "&v=" + getDownloadID(downloadLink));
+        String url = Encoding.urlDecode(brc.getRegex("downloadurl=\"(.*?)\"").getMatch(0), true);
+        if (url == null) {
+            logger.info("Could not download original file, try to download normal one!");
+            this.handleFree(downloadLink);
+            return;
+        } else {
+            String name = downloadLink.getName();
+            String cpName = url.substring(url.lastIndexOf("/") + 1);
+            String useName = name;
+            if (name.startsWith("http_download")) {
+                /* replace fake filename with the one from url */
+                useName = Encoding.urlDecode(cpName, false);
+            }
+            downloadLink.setFinalFileName(useName);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+            dl.startDownload();
+        }
+    }
+
+    public boolean isPremium(final Account account, final Browser br, final boolean refresh, boolean cloneBrowser) throws IOException {
+        synchronized (LOGINLOCK) {
+            if (account == null) { return false; }
+            if (account.getBooleanProperty("typeknown", false) == false || refresh) {
+                final Browser brc;
+                if (cloneBrowser) {
+                    brc = br.cloneBrowser();
+                } else {
+                    brc = br;
+                }
+                this.antiJDBlock(brc);
+                brc.getPage("http://www.megavideo.com/?c=account");
+                final String type = brc.getRegex(Pattern.compile("Account type:.*?<b>([^</ ]+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+                if (type == null || type.equalsIgnoreCase("regular")) {
+                    account.setProperty("ispremium", false);
+                    if (type != null) {
+                        account.setProperty("typeknown", true);
+                    } else {
+                        account.setProperty("typeknown", false);
+                    }
+                    return false;
+                } else {
+                    account.setProperty("ispremium", true);
+                    account.setProperty("typeknown", true);
+                    return true;
+                }
+            } else {
+                return account.getBooleanProperty("ispremium", false);
+            }
+        }
+    }
+
+    public void login(final Account account, final boolean cookielogin) throws IOException, PluginException {
+        String user = account.getStringProperty("user", null);
+        synchronized (LOGINLOCK) {
+            this.antiJDBlock(this.br);
+            if (cookielogin && user != null) {
+                this.br.setCookie("http://www.megavideo.com", "l", "en");
+                this.br.setCookie("http://www.megavideo.com", "user", user);
+                return;
+            } else {
+                if (account.getUser().trim().equalsIgnoreCase("cookie")) {
+                    this.setBrowserExclusive();
+                    this.br.setCookie("http://www.megavideo.com", "l", "en");
+                    this.br.setCookie("http://www.megavideo.com", "user", account.getPass());
+                    this.br.getPage("http://www.megavideo.com/");
+                } else {
+                    this.setBrowserExclusive();
+                    this.br.setCookie("http://www.megavideo.com", "l", "en");
+                    this.br.getPage("http://www.megavideo.com/?s=account");
+                    this.br.postPage("http://www.megavideo.com/?s=account", "login=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                }
+                user = this.br.getCookie("http://www.megavideo.com", "user");
+                this.br.setCookie("http://www.megavideo.com", "user", user);
+                account.setProperty("user", user);
+                if (user == null) {
+                    account.setProperty("ispremium", false);
+                    account.setProperty("typeknown", false);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+        }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        antiJDBlock(br);
+        br.setFollowRedirects(false);
+        br.getPage(parameter.getDownloadURL());
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("unavailable")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Browser brc = br.cloneBrowser();
+        brc.getPage("http://www.megavideo.com/xml/videolink.php?v=" + getDownloadID(parameter));
+        String name = Encoding.htmlDecode(brc.getRegex("title=\"(.*?)\"").getMatch(0));
+        if (name != null) {
+            if (name.length() < 2) name = null;
+        }
+        if (name == null) {
+            name = Encoding.htmlDecode(br.getRegex("description=\"(.*?)\"").getMatch(0));
+        }
+        if (name != null) {
+            if (name.length() < 2) name = null;
+        }
+        if (name == null) {
+            name = "MegaVideoClip_" + System.currentTimeMillis();
+        }
+        if (brc.containsHTML("hd=\"1\"")) {
+            name = name + " (HD)";
+        }
+        if (brc.containsHTML("error=\"1\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String size = brc.getRegex("size=\"(\\d+)\"").getMatch(0);
+        if (size != null) parameter.setDownloadSize(Long.parseLong(size));
+        parameter.setName(Encoding.htmlDecode(name.trim()));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
     }
 }

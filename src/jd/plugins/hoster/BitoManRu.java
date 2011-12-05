@@ -36,48 +36,21 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitoman.ru" }, urls = { "http://(www\\.)?bitoman\\.ru/download/\\d+\\.html" }, flags = { 2 })
 public class BitoManRu extends PluginForHost {
 
+    private static final String WAIT1 = "WAIT1";
+
     public BitoManRu(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
     }
-
-    private static final String WAIT1 = "WAIT1";
 
     @Override
     public String getAGBLink() {
         return "http://www.bitoman.ru/profile/rules.html";
     }
 
-    private void setConfigElements() {
-        final ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.bitomanru.waitInsteadOfReconnect", "Wait and download instead of reconnecting if wait time is under 30 minutes")).setDefaultValue(true);
-        getConfig().addEntry(cond);
-    }
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Файл не найден\\. Возможно указан неверный идентификатор|<title>Bitoman\\.ru \\- Ошибка</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(">Скачать:</p>\\&nbsp;\\&nbsp;<p class=\"valueNameSize\" title=\"\">(.*?)</p>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("class=\"download_kachaem\">Качаем: <b>(.*?)</b></div>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>Bitoman\\.ru \\- (.*?) Скачать быстро, бесплатно, на выской скорости</title>").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("<font style=\"font\\-size: 18px; position: relative; top: \\-3px;\">\\((.*?)\\)</font").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("class=\"nameFile\">Размер:</p>\\&nbsp;<p class=\"valueNameSize\">(.*?)</p><br>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filesize = Encoding.htmlDecode(filesize);
-        filesize = filesize.replace("Г", "G");
-        filesize = filesize.replace("М", "M");
-        filesize = filesize.replaceAll("(к|К)", "k");
-        filesize = filesize.replaceAll("(Б|б)", "");
-        filesize = filesize + "b";
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 3;
     }
 
     @Override
@@ -126,6 +99,38 @@ public class BitoManRu extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>Файл не найден\\. Возможно указан неверный идентификатор|<title>Bitoman\\.ru \\- Ошибка</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex(">Скачать:</p>\\&nbsp;\\&nbsp;<p class=\"valueNameSize\" title=\"\">(.*?)</p>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("class=\"download_kachaem\">Качаем: <b>(.*?)</b></div>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>Bitoman\\.ru \\- (.*?) Скачать быстро, бесплатно, на выской скорости</title>").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex("<font style=\"font\\-size: 18px; position: relative; top: \\-3px;\">\\((.*?)\\)</font").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("class=\"nameFile\">Размер:</p>\\&nbsp;<p class=\"valueNameSize\">(.*?)</p><br>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filesize = Encoding.htmlDecode(filesize);
+        filesize = filesize.replace("Г", "G");
+        filesize = filesize.replace("М", "M");
+        filesize = filesize.replaceAll("(к|К)", "k");
+        filesize = filesize.replaceAll("(Б|б)", "");
+        filesize = filesize + "b";
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
     /** Captcha reload function might be interesting for the future */
     // private String reloadCaptcha() throws IOException {
     // Browser br2 = br.cloneBrowser();
@@ -143,12 +148,12 @@ public class BitoManRu extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 3;
+    public void resetDownloadlink(DownloadLink link) {
     }
 
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
+    private void setConfigElements() {
+        final ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.bitomanru.waitInsteadOfReconnect", "Wait and download instead of reconnecting if wait time is under 30 minutes")).setDefaultValue(true);
+        getConfig().addEntry(cond);
     }
 
 }

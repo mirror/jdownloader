@@ -49,17 +49,13 @@ public class L4dMapsCom extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://www.l4dmaps.com/terms-of-use.php";
-    }
-
-    @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(details|mirrors|file-download)", "mirrors"));
     }
 
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), l4dservers, servers, JDL.L("plugins.host.L4dMapsCom.servers", "Use this server:")).setDefaultValue(0));
+    @Override
+    public String getAGBLink() {
+        return "http://www.l4dmaps.com/terms-of-use.php";
     }
 
     /**
@@ -82,24 +78,8 @@ public class L4dMapsCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(parameter.getDownloadURL().replaceAll("(mirrors|file-download|details)", "details"));
-        String offlinecheck = br.getRedirectLocation();
-        if (offlinecheck != null || br.containsHTML("(404 Not Found|This file could not be found on our system)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>Download(.*?)for Left 4 Dead").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("You are about to download <a href=\".*?\">(.*?)</a>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("rel=\"nofollow\" title=\"Download(.*?)\"").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex(">Size: <em>(.*?)</em>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -152,6 +132,27 @@ public class L4dMapsCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(parameter.getDownloadURL().replaceAll("(mirrors|file-download|details)", "details"));
+        String offlinecheck = br.getRedirectLocation();
+        if (offlinecheck != null || br.containsHTML("(404 Not Found|This file could not be found on our system)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>Download(.*?)for Left 4 Dead").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("You are about to download <a href=\".*?\">(.*?)</a>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("rel=\"nofollow\" title=\"Download(.*?)\"").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex(">Size: <em>(.*?)</em>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setName(filename.trim());
+        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void reset() {
     }
 
@@ -159,9 +160,8 @@ public class L4dMapsCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), l4dservers, servers, JDL.L("plugins.host.L4dMapsCom.servers", "Use this server:")).setDefaultValue(0));
     }
 
 }

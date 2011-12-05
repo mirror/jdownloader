@@ -38,35 +38,19 @@ public class WrzucTo extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://www.wrzuc.to/strona/regulamin";
-    }
-
     public void correctDownloadLink(DownloadLink link) {
         String linkid = new Regex(link.getDownloadURL(), "/linki/([a-zA-Z0-9]+)").getMatch(0);
         if (linkid != null) link.setUrlDownload("http://www.wrzuc.to/en/" + linkid + ".wt");
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.setCookie("http://www.wrzuc.to", "language", "en");
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        String filesize = br.getRegex(Pattern.compile("class=\"info\">.*?<tr>.*?<td>(.*?)</td>", Pattern.DOTALL)).getMatch(0);
-        String name = br.getRegex(Pattern.compile("id=\"file_info\">.*?<strong>(.*?)</strong>", Pattern.DOTALL)).getMatch(0);
-        if (name == null) {
-            name = br.getRegex(Pattern.compile("<title>(.*?)</title>", Pattern.DOTALL)).getMatch(0);
-        }
-        if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filesize = filesize.replace("MiB", "mb");
-        String md5 = br.getRegex("md5: \"(.*?)\"").getMatch(0);
-        if (md5 != null) downloadLink.setMD5Hash(md5.trim());
-        downloadLink.setName(name.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://www.wrzuc.to/strona/regulamin";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -93,8 +77,24 @@ public class WrzucTo extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.setCookie("http://www.wrzuc.to", "language", "en");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        String filesize = br.getRegex(Pattern.compile("class=\"info\">.*?<tr>.*?<td>(.*?)</td>", Pattern.DOTALL)).getMatch(0);
+        String name = br.getRegex(Pattern.compile("id=\"file_info\">.*?<strong>(.*?)</strong>", Pattern.DOTALL)).getMatch(0);
+        if (name == null) {
+            name = br.getRegex(Pattern.compile("<title>(.*?)</title>", Pattern.DOTALL)).getMatch(0);
+        }
+        if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filesize = filesize.replace("MiB", "mb");
+        String md5 = br.getRegex("md5: \"(.*?)\"").getMatch(0);
+        if (md5 != null) downloadLink.setMD5Hash(md5.trim());
+        downloadLink.setName(name.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -102,11 +102,11 @@ public class WrzucTo extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
+
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
-
+    public void resetPluginGlobals() {
     }
 }

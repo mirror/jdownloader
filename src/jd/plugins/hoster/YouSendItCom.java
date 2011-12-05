@@ -34,13 +34,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yousendit.com" }, urls = { "http(s)?://(www\\.)?(yousendit\\.com/.+|rcpt\\.yousendit\\.com/\\d+/[a-z0-9]+)" }, flags = { 0 })
 public class YouSendItCom extends PluginForHost {
 
+    private String DLLINK = null;
+
     public YouSendItCom(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "https://yousendit.com/aboutus/legal/terms-of-service";
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -56,7 +53,47 @@ public class YouSendItCom extends PluginForHost {
         link.setUrlDownload(addedLink);
     }
 
-    private String DLLINK = null;
+    @Override
+    public String getAGBLink() {
+        return "https://yousendit.com/aboutus/legal/terms-of-service";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        String dllink = DLLINK;
+        // Nearly all regexes are needed because they have lots of different
+        // downloadlinks...
+        if (dllink == null) {
+            dllink = br.getRegex("<div style=\"width:390px;font-size:14px;font-weight:bold\">[\t\r\n ]+<a href=\"(.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("onclick=\\'showDownloadProcessing\\(this\\);\\' style=\\'position:absolute;top:10px;right:10px;\\'>[\t\r\n ]+<a href=\"(.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\"(directDownload\\?phi_action=app/directDownload\\&fl=[A-Za-z0-9]+(\\&experience=bas)?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("<a id=\"download-button\" href=\"(http.*?)\"").getMatch(0);
+                        dllink = null;
+                        if (dllink == null) {
+                            dllink = br.getRegex("\"(http(s)?://(www\\.)?yousendit\\.com/transfer\\.php\\?action=check_download\\&ufid=[a-zA-Z0-9]+\\&key=[a-z0-9]+)\"").getMatch(0);
+                        }
+                    }
+                }
+            }
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!dllink.contains("yousendit.com")) dllink = "http://yousendit.com/" + dllink;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -109,44 +146,7 @@ public class YouSendItCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String dllink = DLLINK;
-        // Nearly all regexes are needed because they have lots of different
-        // downloadlinks...
-        if (dllink == null) {
-            dllink = br.getRegex("<div style=\"width:390px;font-size:14px;font-weight:bold\">[\t\r\n ]+<a href=\"(.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("onclick=\\'showDownloadProcessing\\(this\\);\\' style=\\'position:absolute;top:10px;right:10px;\\'>[\t\r\n ]+<a href=\"(.*?)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("\"(directDownload\\?phi_action=app/directDownload\\&fl=[A-Za-z0-9]+(\\&experience=bas)?)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = br.getRegex("<a id=\"download-button\" href=\"(http.*?)\"").getMatch(0);
-                        dllink = null;
-                        if (dllink == null) {
-                            dllink = br.getRegex("\"(http(s)?://(www\\.)?yousendit\\.com/transfer\\.php\\?action=check_download\\&ufid=[a-zA-Z0-9]+\\&key=[a-z0-9]+)\"").getMatch(0);
-                        }
-                    }
-                }
-            }
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (!dllink.contains("yousendit.com")) dllink = "http://yousendit.com/" + dllink;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

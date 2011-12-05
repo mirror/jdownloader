@@ -32,14 +32,19 @@ public class GoEarCom extends PluginForHost {
         super(wrapper);
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        String iD = new Regex(link.getDownloadURL(), "youares\\.com/reproducir/[a-z0-9]+/([0-9a-f]+)/").getMatch(0);
+        if (iD != null) link.setUrlDownload("http://www.goear.com/listen/" + iD + "/");
+    }
+
     @Override
     public String getAGBLink() {
         return "http://www.goear.com/pages/terms_and_conditions.html";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        String iD = new Regex(link.getDownloadURL(), "youares\\.com/reproducir/[a-z0-9]+/([0-9a-f]+)/").getMatch(0);
-        if (iD != null) link.setUrlDownload("http://www.goear.com/listen/" + iD + "/");
+    private String getXmlUrl(String url) {
+        String id = new Regex(url, "/listen/([0-9a-f]+)/").getMatch(0);
+        return "http://www.goear.com/tracker758.php?f=" + id;
     }
 
     @Override
@@ -74,10 +79,5 @@ public class GoEarCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    private String getXmlUrl(String url) {
-        String id = new Regex(url, "/listen/([0-9a-f]+)/").getMatch(0);
-        return "http://www.goear.com/tracker758.php?f=" + id;
     }
 }

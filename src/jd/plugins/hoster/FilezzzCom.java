@@ -45,18 +45,8 @@ public class FilezzzCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        String url = downloadLink.getDownloadURL();
-        br.getPage(url);
-        if (br.containsHTML("not found!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        br.getPage(url);
-        String downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<font size=6>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        String downloadSize = (br.getRegex(Pattern.compile("file size (.*?)\\)", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (downloadName == null || downloadSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(downloadName.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(downloadSize.replaceAll(",", "\\.")));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 3;
     }
 
     @Override
@@ -77,8 +67,18 @@ public class FilezzzCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 3;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        String url = downloadLink.getDownloadURL();
+        br.getPage(url);
+        if (br.containsHTML("not found!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage(url);
+        String downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<font size=6>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String downloadSize = (br.getRegex(Pattern.compile("file size (.*?)\\)", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (downloadName == null || downloadSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(downloadName.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(downloadSize.replaceAll(",", "\\.")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -86,10 +86,10 @@ public class FilezzzCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

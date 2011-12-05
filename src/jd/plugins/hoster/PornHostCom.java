@@ -38,11 +38,6 @@ public class PornHostCom extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://www.pornhost.com/tos.html";
-    }
-
     public void correctDownloadLink(DownloadLink link) {
         // This is neded because we also got a pornhost decrypter, the decrypter
         // gives the links out like "GhtjGEuzrjTU.com" instead of "pornhost.com"
@@ -52,27 +47,13 @@ public class PornHostCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("gallery not found") || br.containsHTML("You will be redirected to")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>pornhost\\.com - free file hosting with a twist - gallery(.*?)</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("id=\"url\" value=\"http://www\\.pornhost\\.com/(.*?)/\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>pornhost\\.com - free file hosting with a twist -(.*?)</title>").getMatch(0);
-                if (filename == null) filename = br.getRegex("\"http://file[0-9]+\\.pornhost\\.com/.*?/(.*?)\"").getMatch(0);
-            }
-        }
-        ending = br.getRegex("<label>download this file</label>.*?<a href=\".*?\">.*?(\\..*?)</a>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (ending != null && ending.length() > 1) {
-            downloadLink.setName(filename.trim() + ending);
-        } else {
-            downloadLink.setName(filename.trim());
-        }
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://www.pornhost.com/tos.html";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -115,8 +96,27 @@ public class PornHostCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("gallery not found") || br.containsHTML("You will be redirected to")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>pornhost\\.com - free file hosting with a twist - gallery(.*?)</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("id=\"url\" value=\"http://www\\.pornhost\\.com/(.*?)/\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>pornhost\\.com - free file hosting with a twist -(.*?)</title>").getMatch(0);
+                if (filename == null) filename = br.getRegex("\"http://file[0-9]+\\.pornhost\\.com/.*?/(.*?)\"").getMatch(0);
+            }
+        }
+        ending = br.getRegex("<label>download this file</label>.*?<a href=\".*?\">.*?(\\..*?)</a>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (ending != null && ending.length() > 1) {
+            downloadLink.setName(filename.trim() + ending);
+        } else {
+            downloadLink.setName(filename.trim());
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -124,10 +124,10 @@ public class PornHostCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

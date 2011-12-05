@@ -37,15 +37,20 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.sme.sk" }, urls = { "http://[\\w\\.]*?tv\\.sme\\.sk/v/[0-9]+/[-a-zA-Z0-9]+\\.html" }, flags = { 0 })
 public class TvSmeSk extends PluginForHost {
 
+    private String dlink = null;
+
     public TvSmeSk(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String dlink = null;
-
     @Override
     public String getAGBLink() {
         return "http://www.sme.sk/dok/faq/";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -58,6 +63,24 @@ public class TvSmeSk extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dl.startDownload();
+    }
+
+    /**
+     * Converts txt from ISO-8859-1 to WINDOWS-1250 encoding.
+     * 
+     * @param txt
+     * @return
+     */
+    private String iso88591ToWin1250(String txt) {
+        CharsetDecoder decoder = Charset.forName("WINDOWS-1250").newDecoder();
+        CharsetEncoder encoder = Charset.forName("ISO-8859-1").newEncoder();
+        try {
+            ByteBuffer bbuf = encoder.encode(CharBuffer.wrap(txt));
+            CharBuffer cbuf = decoder.decode(bbuf);
+            return cbuf.toString();
+        } catch (CharacterCodingException e) {
+            return null;
+        }
     }
 
     @Override
@@ -92,38 +115,15 @@ public class TvSmeSk extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    /**
-     * Converts txt from ISO-8859-1 to WINDOWS-1250 encoding.
-     * 
-     * @param txt
-     * @return
-     */
-    private String iso88591ToWin1250(String txt) {
-        CharsetDecoder decoder = Charset.forName("WINDOWS-1250").newDecoder();
-        CharsetEncoder encoder = Charset.forName("ISO-8859-1").newEncoder();
-        try {
-            ByteBuffer bbuf = encoder.encode(CharBuffer.wrap(txt));
-            CharBuffer cbuf = decoder.decode(bbuf);
-            return cbuf.toString();
-        } catch (CharacterCodingException e) {
-            return null;
-        }
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
     @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

@@ -30,11 +30,11 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stahnu.to" }, urls = { "http://(www\\.)?stahnu\\.to/files/get/[A-Za-z0-9]+/[A-Za-z0-9_\\-% ]+" }, flags = { 0 })
 public class StahnuTo extends PluginForHost {
 
+    private static final String CAPTCHATEXT = "captcha/captcha\\.php";
+
     public StahnuTo(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    private static final String CAPTCHATEXT = "captcha/captcha\\.php";
 
     @Override
     public String getAGBLink() {
@@ -42,16 +42,8 @@ public class StahnuTo extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>D\\&#283;kujem za pochopen\\&iacute;|\">Tento soubor neexistuje  nebo byl odstran\\&#283;n)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = new Regex(link.getDownloadURL(), "stahnu\\.to/files/get/[A-Za-z0-9]+/(.+)").getMatch(0);
-        link.setName(filename.trim());
-        String md5 = br.getRegex("<span id=\"md5\">(.*?)</span>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -85,13 +77,26 @@ public class StahnuTo extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>D\\&#283;kujem za pochopen\\&iacute;|\">Tento soubor neexistuje  nebo byl odstran\\&#283;n)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = new Regex(link.getDownloadURL(), "stahnu\\.to/files/get/[A-Za-z0-9]+/(.+)").getMatch(0);
+        link.setName(filename.trim());
+        String md5 = br.getRegex("<span id=\"md5\">(.*?)</span>").getMatch(0);
+        if (md5 != null) link.setMD5Hash(md5);
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

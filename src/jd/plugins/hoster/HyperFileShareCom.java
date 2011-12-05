@@ -41,26 +41,33 @@ public class HyperFileShareCom extends PluginForHost {
     }
 
     @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Registered (free) User");
+        return ai;
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://download.hyperfileshare.com/terms.php";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-        br.getPage(downloadLink.getDownloadURL());
-        br.setFollowRedirects(true);
-        String properlink = br.getRegex("The document has moved <a href=\"(.*?)\"").getMatch(0);
-        if (properlink != null) br.getPage(properlink);
-        if (br.containsHTML("Download URL is incorrect") || br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>Download (.*?)</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<span>Download(.*?)</span></div>").getMatch(0);
-        String size = br.getRegex("File size:.*?strong>(.*?)</strong>").getMatch(0);
-        if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(size + "B"));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 5;
     }
 
     @Override
@@ -81,33 +88,6 @@ public class HyperFileShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.getPage("http://www.hyperfileshare.com/index.php");
-        br.postPage("http://www.hyperfileshare.com/index.php", "login=" + Encoding.urlEncode(account.getUser()) + "&psw=" + Encoding.urlEncode(account.getPass()) + "&rem_me=1");
-        if (br.getCookie("http://www.hyperfileshare.com", "sid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        account.setValid(true);
-        ai.setUnlimitedTraffic();
-        ai.setStatus("Registered (free) User");
-        return ai;
     }
 
     @Override
@@ -132,9 +112,29 @@ public class HyperFileShareCom extends PluginForHost {
         dl.startDownload();
     }
 
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.getPage("http://www.hyperfileshare.com/index.php");
+        br.postPage("http://www.hyperfileshare.com/index.php", "login=" + Encoding.urlEncode(account.getUser()) + "&psw=" + Encoding.urlEncode(account.getPass()) + "&rem_me=1");
+        if (br.getCookie("http://www.hyperfileshare.com", "sid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return 5;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
+        br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(true);
+        String properlink = br.getRegex("The document has moved <a href=\"(.*?)\"").getMatch(0);
+        if (properlink != null) br.getPage(properlink);
+        if (br.containsHTML("Download URL is incorrect") || br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>Download (.*?)</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<span>Download(.*?)</span></div>").getMatch(0);
+        String size = br.getRegex("File size:.*?strong>(.*?)</strong>").getMatch(0);
+        if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(size + "B"));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -142,10 +142,10 @@ public class HyperFileShareCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

@@ -34,20 +34,15 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datpiff.com" }, urls = { "http://(www\\.)?datpiff\\.com/(.*?\\-download\\.php\\?id=[a-z0-9]+|[A-Za-z0-9\\-_]+\\.\\d+\\.html)" }, flags = { 2 })
 public class DatPiffCom extends PluginForHost {
 
+    private static final String PREMIUMONLY            = ">you must be logged in to download mixtapes<";
+
+    private static final String ONLYREGISTEREDUSERTEXT = "Only downloadable for registered users";
+
+    private static final String MAINPAGE               = "http://www.datpiff.com/";
     public DatPiffCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.datpiff.com/register");
     }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.datpiff.com/terms";
-    }
-
-    private static final String PREMIUMONLY            = ">you must be logged in to download mixtapes<";
-    private static final String ONLYREGISTEREDUSERTEXT = "Only downloadable for registered users";
-    private static final String MAINPAGE               = "http://www.datpiff.com/";
-
     public void correctDownloadLink(DownloadLink link) throws IOException {
         if (!link.getDownloadURL().contains("-download.php")) {
             br.getPage(link.getDownloadURL());
@@ -55,6 +50,75 @@ public class DatPiffCom extends PluginForHost {
             if (downID == null) downID = br.getRegex("mixtapePlayer\\.swf\\?mid=(.*?)\"").getMatch(0);
             if (downID != null) link.setUrlDownload("http://www.datpiff.com/pop-mixtape-download.php?id=" + downID);
         }
+    }
+
+    public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+        String fileID = new Regex(downloadLink.getDownloadURL(), "download\\.php\\?id=(.+)").getMatch(0);
+        if (fileID == null || !br.containsHTML("download-mixtape\\.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.postPage("http://www.datpiff.com/download-mixtape.php", "id=" + fileID + "&x=84&y=11");
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // Server doesn't send the correct filename directly, filename fix also
+        // doesn't work so we have to do it this way
+        downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        dl.startDownload();
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Registered User");
+        return ai;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.datpiff.com/terms";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.datpiffcom.only4premium", ONLYREGISTEREDUSERTEXT));
+        doFree(downloadLink);
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        doFree(link);
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.postPage("http://www.datpiff.com/login", "cmd=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        if (br.getCookie(MAINPAGE, "dp4uid") == null || br.getCookie(MAINPAGE, "lastuser") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -79,71 +143,7 @@ public class DatPiffCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.datpiffcom.only4premium", ONLYREGISTEREDUSERTEXT));
-        doFree(downloadLink);
-    }
-
-    public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
-        String fileID = new Regex(downloadLink.getDownloadURL(), "download\\.php\\?id=(.+)").getMatch(0);
-        if (fileID == null || !br.containsHTML("download-mixtape\\.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage("http://www.datpiff.com/download-mixtape.php", "id=" + fileID + "&x=84&y=11");
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // Server doesn't send the correct filename directly, filename fix also
-        // doesn't work so we have to do it this way
-        downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
-        dl.startDownload();
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.postPage("http://www.datpiff.com/login", "cmd=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie(MAINPAGE, "dp4uid") == null || br.getCookie(MAINPAGE, "lastuser") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        account.setValid(true);
-        ai.setUnlimitedTraffic();
-        ai.setStatus("Registered User");
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        doFree(link);
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

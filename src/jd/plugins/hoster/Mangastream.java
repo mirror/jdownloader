@@ -25,30 +25,13 @@ public class Mangastream extends PluginForHost {
     }
 
     @Override
-    public void reset() {
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 2;
-    }
-
-    @Override
     public String getAGBLink() {
         return "http://mangastream.com/content/privacy";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage("http://mangastream.com" + downloadLink.getDownloadURL().substring(14));
-        if (br.containsHTML("We couldn't find the page you were looking for")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 2;
     }
 
     @Override
@@ -113,5 +96,22 @@ public class Mangastream extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage("http://mangastream.com" + downloadLink.getDownloadURL().substring(14));
+        if (br.containsHTML("We couldn't find the page you were looking for")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
     }
 }

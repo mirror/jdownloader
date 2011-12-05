@@ -42,19 +42,8 @@ public class FisierulMeuRo extends PluginForHost {
     }
 
     // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        this.setBrowserExclusive();
-        if (br.containsHTML("Ne pare rau, dar acest fisier are o adresa gresita.") || br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String name = br.getRegex(Pattern.compile("Numele Fisierului:</b>(.*?)</div>", Pattern.DOTALL)).getMatch(0).trim();
-        if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filesize = br.getRegex(Pattern.compile("<div class=\"dwn_text\"><b>Marimea Fisierului:</b>(.*?)</div>", Pattern.DOTALL)).getMatch(0).trim();
-        if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(name);
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     // @Override
@@ -73,8 +62,19 @@ public class FisierulMeuRo extends PluginForHost {
     }
 
     // @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        this.setBrowserExclusive();
+        if (br.containsHTML("Ne pare rau, dar acest fisier are o adresa gresita.") || br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String name = br.getRegex(Pattern.compile("Numele Fisierului:</b>(.*?)</div>", Pattern.DOTALL)).getMatch(0).trim();
+        if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex(Pattern.compile("<div class=\"dwn_text\"><b>Marimea Fisierului:</b>(.*?)</div>", Pattern.DOTALL)).getMatch(0).trim();
+        if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(name);
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -82,10 +82,10 @@ public class FisierulMeuRo extends PluginForHost {
     }
 
     // @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     // @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

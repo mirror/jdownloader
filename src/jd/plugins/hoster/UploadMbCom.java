@@ -36,11 +36,6 @@ public class UploadMbCom extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://uploadmb.com/termsconditions.php";
-    }
-
     public void correctDownloadLink(DownloadLink link) {
         // Remove unneeded stuff that could cause errors
         String linkPart = new Regex(link.getDownloadURL(), "(uploadmb\\.com/dw\\.php\\?id=\\d+)").getMatch(0);
@@ -48,19 +43,13 @@ public class UploadMbCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>The file you are requesting to download is not available<br>|Reasons for this \\(Invalid link, Violation of <a)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex name2AndSize = br.getRegex("\\&#100;\\&#58;</font></b> (.*?)\\((.*?)\\)<br>");
-        String filename = br.getRegex("addthis_title  = \\'(.*?)\\';").getMatch(0);
-        if (filename == null) filename = name2AndSize.getMatch(0);
-        String filesize = name2AndSize.getMatch(1);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Because server often gives back wrong names
-        link.setFinalFileName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://uploadmb.com/termsconditions.php";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -81,12 +70,23 @@ public class UploadMbCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>The file you are requesting to download is not available<br>|Reasons for this \\(Invalid link, Violation of <a)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Regex name2AndSize = br.getRegex("\\&#100;\\&#58;</font></b> (.*?)\\((.*?)\\)<br>");
+        String filename = br.getRegex("addthis_title  = \\'(.*?)\\';").getMatch(0);
+        if (filename == null) filename = name2AndSize.getMatch(0);
+        String filesize = name2AndSize.getMatch(1);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Because server often gives back wrong names
+        link.setFinalFileName(filename.trim());
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

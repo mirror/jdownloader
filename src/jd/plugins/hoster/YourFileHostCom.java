@@ -32,6 +32,8 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfilehost.com" }, urls = { "http://[\\w\\.]*?yourfilehost\\.com/media\\.php\\?cat=.*?\\&file=.+" }, flags = { 0 })
 public class YourFileHostCom extends PluginForHost {
 
+    private static final String CAPTCHAFAILEDTEXTS = "(Hit your browsers REFRESH BUTTON|enter the correct code|Please also make sure browser cookies are enabled|Please fill out the marked fields correctly and try again\\.)";
+
     public YourFileHostCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,21 +44,9 @@ public class YourFileHostCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<strong class=\"style26\">(.*?)</strong>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("parent\\.location='linkshare.*?file=(.*?)'").getMatch(0);
-            if (filename == null) filename = br.getRegex("\\&file=(.*?)\"").getMatch(0);
-        }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(filename.trim());
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
-
-    private static final String CAPTCHAFAILEDTEXTS = "(Hit your browsers REFRESH BUTTON|enter the correct code|Please also make sure browser cookies are enabled|Please fill out the marked fields correctly and try again\\.)";
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
@@ -106,13 +96,28 @@ public class YourFileHostCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<strong class=\"style26\">(.*?)</strong>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("parent\\.location='linkshare.*?file=(.*?)'").getMatch(0);
+            if (filename == null) filename = br.getRegex("\\&file=(.*?)\"").getMatch(0);
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setFinalFileName(filename.trim());
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

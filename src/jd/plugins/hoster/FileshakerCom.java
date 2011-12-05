@@ -41,19 +41,8 @@ public class FileshakerCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Sorry, File not found\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // Sometimes the page is buggy, filename is not shown but download works
-        String filename = br.getRegex("<div class=\"file\\-name\\-text\">(.*?) \\- \\d+").getMatch(0);
-        if (filename != null) {
-            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
-        } else {
-            logger.info("Filename not found for link: " + downloadLink.getDownloadURL());
-        }
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -71,8 +60,19 @@ public class FileshakerCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Sorry, File not found\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Sometimes the page is buggy, filename is not shown but download works
+        String filename = br.getRegex("<div class=\"file\\-name\\-text\">(.*?) \\- \\d+").getMatch(0);
+        if (filename != null) {
+            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+        } else {
+            logger.info("Filename not found for link: " + downloadLink.getDownloadURL());
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -80,10 +80,10 @@ public class FileshakerCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

@@ -30,15 +30,20 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vii.sk" }, urls = { "http://[\\w\\.]*?vii\\.sk/video/[a-zA-Z0-9]+/[-a-zA-Z0-9]+" }, flags = { 0 })
 public class ViiSk extends PluginForHost {
 
+    private String dlink = null;
+
     public ViiSk(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String dlink = null;
-
     @Override
     public String getAGBLink() {
         return "http://www.vii.sk/pravidla/";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -83,19 +88,14 @@ public class ViiSk extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

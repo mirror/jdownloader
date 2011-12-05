@@ -36,25 +36,28 @@ public class FileStoreComUa extends PluginForHost {
         super(wrapper);
     }
 
+    private String findLink() throws Exception {
+        String finalLink = null;
+        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (String alink : sitelinks) {
+            alink = Encoding.htmlDecode(alink);
+            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
+                finalLink = alink;
+                break;
+            }
+        }
+        return finalLink;
+    }
+
     @Override
     public String getAGBLink() {
         return "http://filestore.com.ua/rules.php";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.setCustomCharset("UTF-8");
-        br.setFollowRedirects(true);
-        br.setCookie("http://filestore.com.ua", "filestore_mylang", "en");
-        br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        String filesize = br.getRegex("<b>File size:</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -113,18 +116,25 @@ public class FileStoreComUa extends PluginForHost {
         dl.startDownload();
     }
 
-    private String findLink() throws Exception {
-        String finalLink = null;
-        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        for (String alink : sitelinks) {
-            alink = Encoding.htmlDecode(alink);
-            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
-                finalLink = alink;
-                break;
-            }
-        }
-        return finalLink;
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        br.setCustomCharset("UTF-8");
+        br.setFollowRedirects(true);
+        br.setCookie("http://filestore.com.ua", "filestore_mylang", "en");
+        br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        String filesize = br.getRegex("<b>File size:</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setName(filename.trim());
+        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -133,11 +143,6 @@ public class FileStoreComUa extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
 }

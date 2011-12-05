@@ -35,9 +35,46 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileape.com" }, urls = { "http://(www\\.)?fileape\\.com/(index\\.php\\?act=download\\&id=|dl/)\\w+" }, flags = { 2 })
 public class FileApeCom extends PluginForHost {
 
+    private static final String MAINPAGE = "http://fileape.com/";
+
     public FileApeCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://fileape.com/?act=purchase");
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        if (link.getDownloadURL().contains("fileape.com/dl/")) link.setUrlDownload("http://fileape.com/index.php?act=download&id=" + new Regex(link.getDownloadURL(), "fileape\\.com/dl/(.+)").getMatch(0));
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://fileape.com/?act=premium");
+        String availabletraffic = br.getRegex("<div class=\"aform left\">[\t\n\r ]+<div class=\"ahead\"  style=\"font\\-weight: normal\">(.*?)</div>").getMatch(0);
+        if (availabletraffic != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+        } else {
+            ai.setUnlimitedTraffic();
+        }
+        String expire = br.getRegex("<div class=\"aform right\">[\t\n\r ]+<div class=\"ahead\" style=\"font\\-weight: normal\">(\\d+)\\.\\d+ days</div>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            double ohCrap = Double.parseDouble(expire);
+            ohCrap = ohCrap * 24 * 60 * 60 * 1000;
+            ai.setValidUntil(System.currentTimeMillis() + (long) ohCrap);
+        }
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
     }
 
     @Override
@@ -45,20 +82,14 @@ public class FileApeCom extends PluginForHost {
         return "http://fileape.com/?act=tos";
     }
 
-    private static final String MAINPAGE = "http://fileape.com/";
-
-    public void correctDownloadLink(DownloadLink link) {
-        if (link.getDownloadURL().contains("fileape.com/dl/")) link.setUrlDownload("http://fileape.com/index.php?act=download&id=" + new Regex(link.getDownloadURL(), "fileape\\.com/dl/(.+)").getMatch(0));
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("This file is either temporarily unavailable or does not exist\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "download\\&id=(.+)").getMatch(0));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -95,48 +126,6 @@ public class FileApeCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.postPage("http://fileape.com/?act=login&redir=premium", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie(MAINPAGE, "usr_id") == null || br.getCookie(MAINPAGE, "usr_session_ident") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        br.getPage("http://fileape.com/?act=premium");
-        String availabletraffic = br.getRegex("<div class=\"aform left\">[\t\n\r ]+<div class=\"ahead\"  style=\"font\\-weight: normal\">(.*?)</div>").getMatch(0);
-        if (availabletraffic != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-        String expire = br.getRegex("<div class=\"aform right\">[\t\n\r ]+<div class=\"ahead\" style=\"font\\-weight: normal\">(\\d+)\\.\\d+ days</div>").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
-        } else {
-            double ohCrap = Double.parseDouble(expire);
-            ohCrap = ohCrap * 24 * 60 * 60 * 1000;
-            ai.setValidUntil(System.currentTimeMillis() + (long) ohCrap);
-        }
-        account.setValid(true);
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
-    @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
@@ -151,9 +140,20 @@ public class FileApeCom extends PluginForHost {
         dl.startDownload();
     }
 
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.postPage("http://fileape.com/?act=login&redir=premium", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        if (br.getCookie(MAINPAGE, "usr_id") == null || br.getCookie(MAINPAGE, "usr_session_ident") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("This file is either temporarily unavailable or does not exist\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "download\\&id=(.+)").getMatch(0));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -161,10 +161,10 @@ public class FileApeCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

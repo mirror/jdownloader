@@ -40,122 +40,13 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ugotfile.com" }, urls = { "http://[\\w\\.]*?ugotfile.com/file/\\d+/.+" }, flags = { 2 })
 public class UgotFileCom extends PluginForHost {
 
-    public UgotFileCom(PluginWrapper wrapper) {
-        super(wrapper);
-        this.enablePremium("http://ugotfile.com/user/register");
-    }
-
     private static final String ERROR404 = "(title>404 Not Found</title>|<h1>Not Found</h1>)";
-
-    @Override
-    public String getAGBLink() {
-        return "http://ugotfile.com/doc/terms/";
-    }
 
     private static final String ONLYPREMIUM = "(Only premium members may download file larger than \\d+MB\\.|You are trying to download file larger than \\d+MB\\.)";
 
-    public void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setCookie("http://ugotfile.com/", "lang", "english");
-        br.getPage("http://ugotfile.com/user/login/");
-        Form form = br.getForm(0);
-        form.put(form.getBestVariable("userName"), Encoding.urlEncode(account.getUser()));
-        form.put(form.getBestVariable("password"), Encoding.urlEncode(account.getPass()));
-        br.submitForm(form);
-        br.getPage("http://ugotfile.com/my/profile/");
-        if (br.containsHTML("Your premium membership is expired")) {
-            if (!br.containsHTML("he subscription will auto renew on the")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        this.setBrowserExclusive();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        String validUntil = br.getRegex("Your premium membership expires on (.*?).<").getMatch(0);
-        if (validUntil == null) validUntil = br.getRegex("he subscription will auto renew on the (.*?).<").getMatch(0);
-        if (validUntil == null) {
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "yyyy-MM-dd", null));
-            account.setValid(true);
-        }
-        br.getPage("http://ugotfile.com/traffic/summary");
-        String trafficleft = br.getRegex("Remaining Downloads</h3>.*?>((\\d+.*?)/.*?\\d+.*?)<").getMatch(1);
-        if (trafficleft != null) ai.setTrafficLeft(Encoding.htmlDecode(trafficleft));
-        String trafficmax = br.getRegex("Remaining Downloads</h3>.*?>(\\d+.*?/(.*?\\d+.*?))<").getMatch(1);
-        if (trafficmax != null) ai.setTrafficMax(SizeFormatter.getSize(Encoding.htmlDecode(trafficmax)));
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        login(account);
-        String finalUrl = null;
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            finalUrl = br.getRedirectLocation();
-        } else {
-            finalUrl = br.getRegex("Content.*?<a.*?href='(http://.*?ugotfile.com/.*?)'>").getMatch(0);
-        }
-        if (finalUrl == null) {
-            if (br.containsHTML("Server is temporarily unavailable for maintenance")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server maintenance", 30 * 60 * 1000l); }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, 0);
-        dl.startDownload();
-    }
-
-    @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(ERROR404)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.LF("plugins.hoster.UhotFileCom.errors.404", "Server error 404"));
-        // Errorhandling for links that are only downloadable by premium users
-        if (br.containsHTML(ONLYPREMIUM)) {
-            String defaultblock = "400";
-            String regexedBlock = br.getRegex("Only premium members may download file larger than (\\d+)MB\\.").getMatch(0);
-            if (regexedBlock == null) regexedBlock = br.getRegex("You are trying to download file larger than (\\d+)MB\\.").getMatch(0);
-            if (regexedBlock != null) defaultblock = regexedBlock;
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.LF("plugins.hoster.UhotFileCom.errors.only4premium", "Only premium users can download files larger than %s MB.", defaultblock));
-        }
-        // IP:Blocked handling
-        int sleep = 30;
-        if (br.containsHTML("seconds: ")) {
-            sleep = Integer.parseInt(br.getRegex("seconds: (\\d+)").getMatch(0));
-            if (sleep > 130) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleep * 1000);
-        }
-        if (br.containsHTML("Server is temporarily unavailable for maintenance")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server maintenance", 30 * 60 * 1000l); }
-        if (br.containsHTML("Your hourly traffic limit is exceeded.")) {
-            int block = Integer.parseInt(br.getRegex("<div id='sessionCountDown' style='font-weight:bold; font-size:20px;'>(.*?)</div>").getMatch(0)) * 1000 + 1;
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, block);
-        }
-        for (int i = 0; i <= 30; i++) {
-
-            String cUrl = "http://ugotfile.com/captcha?" + Math.random();
-            String Captcha = getCaptchaCode(cUrl, link);
-            Browser br2 = br.cloneBrowser();
-            br2.getPage("http://ugotfile.com/captcha?key=" + Captcha);
-            if (!br2.containsHTML("invalid key")) break;
-            continue;
-        }
-        if (br.containsHTML("invalid key")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        sleep(sleep * 1001, link);
-        br.getPage("http://ugotfile.com/file/get-file");
-        String dllink = null;
-        dllink = br.getRegex("(.*)").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
-        dl.startDownload();
+    public UgotFileCom(PluginWrapper wrapper) {
+        super(wrapper);
+        this.enablePremium("http://ugotfile.com/user/register");
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
@@ -224,6 +115,125 @@ public class UgotFileCom extends PluginForHost {
     }
 
     @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        this.setBrowserExclusive();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String validUntil = br.getRegex("Your premium membership expires on (.*?).<").getMatch(0);
+        if (validUntil == null) validUntil = br.getRegex("he subscription will auto renew on the (.*?).<").getMatch(0);
+        if (validUntil == null) {
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "yyyy-MM-dd", null));
+            account.setValid(true);
+        }
+        br.getPage("http://ugotfile.com/traffic/summary");
+        String trafficleft = br.getRegex("Remaining Downloads</h3>.*?>((\\d+.*?)/.*?\\d+.*?)<").getMatch(1);
+        if (trafficleft != null) ai.setTrafficLeft(Encoding.htmlDecode(trafficleft));
+        String trafficmax = br.getRegex("Remaining Downloads</h3>.*?>(\\d+.*?/(.*?\\d+.*?))<").getMatch(1);
+        if (trafficmax != null) ai.setTrafficMax(SizeFormatter.getSize(Encoding.htmlDecode(trafficmax)));
+        return ai;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://ugotfile.com/doc/terms/";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML(ERROR404)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.LF("plugins.hoster.UhotFileCom.errors.404", "Server error 404"));
+        // Errorhandling for links that are only downloadable by premium users
+        if (br.containsHTML(ONLYPREMIUM)) {
+            String defaultblock = "400";
+            String regexedBlock = br.getRegex("Only premium members may download file larger than (\\d+)MB\\.").getMatch(0);
+            if (regexedBlock == null) regexedBlock = br.getRegex("You are trying to download file larger than (\\d+)MB\\.").getMatch(0);
+            if (regexedBlock != null) defaultblock = regexedBlock;
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.LF("plugins.hoster.UhotFileCom.errors.only4premium", "Only premium users can download files larger than %s MB.", defaultblock));
+        }
+        // IP:Blocked handling
+        int sleep = 30;
+        if (br.containsHTML("seconds: ")) {
+            sleep = Integer.parseInt(br.getRegex("seconds: (\\d+)").getMatch(0));
+            if (sleep > 130) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleep * 1000);
+        }
+        if (br.containsHTML("Server is temporarily unavailable for maintenance")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server maintenance", 30 * 60 * 1000l); }
+        if (br.containsHTML("Your hourly traffic limit is exceeded.")) {
+            int block = Integer.parseInt(br.getRegex("<div id='sessionCountDown' style='font-weight:bold; font-size:20px;'>(.*?)</div>").getMatch(0)) * 1000 + 1;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, block);
+        }
+        for (int i = 0; i <= 30; i++) {
+
+            String cUrl = "http://ugotfile.com/captcha?" + Math.random();
+            String Captcha = getCaptchaCode(cUrl, link);
+            Browser br2 = br.cloneBrowser();
+            br2.getPage("http://ugotfile.com/captcha?key=" + Captcha);
+            if (!br2.containsHTML("invalid key")) break;
+            continue;
+        }
+        if (br.containsHTML("invalid key")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        sleep(sleep * 1001, link);
+        br.getPage("http://ugotfile.com/file/get-file");
+        String dllink = null;
+        dllink = br.getRegex("(.*)").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        dl.startDownload();
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        String finalUrl = null;
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            finalUrl = br.getRedirectLocation();
+        } else {
+            finalUrl = br.getRegex("Content.*?<a.*?href='(http://.*?ugotfile.com/.*?)'>").getMatch(0);
+        }
+        if (finalUrl == null) {
+            if (br.containsHTML("Server is temporarily unavailable for maintenance")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server maintenance", 30 * 60 * 1000l); }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, 0);
+        dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setCookie("http://ugotfile.com/", "lang", "english");
+        br.getPage("http://ugotfile.com/user/login/");
+        Form form = br.getForm(0);
+        form.put(form.getBestVariable("userName"), Encoding.urlEncode(account.getUser()));
+        form.put(form.getBestVariable("password"), Encoding.urlEncode(account.getPass()));
+        br.submitForm(form);
+        br.getPage("http://ugotfile.com/my/profile/");
+        if (br.containsHTML("Your premium membership is expired")) {
+            if (!br.containsHTML("he subscription will auto renew on the")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         checkLinks(new DownloadLink[] { downloadLink });
         if (!downloadLink.isAvailabilityStatusChecked()) {
@@ -238,11 +248,6 @@ public class UgotFileCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
 }

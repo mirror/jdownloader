@@ -24,6 +24,11 @@ public class RedTubeCom extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
@@ -60,11 +65,6 @@ public class RedTubeCom extends PluginForHost {
         }
 
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

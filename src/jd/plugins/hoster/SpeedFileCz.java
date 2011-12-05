@@ -35,32 +35,18 @@ public class SpeedFileCz extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://speedfile.cz/pages/terms/";
-    }
-
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(cs|en|de)/", "").replace("speedfile.cz/", "speedfile.cz/en/"));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<h1>Page Not Found</h1>|<p>The page you requested could not be found|or that the page no longer exists\\.|>Tento soubor byl odstraněn)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>Speedfile \\| (.*?)</title>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<h1><span id=\"vyraz\">(.*?)</span></h1>").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("><big>(.*?) \\| Downloaded ").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://speedfile.cz/pages/terms/";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -86,12 +72,26 @@ public class SpeedFileCz extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(<h1>Page Not Found</h1>|<p>The page you requested could not be found|or that the page no longer exists\\.|>Tento soubor byl odstraněn)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>Speedfile \\| (.*?)</title>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<h1><span id=\"vyraz\">(.*?)</span></h1>").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex("><big>(.*?) \\| Downloaded ").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

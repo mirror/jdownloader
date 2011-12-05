@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -36,9 +37,34 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rnbload.com" }, urls = { "http://(www\\.)?rnbload\\.com/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 0 })
 public class RnbLoadCom extends PluginForHost {
 
+    private static final String COOKIE_HOST = "http://rnbload.com";
+
+    private static final String IPBLOCKED   = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
+
+    private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+
+    private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
+
     public RnbLoadCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/register.php?g=3");
+    }
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL() + "&setlang=en");
+    }
+
+    private String findLink() throws Exception {
+        String finalLink = null;
+        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (String alink : sitelinks) {
+            alink = Encoding.htmlDecode(alink);
+            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
+                finalLink = alink;
+                break;
+            }
+        }
+        return finalLink;
     }
 
     // MhfScriptBasic 1.1
@@ -46,53 +72,14 @@ public class RnbLoadCom extends PluginForHost {
     public String getAGBLink() {
         return COOKIE_HOST + "/rules.php";
     }
-
-    private static final String COOKIE_HOST = "http://rnbload.com";
-    private static final String IPBLOCKED   = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL() + "&setlang=en");
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
-    private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
-        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
-        br.getPage(parameter.getDownloadURL());
-        String newlink = br.getRegex("<p>The document has moved <a href=\"(.*?)\">here</a>\\.</p>").getMatch(0);
-        if (newlink != null) {
-            logger.info("This link has moved, trying to find and set the new link...");
-            newlink = newlink.replaceAll("(\\&amp;|setlang=en)", "");
-            parameter.setUrlDownload(newlink);
-            br.getPage(newlink);
-        }
-        if (br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<b>File name:</b></td>[\r\t\n ]+<td align=([\r\t\n ]+|left width=\\d+px)>(.*?)</td>").getMatch(1);
-        if (filename == null) {
-            filename = br.getRegex("\"Click (this to report for|Here to Report)(.*?)\"").getMatch(1);
-            if (filename == null) {
-                filename = br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("Filename:<h1 style=\" font\\-size:15px\"> (.*?)</h1><br").getMatch(0);
-                }
-            }
-        }
-        String filesize = br.getRegex("<b>(File size|Filesize):</b></td>[\r\t\n ]+<td align=([\r\t\n ]+|(\")?left(\")?)>(.*?)</td>").getMatch(4);
-        if (filesize == null) {
-            filesize = br.getRegex("<b>\\&#4324;\\&#4304;\\&#4312;\\&#4314;\\&#4312;\\&#4321; \\&#4310;\\&#4317;\\&#4315;\\&#4304;:</b></td>[\t\r\n ]+<td align=left>(.*?)</td>").getMatch(0);
-            if (filesize == null) {
-                filesize = br.getRegex("Filesize: (.*?)<br />").getMatch(0);
-            }
-        }
-        if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setFinalFileName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -179,23 +166,52 @@ public class RnbLoadCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String findLink() throws Exception {
-        String finalLink = null;
-        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        for (String alink : sitelinks) {
-            alink = Encoding.htmlDecode(alink);
-            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
-                finalLink = alink;
-                break;
-            }
-        }
-        return finalLink;
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
+        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
+        br.getPage(parameter.getDownloadURL());
+        String newlink = br.getRegex("<p>The document has moved <a href=\"(.*?)\">here</a>\\.</p>").getMatch(0);
+        if (newlink != null) {
+            logger.info("This link has moved, trying to find and set the new link...");
+            newlink = newlink.replaceAll("(\\&amp;|setlang=en)", "");
+            parameter.setUrlDownload(newlink);
+            br.getPage(newlink);
+        }
+        if (br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<b>File name:</b></td>[\r\t\n ]+<td align=([\r\t\n ]+|left width=\\d+px)>(.*?)</td>").getMatch(1);
+        if (filename == null) {
+            filename = br.getRegex("\"Click (this to report for|Here to Report)(.*?)\"").getMatch(1);
+            if (filename == null) {
+                filename = br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("Filename:<h1 style=\" font\\-size:15px\"> (.*?)</h1><br").getMatch(0);
+                }
+            }
+        }
+        String filesize = br.getRegex("<b>(File size|Filesize):</b></td>[\r\t\n ]+<td align=([\r\t\n ]+|(\")?left(\")?)>(.*?)</td>").getMatch(4);
+        if (filesize == null) {
+            filesize = br.getRegex("<b>\\&#4324;\\&#4304;\\&#4312;\\&#4314;\\&#4312;\\&#4321; \\&#4310;\\&#4317;\\&#4315;\\&#4304;:</b></td>[\t\r\n ]+<td align=left>(.*?)</td>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("Filesize: (.*?)<br />").getMatch(0);
+            }
+        }
+        if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setFinalFileName(filename.trim());
+        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -204,11 +220,6 @@ public class RnbLoadCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
 }

@@ -31,6 +31,21 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "romhustler.net" }, urls = { "http://[\\w\\.]*?romhustler\\.net/download/.*?/\\d+" }, flags = { 0 })
 public class RomHustlerNet extends PluginForHost {
 
+    private static String decodeurl(String page) {
+        if (page == null) return null;
+        StringBuffer sb = new StringBuffer();
+        String pattern = "('.'),?";
+        Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(page);
+        while (r.find()) {
+            if (r.group(1).length() > 0) {
+                String content = r.group(1).replaceAll("'|,", "");
+                r.appendReplacement(sb, content);
+            }
+        }
+        r.appendTail(sb);
+        return sb.toString();
+    }
+
     private String downloadUrl;
 
     public RomHustlerNet(PluginWrapper wrapper) {
@@ -39,6 +54,16 @@ public class RomHustlerNet extends PluginForHost {
 
     public String getAGBLink() {
         return "http://romhustler.net/disclaimer.php";
+    }
+
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, -2);
+        dl.startDownload();
     }
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
@@ -55,38 +80,13 @@ public class RomHustlerNet extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, -2);
-        dl.startDownload();
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
     public void reset() {
-    }
-
-    public void resetPluginGlobals() {
-    }
-
-    private static String decodeurl(String page) {
-        if (page == null) return null;
-        StringBuffer sb = new StringBuffer();
-        String pattern = "('.'),?";
-        Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(page);
-        while (r.find()) {
-            if (r.group(1).length() > 0) {
-                String content = r.group(1).replaceAll("'|,", "");
-                r.appendReplacement(sb, content);
-            }
-        }
-        r.appendTail(sb);
-        return sb.toString();
     }
 
     // @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    public void resetPluginGlobals() {
     }
 }

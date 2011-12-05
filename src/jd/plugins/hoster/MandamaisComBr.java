@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.config.Property;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -45,18 +46,8 @@ public class MandamaisComBr extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<title>MandaMais\\.com\\.br :: Disco Virtual Grátis") || br.getURL().contains("mandamais.com.br/home.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) \\| MandaMais\\.com\\.br ::").getMatch(0);
-        if (filename == null) br.getRegex("Nome do arquivo:</b> <font color=\"#49436B\"><b>(.*?)</b>").getMatch(0);
-        String filesize = br.getRegex("<b>Tamanho do arquivo:</b> (.*?)<br />").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -94,13 +85,33 @@ public class MandamaisComBr extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("<title>MandaMais\\.com\\.br :: Disco Virtual Grátis") || br.getURL().contains("mandamais.com.br/home.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?) \\| MandaMais\\.com\\.br ::").getMatch(0);
+        if (filename == null) br.getRegex("Nome do arquivo:</b> <font color=\"#49436B\"><b>(.*?)</b>").getMatch(0);
+        String filesize = br.getRegex("<b>Tamanho do arquivo:</b> (.*?)<br />").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

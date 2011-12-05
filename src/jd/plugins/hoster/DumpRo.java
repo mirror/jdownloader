@@ -42,6 +42,11 @@ public class DumpRo extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         this.setBrowserExclusive();
@@ -80,13 +85,9 @@ public class DumpRo extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
     /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
+     * /* public String getVersion() { return getVersion("$Revision$");
+     * }
      */
 
 }

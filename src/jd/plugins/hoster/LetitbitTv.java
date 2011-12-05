@@ -42,6 +42,36 @@ public class LetitbitTv extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        String addedLink = downloadLink.getDownloadURL();
+        br.getPage(addedLink.replace("files/", "files/get/"));
+        // Ticket Time
+        int tt = 45000;
+        String ttt = br.getRegex("var download_wait_time = \"(\\d+)\";").getMatch(0);
+        if (ttt != null) {
+            logger.info("Waittime detected, waiting " + ttt + " milliseconds from now on...");
+            tt = Integer.parseInt(ttt);
+        }
+        sleep(tt + 1000, downloadLink);
+        br.getPage(addedLink.replace("files/", "files/getUrl/"));
+        String dllink = br.toString();
+        if (!dllink.trim().startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("<title>404 Not Found</title")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
@@ -75,37 +105,7 @@ public class LetitbitTv extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String addedLink = downloadLink.getDownloadURL();
-        br.getPage(addedLink.replace("files/", "files/get/"));
-        // Ticket Time
-        int tt = 45000;
-        String ttt = br.getRegex("var download_wait_time = \"(\\d+)\";").getMatch(0);
-        if (ttt != null) {
-            logger.info("Waittime detected, waiting " + ttt + " milliseconds from now on...");
-            tt = Integer.parseInt(ttt);
-        }
-        sleep(tt + 1000, downloadLink);
-        br.getPage(addedLink.replace("files/", "files/getUrl/"));
-        String dllink = br.toString();
-        if (!dllink.trim().startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("<title>404 Not Found</title")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

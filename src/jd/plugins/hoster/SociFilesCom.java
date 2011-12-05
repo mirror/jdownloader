@@ -35,6 +35,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "socifiles.com" }, urls = { "http://(www\\.)?socifiles\\.com/d/[0-9a-z]+" }, flags = { 0 })
 public class SociFilesCom extends PluginForHost {
 
+    private static final String PASSWORDPROTECTED = ">This file is protected by password\\.<";
+
     public SociFilesCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,22 +46,9 @@ public class SociFilesCom extends PluginForHost {
         return "http://about.socifiles.com/terms-of-service";
     }
 
-    private static final String PASSWORDPROTECTED = ">This file is protected by password\\.<";
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(or was removed|is not existed)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(">Filename:</span>(.*?)</li>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Download(.*?)- SociFiles\\.com</title>").getMatch(0);
-        String filesize = br.getRegex(">Size:</span>(.*?)</li>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (br.containsHTML(PASSWORDPROTECTED)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.socifilescom.passwordprotected", "This link is password protected"));
-
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -100,12 +89,23 @@ public class SociFilesCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(or was removed|is not existed)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex(">Filename:</span>(.*?)</li>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>Download(.*?)- SociFiles\\.com</title>").getMatch(0);
+        String filesize = br.getRegex(">Size:</span>(.*?)</li>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.containsHTML(PASSWORDPROTECTED)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.socifilescom.passwordprotected", "This link is password protected"));
+
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

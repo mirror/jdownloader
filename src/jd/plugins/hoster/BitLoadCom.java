@@ -39,16 +39,11 @@ public class BitLoadCom extends PluginForHost {
 
     private static String agent = RandomUserAgent.generate();
 
+    private static final String MAINPAGE = "http://www.bitload.com/";
+
     public BitLoadCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.bitload.com/premium");
-    }
-
-    private static final String MAINPAGE = "http://www.bitload.com/";
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.bitload.com/imprint";
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -58,78 +53,6 @@ public class BitLoadCom extends PluginForHost {
         } else {
             link.setUrlDownload(link.getDownloadURL().replace("/d/", "/f/"));
         }
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", agent);
-        // Servers are often slow
-        br.setReadTimeout(120 * 1000);
-        br.setCookie("http://www.bitload.com", "locale", "de");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Datei nicht gefunden|>Die Datei wurde aufgrund von Urheberrechtsverletzung von unseren Servern entfernt)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex nameAndSize = br.getRegex("Ihre Datei <strong>(.*?) \\(([0-9,\\.]+ .*?)\\)</strong> wird angefordert");
-        String filename = nameAndSize.getMatch(0);
-        if (filename == null) filename = br.getRegex("Sie möchten <strong>(.*?)</strong> schauen <br/>").getMatch(0);
-        if (filename == null) filename = br.getRegex("Sie haben folgende Datei angefordert.*?>(.*?)</").getMatch(0);
-        String filesize = nameAndSize.getMatch(1);
-        if (filesize == null) {
-            filesize = br.getRegex("x\">Divx</strong> \\((.*?)\\)<br/><br/>").getMatch(0);
-            if (filesize == null) filesize = br.getRegex("style=\"font-size:14px\">Flash</strong> \\((.*?)\\)<br/>").getMatch(0);
-        }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        // Streamlinks show no filesize
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace(".", "").replace(",", ".")));
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL() + "?c=free");
-        if (br.containsHTML(">Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String dllink = getDllink();
-        if (dllink == null) {
-            // Video not downloadable?!, link to player invalid
-            if (br.containsHTML("f//")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-            logger.warning("The dllink is null...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("Got html code instead of the file!");
-            br.followConnection();
-            if (br.containsHTML(">Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    private String getDllink() {
-        String dllink = br.getRegex("bis die Datei bereitgestellt wird!</div>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\"(http://ms\\d+\\.mystream\\.to/file-\\d+/[A-Za-z0-9]+/.*?)\"").getMatch(0);
-            if (dllink == null) {
-                // For Streamlinks
-                dllink = br.getRegex("var url = \\'(http://.*?)\\'").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("\\'(http://ms\\d+\\.mystream\\.to/file-\\d+/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
-                }
-            }
-        }
-        return dllink;
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", agent);
-        br.setCookie("http://www.bitload.com", "locale", "de");
-        br.postPage(MAINPAGE + "login", "sUsername=" + Encoding.urlEncode(account.getUser()) + "&sPassword=" + Encoding.urlEncode(account.getPass()) + "&login_submit=");
-        if (br.getCookie(MAINPAGE, "hash") == null || br.getCookie(MAINPAGE, "username") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -159,6 +82,60 @@ public class BitLoadCom extends PluginForHost {
     }
 
     @Override
+    public String getAGBLink() {
+        return "http://www.bitload.com/imprint";
+    }
+
+    private String getDllink() {
+        String dllink = br.getRegex("bis die Datei bereitgestellt wird!</div>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://ms\\d+\\.mystream\\.to/file-\\d+/[A-Za-z0-9]+/.*?)\"").getMatch(0);
+            if (dllink == null) {
+                // For Streamlinks
+                dllink = br.getRegex("var url = \\'(http://.*?)\\'").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\\'(http://ms\\d+\\.mystream\\.to/file-\\d+/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
+                }
+            }
+        }
+        return dllink;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL() + "?c=free");
+        if (br.containsHTML(">Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String dllink = getDllink();
+        if (dllink == null) {
+            // Video not downloadable?!, link to player invalid
+            if (br.containsHTML("f//")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+            logger.warning("The dllink is null...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("Got html code instead of the file!");
+            br.followConnection();
+            if (br.containsHTML(">Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
@@ -184,18 +161,41 @@ public class BitLoadCom extends PluginForHost {
         dl.startDownload();
     }
 
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", agent);
+        br.setCookie("http://www.bitload.com", "locale", "de");
+        br.postPage(MAINPAGE + "login", "sUsername=" + Encoding.urlEncode(account.getUser()) + "&sPassword=" + Encoding.urlEncode(account.getPass()) + "&login_submit=");
+        if (br.getCookie(MAINPAGE, "hash") == null || br.getCookie(MAINPAGE, "username") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", agent);
+        // Servers are often slow
+        br.setReadTimeout(120 * 1000);
+        br.setCookie("http://www.bitload.com", "locale", "de");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>Datei nicht gefunden|>Die Datei wurde aufgrund von Urheberrechtsverletzung von unseren Servern entfernt)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Regex nameAndSize = br.getRegex("Ihre Datei <strong>(.*?) \\(([0-9,\\.]+ .*?)\\)</strong> wird angefordert");
+        String filename = nameAndSize.getMatch(0);
+        if (filename == null) filename = br.getRegex("Sie möchten <strong>(.*?)</strong> schauen <br/>").getMatch(0);
+        if (filename == null) filename = br.getRegex("Sie haben folgende Datei angefordert.*?>(.*?)</").getMatch(0);
+        String filesize = nameAndSize.getMatch(1);
+        if (filesize == null) {
+            filesize = br.getRegex("x\">Divx</strong> \\((.*?)\\)<br/><br/>").getMatch(0);
+            if (filesize == null) filesize = br.getRegex("style=\"font-size:14px\">Flash</strong> \\((.*?)\\)<br/>").getMatch(0);
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        // Streamlinks show no filesize
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace(".", "").replace(",", ".")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

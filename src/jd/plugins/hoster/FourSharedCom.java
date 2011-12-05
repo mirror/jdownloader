@@ -43,12 +43,12 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FourSharedCom extends PluginForHost {
     private static String agent = RandomUserAgent.generate();
 
+    private static final String PASSWORDTEXT = "enter a password to access";
+
     public FourSharedCom(final PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://www.4shared.com/ref/14368016/1");
     }
-
-    private static final String PASSWORDTEXT = "enter a password to access";
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -115,6 +115,16 @@ public class FourSharedCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.4shared.com/terms.jsp";
+    }
+
+    private String getDllink() {
+        /* maybe directdownload */
+        String url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
+        if (url == null) {
+            /* maybe picture download */
+            url = br.getRegex("\"(http://dc\\d+\\.4shared(\\-china)?\\.com/download/[A-Za-z0-9]+/(?!desktop4shared).*?)\"").getMatch(0);
+        }
+        return url;
     }
 
     @Override
@@ -184,14 +194,10 @@ public class FourSharedCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getDllink() {
-        /* maybe directdownload */
-        String url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
-        if (url == null) {
-            /* maybe picture download */
-            url = br.getRegex("\"(http://dc\\d+\\.4shared(\\-china)?\\.com/download/[A-Za-z0-9]+/(?!desktop4shared).*?)\"").getMatch(0);
-        }
-        return url;
+    private void handleFreeErrors() throws PluginException {
+        if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
+        String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
+        if (ttt != null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l); }
     }
 
     private String handlePassword(DownloadLink link) throws Exception {
@@ -210,12 +216,6 @@ public class FourSharedCom extends PluginForHost {
             }
         }
         return pass;
-    }
-
-    private void handleFreeErrors() throws PluginException {
-        if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
-        String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
-        if (ttt != null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l); }
     }
 
     @Override

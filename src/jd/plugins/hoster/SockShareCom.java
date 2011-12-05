@@ -37,13 +37,54 @@ public class SockShareCom extends PluginForHost {
         super(wrapper);
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/mobile", "").replace("/embed/", "/file/"));
+    }
+
     @Override
     public String getAGBLink() {
         return "http://www.sockshare.com/page.php?terms";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/mobile", "").replace("/embed/", "/file/"));
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        br.setDebug(true);
+        String hash = br.getRegex("<input type=\"hidden\" value=\"([a-z0-9]+)\" name=\"hash\">").getMatch(0);
+        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Can still be skipped
+        // String waittime =
+        // br.getRegex("var countdownNum = (\\d+);").getMatch(0);
+        // int wait = 5;
+        // if (waittime != null) wait = Integer.parseInt(waittime);
+        // sleep(wait * 1001l, downloadLink);
+        br.postPage(br.getURL(), "hash=" + hash + "&confirm=Continue+as+Free+User");
+        String streamID = br.getRegex("\"(/get_file\\.php.*?)\"").getMatch(0);
+        if (streamID == null) {
+            streamID = br.getRegex("\'(/get_file\\.php.*?)\'").getMatch(0);
+        }
+        if (streamID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!streamID.contains("key=")) {
+            String key = br.getRegex("key:\\s+\'#?\\$?([0-9a-f]+)\'").getMatch(0);
+            streamID = key == null ? streamID = "" : streamID + "&key=" + key;
+        }
+        br.setFollowRedirects(false);
+        br.getPage("http://www.sockshare.com" + streamID);
+        String dllink = br.getRegex("<media:content url=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://media\\-b\\d+\\.sockshare\\.com/download/-*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRedirectLocation();
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -63,48 +104,7 @@ public class SockShareCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.setDebug(true);
-        String hash = br.getRegex("<input type=\"hidden\" value=\"([a-z0-9]+)\" name=\"hash\">").getMatch(0);
-        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Can still be skipped
-        // String waittime =
-        // br.getRegex("var countdownNum = (\\d+);").getMatch(0);
-        // int wait = 5;
-        // if (waittime != null) wait = Integer.parseInt(waittime);
-        // sleep(wait * 1001l, downloadLink);
-        br.postPage(br.getURL(), "hash=" + hash + "&confirm=Continue+as+Free+User");
-        String streamID = br.getRegex("\"(/get_file\\.php.*?)\"").getMatch(0);
-        if (streamID == null){
-            streamID = br.getRegex("\'(/get_file\\.php.*?)\'").getMatch(0);
-        }        
-        if (streamID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (!streamID.contains("key=")){
-                String key = br.getRegex("key:\\s+\'#?\\$?([0-9a-f]+)\'").getMatch(0);
-                streamID = key == null ? streamID = "" : streamID + "&key=" + key;           
-        }
-        br.setFollowRedirects(false);
-        br.getPage("http://www.sockshare.com" + streamID);        
-        String dllink = br.getRegex("<media:content url=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://media\\-b\\d+\\.sockshare\\.com/download/-*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

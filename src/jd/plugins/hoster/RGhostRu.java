@@ -34,6 +34,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rghost.ru" }, urls = { "http://(www\\.)?(rghost\\.net|rghost\\.ru|phonon\\.rghost\\.ru)/([0-9]+/private/[a-z0-9]+|download/[0-9]+|[0-9]+(\\?key=[a-z0-9]+)?)" }, flags = { 0 })
 public class RGhostRu extends PluginForHost {
 
+    private static final String PWTEXT = "Password: <input id=\"password\" name=\"password\" type=\"password\"";
+
     public RGhostRu(PluginWrapper wrapper) {
         super(wrapper);
         // this host blocks if there is no timegap between the simultan
@@ -41,34 +43,14 @@ public class RGhostRu extends PluginForHost {
         this.setStartIntervall(3500l);
     }
 
-    private static final String PWTEXT = "Password: <input id=\"password\" name=\"password\" type=\"password\"";
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        String filename = br.getRegex("<meta name=\"description\" content=\"(.*?). Download").getMatch(0);
-        if (filename == null) filename = br.getRegex("title=\"Comments for the file (.*?)\"").getMatch(0);
-        String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("class=\"filesize\">\\((.*?)\\)</span>").getMatch(0);
-        if (filename == null || filesize == null) {
-            offlineCheck();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String md5 = br.getRegex("<b>MD5</b></td><td>(.*?)</td></tr>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5.trim());
-        String sha1 = br.getRegex("<b>SHA1</b></td><td>(.*?)</td></tr>").getMatch(0);
-        if (sha1 != null) link.setSha1Hash(sha1.trim());
-        link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        offlineCheck();
-        if (br.containsHTML(PWTEXT)) link.getLinkStatus().setStatusText("This file is password protected");
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://rghost.ru/tos";
     }
 
-    private void offlineCheck() throws PluginException {
-        if (br.containsHTML("(Access to the file (is|was) restricted|the action is prohibited, this is a private file and your key is incorrect|<title>404|File was deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -112,14 +94,32 @@ public class RGhostRu extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    private void offlineCheck() throws PluginException {
+        if (br.containsHTML("(Access to the file (is|was) restricted|the action is prohibited, this is a private file and your key is incorrect|<title>404|File was deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://rghost.ru/tos";
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        String filename = br.getRegex("<meta name=\"description\" content=\"(.*?). Download").getMatch(0);
+        if (filename == null) filename = br.getRegex("title=\"Comments for the file (.*?)\"").getMatch(0);
+        String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("class=\"filesize\">\\((.*?)\\)</span>").getMatch(0);
+        if (filename == null || filesize == null) {
+            offlineCheck();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String md5 = br.getRegex("<b>MD5</b></td><td>(.*?)</td></tr>").getMatch(0);
+        if (md5 != null) link.setMD5Hash(md5.trim());
+        String sha1 = br.getRegex("<b>SHA1</b></td><td>(.*?)</td></tr>").getMatch(0);
+        if (sha1 != null) link.setSha1Hash(sha1.trim());
+        link.setName(filename);
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        offlineCheck();
+        if (br.containsHTML(PWTEXT)) link.getLinkStatus().setStatusText("This file is password protected");
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -127,11 +127,11 @@ public class RGhostRu extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

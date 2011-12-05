@@ -328,4 +328,18 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         if (dlLink != null) dlLink.setPriority(priority.ordinal());
     }
 
+    /**
+     * Returns if this linkc an be handled without manual user captcha input
+     * 
+     * @return
+     */
+    public boolean hasAutoCaptcha() {
+        if (gethPlugin() != null) {
+
+        return gethPlugin().hasAutoCaptcha();
+
+        }
+        return true;
+    }
+
 }

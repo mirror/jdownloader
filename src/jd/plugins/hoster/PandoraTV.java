@@ -51,18 +51,8 @@ public class PandoraTV extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("UTF-8");
-        br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("title\": \"(.*?)\",").getMatch(0);
-        if (filename == null) filename = br.getRegex("\"title\":\"(.*?)\"").getMatch(0);
-        String filesize = br.getRegex("filesize\": \"(.*?)\",").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("\"filesize\":\"(.*?)\"").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim() + ".flv");
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -118,8 +108,18 @@ public class PandoraTV extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("UTF-8");
+        br.getPage(downloadLink.getDownloadURL());
+        String filename = br.getRegex("title\": \"(.*?)\",").getMatch(0);
+        if (filename == null) filename = br.getRegex("\"title\":\"(.*?)\"").getMatch(0);
+        String filesize = br.getRegex("filesize\": \"(.*?)\",").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("\"filesize\":\"(.*?)\"").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename.trim() + ".flv");
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -127,10 +127,10 @@ public class PandoraTV extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

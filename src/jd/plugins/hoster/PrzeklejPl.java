@@ -42,6 +42,12 @@ public class PrzeklejPl extends PluginForHost {
 
     private static final String PATTERN_PASSWORD_WRONG = "B.*?dnie podane has";
 
+    private static final String REGISTEREDONLY = "> możesz pobrać, jeżeli jesteś zalogowany";
+
+    private static final String NOFREEMESSAGE  = "Only downloadable for registered users";
+
+    private static final String FINALLINKREGEX = "class=\"download\" href=\"(.*?)\"";
+
     public PrzeklejPl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.przeklej.pl/wybierz-platnosci");
@@ -49,40 +55,9 @@ public class PrzeklejPl extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://przeklej.pl/regulamin";
-    }
-
-    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replaceAll("_", "-"));
     }
-
-    private static final String REGISTEREDONLY = "> możesz pobrać, jeżeli jesteś zalogowany";
-    private static final String NOFREEMESSAGE  = "Only downloadable for registered users";
-    private static final String FINALLINKREGEX = "class=\"download\" href=\"(.*?)\"";
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<h1 style=\"font-size: 40px;\">Podana strona nie istnieje</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(REGISTEREDONLY)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.PrzeklejPl.errors.nofreedownloadlink", NOFREEMESSAGE));
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>przeklej.pl -(.*?)\\. Wrzucaj", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (filename == null) {
-            Encoding.htmlDecode(br.getRegex(Pattern.compile("title=\"Pobierz plik\">(.*?)</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        }
-        String filesize = br.getRegex(Pattern.compile("class=\"size\" style=\"font-weight: normal;\">[\t\n\r ]+\\((.*?)\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex(Pattern.compile("You are trying to download a <strong>(.*?)</strong> file", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        }
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
-        return AvailableStatus.TRUE;
-    }
-
     public void doFree(DownloadLink downloadLink) throws Exception {
         String passCode = null;
         boolean resumable = true;
@@ -125,23 +100,6 @@ public class PrzeklejPl extends PluginForHost {
             }
         }
     }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (br.containsHTML(REGISTEREDONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.PrzeklejPl.errors.nofreedownloadlink", NOFREEMESSAGE));
-        doFree(downloadLink);
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getHeaders().put("Referer", "");
-        br.setCustomCharset("utf-8");
-        br.postPage("http://www.przeklej.pl/loguj", "login%5Blogin%5D=" + account.getUser() + "&login%5Bpass%5D=" + account.getPass());
-        if (!br.containsHTML("<html><head><meta http\\-equiv=\"refresh\" content=\"0;url=http://www\\.przeklej\\.pl/\"/></head></html>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -157,12 +115,13 @@ public class PrzeklejPl extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<span>Wielkość pliku przekracza Twój dostępny <strong>abonament</strong>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.PrzeklejPl.errors.AccountDisabled", "Account ran out of traffic"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        doFree(link);
+    public String getAGBLink() {
+        return "http://przeklej.pl/regulamin";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -179,8 +138,54 @@ public class PrzeklejPl extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML(REGISTEREDONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.PrzeklejPl.errors.nofreedownloadlink", NOFREEMESSAGE));
+        doFree(downloadLink);
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("<span>Wielkość pliku przekracza Twój dostępny <strong>abonament</strong>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.PrzeklejPl.errors.AccountDisabled", "Account ran out of traffic"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        doFree(link);
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("Referer", "");
+        br.setCustomCharset("utf-8");
+        br.postPage("http://www.przeklej.pl/loguj", "login%5Blogin%5D=" + account.getUser() + "&login%5Bpass%5D=" + account.getPass());
+        if (!br.containsHTML("<html><head><meta http\\-equiv=\"refresh\" content=\"0;url=http://www\\.przeklej\\.pl/\"/></head></html>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("<h1 style=\"font-size: 40px;\">Podana strona nie istnieje</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(REGISTEREDONLY)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.PrzeklejPl.errors.nofreedownloadlink", NOFREEMESSAGE));
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>przeklej.pl -(.*?)\\. Wrzucaj", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (filename == null) {
+            Encoding.htmlDecode(br.getRegex(Pattern.compile("title=\"Pobierz plik\">(.*?)</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        }
+        String filesize = br.getRegex(Pattern.compile("class=\"size\" style=\"font-weight: normal;\">[\t\n\r ]+\\((.*?)\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex(Pattern.compile("You are trying to download a <strong>(.*?)</strong> file", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        }
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -188,10 +193,10 @@ public class PrzeklejPl extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

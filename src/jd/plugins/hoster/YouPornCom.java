@@ -42,6 +42,20 @@ public class YouPornCom extends PluginForHost {
         return "http://youporn.com/terms";
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    public void handleFree(DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -70,20 +84,6 @@ public class YouPornCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-    }
-
-    public void handleFree(DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     public void reset() {

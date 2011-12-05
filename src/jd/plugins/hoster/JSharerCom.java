@@ -42,20 +42,8 @@ public class JSharerCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("jsharer.com/pages/error.jsp") || br.containsHTML("(<title>jsharer \\- RE: 熔火核心计划</title>|>这是地图上不存在的页面<|中的地址是有误。如果您认为这个问题是由于熔火核心的暴走)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div id=dl\\-text>[\t\n\r ]+<p>([^\"\\'<>]+)<span").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>jsharer \\- RE: (.*?)</title>").getMatch(0);
-        String filesize = br.getRegex("<span id=dl\\-stats><var>(.*?)</var>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        String sh1 = br.getRegex("id=\"dl\\-hashcode\">SHA-1: ([a-z0-9]+)</span>").getMatch(0);
-        if (sh1 != null) link.setSha1Hash(sh1);
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -84,12 +72,24 @@ public class JSharerCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("jsharer.com/pages/error.jsp") || br.containsHTML("(<title>jsharer \\- RE: 熔火核心计划</title>|>这是地图上不存在的页面<|中的地址是有误。如果您认为这个问题是由于熔火核心的暴走)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<div id=dl\\-text>[\t\n\r ]+<p>([^\"\\'<>]+)<span").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>jsharer \\- RE: (.*?)</title>").getMatch(0);
+        String filesize = br.getRegex("<span id=dl\\-stats><var>(.*?)</var>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        String sh1 = br.getRegex("id=\"dl\\-hashcode\">SHA-1: ([a-z0-9]+)</span>").getMatch(0);
+        if (sh1 != null) link.setSha1Hash(sh1);
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

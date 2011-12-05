@@ -33,9 +33,26 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twistys.com" }, urls = { "http://(www\\.)?(cdn\\d+\\.)?mdl\\.twistys\\.com/(content|visual)/[a-z0-9]+/.*?\\..{3}(\\?nvb=\\d+\\&nva=\\d+\\&hash=[a-z0-9]+)?" }, flags = { 2 })
 public class TwisTysCom extends PluginForHost {
 
+    private static final String MAINPAGE = "http://twistys.com";
+
+    public static final Object  LOCK     = new Object();
+
     public TwisTysCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://secure.twistys.com/signup/signup.php?");
+    }
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setStatus("Premium User");
+        account.setValid(true);
+        return ai;
     }
 
     @Override
@@ -43,39 +60,32 @@ public class TwisTysCom extends PluginForHost {
         return "http://www.twistyssupport.com/";
     }
 
-    private static final String MAINPAGE = "http://twistys.com";
-    public static final Object LOCK = new Object();
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        // We need to log in to get the file status
-        synchronized (LOCK) {
-            Account aa = AccountController.getInstance().getValidAccount(this);
-            if (aa == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Links are only checkable if a premium account is entered!");
-            login(aa);
-        }
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(link.getDownloadURL());
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-                link.setFinalFileName(getFileNameFromHeader(con));
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
+        // Möglicherweise serverfehler...
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     public void login(Account account) throws Exception {
@@ -107,44 +117,34 @@ public class TwisTysCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        this.setBrowserExclusive();
+        // We need to log in to get the file status
+        synchronized (LOCK) {
+            Account aa = AccountController.getInstance().getValidAccount(this);
+            if (aa == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Links are only checkable if a premium account is entered!");
+            login(aa);
+        }
+        URLConnectionAdapter con = null;
         try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
+            con = br.openGetConnection(link.getDownloadURL());
+            if (!con.getContentType().contains("html")) {
+                link.setDownloadSize(con.getLongContentLength());
+                link.setFinalFileName(getFileNameFromHeader(con));
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
         }
-        ai.setStatus("Premium User");
-        account.setValid(true);
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        login(account);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
-        // Möglicherweise serverfehler...
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

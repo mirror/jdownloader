@@ -43,6 +43,31 @@ public class PlikusPl extends PluginForHost {
     }
 
     // @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
+    }
+
+    // @Override
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
+
+    // @Override
+    public int getTimegapBetweenConnections() {
+        return 2500;
+    }
+
+    // @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        Form form = br.getForm(0);
+        br.setFollowRedirects(false);
+        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 0);
+        dl.startDownload();
+    }
+
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -55,41 +80,16 @@ public class PlikusPl extends PluginForHost {
     }
 
     // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        Form form = br.getForm(0);
-        br.setFollowRedirects(false);
-        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, true, 0);
-        dl.startDownload();
-    }
-
-    // @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
-    }
-
-    // @Override
-    public int getTimegapBetweenConnections() {
-        return 2500;
-    }
-
-    // @Override
     public void reset() {
+    }
+
+    // @Override
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     // @Override
     public void resetPluginGlobals() {
 
-    }
-
-    // @Override
-    public void resetDownloadlink(DownloadLink link) {
     }
 
 }

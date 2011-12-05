@@ -41,24 +41,9 @@ public class FilesTo extends PluginForHost {
     }
 
     // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
-        try {
-            br.getPage(downloadLink.getDownloadURL());
-            if (!br.containsHTML("Die angeforderte Datei konnte nicht gefunden werden")) {
-                downloadLink.setName(Encoding.htmlDecode(br.getRegex("<p>Name: <span id=\"downloadname\">(.*?)</span></p>").getMatch(0)));
-                downloadLink.setDownloadSize(SizeFormatter.getSize(br.getRegex("<p>Gr&ouml;&szlig;e: (.*? (KB|MB|B))</p>").getMatch(0)));
-                return AvailableStatus.TRUE;
-            }
-        } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
-        }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
-
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -74,12 +59,33 @@ public class FilesTo extends PluginForHost {
 
         if (br.containsHTML("Der eingegebene code ist falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String url = br.getRegex("<form id=\"dlform\".*?action\\=\"(http://.*?files\\.to/.*?)\">").getMatch(0);
-        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 1).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1).startDownload();
     }
 
     // @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$");
+     * }
+     */
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    // @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
+        try {
+            br.getPage(downloadLink.getDownloadURL());
+            if (!br.containsHTML("Die angeforderte Datei konnte nicht gefunden werden")) {
+                downloadLink.setName(Encoding.htmlDecode(br.getRegex("<p>Name: <span id=\"downloadname\">(.*?)</span></p>").getMatch(0)));
+                downloadLink.setDownloadSize(SizeFormatter.getSize(br.getRegex("<p>Gr&ouml;&szlig;e: (.*? (KB|MB|B))</p>").getMatch(0)));
+                return AvailableStatus.TRUE;
+            }
+        } catch (Exception e) {
+            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+        }
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     // @Override
@@ -87,11 +93,11 @@ public class FilesTo extends PluginForHost {
     }
 
     // @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     // @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

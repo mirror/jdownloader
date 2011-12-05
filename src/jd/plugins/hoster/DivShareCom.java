@@ -43,6 +43,10 @@ public class DivShareCom extends PluginForHost {
         return "http://www.divshare.com/page/terms";
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
@@ -188,10 +192,6 @@ public class DivShareCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
 }

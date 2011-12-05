@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -34,6 +35,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesin.com" }, urls = { "http://(www\\.)?filesin\\.com/[A-Z0-9]+/download\\.html" }, flags = { 0 })
 public class FilesInCom extends PluginForHost {
 
+    private static final String RECAPTCHAFAILED = "google\\.com/recaptcha/api/";
+
     public FilesInCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,20 +46,9 @@ public class FilesInCom extends PluginForHost {
         return "http://www.filesin.com/terms.html";
     }
 
-    private static final String RECAPTCHAFAILED = "google\\.com/recaptcha/api/";
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>File Not Found|may be deleted by user or administrator\\.</|<title>FilesIn\\.com \\| Upload your files fast,easy and free</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1 stlye=\"margin: 2px;\">(.*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) \\| FilesIn\\.com</title>").getMatch(0);
-        String filesize = br.getRegex("<p>File Size: (.*?)</p>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -88,13 +80,32 @@ public class FilesInCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>File Not Found|may be deleted by user or administrator\\.</|<title>FilesIn\\.com \\| Upload your files fast,easy and free</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h1 stlye=\"margin: 2px;\">(.*?)</h1>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>(.*?) \\| FilesIn\\.com</title>").getMatch(0);
+        String filesize = br.getRegex("<p>File Size: (.*?)</p>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

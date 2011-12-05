@@ -40,6 +40,16 @@ public class XsharewareCom extends PluginForHost {
     }
 
     @Override
+    public String getAGBLink() {
+        return "http://www.xshareware.com/tos.html";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 10;
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -76,14 +86,9 @@ public class XsharewareCom extends PluginForHost {
 
     }
 
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 10;
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.xshareware.com/tos.html";
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
@@ -116,11 +121,11 @@ public class XsharewareCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

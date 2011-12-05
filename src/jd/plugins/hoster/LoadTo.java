@@ -47,33 +47,13 @@ public class LoadTo extends PluginForHost {
     }
 
     @Override
-    public void init() {
-        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
-    }
-
-    /* TODO: remove me after 0.9xx public */
-    private void workAroundTimeOut(Browser br) {
-        try {
-            if (br != null) {
-                br.setConnectTimeout(30000);
-                br.setReadTimeout(120000);
-            }
-        } catch (Throwable e) {
-        }
+    public int getMaxSimultanFreeDownloadNum() {
+        return 3;
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        workAroundTimeOut(br);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Can't find file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("<head><title>(.*?) // Load.to Uploadservice</title>").getMatch(0));
-        String filesize = br.getRegex("Size:</div>.*?download_table_right\">(.*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getTimegapBetweenConnections() {
+        return 2000;
     }
 
     @Override
@@ -113,13 +93,22 @@ public class LoadTo extends PluginForHost {
     }
 
     @Override
-    public int getTimegapBetweenConnections() {
-        return 2000;
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 3;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        workAroundTimeOut(br);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("Can't find file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex("<head><title>(.*?) // Load.to Uploadservice</title>").getMatch(0));
+        String filesize = br.getRegex("Size:</div>.*?download_table_right\">(.*?)</div>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        link.setName(filename);
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -127,11 +116,22 @@ public class LoadTo extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
+        link.setProperty("error", 0);
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
-        link.setProperty("error", 0);
+    public void resetPluginGlobals() {
+    }
+
+    /* TODO: remove me after 0.9xx public */
+    private void workAroundTimeOut(Browser br) {
+        try {
+            if (br != null) {
+                br.setConnectTimeout(30000);
+                br.setReadTimeout(120000);
+            }
+        } catch (Throwable e) {
+        }
     }
 }

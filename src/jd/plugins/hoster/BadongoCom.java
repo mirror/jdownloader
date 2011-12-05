@@ -264,6 +264,11 @@ public class BadongoCom extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
     public boolean isPremium() throws PluginException, IOException {
         br.getPage(MAINPAGE + "/de/");
         final String type = br.getRegex("Du bist zur Zeit als <b>(.*?)</b> eingeloggt").getMatch(0);

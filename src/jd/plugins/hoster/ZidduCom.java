@@ -34,11 +34,21 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ziddu.com" }, urls = { "http://[\\w\\.]*?ziddu\\.com/((download(file)?/\\d+/.+)|(download\\.php\\?uid=.+))" }, flags = { 0 })
 public class ZidduCom extends PluginForHost {
 
+    private static final String FILEOFFLINE = "(may be deleted by the user or by the Adminstrator|src=images/oops\\.gif|The requested URL  was not found on this server)";
+
     public ZidduCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String FILEOFFLINE = "(may be deleted by the user or by the Adminstrator|src=images/oops\\.gif|The requested URL  was not found on this server)";
+    @Override
+    public String getAGBLink() {
+        return "http://www.ziddu.com/termsandconditions.php";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -69,14 +79,9 @@ public class ZidduCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.ziddu.com/termsandconditions.php";
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
@@ -102,11 +107,11 @@ public class ZidduCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

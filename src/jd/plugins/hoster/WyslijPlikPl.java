@@ -41,6 +41,38 @@ public class WyslijPlikPl extends PluginForHost {
         return "http://wyslijplik.pl/tos.php";
     }
 
+    /*
+     * Note:
+     * 
+     * Simultan DL Limits are not implemented yet: - no limits for up to 250mb
+     * files - 5 300MB Downloads - 3 500MB Downloads - 1 1GB Download
+     * 
+     * Well that's what i found in the faq - so the limits depend on the
+     * filesize Would also need more testlinks to bigger files...
+     */
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        String linkurl = br.getRegex("<a href='(http://\\w{2}\\.wyslijplik\\.pl/get\\.php\\?gid=\\w{8})'.*?</a>").getMatch(0);
+        if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
+        if (!(dl.getConnection().isContentDisposition())) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        URLConnectionAdapter con = dl.getConnection();
+        if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
+            con.disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
+        }
+        dl.startDownload();
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -62,46 +94,14 @@ public class WyslijPlikPl extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        String linkurl = br.getRegex("<a href='(http://\\w{2}\\.wyslijplik\\.pl/get\\.php\\?gid=\\w{8})'.*?</a>").getMatch(0);
-        if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
-        if (!(dl.getConnection().isContentDisposition())) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        URLConnectionAdapter con = dl.getConnection();
-        if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
-        }
-        dl.startDownload();
-    }
-
-    /*
-     * Note:
-     * 
-     * Simultan DL Limits are not implemented yet: - no limits for up to 250mb
-     * files - 5 300MB Downloads - 3 500MB Downloads - 1 1GB Download
-     * 
-     * Well that's what i found in the faq - so the limits depend on the
-     * filesize Would also need more testlinks to bigger files...
-     */
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

@@ -34,6 +34,11 @@ public class VidearnCom extends PluginForHost {
         super(wrapper);
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        // Links come from a decrypter
+        link.setUrlDownload(link.getDownloadURL().replace("videarndecrypted.com/", "videarn.com/"));
+    }
+
     @Override
     public String getAGBLink() {
         return "http://videarn.com/tos.php";
@@ -42,11 +47,6 @@ public class VidearnCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        // Links come from a decrypter
-        link.setUrlDownload(link.getDownloadURL().replace("videarndecrypted.com/", "videarn.com/"));
     }
 
     @Override

@@ -36,36 +36,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "platinshare.com" }, urls = { "http://(www\\.)?platinshare\\.com/files/[A-Za-z0-9]+" }, flags = { 2 })
 public class PlatinShareCom extends PluginForHost {
 
+    private static final String FILEIDREGEX = "platinshare\\.com/files/(.+)";
+
     public PlatinShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.platinshare.com/premium/get");
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.platinshare.com/help/terms";
-    }
-
-    private static final String FILEIDREGEX = "platinshare\\.com/files/(.+)";
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>File not found|The file you were looking for could not be found, here are some possible reasons:|>The file was deleted by the uploader|>The file was deleted by PlatinShare because it did not comply with|>The file URL is incorrect|>The file expired because it was not downloaded)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex fileInfo = br.getRegex("(<h1>|<title>PlatinShare\\.com \\- )([^\"\\']+) \\(([^\"\\']+)\\)<");
-        String filename = fileInfo.getMatch(1);
-        String filesize = fileInfo.getMatch(2);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
@@ -80,14 +55,6 @@ public class PlatinShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.postPage("http://www.platinshare.com/account/login", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&task=dologin&return=http%3A%2F%2Fwww.platinshare.com%2Fmembers%2Fmyfile");
-        br.setFollowRedirects(true);
-        br.getPage("http://platinshare.com/members/myfiles");
-        if (!br.containsHTML("(\">Premium Expires:|>Account type: <strong>Premium Member</strong>)")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -118,10 +85,13 @@ public class PlatinShareCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account);
-        doFree(link);
+    public String getAGBLink() {
+        return "http://www.platinshare.com/help/terms";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -130,12 +100,42 @@ public class PlatinShareCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        doFree(downloadLink);
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        doFree(link);
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.postPage("http://www.platinshare.com/account/login", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&task=dologin&return=http%3A%2F%2Fwww.platinshare.com%2Fmembers%2Fmyfile");
+        br.setFollowRedirects(true);
+        br.getPage("http://platinshare.com/members/myfiles");
+        if (!br.containsHTML("(\">Premium Expires:|>Account type: <strong>Premium Member</strong>)")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>File not found|The file you were looking for could not be found, here are some possible reasons:|>The file was deleted by the uploader|>The file was deleted by PlatinShare because it did not comply with|>The file URL is incorrect|>The file expired because it was not downloaded)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Regex fileInfo = br.getRegex("(<h1>|<title>PlatinShare\\.com \\- )([^\"\\']+) \\(([^\"\\']+)\\)<");
+        String filename = fileInfo.getMatch(1);
+        String filesize = fileInfo.getMatch(2);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

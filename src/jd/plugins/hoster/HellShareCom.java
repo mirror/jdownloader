@@ -239,6 +239,11 @@ public class HellShareCom extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
     public void login(final Account account) throws Exception {
         setBrowserExclusive();
         /* to prefer english page */

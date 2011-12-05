@@ -26,6 +26,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.crypt.Base64;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -49,10 +50,138 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.-]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/?)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
 
+    static class Sec {
+        public static String d(final byte[] b, final byte[] key) {
+            Cipher cipher;
+            try {
+                final IvParameterSpec ivSpec = new IvParameterSpec(key);
+                final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+
+                cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+                return new String(cipher.doFinal(b), "UTF-8");
+            } catch (final Exception e) {
+                e.printStackTrace();
+                final IvParameterSpec ivSpec = new IvParameterSpec(key);
+                final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
+
+                try {
+                    cipher = Cipher.getInstance("AES/CBC/nopadding");
+
+                    cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+                    return new String(cipher.doFinal(b), "UTF-8");
+                } catch (final Exception e1) {
+                    e.printStackTrace();
+                }
+
+            }
+            return null;
+        }
+        private byte[] key;
+
+        private byte[] prep;
+
+        public Sec() {
+            key = new byte[] { 0x01, 0x02, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
+            prep = Base64.decode("MC8O21gQXUaeSgMxxiOGugSrROkQHTbadlwDeJqHOpU4Q2o38bGWkm3/2zfS0N0s");
+        }
+
+        public String run() {
+
+            return new String(new byte[] { 97, 112, 105, 107, 101, 121 }) + "=" + d(prep, key);
+
+        }
+    }
+
+    private static void workAroundTimeOut(final Browser br) {
+        try {
+            if (br != null) {
+                br.setConnectTimeout(45000);
+                br.setReadTimeout(45000);
+            }
+        } catch (final Throwable e) {
+        }
+    }
+
     public Uploadedto(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://uploaded.to/");
         this.setStartIntervall(2000l);
+    }
+
+    @Override
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            Browser br = new Browser();
+            workAroundTimeOut(br);
+            br.setCookiesExclusive(true);
+            StringBuilder sb = new StringBuilder();
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 80 links at once */
+                    if (index == urls.length || links.size() > 80) break;
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append(new Sec().run());
+                int c = 0;
+                for (DownloadLink dl : links) {
+                    sb.append("&id_" + c + "=" + getID(dl));
+                    c++;
+                }
+                int retry = 0;
+                while (true) {
+                    /*
+                     * workaround for api issues, retry 5 times when content
+                     * length is only 20 bytes
+                     */
+                    if (retry == 5) return false;
+                    br.postPage("http://uploaded.to/api/filemultiple", sb.toString());
+                    if (br.getHttpConnection().getLongContentLength() != 20) {
+                        break;
+                    }
+                    Thread.sleep(500);
+                    retry++;
+                }
+                sb = null;
+                String infos[][] = br.getRegex(Pattern.compile("(.*?),(.*?),(.*?),(.*?),(.*?)(\r|\n|$)")).getMatches();
+                for (DownloadLink dl : links) {
+                    String id = getID(dl);
+                    int hit = -1;
+                    for (int i = 0; i < infos.length; i++) {
+                        if (infos[i][1].equalsIgnoreCase(id)) {
+                            hit = i;
+                            break;
+                        }
+                    }
+                    if (hit == -1) {
+                        /* id not in response, so its offline */
+                        dl.setAvailable(false);
+                    } else {
+                        dl.setFinalFileName(infos[hit][4].trim());
+                        dl.setDownloadSize(SizeFormatter.getSize(infos[hit][2]));
+                        if ("online".equalsIgnoreCase(infos[hit][0].trim())) {
+                            dl.setAvailable(true);
+                            String sha1 = infos[hit][3].trim();
+                            if (sha1.length() == 0) sha1 = null;
+                            dl.setSha1Hash(sha1);
+                            dl.setMD5Hash(null);
+                        } else {
+                            dl.setAvailable(false);
+                        }
+                    }
+                }
+                if (index == urls.length) break;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -69,29 +198,6 @@ public class Uploadedto extends PluginForHost {
             newLink += parts[t] + "/";
         }
         link.setUrlDownload(newLink);
-    }
-
-    @Override
-    public int getTimegapBetweenConnections() {
-        return 2000;
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        workAroundTimeOut(br);
-        br.setDebug(true);
-        br.setFollowRedirects(true);
-        br.setAcceptLanguage("en, en-gb;q=0.8");
-        br.setCookie("http://uploaded.to", "lang", "en");
-        br.getPage("http://uploaded.to");
-        br.getPage("http://uploaded.to/language/en");
-        br.postPage("http://uploaded.to/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
-        if (br.containsHTML("User and password do not match")) {
-            AccountInfo ai = account.getAccountInfo();
-            if (ai != null) ai.setStatus("User and password do not match");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        if (br.getCookie("http://uploaded.to", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -137,113 +243,18 @@ public class Uploadedto extends PluginForHost {
         return ai;
     }
 
-    private static void workAroundTimeOut(final Browser br) {
-        try {
-            if (br != null) {
-                br.setConnectTimeout(45000);
-                br.setReadTimeout(45000);
-            }
-        } catch (final Throwable e) {
-        }
-    }
-
-    @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        login(account);
-        br.setFollowRedirects(false);
-        String id = getID(downloadLink);
-        br.getPage("http://uploaded.to/file/" + id + "/ddl");
-        String error = new Regex(br.getRedirectLocation(), "http://uploaded.to/\\?view=(.*)").getMatch(0);
-        if (error == null) {
-            error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&i").getMatch(0);
-        }
-        if (error != null) {
-            if (error.contains("error_traffic")) throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (br.getRedirectLocation() == null) {
-            /* ul does not take care of set language.... */
-            if (br.containsHTML(">Traffic exhausted") || br.containsHTML(">Traffickontingent aufgebraucht")) {
-                logger.info("Traffic exhausted, temp disabled account");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-            logger.info("InDirect Downloads active");
-            Form form = br.getForm(0);
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (form.getAction() != null && form.getAction().contains("register")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            if (form.getAction() == null || form.getAction().contains("access")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            logger.info("Download from:" + form.getAction());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 0);
-            dl.setFileSizeVerified(true);
-        } else {
-            logger.info("Direct Downloads active");
-            logger.info("Download from:" + br.getRedirectLocation());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
-            dl.setFileSizeVerified(true);
-        }
-        try {
-            /* remove next major update */
-            /* workaround for broken timeout in 0.9xx public */
-            dl.getRequest().setConnectTimeout(30000);
-            dl.getRequest().setReadTimeout(60000);
-        } catch (final Throwable ee) {
-        }
-
-        if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
-            try {
-                br.followConnection();
-            } catch (final Throwable e) {
-                logger.severe(e.getMessage());
-            }
-            if (dl.getConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            if (dl.getConnection().getResponseCode() == 508) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError(508)", 30 * 60 * 1000l);
-            if (br.containsHTML("File not found!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("No connection to database")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-            if (br.containsHTML("Aus technischen Gr") && br.containsHTML("ist ein Download momentan nicht m")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-            if (br.getURL().contains("view=error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-            try {
-                logger.info(br.toString());
-            } catch (final Throwable e) {
-            }
-            try {
-                logger.info(dl.getConnection().toString());
-            } catch (final Throwable e) {
-            }
-            if ("No htmlCode read".equalsIgnoreCase(br.toString())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (dl.getConnection().getResponseCode() == 404) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        dl.startDownload();
-    }
-
     @Override
     public String getAGBLink() {
         return "http://uploaded.to/agb";
     }
 
+    private String getID(DownloadLink downloadLink) {
+        return new Regex(downloadLink.getDownloadURL(), "uploaded.to/file/(.*?)/").getMatch(0);
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
-        this.correctDownloadLink(downloadLink);
-        String id = getID(downloadLink);
-        boolean red = br.isFollowingRedirects();
-        br.setFollowRedirects(false);
-        try {
-            br.getPage("http://uploaded.to/file/" + id + "/status");
-            String ret = br.getRedirectLocation();
-            if (ret != null && ret.contains("/404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String name = br.getRegex("(.*?)(\r|\n)").getMatch(0);
-            String size = br.getRegex(".+[\r\n]{1,2}(.+)").getMatch(0);
-            if (name == null || size == null) return AvailableStatus.UNCHECKABLE;
-            downloadLink.setFinalFileName(name.trim());
-            downloadLink.setDownloadSize(SizeFormatter.getSize(size));
-        } finally {
-            br.setFollowRedirects(red);
-        }
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     private String getPassword(DownloadLink downloadLink) throws Exception {
@@ -260,8 +271,9 @@ public class Uploadedto extends PluginForHost {
         return passCode;
     }
 
-    private String getID(DownloadLink downloadLink) {
-        return new Regex(downloadLink.getDownloadURL(), "uploaded.to/file/(.*?)/").getMatch(0);
+    @Override
+    public int getTimegapBetweenConnections() {
+        return 2000;
     }
 
     @Override
@@ -349,8 +361,125 @@ public class Uploadedto extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        br.setFollowRedirects(false);
+        String id = getID(downloadLink);
+        br.getPage("http://uploaded.to/file/" + id + "/ddl");
+        String error = new Regex(br.getRedirectLocation(), "http://uploaded.to/\\?view=(.*)").getMatch(0);
+        if (error == null) {
+            error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&i").getMatch(0);
+        }
+        if (error != null) {
+            if (error.contains("error_traffic")) throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (br.getRedirectLocation() == null) {
+            /* ul does not take care of set language.... */
+            if (br.containsHTML(">Traffic exhausted") || br.containsHTML(">Traffickontingent aufgebraucht")) {
+                logger.info("Traffic exhausted, temp disabled account");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            logger.info("InDirect Downloads active");
+            Form form = br.getForm(0);
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (form.getAction() != null && form.getAction().contains("register")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (form.getAction() == null || form.getAction().contains("access")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            logger.info("Download from:" + form.getAction());
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 0);
+            dl.setFileSizeVerified(true);
+        } else {
+            logger.info("Direct Downloads active");
+            logger.info("Download from:" + br.getRedirectLocation());
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
+            dl.setFileSizeVerified(true);
+        }
+        try {
+            /* remove next major update */
+            /* workaround for broken timeout in 0.9xx public */
+            dl.getRequest().setConnectTimeout(30000);
+            dl.getRequest().setReadTimeout(60000);
+        } catch (final Throwable ee) {
+        }
+
+        if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
+            try {
+                br.followConnection();
+            } catch (final Throwable e) {
+                logger.severe(e.getMessage());
+            }
+            if (dl.getConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (dl.getConnection().getResponseCode() == 508) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError(508)", 30 * 60 * 1000l);
+            if (br.containsHTML("File not found!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("No connection to database")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            if (br.containsHTML("Aus technischen Gr") && br.containsHTML("ist ein Download momentan nicht m")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+            if (br.getURL().contains("view=error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            try {
+                logger.info(br.toString());
+            } catch (final Throwable e) {
+            }
+            try {
+                logger.info(dl.getConnection().toString());
+            } catch (final Throwable e) {
+            }
+            if ("No htmlCode read".equalsIgnoreCase(br.toString())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (dl.getConnection().getResponseCode() == 404) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        workAroundTimeOut(br);
+        br.setDebug(true);
+        br.setFollowRedirects(true);
+        br.setAcceptLanguage("en, en-gb;q=0.8");
+        br.setCookie("http://uploaded.to", "lang", "en");
+        br.getPage("http://uploaded.to");
+        br.getPage("http://uploaded.to/language/en");
+        br.postPage("http://uploaded.to/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
+        if (br.containsHTML("User and password do not match")) {
+            AccountInfo ai = account.getAccountInfo();
+            if (ai != null) ai.setStatus("User and password do not match");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        if (br.getCookie("http://uploaded.to", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
+        this.correctDownloadLink(downloadLink);
+        String id = getID(downloadLink);
+        boolean red = br.isFollowingRedirects();
+        br.setFollowRedirects(false);
+        try {
+            br.getPage("http://uploaded.to/file/" + id + "/status");
+            String ret = br.getRedirectLocation();
+            if (ret != null && ret.contains("/404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String name = br.getRegex("(.*?)(\r|\n)").getMatch(0);
+            String size = br.getRegex(".+[\r\n]{1,2}(.+)").getMatch(0);
+            if (name == null || size == null) return AvailableStatus.UNCHECKABLE;
+            downloadLink.setFinalFileName(name.trim());
+            downloadLink.setDownloadSize(SizeFormatter.getSize(size));
+        } finally {
+            br.setFollowRedirects(red);
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -358,129 +487,11 @@ public class Uploadedto extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
-    }
-
-    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    static class Sec {
-        private byte[] key;
-        private byte[] prep;
-
-        public Sec() {
-            key = new byte[] { 0x01, 0x02, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
-            prep = Base64.decode("MC8O21gQXUaeSgMxxiOGugSrROkQHTbadlwDeJqHOpU4Q2o38bGWkm3/2zfS0N0s");
-        }
-
-        public static String d(final byte[] b, final byte[] key) {
-            Cipher cipher;
-            try {
-                final IvParameterSpec ivSpec = new IvParameterSpec(key);
-                final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-
-                cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-                cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-                return new String(cipher.doFinal(b), "UTF-8");
-            } catch (final Exception e) {
-                e.printStackTrace();
-                final IvParameterSpec ivSpec = new IvParameterSpec(key);
-                final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-
-                try {
-                    cipher = Cipher.getInstance("AES/CBC/nopadding");
-
-                    cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-                    return new String(cipher.doFinal(b), "UTF-8");
-                } catch (final Exception e1) {
-                    e.printStackTrace();
-                }
-
-            }
-            return null;
-        }
-
-        public String run() {
-
-            return new String(new byte[] { 97, 112, 105, 107, 101, 121 }) + "=" + d(prep, key);
-
-        }
-    }
-
     @Override
-    public boolean checkLinks(DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            Browser br = new Browser();
-            workAroundTimeOut(br);
-            br.setCookiesExclusive(true);
-            StringBuilder sb = new StringBuilder();
-            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            while (true) {
-                links.clear();
-                while (true) {
-                    /* we test 80 links at once */
-                    if (index == urls.length || links.size() > 80) break;
-                    links.add(urls[index]);
-                    index++;
-                }
-                sb.delete(0, sb.capacity());
-                sb.append(new Sec().run());
-                int c = 0;
-                for (DownloadLink dl : links) {
-                    sb.append("&id_" + c + "=" + getID(dl));
-                    c++;
-                }
-                int retry = 0;
-                while (true) {
-                    /*
-                     * workaround for api issues, retry 5 times when content
-                     * length is only 20 bytes
-                     */
-                    if (retry == 5) return false;
-                    br.postPage("http://uploaded.to/api/filemultiple", sb.toString());
-                    if (br.getHttpConnection().getLongContentLength() != 20) {
-                        break;
-                    }
-                    Thread.sleep(500);
-                    retry++;
-                }
-                sb = null;
-                String infos[][] = br.getRegex(Pattern.compile("(.*?),(.*?),(.*?),(.*?),(.*?)(\r|\n|$)")).getMatches();
-                for (DownloadLink dl : links) {
-                    String id = getID(dl);
-                    int hit = -1;
-                    for (int i = 0; i < infos.length; i++) {
-                        if (infos[i][1].equalsIgnoreCase(id)) {
-                            hit = i;
-                            break;
-                        }
-                    }
-                    if (hit == -1) {
-                        /* id not in response, so its offline */
-                        dl.setAvailable(false);
-                    } else {
-                        dl.setFinalFileName(infos[hit][4].trim());
-                        dl.setDownloadSize(SizeFormatter.getSize(infos[hit][2]));
-                        if ("online".equalsIgnoreCase(infos[hit][0].trim())) {
-                            dl.setAvailable(true);
-                            String sha1 = infos[hit][3].trim();
-                            if (sha1.length() == 0) sha1 = null;
-                            dl.setSha1Hash(sha1);
-                            dl.setMD5Hash(null);
-                        } else {
-                            dl.setAvailable(false);
-                        }
-                    }
-                }
-                if (index == urls.length) break;
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
+    public void resetPluginGlobals() {
     }
 
 }

@@ -39,6 +39,18 @@ public class UploadStube extends PluginForHost {
         return "http://www.uploadstube.de/regeln.php";
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        this.requestFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
+        String link = br.getRegex("onClick=\"window\\.location=..(http://www.uploadstube.de/.*?)..\"").getMatch(0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link);
+        dl.startDownload();
+    }
+
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -50,25 +62,13 @@ public class UploadStube extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        this.requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL());
-        String link = br.getRegex("onClick=\"window\\.location=..(http://www.uploadstube.de/.*?)..\"").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link);
-        dl.startDownload();
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
     public void reset() {
     }
 
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

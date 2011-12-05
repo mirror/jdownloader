@@ -42,6 +42,26 @@ public class FileHosterRu extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML("Файлообменник временно не работает")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FileHosterRu.errors.hostertemporaryunavailable", "This hoster is temporary not available!"));
+        String dllink = br.getRegex("class='file1link' href='(http.*?)'>").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("'(http://dl[0-9]+\\.filehoster\\.ru/files/.*?)'>").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("windows-1251");
@@ -74,27 +94,7 @@ public class FileHosterRu extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        if (br.containsHTML("Файлообменник временно не работает")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FileHosterRu.errors.hostertemporaryunavailable", "This hoster is temporary not available!"));
-        String dllink = br.getRegex("class='file1link' href='(http.*?)'>").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("'(http://dl[0-9]+\\.filehoster\\.ru/files/.*?)'>").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

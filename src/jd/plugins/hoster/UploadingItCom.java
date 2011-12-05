@@ -44,6 +44,27 @@ public class UploadingItCom extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        // Waittime is skippable
+        // sleep(12 * 1001l, downloadLink);;
+        String postUrl = br.getRegex("<form action=\"(file/download/.*?)\"").getMatch(0);
+        if (postUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        postUrl = "http://uploadingit.com/" + postUrl;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, postUrl, "a=download", true, -2);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", ua);
@@ -74,28 +95,7 @@ public class UploadingItCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        // Waittime is skippable
-        // sleep(12 * 1001l, downloadLink);;
-        String postUrl = br.getRegex("<form action=\"(file/download/.*?)\"").getMatch(0);
-        if (postUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        postUrl = "http://uploadingit.com/" + postUrl;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, postUrl, "a=download", true, -2);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

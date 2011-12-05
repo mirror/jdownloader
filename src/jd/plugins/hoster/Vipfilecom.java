@@ -39,10 +39,22 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vip-file.com" }, urls = { "http://[\\w\\.]*?vip-file\\.com/download(lib)?/.*?/.*?\\.html" }, flags = { 2 })
 public class Vipfilecom extends PluginForHost {
 
+    public static final String  FREELINKREGEX = "\"(http://vip-file.com/download([0-9]+)/.*?)\"";
+
+    private static final Object LOCK          = new Object();
+
     public Vipfilecom(PluginWrapper wrapper) {
         super(wrapper);
         this.setAccountwithoutUsername(true);
         enablePremium("http://vip-file.com/tmpl/premium_en.php");
+    }
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        synchronized (LOCK) {
+            AccountInfo ai = new AccountInfo();
+            ai.setStatus("Status can only be checked while downloading!");
+            account.setValid(true);
+            return ai;
+        }
     }
 
     @Override
@@ -50,30 +62,9 @@ public class Vipfilecom extends PluginForHost {
         return "http://vip-file.com/page/terms.php";
     }
 
-    public static final String  FREELINKREGEX = "\"(http://vip-file.com/download([0-9]+)/.*?)\"";
-    private static final Object LOCK          = new Object();
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
-        String downloadURL = downloadLink.getDownloadURL();
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setReadTimeout(2 * 60 * 1000);
-        br.setCookie("http://vip-file.com/", "lang", "en");
-        br.getPage(downloadURL);
-        if (br.containsHTML("(This file not found|\">File not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String fileSize = br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
-        if (fileSize == null) fileSize = br.getRegex("<p>Size of file: <span>(.*?)</span>").getMatch(0);
-        String fileName = br.getRegex("<input type=\"hidden\" name=\"realname\" value=\"(.*?)\" />").getMatch(0);
-        if (fileSize == null || fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
-        downloadLink.setName(fileName);
-        String link = Encoding.htmlDecode(br.getRegex(Pattern.compile(FREELINKREGEX, Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (link == null) {
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
-            return AvailableStatus.TRUE;
-        }
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -169,18 +160,27 @@ public class Vipfilecom extends PluginForHost {
         dl.startDownload();
     }
 
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        synchronized (LOCK) {
-            AccountInfo ai = new AccountInfo();
-            ai.setStatus("Status can only be checked while downloading!");
-            account.setValid(true);
-            return ai;
-        }
-    }
-
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+        String downloadURL = downloadLink.getDownloadURL();
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setReadTimeout(2 * 60 * 1000);
+        br.setCookie("http://vip-file.com/", "lang", "en");
+        br.getPage(downloadURL);
+        if (br.containsHTML("(This file not found|\">File not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String fileSize = br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
+        if (fileSize == null) fileSize = br.getRegex("<p>Size of file: <span>(.*?)</span>").getMatch(0);
+        String fileName = br.getRegex("<input type=\"hidden\" name=\"realname\" value=\"(.*?)\" />").getMatch(0);
+        if (fileSize == null || fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
+        downloadLink.setName(fileName);
+        String link = Encoding.htmlDecode(br.getRegex(Pattern.compile(FREELINKREGEX, Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (link == null) {
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
+            return AvailableStatus.TRUE;
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -188,11 +188,11 @@ public class Vipfilecom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

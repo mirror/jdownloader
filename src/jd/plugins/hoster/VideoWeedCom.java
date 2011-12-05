@@ -33,15 +33,10 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoweed.com" }, urls = { "http://((www\\.)?videoweed\\.(com|es)/file/|embed\\.videoweed\\.(com|es)/embed\\.php\\?.*?v=)[a-z0-9]+" }, flags = { 0 })
 public class VideoWeedCom extends PluginForHost {
 
-    public VideoWeedCom(PluginWrapper wrapper) {
-        super(wrapper);
-    }
-
     private String dllink = null;
 
-    @Override
-    public String getAGBLink() {
-        return "http://www.videoweed.com/terms.php";
+    public VideoWeedCom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -49,6 +44,27 @@ public class VideoWeedCom extends PluginForHost {
         String fileID = new Regex(link.getDownloadURL(), "v=([a-z0-9]+)").getMatch(0);
         if (fileID != null) link.setUrlDownload("http://www.videoweed.es/file/" + fileID);
         link.setUrlDownload(link.getDownloadURL().replace("videoweed.com/", "videoweed.es/"));
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.videoweed.com/terms.php";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -95,30 +111,14 @@ public class VideoWeedCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

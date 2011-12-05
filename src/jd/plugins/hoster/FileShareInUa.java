@@ -40,29 +40,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshare.in.ua" }, urls = { "http://(www\\.)?fileshare\\.in\\.ua/[0-9]+" }, flags = { 2 })
 public class FileShareInUa extends PluginForHost {
 
+    private static final String TEMPORARYUNAVAILABLE = "<b>Файл временно недоступен</b>";
+
     public FileShareInUa(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://fileshare.in.ua/premium.aspx");
-    }
-
-    private static final String TEMPORARYUNAVAILABLE = "<b>Файл временно недоступен</b>";
-
-    @Override
-    public String getAGBLink() {
-        return "http://fileshare.in.ua/about.aspx";
-    }
-
-    public void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage("http://fileshare.in.ua");
-        Form form = br.getFormbyKey("auto_login");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        form.put("email", Encoding.urlEncode(account.getUser()));
-        form.put("password", Encoding.urlEncode(account.getPass()));
-        br.setFollowRedirects(true);
-        br.submitForm(form);
-        if (br.getCookie("http://fileshare.in.ua/", "bfileshare_uid") == null || br.getCookie("http://fileshare.in.ua/", "bfileshare_hash") == null || br.getCookie("http://fileshare.in.ua/", "bfileshare_pass") == null || !br.containsHTML("обычный премиум</a> до")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -87,49 +69,31 @@ public class FileShareInUa extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FileShareInUa.errors.temporaryunavailable", "This file is temporary unavailable"));
-        login(account);
-        br.getPage(downloadLink.getDownloadURL());
-        String getlink = br.getRegex("href=\"(/get/.*?)\"").getMatch(0);
-        if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        getlink = "http://fileshare.in.ua" + getlink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, getlink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("Воcстановление файла\\.\\.\\.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public String getAGBLink() {
+        return "http://fileshare.in.ua/about.aspx";
+    }
+
+    private Form getFormWhichContainsHTML(String searchFor) {
+        Form[] allForms = br.getForms();
+        if (allForms == null || allForms.length == 0) return null;
+        Form returnform = null;
+        for (Form singleForm : allForms) {
+            if (singleForm.containsHTML(searchFor)) {
+                returnform = singleForm;
+                break;
+            }
         }
-        dl.startDownload();
+        return returnform;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        // Using the link + "?free" we can get to the page with the captcha but
-        // atm we do it without captcha
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Такой страницы на нашем сайте нет")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>скачать (.*?)</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("class=\"file_name sr_archive\">[\n\r ]+<span>(.*?)</span>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("width=\"156px\" height=\"39px\" alt=\"(.*?) на FileShare\\.in\\.ua\"").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("Размер: <b>(.*?)</b>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (br.containsHTML(TEMPORARYUNAVAILABLE)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.FileShareInUa.errors.temporaryunavailable", "This file is temporary unavailable"));
-        link.setFinalFileName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -202,17 +166,63 @@ public class FileShareInUa extends PluginForHost {
         dl.startDownload();
     }
 
-    private Form getFormWhichContainsHTML(String searchFor) {
-        Form[] allForms = br.getForms();
-        if (allForms == null || allForms.length == 0) return null;
-        Form returnform = null;
-        for (Form singleForm : allForms) {
-            if (singleForm.containsHTML(searchFor)) {
-                returnform = singleForm;
-                break;
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FileShareInUa.errors.temporaryunavailable", "This file is temporary unavailable"));
+        login(account);
+        br.getPage(downloadLink.getDownloadURL());
+        String getlink = br.getRegex("href=\"(/get/.*?)\"").getMatch(0);
+        if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        getlink = "http://fileshare.in.ua" + getlink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, getlink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("Воcстановление файла\\.\\.\\.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage("http://fileshare.in.ua");
+        Form form = br.getFormbyKey("auto_login");
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        form.put("email", Encoding.urlEncode(account.getUser()));
+        form.put("password", Encoding.urlEncode(account.getPass()));
+        br.setFollowRedirects(true);
+        br.submitForm(form);
+        if (br.getCookie("http://fileshare.in.ua/", "bfileshare_uid") == null || br.getCookie("http://fileshare.in.ua/", "bfileshare_hash") == null || br.getCookie("http://fileshare.in.ua/", "bfileshare_pass") == null || !br.containsHTML("обычный премиум</a> до")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        // Using the link + "?free" we can get to the page with the captcha but
+        // atm we do it without captcha
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("Такой страницы на нашем сайте нет")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>скачать (.*?)</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("class=\"file_name sr_archive\">[\n\r ]+<span>(.*?)</span>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("width=\"156px\" height=\"39px\" alt=\"(.*?) на FileShare\\.in\\.ua\"").getMatch(0);
             }
         }
-        return returnform;
+        String filesize = br.getRegex("Размер: <b>(.*?)</b>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML(TEMPORARYUNAVAILABLE)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.FileShareInUa.errors.temporaryunavailable", "This file is temporary unavailable"));
+        link.setFinalFileName(filename);
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -220,16 +230,11 @@ public class FileShareInUa extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public void resetPluginGlobals() {
     }
 
 }

@@ -40,18 +40,8 @@ public class MadShareCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(parameter.getDownloadURL());
-        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>MadShare.com.*?Download(.*?)</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h2>(.*?)\\(<span").getMatch(0);
-        String filesize = br.getRegex("class=\"size\">(.*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setName(filename.trim());
-        parameter.setDownloadSize(SizeFormatter.getSize(filesize + "Bytes"));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -90,16 +80,26 @@ public class MadShareCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(parameter.getDownloadURL());
+        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>MadShare.com.*?Download(.*?)</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h2>(.*?)\\(<span").getMatch(0);
+        String filesize = br.getRegex("class=\"size\">(.*?)</span>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setName(filename.trim());
+        parameter.setDownloadSize(SizeFormatter.getSize(filesize + "Bytes"));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void reset() {
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
 }

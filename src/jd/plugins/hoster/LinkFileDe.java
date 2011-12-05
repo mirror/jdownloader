@@ -47,20 +47,6 @@ public class LinkFileDe extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        String url = downloadLink.getDownloadURL();
-        br.getPage(url);
-        if (br.containsHTML("Diese Datei ist nicht mehr verf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String size = br.getRegex("<tbody><tr><td[^>]*>\\s+(.*?)\\s+&nbsp;").getMatch(0);
-        if (size == null) size = br.getRegex("&nbsp; \\((.*?)\\)").getMatch(0);
-        String name = br.getRegex("Datei: <b>(.*?)</b>").getMatch(0);
-        if (size == null || name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setDownloadSize(SizeFormatter.getSize(size));
-        downloadLink.setName(name.trim());
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String code = getCaptchaCode(br.getBaseURL() + "captcha.php", downloadLink);
@@ -75,6 +61,25 @@ public class LinkFileDe extends PluginForHost {
         }
         dl.setResume(true);
         dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        String url = downloadLink.getDownloadURL();
+        br.getPage(url);
+        if (br.containsHTML("Diese Datei ist nicht mehr verf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String size = br.getRegex("<tbody><tr><td[^>]*>\\s+(.*?)\\s+&nbsp;").getMatch(0);
+        if (size == null) size = br.getRegex("&nbsp; \\((.*?)\\)").getMatch(0);
+        String name = br.getRegex("Datei: <b>(.*?)</b>").getMatch(0);
+        if (size == null || name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setDownloadSize(SizeFormatter.getSize(size));
+        downloadLink.setName(name.trim());
+        return AvailableStatus.TRUE;
     }
 
     @Override

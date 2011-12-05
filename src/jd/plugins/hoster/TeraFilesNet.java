@@ -42,32 +42,6 @@ public class TeraFilesNet extends PluginForHost {
         this.enablePremium("http://www.terafiles.net/index.php");
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://www.terafiles.net/tos.html";
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Fichier indisponible</h1>|Le fichier que vous souhaitez télécharger n'est plus disponible sur nos serveurs\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>Télécharger (.*?) - Envoi, hebergement,").getMatch(0);
-        String filesize = br.getRegex("\">Taille du fichier :</td>[\t\n\r ]+<td><strong>(.*?)</strong></td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filesize = filesize.replace("Mo", "Mb");
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        link.setName(filename.trim());
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
-    }
-
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         br.setFollowRedirects(false);
         String fileID = new Regex(downloadLink.getDownloadURL(), "terafiles\\.net/v-(\\d+)\\.html").getMatch(0);
@@ -96,13 +70,6 @@ public class TeraFilesNet extends PluginForHost {
         }
     }
 
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        // br.getPage("");
-        br.postPage("http://www.terafiles.net/index.php?p=connexion", "remember=on&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie("http://www.terafiles.net/", "session_cookie_id") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -118,12 +85,13 @@ public class TeraFilesNet extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        doFree(link);
+    public String getAGBLink() {
+        return "http://www.terafiles.net/tos.html";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -132,12 +100,49 @@ public class TeraFilesNet extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        doFree(downloadLink);
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        doFree(link);
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        // br.getPage("");
+        br.postPage("http://www.terafiles.net/index.php?p=connexion", "remember=on&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+        if (br.getCookie("http://www.terafiles.net/", "session_cookie_id") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>Fichier indisponible</h1>|Le fichier que vous souhaitez télécharger n'est plus disponible sur nos serveurs\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>Télécharger (.*?) - Envoi, hebergement,").getMatch(0);
+        String filesize = br.getRegex("\">Taille du fichier :</td>[\t\n\r ]+<td><strong>(.*?)</strong></td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filesize = filesize.replace("Mo", "Mb");
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        link.setName(filename.trim());
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

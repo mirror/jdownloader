@@ -33,18 +33,84 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uzmantv.com" }, urls = { "http://(www\\.)?uzmantv\\.com/[a-z0-9-]+" }, flags = { 0 })
 public class UzManTvCom extends PluginForHost {
 
+    private String DLLINK = null;
+
+    private static final String DLLINKPART = "?source=site";
+
     public UzManTvCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String execJS(final String fun) throws Exception {
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            result = engine.eval(fun);
+        } catch (final Exception e) {
+            JDLogger.exception(e);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return result.toString();
+    }
 
     @Override
     public String getAGBLink() {
         return "http://www.uzmantv.com/kullanimkosullari";
     }
 
-    private static final String DLLINKPART = "?source=site";
+    private String getDllink() throws Exception {
+        String crypticID = br.getRegex("/getswf/(.*?)\"").getMatch(0);
+        if (crypticID == null) {
+            crypticID = br.getRegex("id=\"konulink(.*?)\"").getMatch(0);
+            if (crypticID == null) {
+                crypticID = br.getRegex(">video=\\'(.*?)\\'").getMatch(0);
+                if (crypticID == null) {
+                    crypticID = br.getRegex("v:\\((.*?)\\)").getMatch(0);
+                    if (crypticID == null) {
+                        crypticID = br.getRegex("\\'v=(.*?)\\&").getMatch(0);
+                    }
+                }
+            }
+        }
+        String videoID = br.getRegex("\\'\\&no=(\\d+)\\&").getMatch(0);
+        if (videoID == null) {
+            videoID = br.getRegex("property=\"og:title\" /><meta content=\"http://st\\d+\\.uzmantv\\.com/videos/(\\d+)/").getMatch(0);
+            if (videoID == null) {
+                videoID = br.getRegex("rel=\"canonical\" /><link href=\"http://st\\d+\\.uzmantv\\.com/videos/(\\d+)/").getMatch(0);
+                if (videoID == null) {
+                    videoID = br.getRegex("rel=\"image_src\" /><link href=\"http://st\\d+\\.uzmantv\\.com/videos/(\\d+)/").getMatch(0);
+                    if (videoID == null) {
+                        videoID = br.getRegex("rel=\"thumbnail\" /><link href=\"http://st\\d+\\.uzmantv\\.com/videos/(\\d+)/").getMatch(0);
+                    }
+                }
+            }
+        }
+        String jsOne = br.getRegex("</div><script type=\"text/javascript\">(.*?)</script>").getMatch(0);
+        String securedStuff = br.getRegex("var tok = (.*?);").getMatch(0);
+        String ext = br.getRegex("ext=([a-z0-9]{2,5})\\&").getMatch(0);
+        if (ext == null) ext = "flv";
+        if (securedStuff == null || jsOne == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        securedStuff = execJS(jsOne + securedStuff);
+        return "http://st2.uzmantv.com/c/" + crypticID + "_" + videoID + "_" + securedStuff + "." + ext;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
@@ -84,80 +150,14 @@ public class UzManTvCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    private String getDllink() throws Exception {
-        String crypticID = br.getRegex("/getswf/(.*?)\"").getMatch(0);
-        if (crypticID == null) {
-            crypticID = br.getRegex("id=\"konulink(.*?)\"").getMatch(0);
-            if (crypticID == null) {
-                crypticID = br.getRegex(">video=\\'(.*?)\\'").getMatch(0);
-                if (crypticID == null) {
-                    crypticID = br.getRegex("v:\\((.*?)\\)").getMatch(0);
-                    if (crypticID == null) {
-                        crypticID = br.getRegex("\\'v=(.*?)\\&").getMatch(0);
-                    }
-                }
-            }
-        }
-        String videoID = br.getRegex("\\'\\&no=(\\d+)\\&").getMatch(0);
-        if (videoID == null) {
-            videoID = br.getRegex("property=\"og:title\" /><meta content=\"http://st\\d+\\.uzmantv\\.com/videos/(\\d+)/").getMatch(0);
-            if (videoID == null) {
-                videoID = br.getRegex("rel=\"canonical\" /><link href=\"http://st\\d+\\.uzmantv\\.com/videos/(\\d+)/").getMatch(0);
-                if (videoID == null) {
-                    videoID = br.getRegex("rel=\"image_src\" /><link href=\"http://st\\d+\\.uzmantv\\.com/videos/(\\d+)/").getMatch(0);
-                    if (videoID == null) {
-                        videoID = br.getRegex("rel=\"thumbnail\" /><link href=\"http://st\\d+\\.uzmantv\\.com/videos/(\\d+)/").getMatch(0);
-                    }
-                }
-            }
-        }
-        String jsOne = br.getRegex("</div><script type=\"text/javascript\">(.*?)</script>").getMatch(0);
-        String securedStuff = br.getRegex("var tok = (.*?);").getMatch(0);
-        String ext = br.getRegex("ext=([a-z0-9]{2,5})\\&").getMatch(0);
-        if (ext == null) ext = "flv";
-        if (securedStuff == null || jsOne == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        securedStuff = execJS(jsOne + securedStuff);
-        return "http://st2.uzmantv.com/c/" + crypticID + "_" + videoID + "_" + securedStuff + "." + ext;
-    }
-
-    private String execJS(final String fun) throws Exception {
-        Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        try {
-            result = engine.eval(fun);
-        } catch (final Exception e) {
-            JDLogger.exception(e);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        return result.toString();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

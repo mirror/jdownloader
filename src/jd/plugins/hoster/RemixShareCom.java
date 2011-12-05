@@ -42,46 +42,39 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "remixshare.com" }, urls = { "http://[\\w\\.]*?remixshare\\.com/(.*?\\?file=|download/)[a-z0-9]+" }, flags = { 0 })
 public class RemixShareCom extends PluginForHost {
 
+    public static final String BLOCKED = "(class=\"blocked\"|>Von Deiner IP Adresse kamen zu viele Anfragen innerhalb kurzer Zeit\\.)";
+
+    public static final Object LOCK    = new Object();
+
     public RemixShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(3000l);
+    }
+    private String execJS() throws Exception {
+        String fun = br.getRegex("/>Your Download has been started\\.[\t\n\r ]+</div>[\t\n\r ]+<script type=\"text/javascript\" language=\"Javascript\">(.*?)</script>").getMatch(0);
+        if (fun == null) return null;
+        fun = "var game = \"\";" + fun;
+        String ah = new Regex(fun, "(document\\.getElementById\\((.*?)\\)\\.innerHTML)").getMatch(0);
+        if (ah != null) fun = fun.replace(ah, "game");
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            result = engine.eval(fun);
+        } catch (final Exception e) {
+            JDLogger.exception(e);
+            return null;
+        }
+        if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return result.toString();
     }
 
     public String getAGBLink() {
         return "http://remixshare.com/information/";
     }
 
-    public static final String BLOCKED = "(class=\"blocked\"|>Von Deiner IP Adresse kamen zu viele Anfragen innerhalb kurzer Zeit\\.)";
-    public static final Object LOCK    = new Object();
-
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        synchronized (LOCK) {
-            if (this.isAborted(downloadLink)) return AvailableStatus.TRUE;
-            /* wait 1.5 seconds between filechecks */
-            Thread.sleep(1500);
-        }
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("http://remixshare.com", "lang_en", "english");
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(BLOCKED)) return AvailableStatus.UNCHECKABLE;
-        br.setFollowRedirects(false);
-        if (br.containsHTML("Error Code: 500\\.") || br.containsHTML("Please check the downloadlink")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<span title=\\'([0-9]{10}_)?(.*?)\\'>", Pattern.CASE_INSENSITIVE)).getMatch(1));
-        if (filename == null) filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>(.*?)Download at remiXshare Filehosting", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        String filesize = br.getRegex("(>|\\.\\.\\.)\\&nbsp;\\((.*?)\\)<").getMatch(1);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(filename.trim());
-        if (filesize != null) {
-            filesize = Encoding.htmlDecode(filesize);
-            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
-        }
-        String md5Hash = br.getRegex("/>MD5:(.*?)</span>").getMatch(0);
-        if (md5Hash != null) {
-            downloadLink.setMD5Hash(md5Hash.trim());
-        }
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -118,36 +111,43 @@ public class RemixShareCom extends PluginForHost {
 
     }
 
-    private String execJS() throws Exception {
-        String fun = br.getRegex("/>Your Download has been started\\.[\t\n\r ]+</div>[\t\n\r ]+<script type=\"text/javascript\" language=\"Javascript\">(.*?)</script>").getMatch(0);
-        if (fun == null) return null;
-        fun = "var game = \"\";" + fun;
-        String ah = new Regex(fun, "(document\\.getElementById\\((.*?)\\)\\.innerHTML)").getMatch(0);
-        if (ah != null) fun = fun.replace(ah, "game");
-        Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        try {
-            result = engine.eval(fun);
-        } catch (final Exception e) {
-            JDLogger.exception(e);
-            return null;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        synchronized (LOCK) {
+            if (this.isAborted(downloadLink)) return AvailableStatus.TRUE;
+            /* wait 1.5 seconds between filechecks */
+            Thread.sleep(1500);
         }
-        if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        return result.toString();
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setCookie("http://remixshare.com", "lang_en", "english");
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(BLOCKED)) return AvailableStatus.UNCHECKABLE;
+        br.setFollowRedirects(false);
+        if (br.containsHTML("Error Code: 500\\.") || br.containsHTML("Please check the downloadlink")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<span title=\\'([0-9]{10}_)?(.*?)\\'>", Pattern.CASE_INSENSITIVE)).getMatch(1));
+        if (filename == null) filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>(.*?)Download at remiXshare Filehosting", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String filesize = br.getRegex("(>|\\.\\.\\.)\\&nbsp;\\((.*?)\\)<").getMatch(1);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setName(filename.trim());
+        if (filesize != null) {
+            filesize = Encoding.htmlDecode(filesize);
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        }
+        String md5Hash = br.getRegex("/>MD5:(.*?)</span>").getMatch(0);
+        if (md5Hash != null) {
+            downloadLink.setMD5Hash(md5Hash.trim());
+        }
+        return AvailableStatus.TRUE;
     }
 
     public void reset() {
     }
 
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

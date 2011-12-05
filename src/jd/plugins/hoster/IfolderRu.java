@@ -38,57 +38,25 @@ public class IfolderRu extends PluginForHost {
 
     private String ua = RandomUserAgent.generate();
 
+    private static final String PWTEXT  = "type=\"password\" name=\"pswd\"";
+
+    private static final String CAPTEXT = "/random/images/";
+
     public IfolderRu(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    @Override
-    public String getAGBLink() {
-        return ("http://ifolder.ru/agreement");
     }
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("files.metalarea.org", "ifolder.ru"));
     }
 
-    private static final String PWTEXT  = "type=\"password\" name=\"pswd\"";
-    private static final String CAPTEXT = "/random/images/";
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException, InterruptedException {
-        this.setBrowserExclusive();
-        prepareBrowser(br);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            String fileID = new Regex(downloadLink.getDownloadURL(), "ifolder\\.ru/(.+)").getMatch(0);
-            if (!br.getRedirectLocation().contains(fileID)) {
-                logger.warning("The redirect location doesn't contain the fileID, stopping...");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            logger.info("Setting new downloadUrl...");
-            downloadLink.setUrlDownload(br.getRedirectLocation());
-            br.getPage(downloadLink.getDownloadURL());
-        }
-        if (br.containsHTML("<p>Файл номер <b>\\d+</b> удален !!!</p>") || br.containsHTML("<p>Файл номер <b>\\d+</b> не найден !!!</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        String filename = br.getRegex("Название:.*?<b>(.*?)</b>").getMatch(0);
-        String filesize = br.getRegex("Размер:.*?<b>(.*?)</b>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (filename.contains("..")) {
-            /* because of server problems check for final filename here */
-            downloadLink.setName(filename);
-        } else {
-            downloadLink.setFinalFileName(filename);
-        }
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace("Мб", "Mb").replace("кб", "Kb").replace("Гб", "Gb")));
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return ("http://ifolder.ru/agreement");
     }
-
-    private void prepareBrowser(Browser br) {
-        if (br == null) return;
-        br.getHeaders().put("User-Agent", ua);
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 10;
     }
 
     // If they change back to the "secret" value in the last form(s) look into
@@ -215,13 +183,50 @@ public class IfolderRu extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    private void prepareBrowser(Browser br) {
+        if (br == null) return;
+        br.getHeaders().put("User-Agent", ua);
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException, InterruptedException {
+        this.setBrowserExclusive();
+        prepareBrowser(br);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            String fileID = new Regex(downloadLink.getDownloadURL(), "ifolder\\.ru/(.+)").getMatch(0);
+            if (!br.getRedirectLocation().contains(fileID)) {
+                logger.warning("The redirect location doesn't contain the fileID, stopping...");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            logger.info("Setting new downloadUrl...");
+            downloadLink.setUrlDownload(br.getRedirectLocation());
+            br.getPage(downloadLink.getDownloadURL());
+        }
+        if (br.containsHTML("<p>Файл номер <b>\\d+</b> удален !!!</p>") || br.containsHTML("<p>Файл номер <b>\\d+</b> не найден !!!</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+        String filename = br.getRegex("Название:.*?<b>(.*?)</b>").getMatch(0);
+        String filesize = br.getRegex("Размер:.*?<b>(.*?)</b>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename.contains("..")) {
+            /* because of server problems check for final filename here */
+            downloadLink.setName(filename);
+        } else {
+            downloadLink.setFinalFileName(filename);
+        }
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace("Мб", "Mb").replace("кб", "Kb").replace("Гб", "Gb")));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

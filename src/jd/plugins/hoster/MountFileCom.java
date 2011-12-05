@@ -32,9 +32,15 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.com" }, urls = { "http://[\\w\\.]*?mountfile\\.com/file/[a-z0-9]+/[a-z0-9]+" }, flags = { 0 })
 public class MountFileCom extends PluginForHost {
+    private static final String MAINPAGE = "http://mountfile.com/";
+
     // YunFileCom uses the same script
     public MountFileCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("share.", ""));
     }
 
     @Override
@@ -42,27 +48,9 @@ public class MountFileCom extends PluginForHost {
         return "http://www.mountfile.com/user/terms.html";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("share.", ""));
-    }
-
-    private static final String MAINPAGE = "http://mountfile.com/";
-
-    // Works like HowFileCom and YunFileCom
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("http://mountfile.com/", "language", "en_us");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("File not found or System under maintanence\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) - MountFile\\.com - Free File Hosting and Sharing, Permanently Save </title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h2 class=\"title\">Downloading:\\&nbsp;\\&nbsp;(.*?)</h2>").getMatch(0);
-        String filesize = br.getRegex("File Size: <b>(.*?)</b><br>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -107,13 +95,25 @@ public class MountFileCom extends PluginForHost {
         dl.startDownload();
     }
 
+    // Works like HowFileCom and YunFileCom
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setCookie("http://mountfile.com/", "language", "en_us");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("File not found or System under maintanence\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?) - MountFile\\.com - Free File Hosting and Sharing, Permanently Save </title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h2 class=\"title\">Downloading:\\&nbsp;\\&nbsp;(.*?)</h2>").getMatch(0);
+        String filesize = br.getRegex("File Size: <b>(.*?)</b><br>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public void reset() {
     }
 
     @Override

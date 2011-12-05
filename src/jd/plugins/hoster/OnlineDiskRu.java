@@ -44,30 +44,8 @@ public class OnlineDiskRu extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCustomCharset("windows-1251");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Возможно, файл, который Вы запрашиваете, был удален") || br.containsHTML("image/404.jpg") || br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (downloadLink.getDownloadURL().contains("/view/")) {
-            if (!br.containsHTML("id='photo'")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "onlinedisk\\.ru/view/([0-9]+)").getMatch(0));
-        } else {
-            String filename = br.getRegex("Файл: <b style='font-size:[0-9]+px;'>(.*?)</b>").getMatch(0);
-            String fileSize = br.getRegex("<b>Размер файла.*?:</b>(.*?)</div>").getMatch(0);
-            if (fileSize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            fileSize = fileSize.trim();
-            fileSize = fileSize.replace("б", "");
-            fileSize = fileSize.replace("Г", "G");
-            fileSize = fileSize.replace("м", "M");
-            fileSize = fileSize.replace("к", "k");
-            fileSize = fileSize + "b";
-            fileSize = fileSize.replace("айт", "");
-            downloadLink.setName(filename.trim());
-            downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
-        }
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -99,9 +77,36 @@ public class OnlineDiskRu extends PluginForHost {
 
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCustomCharset("windows-1251");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Возможно, файл, который Вы запрашиваете, был удален") || br.containsHTML("image/404.jpg") || br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getDownloadURL().contains("/view/")) {
+            if (!br.containsHTML("id='photo'")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "onlinedisk\\.ru/view/([0-9]+)").getMatch(0));
+        } else {
+            String filename = br.getRegex("Файл: <b style='font-size:[0-9]+px;'>(.*?)</b>").getMatch(0);
+            String fileSize = br.getRegex("<b>Размер файла.*?:</b>(.*?)</div>").getMatch(0);
+            if (fileSize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            fileSize = fileSize.trim();
+            fileSize = fileSize.replace("б", "");
+            fileSize = fileSize.replace("Г", "G");
+            fileSize = fileSize.replace("м", "M");
+            fileSize = fileSize.replace("к", "k");
+            fileSize = fileSize + "b";
+            fileSize = fileSize.replace("айт", "");
+            downloadLink.setName(filename.trim());
+            downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -109,10 +114,10 @@ public class OnlineDiskRu extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

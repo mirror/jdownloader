@@ -40,19 +40,8 @@ public class FileSurfRu extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.setCustomCharset("windows-1251");
-        br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("Запрошенный файл не существует")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Файл <b>(.*?)</b>").getMatch(0);
-        // String filesize = br.getRegex("(\\d+,[0-9.]+ Кб)").getMatch(0);
-        String filesize = br.getRegex("<b>([0-9,]+ байт)</b>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filesize = filesize.replace("Кб", "KB").replace("байт", "byte");
-        parameter.setName(filename.trim());
-        parameter.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -105,17 +94,33 @@ public class FileSurfRu extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        br.setCustomCharset("windows-1251");
+        br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML("Запрошенный файл не существует")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("Файл <b>(.*?)</b>").getMatch(0);
+        // String filesize = br.getRegex("(\\d+,[0-9.]+ Кб)").getMatch(0);
+        String filesize = br.getRegex("<b>([0-9,]+ байт)</b>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filesize = filesize.replace("Кб", "KB").replace("байт", "byte");
+        parameter.setName(filename.trim());
+        parameter.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void reset() {
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
 }

@@ -67,13 +67,6 @@ public class Rapidshare extends PluginForHost {
             return ret;
         }
 
-        /**
-         * @return the secTim
-         */
-        public String getSecTimout() {
-            return secTim;
-        }
-
         private long   id;
 
         private String name;
@@ -81,15 +74,8 @@ public class Rapidshare extends PluginForHost {
         private String url;
 
         private String secMD5;
+
         private String secTim;
-
-        /**
-         * @return the secMD5
-         */
-        public String getSecMD5() {
-            return secMD5;
-        }
-
         private DownloadLink link;
 
         public RSLink(final DownloadLink link) {
@@ -103,6 +89,20 @@ public class Rapidshare extends PluginForHost {
 
         public String getName() {
             return this.name;
+        }
+
+        /**
+         * @return the secMD5
+         */
+        public String getSecMD5() {
+            return secMD5;
+        }
+
+        /**
+         * @return the secTim
+         */
+        public String getSecTimout() {
+            return secTim;
         }
 
         public String getUrl() {
@@ -502,18 +502,6 @@ public class Rapidshare extends PluginForHost {
         }
     }
 
-    private boolean useSSL() {
-        try {
-            if (Browser.getGlobalProxy() != null) {
-                /* workaround for ssl proxy bug in 09581 stable */
-                return false;
-            }
-        } catch (Throwable e) {
-            /* catch not found in old nightly */
-        }
-        return this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, true) || this.getPluginConfig().getBooleanProperty(Rapidshare.HTTPS_WORKAROUND, false);
-    }
-
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         this.br.forceDebug(true);
@@ -842,6 +830,18 @@ public class Rapidshare extends PluginForHost {
             logger.severe("RS-API change detected, please inform support!");
         }
 
+    }
+
+    private boolean useSSL() {
+        try {
+            if (Browser.getGlobalProxy() != null) {
+                /* workaround for ssl proxy bug in 09581 stable */
+                return false;
+            }
+        } catch (Throwable e) {
+            /* catch not found in old nightly */
+        }
+        return this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, true) || this.getPluginConfig().getBooleanProperty(Rapidshare.HTTPS_WORKAROUND, false);
     }
 
     private void workAroundTimeOut(final Browser br) {

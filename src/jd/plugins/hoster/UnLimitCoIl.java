@@ -35,6 +35,8 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unlimit.co.il" }, urls = { "http://[\\w\\.]*?unlimit\\.co\\.il/getfile\\.php\\?name=\\d+-\\d+-.+" }, flags = { 2 })
 public class UnLimitCoIl extends PluginForHost {
 
+    private static final String ONLY4PREMIUMUSERTEXT = "Download is only available for premium users";
+
     public UnLimitCoIl(PluginWrapper wrapper) {
         super(wrapper);
         this.setAccountwithoutUsername(true);
@@ -49,11 +51,55 @@ public class UnLimitCoIl extends PluginForHost {
     }
 
     @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        account.setValid(true);
+        ai.setStatus("Status can only be checked while downloading!");
+        return ai;
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://www.unlimit.co.il/takanon.php";
     }
 
-    private static final String ONLY4PREMIUMUSERTEXT = "Download is only available for premium users";
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.unlimitcoil.only4premium", ONLY4PREMIUMUSERTEXT));
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        Form loginForm = br.getFormbyProperty("name", "frmLogin");
+        if (loginForm == null) loginForm = br.getFormbyProperty("id", "frmLogin");
+        if (loginForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        loginForm.put("phoneNumber", account.getPass());
+        // chunks are broken at the moment, response contains invalid
+        // content-range
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, loginForm, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            if (br.containsHTML(">שימו לב כי זהו האתר היחידי שלא מגביל תעבורה<") || br.containsHTML(">לאחר קבלת התשובה, עליך להזין את מספר הפלאפון שלך בתיבה למטה. כמו כן, מספר זה אישי ואינו ניתן להעברה")) {
+                logger.info("Account probably invalid, disabling it...");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -84,53 +130,7 @@ public class UnLimitCoIl extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.unlimitcoil.only4premium", ONLY4PREMIUMUSERTEXT));
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        account.setValid(true);
-        ai.setStatus("Status can only be checked while downloading!");
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        Form loginForm = br.getFormbyProperty("name", "frmLogin");
-        if (loginForm == null) loginForm = br.getFormbyProperty("id", "frmLogin");
-        if (loginForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        loginForm.put("phoneNumber", account.getPass());
-        // chunks are broken at the moment, response contains invalid
-        // content-range
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, loginForm, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            if (br.containsHTML(">שימו לב כי זהו האתר היחידי שלא מגביל תעבורה<") || br.containsHTML(">לאחר קבלת התשובה, עליך להזין את מספר הפלאפון שלך בתיבה למטה. כמו כן, מספר זה אישי ואינו ניתן להעברה")) {
-                logger.info("Account probably invalid, disabling it...");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

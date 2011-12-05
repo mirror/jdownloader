@@ -33,6 +33,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "girlshare.ro" }, urls = { "http://[\\w\\.]*?girlshare\\.ro/[0-9\\.]+" }, flags = { 0 })
 public class GirlShareRo extends PluginForHost {
 
+    private static String UA = RandomUserAgent.generate();
+
     public GirlShareRo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,21 +44,9 @@ public class GirlShareRo extends PluginForHost {
         return "http://www.girlshare.ro/";
     }
 
-    private static String UA = RandomUserAgent.generate();
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", UA);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<b>Acest fisier nu exista\\.</b>|<title>GirlShare - Acest fisier nu exista\\.</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("title = \"(.*?)\";").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>GirlShare - Download (.*?)</title>").getMatch(0);
-        String filesize = br.getRegex("</H3>[\n\r\t ]+<br>(.*?) , ").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -88,12 +78,22 @@ public class GirlShareRo extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", UA);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(<b>Acest fisier nu exista\\.</b>|<title>GirlShare - Acest fisier nu exista\\.</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("title = \"(.*?)\";").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>GirlShare - Download (.*?)</title>").getMatch(0);
+        String filesize = br.getRegex("</H3>[\n\r\t ]+<br>(.*?) , ").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

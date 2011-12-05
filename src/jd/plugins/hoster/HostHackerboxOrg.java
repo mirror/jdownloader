@@ -41,23 +41,8 @@ public class HostHackerboxOrg extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<h1>Invalid download link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("Password Protected: <input")) {
-            link.getLinkStatus().setStatusText("This file is password protected");
-            if (link.getStringProperty("pass", null) != null) {
-                handlePassword(link.getStringProperty("pass", null), link);
-            } else
-                return AvailableStatus.TRUE;
-        }
-        String filename = br.getRegex("<d2>File Name[ ]+:(.*?)</d2>").getMatch(0);
-        String filesize = br.getRegex("<d2>File Size[ ]+:(.*?)</d2>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -108,12 +93,27 @@ public class HostHackerboxOrg extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("<h1>Invalid download link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Password Protected: <input")) {
+            link.getLinkStatus().setStatusText("This file is password protected");
+            if (link.getStringProperty("pass", null) != null) {
+                handlePassword(link.getStringProperty("pass", null), link);
+            } else
+                return AvailableStatus.TRUE;
+        }
+        String filename = br.getRegex("<d2>File Name[ ]+:(.*?)</d2>").getMatch(0);
+        String filesize = br.getRegex("<d2>File Size[ ]+:(.*?)</d2>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

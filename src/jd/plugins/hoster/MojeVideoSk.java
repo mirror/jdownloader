@@ -43,7 +43,8 @@ public class MojeVideoSk extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -89,12 +90,11 @@ public class MojeVideoSk extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override
-    public void reset() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override

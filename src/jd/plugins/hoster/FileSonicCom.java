@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
@@ -56,6 +57,8 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
     private static final String  uaf                = "Mozilla/5.0 (JDF; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
     private static final String  uap                = "Mozilla/5.0 (JDP; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
 
+    private static final String RECAPTCHATEXT = "Recaptcha\\.create";
+
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.filesonic.com/premium");
@@ -63,6 +66,16 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
             if (!initDone) {
                 initDone = true;
                 new Thread(new Runnable() {
+
+                    // do not add @Override here to keep 0.* compatibility
+                    public boolean hasAutoCaptcha() {
+                        return JACMethod.hasMethod("recaptcha");
+                    }
+
+                    // do not add @Override here to keep 0.* compatibility
+                    public boolean hasCaptcha() {
+                        return true;
+                    }
 
                     @SuppressWarnings("deprecation")
                     public void run() {
@@ -72,58 +85,6 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
                 }).start();
             }
         }
-    }
-
-    private static final String RECAPTCHATEXT = "Recaptcha\\.create";
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.filesonic.com/terms-and-conditions";
-    }
-
-    private synchronized String getDomain() {
-        if (geoDomain != null) return geoDomain;
-        String defaultDomain = "http://www.filesonic.com";
-        try {
-            geoDomain = getDomainAPI();
-            if (geoDomain == null) {
-                Browser br = new Browser();
-                br.getHeaders().put("User-Agent", ua);
-                br.setCookie(defaultDomain, "lang", "en");
-                br.setFollowRedirects(false);
-                br.getPage(defaultDomain);
-                geoDomain = br.getRedirectLocation();
-                if (geoDomain == null) {
-                    geoDomain = defaultDomain;
-                } else {
-                    String domain = new Regex(br.getRedirectLocation(), "https?://.*?(filesonic\\..*?)(/|$)").getMatch(0);
-                    if (domain == null) {
-                        logger.severe("getDomain: failed(2) " + br.getRedirectLocation() + " " + br.toString());
-                        geoDomain = defaultDomain;
-                    } else {
-                        geoDomain = "http://www." + domain;
-                    }
-                }
-            }
-        } catch (final Throwable e) {
-            logger.info("getDomain: failed(1)" + e.toString());
-            geoDomain = defaultDomain;
-        }
-        return geoDomain;
-    }
-
-    private synchronized String getDomainAPI() {
-        try {
-            Browser br = new Browser();
-            br.getHeaders().put("User-Agent", ua);
-            br.setFollowRedirects(true);
-            br.getPage("http://api.filesonic.com/utility?method=getFilesonicDomainForCurrentIp");
-            String domain = br.getRegex("response>.*?filesonic(\\..*?)</resp").getMatch(0);
-            if (domain != null) { return "http://www.filesonic" + domain; }
-        } catch (final Throwable e) {
-            logger.severe(e.getMessage());
-        }
-        return null;
     }
 
     @Override
@@ -188,6 +149,13 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         return true;
     }
 
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == 3) {
+            /* workaround for old stable to get notified about a reconnect */
+            LAST_FREE_DOWNLOAD = 0;
+        }
+    }
+
     /* converts id and filename */
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -195,20 +163,21 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         link.setUrlDownload(getDomain() + "/file/" + getID(link));
     }
 
-    public String getID(final DownloadLink link) {
-        String id = new Regex(link.getDownloadURL(), "/file/([0-9]+(/.+)?)").getMatch(0);
-        if (id == null) {
-            id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+(/.+)?)").getMatch(0);
+    private String downloadAPI(Browser useBr, Account account, DownloadLink link) throws IOException, PluginException {
+        Browser br = useBr;
+        if (br == null) br = new Browser();
+        br.getHeaders().put("User-Agent", uap);
+        br.setFollowRedirects(true);
+        String pw = "";
+        String pwUsw = link.getStringProperty("pass", null);
+        if (pwUsw != null) {
+            pw = "&passwords[" + this.getPureID(link) + "]=" + Encoding.urlEncode(pwUsw);
         }
-        return id;
-    }
-
-    public String getPureID(final DownloadLink link) {
-        String id = new Regex(link.getDownloadURL(), "/file/([0-9]+)").getMatch(0);
-        if (id == null) {
-            id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+)").getMatch(0);
-        }
-        return id;
+        String page = br.getPage("http://api.filesonic.com/link?method=getDownloadLink&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&format=xml&ids=" + this.getPureID(link) + pw);
+        if (page.contains("FSApi_Auth_Exception")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        String status = br.getRegex("status>(.*?)</status").getMatch(0);
+        if ("NOT_AVAILABLE".equals(status)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        return page;
     }
 
     private void errorHandling(final DownloadLink downloadLink, final Browser br) throws PluginException {
@@ -229,43 +198,6 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         }
         if (br.containsHTML("(<h1>404 Not Found</h1>|<title>404 Not Found</title>|An Error Occurred)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesonic.servererror", "Server error"), 20 * 60 * 1000l); }
         if (br.containsHTML("This file is available for premium users only\\.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only file. Buy Premium Account"); }
-    }
-
-    private String loginAPI(Browser useBr, Account account, boolean showMessageDialog) throws IOException, PluginException {
-        Browser br = useBr;
-        if (br == null) br = new Browser();
-        br.getHeaders().put("User-Agent", uap);
-        br.setFollowRedirects(true);
-        String page = br.getPage("http://api.filesonic.com/user?method=getInfo&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&format=xml");
-        String premium = br.getRegex("is_premium>(.*?)</is_").getMatch(0);
-        if (!"1".equals(premium)) {
-            if (showMessageDialog) {
-                if (br.containsHTML("Login failed. Please check username or password")) {
-                    UserIO.getInstance().requestMessageDialog(0, "Filesonic Premium Error", "Login failed. Please check username or password!");
-                } else if ("0".equalsIgnoreCase(premium)) {
-                    UserIO.getInstance().requestMessageDialog(0, "Filesonic Premium Error", "This account has no premium status!");
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        return page;
-    }
-
-    private String downloadAPI(Browser useBr, Account account, DownloadLink link) throws IOException, PluginException {
-        Browser br = useBr;
-        if (br == null) br = new Browser();
-        br.getHeaders().put("User-Agent", uap);
-        br.setFollowRedirects(true);
-        String pw = "";
-        String pwUsw = link.getStringProperty("pass", null);
-        if (pwUsw != null) {
-            pw = "&passwords[" + this.getPureID(link) + "]=" + Encoding.urlEncode(pwUsw);
-        }
-        String page = br.getPage("http://api.filesonic.com/link?method=getDownloadLink&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&format=xml&ids=" + this.getPureID(link) + pw);
-        if (page.contains("FSApi_Auth_Exception")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        String status = br.getRegex("status>(.*?)</status").getMatch(0);
-        if ("NOT_AVAILABLE".equals(status)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return page;
     }
 
     @Override
@@ -298,6 +230,72 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
     }
 
     @Override
+    public String getAGBLink() {
+        return "http://www.filesonic.com/terms-and-conditions";
+    }
+
+    private synchronized String getDomain() {
+        if (geoDomain != null) return geoDomain;
+        String defaultDomain = "http://www.filesonic.com";
+        try {
+            geoDomain = getDomainAPI();
+            if (geoDomain == null) {
+                Browser br = new Browser();
+                br.getHeaders().put("User-Agent", ua);
+                br.setCookie(defaultDomain, "lang", "en");
+                br.setFollowRedirects(false);
+                br.getPage(defaultDomain);
+                geoDomain = br.getRedirectLocation();
+                if (geoDomain == null) {
+                    geoDomain = defaultDomain;
+                } else {
+                    String domain = new Regex(br.getRedirectLocation(), "https?://.*?(filesonic\\..*?)(/|$)").getMatch(0);
+                    if (domain == null) {
+                        logger.severe("getDomain: failed(2) " + br.getRedirectLocation() + " " + br.toString());
+                        geoDomain = defaultDomain;
+                    } else {
+                        geoDomain = "http://www." + domain;
+                    }
+                }
+            }
+        } catch (final Throwable e) {
+            logger.info("getDomain: failed(1)" + e.toString());
+            geoDomain = defaultDomain;
+        }
+        return geoDomain;
+    }
+
+    private synchronized String getDomainAPI() {
+        try {
+            Browser br = new Browser();
+            br.getHeaders().put("User-Agent", ua);
+            br.setFollowRedirects(true);
+            br.getPage("http://api.filesonic.com/utility?method=getFilesonicDomainForCurrentIp");
+            String domain = br.getRegex("response>.*?filesonic(\\..*?)</resp").getMatch(0);
+            if (domain != null) { return "http://www.filesonic" + domain; }
+        } catch (final Throwable e) {
+            logger.severe(e.getMessage());
+        }
+        return null;
+    }
+
+    private String getDownloadURL(Browser br) {
+        if (br == null) return null;
+        String ret = br.getRegex("<p><a href=\"(http://[^<]*?\\.filesonic\\..*?[^<]*?)\"><span>Start download now!</span></a></p>").getMatch(0);
+        if (ret == null) ret = br.getRegex("<p><a id=\"start_download_link\" href=\"(http://[^<]*?\\.filesonic\\..*?[^<]*?)\"><span>Start download now!</span></a></p>").getMatch(0);
+        return ret;
+
+    }
+
+    public String getID(final DownloadLink link) {
+        String id = new Regex(link.getDownloadURL(), "/file/([0-9]+(/.+)?)").getMatch(0);
+        if (id == null) {
+            id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+(/.+)?)").getMatch(0);
+        }
+        return id;
+    }
+
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
@@ -305,6 +303,14 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    public String getPureID(final DownloadLink link) {
+        String id = new Regex(link.getDownloadURL(), "/file/([0-9]+)").getMatch(0);
+        if (id == null) {
+            id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+)").getMatch(0);
+        }
+        return id;
     }
 
     @Override
@@ -447,14 +453,6 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         FileSonicCom.LAST_FREE_DOWNLOAD = System.currentTimeMillis();
     }
 
-    private String getDownloadURL(Browser br) {
-        if (br == null) return null;
-        String ret = br.getRegex("<p><a href=\"(http://[^<]*?\\.filesonic\\..*?[^<]*?)\"><span>Start download now!</span></a></p>").getMatch(0);
-        if (ret == null) ret = br.getRegex("<p><a id=\"start_download_link\" href=\"(http://[^<]*?\\.filesonic\\..*?[^<]*?)\"><span>Start download now!</span></a></p>").getMatch(0);
-        return ret;
-
-    }
-
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         this.setBrowserExclusive();
@@ -493,6 +491,26 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         this.dl.startDownload();
     }
 
+    private String loginAPI(Browser useBr, Account account, boolean showMessageDialog) throws IOException, PluginException {
+        Browser br = useBr;
+        if (br == null) br = new Browser();
+        br.getHeaders().put("User-Agent", uap);
+        br.setFollowRedirects(true);
+        String page = br.getPage("http://api.filesonic.com/user?method=getInfo&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&format=xml");
+        String premium = br.getRegex("is_premium>(.*?)</is_").getMatch(0);
+        if (!"1".equals(premium)) {
+            if (showMessageDialog) {
+                if (br.containsHTML("Login failed. Please check username or password")) {
+                    UserIO.getInstance().requestMessageDialog(0, "Filesonic Premium Error", "Login failed. Please check username or password!");
+                } else if ("0".equalsIgnoreCase(premium)) {
+                    UserIO.getInstance().requestMessageDialog(0, "Filesonic Premium Error", "This account has no premium status!");
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        return page;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.correctDownloadLink(downloadLink);
@@ -513,13 +531,6 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    public void controlEvent(ControlEvent event) {
-        if (event.getID() == 3) {
-            /* workaround for old stable to get notified about a reconnect */
-            LAST_FREE_DOWNLOAD = 0;
-        }
     }
 
 }

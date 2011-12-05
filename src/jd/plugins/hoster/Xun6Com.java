@@ -34,16 +34,11 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xun6.com" }, urls = { "http://[\\w\\.]*?xun6\\.(com|net)/file/[a-z0-9]+" }, flags = { 0 })
 public class Xun6Com extends PluginForHost {
 
+    private static final String CAPTCHATEXT = "captcha\\.php\\?";
+
     public Xun6Com(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    @Override
-    public String getAGBLink() {
-        return "http://xun6.com/privacy/";
-    }
-
-    private static final String CAPTCHATEXT = "captcha\\.php\\?";
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -53,25 +48,13 @@ public class Xun6Com extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("UTF-8");
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("error") || br.getURL().contains("FileNotFound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex fileandSize = br.getRegex("<title>訊6 \\- 下載 (.*?) 文件 \\((.*?)\\) \\- 美容,化妝,按摩,衣服,短裙,牛仔褲,戒指,項鏈,減肥,保健,香水,鞋子</title>");
-        String filename = br.getRegex("title=\"\\{ Filereport \\}: (.*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = fileandSize.getMatch(0);
-        }
-        String filesize = fileandSize.getMatch(1);
-        if (filesize == null) {
-            filesize = br.getRegex("<th>文件大小:</th>[\t\n\r ]+</tr>[\t\n\r ]+<tr>[\t\n\r ]+<td>(.*?)</td>").getMatch(0);
-        }
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://xun6.com/privacy/";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -140,13 +123,35 @@ public class Xun6Com extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("UTF-8");
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.getURL().contains("error") || br.getURL().contains("FileNotFound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Regex fileandSize = br.getRegex("<title>訊6 \\- 下載 (.*?) 文件 \\((.*?)\\) \\- 美容,化妝,按摩,衣服,短裙,牛仔褲,戒指,項鏈,減肥,保健,香水,鞋子</title>");
+        String filename = br.getRegex("title=\"\\{ Filereport \\}: (.*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = fileandSize.getMatch(0);
+        }
+        String filesize = fileandSize.getMatch(1);
+        if (filesize == null) {
+            filesize = br.getRegex("<th>文件大小:</th>[\t\n\r ]+</tr>[\t\n\r ]+<tr>[\t\n\r ]+<td>(.*?)</td>").getMatch(0);
+        }
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

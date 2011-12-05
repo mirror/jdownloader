@@ -40,29 +40,18 @@ public class FuFoxCom extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://www.fufox.com/cgu.html";
-    }
-
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("fufox.com/", "fufox.net/"));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        // Convert old links to new ones
-        correctDownloadLink(link);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<b>Il y a une erreur dans l'url de cette page\\.</b>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<b>Nom du fichier</b> : (.*?) <br").getMatch(0);
-        String filesize = br.getRegex("<b>Taille du fichier</b> : (.*?) <br />").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        filesize = filesize.replace("Mo", "Mb").replace("Go", "Gb");
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://www.fufox.com/cgu.html";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -106,13 +95,29 @@ public class FuFoxCom extends PluginForHost {
         }
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        // Convert old links to new ones
+        correctDownloadLink(link);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("<b>Il y a une erreur dans l'url de cette page\\.</b>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<b>Nom du fichier</b> : (.*?) <br").getMatch(0);
+        String filesize = br.getRegex("<b>Taille du fichier</b> : (.*?) <br />").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        filesize = filesize.replace("Mo", "Mb").replace("Go", "Gb");
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

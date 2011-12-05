@@ -35,9 +35,34 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tunabox.net" }, urls = { "http://(www\\.)?tunabox\\.net/files/[A-Za-z0-9]+\\.html" }, flags = { 2 })
 public class TunaBoxNet extends PluginForHost {
 
+    private static final String MAINPAGE      = "http://www.tunabox.net";
+
+    private static final String GETLINKREGEX  = "disabled=\"disabled\" onclick=\"document\\.location=\\'(.*?)\\';\"";
+
+    private static final String GETLINKREGEX2 = "\\'(" + "http://(www\\.)" + MAINPAGE.replaceAll("(http://|www\\.)", "") + "/get/[A-Za-z0-9]+/\\d+/.*?)\\'";
+    private static final String PREMIUMLIMIT  = "out of 1000\\.00 GB</td>";
+    private static final String FILENOTFOUND  = ">The file you have requested does not exist";
+    private static final String APIKEY        = "QExPEQ47iXcpXx94RBqiAJlI0d7Q";
     public TunaBoxNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE + "/get-premium.php");
+    }
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String hostedFiles = br.getRegex("<td>Files Hosted:</td>[\t\r\n ]+<td>(\\d+)</td>").getMatch(0);
+        if (hostedFiles != null) ai.setFilesNum(Integer.parseInt(hostedFiles));
+        String space = br.getRegex("<td>Spaced Used:</td>[\t\n\r ]+<td>(.*?) " + PREMIUMLIMIT).getMatch(0);
+        if (space != null) ai.setUsedSpace(space.trim());
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        return ai;
     }
 
     @Override
@@ -45,27 +70,14 @@ public class TunaBoxNet extends PluginForHost {
         return MAINPAGE + "/help/terms.php";
     }
 
-    private static final String MAINPAGE      = "http://www.tunabox.net";
-    private static final String GETLINKREGEX  = "disabled=\"disabled\" onclick=\"document\\.location=\\'(.*?)\\';\"";
-    private static final String GETLINKREGEX2 = "\\'(" + "http://(www\\.)" + MAINPAGE.replaceAll("(http://|www\\.)", "") + "/get/[A-Za-z0-9]+/\\d+/.*?)\\'";
-    private static final String PREMIUMLIMIT  = "out of 1000\\.00 GB</td>";
-    private static final String FILENOTFOUND  = ">The file you have requested does not exist";
-    private static final String APIKEY        = "QExPEQ47iXcpXx94RBqiAJlI0d7Q";
-
-    // Using FreakshareScript 1.1 API Version
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        // Use API with JDownloader API Key
-        br.getPage("http://tunabox.net/api/info.php?api_key=" + APIKEY + "&file_id=" + new Regex(link.getDownloadURL(), "/files/([A-Za-z0-9]+)\\.html").getMatch(0));
-        if (br.containsHTML("file does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("\\[file_name\\] => (.*?)(\n|\r)").getMatch(0);
-        String filesize = br.getRegex("\\[file_size\\] => (\\d+)").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Set final filename here because hoster taggs files
-        link.setFinalFileName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -96,31 +108,6 @@ public class TunaBoxNet extends PluginForHost {
         dl.startDownload();
     }
 
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.postPage(MAINPAGE + "/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login&task=dologin&return=.%2Fmembers%2Fmyfiles.php");
-        if (!br.containsHTML(PREMIUMLIMIT)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        String hostedFiles = br.getRegex("<td>Files Hosted:</td>[\t\r\n ]+<td>(\\d+)</td>").getMatch(0);
-        if (hostedFiles != null) ai.setFilesNum(Integer.parseInt(hostedFiles));
-        String space = br.getRegex("<td>Spaced Used:</td>[\t\n\r ]+<td>(.*?) " + PREMIUMLIMIT).getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim());
-        account.setValid(true);
-        ai.setUnlimitedTraffic();
-        return ai;
-    }
-
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
@@ -142,18 +129,31 @@ public class TunaBoxNet extends PluginForHost {
         dl.startDownload();
     }
 
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.postPage(MAINPAGE + "/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login&task=dologin&return=.%2Fmembers%2Fmyfiles.php");
+        if (!br.containsHTML(PREMIUMLIMIT)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    // Using FreakshareScript 1.1 API Version
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        // Use API with JDownloader API Key
+        br.getPage("http://tunabox.net/api/info.php?api_key=" + APIKEY + "&file_id=" + new Regex(link.getDownloadURL(), "/files/([A-Za-z0-9]+)\\.html").getMatch(0));
+        if (br.containsHTML("file does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("\\[file_name\\] => (.*?)(\n|\r)").getMatch(0);
+        String filesize = br.getRegex("\\[file_size\\] => (\\d+)").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Set final filename here because hoster taggs files
+        link.setFinalFileName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

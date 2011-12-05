@@ -49,7 +49,8 @@ public class VideoalbumyAzetSk extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -62,6 +63,24 @@ public class VideoalbumyAzetSk extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dl.startDownload();
+    }
+
+    /**
+     * Converts txt from ISO-8859-1 to WINDOWS-1250 encoding.
+     * 
+     * @param txt
+     * @return
+     */
+    private String iso88591ToWin1250(String txt) {
+        CharsetDecoder decoder = Charset.forName("WINDOWS-1250").newDecoder();
+        CharsetEncoder encoder = Charset.forName("ISO-8859-1").newEncoder();
+        try {
+            ByteBuffer bbuf = encoder.encode(CharBuffer.wrap(txt));
+            CharBuffer cbuf = decoder.decode(bbuf);
+            return cbuf.toString();
+        } catch (CharacterCodingException e) {
+            return null;
+        }
     }
 
     @Override
@@ -96,33 +115,14 @@ public class VideoalbumyAzetSk extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
-    /**
-     * Converts txt from ISO-8859-1 to WINDOWS-1250 encoding.
-     * 
-     * @param txt
-     * @return
-     */
-    private String iso88591ToWin1250(String txt) {
-        CharsetDecoder decoder = Charset.forName("WINDOWS-1250").newDecoder();
-        CharsetEncoder encoder = Charset.forName("ISO-8859-1").newEncoder();
-        try {
-            ByteBuffer bbuf = encoder.encode(CharBuffer.wrap(txt));
-            CharBuffer cbuf = decoder.decode(bbuf);
-            return cbuf.toString();
-        } catch (CharacterCodingException e) {
-            return null;
-        }
+    @Override
+    public void resetPluginGlobals() {
     }
 }

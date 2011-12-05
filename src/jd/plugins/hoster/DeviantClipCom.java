@@ -33,21 +33,42 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com" }, urls = { "http://(www\\.)?(gsghe366REHrtzegiolp/Media\\-([0-9]+-[0-9]+_|[0-9]+_).*?\\.html(\\-\\-\\-picture|\\-\\-\\-video)|deviantclip\\.com/watch/.+)" }, flags = { 0 })
 public class DeviantClipCom extends PluginForHost {
 
+    // This hoster also got a decrypter called "DeviantClipComGallery" so if the
+    // host goes down please also delete the decrypter!
+    public String dllink = null;
+
     public DeviantClipCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // This hoster also got a decrypter called "DeviantClipComGallery" so if the
-    // host goes down please also delete the decrypter!
-    public String dllink = null;
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("gsghe366REHrtzegiolp", "deviantclip.com"));
+    }
 
     @Override
     public String getAGBLink() {
         return "http://www.deviantclip.com/DMCA.html";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("gsghe366REHrtzegiolp", "deviantclip.com"));
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
@@ -98,30 +119,14 @@ public class DeviantClipCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

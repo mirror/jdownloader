@@ -42,17 +42,8 @@ public class GigaFrontDe extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(Das angeforderte Dokument konnte nicht gefunden werden\\!</td>|<title>GIGAFRONT\\.de \\| Information</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"title\"><b class=\"titlelink\">(.*?)( Download)?</b></div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>GIGAFRONT\\.de Games, Mods, Maps, Downloads  -  Downloads: (.*?)( Download)?</title>").getMatch(0);
-        String filesize = br.getRegex(">Dateigröße:</div>[\t\n\r ]+<div class=\"line02\">(.*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -74,12 +65,21 @@ public class GigaFrontDe extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(Das angeforderte Dokument konnte nicht gefunden werden\\!</td>|<title>GIGAFRONT\\.de \\| Information</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<div class=\"title\"><b class=\"titlelink\">(.*?)( Download)?</b></div>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>GIGAFRONT\\.de Games, Mods, Maps, Downloads  -  Downloads: (.*?)( Download)?</title>").getMatch(0);
+        String filesize = br.getRegex(">Dateigröße:</div>[\t\n\r ]+<div class=\"line02\">(.*?)</div>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

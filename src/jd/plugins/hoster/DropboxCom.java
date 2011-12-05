@@ -39,14 +39,36 @@ public class DropboxCom extends PluginForHost {
     }
 
     @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        br.setDebug(true);
+        try {
+            login(account, true);
+        } catch (final PluginException e) {
+            ai.setStatus("Account not valid.");
+            account.setValid(false);
+            return ai;
+        }
+        ai.setStatus("Account ok");
+        account.setValid(true);
+        return ai;
+    }
+
+    protected String generateNonce() {
+        return Long.toString(new Random().nextLong());
+    }
+
+    protected String generateTimestamp() {
+        return Long.toString(System.currentTimeMillis() / 1000L);
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://www.dropbox.com/terms";
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        return AvailableStatus.UNCHECKABLE;
-    }
+    // TODO: Move into Utilities (It's here for a hack)
+    // public class OAuth {
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
@@ -58,90 +80,6 @@ public class DropboxCom extends PluginForHost {
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, "You can only download files from your own account!");
     }
-
-    /* is only used for website logins */
-    private void login(final Account account, boolean refresh) throws IOException, PluginException {
-        boolean ok = false;
-        synchronized (LOCK) {
-            setBrowserExclusive();
-            br.setFollowRedirects(true);
-            if (refresh == false) {
-                Cookies accCookies = accountMap.get(account.getUser());
-                if (accCookies != null) {
-                    br.getCookies("https://www.dropbox.com").add(accCookies);
-                    return;
-                }
-            }
-            try {
-                br.getPage("https://www.dropbox.com");
-                br.postPage("https://www.dropbox.com/login", "t=&login_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie("https://www.dropbox.com", "puc") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                ok = true;
-            } finally {
-                if (ok) {
-                    accountMap.put(account.getUser(), br.getCookies("https://www.dropbox.com"));
-                } else {
-                    accountMap.remove(account.getUser());
-                }
-            }
-        }
-
-    }
-
-    // TODO: Move into Utilities (It's here for a hack)
-    // public class OAuth {
-
-    protected String generateTimestamp() {
-        return Long.toString(System.currentTimeMillis() / 1000L);
-    }
-
-    protected String generateNonce() {
-        return Long.toString(new Random().nextLong());
-    }
-
-    /**
-     * Sign an OAuth GET request with HMAC-SHA1 according to OAuth Core spec 1.0
-     * 
-     * @return new url including signature
-     * @throws PluginException
-     */
-    public/* static */String signOAuthURL(String url, String oauth_consumer_key, String oauth_consumer_secret, String oauth_token, String oauth_token_secret) throws PluginException {
-        // At first, we remove all OAuth parameters from the url. We add
-        // them
-        // all manually.
-        url = url.replaceAll("[\\?&]oauth_\\w+?=[^&]+", "");
-        url += (url.contains("?") ? "&" : "?") + "oauth_consumer_key=" + oauth_consumer_key;
-        url += "&oauth_nonce=" + generateNonce();
-
-        url += "&oauth_signature_method=HMAC-SHA1";
-        url += "&oauth_timestamp=" + generateTimestamp();
-        url += "&oauth_token=" + oauth_token;
-        url += "&oauth_version=1.0";
-
-        String signatureBaseString = Encoding.urlEncode(url);
-        signatureBaseString = signatureBaseString.replaceFirst("%3F", "&");
-        // See OAuth 1.0 spec Appendix A.5.1
-        signatureBaseString = "GET&" + signatureBaseString;
-
-        String keyString = oauth_consumer_secret + "&" + oauth_token_secret;
-        String signature = "";
-        try {
-            Mac mac = Mac.getInstance("HmacSHA1");
-
-            SecretKeySpec secret = new SecretKeySpec(keyString.getBytes("UTF-8"), "HmacSHA1");
-            mac.init(secret);
-            byte[] digest = mac.doFinal(signatureBaseString.getBytes("UTF-8"));
-            signature = new String(Base64.encodeToString(digest, false)).trim();
-
-        } catch (Exception e) {
-            JDLogger.exception(e);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        url += "&oauth_signature=" + Encoding.urlEncode(signature);
-        return url;
-    }
-
-    // }
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
@@ -197,20 +135,40 @@ public class DropboxCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        br.setDebug(true);
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            ai.setStatus("Account not valid.");
-            account.setValid(false);
-            return ai;
+    /* is only used for website logins */
+    private void login(final Account account, boolean refresh) throws IOException, PluginException {
+        boolean ok = false;
+        synchronized (LOCK) {
+            setBrowserExclusive();
+            br.setFollowRedirects(true);
+            if (refresh == false) {
+                Cookies accCookies = accountMap.get(account.getUser());
+                if (accCookies != null) {
+                    br.getCookies("https://www.dropbox.com").add(accCookies);
+                    return;
+                }
+            }
+            try {
+                br.getPage("https://www.dropbox.com");
+                br.postPage("https://www.dropbox.com/login", "t=&login_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie("https://www.dropbox.com", "puc") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                ok = true;
+            } finally {
+                if (ok) {
+                    accountMap.put(account.getUser(), br.getCookies("https://www.dropbox.com"));
+                } else {
+                    accountMap.remove(account.getUser());
+                }
+            }
         }
-        ai.setStatus("Account ok");
-        account.setValid(true);
-        return ai;
+
+    }
+
+    // }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        return AvailableStatus.UNCHECKABLE;
     }
 
     @Override
@@ -219,6 +177,48 @@ public class DropboxCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    /**
+     * Sign an OAuth GET request with HMAC-SHA1 according to OAuth Core spec 1.0
+     * 
+     * @return new url including signature
+     * @throws PluginException
+     */
+    public/* static */String signOAuthURL(String url, String oauth_consumer_key, String oauth_consumer_secret, String oauth_token, String oauth_token_secret) throws PluginException {
+        // At first, we remove all OAuth parameters from the url. We add
+        // them
+        // all manually.
+        url = url.replaceAll("[\\?&]oauth_\\w+?=[^&]+", "");
+        url += (url.contains("?") ? "&" : "?") + "oauth_consumer_key=" + oauth_consumer_key;
+        url += "&oauth_nonce=" + generateNonce();
+
+        url += "&oauth_signature_method=HMAC-SHA1";
+        url += "&oauth_timestamp=" + generateTimestamp();
+        url += "&oauth_token=" + oauth_token;
+        url += "&oauth_version=1.0";
+
+        String signatureBaseString = Encoding.urlEncode(url);
+        signatureBaseString = signatureBaseString.replaceFirst("%3F", "&");
+        // See OAuth 1.0 spec Appendix A.5.1
+        signatureBaseString = "GET&" + signatureBaseString;
+
+        String keyString = oauth_consumer_secret + "&" + oauth_token_secret;
+        String signature = "";
+        try {
+            Mac mac = Mac.getInstance("HmacSHA1");
+
+            SecretKeySpec secret = new SecretKeySpec(keyString.getBytes("UTF-8"), "HmacSHA1");
+            mac.init(secret);
+            byte[] digest = mac.doFinal(signatureBaseString.getBytes("UTF-8"));
+            signature = new String(Base64.encodeToString(digest, false)).trim();
+
+        } catch (Exception e) {
+            JDLogger.exception(e);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        url += "&oauth_signature=" + Encoding.urlEncode(signature);
+        return url;
     }
 
 }

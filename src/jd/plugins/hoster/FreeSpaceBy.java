@@ -35,49 +35,15 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freespace.by" }, urls = { "http://[\\w\\.]*?freespace\\.by/download/[a-z0-9]+" }, flags = { 2 })
 public class FreeSpaceBy extends PluginForHost {
 
+    private static final String MAINPAGE           = "http://freespace.by/";
+
+    private static final String COUNTRYBLOCKED     = "Услуги FreeSpace доступны только для белорусских сетей\\.";
+
+    private static final String COUNTRYBLOCKEDTEXT = "This hoster is now available in your country!";
     public FreeSpaceBy(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
     }
-
-    @Override
-    public String getAGBLink() {
-        return "http://freespace.by/info/rules";
-    }
-
-    private static final String MAINPAGE           = "http://freespace.by/";
-    private static final String COUNTRYBLOCKED     = "Услуги FreeSpace доступны только для белорусских сетей\\.";
-    private static final String COUNTRYBLOCKEDTEXT = "This hoster is now available in your country!";
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(COUNTRYBLOCKED)) {
-            link.getLinkStatus().setStatusText(COUNTRYBLOCKEDTEXT);
-            return AvailableStatus.UNCHECKABLE;
-        }
-        if (br.containsHTML(">Файл не найден<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Имя файла:</td> <td>(.*?)</td>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<textarea  class=\"links\" onclick=\"this\\.focus\\(\\);this.select\\(\\)\" readonly=\"readonly\"><a href=\"http://freespace\\.by/download/[a-z0-9]+\">(.*?)</a></textarea><br>").getMatch(0);
-        String filesize = br.getRegex("<tr><td>Размер:</td> <td>(.*?)</td></tr>").getMatch(0);
-        if (filesize != null) filesize = br.getRegex("<td>Размер:</td><td>(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
-        String sh1 = br.getRegex("SHA1</a>:</td> <td>(.*?)</td>").getMatch(0);
-        if (sh1 != null) link.setSha1Hash(sh1.trim());
-        String md5 = br.getRegex("MD5</a>:</td> <td>(.*?)</td>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(sh1.trim());
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This hoster doesn't allow any free downloads.");
-    }
-
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (br.containsHTML(COUNTRYBLOCKED)) {
             downloadLink.getLinkStatus().setStatusText(COUNTRYBLOCKEDTEXT);
@@ -111,16 +77,6 @@ public class FreeSpaceBy extends PluginForHost {
         dl.startDownload();
     }
 
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.getPage(MAINPAGE);
-        if (br.containsHTML(COUNTRYBLOCKED)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        String post = "action[0]=AuthExt.logon&username[0]=" + Encoding.urlEncode(account.getUser()) + "&password[0]=" + Encoding.urlEncode(account.getPass()) + "&remember[0]=1";
-        String postPage = "http://freespace.by/api.php?format=ajax&lang=ru&PHPSESSID=" + br.getCookie(MAINPAGE, "PHPSESSID") + "&JsHttpRequest=" + System.currentTimeMillis() + "-xml";
-        br.postPage(postPage, post);
-        if (br.getCookie(MAINPAGE, "lms_auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -137,11 +93,13 @@ public class FreeSpaceBy extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account);
-        br.getPage(link.getDownloadURL());
-        doFree(link);
+    public String getAGBLink() {
+        return "http://freespace.by/info/rules";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -150,12 +108,54 @@ public class FreeSpaceBy extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        throw new PluginException(LinkStatus.ERROR_FATAL, "This hoster doesn't allow any free downloads.");
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.getPage(link.getDownloadURL());
+        doFree(link);
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.getPage(MAINPAGE);
+        if (br.containsHTML(COUNTRYBLOCKED)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        String post = "action[0]=AuthExt.logon&username[0]=" + Encoding.urlEncode(account.getUser()) + "&password[0]=" + Encoding.urlEncode(account.getPass()) + "&remember[0]=1";
+        String postPage = "http://freespace.by/api.php?format=ajax&lang=ru&PHPSESSID=" + br.getCookie(MAINPAGE, "PHPSESSID") + "&JsHttpRequest=" + System.currentTimeMillis() + "-xml";
+        br.postPage(postPage, post);
+        if (br.getCookie(MAINPAGE, "lms_auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML(COUNTRYBLOCKED)) {
+            link.getLinkStatus().setStatusText(COUNTRYBLOCKEDTEXT);
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.containsHTML(">Файл не найден<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("Имя файла:</td> <td>(.*?)</td>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<textarea  class=\"links\" onclick=\"this\\.focus\\(\\);this.select\\(\\)\" readonly=\"readonly\"><a href=\"http://freespace\\.by/download/[a-z0-9]+\">(.*?)</a></textarea><br>").getMatch(0);
+        String filesize = br.getRegex("<tr><td>Размер:</td> <td>(.*?)</td></tr>").getMatch(0);
+        if (filesize != null) filesize = br.getRegex("<td>Размер:</td><td>(.*?)</td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
+        String sh1 = br.getRegex("SHA1</a>:</td> <td>(.*?)</td>").getMatch(0);
+        if (sh1 != null) link.setSha1Hash(sh1.trim());
+        String md5 = br.getRegex("MD5</a>:</td> <td>(.*?)</td>").getMatch(0);
+        if (md5 != null) link.setMD5Hash(sh1.trim());
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

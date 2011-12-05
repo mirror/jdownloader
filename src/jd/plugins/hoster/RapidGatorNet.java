@@ -36,29 +36,18 @@ public class RapidGatorNet extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://rapidgator.net/?content=terms";
-    }
-
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("files/dl/", ""));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("UTF-8");
-        br.setCookie("http://rapidgator.net/", "language", "en");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<h3>File not found</h3>|<h1>Error 404</h1>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<p><b>(.*?)</b>").getMatch(0);
-        if (filename == null) filename = br.getRegex("onclick=\"initPremiumDl\\(\\&#039;/files/dlpremium/\\d+/(.*?)\\.html\\&#039;\\);\"").getMatch(0);
-        String filesize = br.getRegex("style=\"color:#8E908F;\">(.*?)</font>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://rapidgator.net/?content=terms";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -84,12 +73,23 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("UTF-8");
+        br.setCookie("http://rapidgator.net/", "language", "en");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(<h3>File not found</h3>|<h1>Error 404</h1>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<p><b>(.*?)</b>").getMatch(0);
+        if (filename == null) filename = br.getRegex("onclick=\"initPremiumDl\\(\\&#039;/files/dlpremium/\\d+/(.*?)\\.html\\&#039;\\);\"").getMatch(0);
+        String filesize = br.getRegex("style=\"color:#8E908F;\">(.*?)</font>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

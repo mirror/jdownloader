@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.http.Browser;
@@ -56,6 +57,8 @@ public class WUploadCom extends PluginForHost implements ControlListener {
 
     private static String        geoDomain          = null;
 
+    private static final String RECAPTCHATEXT = "Recaptcha\\.create";
+
     public WUploadCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.wupload.com/premium");
@@ -63,6 +66,16 @@ public class WUploadCom extends PluginForHost implements ControlListener {
             if (!initDone) {
                 initDone = true;
                 new Thread(new Runnable() {
+
+                    // do not add @Override here to keep 0.* compatibility
+                    public boolean hasAutoCaptcha() {
+                        return JACMethod.hasMethod("recaptcha");
+                    }
+
+                    // do not add @Override here to keep 0.* compatibility
+                    public boolean hasCaptcha() {
+                        return true;
+                    }
 
                     @SuppressWarnings("deprecation")
                     public void run() {
@@ -73,8 +86,6 @@ public class WUploadCom extends PluginForHost implements ControlListener {
             }
         }
     }
-
-    private static final String RECAPTCHATEXT = "Recaptcha\\.create";
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -134,6 +145,13 @@ public class WUploadCom extends PluginForHost implements ControlListener {
             return false;
         }
         return true;
+    }
+
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == 3) {
+            /* workaround for old stable to get notified about a reconnect */
+            LAST_FREE_DOWNLOAD = 0;
+        }
     }
 
     /* converts id and filename */
@@ -501,13 +519,6 @@ public class WUploadCom extends PluginForHost implements ControlListener {
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    public void controlEvent(ControlEvent event) {
-        if (event.getID() == 3) {
-            /* workaround for old stable to get notified about a reconnect */
-            LAST_FREE_DOWNLOAD = 0;
-        }
     }
 
 }

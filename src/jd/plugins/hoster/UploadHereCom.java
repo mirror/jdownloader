@@ -35,17 +35,39 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadhere.com" }, urls = { "http://(www\\.)?uploadhere\\.com/[A-Z0-9]+" }, flags = { 0 })
 public class UploadHereCom extends PluginForHost {
 
+    private static final String TEMPORARYUNAVAILABLE         = "(>Unfortunately, this file is temporarily unavailable|> \\- The server the file is residing on is currently down for maintenance)";
+
+    private static final String TEMPORARYUNAVAILABLEUSERTEXT = "This file is temporary unavailable!";
+
     public UploadHereCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     @Override
     public String getAGBLink() {
         return "http://www.uploadhere.com/terms";
     }
 
-    private static final String TEMPORARYUNAVAILABLE         = "(>Unfortunately, this file is temporarily unavailable|> \\- The server the file is residing on is currently down for maintenance)";
-    private static final String TEMPORARYUNAVAILABLEUSERTEXT = "This file is temporary unavailable!";
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.uploadherecom.temporaryunavailable", TEMPORARYUNAVAILABLEUSERTEXT), 60 * 60 * 1000l);
+        if (br.containsHTML("(>You are currently downloading|this download, before starting another\\.</font>)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
+        String dllink = br.getRegex("\" id=\"dlbutton\"><a href=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.uploadhere\\.com:\\d+/files/[A-Z0-9]+/.*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // More connections possible but doesn't work for all links
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -12);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -70,29 +92,7 @@ public class UploadHereCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.uploadherecom.temporaryunavailable", TEMPORARYUNAVAILABLEUSERTEXT), 60 * 60 * 1000l);
-        if (br.containsHTML("(>You are currently downloading|this download, before starting another\\.</font>)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
-        String dllink = br.getRegex("\" id=\"dlbutton\"><a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.uploadhere\\.com:\\d+/files/[A-Z0-9]+/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // More connections possible but doesn't work for all links
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -12);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

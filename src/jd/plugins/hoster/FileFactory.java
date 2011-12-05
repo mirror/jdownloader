@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -71,11 +72,6 @@ public class FileFactory extends PluginForHost {
     public FileFactory(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.filefactory.com/info/premium.php");
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.filefactory.com/legal/terms.php";
     }
 
     public void checkErrors() throws PluginException {
@@ -203,6 +199,11 @@ public class FileFactory extends PluginForHost {
     }
 
     @Override
+    public String getAGBLink() {
+        return "http://www.filefactory.com/legal/terms.php";
+    }
+
+    @Override
     public int getMaxRetries() {
         return 20;
     }
@@ -210,6 +211,12 @@ public class FileFactory extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     @Override
@@ -373,12 +380,6 @@ public class FileFactory extends PluginForHost {
         }
     }
 
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
-    }
-
     public String handleRecaptcha(final Browser br, final DownloadLink link) throws Exception {
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -399,6 +400,16 @@ public class FileFactory extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (url.startsWith("http")) { return url; }
         return "http://www.filefactory.com" + url;
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     private void login(final Account account, final boolean force) throws Exception {

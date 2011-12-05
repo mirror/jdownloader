@@ -40,29 +40,8 @@ public class OpenFileRu extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        // Without stting the charset the jd browser shows only weird text
-        // instead of the real one!
-        br.setCustomCharset("windows-1251");
-        // Cookie is there to skip that captcha but it didn't work...wll but
-        // also the cookie doesn't hurt^^
-        br.setCookie("http://openfile.ru", "MG_1145", "7");
-        br.setFollowRedirects(false);
-        br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("(Файл удален или поступила жалоба от правообладателя|Файл удален. Причина: истек срок хранения файла|Причина: поступила жалоба от правообладателя)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)с OpenFile.ru</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("Вы собираетесь скачать файл.*?<b>(.*?)</b>").getMatch(0);
-        String filesize = br.getRegex("Размер: <strong>(.*?)</strong>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setName(filename.trim());
-        filesize = filesize.replaceAll("(&nbsp;|Б)", "");
-        filesize = filesize.replaceAll("Г", "G");
-        filesize = filesize.replaceAll("М", "M");
-        filesize = filesize.replaceAll("к", "k");
-        filesize = filesize + "b";
-        parameter.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -125,17 +104,43 @@ public class OpenFileRu extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        // Without stting the charset the jd browser shows only weird text
+        // instead of the real one!
+        br.setCustomCharset("windows-1251");
+        // Cookie is there to skip that captcha but it didn't work...wll but
+        // also the cookie doesn't hurt^^
+        br.setCookie("http://openfile.ru", "MG_1145", "7");
+        br.setFollowRedirects(false);
+        br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML("(Файл удален или поступила жалоба от правообладателя|Файл удален. Причина: истек срок хранения файла|Причина: поступила жалоба от правообладателя)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?)с OpenFile.ru</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("Вы собираетесь скачать файл.*?<b>(.*?)</b>").getMatch(0);
+        String filesize = br.getRegex("Размер: <strong>(.*?)</strong>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setName(filename.trim());
+        filesize = filesize.replaceAll("(&nbsp;|Б)", "");
+        filesize = filesize.replaceAll("Г", "G");
+        filesize = filesize.replaceAll("М", "M");
+        filesize = filesize.replaceAll("к", "k");
+        filesize = filesize + "b";
+        parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void reset() {
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
 }

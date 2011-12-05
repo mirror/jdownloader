@@ -37,14 +37,8 @@ public class MyuploadDK extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.setCookie("http://www.myupload.dk", "lang", "en");
-        br.getPage(parameter.getDownloadURL());
-        String filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setName(filename);
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
     }
 
     @Override
@@ -59,11 +53,18 @@ public class MyuploadDK extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        br.setCookie("http://www.myupload.dk", "lang", "en");
+        br.getPage(parameter.getDownloadURL());
+        String filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setName(filename);
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void reset() {
     }
 
     /*
@@ -73,8 +74,7 @@ public class MyuploadDK extends PluginForHost {
      */
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+    public void resetDownloadlink(DownloadLink link) {
     }
 
 }

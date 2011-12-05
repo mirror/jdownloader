@@ -49,24 +49,10 @@ public class LetitBitNet extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://letitbit.net/page/terms.php";
-    }
-
-    @Override
     public void correctDownloadLink(DownloadLink link) {
         /* convert directdownload links to normal links */
         link.setUrlDownload(link.getDownloadURL().replaceAll("/ddownload", "/download"));
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\?", "%3F"));
-    }
-
-    private void login(Account account) throws IOException, PluginException {
-        setBrowserExclusive();
-        br.setCookie("http://letitbit.net/", "lang", "en");
-        br.postPage("http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
-        String check = br.getCookie("http://letitbit.net/", "log");
-        if (check == null) check = br.getCookie("http://letitbit.net/", "pas");
-        if (check == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -90,115 +76,52 @@ public class LetitBitNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setDebug(true);
-        br.setCookie("http://letitbit.net/", "lang", "en");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<title>404</title>|<br>File not found<br />|Запрашиваемый файл не найден<br>|>Запрашиваемая вами страница не существует\\!<|Request file .*? Deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // /* set english language */
-        // br.postPage(downloadLink.getDownloadURL(),
-        // "en.x=10&en.y=8&vote_cr=en");
-        String filename = br.getRegex("\"file-info\">File:: <span>(.*?)</span>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("class=\"first\">File:: <span>(.*?)</span></li>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("title>(.*?) download for free").getMatch(0);
-                }
-            }
-        }
-        String filesize = br.getRegex("name=\"sssize\" value=\"(\\d+)\"").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("<li>Size of file:: <span>(.*?)</span></li>").getMatch(0);
-            if (filesize == null) {
-                filesize = br.getRegex("\\[<span>(.*?)</span>\\]</h1>").getMatch(0);
-            }
-        }
-        if (filename == null || filesize == null) {
-            if (br.containsHTML("Request file.*?Deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // Their names often differ from other file hosting services. I noticed
-        // that when in the filenames from other hosting services there are
-        // "-"'s, letitbit uses "_"'s so let's correct this here ;)
-        downloadLink.setFinalFileName(filename.trim().replace("_", "-"));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://letitbit.net/page/terms.php";
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        String dlUrl = null;
-        requestFileInformation(downloadLink);
-        br.setDebug(true);
-        if (account.getUser() == null || account.getUser().trim().length() == 0) {
-            // Get to the premium zone
-            br.postPage(downloadLink.getDownloadURL(), "way_selection=1&submit_way_selection1=HIGH+Speed+Download");
-            /* normal account with only a password */
-            logger.info("Premium with pw only");
-            Form premiumform = null;
-            Form[] allforms = br.getForms();
-            if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            for (Form singleform : allforms) {
-                if (singleform.containsHTML("pass") && singleform.containsHTML("uid5") && singleform.containsHTML("uid") && singleform.containsHTML("name") && singleform.containsHTML("pin") && singleform.containsHTML("realuid") && singleform.containsHTML("realname") && singleform.containsHTML("host") && singleform.containsHTML("ssserver") && singleform.containsHTML("sssize") && singleform.containsHTML("optiondir")) {
-                    premiumform = singleform;
-                    break;
-                }
-            }
-            if (premiumform == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            premiumform.put("pass", Encoding.urlEncode(account.getPass()));
-            br.submitForm(premiumform);
-            String iFrame = br.getRegex("\"(/sms/check2_iframe\\.php\\?ids=[0-9_]+\\&ids_emerg=\\&emergency_mode=)\"").getMatch(0);
-            if (iFrame != null) {
-                logger.info("Found iframe(old one), accessing it...");
-                br.getPage("http://letitbit.net" + iFrame);
-            }
-            if (iFrame == null) {
-                iFrame = br.getRegex("(/sms/check2_iframe\\.php\\?.*?uid=.*?)\"").getMatch(0);
-                if (iFrame != null) {
-                    logger.info("Found iframe(new one), accessing it...");
-                    br.getPage("http://letitbit.net" + iFrame);
-                }
-            }
-            dlUrl = getUrl(account);
-        } else {
-            /* account login */
-            login(account);
-            br.setFollowRedirects(true);
-            br.getPage(downloadLink.getDownloadURL());
-            dlUrl = getUrl(account);
-            if (dlUrl == null) {
-                logger.info("Premium with indirectDL, enabling directDL first");
-                br.postPage("http://premium.letitbit.net/ajax.php?action=setddlstate", "state=2");
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    private String getUrl(Account account) throws IOException {
+        // This information can only be found before each download so lets set
+        // it here
+        String points = br.getRegex("\">Points:</acronym>(.*?)</li>").getMatch(0);
+        String expireDate = br.getRegex("\">Expire date:</acronym> ([0-9-]+) \\[<acronym class").getMatch(0);
+        if (expireDate == null) expireDate = br.getRegex("\">Period of validity:</acronym>(.*?) \\[<acronym").getMatch(0);
+        if (expireDate != null || points != null) {
+            AccountInfo accInfo = new AccountInfo();
+            // 1 point = 1 GB
+            if (points != null) accInfo.setTrafficLeft(SizeFormatter.getSize(points.trim() + "GB"));
+            if (expireDate != null) {
+                accInfo.setValidUntil(TimeFormatter.getMilliSeconds(expireDate.trim(), "yyyy-MM-dd", null));
             } else {
-                logger.info("Premium with directDL");
+                expireDate = br.getRegex("\"Total days remaining\">(\\d+)</acronym>").getMatch(0);
+                if (expireDate == null) expireDate = br.getRegex("\"Days remaining in Your account\">(\\d+)</acronym>").getMatch(0);
+                if (expireDate != null) accInfo.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expireDate) * 24 * 60 * 60 * 1000));
             }
+            account.setAccountInfo(accInfo);
         }
-        /* because there can be another link to a downlodmanager first */
-        if (dlUrl == null) {
-            if (br.getRedirectLocation() != null) {
-                br.getPage(br.getRedirectLocation());
-            }
-            logger.severe(br.toString());
-            if (br.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        String iFrame = br.getRegex("<iframe src=\"(/sms/.*?)\"").getMatch(0);
+        if (iFrame == null) {
+            iFrame = br.getRegex("\"(/sms/check2_iframe\\.php\\?ids=[0-9_]+\\&ids_emerg=[0-9_]+\\&emergency_mode=)\"").getMatch(0);
+            if (iFrame == null) iFrame = br.getRegex("\"(http://s\\d+\\.letitbit\\.net/sms/check2_iframe\\.php\\?ac_syml_uid=.*?)\"").getMatch(0);
         }
-        /* we have to wait little because server too buggy */
-        sleep(5000, downloadLink);
-        br.setDebug(true);
-        br.setFollowRedirects(true);
-        /* remove newline */
-        dlUrl = dlUrl.replaceAll("%0D%0A", "");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 0);
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
-            if (br.containsHTML("Error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 2 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (iFrame != null) {
+            if (!iFrame.startsWith("http://"))
+                br.getPage("http://letitbit.net" + iFrame);
+            else
+                br.getPage(iFrame);
         }
-        dl.startDownload();
+        String url = br.getRegex("(http://[^/;(images) ]*?/download.*?/[^/; ]+?)(\"|')[^(Download Master)]*?(http://[^/; ]*?/download[^; ]*?/[^; ]*?)(\"|')").getMatch(2);
+        if (url == null) {
+            url = br.getRegex("(http://[^/;(images) ]*?/download[^; ]*?/[^; ]*?)(\"|')").getMatch(0);
+            if (url == null) url = br.getRegex("\"(http://[0-9]{2,3}\\.[0-9]{2,3}\\.[0-9]{2,3}\\.[0-9]{2,3}/download\\d+/[^; ]*?)\"").getMatch(0);
+            if (url == null) url = br.getRegex("\"(http://[0-9]{2,3}\\.[0-9]{2,3}\\.[0-9]{2,3}\\.[0-9]{2,3}/[^/].*?download[^/].*?\\d+/[^; ]*?)\"").getMatch(0);
+        }
+        return url;
     }
 
     @Override
@@ -319,6 +242,93 @@ public class LetitBitNet extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        String dlUrl = null;
+        requestFileInformation(downloadLink);
+        br.setDebug(true);
+        if (account.getUser() == null || account.getUser().trim().length() == 0) {
+            // Get to the premium zone
+            br.postPage(downloadLink.getDownloadURL(), "way_selection=1&submit_way_selection1=HIGH+Speed+Download");
+            /* normal account with only a password */
+            logger.info("Premium with pw only");
+            Form premiumform = null;
+            Form[] allforms = br.getForms();
+            if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (Form singleform : allforms) {
+                if (singleform.containsHTML("pass") && singleform.containsHTML("uid5") && singleform.containsHTML("uid") && singleform.containsHTML("name") && singleform.containsHTML("pin") && singleform.containsHTML("realuid") && singleform.containsHTML("realname") && singleform.containsHTML("host") && singleform.containsHTML("ssserver") && singleform.containsHTML("sssize") && singleform.containsHTML("optiondir")) {
+                    premiumform = singleform;
+                    break;
+                }
+            }
+            if (premiumform == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            premiumform.put("pass", Encoding.urlEncode(account.getPass()));
+            br.submitForm(premiumform);
+            String iFrame = br.getRegex("\"(/sms/check2_iframe\\.php\\?ids=[0-9_]+\\&ids_emerg=\\&emergency_mode=)\"").getMatch(0);
+            if (iFrame != null) {
+                logger.info("Found iframe(old one), accessing it...");
+                br.getPage("http://letitbit.net" + iFrame);
+            }
+            if (iFrame == null) {
+                iFrame = br.getRegex("(/sms/check2_iframe\\.php\\?.*?uid=.*?)\"").getMatch(0);
+                if (iFrame != null) {
+                    logger.info("Found iframe(new one), accessing it...");
+                    br.getPage("http://letitbit.net" + iFrame);
+                }
+            }
+            dlUrl = getUrl(account);
+        } else {
+            /* account login */
+            login(account);
+            br.setFollowRedirects(true);
+            br.getPage(downloadLink.getDownloadURL());
+            dlUrl = getUrl(account);
+            if (dlUrl == null) {
+                logger.info("Premium with indirectDL, enabling directDL first");
+                br.postPage("http://premium.letitbit.net/ajax.php?action=setddlstate", "state=2");
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else {
+                logger.info("Premium with directDL");
+            }
+        }
+        /* because there can be another link to a downlodmanager first */
+        if (dlUrl == null) {
+            if (br.getRedirectLocation() != null) {
+                br.getPage(br.getRedirectLocation());
+            }
+            logger.severe(br.toString());
+            if (br.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        /* we have to wait little because server too buggy */
+        sleep(5000, downloadLink);
+        br.setDebug(true);
+        br.setFollowRedirects(true);
+        /* remove newline */
+        dlUrl = dlUrl.replaceAll("%0D%0A", "");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 0);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            if (br.containsHTML("Error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 2 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    private void login(Account account) throws IOException, PluginException {
+        setBrowserExclusive();
+        br.setCookie("http://letitbit.net/", "lang", "en");
+        br.postPage("http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
+        String check = br.getCookie("http://letitbit.net/", "log");
+        if (check == null) check = br.getCookie("http://letitbit.net/", "pas");
+        if (check == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
     private void prepareBrowser(final Browser br) {
         /*
          * last time they did not block the useragent, we just need this stuff
@@ -331,48 +341,43 @@ public class LetitBitNet extends PluginForHost {
         br.getHeaders().put("Content-Length", "0");
     }
 
-    private String getUrl(Account account) throws IOException {
-        // This information can only be found before each download so lets set
-        // it here
-        String points = br.getRegex("\">Points:</acronym>(.*?)</li>").getMatch(0);
-        String expireDate = br.getRegex("\">Expire date:</acronym> ([0-9-]+) \\[<acronym class").getMatch(0);
-        if (expireDate == null) expireDate = br.getRegex("\">Period of validity:</acronym>(.*?) \\[<acronym").getMatch(0);
-        if (expireDate != null || points != null) {
-            AccountInfo accInfo = new AccountInfo();
-            // 1 point = 1 GB
-            if (points != null) accInfo.setTrafficLeft(SizeFormatter.getSize(points.trim() + "GB"));
-            if (expireDate != null) {
-                accInfo.setValidUntil(TimeFormatter.getMilliSeconds(expireDate.trim(), "yyyy-MM-dd", null));
-            } else {
-                expireDate = br.getRegex("\"Total days remaining\">(\\d+)</acronym>").getMatch(0);
-                if (expireDate == null) expireDate = br.getRegex("\"Days remaining in Your account\">(\\d+)</acronym>").getMatch(0);
-                if (expireDate != null) accInfo.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expireDate) * 24 * 60 * 60 * 1000));
-            }
-            account.setAccountInfo(accInfo);
-        }
-        String iFrame = br.getRegex("<iframe src=\"(/sms/.*?)\"").getMatch(0);
-        if (iFrame == null) {
-            iFrame = br.getRegex("\"(/sms/check2_iframe\\.php\\?ids=[0-9_]+\\&ids_emerg=[0-9_]+\\&emergency_mode=)\"").getMatch(0);
-            if (iFrame == null) iFrame = br.getRegex("\"(http://s\\d+\\.letitbit\\.net/sms/check2_iframe\\.php\\?ac_syml_uid=.*?)\"").getMatch(0);
-        }
-        if (iFrame != null) {
-            if (!iFrame.startsWith("http://"))
-                br.getPage("http://letitbit.net" + iFrame);
-            else
-                br.getPage(iFrame);
-        }
-        String url = br.getRegex("(http://[^/;(images) ]*?/download.*?/[^/; ]+?)(\"|')[^(Download Master)]*?(http://[^/; ]*?/download[^; ]*?/[^; ]*?)(\"|')").getMatch(2);
-        if (url == null) {
-            url = br.getRegex("(http://[^/;(images) ]*?/download[^; ]*?/[^; ]*?)(\"|')").getMatch(0);
-            if (url == null) url = br.getRegex("\"(http://[0-9]{2,3}\\.[0-9]{2,3}\\.[0-9]{2,3}\\.[0-9]{2,3}/download\\d+/[^; ]*?)\"").getMatch(0);
-            if (url == null) url = br.getRegex("\"(http://[0-9]{2,3}\\.[0-9]{2,3}\\.[0-9]{2,3}\\.[0-9]{2,3}/[^/].*?download[^/].*?\\d+/[^; ]*?)\"").getMatch(0);
-        }
-        return url;
-    }
-
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setDebug(true);
+        br.setCookie("http://letitbit.net/", "lang", "en");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("(<title>404</title>|<br>File not found<br />|Запрашиваемый файл не найден<br>|>Запрашиваемая вами страница не существует\\!<|Request file .*? Deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // /* set english language */
+        // br.postPage(downloadLink.getDownloadURL(),
+        // "en.x=10&en.y=8&vote_cr=en");
+        String filename = br.getRegex("\"file-info\">File:: <span>(.*?)</span>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("class=\"first\">File:: <span>(.*?)</span></li>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("title>(.*?) download for free").getMatch(0);
+                }
+            }
+        }
+        String filesize = br.getRegex("name=\"sssize\" value=\"(\\d+)\"").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("<li>Size of file:: <span>(.*?)</span></li>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("\\[<span>(.*?)</span>\\]</h1>").getMatch(0);
+            }
+        }
+        if (filename == null || filesize == null) {
+            if (br.containsHTML("Request file.*?Deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // Their names often differ from other file hosting services. I noticed
+        // that when in the filenames from other hosting services there are
+        // "-"'s, letitbit uses "_"'s so let's correct this here ;)
+        downloadLink.setFinalFileName(filename.trim().replace("_", "-"));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -380,10 +385,10 @@ public class LetitBitNet extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

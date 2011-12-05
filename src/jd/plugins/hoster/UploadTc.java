@@ -41,17 +41,8 @@ public class UploadTc extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("><b>File Name :<b></td>[\t\n\r ]+<td class=\"content\" width=\"211\" align=\"left\" valign=\"top\"  style=\"color:#678197;[\t\n\r ]+border:1px solid #e5eff8; padding:.3em 1em;\">(.*?)</td>").getMatch(0);
-        String filesize = br.getRegex("><b>File Size :<b></td>[\t\n\r ]+<td class=\"content\" width=\"211\" align=\"left\" valign=\"top\"  style=\"color:#678197;[\t\n\r ]+border:1px solid #e5eff8; padding:.3em 1em;\">(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -73,12 +64,21 @@ public class UploadTc extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("><b>File Name :<b></td>[\t\n\r ]+<td class=\"content\" width=\"211\" align=\"left\" valign=\"top\"  style=\"color:#678197;[\t\n\r ]+border:1px solid #e5eff8; padding:.3em 1em;\">(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex("><b>File Size :<b></td>[\t\n\r ]+<td class=\"content\" width=\"211\" align=\"left\" valign=\"top\"  style=\"color:#678197;[\t\n\r ]+border:1px solid #e5eff8; padding:.3em 1em;\">(.*?)</td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

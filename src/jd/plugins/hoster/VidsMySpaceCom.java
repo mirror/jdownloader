@@ -31,15 +31,20 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vids.myspace.com" }, urls = { "http://vids\\.myspace\\.com/index\\.cfm\\?fuseaction=vids\\.individual\\&videoid=\\d+" }, flags = { 0 })
 public class VidsMySpaceCom extends PluginForHost {
 
+    private String dllink = null;
+
     public VidsMySpaceCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String dllink = null;
-
     @Override
     public String getAGBLink() {
         return "http://www.myspace.com/index.cfm?fuseaction=misc.terms";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -97,19 +102,14 @@ public class VidsMySpaceCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

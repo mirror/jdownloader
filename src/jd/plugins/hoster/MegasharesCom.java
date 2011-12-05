@@ -57,47 +57,49 @@ public class MegasharesCom extends PluginForHost {
         enablePremium("http://www.megashares.com/lc_order.php?tid=sasky");
     }
 
-    @SuppressWarnings("unchecked")
-    private void login(Account account) throws IOException, PluginException {
-        synchronized (LOCK) {
-            this.setBrowserExclusive();
-            br.getHeaders().put("User-Agent", UserAgent);
-            br.setFollowRedirects(true);
-            Object ret = account.getProperty("cookies", null);
-            if (ret != null && ret instanceof HashMap<?, ?>) {
-                logger.info("Use cookie login");
-                /* use saved cookies */
-                HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                    final String key = cookieEntry.getKey();
-                    final String value = cookieEntry.getValue();
-                    br.setCookie("http://megashares.com/", key, value);
-                }
-            } else {
-                logger.info("Use website login");
-                /* get new cookies */
-                String pw = account.getPass();
-                if (pw.length() > 32) {
-                    pw = pw.substring(0, 32);
-                }
-                br.getPage("http://d01.megashares.com/");
-                br.postPage("http://d01.megashares.com/myms_login.php", "mymslogin_name=" + Encoding.urlEncode(account.getUser()) + "&mymspassword=" + Encoding.urlEncode(pw) + "&myms_login=Login");
-            }
-            if (br.getCookie("http://megashares.com", "myms") == null) {
-                /* invalid account */
-                account.setProperty("cookies", null);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                /* valid account */
-                HashMap<String, String> cookies = new HashMap<String, String>();
-                Cookies add = br.getCookies("http://megashares.com/");
-                for (Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("cookies", cookies);
-            }
-        }
+    private boolean checkPassword(DownloadLink link) throws Exception {
 
+        if (br.containsHTML("This link requires a password")) {
+            Form form = br.getFormBySubmitvalue("Validate+Password");
+            String pass = link.getStringProperty("pass");
+            if (pass != null) {
+                form.put("passText", pass);
+                br.submitForm(form);
+                if (!br.containsHTML("This link requires a password")) { return true; }
+            }
+            int i = 0;
+            while ((i++) < 5) {
+                pass = Plugin.getUserInput(JDL.LF("plugins.hoster.passquestion", "Link '%s' is passwordprotected. Enter password:", link.getName()), link);
+                if (pass != null) {
+                    form.put("passText", pass);
+                    br.submitForm(form);
+                    if (!br.containsHTML("This link requires a password")) {
+                        link.setProperty("pass", pass);
+                        return true;
+                    }
+                }
+            }
+            link.setProperty("pass", null);
+            link.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
+            link.getLinkStatus().setErrorMessage("Link password wrong");
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws IOException {
+        String url = link.getDownloadURL();
+        String id = null;
+        if (url.contains("/dl/")) {
+            id = new Regex(url, "/dl/([a-zA-Z0-9]+)").getMatch(0);
+        } else {
+            id = new Regex(url, "\\?d[0-9]{2}=([0-9a-zA-Z]+)").getMatch(0);
+        }
+        if (id != null) {
+            url = "http://d01.megashares.com/?d01=" + id;
+        }
+        link.setUrlDownload(url);
     }
 
     @Override
@@ -135,31 +137,6 @@ public class MegasharesCom extends PluginForHost {
         }
     }
 
-    public void loadpage(String url) throws IOException {
-        boolean tmp = br.isFollowingRedirects();
-        br.setFollowRedirects(false);
-        br.getPage(url);
-        if (br.getRedirectLocation() != null) {
-            br.getPage(br.getRedirectLocation());
-        }
-        br.setFollowRedirects(tmp);
-    }
-
-    @Override
-    public void correctDownloadLink(DownloadLink link) throws IOException {
-        String url = link.getDownloadURL();
-        String id = null;
-        if (url.contains("/dl/")) {
-            id = new Regex(url, "/dl/([a-zA-Z0-9]+)").getMatch(0);
-        } else {
-            id = new Regex(url, "\\?d[0-9]{2}=([0-9a-zA-Z]+)").getMatch(0);
-        }
-        if (id != null) {
-            url = "http://d01.megashares.com/?d01=" + id;
-        }
-        link.setUrlDownload(url);
-    }
-
     private String findDownloadUrl() {
         String url = br.getRegex("<div>\\s*?<a href=\"(http://.*?megashares.*?)\">").getMatch(0);
         if (url == null) url = br.getRegex("<div id=\"show_download_button(_\\d+)?\".*?>[^<]*?<a href=\"(http://.*?megashares.*?)\">").getMatch(1);
@@ -167,38 +144,18 @@ public class MegasharesCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        synchronized (LOCK) {
-            login(account);
-            // Password protection
-            loadpage(downloadLink.getDownloadURL());
-            if (!checkPassword(downloadLink)) { return; }
-            if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-            if (br.containsHTML("Your Download Passport is") || br.containsHTML("Your Passport needs to be reactivated.") || br.containsHTML("You have reached.*?maximum download limit") || br.containsHTML("You already have the maximum")) {
-                /* invalid account? try again */
-                logger.info("No Premium? try again");
-                account.setProperty("cookies", null);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-        }
-        String url = findDownloadUrl();
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -10);
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
-            if (br.getHttpConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-            /*
-             * seems like megashares sends empty page when last download was
-             * some secs ago
-             */
-            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-            /* maybe we have to fix link */
-            correctDownloadLink(downloadLink);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+    public String getAGBLink() {
+        return "http://d01.megashares.com/tos.php";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getTimegapBetweenConnections() {
+        return 2000;
     }
 
     private void handleErrors(DownloadLink link) throws PluginException {
@@ -263,39 +220,97 @@ public class MegasharesCom extends PluginForHost {
         }
     }
 
-    private boolean checkPassword(DownloadLink link) throws Exception {
-
-        if (br.containsHTML("This link requires a password")) {
-            Form form = br.getFormBySubmitvalue("Validate+Password");
-            String pass = link.getStringProperty("pass");
-            if (pass != null) {
-                form.put("passText", pass);
-                br.submitForm(form);
-                if (!br.containsHTML("This link requires a password")) { return true; }
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        synchronized (LOCK) {
+            login(account);
+            // Password protection
+            loadpage(downloadLink.getDownloadURL());
+            if (!checkPassword(downloadLink)) { return; }
+            if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            if (br.containsHTML("Your Download Passport is") || br.containsHTML("Your Passport needs to be reactivated.") || br.containsHTML("You have reached.*?maximum download limit") || br.containsHTML("You already have the maximum")) {
+                /* invalid account? try again */
+                logger.info("No Premium? try again");
+                account.setProperty("cookies", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            int i = 0;
-            while ((i++) < 5) {
-                pass = Plugin.getUserInput(JDL.LF("plugins.hoster.passquestion", "Link '%s' is passwordprotected. Enter password:", link.getName()), link);
-                if (pass != null) {
-                    form.put("passText", pass);
-                    br.submitForm(form);
-                    if (!br.containsHTML("This link requires a password")) {
-                        link.setProperty("pass", pass);
-                        return true;
-                    }
-                }
-            }
-            link.setProperty("pass", null);
-            link.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
-            link.getLinkStatus().setErrorMessage("Link password wrong");
-            return false;
         }
+        String url = findDownloadUrl();
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -10);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            if (br.getHttpConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            /*
+             * seems like megashares sends empty page when last download was
+             * some secs ago
+             */
+            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            /* maybe we have to fix link */
+            correctDownloadLink(downloadLink);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
         return true;
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://d01.megashares.com/tos.php";
+    public void loadpage(String url) throws IOException {
+        boolean tmp = br.isFollowingRedirects();
+        br.setFollowRedirects(false);
+        br.getPage(url);
+        if (br.getRedirectLocation() != null) {
+            br.getPage(br.getRedirectLocation());
+        }
+        br.setFollowRedirects(tmp);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void login(Account account) throws IOException, PluginException {
+        synchronized (LOCK) {
+            this.setBrowserExclusive();
+            br.getHeaders().put("User-Agent", UserAgent);
+            br.setFollowRedirects(true);
+            Object ret = account.getProperty("cookies", null);
+            if (ret != null && ret instanceof HashMap<?, ?>) {
+                logger.info("Use cookie login");
+                /* use saved cookies */
+                HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                    final String key = cookieEntry.getKey();
+                    final String value = cookieEntry.getValue();
+                    br.setCookie("http://megashares.com/", key, value);
+                }
+            } else {
+                logger.info("Use website login");
+                /* get new cookies */
+                String pw = account.getPass();
+                if (pw.length() > 32) {
+                    pw = pw.substring(0, 32);
+                }
+                br.getPage("http://d01.megashares.com/");
+                br.postPage("http://d01.megashares.com/myms_login.php", "mymslogin_name=" + Encoding.urlEncode(account.getUser()) + "&mymspassword=" + Encoding.urlEncode(pw) + "&myms_login=Login");
+            }
+            if (br.getCookie("http://megashares.com", "myms") == null) {
+                /* invalid account */
+                account.setProperty("cookies", null);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                /* valid account */
+                HashMap<String, String> cookies = new HashMap<String, String>();
+                Cookies add = br.getCookies("http://megashares.com/");
+                for (Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("cookies", cookies);
+            }
+        }
+
     }
 
     public void renew(Browser br, int buttonID) throws IOException {
@@ -358,16 +373,6 @@ public class MegasharesCom extends PluginForHost {
             if (dsize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(dsize));
             if (fln != null) downloadLink.setName(fln.trim());
         }
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
-    @Override
-    public int getTimegapBetweenConnections() {
-        return 2000;
     }
 
     @Override

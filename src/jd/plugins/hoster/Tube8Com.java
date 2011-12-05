@@ -39,24 +39,14 @@ public class Tube8Com extends PluginForHost {
 
     private boolean setEx = true;
 
+    private static final String mobile = "mobile";
+
+    public String dllink = null;
+
     public Tube8Com(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
         this.enablePremium("http://www.tube8.com/signin.html");
-    }
-
-    private static final String mobile = "mobile";
-
-    private void setConfigElements() {
-        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), mobile, JDL.L("plugins.hoster.Tube8Com.setting.preferVideosForMobilePhones", "Prefer videos for mobile phones (3gp format)")).setDefaultValue(false);
-        getConfig().addEntry(cond);
-    }
-
-    public String dllink = null;
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.tube8.com/info.html#dmca";
     }
 
     @Override
@@ -75,19 +65,34 @@ public class Tube8Com extends PluginForHost {
         return ai;
     }
 
-    private void login(Account account, Browser br) throws IOException, PluginException {
-        if (br == null) {
-            br = new Browser();
+    public void find3gpLinks() throws NumberFormatException, PluginException {
+        dllink = br.getRegex("\"(http://mobile[0-9]+\\.tube8\\.com/flv/.*?/.*?\\.3gp)\"").getMatch(0);
+    }
+
+    public void findNormalLinks() throws NumberFormatException, PluginException {
+        dllink = br.getRegex("\"video_url\":\"(http.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://media[0-9]+\\.tube8\\.com/flv/.*?\\.flv)\"").getMatch(0);
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.tube8.com/info.html#dmca";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.setBrowserExclusive();
-        boolean follow = br.isFollowingRedirects();
-        try {
-            br.setFollowRedirects(true);
-            br.postPage("http://www.tube8.com/ajax/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            if (br.containsHTML("invalid") || br.containsHTML("0\\|")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        } finally {
-            br.setFollowRedirects(follow);
-        }
+        dl.startDownload();
     }
 
     @Override
@@ -101,6 +106,21 @@ public class Tube8Com extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void login(Account account, Browser br) throws IOException, PluginException {
+        if (br == null) {
+            br = new Browser();
+        }
+        this.setBrowserExclusive();
+        boolean follow = br.isFollowingRedirects();
+        try {
+            br.setFollowRedirects(true);
+            br.postPage("http://www.tube8.com/ajax/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            if (br.containsHTML("invalid") || br.containsHTML("0\\|")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } finally {
+            br.setFollowRedirects(follow);
+        }
     }
 
     @Override
@@ -159,39 +179,19 @@ public class Tube8Com extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    public void findNormalLinks() throws NumberFormatException, PluginException {
-        dllink = br.getRegex("\"video_url\":\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://media[0-9]+\\.tube8\\.com/flv/.*?\\.flv)\"").getMatch(0);
-    }
-
-    public void find3gpLinks() throws NumberFormatException, PluginException {
-        dllink = br.getRegex("\"(http://mobile[0-9]+\\.tube8\\.com/flv/.*?/.*?\\.3gp)\"").getMatch(0);
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
+    }
+
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
     public void resetPluginGlobals() {
     }
 
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
+    private void setConfigElements() {
+        ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), mobile, JDL.L("plugins.hoster.Tube8Com.setting.preferVideosForMobilePhones", "Prefer videos for mobile phones (3gp format)")).setDefaultValue(false);
+        getConfig().addEntry(cond);
     }
 }

@@ -62,27 +62,8 @@ public class FileboxRo extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (Regex.matches(downloadLink.getDownloadURL(), ".+(/video/|/v/).+")) {
-            this.isVideo = true;
-            String filename = br.getRegex("<h2>(.*?)</h2>.*?<div id=\"player\">").getMatch(0);
-            if (filename != null) {
-                downloadLink.setFinalFileName(filename + ".flv");
-                return AvailableStatus.TRUE;
-            }
-        } else {
-            if (br.containsHTML("(File deleted or file lifespan expired|Wrong link|Filebox.ro is temporarily not available\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-            String filesize = br.getRegex("Dimensiune: </span>(.*?)<hr/>").getMatch(0);
-            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            downloadLink.setName(filename);
-            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
-            return AvailableStatus.TRUE;
-        }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -126,8 +107,27 @@ public class FileboxRo extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (Regex.matches(downloadLink.getDownloadURL(), ".+(/video/|/v/).+")) {
+            this.isVideo = true;
+            String filename = br.getRegex("<h2>(.*?)</h2>.*?<div id=\"player\">").getMatch(0);
+            if (filename != null) {
+                downloadLink.setFinalFileName(filename + ".flv");
+                return AvailableStatus.TRUE;
+            }
+        } else {
+            if (br.containsHTML("(File deleted or file lifespan expired|Wrong link|Filebox.ro is temporarily not available\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+            String filesize = br.getRegex("Dimensiune: </span>(.*?)<hr/>").getMatch(0);
+            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            downloadLink.setName(filename);
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
+            return AvailableStatus.TRUE;
+        }
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override
@@ -135,10 +135,10 @@ public class FileboxRo extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

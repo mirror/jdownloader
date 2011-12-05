@@ -30,16 +30,43 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ehow.com" }, urls = { "http://[\\w\\.]*?.ehow\\.com/video_\\d+_.*?\\.html" }, flags = { 0 })
 public class EHowCom extends PluginForHost {
 
+    private String  dllink = null;
+
+    private boolean hd     = true;
     public EHowCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String  dllink = null;
-    private boolean hd     = true;
-
     @Override
     public String getAGBLink() {
         return "http://www.ehow.com/terms_use.aspx";
+    }
+
+    public void getDllink() throws Exception {
+        dllink = br.getRegex("'(http://cdn-viper\\.demandvideo\\.com/media/[a-z0-9-]+/flashHD/[a-z0-9-]+\\.flv)'").getMatch(0);
+        if (dllink == null) {
+            hd = false;
+            dllink = br.getRegex("(http://cdn-viper\\.demandvideo\\.com/media/[a-z0-9-]+/flash/[a-z0-9-]+\\.flv)").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("id: '(http://.*?\\.flv)'").getMatch(0);
+            }
+        }
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -81,41 +108,14 @@ public class EHowCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    public void getDllink() throws Exception {
-        dllink = br.getRegex("'(http://cdn-viper\\.demandvideo\\.com/media/[a-z0-9-]+/flashHD/[a-z0-9-]+\\.flv)'").getMatch(0);
-        if (dllink == null) {
-            hd = false;
-            dllink = br.getRegex("(http://cdn-viper\\.demandvideo\\.com/media/[a-z0-9-]+/flash/[a-z0-9-]+\\.flv)").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("id: '(http://.*?\\.flv)'").getMatch(0);
-            }
-        }
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

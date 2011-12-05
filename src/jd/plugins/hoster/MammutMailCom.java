@@ -32,6 +32,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mammutmail.com" }, urls = { "http://(www\\.)?mammutmail\\.com/\\?action=download\\&sid=[a-z0-9]{32}" }, flags = { 0 })
 public class MammutMailCom extends PluginForHost {
 
+    private static final String INFOREGEX = "<p><a href=\"(http://.*?)\"><span class=\"a_blue\">Letöltés: (.*?) \\(([0-9\\.]+ [A-Za-z]+)\\)</span>";
+
     public MammutMailCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,21 +43,9 @@ public class MammutMailCom extends PluginForHost {
         return "http://www.mammutmail.com/en/?page=felhasznalasi";
     }
 
-    private static final String INFOREGEX = "<p><a href=\"(http://.*?)\"><span class=\"a_blue\">Letöltés: (.*?) \\(([0-9\\.]+ [A-Za-z]+)\\)</span>";
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("iso-8859-2");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(A fájl már nem található a szerveren\\!<br|A fájl a feladó vagy a címzett által törölve lett<br|Egyéb ok miatt törölve lett a rendszerből<br)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(INFOREGEX).getMatch(1);
-        if (filename == null) filename = br.getRegex("\\&file_name=(.*?)\"").getMatch(0);
-        String filesize = br.getRegex(INFOREGEX).getMatch(2);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -74,12 +64,22 @@ public class MammutMailCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("iso-8859-2");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(A fájl már nem található a szerveren\\!<br|A fájl a feladó vagy a címzett által törölve lett<br|Egyéb ok miatt törölve lett a rendszerből<br)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex(INFOREGEX).getMatch(1);
+        if (filename == null) filename = br.getRegex("\\&file_name=(.*?)\"").getMatch(0);
+        String filesize = br.getRegex(INFOREGEX).getMatch(2);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

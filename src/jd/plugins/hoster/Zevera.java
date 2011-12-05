@@ -39,12 +39,12 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zevera.com" }, urls = { "http://[\\w\\.]*?zevera\\.com/.+" }, flags = { 2 })
 public class Zevera extends PluginForHost {
     static public final Object LOGINLOCK  = new Object();
-    private boolean            showDialog = false;
-
     private static String getID(String link) {
         String id = new Regex(link, ".*fid=(.+)&.*").getMatch(0);
         return id;
     }
+
+    private boolean            showDialog = false;
 
     public Zevera(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,20 +52,84 @@ public class Zevera extends PluginForHost {
         this.enablePremium("http://www.zevera.com/Prices.aspx");
     }
 
-    /* TODO: remove me after 0.9xx public */
-    private void workAroundTimeOut(Browser br) {
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        showDialog = true;
         try {
-            if (br != null) {
-                br.setConnectTimeout(30000);
-                br.setReadTimeout(120000);
-            }
-        } catch (Throwable e) {
+            setBrowserExclusive();
+            loginAPI(account, ai);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
         }
+        return ai;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://zevera.com";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getTimegapBetweenConnections() {
+        return 800;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         throw new PluginException(LinkStatus.ERROR_FATAL, "You need a premium account to use this hoster");
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        setBrowserExclusive();
+        workAroundTimeOut(br);
+        showDialog = false;
+        br.setDebug(true);
+        String user = Encoding.urlEncode(account.getUser());
+        String pw = Encoding.urlEncode(account.getPass());
+        String link = downloadLink.getDownloadURL();
+        if (link.contains("getFiles.aspx")) {
+            showMessage(downloadLink, "Downloading file");
+            user = account.getUser();
+            pw = account.getPass();
+            String basicauth = "Basic " + Encoding.Base64Encode(user + ":" + pw);
+            br.getHeaders().put("Authorization", basicauth);
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
+        } else {
+            showMessage(downloadLink, "Phase 1/2: Get FileID");
+            String FileID = Zevera.getID(link);
+            if (FileID == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Error adding file, FileID null"); }
+            while (true) {
+                showMessage(downloadLink, "Phase 2/3: Check download:");
+                br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=fileinfo&login=" + user + "&pass=" + pw + "&FileID=" + FileID);
+                String infos[] = br.getRegex("(.*?)(,|$)").getColumn(0);
+                if (infos[0].contains("FileID:0")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Error adding file, FileID doesnt exist"); }
+                if (infos[6].contains("Status:Downloaded")) {
+                    String DownloadURL = br.getRegex("DownloadURL:(Http.*?),").getMatch(0);
+                    if (DownloadURL == null) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
+                    showMessage(downloadLink, "Phase 3/3: OK Download starting");
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DownloadURL, true, 0);
+                    break;
+                } else
+                    this.sleep(15 * 1000l, downloadLink, "Waiting for download to finish on Zevera");
+            }
+        }
+        if (dl.getConnection().isContentDisposition()) {
+            long filesize = dl.getConnection().getLongContentLength();
+            if (filesize == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            dl.startDownload();
+        } else {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        }
     }
 
     private void loginAPI(Account account, AccountInfo ai) throws IOException, PluginException {
@@ -118,76 +182,6 @@ public class Zevera extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        showDialog = true;
-        try {
-            setBrowserExclusive();
-            loginAPI(account, ai);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        return ai;
-    }
-
-    @Override
-    public int getTimegapBetweenConnections() {
-        return 800;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        setBrowserExclusive();
-        workAroundTimeOut(br);
-        showDialog = false;
-        br.setDebug(true);
-        String user = Encoding.urlEncode(account.getUser());
-        String pw = Encoding.urlEncode(account.getPass());
-        String link = downloadLink.getDownloadURL();
-        if (link.contains("getFiles.aspx")) {
-            showMessage(downloadLink, "Downloading file");
-            user = account.getUser();
-            pw = account.getPass();
-            String basicauth = "Basic " + Encoding.Base64Encode(user + ":" + pw);
-            br.getHeaders().put("Authorization", basicauth);
-            br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
-        } else {
-            showMessage(downloadLink, "Phase 1/2: Get FileID");
-            String FileID = Zevera.getID(link);
-            if (FileID == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Error adding file, FileID null"); }
-            while (true) {
-                showMessage(downloadLink, "Phase 2/3: Check download:");
-                br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=fileinfo&login=" + user + "&pass=" + pw + "&FileID=" + FileID);
-                String infos[] = br.getRegex("(.*?)(,|$)").getColumn(0);
-                if (infos[0].contains("FileID:0")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Error adding file, FileID doesnt exist"); }
-                if (infos[6].contains("Status:Downloaded")) {
-                    String DownloadURL = br.getRegex("DownloadURL:(Http.*?),").getMatch(0);
-                    if (DownloadURL == null) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
-                    showMessage(downloadLink, "Phase 3/3: OK Download starting");
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DownloadURL, true, 0);
-                    break;
-                } else
-                    this.sleep(15 * 1000l, downloadLink, "Waiting for download to finish on Zevera");
-            }
-        }
-        if (dl.getConnection().isContentDisposition()) {
-            long filesize = dl.getConnection().getLongContentLength();
-            if (filesize == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-            dl.startDownload();
-        } else {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        }
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://zevera.com";
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setDebug(true);
@@ -229,12 +223,11 @@ public class Zevera extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public void reset() {
     }
 
     @Override
-    public void reset() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
@@ -247,7 +240,14 @@ public class Zevera extends PluginForHost {
         link.requestGuiUpdate();
     }
 
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
+    /* TODO: remove me after 0.9xx public */
+    private void workAroundTimeOut(Browser br) {
+        try {
+            if (br != null) {
+                br.setConnectTimeout(30000);
+                br.setReadTimeout(120000);
+            }
+        } catch (Throwable e) {
+        }
     }
 }

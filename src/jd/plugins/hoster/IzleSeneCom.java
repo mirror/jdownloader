@@ -31,11 +31,11 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "izlesene.com" }, urls = { "http://(www\\.)?izlesene\\.com/video/[a-z0-9\\-]+/\\d+" }, flags = { 0 })
 public class IzleSeneCom extends PluginForHost {
 
+    private String DLLINK = null;
+
     public IzleSeneCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    private String DLLINK = null;
 
     @Override
     public String getAGBLink() {
@@ -43,15 +43,8 @@ public class IzleSeneCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage("http://www.izlesene.com/player_xml/izlesene/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
-        if (!br.containsHTML("videoname")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<videoname>(.*?)</videoname>").getMatch(0);
-        filename = filename.trim();
-        downloadLink.setName(Encoding.htmlDecode(filename) + ".mp4");
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -77,8 +70,15 @@ public class IzleSeneCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage("http://www.izlesene.com/player_xml/izlesene/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+        if (!br.containsHTML("videoname")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<videoname>(.*?)</videoname>").getMatch(0);
+        filename = filename.trim();
+        downloadLink.setName(Encoding.htmlDecode(filename) + ".mp4");
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -86,10 +86,10 @@ public class IzleSeneCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
@@ -78,6 +79,16 @@ public class MediafireCom extends PluginForHost {
         }
 
         abstract protected void handlePassword(String password) throws Exception;
+
+        // do not add @Override here to keep 0.* compatibility
+        public boolean hasAutoCaptcha() {
+            return JACMethod.hasMethod("recaptcha");
+        }
+
+        // do not add @Override here to keep 0.* compatibility
+        public boolean hasCaptcha() {
+            return true;
+        }
 
         abstract protected boolean isCorrect();
 
@@ -244,12 +255,6 @@ public class MediafireCom extends PluginForHost {
             eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*?googleapis.com.+", ".*?connect.facebook.net.+", ".*?encoder.*?", ".*?google.+", ".*facebook.+", ".*pmsrvr.com.+", ".*yahoo.com.+", ".*templates/linkto.+", ".*cdn.mediafire.com/css/.+", ".*/blank.html" }, null) {
 
                 @Override
-                public void prepareContents(Request request) {
-
-                    super.prepareContents(request);
-                }
-
-                @Override
                 public boolean doLoadContent(Request request) {
                     return super.doLoadContent(request);
                 }
@@ -282,6 +287,12 @@ public class MediafireCom extends PluginForHost {
                 @Override
                 public boolean isInternalCSSEnabled() {
                     return true;
+                }
+
+                @Override
+                public void prepareContents(Request request) {
+
+                    super.prepareContents(request);
                 }
 
             });

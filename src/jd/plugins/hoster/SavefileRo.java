@@ -40,6 +40,16 @@ public class SavefileRo extends PluginForHost {
     }
 
     @Override
+    public String getAGBLink() {
+        return "http://www.savefile.ro/tos.html";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -86,14 +96,9 @@ public class SavefileRo extends PluginForHost {
         }
     }
 
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.savefile.ro/tos.html";
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
@@ -114,11 +119,11 @@ public class SavefileRo extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

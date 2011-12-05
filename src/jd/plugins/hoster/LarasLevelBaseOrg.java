@@ -33,47 +33,11 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "laraslevelbase.org" }, urls = { "http://(www\\.)?laraslevelbase\\.org/box_download\\.asp\\?Id=\\d+" }, flags = { 2 })
 public class LarasLevelBaseOrg extends PluginForHost {
 
+    public static final Object LOCK = new Object();
+
     public LarasLevelBaseOrg(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://laraslevelbase.org/box_mem_eintrag.asp");
-    }
-
-    public static final Object LOCK = new Object();
-
-    @Override
-    public String getAGBLink() {
-        return "http://laraslevelbase.org/index.asp";
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        // We need to log in to get the file status
-        synchronized (LOCK) {
-            Account aa = AccountController.getInstance().getValidAccount(this);
-            if (aa == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Links are only checkable if a registered account is entered!");
-            login(aa);
-        }
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<p>Level wurde auf Wunsch des Autos von der Levelbase entfernt")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("onMouseOver=\"status=\\'© Lara´s Levelbase Community\\';return true;\">(.*?)</a></b></font>").getMatch(0);
-        String filesize = br.getRegex("<dt><font face=\"Verdana\" size=\"1\">\\( (.*?) \\)</font>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.postPage("http://laraslevelbase.org/index.asp?id=&rl_pos=&rl_neu=&rl_neg=", "status=check&USERNAME=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login&id=&na=na");
-        if (br.getCookie("http://laraslevelbase.org/", "SavedLogin") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -87,6 +51,27 @@ public class LarasLevelBaseOrg extends PluginForHost {
         }
         ai.setStatus("Registered (free) User");
         return ai;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://laraslevelbase.org/index.asp";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
     }
 
     @Override
@@ -109,18 +94,33 @@ public class LarasLevelBaseOrg extends PluginForHost {
         dl.startDownload();
     }
 
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.postPage("http://laraslevelbase.org/index.asp?id=&rl_pos=&rl_neu=&rl_neg=", "status=check&USERNAME=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login&id=&na=na");
+        if (br.getCookie("http://laraslevelbase.org/", "SavedLogin") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        this.setBrowserExclusive();
+        // We need to log in to get the file status
+        synchronized (LOCK) {
+            Account aa = AccountController.getInstance().getValidAccount(this);
+            if (aa == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Links are only checkable if a registered account is entered!");
+            login(aa);
+        }
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("<p>Level wurde auf Wunsch des Autos von der Levelbase entfernt")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("onMouseOver=\"status=\\'© Lara´s Levelbase Community\\';return true;\">(.*?)</a></b></font>").getMatch(0);
+        String filesize = br.getRegex("<dt><font face=\"Verdana\" size=\"1\">\\( (.*?) \\)</font>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

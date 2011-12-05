@@ -31,6 +31,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "howfile.com" }, urls = { "http://(www\\.)?howfile\\.com/file/[a-z0-9]+/[a-z0-9]+" }, flags = { 0 })
 public class HowFileCom extends PluginForHost {
 
+    private static final String MAINPAGE = "http://howfile.com/";
+
     public HowFileCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,7 +42,31 @@ public class HowFileCom extends PluginForHost {
         return "http://www.howfile.com/user/terms.html";
     }
 
-    private static final String MAINPAGE = "http://howfile.com/";
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        String vid = br.getRegex("setCookie\\(\"vid\", \"(.*?)\"").getMatch(0);
+        String vid1 = br.getRegex("setCookie\\(\"vid1\", \"(.*?)\"").getMatch(0);
+        if (vid == null || vid1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Those cookies are important, no downloadstart without them!
+        br.setCookie(MAINPAGE, "vid", vid);
+        br.setCookie(MAINPAGE, "vid1", vid1);
+        br.setFollowRedirects(false);
+        String dllink = br.getRegex("width=0 height=0></iframe>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?dl\\d+\\.howfile\\.com/downfile/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
 
     // Works like MountFileCom and YonFileCom
     @Override
@@ -65,33 +91,7 @@ public class HowFileCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String vid = br.getRegex("setCookie\\(\"vid\", \"(.*?)\"").getMatch(0);
-        String vid1 = br.getRegex("setCookie\\(\"vid1\", \"(.*?)\"").getMatch(0);
-        if (vid == null || vid1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Those cookies are important, no downloadstart without them!
-        br.setCookie(MAINPAGE, "vid", vid);
-        br.setCookie(MAINPAGE, "vid1", vid1);
-        br.setFollowRedirects(false);
-        String dllink = br.getRegex("width=0 height=0></iframe>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?dl\\d+\\.howfile\\.com/downfile/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

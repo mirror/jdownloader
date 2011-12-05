@@ -39,11 +39,6 @@ public class NarodRu extends PluginForHost {
         super(wrapper);
     }
 
-    public String getAGBLink() {
-        setBrowserExclusive();
-        return "http://narod.ru/agreement/";
-    }
-
     public void correctDownloadLink(DownloadLink link) {
         // Correct added links because some guys are spreading narod direct
         // links
@@ -58,28 +53,14 @@ public class NarodRu extends PluginForHost {
         }
     }
 
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        /*
-         * no captcha because of http://userscripts.org/scripts/review/64343
-         */
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0 YB/4.2.0");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<title>404</title>") || br.containsHTML("Файл удален с сервиса") || br.containsHTML("Закончился срок хранения файла\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String name = br.getRegex(Pattern.compile("<dt class=\"name\"><i class=\"b-old-icon b-old-icon-arc\"></i>(.*?)</dt>")).getMatch(0);
-        if (name == null) name = br.getRegex(Pattern.compile("class=\"name\"><i class=.*?></i>(.*?)</dt>")).getMatch(0);
-        if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String md5Hash = br.getRegex(Pattern.compile("<dt class=\"size\">md5:</dt>.*<dd class=\"size\">(.*?)</dd>", Pattern.DOTALL)).getMatch(0);
-        String fileSize = br.getRegex(Pattern.compile("<td class=\"l-download-info-right\">.*?<dl class=\"b-download-item g-line\">.*?<dt class=\"size\">.*?</dt>.*?<dd class=\"size\">(.*?).</dd>", Pattern.DOTALL)).getMatch(0);
-        if (fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        fileSize = fileSize.replaceAll("Г", "G");
-        fileSize = fileSize.replaceAll("М", "M");
-        fileSize = fileSize.replaceAll("к", "k");
-        fileSize = fileSize + "b";
-        if (md5Hash != null) downloadLink.setMD5Hash(md5Hash.trim());
-        downloadLink.setName(name.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        setBrowserExclusive();
+        return "http://narod.ru/agreement/";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -136,9 +117,33 @@ public class NarodRu extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        /*
+         * no captcha because of http://userscripts.org/scripts/review/64343
+         */
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0 YB/4.2.0");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("<title>404</title>") || br.containsHTML("Файл удален с сервиса") || br.containsHTML("Закончился срок хранения файла\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String name = br.getRegex(Pattern.compile("<dt class=\"name\"><i class=\"b-old-icon b-old-icon-arc\"></i>(.*?)</dt>")).getMatch(0);
+        if (name == null) name = br.getRegex(Pattern.compile("class=\"name\"><i class=.*?></i>(.*?)</dt>")).getMatch(0);
+        if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String md5Hash = br.getRegex(Pattern.compile("<dt class=\"size\">md5:</dt>.*<dd class=\"size\">(.*?)</dd>", Pattern.DOTALL)).getMatch(0);
+        String fileSize = br.getRegex(Pattern.compile("<td class=\"l-download-info-right\">.*?<dl class=\"b-download-item g-line\">.*?<dt class=\"size\">.*?</dt>.*?<dd class=\"size\">(.*?).</dd>", Pattern.DOTALL)).getMatch(0);
+        if (fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        fileSize = fileSize.replaceAll("Г", "G");
+        fileSize = fileSize.replaceAll("М", "M");
+        fileSize = fileSize.replaceAll("к", "k");
+        fileSize = fileSize + "b";
+        if (md5Hash != null) downloadLink.setMD5Hash(md5Hash.trim());
+        downloadLink.setName(name.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -146,10 +151,10 @@ public class NarodRu extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

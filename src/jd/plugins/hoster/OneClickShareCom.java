@@ -35,8 +35,14 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1-clickshare.com" }, urls = { "http://(www\\.)?1\\-clickshare\\.com/(\\d+|download2\\.php\\?a=\\d+)" }, flags = { 0 })
 public class OneClickShareCom extends PluginForHost {
 
+    private static final String PASSWORDTEXT = "(>Password Protected|name=\"codefile\")";
+
     public OneClickShareCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("download2\\.php\\?a=", ""));
     }
 
     @Override
@@ -44,29 +50,9 @@ public class OneClickShareCom extends PluginForHost {
         return "http://www.1-clickshare.com/index.php?page=tos";
     }
 
-    private static final String PASSWORDTEXT = "(>Password Protected|name=\"codefile\")";
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("download2\\.php\\?a=", ""));
-    }
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Invalid download link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(PASSWORDTEXT)) {
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.oneclicksharecom.passwordprotected", "This link is password protected"));
-            return AvailableStatus.TRUE;
-        }
-        Regex linkInfo = br.getRegex("<br /><h1>File: (.*?) \\- Size: (.*?)</h1>");
-        String filename = linkInfo.getMatch(0);
-        String filesize = linkInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -95,12 +81,26 @@ public class OneClickShareCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML(">Invalid download link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(PASSWORDTEXT)) {
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.oneclicksharecom.passwordprotected", "This link is password protected"));
+            return AvailableStatus.TRUE;
+        }
+        Regex linkInfo = br.getRegex("<br /><h1>File: (.*?) \\- Size: (.*?)</h1>");
+        String filename = linkInfo.getMatch(0);
+        String filesize = linkInfo.getMatch(1);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

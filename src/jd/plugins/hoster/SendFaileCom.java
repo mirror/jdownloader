@@ -42,6 +42,28 @@ public class SendFaileCom extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL().replace("/download/", "/download2/"));
+        sleep(20 * 1001l, downloadLink);
+        String id = new Regex(downloadLink.getDownloadURL(), "sendfaile\\.com/download/(.*?)/.*?\\.html").getMatch(0);
+        if (id == null) id = new Regex(downloadLink.getDownloadURL(), "sendfaile\\.com/download/(.*?)\\.html").getMatch(0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.sendfaile.com/pobierz.php", "id=" + id, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("NIE ODCZEKANO ODPOWIEDNIEGO CZASU\\!")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment");
+            if (br.containsHTML("<b>404 Nie ma pliku\\!</b>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
@@ -64,29 +86,7 @@ public class SendFaileCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL().replace("/download/", "/download2/"));
-        sleep(20 * 1001l, downloadLink);
-        String id = new Regex(downloadLink.getDownloadURL(), "sendfaile\\.com/download/(.*?)/.*?\\.html").getMatch(0);
-        if (id == null) id = new Regex(downloadLink.getDownloadURL(), "sendfaile\\.com/download/(.*?)\\.html").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.sendfaile.com/pobierz.php", "id=" + id, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("NIE ODCZEKANO ODPOWIEDNIEGO CZASU\\!")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment");
-            if (br.containsHTML("<b>404 Nie ma pliku\\!</b>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

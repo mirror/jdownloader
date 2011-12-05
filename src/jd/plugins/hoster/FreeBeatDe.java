@@ -39,14 +39,8 @@ public class FreeBeatDe extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Der Benutzername existiert nicht. Du kannst dich sofort") || br.containsHTML("Die Datei ist keine MP3 und kann nicht im Player abgespielt werden") || !br.containsHTML("FlashVars")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setFinalFileName(filename.trim() + ".mp3");
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -61,8 +55,14 @@ public class FreeBeatDe extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Der Benutzername existiert nicht. Du kannst dich sofort") || br.containsHTML("Die Datei ist keine MP3 und kann nicht im Player abgespielt werden") || !br.containsHTML("FlashVars")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setFinalFileName(filename.trim() + ".mp3");
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -70,10 +70,10 @@ public class FreeBeatDe extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

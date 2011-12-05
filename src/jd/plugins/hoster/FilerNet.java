@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -42,9 +43,34 @@ public class FilerNet extends PluginForHost {
 
     private static final Pattern PATTERN_MATCHER_ERROR = Pattern.compile("errors", Pattern.CASE_INSENSITIVE);
 
+    private static long LAST_FREE_DOWNLOAD = 0l;
+
     public FilerNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://filer.net/premium");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        this.setBrowserExclusive();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String trafficleft = br.getRegex(Pattern.compile("<th>Traffic</th>.*?<td>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String validuntil = br.getRegex(Pattern.compile("<th>Mitglied bis</th>.*?<td>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        ai.setTrafficLeft(trafficleft);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yy");
+
+        String[] splitted = validuntil.split("-");
+        Date date = dateFormat.parse(splitted[2] + "." + splitted[1] + "." + splitted[0]);
+        ai.setValidUntil(date.getTime());
+
+        account.setValid(true);
+        return ai;
     }
 
     @Override
@@ -52,7 +78,15 @@ public class FilerNet extends PluginForHost {
         return "http://www.filer.net/agb.htm";
     }
 
-    private static long LAST_FREE_DOWNLOAD = 0l;
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getTimegapBetweenConnections() {
+        return 500;
+    }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -116,43 +150,6 @@ public class FilerNet extends PluginForHost {
         FilerNet.LAST_FREE_DOWNLOAD = System.currentTimeMillis();
     }
 
-    public void login(Account account) throws IOException, PluginException, InterruptedException {
-        br.getPage("http://www.filer.net/");
-        Thread.sleep(500);
-        br.getPage("http://www.filer.net/login");
-        Thread.sleep(500);
-        br.postPage("http://www.filer.net/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&commit=Einloggen");
-        Thread.sleep(500);
-        String cookie = br.getCookie("http://filer.net", "filer_net");
-        if (cookie == null) {
-            if (br.containsHTML("Mit diesem Usernamen ist bereits ein Benutzer eingelogged")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Fraud Detection. This Username is currently used by someone else.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        this.setBrowserExclusive();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        String trafficleft = br.getRegex(Pattern.compile("<th>Traffic</th>.*?<td>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        String validuntil = br.getRegex(Pattern.compile("<th>Mitglied bis</th>.*?<td>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        ai.setTrafficLeft(trafficleft);
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yy");
-
-        String[] splitted = validuntil.split("-");
-        Date date = dateFormat.parse(splitted[2] + "." + splitted[1] + "." + splitted[0]);
-        ai.setValidUntil(date.getTime());
-
-        account.setValid(true);
-        return ai;
-    }
-
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         setBrowserExclusive();
@@ -171,6 +168,30 @@ public class FilerNet extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    public void login(Account account) throws IOException, PluginException, InterruptedException {
+        br.getPage("http://www.filer.net/");
+        Thread.sleep(500);
+        br.getPage("http://www.filer.net/login");
+        Thread.sleep(500);
+        br.postPage("http://www.filer.net/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&commit=Einloggen");
+        Thread.sleep(500);
+        String cookie = br.getCookie("http://filer.net", "filer_net");
+        if (cookie == null) {
+            if (br.containsHTML("Mit diesem Usernamen ist bereits ein Benutzer eingelogged")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Fraud Detection. This Username is currently used by someone else.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -181,24 +202,14 @@ public class FilerNet extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public int getTimegapBetweenConnections() {
-        return 500;
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
     }
 }

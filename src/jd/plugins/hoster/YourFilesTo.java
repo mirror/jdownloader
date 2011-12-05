@@ -46,6 +46,27 @@ public class YourFilesTo extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+
+        String link = br.getRegex("var bla = 'http://http:/(.*?)';").getMatch(0);
+        link = Encoding.urlDecode(link.replace("dumdidum", ""), true);
+        link = Encoding.urlDecode(link.replace("dumdidu", ""), true);
+
+        Browser brc = br.cloneBrowser();
+        dl = BrowserAdapter.openDownload(brc, downloadLink, link);
+        /* Workaround für fehlerhaften Filename Header */
+        String name = Plugin.getFileNameFromHeader(dl.getConnection());
+        if (name != null) downloadLink.setFinalFileName(Encoding.deepHtmlDecode(name));
+        dl.startDownload();
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -68,36 +89,15 @@ public class YourFilesTo extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-
-        String link = br.getRegex("var bla = 'http://http:/(.*?)';").getMatch(0);
-        link = Encoding.urlDecode(link.replace("dumdidum", ""), true);
-        link = Encoding.urlDecode(link.replace("dumdidu", ""), true);
-
-        Browser brc = br.cloneBrowser();
-        dl = BrowserAdapter.openDownload(brc, downloadLink, link);
-        /* Workaround für fehlerhaften Filename Header */
-        String name = Plugin.getFileNameFromHeader(dl.getConnection());
-        if (name != null) downloadLink.setFinalFileName(Encoding.deepHtmlDecode(name));
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

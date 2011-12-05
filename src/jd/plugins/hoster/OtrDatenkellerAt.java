@@ -34,8 +34,14 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr.datenkeller.at" }, urls = { "http://(www\\.)?otr\\.datenkeller\\.at/\\?(file|getFile)=.+" }, flags = { 0 })
 public class OtrDatenkellerAt extends PluginForHost {
 
+    public static String agent = RandomUserAgent.generate();
+
     public OtrDatenkellerAt(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("getFile", "file").replaceAll("\\&referer=otrkeyfinder\\&lang=[a-z]+", ""));
     }
 
     @Override
@@ -43,25 +49,19 @@ public class OtrDatenkellerAt extends PluginForHost {
         return "http://otr.datenkeller.at";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("getFile", "file").replaceAll("\\&referer=otrkeyfinder\\&lang=[a-z]+", ""));
+    public String getDllink() throws Exception, PluginException {
+        Regex allMatches = br.getRegex("onclick=\"startCount\\([0-9]{1}, [0-9]{1}, \\'(.*?)\\', \\'(.*?)\\', \\'(.*?)\\'\\)");
+        String firstPart = allMatches.getMatch(1);
+        String secondPart = allMatches.getMatch(0);
+        String thirdPart = allMatches.getMatch(2);
+        if (firstPart == null || secondPart == null || thirdPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = "http://" + firstPart + "/" + secondPart + "/" + thirdPart;
+        return dllink;
     }
 
-    public static String agent = RandomUserAgent.generate();
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.getHeaders().put("User-Agent", agent);
-        br.getPage(link.getDownloadURL());
-        if (!br.containsHTML("id=\"reqFileImg\"") && !br.containsHTML("\\(\\'#reqFile\\'\\)\\.hide\\(\\)\\.slideDown") && !br.containsHTML("onclick=\"window\\.open\\(\\'/\\?getFile")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = new Regex(link.getDownloadURL(), "otr\\.datenkeller\\.at/\\?file=(.+)").getMatch(0);
-        String filesize = br.getRegex("Größe: </td><td align=\\'center\\'> (.*?) </td>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename.trim().replaceAll("\\&referer=.*?", ""));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace("i", "")));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -113,23 +113,23 @@ public class OtrDatenkellerAt extends PluginForHost {
         dl.startDownload();
     }
 
-    public String getDllink() throws Exception, PluginException {
-        Regex allMatches = br.getRegex("onclick=\"startCount\\([0-9]{1}, [0-9]{1}, \\'(.*?)\\', \\'(.*?)\\', \\'(.*?)\\'\\)");
-        String firstPart = allMatches.getMatch(1);
-        String secondPart = allMatches.getMatch(0);
-        String thirdPart = allMatches.getMatch(2);
-        if (firstPart == null || secondPart == null || thirdPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String dllink = "http://" + firstPart + "/" + secondPart + "/" + thirdPart;
-        return dllink;
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.getHeaders().put("User-Agent", agent);
+        br.getPage(link.getDownloadURL());
+        if (!br.containsHTML("id=\"reqFileImg\"") && !br.containsHTML("\\(\\'#reqFile\\'\\)\\.hide\\(\\)\\.slideDown") && !br.containsHTML("onclick=\"window\\.open\\(\\'/\\?getFile")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = new Regex(link.getDownloadURL(), "otr\\.datenkeller\\.at/\\?file=(.+)").getMatch(0);
+        String filesize = br.getRegex("Größe: </td><td align=\\'center\\'> (.*?) </td>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        link.setName(filename.trim().replaceAll("\\&referer=.*?", ""));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace("i", "")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

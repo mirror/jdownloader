@@ -33,22 +33,39 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grou.ps" }, urls = { "http://(www\\.)?decryptedgrou\\.ps/[a-z0-9]+/videos/\\d+" }, flags = { 0 })
 public class GrouPs extends PluginForHost {
 
+    private String              DLLINK                   = null;
+
+    private static final String VIDEOUNAVAILABLE         = "(This video is being encoded now\\.\\.\\.|Check back later\\.\\.\\.)";
+    private static final String VIDEOUNAVAILABLEUSERTEXT = "This video is being encoded now, try again later!";
     public GrouPs(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String              DLLINK                   = null;
-    private static final String VIDEOUNAVAILABLE         = "(This video is being encoded now\\.\\.\\.|Check back later\\.\\.\\.)";
-    private static final String VIDEOUNAVAILABLEUSERTEXT = "This video is being encoded now, try again later!";
+    public void correctDownloadLink(DownloadLink link) {
+        // Links come from a decrypter
+        link.setUrlDownload(link.getDownloadURL().replace("decryptedgrou.ps", "grou.ps"));
+    }
 
     @Override
     public String getAGBLink() {
         return "http://grou.ps/includes/homepage_files/content/tos.html";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        // Links come from a decrypter
-        link.setUrlDownload(link.getDownloadURL().replace("decryptedgrou.ps", "grou.ps"));
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML(VIDEOUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.groups.videobeingencoded", VIDEOUNAVAILABLEUSERTEXT), 60 * 60 * 1000l);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -96,31 +113,14 @@ public class GrouPs extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (br.containsHTML(VIDEOUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.groups.videobeingencoded", VIDEOUNAVAILABLEUSERTEXT), 60 * 60 * 1000l);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

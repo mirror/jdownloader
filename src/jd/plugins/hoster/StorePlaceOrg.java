@@ -44,26 +44,8 @@ public class StorePlaceOrg extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        br.setFollowRedirects(true);
-        for (int i = 0; i < 5; i++) {
-            /* hoster blocks several useragents */
-            this.setBrowserExclusive();
-            br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-            br.setCookie("http://www.storeplace.org", "setlang", "en");
-            br.getPage(downloadLink.getDownloadURL());
-            if (!br.containsHTML("User-Agent not allowed")) break;
-            Thread.sleep(250);
-        }
-        if (br.containsHTML("User-Agent not allowed")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("File name:</b></td>.*?<td align=.*?width=[0-9]+px>(.*?)</td>").getMatch(0));
-        String filesize = br.getRegex("File size:</b></td>.*?<td align=left>(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -103,8 +85,26 @@ public class StorePlaceOrg extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        br.setFollowRedirects(true);
+        for (int i = 0; i < 5; i++) {
+            /* hoster blocks several useragents */
+            this.setBrowserExclusive();
+            br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+            br.setCookie("http://www.storeplace.org", "setlang", "en");
+            br.getPage(downloadLink.getDownloadURL());
+            if (!br.containsHTML("User-Agent not allowed")) break;
+            Thread.sleep(250);
+        }
+        if (br.containsHTML("User-Agent not allowed")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex("File name:</b></td>.*?<td align=.*?width=[0-9]+px>(.*?)</td>").getMatch(0));
+        String filesize = br.getRegex("File size:</b></td>.*?<td align=left>(.*?)</td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -112,10 +112,10 @@ public class StorePlaceOrg extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

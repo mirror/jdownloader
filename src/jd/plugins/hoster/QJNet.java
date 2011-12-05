@@ -40,20 +40,8 @@ public class QJNet extends PluginForHost {
         return "http://www.qj.net/terms.html";
     }
 
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (!(br.containsHTML("<title>QuickJump Downloads- - </title>") || br.containsHTML("This file has been temporarily removed"))) {
-            String filename = br.getRegex("File Name</b>.*?<b>(.*?)</b>").getMatch(0);
-            String filesize = br.getRegex("File Size.*?<td class=\"odd\">(.*?)</td>").getMatch(0);
-            if (!(filename == null || filesize == null)) {
-                downloadLink.setName(filename);
-                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
-                return AvailableStatus.TRUE;
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -84,16 +72,28 @@ public class QJNet extends PluginForHost {
         dl.startDownload();
     }
 
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (!(br.containsHTML("<title>QuickJump Downloads- - </title>") || br.containsHTML("This file has been temporarily removed"))) {
+            String filename = br.getRegex("File Name</b>.*?<b>(.*?)</b>").getMatch(0);
+            String filesize = br.getRegex("File Size.*?<td class=\"odd\">(.*?)</td>").getMatch(0);
+            if (!(filename == null || filesize == null)) {
+                downloadLink.setName(filename);
+                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
+                return AvailableStatus.TRUE;
+            }
+        }
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     public void reset() {
     }
 
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

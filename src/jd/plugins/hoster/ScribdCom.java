@@ -37,23 +37,39 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "http://(www\\.)?scribd\\.com/doc/\\d+" }, flags = { 2 })
 public class ScribdCom extends PluginForHost {
 
+    private static final String   formats    = "formats";
+
+    /** The list of server values displayed to the user */
+    private static final String[] allFormats;
+
+    private static final String   NODOWNLOAD = "This file can't be downloaded!";
+    static {
+        allFormats = new String[] { "PDF", "TXT" };
+    }
     public ScribdCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.scribd.com");
         setConfigElements();
     }
 
-    private static final String   formats    = "formats";
-
-    /** The list of server values displayed to the user */
-    private static final String[] allFormats;
-    private static final String   NODOWNLOAD = "This file can't be downloaded!";
-    static {
-        allFormats = new String[] { "PDF", "TXT" };
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Registered (Free) User");
+        account.setValid(true);
+        return ai;
     }
 
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), formats, allFormats, JDL.L("plugins.host.ScribdCom.formats", "Download files in this format:")).setDefaultValue(0));
+    @Override
+    public String getAGBLink() {
+        return "http://support.scribd.com/forums/33939/entries/25459";
     }
 
     private String getConfiguredServer() {
@@ -71,37 +87,30 @@ public class ScribdCom extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://support.scribd.com/forums/33939/entries/25459";
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().contains("/removal/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setUrlDownload(br.getRedirectLocation());
-            br.getPage(br.getRedirectLocation());
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        // Pretend we're using an iphone^^
+        br.getHeaders().put("User-Agent", "Apple-iPhone3C1/801.293");
+        final String fID = new Regex(downloadLink.getDownloadURL(), "scribd\\.com/doc/(\\d+)/").getMatch(0);
+        br.getPage("http://www.scribd.com/mobile/documents/" + fID);
+        if (br.containsHTML(">\\[not available on mobile\\]<")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.scribdcom.nodownload", NODOWNLOAD));
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.scribd.com/mobile/documents/" + fID + "/download?commit=Download+Now&secret_password=", true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML(">Can\\'t download that document")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.scribdcom.nodownload", NODOWNLOAD));
         }
-        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta property=\"media:title\" content=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<Attribute name=\"title\">(.*?)</Attribute>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<h1 class=\"title\" id=\"\">(.*?)</h1>").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-                    }
-                }
-            }
-        }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (br.containsHTML("class=\"download_disabled_button\"")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ScribdCom.NoDownloadAvailable", "Download is disabled for this file!"));
-        downloadLink.setName(filename);
-        return AvailableStatus.TRUE;
+        downloadLink.setFinalFileName(downloadLink.getName() + ".pdf");
+        dl.startDownload();
     }
 
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
@@ -143,45 +152,32 @@ public class ScribdCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            if (br.getRedirectLocation().contains("/removal/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            downloadLink.setUrlDownload(br.getRedirectLocation());
+            br.getPage(br.getRedirectLocation());
         }
-        ai.setUnlimitedTraffic();
-        ai.setStatus("Registered (Free) User");
-        account.setValid(true);
-        return ai;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        // Pretend we're using an iphone^^
-        br.getHeaders().put("User-Agent", "Apple-iPhone3C1/801.293");
-        final String fID = new Regex(downloadLink.getDownloadURL(), "scribd\\.com/doc/(\\d+)/").getMatch(0);
-        br.getPage("http://www.scribd.com/mobile/documents/" + fID);
-        if (br.containsHTML(">\\[not available on mobile\\]<")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.scribdcom.nodownload", NODOWNLOAD));
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.scribd.com/mobile/documents/" + fID + "/download?commit=Download+Now&secret_password=", true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML(">Can\\'t download that document")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.scribdcom.nodownload", NODOWNLOAD));
+        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<meta property=\"media:title\" content=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<Attribute name=\"title\">(.*?)</Attribute>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<h1 class=\"title\" id=\"\">(.*?)</h1>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                    }
+                }
+            }
         }
-        downloadLink.setFinalFileName(downloadLink.getName() + ".pdf");
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("class=\"download_disabled_button\"")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ScribdCom.NoDownloadAvailable", "Download is disabled for this file!"));
+        downloadLink.setName(filename);
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -189,10 +185,14 @@ public class ScribdCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), formats, allFormats, JDL.L("plugins.host.ScribdCom.formats", "Download files in this format:")).setDefaultValue(0));
     }
 }

@@ -48,31 +48,6 @@ public class GigaSizeCom extends PluginForHost {
         setStartIntervall(5000l);
     }
 
-    public void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setDebug(true);
-        br.getHeaders().put("User-Agent", agent);
-        br.getPage("http://www.gigasize.com");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        try {
-            try {
-                Thread.sleep(1000);
-            } catch (final InterruptedException e) {
-            }
-            String token = br.getPage("http://www.gigasize.com/formtoken");
-            try {
-                Thread.sleep(2000);
-            } catch (final InterruptedException e) {
-            }
-            br.postPage("http://www.gigasize.com/signin", "func=&token=" + token + "&signRem=1&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        } finally {
-            br.getHeaders().put("X-Requested-With", null);
-        }
-        if (br.getCookie("http://gigasize.com", "MIIS_GIGASIZE_AUTH") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("premium\":1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -92,30 +67,28 @@ public class GigaSizeCom extends PluginForHost {
         return ai;
     }
 
+    @Override
+    public String getAGBLink() {
+        return AGB_LINK;
+    }
+
     private String getID(DownloadLink link) {
         return new Regex(link.getDownloadURL(), "/get/(.+)").getMatch(0);
     }
 
     @Override
-    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        requestFileInformation(parameter);
-        login(account);
-        br.getPage(parameter.getDownloadURL());
-        Form form = br.getForm(2);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.submitForm(form);
-        br.setFollowRedirects(true);
-        String token = br.getPage("http://www.gigasize.com/formtoken");
-        br.postPage("http://www.gigasize.com/getoken", "fileId=" + getID(parameter) + "&token=" + token + "&rnd=" + System.currentTimeMillis());
-        String url = br.getRegex("redirect\":\"(http:.*?)\"").getMatch(0);
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        url = url.replaceAll("\\\\/", "/");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 0);
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getTimegapBetweenConnections() {
+        return 800;
     }
 
     @Override
@@ -156,8 +129,55 @@ public class GigaSizeCom extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return AGB_LINK;
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        requestFileInformation(parameter);
+        login(account);
+        br.getPage(parameter.getDownloadURL());
+        Form form = br.getForm(2);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.submitForm(form);
+        br.setFollowRedirects(true);
+        String token = br.getPage("http://www.gigasize.com/formtoken");
+        br.postPage("http://www.gigasize.com/getoken", "fileId=" + getID(parameter) + "&token=" + token + "&rnd=" + System.currentTimeMillis());
+        String url = br.getRegex("redirect\":\"(http:.*?)\"").getMatch(0);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        url = url.replaceAll("\\\\/", "/");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 0);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setDebug(true);
+        br.getHeaders().put("User-Agent", agent);
+        br.getPage("http://www.gigasize.com");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        try {
+            try {
+                Thread.sleep(1000);
+            } catch (final InterruptedException e) {
+            }
+            String token = br.getPage("http://www.gigasize.com/formtoken");
+            try {
+                Thread.sleep(2000);
+            } catch (final InterruptedException e) {
+            }
+            br.postPage("http://www.gigasize.com/signin", "func=&token=" + token + "&signRem=1&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        } finally {
+            br.getHeaders().put("X-Requested-With", null);
+        }
+        if (br.getCookie("http://gigasize.com", "MIIS_GIGASIZE_AUTH") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("premium\":1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -177,29 +197,14 @@ public class GigaSizeCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public int getTimegapBetweenConnections() {
-        return 800;
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
     }
 }

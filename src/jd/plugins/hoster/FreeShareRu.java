@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -45,24 +46,8 @@ public class FreeShareRu extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("файл не найден/not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Имя файла: <b><a style=\"color:.*?\" href=\"http://free-share\\.ru/[0-9]+/[0-9]+/(.*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("\"http://free-share\\.ru/[0-9]+/[0-9]+/.*?\">(.*?)</a>").getMatch(0);
-        }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename.trim());
-        Regex info = br.getRegex("Размер файла.*?<b><strong>(.*?)</strong>(.*?)</b>");
-        if (info.getMatch(0) != null && info.getMatch(1) != null) {
-            String filesize = info.getMatch(0) + info.getMatch(1);
-            filesize = filesize.trim();
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -113,13 +98,39 @@ public class FreeShareRu extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("файл не найден/not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("Имя файла: <b><a style=\"color:.*?\" href=\"http://free-share\\.ru/[0-9]+/[0-9]+/(.*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("\"http://free-share\\.ru/[0-9]+/[0-9]+/.*?\">(.*?)</a>").getMatch(0);
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        link.setName(filename.trim());
+        Regex info = br.getRegex("Размер файла.*?<b><strong>(.*?)</strong>(.*?)</b>");
+        if (info.getMatch(0) != null && info.getMatch(1) != null) {
+            String filesize = info.getMatch(0) + info.getMatch(1);
+            filesize = filesize.trim();
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

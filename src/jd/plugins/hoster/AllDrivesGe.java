@@ -30,8 +30,14 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alldrives.ge" }, urls = { "http://[\\w\\.]*?alldrives\\.ge/main/linkform\\.php\\?f=[a-z0-9]+" }, flags = { 0 })
 public class AllDrivesGe extends PluginForHost {
 
+    private static final String CAPTCHAWRONG = "error=Incorrect";
+
     public AllDrivesGe(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL() + "&lang=eng");
     }
 
     @Override
@@ -39,19 +45,9 @@ public class AllDrivesGe extends PluginForHost {
         return "http://www.alldrives.ge";
     }
 
-    private static final String CAPTCHAWRONG = "error=Incorrect";
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL() + "&lang=eng");
-    }
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        System.out.print(br.toString());
-        if (br.containsHTML("(>File has been deleted\\.<|>File is not found\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -80,13 +76,22 @@ public class AllDrivesGe extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        System.out.print(br.toString());
+        if (br.containsHTML("(>File has been deleted\\.<|>File is not found\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

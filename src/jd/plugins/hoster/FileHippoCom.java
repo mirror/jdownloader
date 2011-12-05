@@ -31,16 +31,11 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "http://[\\w\\.]*?filehippo\\.com(/(es|en|pl|jp))?/download_.+" }, flags = { 0 })
 public class FileHippoCom extends PluginForHost {
 
+    private static final String FILENOTFOUND = "(<h1>404 Error</h1>|<b>Sorry the page you requested could not be found)";
+
+    public static final String  MAINPAGE     = "http://www.filehippo.com";
     public FileHippoCom(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    private static final String FILENOTFOUND = "(<h1>404 Error</h1>|<b>Sorry the page you requested could not be found)";
-    public static final String  MAINPAGE     = "http://www.filehippo.com";
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.filehippo.com/info/disclaimer/";
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -49,6 +44,44 @@ public class FileHippoCom extends PluginForHost {
             link.setUrlDownload(link.getDownloadURL() + "/tech/");
         else
             link.setUrlDownload(link.getDownloadURL() + "tech/");
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.filehippo.com/info/disclaimer/";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        br.setFollowRedirects(false);
+        String nextPage = br.getRegex("<div id=\"dlbox\">[\n\r\t ]+<a href=\"(/.*?)\"").getMatch(0);
+        if (nextPage == null) nextPage = br.getRegex("\"(/download_.*?/download/[a-z0-9]+(/)?)\"").getMatch(0);
+        if (nextPage != null) {
+            nextPage = MAINPAGE + nextPage;
+            br.getPage(nextPage);
+        }
+        String dllink = br.getRegex("http\\-equiv=\"Refresh\" content=\"1; url=(/.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("id=\"_ctl0_contentMain_lnkURL\" class=\"black\" href=\"(/.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("(/download/file/[a-z0-9]+(/)?)\"").getMatch(0);
+            }
+        }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = MAINPAGE + dllink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        dl.startDownload();
     }
 
     @Override
@@ -89,40 +122,7 @@ public class FileHippoCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
-        String nextPage = br.getRegex("<div id=\"dlbox\">[\n\r\t ]+<a href=\"(/.*?)\"").getMatch(0);
-        if (nextPage == null) nextPage = br.getRegex("\"(/download_.*?/download/[a-z0-9]+(/)?)\"").getMatch(0);
-        if (nextPage != null) {
-            nextPage = MAINPAGE + nextPage;
-            br.getPage(nextPage);
-        }
-        String dllink = br.getRegex("http\\-equiv=\"Refresh\" content=\"1; url=(/.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("id=\"_ctl0_contentMain_lnkURL\" class=\"black\" href=\"(/.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("(/download/file/[a-z0-9]+(/)?)\"").getMatch(0);
-            }
-        }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = MAINPAGE + dllink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

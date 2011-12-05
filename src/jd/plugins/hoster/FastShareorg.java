@@ -38,27 +38,8 @@ public class FastShareorg extends PluginForHost {
         return "http://www.fastshare.org/discl.php";
     }
 
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
-        try {
-            br.setCookiesExclusive(true);
-            br.clearCookies(getHost());
-            br.setFollowRedirects(false);
-            String url = downloadLink.getDownloadURL();
-            br.getPage(url);
-            if (!br.containsHTML("No filename specified or the file has been deleted")) {
-                downloadLink.setName(Encoding.htmlDecode(br.getRegex("Wenn sie die Datei \"<b>(.*?)<\\/b>\"").getMatch(0)));
-                String filesize = null;
-                if ((filesize = br.getRegex("<i>\\((.*)MB\\)</i>").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize(Math.round(Double.parseDouble(filesize)) * 1024 * 1024l);
-                } else if ((filesize = br.getRegex("<i>\\((.*)KB\\)</i>").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize(Math.round(Double.parseDouble(filesize)) * 1024l);
-                }
-                return AvailableStatus.TRUE;
-            }
-        } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
-        }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    public int getMaxSimultanFreeDownloadNum() {
+        return 2;
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -86,16 +67,35 @@ public class FastShareorg extends PluginForHost {
 
     }
 
-    public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
+        try {
+            br.setCookiesExclusive(true);
+            br.clearCookies(getHost());
+            br.setFollowRedirects(false);
+            String url = downloadLink.getDownloadURL();
+            br.getPage(url);
+            if (!br.containsHTML("No filename specified or the file has been deleted")) {
+                downloadLink.setName(Encoding.htmlDecode(br.getRegex("Wenn sie die Datei \"<b>(.*?)<\\/b>\"").getMatch(0)));
+                String filesize = null;
+                if ((filesize = br.getRegex("<i>\\((.*)MB\\)</i>").getMatch(0)) != null) {
+                    downloadLink.setDownloadSize(Math.round(Double.parseDouble(filesize)) * 1024 * 1024l);
+                } else if ((filesize = br.getRegex("<i>\\((.*)KB\\)</i>").getMatch(0)) != null) {
+                    downloadLink.setDownloadSize(Math.round(Double.parseDouble(filesize)) * 1024l);
+                }
+                return AvailableStatus.TRUE;
+            }
+        } catch (Exception e) {
+            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+        }
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     public void reset() {
     }
 
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

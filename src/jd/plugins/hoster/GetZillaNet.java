@@ -42,6 +42,31 @@ public class GetZillaNet extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL().replace("/files/", "/files/get/"));
+        int wait = 5000;
+        String waittime = br.getRegex("var download_wait_time = \"(\\d+)\";").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        sleep(wait + 200, downloadLink);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getPage(downloadLink.getDownloadURL().replace("/files/", "/files/getUrl/") + "?gold=false&_dc=" + System.currentTimeMillis());
+        String dllink = br.toString();
+        if (dllink == null || !dllink.startsWith("http") || dllink.contains("/files/") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -67,32 +92,7 @@ public class GetZillaNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL().replace("/files/", "/files/get/"));
-        int wait = 5000;
-        String waittime = br.getRegex("var download_wait_time = \"(\\d+)\";").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait + 200, downloadLink);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage(downloadLink.getDownloadURL().replace("/files/", "/files/getUrl/") + "?gold=false&_dc=" + System.currentTimeMillis());
-        String dllink = br.toString();
-        if (dllink == null || !dllink.startsWith("http") || dllink.contains("/files/") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

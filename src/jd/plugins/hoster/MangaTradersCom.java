@@ -34,82 +34,14 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangatraders.com" }, urls = { "http://[\\w\\.]*?mangatraders\\.com/download/file/\\d+" }, flags = { 2 })
 public class MangaTradersCom extends PluginForHost {
 
-    public MangaTradersCom(PluginWrapper wrapper) {
-        super(wrapper);
-        this.enablePremium("http://www.mangatraders.com/register/");
-    }
-
     private boolean             weAreAlreadyLoggedIn = false;
+
     private static final String COOKIENAME           = "SMFCookie232";
     private static final String ACCESSBLOCK          = "<p>You have attempted to download this file within the last 10 seconds.</p>";
     private static final String FILEOFFLINE          = ">Download Manager Error - Invalid Fileid";
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.mangatraders.com/register/";
-    }
-
-    public void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        // Clear the Referer or the download could start here which then causes
-        // an exception
-        br.getHeaders().put("Referer", "");
-        br.setFollowRedirects(false);
-        br.postPage("http://www.mangatraders.com/login/processlogin", "login-user=" + Encoding.urlEncode(account.getUser()) + "&login-pass=" + Encoding.urlEncode(account.getPass()) + "&rememberme=on");
-        if (br.getCookie("http://www.mangatraders.com/", COOKIENAME) == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        weAreAlreadyLoggedIn = true;
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        account.setValid(true);
-        ai.setStatus("Registered (free) User");
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        // Don't check the links because the download will then fail ;)
-        // requestFileInformation(downloadLink);
-        // Usually JD is already logged in after the linkcheck so if JD is
-        // logged in we don't have to log in again here
-        if (!weAreAlreadyLoggedIn || br.getCookie("http://www.mangatraders.com/", COOKIENAME) == null) login(account);
-        br.getPage(downloadLink.getDownloadURL());
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML(ACCESSBLOCK)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, wait some minutes!", 5 * 60 * 1999l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML(ACCESSBLOCK)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, wait some minutes!", 5 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
-        if (checkLinks(new DownloadLink[] { downloadLink }) == false) {
-            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        } else if (!downloadLink.isAvailabilityStatusChecked()) {
-            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        }
-        return downloadLink.getAvailableStatus();
+    public MangaTradersCom(PluginWrapper wrapper) {
+        super(wrapper);
+        this.enablePremium("http://www.mangatraders.com/register/");
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
@@ -141,18 +73,86 @@ public class MangaTradersCom extends PluginForHost {
     }
 
     @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setStatus("Registered (free) User");
+        return ai;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.mangatraders.com/register/";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 1;
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         throw new PluginException(LinkStatus.ERROR_FATAL, "Download does only work with account");
     }
 
     @Override
-    public void reset() {
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        // Don't check the links because the download will then fail ;)
+        // requestFileInformation(downloadLink);
+        // Usually JD is already logged in after the linkcheck so if JD is
+        // logged in we don't have to log in again here
+        if (!weAreAlreadyLoggedIn || br.getCookie("http://www.mangatraders.com/", COOKIENAME) == null) login(account);
+        br.getPage(downloadLink.getDownloadURL());
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(ACCESSBLOCK)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, wait some minutes!", 5 * 60 * 1999l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML(ACCESSBLOCK)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, wait some minutes!", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        // Clear the Referer or the download could start here which then causes
+        // an exception
+        br.getHeaders().put("Referer", "");
+        br.setFollowRedirects(false);
+        br.postPage("http://www.mangatraders.com/login/processlogin", "login-user=" + Encoding.urlEncode(account.getUser()) + "&login-pass=" + Encoding.urlEncode(account.getPass()) + "&rememberme=on");
+        if (br.getCookie("http://www.mangatraders.com/", COOKIENAME) == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        weAreAlreadyLoggedIn = true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
+        if (checkLinks(new DownloadLink[] { downloadLink }) == false) {
+            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!downloadLink.isAvailabilityStatusChecked()) {
+            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        }
+        return downloadLink.getAvailableStatus();
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

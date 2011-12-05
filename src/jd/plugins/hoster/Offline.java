@@ -45,8 +45,15 @@ public class Offline extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Permanently Offline: Host provider no longer exists");
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls != null) {
+            for (DownloadLink link : urls) {
+                link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                link.getLinkStatus().setErrorMessage("Permanently Offline: Host provider no longer exists");
+                link.setAvailable(false);
+            }
+        }
+        return true;
     }
 
     @Override
@@ -60,23 +67,16 @@ public class Offline extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Permanently Offline: Host provider no longer exists");
+    }
+
+    @Override
     public void reset() {
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public boolean checkLinks(DownloadLink[] urls) {
-        if (urls != null) {
-            for (DownloadLink link : urls) {
-                link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                link.getLinkStatus().setErrorMessage("Permanently Offline: Host provider no longer exists");
-                link.setAvailable(false);
-            }
-        }
-        return true;
     }
 
 }

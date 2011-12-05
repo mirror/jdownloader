@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -42,6 +43,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefrog.to" }, urls = { "http://[\\w\\.]*?filefrog\\.to/download/\\d+/[a-zA-Z0-9]+" }, flags = { 2 })
 public class FilefrogTo extends PluginForHost {
 
+    private static final String NOTRAFFIC = "traffic-exhausted";
+
     public FilefrogTo(PluginWrapper wrapper) {
         super(wrapper);
         /*
@@ -51,12 +54,6 @@ public class FilefrogTo extends PluginForHost {
         this.setStartIntervall(1000);
         enablePremium("http://www.filefrog.to/premium");
     }
-
-    public String getAGBLink() {
-        return "http://www.filefrog.to/terms";
-    }
-
-    private static final String NOTRAFFIC = "traffic-exhausted";
 
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -76,6 +73,44 @@ public class FilefrogTo extends PluginForHost {
         ai.setTrafficLeft(SizeFormatter.getSize(dat.get("traffic")));
         ai.setValidUntil(TimeFormatter.getMilliSeconds(dat.get("premium_until"), "yyyy-MM-dd", null));
         return ai;
+    }
+
+    private void fetchSession() throws IOException {
+        br.getPage("http://www.filefrog.to/index/locale/set/en_US");
+    }
+
+    public String getAGBLink() {
+        return "http://www.filefrog.to/terms";
+    }
+
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        br.forceDebug(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains(NOTRAFFIC)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        rc.parse();
+        rc.load();
+        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        String c = getCaptchaCode(cf, downloadLink);
+        rc.setCode(c);
+        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.getRedirectLocation().contains(NOTRAFFIC)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
+        if (br.getRedirectLocation().contains(downloadLink.getDownloadURL().replaceAll("(http://|www\\.)", ""))) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation());
+        URLConnectionAdapter con = dl.getConnection();
+        if (!con.isContentDisposition()) {
+            if (br.getURL().contains(NOTRAFFIC)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
+            // server error. for some files it returns 0 byte text files.
+            if (con.getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60000);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
@@ -107,6 +142,16 @@ public class FilefrogTo extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
     private void login(Account account) throws Exception {
         br.getPage("http://www.filefrog.to/user/login");
         Form form = br.getForms()[0];
@@ -132,46 +177,12 @@ public class FilefrogTo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        br.forceDebug(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains(NOTRAFFIC)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        rc.parse();
-        rc.load();
-        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        String c = getCaptchaCode(cf, downloadLink);
-        rc.setCode(c);
-        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (br.getRedirectLocation().contains(NOTRAFFIC)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
-        if (br.getRedirectLocation().contains(downloadLink.getDownloadURL().replaceAll("(http://|www\\.)", ""))) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation());
-        URLConnectionAdapter con = dl.getConnection();
-        if (!con.isContentDisposition()) {
-            if (br.getURL().contains(NOTRAFFIC)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60000);
-            // server error. for some files it returns 0 byte text files.
-            if (con.getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60000);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    private void fetchSession() throws IOException {
-        br.getPage("http://www.filefrog.to/index/locale/set/en_US");
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
     public void reset() {
     }
 
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

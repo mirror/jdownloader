@@ -48,14 +48,8 @@ public class Speedy_ShareCom extends PluginForHost {
     }
 
     // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        br.getPage(downloadLink.getDownloadURL());
-        if (!br.containsHTML("File Not Found")) {
-            downloadLink.setName(Encoding.htmlDecode(br.getRegex("File Name:</span>(.*?)</span>").getMatch(0)));
-            downloadLink.setDownloadSize(SizeFormatter.getSize(br.getRegex("File Size:</span>(.*?)</span>").getMatch(0)));
-            return AvailableStatus.TRUE;
-        }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
     }
 
     // @Override
@@ -84,12 +78,18 @@ public class Speedy_ShareCom extends PluginForHost {
         sleep(30000, downloadLink);
 
         /* Datei herunterladen */
-        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadLink.getDownloadURL(), postdata).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), postdata).startDownload();
     }
 
     // @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        br.getPage(downloadLink.getDownloadURL());
+        if (!br.containsHTML("File Not Found")) {
+            downloadLink.setName(Encoding.htmlDecode(br.getRegex("File Name:</span>(.*?)</span>").getMatch(0)));
+            downloadLink.setDownloadSize(SizeFormatter.getSize(br.getRegex("File Size:</span>(.*?)</span>").getMatch(0)));
+            return AvailableStatus.TRUE;
+        }
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     // @Override
@@ -97,10 +97,10 @@ public class Speedy_ShareCom extends PluginForHost {
     }
 
     // @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     // @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

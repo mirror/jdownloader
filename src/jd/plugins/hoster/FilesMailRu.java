@@ -38,9 +38,68 @@ public class FilesMailRu extends PluginForHost {
     private static final String UA          = RandomUserAgent.generate();
     private boolean             keepCookies = false;
 
+    private static final String DLLINKREGEX  = "\"(http://[a-z0-9-]+\\.files\\.mail\\.ru/.*?/.*?)\"";
+
+    private static final String UNAVAILABLE1 = ">В обработке<";
+
+    private static final String UNAVAILABLE2 = ">In process<";
+
+    private static final String INFOREGEX    = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
     public FilesMailRu(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://en.reg.mail.ru/cgi-bin/signup");
+    }
+    public void correctDownloadLink(DownloadLink link) {
+        // Rename the decrypted links to make them work
+        link.setUrlDownload(link.getDownloadURL().replaceAll("wge4zu4rjfsdehehztiuxw", "files.mail.ru"));
+    }
+    private void doFree(DownloadLink downloadLink, boolean premium) throws Exception, PluginException {
+        String finallink = null;
+        keepCookies = premium;
+        requestFileInformation(downloadLink);
+        finallink = br.getRegex(DLLINKREGEX).getMatch(0);
+        if (finallink == null) {
+            logger.warning("Critical error occured: The final downloadlink couldn't be found in handleFree!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!premium) goToSleep(downloadLink);
+        // Errorhandling, sometimes the link which is usually renewed by the
+        // linkgrabber doesn't work and needs to be refreshed again!
+        int chunks = 1;
+        if (premium) chunks = 0;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, chunks);
+        if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads!"); }
+        dl.startDownload();
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("<b>Your VIP status is valid until (.*?)</b><br><br>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "MMMM dd, yyyy", null));
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    private String fixLink(String dllink) {
+        logger.info("Correcting link...");
+        String replaceThis = new Regex(dllink, "http://(content\\d+-n)\\.files\\.mail\\.ru.*?").getMatch(0);
+        if (replaceThis != null) dllink = dllink.replace(replaceThis, replaceThis.replace("-n", ""));
+        return dllink;
     }
 
     @Override
@@ -48,15 +107,54 @@ public class FilesMailRu extends PluginForHost {
         return "http://files.mail.ru/cgi-bin/files/fagreement";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        // Rename the decrypted links to make them work
-        link.setUrlDownload(link.getDownloadURL().replaceAll("wge4zu4rjfsdehehztiuxw", "files.mail.ru"));
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
-    private static final String DLLINKREGEX  = "\"(http://[a-z0-9-]+\\.files\\.mail\\.ru/.*?/.*?)\"";
-    private static final String UNAVAILABLE1 = ">В обработке<";
-    private static final String UNAVAILABLE2 = ">In process<";
-    private static final String INFOREGEX    = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    public void goToSleep(DownloadLink downloadLink) throws PluginException {
+        String ttt = br.getRegex("файлы через.*?(\\d+).*?сек").getMatch(0);
+        if (ttt == null) ttt = br.getRegex("download files in.*?(\\d+).*?sec").getMatch(0);
+        int tt = 10;
+        if (ttt != null) tt = Integer.parseInt(ttt);
+        logger.info("Waiting " + tt + " seconds...");
+        sleep((tt + 1) * 1001, downloadLink);
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        doFree(downloadLink, false);
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        br.getHeaders().put("User-Agent", UA);
+        login(account);
+        br.setFollowRedirects(false);
+        doFree(link, true);
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        prepareBrowser();
+        br.setFollowRedirects(true);
+        br.postPage("http://swa.mail.ru/cgi-bin/auth", "Page=http%3A%2F%2Ffiles.mail.ru%2F&Login=" + Encoding.urlEncode(account.getUser()) + "&Domain=mail.ru&Password=" + Encoding.urlEncode(account.getPass()));
+        br.getPage("http://files.mail.ru/eng?back=%2Fsms-services");
+        if (!br.containsHTML(">You have a VIP status<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    private void prepareBrowser() {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2.18) Gecko/20110614 Firefox/3.6.18");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
+        br.getHeaders().put("Accept-Encoding", "");
+        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
@@ -125,105 +223,7 @@ public class FilesMailRu extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        doFree(downloadLink, false);
-    }
-
-    private void doFree(DownloadLink downloadLink, boolean premium) throws Exception, PluginException {
-        String finallink = null;
-        keepCookies = premium;
-        requestFileInformation(downloadLink);
-        finallink = br.getRegex(DLLINKREGEX).getMatch(0);
-        if (finallink == null) {
-            logger.warning("Critical error occured: The final downloadlink couldn't be found in handleFree!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!premium) goToSleep(downloadLink);
-        // Errorhandling, sometimes the link which is usually renewed by the
-        // linkgrabber doesn't work and needs to be refreshed again!
-        int chunks = 1;
-        if (premium) chunks = 0;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, chunks);
-        if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads!"); }
-        dl.startDownload();
-    }
-
-    public void goToSleep(DownloadLink downloadLink) throws PluginException {
-        String ttt = br.getRegex("файлы через.*?(\\d+).*?сек").getMatch(0);
-        if (ttt == null) ttt = br.getRegex("download files in.*?(\\d+).*?sec").getMatch(0);
-        int tt = 10;
-        if (ttt != null) tt = Integer.parseInt(ttt);
-        logger.info("Waiting " + tt + " seconds...");
-        sleep((tt + 1) * 1001, downloadLink);
-    }
-
-    private String fixLink(String dllink) {
-        logger.info("Correcting link...");
-        String replaceThis = new Regex(dllink, "http://(content\\d+-n)\\.files\\.mail\\.ru.*?").getMatch(0);
-        if (replaceThis != null) dllink = dllink.replace(replaceThis, replaceThis.replace("-n", ""));
-        return dllink;
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        prepareBrowser();
-        br.setFollowRedirects(true);
-        br.postPage("http://swa.mail.ru/cgi-bin/auth", "Page=http%3A%2F%2Ffiles.mail.ru%2F&Login=" + Encoding.urlEncode(account.getUser()) + "&Domain=mail.ru&Password=" + Encoding.urlEncode(account.getPass()));
-        br.getPage("http://files.mail.ru/eng?back=%2Fsms-services");
-        if (!br.containsHTML(">You have a VIP status<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    private void prepareBrowser() {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2.18) Gecko/20110614 Firefox/3.6.18");
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
-        br.getHeaders().put("Accept-Encoding", "");
-        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        account.setValid(true);
-        ai.setUnlimitedTraffic();
-        String expire = br.getRegex("<b>Your VIP status is valid until (.*?)</b><br><br>").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "MMMM dd, yyyy", null));
-        }
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        br.getHeaders().put("User-Agent", UA);
-        login(account);
-        br.setFollowRedirects(false);
-        doFree(link, true);
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

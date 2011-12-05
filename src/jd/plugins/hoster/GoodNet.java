@@ -34,13 +34,45 @@ public class GoodNet extends PluginForHost {
         super(wrapper);
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("gjerzu4zr4jk555hd", "good.net"));
+    }
+
     @Override
     public String getAGBLink() {
         return "http://forums.good.net/phpBB/viewtopic.php?f=7&t=14&sid=";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("gjerzu4zr4jk555hd", "good.net"));
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 2;
+    }
+
+    @Override
+    public void handleFree(DownloadLink link) throws Exception {
+        this.setBrowserExclusive();
+        requestFileInformation(link);
+        URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
+        String dllink = null;
+        if (!con.getContentType().contains("html")) {
+            dllink = link.getDownloadURL();
+            con.disconnect();
+        } else {
+            br.followConnection();
+            dllink = br.getRegex("\"(/dl/.*?/wait)\"").getMatch(0);
+        }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!dllink.contains("good.net/")) dllink = "http://good.net" + dllink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        if ((dl.getConnection().getContentType().contains("html"))) {
+            br.followConnection();
+            dllink = br.getRegex("thelinkA\" href=\"(http.*?)\"").getMatch(0);
+            if (dllink != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+            if ((dl.getConnection().getContentType().contains("html"))) br.followConnection();
+            if (br.containsHTML("(Please ensure there are no more than.*?downloads going on concurrently|There are.*?connections open to good.net servers from)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -77,43 +109,11 @@ public class GoodNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        requestFileInformation(link);
-        URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
-        String dllink = null;
-        if (!con.getContentType().contains("html")) {
-            dllink = link.getDownloadURL();
-            con.disconnect();
-        } else {
-            br.followConnection();
-            dllink = br.getRegex("\"(/dl/.*?/wait)\"").getMatch(0);
-        }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (!dllink.contains("good.net/")) dllink = "http://good.net" + dllink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
-        if ((dl.getConnection().getContentType().contains("html"))) {
-            br.followConnection();
-            dllink = br.getRegex("thelinkA\" href=\"(http.*?)\"").getMatch(0);
-            if (dllink != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-            if ((dl.getConnection().getContentType().contains("html"))) br.followConnection();
-            if (br.containsHTML("(Please ensure there are no more than.*?downloads going on concurrently|There are.*?connections open to good.net servers from)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 2;
     }
 
 }

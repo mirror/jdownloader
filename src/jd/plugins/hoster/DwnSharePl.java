@@ -31,8 +31,14 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dwnshare.pl" }, urls = { "http://(www\\.)?dwnshare\\.pl/(show\\-file/[a-z0-9]+/\\d+/.*?\\.html|download\\-file\\-directly/[a-z0-9]+/\\d+/.+)" }, flags = { 0 })
 public class DwnSharePl extends PluginForHost {
 
+    private static final String MAINPAGE = "http://dwnshare.pl/";
+
     public DwnSharePl(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        if (!link.getDownloadURL().contains("/show-file/")) link.setUrlDownload(link.getDownloadURL().replace("/download-file-directly/", "/show-file/") + ".html");
     }
 
     @Override
@@ -40,11 +46,24 @@ public class DwnSharePl extends PluginForHost {
         return "http://dwnshare.pl/rules.html";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        if (!link.getDownloadURL().contains("/show-file/")) link.setUrlDownload(link.getDownloadURL().replace("/download-file-directly/", "/show-file/") + ".html");
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
-    private static final String MAINPAGE = "http://dwnshare.pl/";
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        String dllink = br.getRegex("<div class=\"link\"><a href=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://(s\\d+\\.)?dwnshare\\.com/download\\-file\\-directly/.*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -68,26 +87,7 @@ public class DwnSharePl extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String dllink = br.getRegex("<div class=\"link\"><a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://(s\\d+\\.)?dwnshare\\.com/download\\-file\\-directly/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

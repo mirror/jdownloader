@@ -36,10 +36,6 @@ public class SwoopshareCom extends PluginForHost {
         super(wrapper);
     }
 
-    public String getAGBLink() {
-        return "http://de.swoopshare.com/info/terms";
-    }
-
     public void correctDownloadLink(DownloadLink downloadLink) throws MalformedURLException {
         // fileid should never be null...
         String fileid = new Regex(downloadLink.getDownloadURL(), "/file/([a-z0-9]+)").getMatch(0);
@@ -47,19 +43,12 @@ public class SwoopshareCom extends PluginForHost {
 
     }
 
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        String size = br.getRegex("</b> \\((.*)yte\\)").getMatch(0);
-        String name = br.getRegex("<title>(cshare\\.de|swoopshare) -(.*?)</title>").getMatch(1);
-        if (name == null) {
-            name = br.getRegex("<span style=\"font-size:26px; font-weight:bold\">(.*?)</span>").getMatch(0);
-        }
-        if (name == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(name.trim().replace("Download ", ""));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(size));
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://de.swoopshare.com/info/terms";
+    }
+
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -81,17 +70,28 @@ public class SwoopshareCom extends PluginForHost {
         dl.startDownload();
     }
 
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        String size = br.getRegex("</b> \\((.*)yte\\)").getMatch(0);
+        String name = br.getRegex("<title>(cshare\\.de|swoopshare) -(.*?)</title>").getMatch(1);
+        if (name == null) {
+            name = br.getRegex("<span style=\"font-size:26px; font-weight:bold\">(.*?)</span>").getMatch(0);
+        }
+        if (name == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(name.trim().replace("Download ", ""));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(size));
+        return AvailableStatus.TRUE;
     }
 
     public void reset() {
     }
 
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

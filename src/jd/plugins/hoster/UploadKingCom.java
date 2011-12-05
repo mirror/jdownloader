@@ -41,9 +41,43 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadking.com" }, urls = { "http://(www\\.)?uploadking\\.com/[A-Z0-9]+" }, flags = { 2 })
 public class UploadKingCom extends PluginForHost {
 
+    private static final String TEMPORARYUNAVAILABLE         = "(>Unfortunately, this file is temporarily unavailable|> \\- The server the file is residing on is currently down for maintenance)";
+
+    private static final String TEMPORARYUNAVAILABLEUSERTEXT = "This file is temporary unavailable!";
+
+    private static final Object LOCK                         = new Object();
+    private static final String MAINPAGE                     = "http://www.uploadking.com/";
     public UploadKingCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.uploadking.com/premium");
+    }
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String space = br.getRegex(">Total storage space used:</TD><TD><b>(.*?)</b></TD>").getMatch(0);
+        if (space != null) ai.setUsedSpace(space.trim());
+        ai.setUnlimitedTraffic();
+        String filesNum = br.getRegex(">Total files uploaded:</TD><TD><b>(\\d+)</b>").getMatch(0);
+        if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
+        // Expire date not set because its not very precise
+        // String expire =
+        // br.getRegex("<b>Premium</b> \\(expires in (\\d+) weeks").getMatch(0);
+        // if (expire == null) {
+        // account.setValid(false);
+        // return ai;
+        // } else {
+        // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire,
+        // "dd MMMM yyyy", null));
+        // }
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
     }
 
     @Override
@@ -51,31 +85,14 @@ public class UploadKingCom extends PluginForHost {
         return "http://www.uploadking.com/terms";
     }
 
-    private static final String TEMPORARYUNAVAILABLE         = "(>Unfortunately, this file is temporarily unavailable|> \\- The server the file is residing on is currently down for maintenance)";
-    private static final String TEMPORARYUNAVAILABLEUSERTEXT = "This file is temporary unavailable!";
-    private static final Object LOCK                         = new Object();
-    private static final String MAINPAGE                     = "http://www.uploadking.com/";
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.setCustomCharset("utf-8");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(TEMPORARYUNAVAILABLE)) {
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.uploadkingcom.temporaryunavailable", TEMPORARYUNAVAILABLEUSERTEXT));
-            return AvailableStatus.TRUE;
-        }
-        if (br.containsHTML("(>Unfortunately, this file is unavailable|> \\- Invalid link|> \\- The file has been deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex infoWhileLimitReached = br.getRegex(">You are currently downloading (.*?) \\((\\d+.*?)\\)\\. Please ");
-        String filename = br.getRegex("\">File: <b>(.*?)</b>").getMatch(0);
-        if (filename == null) filename = infoWhileLimitReached.getMatch(0);
-        String filesize = br.getRegex("\">Size: <b>(.*?)</b>").getMatch(0);
-        if (filesize == null) filesize = infoWhileLimitReached.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -89,6 +106,27 @@ public class UploadKingCom extends PluginForHost {
         // More connections possible but doesn't work for all links
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -11);
         if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        String dllink = br.getRegex("<div style=\"position:absolute; left:0px; top:0px;\"><a href=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.uploadking\\.com:\\d+/files/[A-Z0-9]+/.*?)\"").getMatch(0);
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -130,67 +168,29 @@ public class UploadKingCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        String space = br.getRegex(">Total storage space used:</TD><TD><b>(.*?)</b></TD>").getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim());
-        ai.setUnlimitedTraffic();
-        String filesNum = br.getRegex(">Total files uploaded:</TD><TD><b>(\\d+)</b>").getMatch(0);
-        if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
-        // Expire date not set because its not very precise
-        // String expire =
-        // br.getRegex("<b>Premium</b> \\(expires in (\\d+) weeks").getMatch(0);
-        // if (expire == null) {
-        // account.setValid(false);
-        // return ai;
-        // } else {
-        // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire,
-        // "dd MMMM yyyy", null));
-        // }
-        account.setValid(true);
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("<div style=\"position:absolute; left:0px; top:0px;\"><a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.uploadking\\.com:\\d+/files/[A-Z0-9]+/.*?)\"").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML(TEMPORARYUNAVAILABLE)) {
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.uploadkingcom.temporaryunavailable", TEMPORARYUNAVAILABLEUSERTEXT));
+            return AvailableStatus.TRUE;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        if (br.containsHTML("(>Unfortunately, this file is unavailable|> \\- Invalid link|> \\- The file has been deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Regex infoWhileLimitReached = br.getRegex(">You are currently downloading (.*?) \\((\\d+.*?)\\)\\. Please ");
+        String filename = br.getRegex("\">File: <b>(.*?)</b>").getMatch(0);
+        if (filename == null) filename = infoWhileLimitReached.getMatch(0);
+        String filesize = br.getRegex("\">Size: <b>(.*?)</b>").getMatch(0);
+        if (filesize == null) filesize = infoWhileLimitReached.getMatch(1);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

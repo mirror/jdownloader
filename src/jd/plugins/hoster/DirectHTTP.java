@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.controlling.HTACCESSController;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
@@ -78,6 +79,18 @@ public class DirectHTTP extends PluginForHost {
             return captchaFile;
         }
 
+        /**
+         * 
+         * DO NOT use in Plugins at the moment, cause the current nightly is not
+         * able to use this function, directHTTP is included in jar and not
+         * updatable at the moment
+         */
+        public void findID() throws PluginException {
+            this.id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+            if (this.id == null) this.id = this.br.getRegex("Recaptcha\\.create\\(\"([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+            if (this.id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
         public String getCaptchaAddress() {
             return this.captchaAddress;
         }
@@ -100,18 +113,6 @@ public class DirectHTTP extends PluginForHost {
 
         public int getTries() {
             return this.tries;
-        }
-
-        /**
-         * 
-         * DO NOT use in Plugins at the moment, cause the current nightly is not
-         * able to use this function, directHTTP is included in jar and not
-         * updatable at the moment
-         */
-        public void findID() throws PluginException {
-            this.id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-            if (this.id == null) this.id = this.br.getRegex("Recaptcha\\.create\\(\"([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-            if (this.id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
         public synchronized void handleAuto(final Plugin plg, final DownloadLink downloadLink) throws Exception {
@@ -139,6 +140,16 @@ public class DirectHTTP extends PluginForHost {
                 this.setCode(code);
 
             }
+        }
+
+        // do not add @Override here to keep 0.* compatibility
+        public boolean hasAutoCaptcha() {
+            return JACMethod.hasMethod("recaptcha");
+        }
+
+        // do not add @Override here to keep 0.* compatibility
+        public boolean hasCaptcha() {
+            return true;
         }
 
         public boolean isSolved() throws PluginException {
@@ -221,6 +232,15 @@ public class DirectHTTP extends PluginForHost {
 
         }
 
+        public void prepareForm(final String code) throws PluginException {
+            if (this.challenge == null || code == null) {
+                JDLogger.getLogger().severe("Recaptcha Module fail: challenge or code equals null!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            this.form.put("recaptcha_challenge_field", this.challenge);
+            this.form.put("recaptcha_response_field", Encoding.urlEncode(code));
+        }
+
         public void reload() throws IOException, PluginException {
 
             this.rcBr.getPage("http://www.google.com/recaptcha/api/reload?c=" + this.challenge + "&k=" + this.id + "&reason=r&type=image&lang=en");
@@ -249,15 +269,6 @@ public class DirectHTTP extends PluginForHost {
             this.br.submitForm(this.form);
             this.tries++;
             return this.br;
-        }
-
-        public void prepareForm(final String code) throws PluginException {
-            if (this.challenge == null || code == null) {
-                JDLogger.getLogger().severe("Recaptcha Module fail: challenge or code equals null!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            this.form.put("recaptcha_challenge_field", this.challenge);
-            this.form.put("recaptcha_response_field", Encoding.urlEncode(code));
         }
 
         public void setForm(final Form form) {

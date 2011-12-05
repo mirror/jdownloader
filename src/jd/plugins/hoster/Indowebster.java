@@ -19,11 +19,11 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -41,33 +41,8 @@ public class Indowebster extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setReadTimeout(3 * 60 * 1000);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(Requested file is deleted|image/default/404\\.png\")") || br.getURL().contains("/error") || br.getURL().contains("/files_not_found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // Convert old links to new links
-        String newlink = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+;URL=(http://v\\d+\\.indowebster\\.com/.*?)\"").getMatch(0);
-        if (newlink != null) {
-            newlink = newlink.trim();
-            downloadLink.setUrlDownload(newlink);
-            logger.info("New link set...");
-            br.getPage(newlink);
-        }
-        String filename = br.getRegex("<title>Free Download (.*?) \\| ").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("class=\"dl\\-title\" title=\"(.*?)\">").getMatch(0);
-        }
-        String filesize = br.getRegex(">Size : <span style=\"float:none;\">(.*?)</span><").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("Date upload: .{1,20} Size: (.*?)\"").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (downloadLink.getDownloadURL().contains("/audio/"))
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
-        else
-            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -105,12 +80,37 @@ public class Indowebster extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setReadTimeout(3 * 60 * 1000);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("(Requested file is deleted|image/default/404\\.png\")") || br.getURL().contains("/error") || br.getURL().contains("/files_not_found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Convert old links to new links
+        String newlink = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+;URL=(http://v\\d+\\.indowebster\\.com/.*?)\"").getMatch(0);
+        if (newlink != null) {
+            newlink = newlink.trim();
+            downloadLink.setUrlDownload(newlink);
+            logger.info("New link set...");
+            br.getPage(newlink);
+        }
+        String filename = br.getRegex("<title>Free Download (.*?) \\| ").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("class=\"dl\\-title\" title=\"(.*?)\">").getMatch(0);
+        }
+        String filesize = br.getRegex(">Size : <span style=\"float:none;\">(.*?)</span><").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("Date upload: .{1,20} Size: (.*?)\"").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (downloadLink.getDownloadURL().contains("/audio/"))
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+        else
+            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

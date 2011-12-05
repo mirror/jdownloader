@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -36,8 +37,14 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tgf-services.com" }, urls = { "http://(www\\.)?tgf\\-services\\.com/UserDownloadsdecrypted(\\d+)?/.+" }, flags = { 0 })
 public class TgfServicesCom extends PluginForHost {
 
+    private String SUBFILEID = null;
+
     public TgfServicesCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/UserDownloadsdecrypted", "/UserDownloads"));
     }
 
     @Override
@@ -45,40 +52,9 @@ public class TgfServicesCom extends PluginForHost {
         return "http://tgf-services.com/Terms";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/UserDownloadsdecrypted", "/UserDownloads"));
-    }
-
-    private String SUBFILEID = null;
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        String dlurl = link.getDownloadURL();
-        SUBFILEID = new Regex(dlurl, "/UserDownloads(\\d+)/").getMatch(0);
-        if (SUBFILEID != null) dlurl = dlurl.replace(SUBFILEID, "");
-        br.getPage(dlurl);
-        if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().contains("/Warning/?err_num=15")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String startNumber = link.getStringProperty("startNumber");
-        if (startNumber != null && SUBFILEID != null) {
-            String filename = br.getRegex("<td width=\"5%\" align=\"right\">" + startNumber + "\\.</td>[\t\n\r ]+<td width=\"55%\" class=\"left\">([^<>\"]+)</td>[\t\n\r ]+<td width=\"20%\" align=\"center\">[\t\n\r ]+<a class=\"free\\-download\" id=\"free\\-download\" href=\"javascript:void\\(0\\);\"></a>[\t\n\r ]+</td>[\t\n\r ]+<td width=\"20%\" align=\"center\">[\t\n\r ]+<a class=\"premium\\-download\" id=\"premium\\-download\" href=\"javascript:void\\(0\\);\"></a>[\t\n\r ]+</td>[\t\n\r ]+</tr>[\t\n\r ]+<tr>[\t\n\r ]+<\\!\\-\\-DOWNLOAD TR\\-\\->[\t\n\r ]+<td colspan=\"4\">[\t\n\r ]+<\\!\\-\\-PREMIUM\\-\\->[\t\n\r ]+<div align=\"center\" style=\"display: none;\" class=\"download\\-premium\\-window\" id=\"download\\-premium\\-window\\-" + SUBFILEID + "\">").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            link.setFinalFileName(startNumber + "." + Encoding.htmlDecode(filename.trim() + ".mp3"));
-        } else {
-            String filename = br.getRegex("<h2>Part Name:</h2></td>[\n\t\r ]+<td><h2>(.*?)</h2>").getMatch(0);
-            if (filename == null) filename = br.getRegex("id=\"aname\">(.*?)</h1>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String ext = br.getRegex("<h2>Bitrate: \\d+, Frequency: \\d+, Mode: (Stereo|Mono), (.*?)</h2>").getMatch(1);
-            if (ext != null) filename += "." + ext;
-            link.setName(Encoding.htmlDecode(filename.trim()));
-            String filesize = br.getRegex("<h2>File size:</h2></td>[\t\n\r ]+<td><h2>(.*?)</h2></td>").getMatch(0);
-            if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-        }
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -147,13 +123,48 @@ public class TgfServicesCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        String dlurl = link.getDownloadURL();
+        SUBFILEID = new Regex(dlurl, "/UserDownloads(\\d+)/").getMatch(0);
+        if (SUBFILEID != null) dlurl = dlurl.replace(SUBFILEID, "");
+        br.getPage(dlurl);
+        if (br.getRedirectLocation() != null) {
+            if (br.getRedirectLocation().contains("/Warning/?err_num=15")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String startNumber = link.getStringProperty("startNumber");
+        if (startNumber != null && SUBFILEID != null) {
+            String filename = br.getRegex("<td width=\"5%\" align=\"right\">" + startNumber + "\\.</td>[\t\n\r ]+<td width=\"55%\" class=\"left\">([^<>\"]+)</td>[\t\n\r ]+<td width=\"20%\" align=\"center\">[\t\n\r ]+<a class=\"free\\-download\" id=\"free\\-download\" href=\"javascript:void\\(0\\);\"></a>[\t\n\r ]+</td>[\t\n\r ]+<td width=\"20%\" align=\"center\">[\t\n\r ]+<a class=\"premium\\-download\" id=\"premium\\-download\" href=\"javascript:void\\(0\\);\"></a>[\t\n\r ]+</td>[\t\n\r ]+</tr>[\t\n\r ]+<tr>[\t\n\r ]+<\\!\\-\\-DOWNLOAD TR\\-\\->[\t\n\r ]+<td colspan=\"4\">[\t\n\r ]+<\\!\\-\\-PREMIUM\\-\\->[\t\n\r ]+<div align=\"center\" style=\"display: none;\" class=\"download\\-premium\\-window\" id=\"download\\-premium\\-window\\-" + SUBFILEID + "\">").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setFinalFileName(startNumber + "." + Encoding.htmlDecode(filename.trim() + ".mp3"));
+        } else {
+            String filename = br.getRegex("<h2>Part Name:</h2></td>[\n\t\r ]+<td><h2>(.*?)</h2>").getMatch(0);
+            if (filename == null) filename = br.getRegex("id=\"aname\">(.*?)</h1>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String ext = br.getRegex("<h2>Bitrate: \\d+, Frequency: \\d+, Mode: (Stereo|Mono), (.*?)</h2>").getMatch(1);
+            if (ext != null) filename += "." + ext;
+            link.setName(Encoding.htmlDecode(filename.trim()));
+            String filesize = br.getRegex("<h2>File size:</h2></td>[\t\n\r ]+<td><h2>(.*?)</h2></td>").getMatch(0);
+            if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

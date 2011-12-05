@@ -45,30 +45,8 @@ public class AdriveCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        String goToLink = br.getRegex("<b>Please go to <a href=\"(/.*?)\"").getMatch(0);
-        if (goToLink != null) br.getPage("http://www.adrive.com" + goToLink);
-        if (br.containsHTML("is no longer available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(.*?)\">here</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        Browser br2 = br.cloneBrowser();
-        URLConnectionAdapter con = br2.openGetConnection(linkurl);
-        if (con.getContentType().contains("html")) {
-            br2.followConnection();
-            if (br.containsHTML("File overlimit")) {
-                con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.adrivecom.errors.toomanyconnections", "Too many connections"), 10 * 60 * 1000l);
-            } else {
-                con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        }
-        downloadLink.setFinalFileName(AdriveCom.getFileNameFromHeader(con));
-        downloadLink.setDownloadSize(con.getLongContentLength());
-        con.disconnect();
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -96,8 +74,30 @@ public class AdriveCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
+        String goToLink = br.getRegex("<b>Please go to <a href=\"(/.*?)\"").getMatch(0);
+        if (goToLink != null) br.getPage("http://www.adrive.com" + goToLink);
+        if (br.containsHTML("is no longer available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(.*?)\">here</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Browser br2 = br.cloneBrowser();
+        URLConnectionAdapter con = br2.openGetConnection(linkurl);
+        if (con.getContentType().contains("html")) {
+            br2.followConnection();
+            if (br.containsHTML("File overlimit")) {
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.adrivecom.errors.toomanyconnections", "Too many connections"), 10 * 60 * 1000l);
+            } else {
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
+        downloadLink.setFinalFileName(AdriveCom.getFileNameFromHeader(con));
+        downloadLink.setDownloadSize(con.getLongContentLength());
+        con.disconnect();
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -105,10 +105,10 @@ public class AdriveCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

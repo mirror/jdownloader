@@ -32,8 +32,14 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "http://[\\w\\.]*?\\.decryptedlivedrive\\.com/frameset\\.php\\?path=/files/\\d+" }, flags = { 0 })
 public class LiveDriveCom extends PluginForHost {
 
+    private String DLLINKPART;
+
     public LiveDriveCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("decryptedlivedrive", "livedrive"));
     }
 
     @Override
@@ -41,11 +47,21 @@ public class LiveDriveCom extends PluginForHost {
         return "http://www.livedrive.com/terms-of-use";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("decryptedlivedrive", "livedrive"));
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
-    private String DLLINKPART;
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINKPART + downloadLink.getStringProperty("DOWNLOADID"), true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -64,23 +80,7 @@ public class LiveDriveCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINKPART + downloadLink.getStringProperty("DOWNLOADID"), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

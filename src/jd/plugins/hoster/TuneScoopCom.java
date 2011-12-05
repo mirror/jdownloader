@@ -43,6 +43,31 @@ public class TuneScoopCom extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        br.setFollowRedirects(true);
+        Form dlForm = br.getFormbyProperty("name", "dform");
+        if (dlForm == null) dlForm = br.getFormbyProperty("name", "dform");
+        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.submitForm(dlForm);
+        dlForm = br.getFormbyProperty("name", "dform");
+        if (dlForm == null) dlForm = br.getFormbyProperty("name", "dform");
+        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // More chunks are possible but cause problems
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         URLConnectionAdapter con = null;
@@ -68,32 +93,7 @@ public class TuneScoopCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.setFollowRedirects(true);
-        Form dlForm = br.getFormbyProperty("name", "dform");
-        if (dlForm == null) dlForm = br.getFormbyProperty("name", "dform");
-        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.submitForm(dlForm);
-        dlForm = br.getFormbyProperty("name", "dform");
-        if (dlForm == null) dlForm = br.getFormbyProperty("name", "dform");
-        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // More chunks are possible but cause problems
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

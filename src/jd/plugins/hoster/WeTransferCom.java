@@ -32,19 +32,36 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "http(s)?://(www\\.)?(wtrns\\.fr/[A-Za-z0-9\\-]+|wetransfer\\.com/dl/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 0 })
 public class WeTransferCom extends PluginForHost {
 
+    private String              HASH             = null;
+
+    private String              CODE             = null;
+
+    private static final String POSTDOWNLOADLINK = "https://crazycatlady3.wetransfer.com/fsdl.php";
     public WeTransferCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     @Override
     public String getAGBLink() {
         // No TOS/TOSlink found
         return "https://wetransfer.com/";
     }
 
-    private String              HASH             = null;
-    private String              CODE             = null;
-    private static final String POSTDOWNLOADLINK = "https://crazycatlady3.wetransfer.com/fsdl.php";
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        // More chunks are possible for some links but not for all
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, POSTDOWNLOADLINK, "hash=" + HASH + "&flash=WIN%2010%2C3%2C183%2C7&corporate=null&profile=1&code=" + CODE, true, -2);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -78,24 +95,7 @@ public class WeTransferCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        // More chunks are possible for some links but not for all
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, POSTDOWNLOADLINK, "hash=" + HASH + "&flash=WIN%2010%2C3%2C183%2C7&corporate=null&profile=1&code=" + CODE, true, -2);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

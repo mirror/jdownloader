@@ -30,34 +30,21 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4share.ws" }, urls = { "http://(www\\.)?4share\\.ws/file/[a-z0-9]+/.*?\\.html" }, flags = { 0 })
 public class FourShareWs extends PluginForHost {
 
+    private static final String PASSWORDPROTECTED = "(File Is Protected|Enter password to continue)";
+
+    private static final String PASSWORDWRONG     = ">You entered a wrong password";
+
     public FourShareWs(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     @Override
     public String getAGBLink() {
         return "http://4share.ws/terms";
     }
 
-    private static final String PASSWORDPROTECTED = "(File Is Protected|Enter password to continue)";
-    private static final String PASSWORDWRONG     = ">You entered a wrong password";
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        // They have a linkchecker but it doesn't show the filesize:
-        // http://4share.ws/filechecker
-        br.setFollowRedirects(false);
-        br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("(Not Found \\(  \\)|<title>4Share\\.WS</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex fileInfo = br.getRegex("image/ext/.*?\" class=\"middle\" alt=\"\" /> (.*?) \\( (.*?) \\)</h2><");
-        String filename = br.getRegex("<title>(.*?) \\- Download \\- 4Share\\.WS</title>").getMatch(0);
-        if (filename == null) filename = fileInfo.getMatch(0);
-        String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null || filesize.trim().equals("Byte")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        parameter.setName(filename.trim());
-        parameter.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 5;
     }
 
     @Override
@@ -107,16 +94,29 @@ public class FourShareWs extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        // They have a linkchecker but it doesn't show the filesize:
+        // http://4share.ws/filechecker
+        br.setFollowRedirects(false);
+        br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML("(Not Found \\(  \\)|<title>4Share\\.WS</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Regex fileInfo = br.getRegex("image/ext/.*?\" class=\"middle\" alt=\"\" /> (.*?) \\( (.*?) \\)</h2><");
+        String filename = br.getRegex("<title>(.*?) \\- Download \\- 4Share\\.WS</title>").getMatch(0);
+        if (filename == null) filename = fileInfo.getMatch(0);
+        String filesize = fileInfo.getMatch(1);
+        if (filename == null || filesize == null || filesize.trim().equals("Byte")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        parameter.setName(filename.trim());
+        parameter.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void reset() {
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 5;
     }
 
 }

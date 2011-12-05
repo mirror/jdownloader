@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
@@ -56,39 +57,47 @@ public class BitShareCom extends PluginForHost {
     }
 
     @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://bitshare.com/myaccount.html");
+        String filesNum = br.getRegex("<a href=\"http://bitshare\\.com/myfiles\\.html\">(\\d+) files</a>").getMatch(0);
+        if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
+        String space = br.getRegex("<b>Storage</b><br />(.*?) / 1000").getMatch(0);
+        if (space != null) ai.setUsedSpace(space.trim());
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("Valid until: (.*?)</div>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "yyyy-MM-dd", null));
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://bitshare.com/terms-of-service.html";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCookie(MAINPAGE, "language_selection", "EN");
-        br.getHeaders().put("User-Agent", agent);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>We are sorry, but the requested file was not found in our database|>Error - File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (link.getDownloadURL().contains("?f=")) {
-            String newlink = br.getRegex("\"(http://bitshare\\.com/files/[a-z0-9]+/.*?\\.html)\"").getMatch(0);
-            if (newlink == null) {
-                logger.warning("Failed to get new link for shortlink: " + link.getDownloadURL());
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setUrlDownload(newlink);
-        }
-        Regex nameAndSize = br.getRegex("<h1>Downloading (.*?) - ([0-9\\.]+ [A-Za-z]+)</h1>");
-        String filename = nameAndSize.getMatch(0);
-        String filesize = nameAndSize.getMatch(1);
-        if (filename == null || filesize == null) {
-            logger.warning("Filename or filesize is null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace("yte", "")));
-        if (filename.contains("....")) {
-            String urlFilename = new Regex(link.getDownloadURL(), "/files/[a-z0-9]+/(.*?)\\.html").getMatch(0);
-            if (urlFilename != null) link.setName(Encoding.htmlDecode(urlFilename));
-        }
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        // Maximum allowed connections = 15
+        return 5;
     }
 
     @Override
@@ -177,42 +186,6 @@ public class BitShareCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", agent);
-        br.setCookie(MAINPAGE, "language_selection", "EN");
-        br.postPage("http://bitshare.com/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&rememberlogin=&submit=Login");
-        if (!br.containsHTML("\\(<b>Premium</b>\\)")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        br.getPage("http://bitshare.com/myaccount.html");
-        String filesNum = br.getRegex("<a href=\"http://bitshare\\.com/myfiles\\.html\">(\\d+) files</a>").getMatch(0);
-        if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
-        String space = br.getRegex("<b>Storage</b><br />(.*?) / 1000").getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim());
-        account.setValid(true);
-        ai.setUnlimitedTraffic();
-        String expire = br.getRegex("Valid until: (.*?)</div>").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "yyyy-MM-dd", null));
-        }
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
@@ -246,19 +219,57 @@ public class BitShareCom extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", agent);
+        br.setCookie(MAINPAGE, "language_selection", "EN");
+        br.postPage("http://bitshare.com/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&rememberlogin=&submit=Login");
+        if (!br.containsHTML("\\(<b>Premium</b>\\)")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        // Maximum allowed connections = 15
-        return 5;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCookie(MAINPAGE, "language_selection", "EN");
+        br.getHeaders().put("User-Agent", agent);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>We are sorry, but the requested file was not found in our database|>Error - File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getDownloadURL().contains("?f=")) {
+            String newlink = br.getRegex("\"(http://bitshare\\.com/files/[a-z0-9]+/.*?\\.html)\"").getMatch(0);
+            if (newlink == null) {
+                logger.warning("Failed to get new link for shortlink: " + link.getDownloadURL());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setUrlDownload(newlink);
+        }
+        Regex nameAndSize = br.getRegex("<h1>Downloading (.*?) - ([0-9\\.]+ [A-Za-z]+)</h1>");
+        String filename = nameAndSize.getMatch(0);
+        String filesize = nameAndSize.getMatch(1);
+        if (filename == null || filesize == null) {
+            logger.warning("Filename or filesize is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace("yte", "")));
+        if (filename.contains("....")) {
+            String urlFilename = new Regex(link.getDownloadURL(), "/files/[a-z0-9]+/(.*?)\\.html").getMatch(0);
+            if (urlFilename != null) link.setName(Encoding.htmlDecode(urlFilename));
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

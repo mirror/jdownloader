@@ -63,55 +63,23 @@ public class Megauploadcom extends PluginForHost {
     }
 
     private static final String   MU_PARAM_PORT   = "MU_PARAM_PORT_NEW1";
+
     private final static String[] ports           = new String[] { "80", "800", "1723" };
     private static String         wwwWorkaround   = null;
     private static final Object   LOCK            = new Object();
-
     private static final Object   LOGINLOCK       = new Object();
-    private static int            simultanpremium = 1;
-    private boolean               directDL        = false;
 
-    private synchronized void handleWaittimeWorkaround(final DownloadLink link, final Browser br) throws PluginException {
-        if (br.containsHTML("gencap\\.php\\?")) {
-            /* page contains captcha */
-            if (Megauploadcom.WaittimeWorkaround == 0) {
-                /*
-                 * we tried to workaround the waittime, so lets try again with
-                 * normal waittime
-                 */
-                Megauploadcom.WaittimeWorkaround = 1;
-                logger.info("WaittimeWorkaround failed (1)");
-                link.getLinkStatus().setRetryCount(link.getLinkStatus().getRetryCount() + 1);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (Megauploadcom.WaittimeWorkaround == 1) {
-                logger.info("strange servererror: we did wait(normal) but again a captcha?");
-                /* no reset here for retry count */
-                /* retry with longer waittime */
-                Megauploadcom.WaittimeWorkaround = 2;
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (Megauploadcom.WaittimeWorkaround == 2) {
-                logger.info("strange servererror: we did wait(longer) but again a captcha?");
-                /* no reset here for retry count */
-                /* retry with normal waittime again */
-                Megauploadcom.WaittimeWorkaround = 1;
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+    private static int            simultanpremium = 1;
+    private static void workAroundTimeOut(final Browser br) {
+        try {
+            if (br != null) {
+                br.setConnectTimeout(30000);
+                br.setReadTimeout(30000);
             }
-        } else {
-            /* something else? */
-            if (Megauploadcom.WaittimeWorkaround == 0) {
-                /* lets try again with normal waittime */
-                Megauploadcom.WaittimeWorkaround = 1;
-                logger.info("WaittimeWorkaround failed (2)");
-                link.getLinkStatus().setRetryCount(link.getLinkStatus().getRetryCount() + 1);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (Megauploadcom.WaittimeWorkaround > 1) {
-                logger.info("WaittimeWorkaround failed (3)");
-                if (++Megauploadcom.WaittimeWorkaround > 1) {
-                    Megauploadcom.WaittimeWorkaround = 1;
-                }
-            }
+        } catch (final Throwable e) {
         }
     }
+    private boolean               directDL        = false;
 
     private boolean             onlyapi            = false;
 
@@ -145,16 +113,6 @@ public class Megauploadcom extends PluginForHost {
             br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "l", "en");
         } catch (Throwable e) {
             /* setCookie throws exception in 09580 */
-        }
-    }
-
-    private static void workAroundTimeOut(final Browser br) {
-        try {
-            if (br != null) {
-                br.setConnectTimeout(30000);
-                br.setReadTimeout(30000);
-            }
-        } catch (final Throwable e) {
         }
     }
 
@@ -767,6 +725,48 @@ public class Megauploadcom extends PluginForHost {
         this.doDownload(parameter, url, true, account);
     }
 
+    private synchronized void handleWaittimeWorkaround(final DownloadLink link, final Browser br) throws PluginException {
+        if (br.containsHTML("gencap\\.php\\?")) {
+            /* page contains captcha */
+            if (Megauploadcom.WaittimeWorkaround == 0) {
+                /*
+                 * we tried to workaround the waittime, so lets try again with
+                 * normal waittime
+                 */
+                Megauploadcom.WaittimeWorkaround = 1;
+                logger.info("WaittimeWorkaround failed (1)");
+                link.getLinkStatus().setRetryCount(link.getLinkStatus().getRetryCount() + 1);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (Megauploadcom.WaittimeWorkaround == 1) {
+                logger.info("strange servererror: we did wait(normal) but again a captcha?");
+                /* no reset here for retry count */
+                /* retry with longer waittime */
+                Megauploadcom.WaittimeWorkaround = 2;
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (Megauploadcom.WaittimeWorkaround == 2) {
+                logger.info("strange servererror: we did wait(longer) but again a captcha?");
+                /* no reset here for retry count */
+                /* retry with normal waittime again */
+                Megauploadcom.WaittimeWorkaround = 1;
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        } else {
+            /* something else? */
+            if (Megauploadcom.WaittimeWorkaround == 0) {
+                /* lets try again with normal waittime */
+                Megauploadcom.WaittimeWorkaround = 1;
+                logger.info("WaittimeWorkaround failed (2)");
+                link.getLinkStatus().setRetryCount(link.getLinkStatus().getRetryCount() + 1);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (Megauploadcom.WaittimeWorkaround > 1) {
+                logger.info("WaittimeWorkaround failed (3)");
+                if (++Megauploadcom.WaittimeWorkaround > 1) {
+                    Megauploadcom.WaittimeWorkaround = 1;
+                }
+            }
+        }
+    }
+
     public void handleWebsiteDownload(final DownloadLink link, final Account account) throws Exception {
         String url = null;
         if (directDL == false) {
@@ -883,6 +883,11 @@ public class Megauploadcom extends PluginForHost {
             url = br.getRedirectLocation();
         }
         this.doDownload(link, url, true, account);
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     public boolean isPremium(final Account account, final Browser br, final boolean refresh, boolean cloneBrowser) throws IOException {

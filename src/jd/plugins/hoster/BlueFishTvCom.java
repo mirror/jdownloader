@@ -32,15 +32,20 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bluefishtv.com" }, urls = { "http://[\\w\\.]*?bluefishtv\\.com/Store/[_a-zA-Z]+/\\d+/.*" }, flags = { 0 })
 public class BlueFishTvCom extends PluginForHost {
 
+    private String dlink = null;
+
     public BlueFishTvCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String dlink = null;
-
     @Override
     public String getAGBLink() {
         return "http://www.bluefishtv.com/Terms_of_Use";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -86,19 +91,14 @@ public class BlueFishTvCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

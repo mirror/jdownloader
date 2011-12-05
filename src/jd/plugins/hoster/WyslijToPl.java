@@ -45,17 +45,8 @@ public class WyslijToPl extends PluginForHost {
     }
 
     // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("</b> zosta. usuni.ty z serwisu WyslijTo.pl")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<b style=\"color: RED;\">(.*?)</b> \\(rozmiar", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        String filesize = br.getRegex("rozmiar: (.*?) \\)</a>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
     }
 
     // @Override
@@ -72,14 +63,23 @@ public class WyslijToPl extends PluginForHost {
         br.setFollowRedirects(true);
         // this.sleep(60000, downloadLink); // uncomment when they find a better
         // way to force wait time
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl);
         dl.startDownload();
 
     }
 
     // @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("</b> zosta. usuni.ty z serwisu WyslijTo.pl")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<b style=\"color: RED;\">(.*?)</b> \\(rozmiar", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String filesize = br.getRegex("rozmiar: (.*?) \\)</a>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -87,10 +87,10 @@ public class WyslijToPl extends PluginForHost {
     }
 
     // @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     // @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

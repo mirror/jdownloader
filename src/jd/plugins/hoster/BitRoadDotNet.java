@@ -42,18 +42,8 @@ public class BitRoadDotNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("file is not found") || br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (!br.containsHTML("Free, in one stream, without a possibility to revive a downloading.")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
-        String filename = br.getRegex("name=\"name\" value=\"(.*?)\"").getMatch(0);
-        String size = br.getRegex("<h1>.*\\[\\s(.*?)\\s\\]</h1>").getMatch(0);
-        if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(size));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -72,8 +62,18 @@ public class BitRoadDotNet extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("file is not found") || br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.containsHTML("Free, in one stream, without a possibility to revive a downloading.")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
+        String filename = br.getRegex("name=\"name\" value=\"(.*?)\"").getMatch(0);
+        String size = br.getRegex("<h1>.*\\[\\s(.*?)\\s\\]</h1>").getMatch(0);
+        if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(size));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -81,10 +81,10 @@ public class BitRoadDotNet extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

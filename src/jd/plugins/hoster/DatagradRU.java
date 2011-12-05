@@ -38,6 +38,22 @@ public class DatagradRU extends PluginForHost {
         return "http://www.datagrad.ru/auth/hosting.php";
     }
 
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        // requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("the dllink doesn't seem to be a file, following the connection...");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("UTF-8");
@@ -53,32 +69,16 @@ public class DatagradRU extends PluginForHost {
         }
     }
 
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        // requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("the dllink doesn't seem to be a file, following the connection...");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
     @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

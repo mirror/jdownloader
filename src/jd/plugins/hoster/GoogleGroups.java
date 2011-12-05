@@ -41,11 +41,6 @@ public class GoogleGroups extends PluginForHost {
     }
 
     // @Override
-    public String getAGBLink() {
-        return "http://groups.google.com/intl/de/googlegroups/terms_of_service3.html";
-    }
-
-    // @Override
     public boolean checkLinks(DownloadLink[] urls) {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -91,10 +86,13 @@ public class GoogleGroups extends PluginForHost {
     }
 
     // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        checkLinks(new DownloadLink[] { downloadLink });
-        if (downloadLink.getAvailableStatus() == AvailableStatus.FALSE) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return downloadLink.getAvailableStatus();
+    public String getAGBLink() {
+        return "http://groups.google.com/intl/de/googlegroups/terms_of_service3.html";
+    }
+
+    // @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
     }
 
     // @Override
@@ -109,14 +107,16 @@ public class GoogleGroups extends PluginForHost {
         String na = downloadLink.getDownloadURL().replaceFirst("\\?gda=.*", "");
         na = na.replaceFirst("googlegroups.com/web/.*", "googlegroups.com/web/") + URLEncoder.encode(na.replaceFirst("http://.*?\\.googlegroups.com/web/", ""), "UTF-8");
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, na);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, na);
         dl.setFilesizeCheck(false);
         dl.startDownload();
     }
 
     // @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (downloadLink.getAvailableStatus() == AvailableStatus.FALSE) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        return downloadLink.getAvailableStatus();
     }
 
     // @Override
@@ -124,10 +124,10 @@ public class GoogleGroups extends PluginForHost {
     }
 
     // @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     // @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

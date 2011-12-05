@@ -22,6 +22,7 @@ import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -42,21 +43,17 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datei.to", "sharebase.to" }, urls = { "http://(www\\.)?(sharebase\\.(de|to)/(files/|1,)|datei\\.to/datei/)[\\w]+\\.html", "blablablaInvalid_regex" }, flags = { 2, 2 })
 public class DateiTo extends PluginForHost {
 
+    private static final String APIPAGE          = "http://api.datei.to/";
+
+    private static final String FILEIDREGEX      = "datei\\.to/datei/(.*?)\\.html";
+
+    private static final String DOWNLOADPOSTPAGE = "http://datei.to/ajax/download.php";
+
+    private static final String RECAPTCHATEXT    = "(Versuche es erneut, indem du|klickst und das Captcha erneut eingibst|>Deine Eingabe war leider falsch)";
     public DateiTo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://datei.to/premium");
     }
-
-    private static final String APIPAGE          = "http://api.datei.to/";
-    private static final String FILEIDREGEX      = "datei\\.to/datei/(.*?)\\.html";
-    private static final String DOWNLOADPOSTPAGE = "http://datei.to/ajax/download.php";
-    private static final String RECAPTCHATEXT    = "(Versuche es erneut, indem du|klickst und das Captcha erneut eingibst|>Deine Eingabe war leider falsch)";
-
-    @Override
-    public String getAGBLink() {
-        return "http://datei.to/agb";
-    }
-
     @Override
     public void correctDownloadLink(DownloadLink link) throws MalformedURLException {
         if ("sharebase.to".equals(link.getHost())) {
@@ -72,30 +69,6 @@ public class DateiTo extends PluginForHost {
         String id = new Regex(link.getDownloadURL(), "(/files/|/1,)([\\w]+\\.html)").getMatch(1);
         if (id != null) link.setUrlDownload("http://datei.to/datei/" + id);
     }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.postPage(APIPAGE, "key=YYMHGBR9SFQA0ZWA&info=COMPLETE&datei=" + new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0));
-        if (!br.containsHTML("online") || br.containsHTML("offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex info = br.getRegex(";(.*?);(\\d+);");
-        downloadLink.setFinalFileName(info.getMatch(0));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(info.getMatch(1)));
-        return AvailableStatus.TRUE;
-    }
-
-    public void login(Account account) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://api.datei.to/", "info=jdLogin&Username=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()));
-        if (br.containsHTML("free")) {
-            logger.info("Free account found->Not support->Disable");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        if (!br.containsHTML("premium") || br.containsHTML("false")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -115,20 +88,13 @@ public class DateiTo extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        br.postPage("http://api.datei.to/", "info=jdPremDown&Username=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&datei=" + new Regex(downloadLink.getDownloadURL(), "datei\\.to/datei/(.*?)\\.html").getMatch(0));
-        String dlUrl = br.toString();
-        if (dlUrl == null || !dlUrl.startsWith("http") || dlUrl.length() > 500 || dlUrl.contains("no file")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        dlUrl = dlUrl.trim();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 0);
-        br.setFollowRedirects(true);
-        if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            logger.severe("PremiumError: " + br.toString());
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        dl.startDownload();
+    public String getAGBLink() {
+        return "http://datei.to/agb";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -202,8 +168,53 @@ public class DateiTo extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        br.postPage("http://api.datei.to/", "info=jdPremDown&Username=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&datei=" + new Regex(downloadLink.getDownloadURL(), "datei\\.to/datei/(.*?)\\.html").getMatch(0));
+        String dlUrl = br.toString();
+        if (dlUrl == null || !dlUrl.startsWith("http") || dlUrl.length() > 500 || dlUrl.contains("no file")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        dlUrl = dlUrl.trim();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 0);
+        br.setFollowRedirects(true);
+        if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            logger.severe("PremiumError: " + br.toString());
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    public void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage("http://api.datei.to/", "info=jdLogin&Username=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()));
+        if (br.containsHTML("free")) {
+            logger.info("Free account found->Not support->Disable");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        if (!br.containsHTML("premium") || br.containsHTML("false")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.postPage(APIPAGE, "key=YYMHGBR9SFQA0ZWA&info=COMPLETE&datei=" + new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0));
+        if (!br.containsHTML("online") || br.containsHTML("offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Regex info = br.getRegex(";(.*?);(\\d+);");
+        downloadLink.setFinalFileName(info.getMatch(0));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(info.getMatch(1)));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -211,11 +222,11 @@ public class DateiTo extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

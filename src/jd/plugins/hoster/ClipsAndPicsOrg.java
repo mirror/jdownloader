@@ -30,13 +30,40 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clips-and-pics.org" }, urls = { "http://(www\\.)?clips\\-and\\-pics\\.orgdecrypted/hosted/media/.*?,\\d+\\.php" }, flags = { 0 })
 public class ClipsAndPicsOrg extends PluginForHost {
 
+    private static final String PACKEDJSURL = "http://sbfileserver.org/mediaplayer/encrypt.js";
+
+    public static String fromCharCode(int lol) {
+        return Character.toString((char) lol);
+    }
+
     public ClipsAndPicsOrg(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private String convert_char(int c, int b, int d, char x) {
+        String a = Character.toString(x);
+        return fromCharCode(b + (((a.charAt(0) - b) + c) % (c * 2)));
     }
 
     public void correctDownloadLink(DownloadLink link) {
         // Links come from a decrypter
         link.setUrlDownload(link.getDownloadURL().replace("clips-and-pics.orgdecrypted/", "clips-and-pics.org/"));
+    }
+
+    private String encryptString(String b) {
+        String a = "";
+        for (int c = 0; c < b.length(); c++) {
+            if (b.charAt(c) >= 65 && b.charAt(c) <= 90) {
+                a = a + convert_char(13, 65, 90, b.charAt(c));
+            } else {
+                if (b.charAt(c) >= 97 && b.charAt(c) <= 122) {
+                    a = a + convert_char(13, 97, 122, b.charAt(c));
+                } else {
+                    a = a + b.charAt(c);
+                }
+            }
+        }
+        return a;
     }
 
     @Override
@@ -45,19 +72,9 @@ public class ClipsAndPicsOrg extends PluginForHost {
         return "http://www.clips-and-pics.org/";
     }
 
-    private static final String PACKEDJSURL = "http://sbfileserver.org/mediaplayer/encrypt.js";
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.clips-and-pics.org/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div id=\"mid\">[\t\n\r ]+<div class=\"navi_m_top\">(.*?)</div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\">").getMatch(0);
-        filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -78,34 +95,17 @@ public class ClipsAndPicsOrg extends PluginForHost {
         dl.startDownload();
     }
 
-    private String encryptString(String b) {
-        String a = "";
-        for (int c = 0; c < b.length(); c++) {
-            if (b.charAt(c) >= 65 && b.charAt(c) <= 90) {
-                a = a + convert_char(13, 65, 90, b.charAt(c));
-            } else {
-                if (b.charAt(c) >= 97 && b.charAt(c) <= 122) {
-                    a = a + convert_char(13, 97, 122, b.charAt(c));
-                } else {
-                    a = a + b.charAt(c);
-                }
-            }
-        }
-        return a;
-    }
-
-    private String convert_char(int c, int b, int d, char x) {
-        String a = Character.toString(x);
-        return fromCharCode(b + (((a.charAt(0) - b) + c) % (c * 2)));
-    }
-
-    public static String fromCharCode(int lol) {
-        return Character.toString((char) lol);
-    }
-
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getURL().equals("http://www.clips-and-pics.org/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<div id=\"mid\">[\t\n\r ]+<div class=\"navi_m_top\">(.*?)</div>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\">").getMatch(0);
+        filename = filename.trim();
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -113,10 +113,10 @@ public class ClipsAndPicsOrg extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

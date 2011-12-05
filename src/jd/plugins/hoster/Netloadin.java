@@ -44,8 +44,6 @@ public class Netloadin extends PluginForHost {
     static private final String AGB_LINK   = "http://netload.in/index.php?id=13";
 
     static public final Object  LOGINLOCK  = new Object();
-    private boolean             showDialog = false;
-
     private static String getID(String link) {
         String id = new Regex(link, "\\/datei([a-zA-Z0-9]+)").getMatch(0);
         if (id == null) id = new Regex(link, "file_id=([a-zA-Z0-9]+)").getMatch(0);
@@ -53,26 +51,144 @@ public class Netloadin extends PluginForHost {
         return id;
     }
 
+    private boolean             showDialog = false;
+
     public Netloadin(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(1000l);
         this.enablePremium("http://netload.in/index.php?refer_id=134847&id=39");
     }
 
-    /* TODO: remove me after 0.9xx public */
-    private void workAroundTimeOut(Browser br) {
+    private void checkErrors(DownloadLink downloadLink, Browser br, boolean checkFail) throws Exception {
+        String state = br.getRegex("state\":\"(.*?)\"").getMatch(0);
+        if ("hddcrash".equalsIgnoreCase(state)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HDDCrash(In Recovery)", 12 * 60 * 60 * 1000l);
+        if ("maintenance".equalsIgnoreCase(state)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maintenance", 2 * 60 * 60 * 1000l);
+        if (checkFail && "fail".equalsIgnoreCase(state)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 4 * 60 * 60 * 1000l); }
+    }
+
+    private void checkLimit(DownloadLink downloadLink, Browser br) throws Exception {
+        String state = br.getRegex("state\":\"(.*?)\"").getMatch(0);
+        String countdown = br.getRegex("countdown\":(\\d+)").getMatch(0);
+        if (countdown == null) return;
+        if ("limitexceeded".equalsIgnoreCase(state)) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(countdown) * 1000l);
+        } else if ("ok".equalsIgnoreCase(state)) {
+            this.sleep(Integer.parseInt(countdown) * 1000l, downloadLink);
+        } else {
+            if ("fail".equalsIgnoreCase(state)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 4 * 60 * 60 * 1000l); }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
+    @Override
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
         try {
-            if (br != null) {
-                br.setConnectTimeout(30000);
-                br.setReadTimeout(120000);
+            Browser br = new Browser();
+            workAroundTimeOut(br);
+            br.setCookiesExclusive(true);
+            StringBuilder sb = new StringBuilder();
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 80 links at once */
+                    if (index == urls.length || links.size() > 80) break;
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("auth=BVm96BWDSoB4WkfbEhn42HgnjIe1ilMt&bz=1&md5=1&file_id=");
+                int c = 0;
+                for (DownloadLink dl : links) {
+                    if (c > 0) sb.append(";");
+                    sb.append(Netloadin.getID(dl.getDownloadURL()));
+                    c++;
+                }
+                br.postPage("http://api.netload.in/info.php", sb.toString());
+                String infos[][] = br.getRegex(Pattern.compile("(.*?);(.*?);(\\d+);(.*?);([0-9a-fA-F]+)")).getMatches();
+                for (DownloadLink dl : links) {
+                    String id = Netloadin.getID(dl.getDownloadURL());
+                    int hit = -1;
+                    for (int i = 0; i < infos.length; i++) {
+                        if (infos[i][0].equalsIgnoreCase(id)) {
+                            hit = i;
+                            break;
+                        }
+                    }
+                    if (hit == -1) {
+                        /* id not in response, so its offline */
+                        dl.setAvailable(false);
+                    } else {
+                        dl.setFinalFileName(infos[hit][1].trim());
+                        dl.setDownloadSize(SizeFormatter.getSize(infos[hit][2]));
+                        if (infos[hit][3].trim().equalsIgnoreCase("online")) {
+                            dl.setAvailable(true);
+                            dl.setMD5Hash(infos[hit][4].trim());
+                        } else {
+                            dl.setAvailable(false);
+                        }
+                    }
+                }
+                if (index == urls.length) break;
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    private void checkPassword(DownloadLink downloadLink, Browser br) throws Exception {
+        String state = br.getRegex("state\":\"(.*?)\"").getMatch(0);
+        if (!"failpass".equalsIgnoreCase(state)) return;
+        String ID = getID(downloadLink.getDownloadURL());
+        String pass = downloadLink.getStringProperty("pass", null);
+        if (pass == null) {
+            pass = Plugin.getUserInput(JDL.LF("plugins.hoster.netload.downloadPassword_question", "Password protected. Enter Password for %s", downloadLink.getName()), downloadLink);
+        }
+        br.getPage("http://netload.in/json/datei" + ID + ".htm?password=" + Encoding.urlEncode(pass));
+        state = br.getRegex("state\":\"(.*?)\"").getMatch(0);
+        if ("failpass".equalsIgnoreCase(state)) {
+            downloadLink.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Password wrong");
+        } else {
+            downloadLink.setProperty("pass", pass);
         }
     }
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("http://netload.in/datei" + Netloadin.getID(link.getDownloadURL()) + ".htm");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        showDialog = true;
+        try {
+            setBrowserExclusive();
+            loginAPI(account, ai);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        return ai;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return AGB_LINK;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getTimegapBetweenConnections() {
+        return 800;
     }
 
     @Override
@@ -109,43 +225,54 @@ public class Netloadin extends PluginForHost {
 
     }
 
-    private void checkPassword(DownloadLink downloadLink, Browser br) throws Exception {
-        String state = br.getRegex("state\":\"(.*?)\"").getMatch(0);
-        if (!"failpass".equalsIgnoreCase(state)) return;
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        setBrowserExclusive();
+        workAroundTimeOut(br);
+        requestFileInformation(downloadLink);
+        showDialog = false;
+        loginAPI(account, null);
+        String cookie = br.getCookie("http://www.netload.in", "cookie_user");
+        if (cookie == null) {
+            logger.severe("no cookie!");
+            logger.severe(br.toString());
+            try {
+                logger.info(br.getHttpConnection().toString());
+            } catch (final Throwable e) {
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+        }
         String ID = getID(downloadLink.getDownloadURL());
-        String pass = downloadLink.getStringProperty("pass", null);
-        if (pass == null) {
-            pass = Plugin.getUserInput(JDL.LF("plugins.hoster.netload.downloadPassword_question", "Password protected. Enter Password for %s", downloadLink.getName()), downloadLink);
-        }
-        br.getPage("http://netload.in/json/datei" + ID + ".htm?password=" + Encoding.urlEncode(pass));
-        state = br.getRegex("state\":\"(.*?)\"").getMatch(0);
-        if ("failpass".equalsIgnoreCase(state)) {
-            downloadLink.setProperty("pass", null);
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Password wrong");
+        br.getPage("http://netload.in/json/datei" + ID + ".htm");
+        checkPassword(downloadLink, br);
+        checkErrors(downloadLink, br, true);
+        workAroundTimeOut(br);
+        String url = br.getRegex("link\":\"(http.*?)\"").getMatch(0);
+        if (url != null) {
+            url = url.replaceAll("\\\\/", "/");
         } else {
-            downloadLink.setProperty("pass", pass);
-        }
-    }
-
-    private void checkLimit(DownloadLink downloadLink, Browser br) throws Exception {
-        String state = br.getRegex("state\":\"(.*?)\"").getMatch(0);
-        String countdown = br.getRegex("countdown\":(\\d+)").getMatch(0);
-        if (countdown == null) return;
-        if ("limitexceeded".equalsIgnoreCase(state)) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(countdown) * 1000l);
-        } else if ("ok".equalsIgnoreCase(state)) {
-            this.sleep(Integer.parseInt(countdown) * 1000l, downloadLink);
-        } else {
-            if ("fail".equalsIgnoreCase(state)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 4 * 60 * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-    }
-
-    private void checkErrors(DownloadLink downloadLink, Browser br, boolean checkFail) throws Exception {
-        String state = br.getRegex("state\":\"(.*?)\"").getMatch(0);
-        if ("hddcrash".equalsIgnoreCase(state)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HDDCrash(In Recovery)", 12 * 60 * 60 * 1000l);
-        if ("maintenance".equalsIgnoreCase(state)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maintenance", 2 * 60 * 60 * 1000l);
-        if (checkFail && "fail".equalsIgnoreCase(state)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 4 * 60 * 60 * 1000l); }
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
+            try {
+                /* remove next major update */
+                /* workaround for broken timeout in 0.9xx public */
+                dl.getConnection().setConnectTimeout(30000);
+                dl.getConnection().setReadTimeout(120000);
+            } catch (Throwable e) {
+            }
+            if (!dl.startDownload()) {
+                if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:"))) {
+                    logger.severe("Workaround for Netload Server-Problem! Setting Resume to false and Chunks to 1!");
+                    downloadLink.setProperty("nochunk", true);
+                    downloadLink.setChunksProgress(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } finally {
+            logger.info("used serverurl: " + url);
+        }
     }
 
     private void loginAPI(Account account, AccountInfo ai) throws IOException, PluginException {
@@ -210,72 +337,30 @@ public class Netloadin extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        showDialog = true;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
-            setBrowserExclusive();
-            loginAPI(account, ai);
+            DownloadLink urls[] = new DownloadLink[1];
+            urls[0] = downloadLink;
+            checkLinks(urls);
+            if (!downloadLink.isAvailabilityStatusChecked()) return AvailableStatus.UNCHECKED;
+            if (downloadLink.isAvailable()) return AvailableStatus.TRUE;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
+            /* workaround for buggy api */
+            /* workaround for stable */
+            DownloadLink tmpLink = new DownloadLink(null, "temp", "temp", "temp", false);
+            LinkStatus linkState = new LinkStatus(tmpLink);
+            e.fillLinkStatus(linkState);
+            if (linkState.hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
+                return websiteFileCheck(downloadLink);
+            } else {
+                throw e;
+            }
         }
-        return ai;
     }
 
     @Override
-    public int getTimegapBetweenConnections() {
-        return 800;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        setBrowserExclusive();
-        workAroundTimeOut(br);
-        requestFileInformation(downloadLink);
-        showDialog = false;
-        loginAPI(account, null);
-        String cookie = br.getCookie("http://www.netload.in", "cookie_user");
-        if (cookie == null) {
-            logger.severe("no cookie!");
-            logger.severe(br.toString());
-            try {
-                logger.info(br.getHttpConnection().toString());
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-        }
-        String ID = getID(downloadLink.getDownloadURL());
-        br.getPage("http://netload.in/json/datei" + ID + ".htm");
-        checkPassword(downloadLink, br);
-        checkErrors(downloadLink, br, true);
-        workAroundTimeOut(br);
-        String url = br.getRegex("link\":\"(http.*?)\"").getMatch(0);
-        if (url != null) {
-            url = url.replaceAll("\\\\/", "/");
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        try {
-            dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
-            try {
-                /* remove next major update */
-                /* workaround for broken timeout in 0.9xx public */
-                dl.getConnection().setConnectTimeout(30000);
-                dl.getConnection().setReadTimeout(120000);
-            } catch (Throwable e) {
-            }
-            if (!dl.startDownload()) {
-                if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:"))) {
-                    logger.severe("Workaround for Netload Server-Problem! Setting Resume to false and Chunks to 1!");
-                    downloadLink.setProperty("nochunk", true);
-                    downloadLink.setChunksProgress(null);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        } finally {
-            logger.info("used serverurl: " + url);
-        }
+    public void reset() {
     }
 
     @Override
@@ -284,8 +369,8 @@ public class Netloadin extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return AGB_LINK;
+    public void resetPluginGlobals() {
+
     }
 
     public AvailableStatus websiteFileCheck(DownloadLink downloadLink) throws PluginException {
@@ -317,99 +402,14 @@ public class Netloadin extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
-    public boolean checkLinks(DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
+    /* TODO: remove me after 0.9xx public */
+    private void workAroundTimeOut(Browser br) {
         try {
-            Browser br = new Browser();
-            workAroundTimeOut(br);
-            br.setCookiesExclusive(true);
-            StringBuilder sb = new StringBuilder();
-            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            while (true) {
-                links.clear();
-                while (true) {
-                    /* we test 80 links at once */
-                    if (index == urls.length || links.size() > 80) break;
-                    links.add(urls[index]);
-                    index++;
-                }
-                sb.delete(0, sb.capacity());
-                sb.append("auth=BVm96BWDSoB4WkfbEhn42HgnjIe1ilMt&bz=1&md5=1&file_id=");
-                int c = 0;
-                for (DownloadLink dl : links) {
-                    if (c > 0) sb.append(";");
-                    sb.append(Netloadin.getID(dl.getDownloadURL()));
-                    c++;
-                }
-                br.postPage("http://api.netload.in/info.php", sb.toString());
-                String infos[][] = br.getRegex(Pattern.compile("(.*?);(.*?);(\\d+);(.*?);([0-9a-fA-F]+)")).getMatches();
-                for (DownloadLink dl : links) {
-                    String id = Netloadin.getID(dl.getDownloadURL());
-                    int hit = -1;
-                    for (int i = 0; i < infos.length; i++) {
-                        if (infos[i][0].equalsIgnoreCase(id)) {
-                            hit = i;
-                            break;
-                        }
-                    }
-                    if (hit == -1) {
-                        /* id not in response, so its offline */
-                        dl.setAvailable(false);
-                    } else {
-                        dl.setFinalFileName(infos[hit][1].trim());
-                        dl.setDownloadSize(SizeFormatter.getSize(infos[hit][2]));
-                        if (infos[hit][3].trim().equalsIgnoreCase("online")) {
-                            dl.setAvailable(true);
-                            dl.setMD5Hash(infos[hit][4].trim());
-                        } else {
-                            dl.setAvailable(false);
-                        }
-                    }
-                }
-                if (index == urls.length) break;
+            if (br != null) {
+                br.setConnectTimeout(30000);
+                br.setReadTimeout(120000);
             }
-        } catch (Exception e) {
-            return false;
+        } catch (Throwable e) {
         }
-        return true;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
-        try {
-            DownloadLink urls[] = new DownloadLink[1];
-            urls[0] = downloadLink;
-            checkLinks(urls);
-            if (!downloadLink.isAvailabilityStatusChecked()) return AvailableStatus.UNCHECKED;
-            if (downloadLink.isAvailable()) return AvailableStatus.TRUE;
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } catch (PluginException e) {
-            /* workaround for buggy api */
-            /* workaround for stable */
-            DownloadLink tmpLink = new DownloadLink(null, "temp", "temp", "temp", false);
-            LinkStatus linkState = new LinkStatus(tmpLink);
-            e.fillLinkStatus(linkState);
-            if (linkState.hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
-                return websiteFileCheck(downloadLink);
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
-    @Override
-    public void reset() {
-    }
-
-    @Override
-    public void resetPluginGlobals() {
-
     }
 }

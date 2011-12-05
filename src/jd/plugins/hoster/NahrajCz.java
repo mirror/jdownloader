@@ -37,30 +37,19 @@ public class NahrajCz extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://nahraj.cz/";
-    }
-
-    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         String downloadlinklink = link.getDownloadURL().replaceAll("(view|download)", "view");
         link.setUrlDownload(downloadlinklink);
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        String dlpage = link.getDownloadURL().replaceAll("(view|download)", "download");
-        br.getPage(dlpage);
-        if (br.containsHTML("Neznamý soubor")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename0 = br.getRegex("class=\"title\">(.*?)</span>").getMatch(0);
-        String filename1 = br.getRegex("content/dw/.*?-.*?-.*?-.*?-.*?/.*?(\\..*?)\">.*?<div id=\"widget").getMatch(0);
-        String filename = filename0 + filename1;
-        String filesize = br.getRegex("class=\"size\">(.*?)</span>").getMatch(0);
-        if (filename0 == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://nahraj.cz/";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
     }
 
     @Override
@@ -93,12 +82,23 @@ public class NahrajCz extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        String dlpage = link.getDownloadURL().replaceAll("(view|download)", "download");
+        br.getPage(dlpage);
+        if (br.containsHTML("Neznamý soubor")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename0 = br.getRegex("class=\"title\">(.*?)</span>").getMatch(0);
+        String filename1 = br.getRegex("content/dw/.*?-.*?-.*?-.*?-.*?/.*?(\\..*?)\">.*?<div id=\"widget").getMatch(0);
+        String filename = filename0 + filename1;
+        String filesize = br.getRegex("class=\"size\">(.*?)</span>").getMatch(0);
+        if (filename0 == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        link.setName(filename);
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+    public void reset() {
     }
 
     @Override

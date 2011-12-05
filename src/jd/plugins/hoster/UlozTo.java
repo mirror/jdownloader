@@ -26,11 +26,11 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -42,43 +42,51 @@ public class UlozTo extends PluginForHost {
         this.enablePremium("http://uloz.to/kredit/");
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://ulozto.net/podminky/";
-    }
-
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)", "uloz.to"));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.setFollowRedirects(false);
-        handleDownloadUrl(downloadLink);
-        String continuePage = br.getRegex("<p><a href=\"(http://.*?)\">Please click here to continue</a>").getMatch(0);
-        if (continuePage != null) {
-            downloadLink.setUrlDownload(continuePage);
-            br.getPage(downloadLink.getDownloadURL());
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
         }
-        // Wrong links show the mainpage so here we check if we got the mainpage
-        // or not
-        if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(Pattern.compile("\\&t=(.*?)\"")).getMatch(0);
-        if (filename == null) filename = br.getRegex(Pattern.compile("cptm=;Pe/\\d+/(.*?)\\?b")).getMatch(0);
-        String filesize = br.getRegex(Pattern.compile("style=\"top:\\-55px;\"><div>\\d+:\\d+ \\| (.*?)</div></div>")).getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("class=\"info_velikost\" style=\"top:\\-55px;\">[\t\n\r ]+<div>[\t\n\r ]+\\d{2}:\\d{2}(:\\d{2})? \\| (.*?)</div>").getMatch(1);
-            if (filesize == null) {
-                filesize = br.getRegex("<span>Velikost:</span> <span class=\"green\">(.*?)</span>").getMatch(0);
-            }
+        br.getPage("http://www.uloz.to/nastaveni/");
+        String trafficleft = br.getRegex("class=\"credit\"><a href=\"/kredit/\" class=\"coins\" title=\"([^<>\"\\']+) = ").getMatch(0);
+        if (trafficleft != null) ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+        ai.setStatus("Premium User");
+        account.setValid(true);
+        return ai;
+    }
 
+    @Override
+    public String getAGBLink() {
+        return "http://ulozto.net/podminky/";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    private void handleDownloadUrl(DownloadLink downloadLink) throws IOException {
+        br.getPage(downloadLink.getDownloadURL());
+        if (downloadLink.getDownloadURL().matches(".*?bagruj\\.cz/[a-z0-9]{12}.*?") && br.getRedirectLocation() != null) {
+            downloadLink.setUrlDownload(br.getRedirectLocation());
+            br.getPage(downloadLink.getDownloadURL());
+        } else if (br.getRedirectLocation() != null) {
+            logger.info("Getting redirect-page");
+            br.getPage(br.getRedirectLocation());
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -137,47 +145,6 @@ public class UlozTo extends PluginForHost {
         dl.startDownload();
     }
 
-    private void handleDownloadUrl(DownloadLink downloadLink) throws IOException {
-        br.getPage(downloadLink.getDownloadURL());
-        if (downloadLink.getDownloadURL().matches(".*?bagruj\\.cz/[a-z0-9]{12}.*?") && br.getRedirectLocation() != null) {
-            downloadLink.setUrlDownload(br.getRedirectLocation());
-            br.getPage(downloadLink.getDownloadURL());
-        } else if (br.getRedirectLocation() != null) {
-            logger.info("Getting redirect-page");
-            br.getPage(br.getRedirectLocation());
-        }
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    public void login(Account account) throws Exception {
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCustomCharset("utf-8");
-        br.postPage("http://www.uloz.to/?do=authForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&trvale=on&login=P%C5%99ihl%C3%A1sit");
-        if (br.getCookie("http://uloz.to/", "autologin") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        br.getPage("http://www.uloz.to/nastaveni/");
-        String trafficleft = br.getRegex("class=\"credit\"><a href=\"/kredit/\" class=\"coins\" title=\"([^<>\"\\']+) = ").getMatch(0);
-        if (trafficleft != null) ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
-        ai.setStatus("Premium User");
-        account.setValid(true);
-        return ai;
-    }
-
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
@@ -194,9 +161,47 @@ public class UlozTo extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    public void login(Account account) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCustomCharset("utf-8");
+        br.postPage("http://www.uloz.to/?do=authForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&trvale=on&login=P%C5%99ihl%C3%A1sit");
+        if (br.getCookie("http://uloz.to/", "autologin") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.setFollowRedirects(false);
+        handleDownloadUrl(downloadLink);
+        String continuePage = br.getRegex("<p><a href=\"(http://.*?)\">Please click here to continue</a>").getMatch(0);
+        if (continuePage != null) {
+            downloadLink.setUrlDownload(continuePage);
+            br.getPage(downloadLink.getDownloadURL());
+        }
+        // Wrong links show the mainpage so here we check if we got the mainpage
+        // or not
+        if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex(Pattern.compile("\\&t=(.*?)\"")).getMatch(0);
+        if (filename == null) filename = br.getRegex(Pattern.compile("cptm=;Pe/\\d+/(.*?)\\?b")).getMatch(0);
+        String filesize = br.getRegex(Pattern.compile("style=\"top:\\-55px;\"><div>\\d+:\\d+ \\| (.*?)</div></div>")).getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("class=\"info_velikost\" style=\"top:\\-55px;\">[\t\n\r ]+<div>[\t\n\r ]+\\d{2}:\\d{2}(:\\d{2})? \\| (.*?)</div>").getMatch(1);
+            if (filesize == null) {
+                filesize = br.getRegex("<span>Velikost:</span> <span class=\"green\">(.*?)</span>").getMatch(0);
+            }
+
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -204,10 +209,10 @@ public class UlozTo extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

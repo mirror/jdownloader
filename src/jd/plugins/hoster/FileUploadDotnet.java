@@ -49,6 +49,38 @@ public class FileUploadDotnet extends PluginForHost {
     }
 
     // @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
+    }
+
+    // @Override
+    /*
+     * /* public String getVersion() {
+     * 
+     * return getVersion("$Revision$"); }
+     */
+
+    // @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        br.getHeaders().put("User-Agent", UA);
+        if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
+            /* DownloadFiles */
+            Form form = br.getForm(0);
+            form.setAction(Encoding.htmlDecode(form.getAction()));
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form);
+        } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
+            /* DownloadFiles */
+            String downloadurl = br.getRegex("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getMatch(0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadurl);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+
+        dl.startDownload();
+    }
+
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -90,47 +122,15 @@ public class FileUploadDotnet extends PluginForHost {
     }
 
     // @Override
-    /*
-     * /* public String getVersion() {
-     * 
-     * return getVersion("$Revision$"); }
-     */
-
-    // @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        br.getHeaders().put("User-Agent", UA);
-        if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
-            /* DownloadFiles */
-            Form form = br.getForm(0);
-            form.setAction(Encoding.htmlDecode(form.getAction()));
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form);
-        } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
-            /* DownloadFiles */
-            String downloadurl = br.getRegex("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getMatch(0);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadurl);
-        } else {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-
-        dl.startDownload();
-    }
-
-    // @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
-    }
-
-    // @Override
     public void reset() {
+    }
+
+    // @Override
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     // @Override
     public void resetPluginGlobals() {
 
-    }
-
-    // @Override
-    public void resetDownloadlink(DownloadLink link) {
     }
 }

@@ -22,13 +22,13 @@ public class ZeroAPremium extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        return AvailableStatus.FALSE;
+    public void handleFree(DownloadLink link) throws Exception {
+        throw new PluginException(LinkStatus.ERROR_FATAL, "DUMMY PLUGIN");
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        throw new PluginException(LinkStatus.ERROR_FATAL, "DUMMY PLUGIN");
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        return AvailableStatus.FALSE;
     }
 
     @Override

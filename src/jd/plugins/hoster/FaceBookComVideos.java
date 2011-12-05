@@ -59,57 +59,6 @@ public class FaceBookComVideos extends PluginForHost {
         link.setUrlDownload(thislink);
     }
 
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        br.setCookie("http://www.facebook.com", "locale", "en_GB");
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null || !aa.isValid()) {
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.facebookvideos.only4registered", "Links can only be checked if a valid account is entered"));
-            return AvailableStatus.UNCHECKABLE;
-        }
-        br.setFollowRedirects(true);
-        login(aa, false, br);
-        br.getPage(link.getDownloadURL());
-        String getThisPage = br.getRegex("window\\.location\\.replace\\(\"(http:.*?)\"").getMatch(0);
-        if (getThisPage != null) br.getPage(getThisPage.replace("\\", ""));
-        if (br.containsHTML("(No htmlCode read|>Dieses Video wurde entweder von Facebook entfernt oder)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        dllink = Encoding.urlDecode(decodeUnicode(br.getRegex(DLLINKREGEXP).getMatch(1)), true);
-        // extrahiere Videoname aus HTML-Quellcode
-        String filename = br.getRegex("class=\"video_title datawrap\">(.*)</h3>").getMatch(0);
-        // wird nichts gefunden, versuche Videoname aus einem anderen
-        // Teil des Quellcodes rauszusuchen
-        if (filename == null) {
-            filename = br.getRegex("<title>Facebook \\| Videos posted by .*: (.*)</title>").getMatch(0);
-            if (filename == null) {
-                // Immer versuchen, allgemeine Regexes zu machen, da die
-                // Spracheinstellung nicht per Cookie funktioniert und jedes mal
-                // die Sprache ändern sinnlos ist!
-                filename = br.getRegex("class=\"mbs\"><span class=\"mtm mbs mrs fsm fwn fcg\">[A-Za-z]{1,30}:</span>(.*?)<span class").getMatch(0);
-                // falls Videoname immer noch nicht gefunden wurde, dann
-                // versuche Username & Video-ID als Filename zu nehmen
-                if (filename == null) {
-                    filename = br.getRegex("<title>Facebook \\| Videos posted by (.*): .*</title>").getMatch(0);
-                    // falls Username gefunden wurde, so setze dies und Video-ID
-                    // zusammen
-                    if (filename != null) {
-                        final String videoid = new Regex(link.getDownloadURL(), "facebook\\.com/video/video\\.php\\?v=(\\d+)").getMatch(0);
-                        filename = filename + " - Video_" + videoid;
-                    }
-                }
-            }
-        }
-
-        // wurde Filename extrahiert, setze entgültiger Dateiname &
-        // Dateiendung
-        if (filename != null) {
-            filename = filename.trim();
-            link.setFinalFileName(filename + ".mp4");
-            return AvailableStatus.TRUE;
-        } else {
-            // falls nicht, so setze den Download als nicht verfügbar
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-    }
-
     public String decodeUnicode(final String s) {
         final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
         String res = s;
@@ -236,6 +185,57 @@ public class FaceBookComVideos extends PluginForHost {
             account.setProperty("pass", Encoding.urlEncode(account.getPass()));
             account.setProperty("cookies", cookies);
             account.setValid(true);
+        }
+    }
+
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        br.setCookie("http://www.facebook.com", "locale", "en_GB");
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa == null || !aa.isValid()) {
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.facebookvideos.only4registered", "Links can only be checked if a valid account is entered"));
+            return AvailableStatus.UNCHECKABLE;
+        }
+        br.setFollowRedirects(true);
+        login(aa, false, br);
+        br.getPage(link.getDownloadURL());
+        String getThisPage = br.getRegex("window\\.location\\.replace\\(\"(http:.*?)\"").getMatch(0);
+        if (getThisPage != null) br.getPage(getThisPage.replace("\\", ""));
+        if (br.containsHTML("(No htmlCode read|>Dieses Video wurde entweder von Facebook entfernt oder)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        dllink = Encoding.urlDecode(decodeUnicode(br.getRegex(DLLINKREGEXP).getMatch(1)), true);
+        // extrahiere Videoname aus HTML-Quellcode
+        String filename = br.getRegex("class=\"video_title datawrap\">(.*)</h3>").getMatch(0);
+        // wird nichts gefunden, versuche Videoname aus einem anderen
+        // Teil des Quellcodes rauszusuchen
+        if (filename == null) {
+            filename = br.getRegex("<title>Facebook \\| Videos posted by .*: (.*)</title>").getMatch(0);
+            if (filename == null) {
+                // Immer versuchen, allgemeine Regexes zu machen, da die
+                // Spracheinstellung nicht per Cookie funktioniert und jedes mal
+                // die Sprache ändern sinnlos ist!
+                filename = br.getRegex("class=\"mbs\"><span class=\"mtm mbs mrs fsm fwn fcg\">[A-Za-z]{1,30}:</span>(.*?)<span class").getMatch(0);
+                // falls Videoname immer noch nicht gefunden wurde, dann
+                // versuche Username & Video-ID als Filename zu nehmen
+                if (filename == null) {
+                    filename = br.getRegex("<title>Facebook \\| Videos posted by (.*): .*</title>").getMatch(0);
+                    // falls Username gefunden wurde, so setze dies und Video-ID
+                    // zusammen
+                    if (filename != null) {
+                        final String videoid = new Regex(link.getDownloadURL(), "facebook\\.com/video/video\\.php\\?v=(\\d+)").getMatch(0);
+                        filename = filename + " - Video_" + videoid;
+                    }
+                }
+            }
+        }
+
+        // wurde Filename extrahiert, setze entgültiger Dateiname &
+        // Dateiendung
+        if (filename != null) {
+            filename = filename.trim();
+            link.setFinalFileName(filename + ".mp4");
+            return AvailableStatus.TRUE;
+        } else {
+            // falls nicht, so setze den Download als nicht verfügbar
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 

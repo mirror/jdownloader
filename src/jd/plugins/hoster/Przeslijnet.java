@@ -42,6 +42,21 @@ public class Przeslijnet extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        /* Nochmals das File überprüfen */
+        requestFileInformation(downloadLink);
+        String dllink = Encoding.htmlDecode(br.getRegex("onClick=\"window\\.location=\\\\\'(.*?)\\\\\'").getMatch(0));
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /* Datei herunterladen */
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink).startDownload();
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
             br.getPage(downloadLink.getDownloadURL());
@@ -57,29 +72,14 @@ public class Przeslijnet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        /* Nochmals das File überprüfen */
-        requestFileInformation(downloadLink);
-        String dllink = Encoding.htmlDecode(br.getRegex("onClick=\"window\\.location=\\\\\'(.*?)\\\\\'").getMatch(0));
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        /* Datei herunterladen */
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink).startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

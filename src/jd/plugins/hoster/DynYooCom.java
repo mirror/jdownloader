@@ -32,6 +32,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dynyoo.com" }, urls = { "http://(www\\.)?dynyoo\\.com/\\?goto=dl\\&id=[a-z0-9]{32}" }, flags = { 0 })
 public class DynYooCom extends PluginForHost {
 
+    private static final String FILEIDREGEX = "dynyoo\\.com/\\?goto=dl\\&id=(.+)";
+
     public DynYooCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,7 +43,22 @@ public class DynYooCom extends PluginForHost {
         return "http://dynyoo.com/?goto=faq";
     }
 
-    private static final String FILEIDREGEX = "dynyoo\\.com/\\?goto=dl\\&id=(.+)";
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://dynyoo.com/downloadnow.php?id=" + new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0), true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The finallink doesn't seem to be a file...");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -62,24 +79,7 @@ public class DynYooCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://dynyoo.com/downloadnow.php?id=" + new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The finallink doesn't seem to be a file...");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

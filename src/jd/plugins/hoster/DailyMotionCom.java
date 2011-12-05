@@ -36,12 +36,58 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://(www\\.)?dailymotion\\.com/video/[a-z0-9]+" }, flags = { 2 })
 public class DailyMotionCom extends PluginForHost {
 
+    public String dllink = null;
+
+    private static final String MAINPAGE               = "http://www.dailymotion.com/";
+
+    private static final String REGISTEREDONLY1        = "this content as suitable for mature audiences only";
+
+    private static final String REGISTEREDONLY2        = "You must be logged in, over 18 years old, and set your family filter OFF, in order to watch it";
+    private static final String REGISTEREDONLYUSERTEXT = "Download only possible for registered users";
+    private String[]            subtitles              = null;
     public DailyMotionCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.dailymotion.com/register");
     }
+    public void doFree(DownloadLink downloadLink) throws Exception {
+        // They do allow resume and unlimited chunks but resuming or using more
+        // than 1 chunk causes problems, the file will then b corrupted!
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (dl.startDownload()) {
+            if (subtitles != null && subtitles.length != 0) {
+                String previousFilename = downloadLink.getName();
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.downloadingsubtitles", "Downloading subtitles..."));
+                for (String subtitlelink : subtitles) {
+                    final String language = new Regex(subtitlelink, ".*?\\d+:subtitle_(.{1,4}).srt.*?").getMatch(0);
+                    if (language != null)
+                        downloadLink.setFinalFileName("Subtitle_" + language + ".srt");
+                    else
+                        downloadLink.setFinalFileName("Subtitle_" + Integer.toString(new Random().nextInt(1000)) + ".srt");
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, subtitlelink, false, 1);
+                    if (!dl.getConnection().getContentType().contains("html")) dl.startDownload();
+                }
+                downloadLink.setName(previousFilename);
+            }
+        }
+    }
 
-    public String dllink = null;
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Registered (free) User");
+        return ai;
+    }
 
     @Override
     public String getAGBLink() {
@@ -49,11 +95,38 @@ public class DailyMotionCom extends PluginForHost {
 
     }
 
-    private static final String MAINPAGE               = "http://www.dailymotion.com/";
-    private static final String REGISTEREDONLY1        = "this content as suitable for mature audiences only";
-    private static final String REGISTEREDONLY2        = "You must be logged in, over 18 years old, and set your family filter OFF, in order to watch it";
-    private static final String REGISTEREDONLYUSERTEXT = "Download only possible for registered users";
-    private String[]            subtitles              = null;
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (dllink.contains(REGISTEREDONLY1) || dllink.contains(REGISTEREDONLY2)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.dailymotioncom.only4registered", REGISTEREDONLYUSERTEXT));
+        doFree(downloadLink);
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        login(account);
+        requestFileInformation(link);
+        doFree(link);
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("X-Prototype-Version", "1.6.1");
+        br.postPage("http://www.dailymotion.com/pageitem/login?urlback=%2Fde&request=%2Flogin", "form_name=dm_pageitem_login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&rememberme=1&login_submit=Login");
+        if (br.getCookie(MAINPAGE, "sid") == null || br.getCookie(MAINPAGE, "dailymotion_auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
@@ -127,87 +200,14 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (dllink.contains(REGISTEREDONLY1) || dllink.contains(REGISTEREDONLY2)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.dailymotioncom.only4registered", REGISTEREDONLYUSERTEXT));
-        doFree(downloadLink);
-    }
-
-    public void doFree(DownloadLink downloadLink) throws Exception {
-        // They do allow resume and unlimited chunks but resuming or using more
-        // than 1 chunk causes problems, the file will then b corrupted!
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (dl.startDownload()) {
-            if (subtitles != null && subtitles.length != 0) {
-                String previousFilename = downloadLink.getName();
-                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.downloadingsubtitles", "Downloading subtitles..."));
-                for (String subtitlelink : subtitles) {
-                    final String language = new Regex(subtitlelink, ".*?\\d+:subtitle_(.{1,4}).srt.*?").getMatch(0);
-                    if (language != null)
-                        downloadLink.setFinalFileName("Subtitle_" + language + ".srt");
-                    else
-                        downloadLink.setFinalFileName("Subtitle_" + Integer.toString(new Random().nextInt(1000)) + ".srt");
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, subtitlelink, false, 1);
-                    if (!dl.getConnection().getContentType().contains("html")) dl.startDownload();
-                }
-                downloadLink.setName(previousFilename);
-            }
-        }
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getHeaders().put("X-Prototype-Version", "1.6.1");
-        br.postPage("http://www.dailymotion.com/pageitem/login?urlback=%2Fde&request=%2Flogin", "form_name=dm_pageitem_login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&rememberme=1&login_submit=Login");
-        if (br.getCookie(MAINPAGE, "sid") == null || br.getCookie(MAINPAGE, "dailymotion_auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        ai.setUnlimitedTraffic();
-        ai.setStatus("Registered (free) User");
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        login(account);
-        requestFileInformation(link);
-        doFree(link);
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

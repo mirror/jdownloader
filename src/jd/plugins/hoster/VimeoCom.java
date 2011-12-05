@@ -48,60 +48,6 @@ public class VimeoCom extends PluginForHost {
         this.enablePremium("http://vimeo.com/join");
     }
 
-    public String getAGBLink() {
-        return AGB;
-    }
-
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL() + "?hd=1");
-        if (br.containsHTML(">Page not found on Vimeo<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String clipID = br.getRegex("targ_clip_id:   (\\d+)").getMatch(0);
-        this.clipData = br.getPage("/moogaloop/load/clip:" + clipID + "/local?param_force_embed=0&param_clip_id=" + clipID + "&param_show_portrait=0&param_multimoog=&param_server=vimeo.com&param_show_title=0&param_autoplay=0&param_show_byline=0&param_color=00ADEF&param_fullscreen=1&param_md5=0&param_context_id=&context_id=null");
-        String title = getClipData("caption");
-        String clipId = getClipData("clip_id");
-        if (clipId == null) clipId = getClipData("nodeId");
-        String dlURL = "/moogaloop/play/clip:" + clipId + "/" + getClipData("request_signature") + "/" + getClipData("request_signature_expires") + "/?q=" + (getClipData("isHD").equals("1") ? "hd" : "sd");
-        br.setFollowRedirects(false);
-        br.getPage(dlURL);
-        this.finalURL = br.getRedirectLocation();
-        if (finalURL == null || title == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        title = Encoding.htmlDecode(title);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(finalURL);
-            if (con.getContentType() != null && con.getContentType().contains("mp4")) {
-                downloadLink.setName(title + ".mp4");
-            } else {
-                downloadLink.setName(title + ".flv");
-            }
-            if ("FREE".equals(downloadLink.getStringProperty("LASTTYPE", "FREE"))) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
-    }
-
-    private String getClipData(String tag) {
-        return new Regex(this.clipData, "<" + tag + ">(.*?)</" + tag + ">").getMatch(0);
-    }
-
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (!"FREE".equals(downloadLink.getStringProperty("LASTTYPE", "FREE"))) {
-            downloadLink.setProperty("LASTTYPE", "FREE");
-            downloadLink.setChunksProgress(null);
-            downloadLink.setDownloadSize(0);
-        }
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
-    }
-
     public void doFree(DownloadLink downloadLink) throws Exception {
         if (!"FREE".equals(downloadLink.getStringProperty("LASTTYPE", "FREE"))) {
             downloadLink.setProperty("LASTTYPE", "FREE");
@@ -118,6 +64,101 @@ public class VimeoCom extends PluginForHost {
         // extensions
         downloadLink.setFinalFileName(downloadLink.getName());
         downloadLink.setProperty("LASTTYPE", "FREE");
+        dl.startDownload();
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        synchronized (LOCK) {
+            AccountInfo ai = new AccountInfo();
+            if (!new Regex(account.getUser(), ".*?@.*?\\..+").matches()) {
+                account.setProperty("cookies", null);
+                account.setValid(false);
+                ai.setStatus("Invalid email address");
+                return ai;
+
+            }
+            try {
+                login(account, true);
+            } catch (PluginException e) {
+                account.setProperty("cookies", null);
+                account.setValid(false);
+                return ai;
+            }
+            br.getPage("http://vimeo.com/settings");
+            String type = br.getRegex("acct_status\">.*?>(.*?)<").getMatch(0);
+            if (type != null) {
+                ai.setStatus(type);
+            } else {
+                ai.setStatus(null);
+            }
+            account.setValid(true);
+            ai.setUnlimitedTraffic();
+            return ai;
+        }
+    }
+
+    public String getAGBLink() {
+        return AGB;
+    }
+
+    private String getClipData(String tag) {
+        return new Regex(this.clipData, "<" + tag + ">(.*?)</" + tag + ">").getMatch(0);
+    }
+
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        if (!"FREE".equals(downloadLink.getStringProperty("LASTTYPE", "FREE"))) {
+            downloadLink.setProperty("LASTTYPE", "FREE");
+            downloadLink.setChunksProgress(null);
+            downloadLink.setDownloadSize(0);
+        }
+        requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        if (!"PREMIUM".equals(link.getStringProperty("LASTTYPE", "FREE"))) {
+            link.setProperty("LASTTYPE", "PREMIUM");
+            link.setChunksProgress(null);
+            link.setDownloadSize(0);
+        }
+        requestFileInformation(link);
+        login(account, false);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("\">Sorry, not available for download")) {
+            logger.info("No download available for link: " + link.getDownloadURL() + " , downloading as unregistered user...");
+            doFree(link);
+            return;
+        }
+        String dllink = br.getRegex("class=\"download\">[\t\n\r ]+<a href=\"(/.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(/download/video:\\d+\\?v=\\d+\\&e=\\d+\\&h=[a-z0-9]+\\&uh=[a-z0-9]+)\"").getMatch(0);
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = MAINPAGE + dllink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String oldName = link.getName();
+        String newName = getFileNameFromHeader(dl.getConnection());
+        String name = oldName.substring(0, oldName.lastIndexOf(".")) + newName.substring(newName.lastIndexOf("."));
+        link.setName(name);
+        link.setProperty("LASTTYPE", "ACCOUNT");
         dl.startDownload();
     }
 
@@ -176,92 +217,51 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        synchronized (LOCK) {
-            AccountInfo ai = new AccountInfo();
-            if (!new Regex(account.getUser(), ".*?@.*?\\..+").matches()) {
-                account.setProperty("cookies", null);
-                account.setValid(false);
-                ai.setStatus("Invalid email address");
-                return ai;
-
-            }
-            try {
-                login(account, true);
-            } catch (PluginException e) {
-                account.setProperty("cookies", null);
-                account.setValid(false);
-                return ai;
-            }
-            br.getPage("http://vimeo.com/settings");
-            String type = br.getRegex("acct_status\">.*?>(.*?)<").getMatch(0);
-            if (type != null) {
-                ai.setStatus(type);
-            } else {
-                ai.setStatus(null);
-            }
-            account.setValid(true);
-            ai.setUnlimitedTraffic();
-            return ai;
-        }
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        if (!"PREMIUM".equals(link.getStringProperty("LASTTYPE", "FREE"))) {
-            link.setProperty("LASTTYPE", "PREMIUM");
-            link.setChunksProgress(null);
-            link.setDownloadSize(0);
-        }
-        requestFileInformation(link);
-        login(account, false);
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL() + "?hd=1");
+        if (br.containsHTML(">Page not found on Vimeo<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String clipID = br.getRegex("targ_clip_id:   (\\d+)").getMatch(0);
+        this.clipData = br.getPage("/moogaloop/load/clip:" + clipID + "/local?param_force_embed=0&param_clip_id=" + clipID + "&param_show_portrait=0&param_multimoog=&param_server=vimeo.com&param_show_title=0&param_autoplay=0&param_show_byline=0&param_color=00ADEF&param_fullscreen=1&param_md5=0&param_context_id=&context_id=null");
+        String title = getClipData("caption");
+        String clipId = getClipData("clip_id");
+        if (clipId == null) clipId = getClipData("nodeId");
+        String dlURL = "/moogaloop/play/clip:" + clipId + "/" + getClipData("request_signature") + "/" + getClipData("request_signature_expires") + "/?q=" + (getClipData("isHD").equals("1") ? "hd" : "sd");
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("\">Sorry, not available for download")) {
-            logger.info("No download available for link: " + link.getDownloadURL() + " , downloading as unregistered user...");
-            doFree(link);
-            return;
+        br.getPage(dlURL);
+        this.finalURL = br.getRedirectLocation();
+        if (finalURL == null || title == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        title = Encoding.htmlDecode(title);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(finalURL);
+            if (con.getContentType() != null && con.getContentType().contains("mp4")) {
+                downloadLink.setName(title + ".mp4");
+            } else {
+                downloadLink.setName(title + ".flv");
+            }
+            if ("FREE".equals(downloadLink.getStringProperty("LASTTYPE", "FREE"))) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            }
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
         }
-        String dllink = br.getRegex("class=\"download\">[\t\n\r ]+<a href=\"(/.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(/download/video:\\d+\\?v=\\d+\\&e=\\d+\\&h=[a-z0-9]+\\&uh=[a-z0-9]+)\"").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = MAINPAGE + dllink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String oldName = link.getName();
-        String newName = getFileNameFromHeader(dl.getConnection());
-        String name = oldName.substring(0, oldName.lastIndexOf(".")) + newName.substring(newName.lastIndexOf("."));
-        link.setName(name);
-        link.setProperty("LASTTYPE", "ACCOUNT");
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     public void reset() {
     }
 
-    public void resetPluginGlobals() {
-    }
-
     public void resetDownloadlink(DownloadLink link) {
         /* reset downloadtype back to free */
         link.setProperty("LASTTYPE", "FREE");
+    }
+
+    public void resetPluginGlobals() {
     }
 
 }

@@ -41,6 +41,10 @@ public class ShareHubCom extends PluginForHost {
         return "http://sharehub.com/tos.php";
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setDebug(true);
         AvailableStatus av = requestFileInformation(downloadLink);
@@ -66,10 +70,6 @@ public class ShareHubCom extends PluginForHost {
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     public void reset() {

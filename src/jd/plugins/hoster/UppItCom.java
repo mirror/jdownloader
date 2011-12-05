@@ -43,30 +43,8 @@ public class UppItCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Invalid download link|>File Not Found<|The file you were looking for could not be found,|<li>The file expired|<li>The file was deleted by its owner)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // Regexes for 3 kinds of links
-        Regex finfo = br.getRegex(">You have requested the file<br /><b>(.*?)</b> \\((.*?)\\)<br /><br");
-        String filename = br.getRegex("<font size=\"20\"><b>(.*?)</b></font>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>UppIT \\- Free File Sharing \\-(.*?)</title>").getMatch(0);
-            if (filename == null) {
-                filename = finfo.getMatch(0);
-                if (filename == null) filename = br.getRegex(">File download:\\&nbsp;<strong>(.*?)</strong>").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("<h3>File Size:</h3></td><td align=\"right\"><h3>(.*?)</h3>").getMatch(0);
-        if (filesize == null) {
-            filesize = finfo.getMatch(1);
-            if (filesize == null) filesize = br.getRegex("Size:\\&nbsp;\\&nbsp;<strong>(.*?)</strong><br").getMatch(0);
-        }
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -112,12 +90,34 @@ public class UppItCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>Invalid download link|>File Not Found<|The file you were looking for could not be found,|<li>The file expired|<li>The file was deleted by its owner)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Regexes for 3 kinds of links
+        Regex finfo = br.getRegex(">You have requested the file<br /><b>(.*?)</b> \\((.*?)\\)<br /><br");
+        String filename = br.getRegex("<font size=\"20\"><b>(.*?)</b></font>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>UppIT \\- Free File Sharing \\-(.*?)</title>").getMatch(0);
+            if (filename == null) {
+                filename = finfo.getMatch(0);
+                if (filename == null) filename = br.getRegex(">File download:\\&nbsp;<strong>(.*?)</strong>").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex("<h3>File Size:</h3></td><td align=\"right\"><h3>(.*?)</h3>").getMatch(0);
+        if (filesize == null) {
+            filesize = finfo.getMatch(1);
+            if (filesize == null) filesize = br.getRegex("Size:\\&nbsp;\\&nbsp;<strong>(.*?)</strong><br").getMatch(0);
+        }
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

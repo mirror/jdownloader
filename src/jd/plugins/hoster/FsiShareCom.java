@@ -42,21 +42,10 @@ public class FsiShareCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        // Often slow servers
-        br.setReadTimeout(60 * 1000);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>404 Not Found<|>Not Found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Name :([^<>\"]+)</p>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>FSI Share \\-(.*?)</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Filesize is now always displayed
-        String fileSize = br.getRegex(">Video Size : (.*?)</p>").getMatch(0);
-        if (fileSize != null) link.setDownloadSize(SizeFormatter.getSize(fileSize));
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".3gp");
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        // Max 5 connections at all, using more will result in disconnection or
+        // network errors
+        return 1;
     }
 
     @Override
@@ -82,14 +71,25 @@ public class FsiShareCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        // Often slow servers
+        br.setReadTimeout(60 * 1000);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>404 Not Found<|>Not Found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("Name :([^<>\"]+)</p>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>FSI Share \\-(.*?)</title>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Filesize is now always displayed
+        String fileSize = br.getRegex(">Video Size : (.*?)</p>").getMatch(0);
+        if (fileSize != null) link.setDownloadSize(SizeFormatter.getSize(fileSize));
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".3gp");
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        // Max 5 connections at all, using more will result in disconnection or
-        // network errors
-        return 1;
+    public void reset() {
     }
 
     @Override

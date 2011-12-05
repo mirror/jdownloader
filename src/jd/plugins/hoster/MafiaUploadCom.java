@@ -22,11 +22,11 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -40,6 +40,24 @@ public class MafiaUploadCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.mafiaupload.com/terms.php";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        /** Can be skipped */
+        // sleep(3 * 1000l, downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.mafiaupload.com/do.php?down=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0), true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -70,25 +88,7 @@ public class MafiaUploadCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        /** Can be skipped */
-        // sleep(3 * 1000l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.mafiaupload.com/do.php?down=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0), true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

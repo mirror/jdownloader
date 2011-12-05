@@ -33,6 +33,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moviesnxs.com" }, urls = { "http://(www\\.)?moviesnxs\\.com/web/gallery/mnxs\\.php\\?id=\\d+" }, flags = { 0 })
 public class MoviesNxsCom extends PluginForHost {
 
+    private static final String CAPTCHATEXT = "securimage_show\\.php";
+
     public MoviesNxsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,27 +44,9 @@ public class MoviesNxsCom extends PluginForHost {
         return "http://www.moviesnxs.com/web/movieboard/register.php";
     }
 
-    private static final String CAPTCHATEXT = "securimage_show\\.php";
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Clip not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex fInfo = br.getRegex("Type:(.{1,5})<BR>Dimensions: .{1,40} <BR>Duration: \\d+:\\d+ <BR>Audio: .{1,40}<BR>File Size: (.*?)<br>(Title: (.*?)<br>)?");
-        String filename = fInfo.getMatch(2);
-        String filesize = fInfo.getMatch(1);
-        if (filename != null) {
-            String ext = fInfo.getMatch(0);
-            if (ext == null)
-                ext = "";
-            else
-                ext = "." + ext;
-            link.setName(filename.trim() + ext);
-        }
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -98,13 +82,34 @@ public class MoviesNxsCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML(">Clip not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Regex fInfo = br.getRegex("Type:(.{1,5})<BR>Dimensions: .{1,40} <BR>Duration: \\d+:\\d+ <BR>Audio: .{1,40}<BR>File Size: (.*?)<br>(Title: (.*?)<br>)?");
+        String filename = fInfo.getMatch(2);
+        String filesize = fInfo.getMatch(1);
+        if (filename != null) {
+            String ext = fInfo.getMatch(0);
+            if (ext == null)
+                ext = "";
+            else
+                ext = "." + ext;
+            link.setName(filename.trim() + ext);
+        }
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

@@ -42,6 +42,29 @@ public class PlunderCom extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        String dllink = br.getRegex("<h2>Download</h2>.*?a href=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://pearl\\.plunder\\.com/x/.*?/.*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+        if ((dl.getConnection().getContentType().contains("html"))) {
+            br.followConnection();
+            String checklink = br.getURL();
+            if (br.containsHTML("Too many downloads from this IP") || checklink.contains("/blocked")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads!", 10 * 60 * 1000l);
+            if (br.containsHTML("You must log in to download more this session") || checklink.contains("/login/")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Register or perform a reconnect to download more!", 10 * 60 * 1001l);
+            if (checklink.contains("/error")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         br.getPage(downloadLink.getDownloadURL());
         // Sometimes the links are outdated but they show the new links, the
@@ -75,37 +98,14 @@ public class PlunderCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        String dllink = br.getRegex("<h2>Download</h2>.*?a href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://pearl\\.plunder\\.com/x/.*?/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
-        if ((dl.getConnection().getContentType().contains("html"))) {
-            br.followConnection();
-            String checklink = br.getURL();
-            if (br.containsHTML("Too many downloads from this IP") || checklink.contains("/blocked")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads!", 10 * 60 * 1000l);
-            if (br.containsHTML("You must log in to download more this session") || checklink.contains("/login/")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Register or perform a reconnect to download more!", 10 * 60 * 1001l);
-            if (checklink.contains("/error")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

@@ -35,27 +35,11 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zshare.net" }, urls = { "http://[\\w\\.]*?zshare\\.net/(download|video|image|audio|flash)/.*" }, flags = { 2 })
 public class ZShareNet extends PluginForHost {
 
+    public boolean nopremium = false;
+
     public ZShareNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.zshare.net/overview.php");
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.zshare.net/TOS.html";
-    }
-
-    public boolean nopremium = false;
-
-    public void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.getPage("http://www.zshare.net/myzshare/login.php");
-        br.postPage("http://zshare.net/myzshare/process.php?loc=http://zshare.net/myzshare/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("unverified")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage("http://zshare.net/myzshare/my-uploads.php");
-        String mysession = br.getCookie("http://www.zshare.net", "mysession");
-        if ((!br.containsHTML("Your premium account will expire in") && !br.containsHTML("Upgrade your account to Premium")) || mysession == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("Your premium account will expire in")) nopremium = true;
     }
 
     @Override
@@ -80,6 +64,66 @@ public class ZShareNet extends PluginForHost {
         }
         account.setValid(true);
         return ai;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.zshare.net/TOS.html";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        // Form abrufen
+        Form download = br.getForm(0);
+        String dlUrl = null;
+        if (download != null) {
+            // Formparameter setzen (zufällige Klickpositionen im Bild)
+            download.put("imageField.x", (Math.random() * 200) + "");
+            download.put("imageField.y", (Math.random() * 55) + "");
+            download.put("imageField", null);
+            // Form abschicken
+            br.submitForm(download);
+            String fnc = br.getRegex("var link_enc\\=new Array\\(\\'(.*?)\\'\\)").getMatch(0);
+            fnc = fnc.replaceAll("\\'\\,\\'", "");
+            dlUrl = fnc;
+        } else {
+            dlUrl = br.getRegex("<td bgcolor=\"#CCCCCC\">.*?<img src=\"(http://.*?\\.zshare\\.net/download/.*?)\"").getMatch(0);
+            if (dlUrl == null) {
+                dlUrl = br.getRegex("<td bgcolor=\"#CCCCCC\">.*?<img src=\"(.*?)\"").getMatch(0);
+                if (!dlUrl.startsWith("/")) dlUrl = "/" + dlUrl;
+            }
+        }
+        if (dlUrl == null) {
+            logger.warning("The dlUrl couldn't be found!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* they now check waittime */
+        sleep(50 * 1000l, downloadLink);
+        br.setDebug(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 1);
+        // Möglicherweise serverfehler...
+        if (!dl.getConnection().isContentDisposition() || dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The download couldn't be started, something is wrong...");
+            br.followConnection();
+            logger.info(br.toString());
+            if (br.containsHTML("/images/download.gif")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+            if (br.containsHTML("404 - Not Found") || br.getHttpConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getHeaders().get("Referer") != null && br.getHeaders().get("Referer").contains("token")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            logger.warning("Unsupported errormessage on downloadstart!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -129,9 +173,15 @@ public class ZShareNet extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.getPage("http://www.zshare.net/myzshare/login.php");
+        br.postPage("http://zshare.net/myzshare/process.php?loc=http://zshare.net/myzshare/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("unverified")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://zshare.net/myzshare/my-uploads.php");
+        String mysession = br.getCookie("http://www.zshare.net", "mysession");
+        if ((!br.containsHTML("Your premium account will expire in") && !br.containsHTML("Upgrade your account to Premium")) || mysession == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("Your premium account will expire in")) nopremium = true;
     }
 
     @Override
@@ -157,65 +207,15 @@ public class ZShareNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        // Form abrufen
-        Form download = br.getForm(0);
-        String dlUrl = null;
-        if (download != null) {
-            // Formparameter setzen (zufällige Klickpositionen im Bild)
-            download.put("imageField.x", (Math.random() * 200) + "");
-            download.put("imageField.y", (Math.random() * 55) + "");
-            download.put("imageField", null);
-            // Form abschicken
-            br.submitForm(download);
-            String fnc = br.getRegex("var link_enc\\=new Array\\(\\'(.*?)\\'\\)").getMatch(0);
-            fnc = fnc.replaceAll("\\'\\,\\'", "");
-            dlUrl = fnc;
-        } else {
-            dlUrl = br.getRegex("<td bgcolor=\"#CCCCCC\">.*?<img src=\"(http://.*?\\.zshare\\.net/download/.*?)\"").getMatch(0);
-            if (dlUrl == null) {
-                dlUrl = br.getRegex("<td bgcolor=\"#CCCCCC\">.*?<img src=\"(.*?)\"").getMatch(0);
-                if (!dlUrl.startsWith("/")) dlUrl = "/" + dlUrl;
-            }
-        }
-        if (dlUrl == null) {
-            logger.warning("The dlUrl couldn't be found!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* they now check waittime */
-        sleep(50 * 1000l, downloadLink);
-        br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 1);
-        // Möglicherweise serverfehler...
-        if (!dl.getConnection().isContentDisposition() || dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The download couldn't be started, something is wrong...");
-            br.followConnection();
-            logger.info(br.toString());
-            if (br.containsHTML("/images/download.gif")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
-            if (br.containsHTML("404 - Not Found") || br.getHttpConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.getHeaders().get("Referer") != null && br.getHeaders().get("Referer").contains("token")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            logger.warning("Unsupported errormessage on downloadstart!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public void resetPluginGlobals() {
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
 
+    }
+
+    @Override
+    public void resetPluginGlobals() {
     }
 }

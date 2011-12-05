@@ -47,55 +47,6 @@ public class FourFastFileCom extends PluginForHost {
         if (!"abv-fs/".equals(languageText)) link.setUrlDownload(link.getDownloadURL().replace(languageText, ""));
     }
 
-    // Using same script as 1-upload.com and 1clickshare.net
-    @Override
-    public String getAGBLink() {
-        return "http://4fastfile.com/terms";
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("This file is either removed due to copyright claim or deleted by his owner\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>4FastFile\\.com \\- Download (.*?)</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<td class=\"file\\-name\">(.*?)</td>").getMatch(0);
-        String filesize = br.getRegex("<td class=\"file-size\">(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        Form dlform = br.getFormbyProperty("id", "abv-fs-download-form");
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String waitfbid = dlform.getRegex("form_build_id\" id=\"(.*?)\"").getMatch(0);
-        if (waitfbid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dlform.put("waitfbid", waitfbid);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setDebug(true);
-        br.setFollowRedirects(true);
-        br.getPage("http://4fastfile.com/user/login");
-        Form loginform = br.getFormbyProperty("id", "user-login");
-        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        loginform.put("name", Encoding.urlEncode(account.getUser()));
-        loginform.put("pass", Encoding.urlEncode(account.getPass()));
-        br.submitForm(loginform);
-        if (!br.containsHTML("<dd>Your Premium Membership will expire on")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -118,6 +69,38 @@ public class FourFastFileCom extends PluginForHost {
         return ai;
     }
 
+    // Using same script as 1-upload.com and 1clickshare.net
+    @Override
+    public String getAGBLink() {
+        return "http://4fastfile.com/terms";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        Form dlform = br.getFormbyProperty("id", "abv-fs-download-form");
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String waitfbid = dlform.getRegex("form_build_id\" id=\"(.*?)\"").getMatch(0);
+        if (waitfbid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dlform.put("waitfbid", waitfbid);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
@@ -134,18 +117,35 @@ public class FourFastFileCom extends PluginForHost {
 
     }
 
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setDebug(true);
+        br.setFollowRedirects(true);
+        br.getPage("http://4fastfile.com/user/login");
+        Form loginform = br.getFormbyProperty("id", "user-login");
+        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        loginform.put("name", Encoding.urlEncode(account.getUser()));
+        loginform.put("pass", Encoding.urlEncode(account.getPass()));
+        br.submitForm(loginform);
+        if (!br.containsHTML("<dd>Your Premium Membership will expire on")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("This file is either removed due to copyright claim or deleted by his owner\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>4FastFile\\.com \\- Download (.*?)</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<td class=\"file\\-name\">(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex("<td class=\"file-size\">(.*?)</td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

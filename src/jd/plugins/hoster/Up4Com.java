@@ -43,34 +43,16 @@ public class Up4Com extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCookie("http://up-4.com", "mfh_mylang", "en");
-        br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<b>File name:</b></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
-        if (filename == null) {
-            br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
-            if (filename == null) {
-                br.getRegex("<title>(.*?)</title>").getMatch(0);
-            }
-            if (filename == null) {
-                br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("<b>File size:</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-//        br.postPage(link.getDownloadURL(), "Free=Free+Users"); not needed anymore
+        // br.postPage(link.getDownloadURL(), "Free=Free+Users"); not needed
+        // anymore
         String passCode = null;
         for (int i = 0; i <= 3; i++) {
             Form captchaform = br.getFormbyProperty("name", "validateform");
@@ -137,17 +119,41 @@ public class Up4Com extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCookie("http://up-4.com", "mfh_mylang", "en");
+        br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<b>File name:</b></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
+        if (filename == null) {
+            br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
+            if (filename == null) {
+                br.getRegex("<title>(.*?)</title>").getMatch(0);
+            }
+            if (filename == null) {
+                br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex("<b>File size:</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setName(filename.trim());
+        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void reset() {
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
 }

@@ -38,8 +38,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploader.pl" }, urls = { "http://[\\w\\.]*?uploader.pl/([a-z]{2}/)?file/\\d+/" }, flags = { 2 })
 public class UploaderPl extends PluginForHost {
 
-    private int simultanpremium = 1;
-    private static final Object PREMLOCK = new Object();
+    private int                 simultanpremium = 1;
+    private static final Object PREMLOCK        = new Object();
 
     public UploaderPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,49 +48,6 @@ public class UploaderPl extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("/pl/", "/en/"));
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        handleFree0(downloadLink);
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    public void handleFree0(DownloadLink downloadLink) throws Exception {
-        br.getPage(downloadLink.getDownloadURL());
-        String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.clearCookies("uploader.pl");
-        br.getPage("http://uploader.pl/en/login.php");
-        Form login = br.getForm(0);
-        login.put("user", Encoding.urlEncode(account.getUser()));
-        login.put("pass", Encoding.urlEncode(account.getPass()));
-        login.put("autologin", "0");
-        br.submitForm(login);
-        String cookie1 = br.getCookie("http://uploader.pl/", "yab_uid");
-        if (cookie1 == null || cookie1.equalsIgnoreCase("0")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    private boolean isPremium() throws IOException {
-        br.getPage("http://uploader.pl/en/members.php?overview=1");
-        if (br.containsHTML("package_info'\\)\"><b>Zareje")) return false;
-        return true;
     }
 
     @Override
@@ -120,10 +77,39 @@ public class UploaderPl extends PluginForHost {
     }
 
     @Override
+    public String getAGBLink() {
+        return "http://uploader.pl/rules.php";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         synchronized (PREMLOCK) {
             return simultanpremium;
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        handleFree0(downloadLink);
+    }
+
+    public void handleFree0(DownloadLink downloadLink) throws Exception {
+        br.getPage(downloadLink.getDownloadURL());
+        String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -158,9 +144,23 @@ public class UploaderPl extends PluginForHost {
         }
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://uploader.pl/rules.php";
+    private boolean isPremium() throws IOException {
+        br.getPage("http://uploader.pl/en/members.php?overview=1");
+        if (br.containsHTML("package_info'\\)\"><b>Zareje")) return false;
+        return true;
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.clearCookies("uploader.pl");
+        br.getPage("http://uploader.pl/en/login.php");
+        Form login = br.getForm(0);
+        login.put("user", Encoding.urlEncode(account.getUser()));
+        login.put("pass", Encoding.urlEncode(account.getPass()));
+        login.put("autologin", "0");
+        br.submitForm(login);
+        String cookie1 = br.getCookie("http://uploader.pl/", "yab_uid");
+        if (cookie1 == null || cookie1.equalsIgnoreCase("0")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -182,11 +182,11 @@ public class UploaderPl extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

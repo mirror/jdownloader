@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -49,30 +50,16 @@ public class FilePostCom extends PluginForHost {
     private static final String ua                 = "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.18) Gecko/20110628 Ubuntu/10.10 (maverick) Firefox/3.6.18";
     private boolean             showAccountCaptcha = false;
 
+    private static final String FILEIDREGEX = "filepost\\.com/files/(.+)";
+
+    private static final String MAINPAGE    = "https://filepost.com/";
+
+    private static final Object LOCK        = new Object();
+
     public FilePostCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://filepost.com/premium/");
     }
-
-    @Override
-    public String getAGBLink() {
-        return "http://filepost.com/terms/";
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * jd.plugins.PluginForHost#correctDownloadLink(jd.plugins.DownloadLink)
-     */
-    @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("https:", "http:").replace("fp.io/", "filepost.com/files/"));
-    }
-
-    private static final String FILEIDREGEX = "filepost\\.com/files/(.+)";
-    private static final String MAINPAGE    = "https://filepost.com/";
-    private static final Object LOCK        = new Object();
 
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
@@ -130,13 +117,63 @@ public class FilePostCom extends PluginForHost {
         return true;
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * jd.plugins.PluginForHost#correctDownloadLink(jd.plugins.DownloadLink)
+     */
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) {
-            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        } else if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return downloadLink.getAvailableStatus();
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("https:", "http:").replace("fp.io/", "filepost.com/files/"));
+    }
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            showAccountCaptcha = true;
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        } finally {
+            showAccountCaptcha = false;
+        }
+        br.getPage(MAINPAGE);
+        if (!br.containsHTML("<li>Account type: <span>Premium</span>")) {
+            account.setValid(false);
+            return ai;
+        }
+        String space = br.getRegex("<li>Used storage: <span.*?>(.*?)</span></li>").getMatch(0);
+        if (space != null) ai.setUsedSpace(space.trim());
+        String filesNum = br.getRegex("<li>Active files: <span.*?>(\\d+)</span>").getMatch(0);
+        if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("<li>Valid until: <span>(.*?)</span>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd, yyyy", null));
+            account.setValid(true);
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
+    @Override
+    public String getAGBLink() {
+        return "http://filepost.com/terms/";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -221,6 +258,38 @@ public class FilePostCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
+        String dllink = br.getRegex("<button onclick=\"download_file\\(\\'(https?://.*?)\\'\\)").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\\'(https?://fs\\d+\\.filepost\\.com/get_file/.*?)\\'").getMatch(0);
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
@@ -290,74 +359,16 @@ public class FilePostCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            showAccountCaptcha = true;
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        } finally {
-            showAccountCaptcha = false;
-        }
-        br.getPage(MAINPAGE);
-        if (!br.containsHTML("<li>Account type: <span>Premium</span>")) {
-            account.setValid(false);
-            return ai;
-        }
-        String space = br.getRegex("<li>Used storage: <span.*?>(.*?)</span></li>").getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim());
-        String filesNum = br.getRegex("<li>Active files: <span.*?>(\\d+)</span>").getMatch(0);
-        if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
-        ai.setUnlimitedTraffic();
-        String expire = br.getRegex("<li>Valid until: <span>(.*?)</span>").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd, yyyy", null));
-            account.setValid(true);
-        }
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
-        String dllink = br.getRegex("<button onclick=\"download_file\\(\\'(https?://.*?)\\'\\)").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\\'(https?://fs\\d+\\.filepost\\.com/get_file/.*?)\\'").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) {
+            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        return downloadLink.getAvailableStatus();
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

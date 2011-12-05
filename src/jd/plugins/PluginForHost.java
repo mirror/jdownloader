@@ -19,6 +19,7 @@ package jd.plugins;
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.IOPermission;
@@ -47,6 +49,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.os.CrossSystem;
@@ -136,6 +139,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected String getCaptchaCode(final String methodname, final File captchaFile, final DownloadLink downloadLink) throws PluginException {
+
         return getCaptchaCode(methodname, captchaFile, 0, downloadLink, null, null);
     }
 
@@ -909,6 +913,46 @@ public abstract class PluginForHost extends Plugin {
         this.ioPermission = ioPermission;
     }
 
+    public static void main(String[] args) {
+
+        // public boolean hasAutoCaptcha() {
+        // return JACMethod.hasMethod("recaptcha");
+        // }
+
+        File dir = new File("C:\\workspace\\JDownloader\\src\\jd\\plugins\\hoster");
+        String[] javas = dir.list(new FilenameFilter() {
+
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".java");
+            }
+        });
+
+        for (String s : javas) {
+
+            try {
+                String str = IO.readFileToString(new File(dir, s));
+                boolean hc = str.toLowerCase().contains("captcha");
+                boolean rc = str.toLowerCase().contains("recaptcha");
+                boolean hasC = str.contains("hasCaptcha");
+                boolean hac = str.contains("hasAutoCaptcha");
+                if (!hasC && hc) {
+                    str = Pattern.compile("\t\\}", Pattern.DOTALL | Pattern.MULTILINE).matcher(str).replaceFirst("    }\r\n//do not add @Override here to keep 0.* compatibility\r\npublic boolean hasCaptcha() {return true;}\r\n");
+
+                }
+                if (!hac && rc) {
+                    str = Pattern.compile("\t\\}", Pattern.DOTALL | Pattern.MULTILINE).matcher(str).replaceFirst("    }\r\n//do not add @Override here to keep 0.* compatibility\r\npublic boolean hasAutoCaptcha() { return JACMethod.hasMethod(\"recaptcha\");}\r\n");
+
+                }
+                new File(dir, s).delete();
+                IO.writeStringToFile(new File(dir, s), str);
+                System.out.println(s);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
+
     /**
      * @return the ioPermission
      */
@@ -920,6 +964,14 @@ public abstract class PluginForHost extends Plugin {
         String host = getCustomFavIconURL();
         if (host == null) host = getHost();
         return DomainInfo.getInstance(host).getFavIcon();
+    }
+
+    public boolean hasCaptcha() {
+        return false;
+    }
+
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod(getHost());
     }
 
 }

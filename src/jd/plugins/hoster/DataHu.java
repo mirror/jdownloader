@@ -45,44 +45,8 @@ public class DataHu extends PluginForHost {
         this.enablePremium("http://data.hu/premium.php");
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://data.hu/adatvedelem.php";
-    }
-
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace(".html", ""));
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"download_filename\">(.*?)</div>").getMatch(0);
-        String filesize = br.getRegex(", fájlméret: ([0-9\\.]+ [A-Za-z]{1,5})").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        downloadLink.setName(filename.trim());
-        return AvailableStatus.TRUE;
-    }
-
-    public void login(Account account) throws Exception {
-        synchronized (LOCK) {
-            br.setCustomCharset("utf-8");
-            br.setFollowRedirects(true);
-            this.setBrowserExclusive();
-            br.forceDebug(true);
-            br.getPage("http://data.hu/");
-            String loginID = br.getRegex("name=\"login_passfield\" value=\"(.*?)\"").getMatch(0);
-            String postData = "act=dologin&login_passfield=" + loginID + "&target=%2Findex.php&t=&id=&data=&username=" + Encoding.urlEncode(account.getUser()) + "&" + loginID + "=" + Encoding.urlEncode(account.getPass()) + "&remember=on&url_for_login=%2F&need_redirect=1&";
-            br.postPage("http://data.hu/login.php", postData);
-            if (br.getCookie("http://data.hu/", "datapremiumseccode") == null) {
-                logger.warning("Cookie error!");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
     }
 
     @Override
@@ -117,21 +81,18 @@ public class DataHu extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        login(account);
-        br.getPage(downloadLink.getDownloadURL());
-        String link = br.getRegex("window\\.location\\.href=\\'(.*?)\\';").getMatch(0);
-        if (link == null) link = br.getRegex("\"(http://ddlp\\.data\\.hu/get/[a-z0-9]+/\\d+/.*?)\"").getMatch(0);
-        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The finallink doesn't seem to be a file...");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+    public String getAGBLink() {
+        return "http://data.hu/adatvedelem.php";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 3;
+    }
+
+    @Override
+    public int getTimegapBetweenConnections() {
+        return 500;
     }
 
     @Override
@@ -160,13 +121,52 @@ public class DataHu extends PluginForHost {
     }
 
     @Override
-    public int getTimegapBetweenConnections() {
-        return 500;
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        br.getPage(downloadLink.getDownloadURL());
+        String link = br.getRegex("window\\.location\\.href=\\'(.*?)\\';").getMatch(0);
+        if (link == null) link = br.getRegex("\"(http://ddlp\\.data\\.hu/get/[a-z0-9]+/\\d+/.*?)\"").getMatch(0);
+        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The finallink doesn't seem to be a file...");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    public void login(Account account) throws Exception {
+        synchronized (LOCK) {
+            br.setCustomCharset("utf-8");
+            br.setFollowRedirects(true);
+            this.setBrowserExclusive();
+            br.forceDebug(true);
+            br.getPage("http://data.hu/");
+            String loginID = br.getRegex("name=\"login_passfield\" value=\"(.*?)\"").getMatch(0);
+            String postData = "act=dologin&login_passfield=" + loginID + "&target=%2Findex.php&t=&id=&data=&username=" + Encoding.urlEncode(account.getUser()) + "&" + loginID + "=" + Encoding.urlEncode(account.getPass()) + "&remember=on&url_for_login=%2F&need_redirect=1&";
+            br.postPage("http://data.hu/login.php", postData);
+            if (br.getCookie("http://data.hu/", "datapremiumseccode") == null) {
+                logger.warning("Cookie error!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 3;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<div class=\"download_filename\">(.*?)</div>").getMatch(0);
+        String filesize = br.getRegex(", fájlméret: ([0-9\\.]+ [A-Za-z]{1,5})").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        downloadLink.setName(filename.trim());
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -174,10 +174,10 @@ public class DataHu extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

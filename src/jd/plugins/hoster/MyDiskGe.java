@@ -41,17 +41,8 @@ public class MyDiskGe extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("UTF-8");
-        br.getPage(link.getDownloadURL());
-        String filename = br.getRegex("style='margin-top:320px;margin-bottom:5px;'>ფაილის სახელი -(.*?)</div>").getMatch(0);
-        String filesize = br.getRegex("style='margin-top:5px;margin-bottom:5px;'>ფაილის ზომა  -(.*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (filename.length() == 0 || filesize.equals(" byte")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -70,12 +61,21 @@ public class MyDiskGe extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("UTF-8");
+        br.getPage(link.getDownloadURL());
+        String filename = br.getRegex("style='margin-top:320px;margin-bottom:5px;'>ფაილის სახელი -(.*?)</div>").getMatch(0);
+        String filesize = br.getRegex("style='margin-top:5px;margin-bottom:5px;'>ფაილის ზომა  -(.*?)</div>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename.length() == 0 || filesize.equals(" byte")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

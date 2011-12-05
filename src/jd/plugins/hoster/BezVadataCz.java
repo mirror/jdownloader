@@ -42,19 +42,8 @@ public class BezVadataCz extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Soubor nenalezen<|<title>BezvaData \\| Soubor nenalezen</title>|Omlouváme se, soubor byl již odstraněn na žádost autora nebo z důvodů porušování autorských práv\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>BezvaData \\| Stáhnout soubor (.*?)</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h1 >Stáhnout soubor (.*?)</h1>").getMatch(0);
-        String filesize = br.getRegex("strong>velikost souboru: </strong>(.*?)</p>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -73,12 +62,23 @@ public class BezVadataCz extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>Soubor nenalezen<|<title>BezvaData \\| Soubor nenalezen</title>|Omlouváme se, soubor byl již odstraněn na žádost autora nebo z důvodů porušování autorských práv\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>BezvaData \\| Stáhnout soubor (.*?)</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h1 >Stáhnout soubor (.*?)</h1>").getMatch(0);
+        String filesize = br.getRegex("strong>velikost souboru: </strong>(.*?)</p>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

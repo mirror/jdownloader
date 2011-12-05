@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
@@ -56,11 +57,6 @@ public class Freaksharenet extends PluginForHost {
         setStartIntervall(100l);
         this.enablePremium("http://freakshare.com/shop.html");
         setConfigElements();
-    }
-
-    private void setConfigElements() {
-        final ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.Freaksharenet.waitInsteadOfReconnect", "Wait and download instead of reconnecting if wait time is under 30 minutes")).setDefaultValue(true);
-        getConfig().addEntry(cond);
     }
 
     @Override
@@ -263,6 +259,16 @@ public class Freaksharenet extends PluginForHost {
         }
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
     public void login(final Account account) throws IOException, PluginException {
         setBrowserExclusive();
         br.setCustomCharset("UTF-8");/* workaround for buggy server */
@@ -324,5 +330,10 @@ public class Freaksharenet extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    private void setConfigElements() {
+        final ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.Freaksharenet.waitInsteadOfReconnect", "Wait and download instead of reconnecting if wait time is under 30 minutes")).setDefaultValue(true);
+        getConfig().addEntry(cond);
     }
 }

@@ -38,57 +38,16 @@ import jd.utils.JDUtilities;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/picturelink/\\d+_\\d+" }, flags = { 0 })
 public class VKontakteRuHoster extends PluginForHost {
 
+    private static final String DOMAIN    = "vkontakte.ru";
+
+    private String              FINALLINK = null;
+
     public VKontakteRuHoster(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     @Override
     public String getAGBLink() {
         return "http://vkontakte.ru/help.php?page=terms";
-    }
-
-    private static final String DOMAIN    = "vkontakte.ru";
-    private String              FINALLINK = null;
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        getLink(link);
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(FINALLINK);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        /**
-         * Chunks disabled because (till now) this plugin only exists to
-         * download pictures
-         */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, FINALLINK, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
-        dl.startDownload();
     }
 
     @SuppressWarnings("unchecked")
@@ -134,12 +93,53 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        /**
+         * Chunks disabled because (till now) this plugin only exists to
+         * download pictures
+         */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, FINALLINK, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        dl.startDownload();
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        getLink(link);
+        Browser br2 = br.cloneBrowser();
+        // In case the link redirects to the finallink
+        br2.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = br2.openGetConnection(FINALLINK);
+            if (!con.getContentType().contains("html")) {
+                link.setDownloadSize(con.getLongContentLength());
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

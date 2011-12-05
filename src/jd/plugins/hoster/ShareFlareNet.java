@@ -39,50 +39,59 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareflare.net" }, urls = { "http://[\\w\\.]*?shareflare\\.net/download/.*?/.*?\\.html" }, flags = { 2 })
 public class ShareFlareNet extends PluginForHost {
 
+    private static final String NEXTPAGE             = "http://shareflare.net/tmpl/tmpl_frame_top.php?link=";
+
+    private static final String LINKFRAMEPART        = "tmpl/tmpl_frame_top\\.php\\?link=";
+
+    private static final String FREEDOWNLOADPOSSIBLE = "download4";
+    private static final Object LOCK = new Object();
     public ShareFlareNet(PluginWrapper wrapper) {
         super(wrapper);
         this.setAccountwithoutUsername(true);
         enablePremium("http://shareflare.net/page/premium.php");
     }
 
-    private static final String NEXTPAGE             = "http://shareflare.net/tmpl/tmpl_frame_top.php?link=";
-    private static final String LINKFRAMEPART        = "tmpl/tmpl_frame_top\\.php\\?link=";
-    private static final String FREEDOWNLOADPOSSIBLE = "download4";
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("\\?", "%3F"));
+    }
+
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        synchronized (LOCK) {
+            AccountInfo ai = new AccountInfo();
+            ai.setStatus("Status can only be checked while downloading!");
+            account.setValid(true);
+            return ai;
+        }
+    }
 
     @Override
     public String getAGBLink() {
         return "http://shareflare.net/page/terms.php";
     }
 
-    private static final Object LOCK = new Object();
+    private String getCaptchaUrl() {
+        String captchaUrl = br.getRegex("<div class=\"cont c2\" align=\"center\">.*?<img src=\\'(http.*?)\\'").getMatch(0);
+        if (captchaUrl == null) {
+            captchaUrl = br.getRegex("('|\")(http://letitbit\\.net/cap\\.php\\?jpg=.*?\\.jpg)('|\")").getMatch(1);
+            if (captchaUrl == null) {
+                String capid = br.getRegex("name=\"(uid2|uid)\" value=\"(.*?)\"").getMatch(1);
+                if (capid != null) captchaUrl = "http://letitbit.net/cap.php?jpg=" + capid + ".jpg";
+            }
+        }
+        return captchaUrl;
+    }
 
-    @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("\\?", "%3F"));
+    private String getDllink() {
+        String dllink = br.getRegex("DownloadClick\\(\\);\" href=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://[0-9]+\\.[0-9]+\\..*?/.*?download.*?[0-9]+/.*?/.*?/shareflare\\.net/.*?)\"").getMatch(0);
+        return dllink;
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("http://shareflare.net", "lang", "en");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-        if (br.containsHTML("(File not found|deleted for abuse or something like this)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("id=\"file-info\">(.*?)<small").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("name=\"name\" value=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (!br.containsHTML(FREEDOWNLOADPOSSIBLE)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.shareflarenet.nofreedownloadlink", "No free download link for this file"));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        /* seems no longer supports multiple free downloads */
+        return 1;
     }
 
     @SuppressWarnings("deprecation")
@@ -195,41 +204,37 @@ public class ShareFlareNet extends PluginForHost {
         dl.startDownload();
     }
 
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        synchronized (LOCK) {
-            AccountInfo ai = new AccountInfo();
-            ai.setStatus("Status can only be checked while downloading!");
-            account.setValid(true);
-            return ai;
-        }
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
-    private String getCaptchaUrl() {
-        String captchaUrl = br.getRegex("<div class=\"cont c2\" align=\"center\">.*?<img src=\\'(http.*?)\\'").getMatch(0);
-        if (captchaUrl == null) {
-            captchaUrl = br.getRegex("('|\")(http://letitbit\\.net/cap\\.php\\?jpg=.*?\\.jpg)('|\")").getMatch(1);
-            if (captchaUrl == null) {
-                String capid = br.getRegex("name=\"(uid2|uid)\" value=\"(.*?)\"").getMatch(1);
-                if (capid != null) captchaUrl = "http://letitbit.net/cap.php?jpg=" + capid + ".jpg";
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setCookie("http://shareflare.net", "lang", "en");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+        if (br.containsHTML("(File not found|deleted for abuse or something like this)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("id=\"file-info\">(.*?)<small").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("name=\"name\" value=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
             }
         }
-        return captchaUrl;
-    }
-
-    private String getDllink() {
-        String dllink = br.getRegex("DownloadClick\\(\\);\" href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://[0-9]+\\.[0-9]+\\..*?/.*?download.*?[0-9]+/.*?/.*?/shareflare\\.net/.*?)\"").getMatch(0);
-        return dllink;
+        String filesize = br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (!br.containsHTML(FREEDOWNLOADPOSSIBLE)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.shareflarenet.nofreedownloadlink", "No free download link for this file"));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        /* seems no longer supports multiple free downloads */
-        return 1;
     }
 
     @Override

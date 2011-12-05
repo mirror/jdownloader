@@ -20,7 +20,8 @@ public class CompiledPluginStatusFiler extends PluginStatusFilter {
                 return AccountController.getInstance().hasAccounts(link.getHost());
             case AUTOCAPTCHA:
                 // TODO
-                return true;
+
+                return link.hasAutoCaptcha();
 
             }
         case ISNOT:
@@ -29,9 +30,10 @@ public class CompiledPluginStatusFiler extends PluginStatusFilter {
             case PREMIUM:
                 // TODO
                 return !AccountController.getInstance().hasAccounts(link.getHost());
+
             case AUTOCAPTCHA:
                 // TODO
-                return false;
+                return !link.hasAutoCaptcha();
 
             }
 

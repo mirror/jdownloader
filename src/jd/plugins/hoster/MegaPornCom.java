@@ -63,60 +63,13 @@ public class MegaPornCom extends PluginForHost {
     }
 
     private static final String   MU_PARAM_PORT   = "MU_PARAM_PORT_NEW1";
+
     private final static String[] ports           = new String[] { "80", "800", "1723" };
     private static String         wwwWorkaround   = null;
     private static final Object   LOCK            = new Object();
-
     private static final Object   LOGINLOCK       = new Object();
+
     private static int            simultanpremium = 1;
-
-    @Override
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(megarotic|sexuploader)\\.com", "megaporn.com"));
-    }
-
-    private synchronized void handleWaittimeWorkaround(final DownloadLink link, final Browser br) throws PluginException {
-        if (br.containsHTML("gencap\\.php\\?")) {
-            /* page contains captcha */
-            if (WaittimeWorkaround == 0) {
-                /*
-                 * we tried to workaround the waittime, so lets try again with
-                 * normal waittime
-                 */
-                WaittimeWorkaround = 1;
-                logger.info("WaittimeWorkaround failed (1)");
-                link.getLinkStatus().setRetryCount(link.getLinkStatus().getRetryCount() + 1);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (WaittimeWorkaround == 1) {
-                logger.info("strange servererror: we did wait(normal) but again a captcha?");
-                /* no reset here for retry count */
-                /* retry with longer waittime */
-                WaittimeWorkaround = 2;
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (WaittimeWorkaround == 2) {
-                logger.info("strange servererror: we did wait(longer) but again a captcha?");
-                /* no reset here for retry count */
-                /* retry with normal waittime again */
-                WaittimeWorkaround = 1;
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-        } else {
-            /* something else? */
-            if (WaittimeWorkaround == 0) {
-                /* lets try again with normal waittime */
-                WaittimeWorkaround = 1;
-                logger.info("WaittimeWorkaround failed (2)");
-                link.getLinkStatus().setRetryCount(link.getLinkStatus().getRetryCount() + 1);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (WaittimeWorkaround > 1) {
-                logger.info("WaittimeWorkaround failed (3)");
-                if (++WaittimeWorkaround > 1) {
-                    WaittimeWorkaround = 1;
-                }
-            }
-        }
-    }
-
     private boolean             onlyapi            = false;
 
     private String              wait               = null;
@@ -241,6 +194,11 @@ public class MegaPornCom extends PluginForHost {
                 }
             }
         }
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(megarotic|sexuploader)\\.com", "megaporn.com"));
     }
 
     private void doDownload(final DownloadLink link, String url, final boolean resume, final Account account) throws Exception {
@@ -401,13 +359,6 @@ public class MegaPornCom extends PluginForHost {
         return ret;
     }
 
-    public String getVideoID(final DownloadLink link) throws MalformedURLException {
-        final HashMap<String, String> p = Request.parseQuery(link.getDownloadURL());
-        String ret = p.get("v");
-        if (ret != null) ret = ret.toUpperCase(Locale.ENGLISH);
-        return ret;
-    }
-
     private STATUS getFileStatus(final DownloadLink link) throws MalformedURLException, PluginException {
         this.onlyapi = false;
         this.checkWWWWorkaround();
@@ -502,6 +453,13 @@ public class MegaPornCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
             }
         }
+    }
+
+    public String getVideoID(final DownloadLink link) throws MalformedURLException {
+        final HashMap<String, String> p = Request.parseQuery(link.getDownloadURL());
+        String ret = p.get("v");
+        if (ret != null) ret = ret.toUpperCase(Locale.ENGLISH);
+        return ret;
     }
 
     public void handleAPIDownload(final DownloadLink link, final Account account) throws Exception {
@@ -719,6 +677,48 @@ public class MegaPornCom extends PluginForHost {
         this.doDownload(parameter, url, true, account);
     }
 
+    private synchronized void handleWaittimeWorkaround(final DownloadLink link, final Browser br) throws PluginException {
+        if (br.containsHTML("gencap\\.php\\?")) {
+            /* page contains captcha */
+            if (WaittimeWorkaround == 0) {
+                /*
+                 * we tried to workaround the waittime, so lets try again with
+                 * normal waittime
+                 */
+                WaittimeWorkaround = 1;
+                logger.info("WaittimeWorkaround failed (1)");
+                link.getLinkStatus().setRetryCount(link.getLinkStatus().getRetryCount() + 1);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (WaittimeWorkaround == 1) {
+                logger.info("strange servererror: we did wait(normal) but again a captcha?");
+                /* no reset here for retry count */
+                /* retry with longer waittime */
+                WaittimeWorkaround = 2;
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (WaittimeWorkaround == 2) {
+                logger.info("strange servererror: we did wait(longer) but again a captcha?");
+                /* no reset here for retry count */
+                /* retry with normal waittime again */
+                WaittimeWorkaround = 1;
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        } else {
+            /* something else? */
+            if (WaittimeWorkaround == 0) {
+                /* lets try again with normal waittime */
+                WaittimeWorkaround = 1;
+                logger.info("WaittimeWorkaround failed (2)");
+                link.getLinkStatus().setRetryCount(link.getLinkStatus().getRetryCount() + 1);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (WaittimeWorkaround > 1) {
+                logger.info("WaittimeWorkaround failed (3)");
+                if (++WaittimeWorkaround > 1) {
+                    WaittimeWorkaround = 1;
+                }
+            }
+        }
+    }
+
     public void handleWebsiteDownload(final DownloadLink link, final Account account) throws Exception {
         if (account != null) {
             this.login(account, true);
@@ -829,6 +829,11 @@ public class MegaPornCom extends PluginForHost {
             url = br.getRedirectLocation();
         }
         this.doDownload(link, url, true, account);
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     public boolean isPremium(final Account account, final Browser br, final boolean refresh, boolean cloneBrowser) throws IOException {

@@ -30,9 +30,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://googlebooksdecrypter.[a-z]+/books\\?id=.*&pg=.*" }, flags = { 0 })
 public class GoogleBooks extends PluginForHost {
 
-    private static int counter = 0;
+    private static int    counter = 0;
 
-    private static Object LOCK = new Object();
+    private static Object LOCK    = new Object();
 
     public GoogleBooks(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,6 +47,11 @@ public class GoogleBooks extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://books.google.de/accounts/TOS";
+    }
+
+    // @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -96,6 +101,11 @@ public class GoogleBooks extends PluginForHost {
 
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         return AvailableStatus.TRUE;
@@ -110,11 +120,6 @@ public class GoogleBooks extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 
-    }
-
-    // @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
 }

@@ -42,22 +42,8 @@ public class StageVuCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Error: No video with the provided information exists</div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)- Stagevu: Your View</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<div id=\"vidbox\">[\n\r\t ]+<h1>(.*?)</h1>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<param name=\"movieTitle\" value=\"(.*?)\"").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex(">Filesize:</td><td>(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".avi");
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -82,12 +68,26 @@ public class StageVuCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML(">Error: No video with the provided information exists</div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?)- Stagevu: Your View</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<div id=\"vidbox\">[\n\r\t ]+<h1>(.*?)</h1>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<param name=\"movieTitle\" value=\"(.*?)\"").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex(">Filesize:</td><td>(.*?)</td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".avi");
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

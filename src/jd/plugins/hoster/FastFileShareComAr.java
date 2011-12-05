@@ -36,16 +36,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastfileshare.com.ar" }, urls = { "http://[\\w\\.]*?fastfileshare\\.com\\.ar/index\\.php\\?p=download\\&hash=[A-Za-z0-9]+" }, flags = { 2 })
 public class FastFileShareComAr extends PluginForHost {
 
+    private static final String COOKIE_HOST = "http://fastfileshare.com.ar";
+
     public FastFileShareComAr(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://fastfileshare.com.ar/index.php?p=fastpass&");
-    }
-
-    private static final String COOKIE_HOST = "http://fastfileshare.com.ar";
-
-    @Override
-    public String getAGBLink() {
-        return "http://fastfileshare.com.ar/index.php?p=rules";
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -54,19 +49,38 @@ public class FastFileShareComAr extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("('File Not Found|The specified file can not found in our servers)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<strong>Filename:</strong></div></td>.*?<td width=\"\\d+%\"><div align=\"left\" class=\"style47\">(.*?)<img").getMatch(0);
-        String filesize = br.getRegex("<strong>Filesize:</strong></div></td>.*?<td><div align=\"left\"  class=\"style47\">(.*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String md5 = br.getRegex("<strong>Suma MD5: </strong></div></td>.*?<td width=\"\\d+%\"><div align=\"left\" class=\"style47\">(.*?)</div>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String expires = br.getRegex("Your Account Expires on (.*?, \\d+), ").getMatch(0);
+        if (expires != null) {
+            // Your Account Expires on July 3, 2010, 1:26 pm<br>
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "MMMM d, yyyy", null));
+        }
+        ai.setStatus("Premium User");
+        account.setValid(true);
+
+        return ai;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://fastfileshare.com.ar/index.php?p=rules";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -100,6 +114,31 @@ public class FastFileShareComAr extends PluginForHost {
         dl.startDownload();
     }
 
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        requestFileInformation(parameter);
+        login(account);
+        br.setFollowRedirects(false);
+        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
+        br.getPage(parameter.getDownloadURL());
+        Form dlform = br.getForm(0);
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.submitForm(dlform);
+        String finalLink = br.getRegex("<code>Your Download Link: <a href=\"(http://.*?)\"").getMatch(0);
+        if (finalLink == null) finalLink = br.getRegex("\"(http://d\\d+\\.fastfileshare\\.com\\.ar:\\d+/index\\.php\\?p=.*?\\&link=\\d+&name=.*?)\"").getMatch(0);
+        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, finalLink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
     public void login(Account account) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -122,57 +161,23 @@ public class FastFileShareComAr extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        String expires = br.getRegex("Your Account Expires on (.*?, \\d+), ").getMatch(0);
-        if (expires != null) {
-            // Your Account Expires on July 3, 2010, 1:26 pm<br>
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "MMMM d, yyyy", null));
-        }
-        ai.setStatus("Premium User");
-        account.setValid(true);
-
-        return ai;
-    }
-
-    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        requestFileInformation(parameter);
-        login(account);
-        br.setFollowRedirects(false);
-        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
-        br.getPage(parameter.getDownloadURL());
-        Form dlform = br.getForm(0);
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.submitForm(dlform);
-        String finalLink = br.getRegex("<code>Your Download Link: <a href=\"(http://.*?)\"").getMatch(0);
-        if (finalLink == null) finalLink = br.getRegex("\"(http://d\\d+\\.fastfileshare\\.com\\.ar:\\d+/index\\.php\\?p=.*?\\&link=\\d+&name=.*?)\"").getMatch(0);
-        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, finalLink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("('File Not Found|The specified file can not found in our servers)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<strong>Filename:</strong></div></td>.*?<td width=\"\\d+%\"><div align=\"left\" class=\"style47\">(.*?)<img").getMatch(0);
+        String filesize = br.getRegex("<strong>Filesize:</strong></div></td>.*?<td><div align=\"left\"  class=\"style47\">(.*?)</div>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String md5 = br.getRegex("<strong>Suma MD5: </strong></div></td>.*?<td width=\"\\d+%\"><div align=\"left\" class=\"style47\">(.*?)</div>").getMatch(0);
+        if (md5 != null) link.setMD5Hash(md5);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

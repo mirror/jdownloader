@@ -40,6 +40,34 @@ public class XHamsterCom extends PluginForHost {
         return "http://xhamster.com/terms.php";
     }
 
+    public String getDllink() throws IOException, PluginException {
+        String server = br.getRegex("\\'srv\\': \\'(.*?)\\'").getMatch(0);
+        String file = br.getRegex("\\'file\\': \\'(.*?)\\'").getMatch(0);
+        if (server == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = server + "/key=" + file;
+        return dllink;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        // Access the page again to get a new direct link because by checking
+        // the availibility the first linkisn't valid anymore
+        br.getPage(downloadLink.getDownloadURL());
+        String dllink = getDllink();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -86,42 +114,14 @@ public class XHamsterCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        // Access the page again to get a new direct link because by checking
-        // the availibility the first linkisn't valid anymore
-        br.getPage(downloadLink.getDownloadURL());
-        String dllink = getDllink();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    public String getDllink() throws IOException, PluginException {
-        String server = br.getRegex("\\'srv\\': \\'(.*?)\\'").getMatch(0);
-        String file = br.getRegex("\\'file\\': \\'(.*?)\\'").getMatch(0);
-        if (server == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String dllink = server + "/key=" + file;
-        return dllink;
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

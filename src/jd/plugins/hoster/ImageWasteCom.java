@@ -39,15 +39,8 @@ public class ImageWasteCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Image Deleted Due to Voilation of Terms \\& Contions</")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("/big/\\d+/(.*?)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("<input type=\"text\" style=\"font\\-size: 12px;\" size=\"50\" value=\"(.*?)\">").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -66,12 +59,19 @@ public class ImageWasteCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML(">Image Deleted Due to Voilation of Terms \\& Contions</")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("/big/\\d+/(.*?)\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("<input type=\"text\" style=\"font\\-size: 12px;\" size=\"50\" value=\"(.*?)\">").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

@@ -43,6 +43,11 @@ public class MyVideo extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("myvideo.at/", "myvideo.de/"));
+    }
+
     private String decrypt(final String cipher, final String id) {
         final String key = org.appwork.utils.Hash.getMD5(Encoding.Base64Decode(KEY) + org.appwork.utils.Hash.getMD5(id));
         final byte[] ciphertext = JDHexUtils.getByteArray(cipher);
@@ -54,11 +59,6 @@ public class MyVideo extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.myvideo.de/AGB";
-    }
-
-    @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("myvideo.at/", "myvideo.de/"));
     }
 
     @Override

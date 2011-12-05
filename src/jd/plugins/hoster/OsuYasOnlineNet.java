@@ -33,8 +33,14 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "osu.yas-online.net" }, urls = { "http://(www\\.)?(osu\\.yas\\-online\\.net|osupacks\\.ppy\\.sh)/((p|m)#\\d+|t#[^\"\\'<>]+\\-\\d+)" }, flags = { 0 })
 public class OsuYasOnlineNet extends PluginForHost {
 
+    private static final String OFFLINE = "\"Theme or pack does not exist";
+
     public OsuYasOnlineNet(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("osu.yas-online.net/", "osupacks.ppy.sh/"));
     }
 
     @Override
@@ -43,11 +49,24 @@ public class OsuYasOnlineNet extends PluginForHost {
         return "http://osu.ppy.sh/p/terms";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("osu.yas-online.net/", "osupacks.ppy.sh/"));
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
-    private static final String OFFLINE = "\"Theme or pack does not exist";
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        String dllink = new Regex(br.toString().replace("\\", ""), "\"downloadLink\":\"(/fetch/.*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = "http://osupacks.ppy.sh" + dllink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -79,26 +98,7 @@ public class OsuYasOnlineNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String dllink = new Regex(br.toString().replace("\\", ""), "\"downloadLink\":\"(/fetch/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://osupacks.ppy.sh" + dllink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

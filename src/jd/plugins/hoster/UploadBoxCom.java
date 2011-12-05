@@ -43,26 +43,9 @@ public class UploadBoxCom extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://uploadbox.com/en/terms/";
-    }
-
-    @Override
     public void correctDownloadLink(DownloadLink parameter) {
         String id = new Regex(parameter.getDownloadURL(), "files/([0-9a-zA-Z]+)").getMatch(0);
         parameter.setUrlDownload("http://www.uploadbox.com/en/files/" + id);
-    }
-
-    public void login(Account account) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setDebug(true);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getPage("http://uploadbox.com/?ac=lang&lang_new=en");
-        br.getPage("http://uploadbox.com/en");
-        br.postPage("http://uploadbox.com/en", "login=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&ac=auth&back=");
-        if (br.containsHTML("You enter wrong user name or password")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage("http://uploadbox.com/");
-        if (br.containsHTML("Type: FREE")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -84,40 +67,13 @@ public class UploadBoxCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("(class=\"not_found\">|File deleted from service)") || !br.containsHTML("<h3>Downloading</h3>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("id=\"error\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(">File name:</td>.*?<b>(.*?)</b>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>UploadBox.*?Downloading(.*?)</title>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("description\" content=\"Downloading(.*?)! Free").getMatch(0);
-
-            }
-        }
-        String filesize = br.getRegex("Size:</span>(.*?)<s").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setName(filename.trim());
-        if (filesize != null) {
-            parameter.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-        }
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://uploadbox.com/en/terms/";
     }
 
     @Override
-    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        requestFileInformation(parameter);
-        login(account);
-        br.setFollowRedirects(false);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getPage(parameter.getDownloadURL());
-        String dlUrl = br.getRegex("title=\"Direct link\">(http://.*?)</a>").getMatch(0);
-        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlUrl, true, 0);
-        dl.startDownload();
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -182,12 +138,61 @@ public class UploadBoxCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        requestFileInformation(parameter);
+        login(account);
+        br.setFollowRedirects(false);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getPage(parameter.getDownloadURL());
+        String dlUrl = br.getRegex("title=\"Direct link\">(http://.*?)</a>").getMatch(0);
+        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlUrl, true, 0);
+        dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    public void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setDebug(true);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getPage("http://uploadbox.com/?ac=lang&lang_new=en");
+        br.getPage("http://uploadbox.com/en");
+        br.postPage("http://uploadbox.com/en", "login=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&ac=auth&back=");
+        if (br.containsHTML("You enter wrong user name or password")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://uploadbox.com/");
+        if (br.containsHTML("Type: FREE")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML("(class=\"not_found\">|File deleted from service)") || !br.containsHTML("<h3>Downloading</h3>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("id=\"error\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex(">File name:</td>.*?<b>(.*?)</b>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>UploadBox.*?Downloading(.*?)</title>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("description\" content=\"Downloading(.*?)! Free").getMatch(0);
+
+            }
+        }
+        String filesize = br.getRegex("Size:</span>(.*?)<s").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setName(filename.trim());
+        if (filesize != null) {
+            parameter.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

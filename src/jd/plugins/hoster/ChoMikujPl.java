@@ -38,9 +38,36 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "\\&id=.*?\\&gallerylink=.*?60423fhrzisweguikipo9re.*?\\&" }, flags = { 2 })
 public class ChoMikujPl extends PluginForHost {
 
+    private String              DLLINK              = null;
+
+    private static final String PREMIUMONLY         = "(Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS\\.|Właściciel tego chomika udostępnia swój transfer, ale nie ma go już w wystarczającej|wymaga opłacenia kosztów transferu z serwerów Chomikuj\\.pl)";
+
+    private static final String PREMIUMONLYUSERTEXT = "Download is only available for registered/premium users!";
+    private static final String MAINPAGE            = "http://chomikuj.pl/";
+    private static final String FILEIDREGEX         = "\\&id=(.*?)\\&";
+    private boolean             videolink           = false;
     public ChoMikujPl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("");
+    }
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("60423fhrzisweguikipo9re", "chomikuj.pl"));
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Premium User");
+        return ai;
     }
 
     @Override
@@ -48,15 +75,86 @@ public class ChoMikujPl extends PluginForHost {
         return "http://chomikuj.pl/Regulamin.aspx";
     }
 
-    private String              DLLINK              = null;
-    private static final String PREMIUMONLY         = "(Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS\\.|Właściciel tego chomika udostępnia swój transfer, ale nie ma go już w wystarczającej|wymaga opłacenia kosztów transferu z serwerów Chomikuj\\.pl)";
-    private static final String PREMIUMONLYUSERTEXT = "Download is only available for registered/premium users!";
-    private static final String MAINPAGE            = "http://chomikuj.pl/";
-    private static final String FILEIDREGEX         = "\\&id=(.*?)\\&";
-    private boolean             videolink           = false;
+    public void getDllink(DownloadLink theLink, Browser br2) throws NumberFormatException, PluginException, IOException {
+        // Set by the decrypter if the link is password protected
+        String savedLink = theLink.getStringProperty("savedlink");
+        String savedPost = theLink.getStringProperty("savedpost");
+        if (savedLink != null && savedPost != null) br.postPage(savedLink, savedPost);
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br2.postPage("http://chomikuj.pl/Chomik/License/Download", "fileId=" + new Regex(theLink.getDownloadURL(), FILEIDREGEX).getMatch(0));
+        if (br2.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
+        DLLINK = br2.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
+        if (DLLINK == null) DLLINK = br2.getRegex("\\\\u003ca href=\\\\\"(.*?)\\\\\"").getMatch(0);
+        if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
+    }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("60423fhrzisweguikipo9re", "chomikuj.pl"));
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
+        if (!videolink) getDllink(downloadLink, br);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.setFollowRedirects(false);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        Browser brc = br.cloneBrowser();
+        DLLINK = null;
+        getDllink(link, brc);
+        if (DLLINK == null) {
+            Regex confirmVarsRegex = new Regex(brc.toString().replace("\\", ""), "fileId=\\d+u0027,[a-z\r\n\t ]+u0027(.*?)u0027, u0027(.*?)u0027");
+            String argh1 = confirmVarsRegex.getMatch(0);
+            String argh2 = confirmVarsRegex.getMatch(1);
+            if (argh1 == null || argh2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // For some files they ask
+            // "Do you really want to download this file", so we have to confirm
+            // it with "YES" here ;)
+            br.postPage("http://chomikuj.pl/Chomik/License/acceptOwnTransfer?fileId=" + new Regex(link.getDownloadURL(), FILEIDREGEX).getMatch(0), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2));
+            getDllink(link, brc);
+        }
+        if (DLLINK == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.getPage(MAINPAGE);
+        String viewstate = br.getRegex("name=\"__VIEWSTATE\" id=\"__VIEWSTATE\" value=\"(.*?)\"").getMatch(0);
+        if (viewstate == null) {
+            logger.warning("Chomikuj.pl login broken!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.postPage(MAINPAGE, "__EVENTTARGET=&__EVENTARGUMENT=&__VIEWSTATE=" + Encoding.urlEncode(viewstate) + "&PageCmd=&PageArg=&ctl00%24LoginTop%24LoginChomikName=" + Encoding.urlEncode(account.getUser()) + "&ctl00%24LoginTop%24LoginChomikPassword=" + Encoding.urlEncode(account.getPass()) + "&ctl00%24LoginTop%24LoginButton.x=0&ctl00%24LoginTop%24LoginButton.y=0&ctl00%24SearchInputBox=&ctl00%24SearchFileBox=&ctl00%24SearchType=all&SType=0&ctl00%24CT%24ChomikLog%24LoginChomikName=&ctl00%24CT%24ChomikLog%24LoginChomikPassword=");
+        if (br.getCookie(MAINPAGE, "ChomikSession") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -102,105 +200,7 @@ public class ChoMikujPl extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
-        if (!videolink) getDllink(downloadLink, br);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    public void getDllink(DownloadLink theLink, Browser br2) throws NumberFormatException, PluginException, IOException {
-        // Set by the decrypter if the link is password protected
-        String savedLink = theLink.getStringProperty("savedlink");
-        String savedPost = theLink.getStringProperty("savedpost");
-        if (savedLink != null && savedPost != null) br.postPage(savedLink, savedPost);
-        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.postPage("http://chomikuj.pl/Chomik/License/Download", "fileId=" + new Regex(theLink.getDownloadURL(), FILEIDREGEX).getMatch(0));
-        if (br2.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
-        DLLINK = br2.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br2.getRegex("\\\\u003ca href=\\\\\"(.*?)\\\\\"").getMatch(0);
-        if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.getPage(MAINPAGE);
-        String viewstate = br.getRegex("name=\"__VIEWSTATE\" id=\"__VIEWSTATE\" value=\"(.*?)\"").getMatch(0);
-        if (viewstate == null) {
-            logger.warning("Chomikuj.pl login broken!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.postPage(MAINPAGE, "__EVENTTARGET=&__EVENTARGUMENT=&__VIEWSTATE=" + Encoding.urlEncode(viewstate) + "&PageCmd=&PageArg=&ctl00%24LoginTop%24LoginChomikName=" + Encoding.urlEncode(account.getUser()) + "&ctl00%24LoginTop%24LoginChomikPassword=" + Encoding.urlEncode(account.getPass()) + "&ctl00%24LoginTop%24LoginButton.x=0&ctl00%24LoginTop%24LoginButton.y=0&ctl00%24SearchInputBox=&ctl00%24SearchFileBox=&ctl00%24SearchType=all&SType=0&ctl00%24CT%24ChomikLog%24LoginChomikName=&ctl00%24CT%24ChomikLog%24LoginChomikPassword=");
-        if (br.getCookie(MAINPAGE, "ChomikSession") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        account.setValid(true);
-        ai.setUnlimitedTraffic();
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account);
-        br.setFollowRedirects(false);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        Browser brc = br.cloneBrowser();
-        DLLINK = null;
-        getDllink(link, brc);
-        if (DLLINK == null) {
-            Regex confirmVarsRegex = new Regex(brc.toString().replace("\\", ""), "fileId=\\d+u0027,[a-z\r\n\t ]+u0027(.*?)u0027, u0027(.*?)u0027");
-            String argh1 = confirmVarsRegex.getMatch(0);
-            String argh2 = confirmVarsRegex.getMatch(1);
-            if (argh1 == null || argh2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // For some files they ask
-            // "Do you really want to download this file", so we have to confirm
-            // it with "YES" here ;)
-            br.postPage("http://chomikuj.pl/Chomik/License/acceptOwnTransfer?fileId=" + new Regex(link.getDownloadURL(), FILEIDREGEX).getMatch(0), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2));
-            getDllink(link, brc);
-        }
-        if (DLLINK == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

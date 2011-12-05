@@ -32,15 +32,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitfile.ru" }, urls = { "http://[\\w\\.]*?letitfile\\.(ru|com)/download/id\\d+" }, flags = { 0 })
 public class LetitFileRu extends PluginForHost {
 
-    public LetitFileRu(PluginWrapper wrapper) {
-        super(wrapper);
-    }
-
     private static final String URLPIECE = "get_file";
 
-    @Override
-    public String getAGBLink() {
-        return "http://letitfile.ru/rules/";
+    public LetitFileRu(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -48,23 +43,13 @@ public class LetitFileRu extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Файл не найден")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("(File name|Имя файла): <b>(.*?)</b>").getMatch(1);
-        String filesize = br.getRegex("(File size|Размер файла): <b>(.*?)</b>").getMatch(1);
-        if (filename == null || filesize == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename.trim());
-        filesize = filesize.replace("Г", "G");
-        filesize = filesize.replace("М", "M");
-        filesize = filesize.replace("к", "k");
-        filesize = filesize.replaceAll("(Б|б)", "");
-        filesize = filesize + "b";
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (br.containsHTML("Владелец данного файла разрешил скачивать файл только пользователям")) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.LetitFileRu.Only4Premium", "This file is only downloadable for premium users!"));
-        return AvailableStatus.TRUE;
+    public String getAGBLink() {
+        return "http://letitfile.ru/rules/";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -104,13 +89,33 @@ public class LetitFileRu extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("Файл не найден")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("(File name|Имя файла): <b>(.*?)</b>").getMatch(1);
+        String filesize = br.getRegex("(File size|Размер файла): <b>(.*?)</b>").getMatch(1);
+        if (filename == null || filesize == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        link.setName(filename.trim());
+        filesize = filesize.replace("Г", "G");
+        filesize = filesize.replace("М", "M");
+        filesize = filesize.replace("к", "k");
+        filesize = filesize.replaceAll("(Б|б)", "");
+        filesize = filesize + "b";
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.containsHTML("Владелец данного файла разрешил скачивать файл только пользователям")) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.LetitFileRu.Only4Premium", "This file is only downloadable for premium users!"));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -46,92 +47,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filejungle.com" }, urls = { "http://(www\\.)?filejungle\\.com/f/[A-Za-z0-9]+" }, flags = { 2 })
 public class FileJungleCom extends PluginForHost {
 
+    private static final String CAPTCHAFAILED = "\"error\":\"incorrect\\-captcha\\-sol\"";
+
+    private static final String MAINPAGE      = "http://filejungle.com/";
+
+    private static final Object LOCK          = new Object();
+
     public FileJungleCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://filejungle.com/premium.php");
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.filejungle.com/terms_and_conditions.php";
-    }
-
-    private static final String CAPTCHAFAILED = "\"error\":\"incorrect\\-captcha\\-sol\"";
-    private static final String MAINPAGE      = "http://filejungle.com/";
-    private static final Object LOCK          = new Object();
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        checkLinks(new DownloadLink[] { link });
-        if (!link.isAvailabilityStatusChecked()) {
-            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        } else if (!link.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        return link.getAvailableStatus();
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL());
-        final String damnLanding = br.getRegex("\"(/landing/L\\d+/download_captcha\\.js\\?\\d+)\"").getMatch(0);
-        final String id = br.getRegex("var reCAPTCHA_publickey=\\'([^\\'\"<>]+)\\'").getMatch(0);
-        final String rcShortenCode = br.getRegex("id=\"recaptcha_shortencode_field\" name=\"recaptcha_shortencode_field\" value=\"([^\\'\"<>]+)\"").getMatch(0);
-        if (id == null || damnLanding == null || rcShortenCode == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://www.filejungle.com" + damnLanding);
-        Browser br2 = br.cloneBrowser();
-        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.setCustomCharset("utf-8");
-        final String postlink = downloadLink.getDownloadURL() + "/" + downloadLink.getName();
-        br2.postPage(postlink, "checkDownload=check");
-        if (br2.containsHTML("\"captchaFail\"")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many wrong captcha attempts!", 10 * 60 * 1000l);
-        if (br2.containsHTML("\"fail\":\"timeLimit\"")) {
-            br.postPage(postlink, "checkDownload=showError&errorType=timeLimit");
-            String reconnectWait = br.getRegex("Please wait for (\\d+) seconds to download the next file").getMatch(0);
-            int wait = 600;
-            if (reconnectWait != null) wait = Integer.parseInt(reconnectWait);
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
-        }
-        if (!br2.containsHTML("\"success\":\"showCaptcha\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2);
-        Form dlform = new Form();
-        dlform.setMethod(MethodType.POST);
-        dlform.setAction("http://www.filejungle.com/checkReCaptcha.php");
-        dlform.put("recaptcha_shortencode_field", rcShortenCode);
-        rc.setForm(dlform);
-        rc.setId(id);
-        rc.load();
-        for (int i = 0; i <= 5; i++) {
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
-            rc.setCode(c);
-            if (br2.containsHTML(CAPTCHAFAILED)) {
-                rc.reload();
-                continue;
-            }
-            break;
-        }
-        if (br2.containsHTML(CAPTCHAFAILED)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (!br2.containsHTML("\"success\":1")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br2.postPage(postlink, "downloadLink=wait");
-        int wait = 30;
-        String waittime = br2.getRegex("\"waitTime\":(\\d+),\"").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait * 1001l, downloadLink);
-        br2.postPage(postlink, "downloadLink=show");
-        // Use normal browser here
-        br.postPage(postlink, "download=normal");
-        if (br.containsHTML("(>File is not available<|>The page you requested cannot be displayed right now|The file may have removed by the uploader or expired\\.<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            handleErrors();
-            logger.warning("The final dllink seems not to be a file!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override
@@ -215,6 +139,148 @@ public class FileJungleCom extends PluginForHost {
         }
         return true;
     }
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://filejungle.com/dashboard.php");
+        ai.setUnlimitedTraffic();
+        String validUntil = br.getRegex("\"/extend_premium\\.php\">Until (\\d+ [A-Za-z]+ \\d+)<br").getMatch(0);
+        if (validUntil != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd MMMM yyyy", null));
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
+    }
+    @Override
+    public String getAGBLink() {
+        return "http://www.filejungle.com/terms_and_conditions.php";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    private void handleErrors() throws PluginException {
+        final String theURL = br.getURL();
+        if (theURL.contains("filejungle.com/landing-1703")) {
+            logger.warning("Found unknown error, landing page: " + theURL);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Landing error 1703 found, please check if you can download via browser!");
+        }
+        String landing = new Regex(theURL, ".*?filejungle\\.com/landing\\-(\\d+)").getMatch(0);
+        if (landing != null) {
+            logger.warning("Found unknown error, landing page: " + theURL);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown landing error " + landing + "found, please contact our support!");
+        }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
+        final String damnLanding = br.getRegex("\"(/landing/L\\d+/download_captcha\\.js\\?\\d+)\"").getMatch(0);
+        final String id = br.getRegex("var reCAPTCHA_publickey=\\'([^\\'\"<>]+)\\'").getMatch(0);
+        final String rcShortenCode = br.getRegex("id=\"recaptcha_shortencode_field\" name=\"recaptcha_shortencode_field\" value=\"([^\\'\"<>]+)\"").getMatch(0);
+        if (id == null || damnLanding == null || rcShortenCode == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://www.filejungle.com" + damnLanding);
+        Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br2.setCustomCharset("utf-8");
+        final String postlink = downloadLink.getDownloadURL() + "/" + downloadLink.getName();
+        br2.postPage(postlink, "checkDownload=check");
+        if (br2.containsHTML("\"captchaFail\"")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many wrong captcha attempts!", 10 * 60 * 1000l);
+        if (br2.containsHTML("\"fail\":\"timeLimit\"")) {
+            br.postPage(postlink, "checkDownload=showError&errorType=timeLimit");
+            String reconnectWait = br.getRegex("Please wait for (\\d+) seconds to download the next file").getMatch(0);
+            int wait = 600;
+            if (reconnectWait != null) wait = Integer.parseInt(reconnectWait);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+        }
+        if (!br2.containsHTML("\"success\":\"showCaptcha\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2);
+        Form dlform = new Form();
+        dlform.setMethod(MethodType.POST);
+        dlform.setAction("http://www.filejungle.com/checkReCaptcha.php");
+        dlform.put("recaptcha_shortencode_field", rcShortenCode);
+        rc.setForm(dlform);
+        rc.setId(id);
+        rc.load();
+        for (int i = 0; i <= 5; i++) {
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            rc.setCode(c);
+            if (br2.containsHTML(CAPTCHAFAILED)) {
+                rc.reload();
+                continue;
+            }
+            break;
+        }
+        if (br2.containsHTML(CAPTCHAFAILED)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (!br2.containsHTML("\"success\":1")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br2.postPage(postlink, "downloadLink=wait");
+        int wait = 30;
+        String waittime = br2.getRegex("\"waitTime\":(\\d+),\"").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        sleep(wait * 1001l, downloadLink);
+        br2.postPage(postlink, "downloadLink=show");
+        // Use normal browser here
+        br.postPage(postlink, "download=normal");
+        if (br.containsHTML("(>File is not available<|>The page you requested cannot be displayed right now|The file may have removed by the uploader or expired\\.<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            handleErrors();
+            logger.warning("The final dllink seems not to be a file!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        // There is also another way to download (not via direct redirect) but
+        // it didn't work when i changed it in the accountsettings
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            handleErrors();
+            logger.warning("The final dllink seems not to be a file!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
 
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
@@ -250,71 +316,16 @@ public class FileJungleCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        br.getPage("http://filejungle.com/dashboard.php");
-        ai.setUnlimitedTraffic();
-        String validUntil = br.getRegex("\"/extend_premium\\.php\">Until (\\d+ [A-Za-z]+ \\d+)<br").getMatch(0);
-        if (validUntil != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd MMMM yyyy", null));
-        account.setValid(true);
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        // There is also another way to download (not via direct redirect) but
-        // it didn't work when i changed it in the accountsettings
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            handleErrors();
-            logger.warning("The final dllink seems not to be a file!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    private void handleErrors() throws PluginException {
-        final String theURL = br.getURL();
-        if (theURL.contains("filejungle.com/landing-1703")) {
-            logger.warning("Found unknown error, landing page: " + theURL);
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Landing error 1703 found, please check if you can download via browser!");
-        }
-        String landing = new Regex(theURL, ".*?filejungle\\.com/landing\\-(\\d+)").getMatch(0);
-        if (landing != null) {
-            logger.warning("Found unknown error, landing page: " + theURL);
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown landing error " + landing + "found, please contact our support!");
-        }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        checkLinks(new DownloadLink[] { link });
+        if (!link.isAvailabilityStatusChecked()) {
+            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+        } else if (!link.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        return link.getAvailableStatus();
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

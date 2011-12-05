@@ -44,6 +44,36 @@ public class ImageHostOrg extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        String dllink = null;
+        if (downloadLink.getDownloadURL().contains("/download/")) {
+            // Handling for normal (file) links
+            String postlink = downloadLink.getDownloadURL().replace("/download/", "/ajax/");
+            String poststuff = "a=ajax&rand=" + new Regex(Math.random() * 100000, "(\\d+)").getMatch(0);
+            br.postPage(postlink, poststuff);
+            dllink = br.getRegex("<json>(.*?)</json>").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = Encoding.htmlDecode(dllink.trim());
+            dllink = dllink.replaceAll("(\\\\|\")", "");
+        } else {
+            // Handling for direct (picture) links
+            dllink = downloadLink.getDownloadURL();
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         if (link.getDownloadURL().contains("/download/")) {
@@ -75,37 +105,7 @@ public class ImageHostOrg extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String dllink = null;
-        if (downloadLink.getDownloadURL().contains("/download/")) {
-            // Handling for normal (file) links
-            String postlink = downloadLink.getDownloadURL().replace("/download/", "/ajax/");
-            String poststuff = "a=ajax&rand=" + new Regex(Math.random() * 100000, "(\\d+)").getMatch(0);
-            br.postPage(postlink, poststuff);
-            dllink = br.getRegex("<json>(.*?)</json>").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dllink = Encoding.htmlDecode(dllink.trim());
-            dllink = dllink.replaceAll("(\\\\|\")", "");
-        } else {
-            // Handling for direct (picture) links
-            dllink = downloadLink.getDownloadURL();
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override

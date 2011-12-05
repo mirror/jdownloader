@@ -34,11 +34,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moddb.com" }, urls = { "http://[\\w\\.]*?moddb\\.com/(games|mods|engines|groups)/.*?/(addons|downloads)/[0-9a-z-]+" }, flags = { 0 })
 public class ModDbCom extends PluginForHost {
 
-    public ModDbCom(PluginWrapper wrapper) {
-        super(wrapper);
-        setConfigElements();
-    }
-
     private static final String   moddbservers = "moddbservers";
 
     /** The list of server values displayed to the user */
@@ -48,117 +43,23 @@ public class ModDbCom extends PluginForHost {
         servers = new String[] { "fdcservers.net(WORLDWIDE)", "moddb.com #4(TEXAS, US)", "moddb.com #5(COLORADO, US)", "moddb.com #6(COLORADO, US)", "Mod DB #8 (CALIFORNIA, US)", "Mod DB #10 (NETHERLANDS, EU)", "Mod DB #11 (NETHERLANDS, EU)", "Mod DB #13 (NETHERLANDS, EU)" };
     }
 
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), moddbservers, servers, JDL.L("plugins.host.L4dMapsCom.servers", "Use this server:")).setDefaultValue(0));
-    }
-
-    private int getConfiguredServer() {
-        switch (getPluginConfig().getIntegerProperty(moddbservers, -1)) {
-        case 0:
-            logger.fine("The server fdcserver.net is configured");
-            return 1;
-        case 1:
-            logger.fine("The servermoddb.com #4  is configured");
-            return 2;
-        case 2:
-            logger.fine("The server  ismoddb.com #5 configured");
-            return 3;
-        case 3:
-            logger.fine("The server  ismoddb.com #6 configured");
-            return 4;
-        case 4:
-            logger.fine("The server  ismoddb.com #8 configured");
-            return 5;
-        case 5:
-            logger.fine("The server  ismoddb.com #10 configured");
-            return 6;
-        case 6:
-            logger.fine("The server  ismoddb.com #11 configured");
-            return 7;
-        case 7:
-            logger.fine("The server  ismoddb.com #13 configured");
-            return 8;
-        default:
-            logger.fine("No server is configured, returning default server (fdcserver.net)");
-            return 1;
-        }
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("An error has occured") || br.containsHTML("The download requested could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h5>Filename</h5>.*?<span class=\"summary\">(.*?)</span>").getMatch(0);
-        String filesize = br.getRegex("<h5>Size</h5>.*?<span class=\"summary\">.*?\\((.*?bytes)\\)</span>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<h5>Size</h5>.*?<span class=\"summary\">(.*?)\\(").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename);
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
-        return AvailableStatus.TRUE;
-    }
-
     private String FDCCDNREGEX1  = "Mirror provided by FDCCDN.*?<a href=\"(.*?)\"";
+
     private String FDCCDNREGEX2  = "http://www\\.fdcservers\\.net.*?<a href=\"(.*?)\"";
+
     private String SERVER4REGEX  = "Mirror provided by Mod DB #4.*?<a href=\"(.*?)\"";
+
     private String SERVER5REGEX  = "Mirror provided by Mod DB #5.*?<a href=\"(.*?)\"";
+
     private String SERVER6REGEX  = "Mirror provided by Mod DB #6.*?<a href=\"(.*?)\"";
     private String SERVER8REGEX  = "Mirror provided by Mod DB #8.*?<a href=\"(.*?)\"";
     private String SERVER10REGEX = "Mirror provided by Mod DB #10.*?<a href=\"(.*?)\"";
     private String SERVER11REGEX = "Mirror provided by Mod DB #11.*?<a href=\"(.*?)\"";
     private String SERVER13REGEX = "Mirror provided by Mod DB #13.*?<a href=\"(.*?)\"";
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        int configuredServer = getConfiguredServer();
-        // Get pages with the mirror
-        String singlemirrorpage = br.getRegex("window\\.open\\('(.*?)'").getMatch(0);
-        String mirrorid = br.getRegex("id=\"downloads(\\d+)report\"").getMatch(0);
-        if (mirrorid == null) {
-            mirrorid = br.getRegex("siteareaid=(\\d+)\"").getMatch(0);
-            if (mirrorid == null) {
-                mirrorid = br.getRegex("start/(\\d+)").getMatch(0);
-            }
-        }
-        if (mirrorid != null) {
-            br.getPage("http://www.moddb.com/downloads/start/" + mirrorid + "/all");
-        } else {
-            String standardmirrorpage = br.getRegex("attr\\(\"href\", \"(.*?)\\&amp;").getMatch(0);
-            if (standardmirrorpage != null) br.getPage("http://www.moddb.com" + standardmirrorpage);
-        }
-        String dllink = findLink(configuredServer, singlemirrorpage);
-        if (dllink == null) {
-            logger.info("no final downloadlink (dllink) has been found, the plugin must be defect!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = "http://www.moddb.com" + dllink;
-        br.setFollowRedirects(false);
-        br.getPage(dllink);
-        dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            logger.info("There is a problem with getting the dllink by br.getredirectlocation");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        boolean resumable = false;
-        int maxchunks = 1;
-        // The moddb servers and the fdcservers servers got different settings
-        // so the plugin also got them with this handling
-        if (configuredServer != 1 && !dllink.contains("fdccdn")) {
-            resumable = true;
-            maxchunks = 0;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.info("invalid final downloadlink (dllink) ?!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+    public ModDbCom(PluginWrapper wrapper) {
+        super(wrapper);
+        setConfigElements();
     }
-
     private String findLink(int configuredServer, String singlemirrorpage) throws IOException {
         String dllink = null;
         // Try to find the link for the selected servers
@@ -243,6 +144,41 @@ public class ModDbCom extends PluginForHost {
         }
         return dllink;
     }
+    @Override
+    public String getAGBLink() {
+        return "http://www.moddb.com/terms-of-use";
+    }
+    private int getConfiguredServer() {
+        switch (getPluginConfig().getIntegerProperty(moddbservers, -1)) {
+        case 0:
+            logger.fine("The server fdcserver.net is configured");
+            return 1;
+        case 1:
+            logger.fine("The servermoddb.com #4  is configured");
+            return 2;
+        case 2:
+            logger.fine("The server  ismoddb.com #5 configured");
+            return 3;
+        case 3:
+            logger.fine("The server  ismoddb.com #6 configured");
+            return 4;
+        case 4:
+            logger.fine("The server  ismoddb.com #8 configured");
+            return 5;
+        case 5:
+            logger.fine("The server  ismoddb.com #10 configured");
+            return 6;
+        case 6:
+            logger.fine("The server  ismoddb.com #11 configured");
+            return 7;
+        case 7:
+            logger.fine("The server  ismoddb.com #13 configured");
+            return 8;
+        default:
+            logger.fine("No server is configured, returning default server (fdcserver.net)");
+            return 1;
+        }
+    }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
@@ -250,8 +186,68 @@ public class ModDbCom extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://www.moddb.com/terms-of-use";
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        int configuredServer = getConfiguredServer();
+        // Get pages with the mirror
+        String singlemirrorpage = br.getRegex("window\\.open\\('(.*?)'").getMatch(0);
+        String mirrorid = br.getRegex("id=\"downloads(\\d+)report\"").getMatch(0);
+        if (mirrorid == null) {
+            mirrorid = br.getRegex("siteareaid=(\\d+)\"").getMatch(0);
+            if (mirrorid == null) {
+                mirrorid = br.getRegex("start/(\\d+)").getMatch(0);
+            }
+        }
+        if (mirrorid != null) {
+            br.getPage("http://www.moddb.com/downloads/start/" + mirrorid + "/all");
+        } else {
+            String standardmirrorpage = br.getRegex("attr\\(\"href\", \"(.*?)\\&amp;").getMatch(0);
+            if (standardmirrorpage != null) br.getPage("http://www.moddb.com" + standardmirrorpage);
+        }
+        String dllink = findLink(configuredServer, singlemirrorpage);
+        if (dllink == null) {
+            logger.info("no final downloadlink (dllink) has been found, the plugin must be defect!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = "http://www.moddb.com" + dllink;
+        br.setFollowRedirects(false);
+        br.getPage(dllink);
+        dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            logger.info("There is a problem with getting the dllink by br.getredirectlocation");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        boolean resumable = false;
+        int maxchunks = 1;
+        // The moddb servers and the fdcservers servers got different settings
+        // so the plugin also got them with this handling
+        if (configuredServer != 1 && !dllink.contains("fdccdn")) {
+            resumable = true;
+            maxchunks = 0;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.info("invalid final downloadlink (dllink) ?!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("An error has occured") || br.containsHTML("The download requested could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h5>Filename</h5>.*?<span class=\"summary\">(.*?)</span>").getMatch(0);
+        String filesize = br.getRegex("<h5>Size</h5>.*?<span class=\"summary\">.*?\\((.*?bytes)\\)</span>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<h5>Size</h5>.*?<span class=\"summary\">(.*?)\\(").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename);
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -259,11 +255,15 @@ public class ModDbCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), moddbservers, servers, JDL.L("plugins.host.L4dMapsCom.servers", "Use this server:")).setDefaultValue(0));
     }
 
 }

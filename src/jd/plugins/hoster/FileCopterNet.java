@@ -32,35 +32,24 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecopter.net" }, urls = { "http://(www\\.)?filecopter.net/files/[A-Za-z0-9]+\\.html" }, flags = { 0 })
 public class FileCopterNet extends PluginForHost {
 
+    private static final String MAINPAGE      = "http://www.filecopter.net";
+
+    private static final String GETLINKREGEX  = "disabled=\"disabled\" onclick=\"document\\.location=\\'(.*?)\\';\"";
+
+    private static final String GETLINKREGEX2 = "\\'(" + "http://(www\\.)" + MAINPAGE.replaceAll("(http://|www\\.)", "") + "/get/[A-Za-z0-9]+/\\d+/.*?)\\'";
+    private static final String FILENOTFOUND  = ">The file you have requested does not exist";
+    private static final String APIKEY        = "lk6ucRFoBSsboU84Sx6GeHEf0TqB";
     public FileCopterNet(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     @Override
     public String getAGBLink() {
         return MAINPAGE + "/help/terms.php";
     }
 
-    private static final String MAINPAGE      = "http://www.filecopter.net";
-    private static final String GETLINKREGEX  = "disabled=\"disabled\" onclick=\"document\\.location=\\'(.*?)\\';\"";
-    private static final String GETLINKREGEX2 = "\\'(" + "http://(www\\.)" + MAINPAGE.replaceAll("(http://|www\\.)", "") + "/get/[A-Za-z0-9]+/\\d+/.*?)\\'";
-    private static final String FILENOTFOUND  = ">The file you have requested does not exist";
-    private static final String APIKEY        = "lk6ucRFoBSsboU84Sx6GeHEf0TqB";
-
-    // Using FreakshareScript 1.1 API Version
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        // Use API with JDownloader API Key
-        br.getPage(MAINPAGE.replace("www.", "") + "/api/info.php?api_key=" + APIKEY + "&file_id=" + new Regex(link.getDownloadURL(), "/files/([A-Za-z0-9]+)\\.html").getMatch(0));
-        if (br.containsHTML("file does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("\\[file_name\\] => (.*?)\n").getMatch(0);
-        String filesize = br.getRegex("\\[file_size\\] => (\\d+)\n").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Set final filename here because hoster taggs files
-        link.setFinalFileName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -91,13 +80,24 @@ public class FileCopterNet extends PluginForHost {
         dl.startDownload();
     }
 
+    // Using FreakshareScript 1.1 API Version
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        // Use API with JDownloader API Key
+        br.getPage(MAINPAGE.replace("www.", "") + "/api/info.php?api_key=" + APIKEY + "&file_id=" + new Regex(link.getDownloadURL(), "/files/([A-Za-z0-9]+)\\.html").getMatch(0));
+        if (br.containsHTML("file does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("\\[file_name\\] => (.*?)\n").getMatch(0);
+        String filesize = br.getRegex("\\[file_size\\] => (\\d+)\n").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Set final filename here because hoster taggs files
+        link.setFinalFileName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

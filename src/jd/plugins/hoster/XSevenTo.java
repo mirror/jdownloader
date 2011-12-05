@@ -41,40 +41,125 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x7.to" }, urls = { "http://[\\w\\.]*?x7\\.to/(?!list)[a-zA-Z0-9]+(/(?!inList)[^/\r\n]+)?" }, flags = { 2 })
 public class XSevenTo extends PluginForHost {
 
+    public static final Object  LOCK            = new Object();
+
+    private static final String PREMIUMONLYTEXT = "(only premium members will be able to download the file|The requested file is larger than|und kann nur von Premium-Benutzern herunter geladen werden)";
+
     public XSevenTo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://x7.to/foyer");
     }
-
     @Override
-    public String getAGBLink() {
-        return "http://x7.to/legal";
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            Browser br = new Browser();
+            br.setDebug(true);
+            br.setCookiesExclusive(true);
+            StringBuilder sb = new StringBuilder();
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 80 links at once */
+                    if (index == urls.length || links.size() > 80) break;
+                    DownloadLink dl = urls[index];
+                    index++;
+                    String id = new Regex(dl.getDownloadURL(), "to/(?!list)([a-zA-Z0-9]+/[^/]+)").getMatch(0);
+                    /*
+                     * we need id/filename format for api else fallback to
+                     * website checking
+                     */
+                    /* � cause issues for api, so we do fallback check here */
+                    if (id == null || id.contains("�") || id.contains("%")) {
+                        dl.isAvailable();
+                        continue;
+                    }
+                    links.add(dl);
+                }
+                if (links.size() == 0) break;
+                sb.delete(0, sb.capacity());
+                int c = 0;
+                for (DownloadLink dl : links) {
+                    if (c > 0) sb.append("&");
+                    String id = new Regex(dl.getDownloadURL(), "to/(?!list)([a-zA-Z0-9]+/[^/]+)").getMatch(0);
+                    sb.append("id_" + c + "=" + Encoding.urlEncode(id));
+                    c++;
+                }
+                br.postPage("http://x7.to/api?fnc=onlinecheck", sb.toString());
+                String infos[][] = br.getRegex(Pattern.compile("id_(\\d+): ((.+), (\\d+)|file removed)")).getMatches();
+                for (String info[] : infos) {
+                    int number = Integer.parseInt(info[0]);
+                    DownloadLink dl = links.get(number);
+                    if ("file removed".equalsIgnoreCase(info[1])) {
+                        dl.setAvailable(false);
+                    } else {
+                        dl.setAvailable(true);
+                        dl.setName(info[2]);
+                        dl.setDownloadSize(SizeFormatter.getSize(info[3]));
+                    }
+                }
+                if (index == urls.length) break;
+            }
+        } catch (Throwable e) {
+            return false;
+        }
+        return true;
     }
-
-    public static final Object  LOCK            = new Object();
-    private static final String PREMIUMONLYTEXT = "(only premium members will be able to download the file|The requested file is larger than|und kann nur von Premium-Benutzern herunter geladen werden)";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("/player", ""));
     }
 
-    public void login(Account account) throws Exception {
-        synchronized (LOCK) {
-            this.setBrowserExclusive();
-            br.getPage("http://x7.to");
-            br.postPage("http://x7.to/james/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
-            if (br.getCookie("http://x7.to/", "login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            br.getPage("http://x7.to/my");
-            String premium = br.getRegex("Account type<.*?(>Premium<)/").getMatch(0);
-            if (premium == null) {
-                account.setProperty("freeaccount", "yesss ;)");
+    public void doFree(DownloadLink downloadLink) throws Exception {
+        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
+        if (con.getContentType().contains("html")) {
+            br.followConnection();
+            String dllink = null;
+            if (br.containsHTML(PREMIUMONLYTEXT)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
+            String fileID = new Regex(downloadLink.getDownloadURL(), "\\.to/([a-zA-Z0-9]+)").getMatch(0);
+            boolean isStream = br.containsHTML("<b>Stream</b>");
+            if (!isStream) {
+                Browser brc = requestXML(br, "http://x7.to/james/ticket/dl/" + fileID, null, false);
+                /* error handling */
+                if (brc.containsHTML("err:")) {
+                    String error = brc.getRegex("err:\"(.*?)\"").getMatch(0);
+                    if (error == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (error.contains("limit-parallel")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+                    if (error.contains("limit-dl")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
+                    if (error.contains("Download denied")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerProblem", 30 * 60 * 1000l);
+                    /* unknown error */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (brc.containsHTML("type:'download")) {
+                    int waitsecs = 0;
+                    String waittime = brc.getRegex("wait:(\\d+)").getMatch(0);
+                    if (waittime != null) waitsecs = Integer.parseInt(waittime);
+                    if (waitsecs > 0) sleep(waitsecs * 1000l, downloadLink);
+                    dllink = brc.getRegex("url:'(.*?)'").getMatch(0);
+                }
             } else {
-                account.setProperty("freeaccount", null);
+                /* free users can only download the 10mins sample */
+                br.getPage("http://x7.to/stream/" + fileID + "/h");
+                dllink = br.getRedirectLocation();
             }
-            /* have to call this in order so set language */
-            br.getPage("http://x7.to/lang/en");
-            br.getPage("http://x7.to/my");
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!dllink.contains("x7.to/")) dllink = "http://x7.to/" + dllink;
+            br.setDebug(true);
+            /* streams are not resumable */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, !isStream, 1);
+        } else {
+            // Direct links have no limits
+            con.disconnect();
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         }
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("wird ein erneuter Versuch gestartet") || br.containsHTML("elem/tecissue")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverproblems");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -136,6 +221,22 @@ public class XSevenTo extends PluginForHost {
     }
 
     @Override
+    public String getAGBLink() {
+        return "http://x7.to/legal";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -165,6 +266,25 @@ public class XSevenTo extends PluginForHost {
             dl.startDownload();
         } else {
             doFree(downloadLink);
+        }
+    }
+
+    public void login(Account account) throws Exception {
+        synchronized (LOCK) {
+            this.setBrowserExclusive();
+            br.getPage("http://x7.to");
+            br.postPage("http://x7.to/james/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
+            if (br.getCookie("http://x7.to/", "login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            br.getPage("http://x7.to/my");
+            String premium = br.getRegex("Account type<.*?(>Premium<)/").getMatch(0);
+            if (premium == null) {
+                account.setProperty("freeaccount", "yesss ;)");
+            } else {
+                account.setProperty("freeaccount", null);
+            }
+            /* have to call this in order so set language */
+            br.getPage("http://x7.to/lang/en");
+            br.getPage("http://x7.to/my");
         }
     }
 
@@ -223,135 +343,15 @@ public class XSevenTo extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
-    }
-
-    public void doFree(DownloadLink downloadLink) throws Exception {
-        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
-        if (con.getContentType().contains("html")) {
-            br.followConnection();
-            String dllink = null;
-            if (br.containsHTML(PREMIUMONLYTEXT)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.XSevenTo.errors.only4premium", "Only downloadable for premium users"));
-            String fileID = new Regex(downloadLink.getDownloadURL(), "\\.to/([a-zA-Z0-9]+)").getMatch(0);
-            boolean isStream = br.containsHTML("<b>Stream</b>");
-            if (!isStream) {
-                Browser brc = requestXML(br, "http://x7.to/james/ticket/dl/" + fileID, null, false);
-                /* error handling */
-                if (brc.containsHTML("err:")) {
-                    String error = brc.getRegex("err:\"(.*?)\"").getMatch(0);
-                    if (error == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    if (error.contains("limit-parallel")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
-                    if (error.contains("limit-dl")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
-                    if (error.contains("Download denied")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerProblem", 30 * 60 * 1000l);
-                    /* unknown error */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (brc.containsHTML("type:'download")) {
-                    int waitsecs = 0;
-                    String waittime = brc.getRegex("wait:(\\d+)").getMatch(0);
-                    if (waittime != null) waitsecs = Integer.parseInt(waittime);
-                    if (waitsecs > 0) sleep(waitsecs * 1000l, downloadLink);
-                    dllink = brc.getRegex("url:'(.*?)'").getMatch(0);
-                }
-            } else {
-                /* free users can only download the 10mins sample */
-                br.getPage("http://x7.to/stream/" + fileID + "/h");
-                dllink = br.getRedirectLocation();
-            }
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (!dllink.contains("x7.to/")) dllink = "http://x7.to/" + dllink;
-            br.setDebug(true);
-            /* streams are not resumable */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, !isStream, 1);
-        } else {
-            // Direct links have no limits
-            con.disconnect();
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
-        }
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("wird ein erneuter Versuch gestartet") || br.containsHTML("elem/tecissue")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverproblems");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public boolean checkLinks(DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            Browser br = new Browser();
-            br.setDebug(true);
-            br.setCookiesExclusive(true);
-            StringBuilder sb = new StringBuilder();
-            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            while (true) {
-                links.clear();
-                while (true) {
-                    /* we test 80 links at once */
-                    if (index == urls.length || links.size() > 80) break;
-                    DownloadLink dl = urls[index];
-                    index++;
-                    String id = new Regex(dl.getDownloadURL(), "to/(?!list)([a-zA-Z0-9]+/[^/]+)").getMatch(0);
-                    /*
-                     * we need id/filename format for api else fallback to
-                     * website checking
-                     */
-                    /* � cause issues for api, so we do fallback check here */
-                    if (id == null || id.contains("�") || id.contains("%")) {
-                        dl.isAvailable();
-                        continue;
-                    }
-                    links.add(dl);
-                }
-                if (links.size() == 0) break;
-                sb.delete(0, sb.capacity());
-                int c = 0;
-                for (DownloadLink dl : links) {
-                    if (c > 0) sb.append("&");
-                    String id = new Regex(dl.getDownloadURL(), "to/(?!list)([a-zA-Z0-9]+/[^/]+)").getMatch(0);
-                    sb.append("id_" + c + "=" + Encoding.urlEncode(id));
-                    c++;
-                }
-                br.postPage("http://x7.to/api?fnc=onlinecheck", sb.toString());
-                String infos[][] = br.getRegex(Pattern.compile("id_(\\d+): ((.+), (\\d+)|file removed)")).getMatches();
-                for (String info[] : infos) {
-                    int number = Integer.parseInt(info[0]);
-                    DownloadLink dl = links.get(number);
-                    if ("file removed".equalsIgnoreCase(info[1])) {
-                        dl.setAvailable(false);
-                    } else {
-                        dl.setAvailable(true);
-                        dl.setName(info[2]);
-                        dl.setDownloadSize(SizeFormatter.getSize(info[3]));
-                    }
-                }
-                if (index == urls.length) break;
-            }
-        } catch (Throwable e) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public void resetPluginGlobals() {
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
 
+    }
+
+    @Override
+    public void resetPluginGlobals() {
     }
 }

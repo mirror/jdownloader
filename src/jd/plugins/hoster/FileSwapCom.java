@@ -42,18 +42,8 @@ public class FileSwapCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>The file you requested has not been found or may no longer be available|<title>FileSwap\\.com :  download free</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<legend>Share This File \\&#187; (.*?)</legend>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>FileSwap\\.com : (.*?) download free</title>").getMatch(0);
-        String filesize = br.getRegex("\\&nbsp;\\&nbsp;\\&nbsp; <b>Size:</b>\\&nbsp;[\t\n\r ]+</td>[\t\n\r ]+<td>(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -76,12 +66,22 @@ public class FileSwapCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>The file you requested has not been found or may no longer be available|<title>FileSwap\\.com :  download free</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<legend>Share This File \\&#187; (.*?)</legend>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>FileSwap\\.com : (.*?) download free</title>").getMatch(0);
+        String filesize = br.getRegex("\\&nbsp;\\&nbsp;\\&nbsp; <b>Size:</b>\\&nbsp;[\t\n\r ]+</td>[\t\n\r ]+<td>(.*?)</td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void reset() {
     }
 
     @Override

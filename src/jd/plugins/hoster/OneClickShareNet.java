@@ -47,10 +47,91 @@ public class OneClickShareNet extends PluginForHost {
         if (!"abv-fs/".equals(languageText)) link.setUrlDownload(link.getDownloadURL().replace(languageText, ""));
     }
 
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        String expire = br.getRegex(">This role will expire on (\\d+/\\d+/\\d+ \\- \\d+:\\d+)</dd>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy - HH:mm", null));
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
     // Using same script as 4fastfile.com and 1-upload.com
     @Override
     public String getAGBLink() {
         return "http://1clickshare.net/terms";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        String reconnectWaittime = br.getRegex("id=\"abv\\-fs\\-wait\\-min\">(\\d+)<").getMatch(0);
+        if (reconnectWaittime != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(reconnectWaittime) + 1) * 60 * 1001l); }
+        Form dlform = br.getFormbyProperty("id", "abv-fs-download-form");
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String waitfbid = dlform.getRegex("form_build_id\" id=\"(.*?)\"").getMatch(0);
+        if (waitfbid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dlform.put("waitfbid", waitfbid);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            // This should never happen
+            if (br.containsHTML("You have another download in progress\\. You are not allowed to have parallel downloads")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        br.getPage(link.getDownloadURL());
+        Form dlform = br.getFormbyProperty("id", "abv-fs-download-form");
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+
+    }
+
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setCookie("http://1clickshare.net/", "ip2locale_lc", "en");
+        br.setFollowRedirects(true);
+        br.getPage("http://1clickshare.net/user/login");
+        Form loginform = br.getFormbyProperty("id", "user-login");
+        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        loginform.put("name", Encoding.urlEncode(account.getUser()));
+        loginform.put("pass", Encoding.urlEncode(account.getPass()));
+        br.submitForm(loginform);
+        if (!br.containsHTML("<dt>Premium</dt>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -74,88 +155,7 @@ public class OneClickShareNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String reconnectWaittime = br.getRegex("id=\"abv\\-fs\\-wait\\-min\">(\\d+)<").getMatch(0);
-        if (reconnectWaittime != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(reconnectWaittime) + 1) * 60 * 1001l); }
-        Form dlform = br.getFormbyProperty("id", "abv-fs-download-form");
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String waitfbid = dlform.getRegex("form_build_id\" id=\"(.*?)\"").getMatch(0);
-        if (waitfbid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dlform.put("waitfbid", waitfbid);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            // This should never happen
-            if (br.containsHTML("You have another download in progress\\. You are not allowed to have parallel downloads")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setCookie("http://1clickshare.net/", "ip2locale_lc", "en");
-        br.setFollowRedirects(true);
-        br.getPage("http://1clickshare.net/user/login");
-        Form loginform = br.getFormbyProperty("id", "user-login");
-        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        loginform.put("name", Encoding.urlEncode(account.getUser()));
-        loginform.put("pass", Encoding.urlEncode(account.getPass()));
-        br.submitForm(loginform);
-        if (!br.containsHTML("<dt>Premium</dt>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        account.setValid(true);
-        String expire = br.getRegex(">This role will expire on (\\d+/\\d+/\\d+ \\- \\d+:\\d+)</dd>").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy - HH:mm", null));
-        }
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account);
-        br.getPage(link.getDownloadURL());
-        Form dlform = br.getFormbyProperty("id", "abv-fs-download-form");
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

@@ -47,109 +47,6 @@ public class Ftp extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://jdownloader.org";
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        SimpleFTP ftp = new SimpleFTP();
-        try {
-            URL url = new URL(downloadLink.getDownloadURL());
-            /* cut off all ?xyz at the end */
-            String filePath = new Regex(downloadLink.getDownloadURL(), "://.*?/(.+?)(\\?|$)").getMatch(0);
-            ftp.connect(url);
-            String name = null;
-            if (oldStyle()) {
-                if (!filePath.contains("/")) filePath = "/" + filePath;
-                String[] list = ftp.getFileInfo(Encoding.urlDecode(filePath, false));
-                if (list != null) {
-                    /* list command worked */
-                    /* cut off all ?xyz at the end */
-                    name = new Regex(filePath, ".*/(.+?)(\\?|$)").getMatch(0);
-                    if (name == null) {
-                        logger.severe("could not get filename from ftpurl");
-                        name = downloadLink.getName();
-                    }
-                    name = Encoding.urlDecode(name, false);
-                    downloadLink.setFinalFileName(name);
-                    if (list.length == 4) downloadLink.setDownloadSize(Long.parseLong(list[2]));
-                    if (list.length == 7) downloadLink.setDownloadSize(Long.parseLong(list[4]));
-                }
-            } else {
-                /* switch binary mode */
-                ftp.bin();
-                /*
-                 * some servers do not allow to list the folder, so this may
-                 * fail but file still might be online
-                 */
-                long size = ftp.getSize(Encoding.urlDecode(filePath, false));
-                if (size != -1) {
-                    downloadLink.setDownloadSize(size);
-                    /* cut off all ?xyz at the end */
-                    name = new Regex(filePath, ".*/(.+?)(\\?|$)").getMatch(0);
-                    if (name == null) {
-                        logger.severe("could not get filename from ftpurl");
-                        name = downloadLink.getName();
-                    }
-                    name = Encoding.urlDecode(name, false);
-                    downloadLink.setFinalFileName(name);
-                } else {
-                    /* some server need / at the beginning */
-                    filePath = "/" + filePath;
-                    size = ftp.getSize(Encoding.urlDecode(filePath, false));
-                    if (size != -1) {
-                        downloadLink.setDownloadSize(size);
-                        /* cut off all ?xyz at the end */
-                        name = new Regex(filePath, ".*/(.+?)(\\?|$)").getMatch(0);
-                        if (name == null) {
-                            logger.severe("could not get filename from ftpurl");
-                            name = downloadLink.getName();
-                        }
-                        name = Encoding.urlDecode(name, false);
-                        downloadLink.setFinalFileName(name);
-                    }
-                }
-            }
-            if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } catch (IOException e) {
-            if (e.getMessage().contains("530 Login incorrect")) {
-                downloadLink.getLinkStatus().setErrorMessage("Login incorrect");
-                return AvailableStatus.FALSE;
-            } else
-                throw e;
-        } catch (PluginException e) {
-            throw e;
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                ftp.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        download(downloadLink.getDownloadURL(), downloadLink);
-    }
-
-    /* old simpleftp does not have size command support */
-    private boolean oldStyle() {
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        int rev = Integer.parseInt(prev);
-        if (rev < 10000) return true;
-        return false;
-    }
-
     public void download(String ftpurl, final DownloadLink downloadLink) throws IOException, PluginException {
         SimpleFTP ftp = new SimpleFTP();
         try {
@@ -327,8 +224,111 @@ public class Ftp extends PluginForHost {
     }
 
     @Override
+    public String getAGBLink() {
+        return "http://jdownloader.org";
+    }
+
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        download(downloadLink.getDownloadURL(), downloadLink);
+    }
+
+    /* old simpleftp does not have size command support */
+    private boolean oldStyle() {
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
+        } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        int rev = Integer.parseInt(prev);
+        if (rev < 10000) return true;
+        return false;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        SimpleFTP ftp = new SimpleFTP();
+        try {
+            URL url = new URL(downloadLink.getDownloadURL());
+            /* cut off all ?xyz at the end */
+            String filePath = new Regex(downloadLink.getDownloadURL(), "://.*?/(.+?)(\\?|$)").getMatch(0);
+            ftp.connect(url);
+            String name = null;
+            if (oldStyle()) {
+                if (!filePath.contains("/")) filePath = "/" + filePath;
+                String[] list = ftp.getFileInfo(Encoding.urlDecode(filePath, false));
+                if (list != null) {
+                    /* list command worked */
+                    /* cut off all ?xyz at the end */
+                    name = new Regex(filePath, ".*/(.+?)(\\?|$)").getMatch(0);
+                    if (name == null) {
+                        logger.severe("could not get filename from ftpurl");
+                        name = downloadLink.getName();
+                    }
+                    name = Encoding.urlDecode(name, false);
+                    downloadLink.setFinalFileName(name);
+                    if (list.length == 4) downloadLink.setDownloadSize(Long.parseLong(list[2]));
+                    if (list.length == 7) downloadLink.setDownloadSize(Long.parseLong(list[4]));
+                }
+            } else {
+                /* switch binary mode */
+                ftp.bin();
+                /*
+                 * some servers do not allow to list the folder, so this may
+                 * fail but file still might be online
+                 */
+                long size = ftp.getSize(Encoding.urlDecode(filePath, false));
+                if (size != -1) {
+                    downloadLink.setDownloadSize(size);
+                    /* cut off all ?xyz at the end */
+                    name = new Regex(filePath, ".*/(.+?)(\\?|$)").getMatch(0);
+                    if (name == null) {
+                        logger.severe("could not get filename from ftpurl");
+                        name = downloadLink.getName();
+                    }
+                    name = Encoding.urlDecode(name, false);
+                    downloadLink.setFinalFileName(name);
+                } else {
+                    /* some server need / at the beginning */
+                    filePath = "/" + filePath;
+                    size = ftp.getSize(Encoding.urlDecode(filePath, false));
+                    if (size != -1) {
+                        downloadLink.setDownloadSize(size);
+                        /* cut off all ?xyz at the end */
+                        name = new Regex(filePath, ".*/(.+?)(\\?|$)").getMatch(0);
+                        if (name == null) {
+                            logger.severe("could not get filename from ftpurl");
+                            name = downloadLink.getName();
+                        }
+                        name = Encoding.urlDecode(name, false);
+                        downloadLink.setFinalFileName(name);
+                    }
+                }
+            }
+            if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } catch (IOException e) {
+            if (e.getMessage().contains("530 Login incorrect")) {
+                downloadLink.getLinkStatus().setErrorMessage("Login incorrect");
+                return AvailableStatus.FALSE;
+            } else
+                throw e;
+        } catch (PluginException e) {
+            throw e;
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                ftp.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -336,11 +336,11 @@ public class Ftp extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
+        link.setProperty("RESUME", true);
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
-        link.setProperty("RESUME", true);
+    public void resetPluginGlobals() {
     }
 }

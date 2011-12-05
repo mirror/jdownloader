@@ -32,42 +32,12 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allshares.ge" }, urls = { "http://[\\w\\.]*?allshares\\.ge/(\\?d|download\\.php\\?id)=[A-Z0-9]+" }, flags = { 0 })
 public class AllSharesGe extends PluginForHost {
 
-    public AllSharesGe(PluginWrapper wrapper) {
-        super(wrapper);
-    }
+    public String               finalLink   = null;
 
-    // MhfScriptBasic 1.0
-    @Override
-    public String getAGBLink() {
-        return COOKIE_HOST + "/rules.php";
-    }
-
-    public String finalLink = null;
     private static final String COOKIE_HOST = "http://allshares.ge";
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
-        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
-        br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<b>File name:</b></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
-        if (filename == null) {
-            br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
-            if (filename == null) {
-                br.getRegex("<title>(.*?)</title>").getMatch(0);
-            }
-            if (filename == null) {
-                br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("<b>File size:</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setFinalFileName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public AllSharesGe(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     public void findLink(DownloadLink link) throws Exception {
@@ -80,6 +50,16 @@ public class AllSharesGe extends PluginForHost {
                 break;
             }
         }
+    }
+    // MhfScriptBasic 1.0
+    @Override
+    public String getAGBLink() {
+        return COOKIE_HOST + "/rules.php";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -146,17 +126,42 @@ public class AllSharesGe extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
+        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
+        br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<b>File name:</b></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
+        if (filename == null) {
+            br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
+            if (filename == null) {
+                br.getRegex("<title>(.*?)</title>").getMatch(0);
+            }
+            if (filename == null) {
+                br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex("<b>File size:</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setFinalFileName(filename.trim());
+        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void reset() {
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
 }

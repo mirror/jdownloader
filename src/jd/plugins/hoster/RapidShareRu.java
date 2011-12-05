@@ -42,6 +42,32 @@ public class RapidShareRu extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML("Все слоты бесплатного скачивания заняты. Пожалуйста попробуйте еще раз через некоторое время")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available", 30 * 60 * 1000l);
+        String dllink = br.getRegex("innerHTML=' <a href=\"'\\+'(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("'(http://dl[0-9]+\\.rapidshare\\.ru/.*?/.*?/[a-zA-Z0-9.-_]+)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setDebug(true);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (!(dl.getConnection().isContentDisposition())) {
+            if (dl.getConnection().isOK()) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerError", 5 * 60 * 1000l);
+            }
+        }
+        dl.startDownload();
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -69,33 +95,7 @@ public class RapidShareRu extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        if (br.containsHTML("Все слоты бесплатного скачивания заняты. Пожалуйста попробуйте еще раз через некоторое время")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available", 30 * 60 * 1000l);
-        String dllink = br.getRegex("innerHTML=' <a href=\"'\\+'(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("'(http://dl[0-9]+\\.rapidshare\\.ru/.*?/.*?/[a-zA-Z0-9.-_]+)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setDebug(true);
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (!(dl.getConnection().isContentDisposition())) {
-            if (dl.getConnection().isOK()) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerError", 5 * 60 * 1000l);
-            }
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

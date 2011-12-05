@@ -40,9 +40,113 @@ public class TabNetUa extends PluginForHost {
         this.enablePremium("http://tab.net.ua/registration/");
     }
 
+    public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+        if (br.containsHTML("name=\"password\\[files_")) {
+            handlePassword(downloadLink.getStringProperty("pass", null), downloadLink);
+        } else if (br.containsHTML(">Тільки зареєстровані користувачі можуть скачати цей файл<")) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.TabNetUa.only4resteredusers", "This file is only downloadable for registered users!")); }
+        for (int i = 0; i <= 3; i++) {
+            String captchaUrl = br.getRegex("Введіть число, вказане на картинці:<br>.*?<img src=\"(http://tab\\.net\\.ua/.*?)\"").getMatch(0);
+            if (captchaUrl == null) captchaUrl = br.getRegex("\"(http://tab\\.net\\.ua/tools/antispam\\.php\\?id=[a-z0-9]+\\&r=\\d+)\"").getMatch(0);
+            if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String code = getCaptchaCode(captchaUrl, downloadLink);
+            br.postPage(br.getURL(), "antispam=" + code);
+            if (br.containsHTML("(>Не співпадає з числом на картинці<|antispam.php?)")) continue;
+            break;
+        }
+        if (br.containsHTML("Вы ввели неправильный код проверки")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        String dllink = br.getRegex("; background-repeat:no-repeat;\">.*?<a href=\"(http://.*?)\" class=\"file_download\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://d\\d+\\.tab\\.net\\.ua:\\d+/\\d+/.*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("<title>404 Not Found</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        dl.startDownload();
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setStatus("Registered (Free) User");
+        account.setValid(true);
+
+        return ai;
+    }
+
     @Override
     public String getAGBLink() {
         return "http://tab.net.ua/";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public void handlePassword(String passCode, DownloadLink downloadLink) throws Exception, PluginException {
+        String fid = new Regex(downloadLink.getDownloadURL(), "tab\\.net\\.ua/sites/files/site_name\\..*?/id\\.(\\d+)/").getMatch(0);
+        if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (int i = 0; i <= 3; i++) {
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Please enter the password file with the ID: " + fid, downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+            br.postPage(downloadLink.getDownloadURL(), "password%5Bfiles_" + fid + "%5D=" + passCode);
+            logger.info("File is password protected, password = " + passCode);
+            if (br.containsHTML("name=\"password\\[files_")) {
+                logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                downloadLink.setProperty("pass", null);
+                continue;
+            }
+            break;
+        }
+        if (br.containsHTML("name=\"password\\[files_")) {
+            logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+            downloadLink.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        if (passCode != null) downloadLink.setProperty("pass", passCode);
+    }
+
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        requestFileInformation(parameter);
+        login(account);
+        br.getPage(parameter.getDownloadURL());
+        doFree(parameter);
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    public void login(Account account) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.postPage("http://tab.net.ua/", "r%5Blog%5D=" + Encoding.urlEncode(account.getUser()) + "&r%5Bpass%5D=" + Encoding.urlEncode(account.getPass()));
+        if (br.getCookie("http://tab.net.ua", "sid") == null || br.getCookie("http://tab.net.ua", "password") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     /** TODO: after next major update */
@@ -90,106 +194,7 @@ public class TabNetUa extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
-    }
-
-    public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
-        if (br.containsHTML("name=\"password\\[files_")) {
-            handlePassword(downloadLink.getStringProperty("pass", null), downloadLink);
-        } else if (br.containsHTML(">Тільки зареєстровані користувачі можуть скачати цей файл<")) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.TabNetUa.only4resteredusers", "This file is only downloadable for registered users!")); }
-        for (int i = 0; i <= 3; i++) {
-            String captchaUrl = br.getRegex("Введіть число, вказане на картинці:<br>.*?<img src=\"(http://tab\\.net\\.ua/.*?)\"").getMatch(0);
-            if (captchaUrl == null) captchaUrl = br.getRegex("\"(http://tab\\.net\\.ua/tools/antispam\\.php\\?id=[a-z0-9]+\\&r=\\d+)\"").getMatch(0);
-            if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String code = getCaptchaCode(captchaUrl, downloadLink);
-            br.postPage(br.getURL(), "antispam=" + code);
-            if (br.containsHTML("(>Не співпадає з числом на картинці<|antispam.php?)")) continue;
-            break;
-        }
-        if (br.containsHTML("Вы ввели неправильный код проверки")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String dllink = br.getRegex("; background-repeat:no-repeat;\">.*?<a href=\"(http://.*?)\" class=\"file_download\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://d\\d+\\.tab\\.net\\.ua:\\d+/\\d+/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("<title>404 Not Found</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
-        dl.startDownload();
-    }
-
-    public void handlePassword(String passCode, DownloadLink downloadLink) throws Exception, PluginException {
-        String fid = new Regex(downloadLink.getDownloadURL(), "tab\\.net\\.ua/sites/files/site_name\\..*?/id\\.(\\d+)/").getMatch(0);
-        if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        for (int i = 0; i <= 3; i++) {
-            if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput("Please enter the password file with the ID: " + fid, downloadLink);
-            } else {
-                /* gespeicherten PassCode holen */
-                passCode = downloadLink.getStringProperty("pass", null);
-            }
-            br.postPage(downloadLink.getDownloadURL(), "password%5Bfiles_" + fid + "%5D=" + passCode);
-            logger.info("File is password protected, password = " + passCode);
-            if (br.containsHTML("name=\"password\\[files_")) {
-                logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                downloadLink.setProperty("pass", null);
-                continue;
-            }
-            break;
-        }
-        if (br.containsHTML("name=\"password\\[files_")) {
-            logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-            downloadLink.setProperty("pass", null);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
-    }
-
-    public void login(Account account) throws Exception {
-        setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.postPage("http://tab.net.ua/", "r%5Blog%5D=" + Encoding.urlEncode(account.getUser()) + "&r%5Bpass%5D=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie("http://tab.net.ua", "sid") == null || br.getCookie("http://tab.net.ua", "password") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        ai.setStatus("Registered (Free) User");
-        account.setValid(true);
-
-        return ai;
-    }
-
-    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        requestFileInformation(parameter);
-        login(account);
-        br.getPage(parameter.getDownloadURL());
-        doFree(parameter);
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
-    }
-
-    @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

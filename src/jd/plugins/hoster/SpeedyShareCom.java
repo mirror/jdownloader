@@ -21,11 +21,11 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -33,36 +33,24 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedyshare.com" }, urls = { "http://(www\\.)?speedyshare\\.com/files?/[A-Za-z0-9]+/.+" }, flags = { 0 })
 public class SpeedyShareCom extends PluginForHost {
 
+    private static final String PREMIUMONLY     = ">This paraticular file can only be downloaded after you purchase";
+
+    private static final String PREMIUMONLYTEXT = "Only downloadable for premium users";
+
+    private static final String MAINPAGE        = "http://www.speedyshare.com";
+
+    private static final String CAPTCHATEXT     = "/captcha\\.php\\?";
     public SpeedyShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(2000l);
     }
-
     @Override
     public String getAGBLink() {
         return "http://www.speedyshare.com/terms.php";
     }
-
-    private static final String PREMIUMONLY     = ">This paraticular file can only be downloaded after you purchase";
-    private static final String PREMIUMONLYTEXT = "Only downloadable for premium users";
-    private static final String MAINPAGE        = "http://www.speedyshare.com";
-    private static final String CAPTCHATEXT     = "/captcha\\.php\\?";
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(class=sizetagtext>not found<|File not found|It has been deleted<|>or it never existed at all)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("property=\"og:title\" content=\"(.*?) \\- download at SpeedyShare\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("itemprop=\"name\" content=\"(.*?) \\- download at SpeedyShare\"").getMatch(0);
-        String filesize = br.getRegex("valign=top><div class=sizetagtext>(.*?)</div>").getMatch(0);
-        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(Encoding.htmlDecode(filename));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (br.containsHTML(PREMIUMONLY)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.speedysharecom.errors.only4premium", PREMIUMONLYTEXT));
-        return AvailableStatus.TRUE;
-
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -109,9 +97,26 @@ public class SpeedyShareCom extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("(class=sizetagtext>not found<|File not found|It has been deleted<|>or it never existed at all)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("property=\"og:title\" content=\"(.*?) \\- download at SpeedyShare\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("itemprop=\"name\" content=\"(.*?) \\- download at SpeedyShare\"").getMatch(0);
+        String filesize = br.getRegex("valign=top><div class=sizetagtext>(.*?)</div>").getMatch(0);
+        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setName(Encoding.htmlDecode(filename));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.containsHTML(PREMIUMONLY)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.speedysharecom.errors.only4premium", PREMIUMONLYTEXT));
+        return AvailableStatus.TRUE;
+
     }
 
     @Override
@@ -119,10 +124,10 @@ public class SpeedyShareCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

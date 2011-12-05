@@ -46,24 +46,8 @@ public class XupIn extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Datei existiert nicht")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = null;
-        String filesize = null;
-        if (downloadLink.getDownloadURL().contains("xup.raidrush.ws/")) {
-            filename = br.getRegex("<title>XUP - Download (.*?) \\| ").getMatch(0);
-            if (filename == null) filename = br.getRegex("<h1>XUP - Download (.*?) \\| ").getMatch(0);
-            filesize = br.getRegex("Size</font></td>[\t\n\r ]+<td>(\\d+)</td>").getMatch(0);
-        } else {
-            filename = br.getRegex("<legend>.*?<.*?>Download:(.*?)</.*?>").getMatch(0);
-            filesize = br.getRegex("File Size:(.*?)</li>").getMatch(0);
-        }
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        downloadLink.setName(filename.trim());
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -108,8 +92,24 @@ public class XupIn extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Datei existiert nicht")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = null;
+        String filesize = null;
+        if (downloadLink.getDownloadURL().contains("xup.raidrush.ws/")) {
+            filename = br.getRegex("<title>XUP - Download (.*?) \\| ").getMatch(0);
+            if (filename == null) filename = br.getRegex("<h1>XUP - Download (.*?) \\| ").getMatch(0);
+            filesize = br.getRegex("Size</font></td>[\t\n\r ]+<td>(\\d+)</td>").getMatch(0);
+        } else {
+            filename = br.getRegex("<legend>.*?<.*?>Download:(.*?)</.*?>").getMatch(0);
+            filesize = br.getRegex("File Size:(.*?)</li>").getMatch(0);
+        }
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        downloadLink.setName(filename.trim());
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -118,11 +118,11 @@ public class XupIn extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

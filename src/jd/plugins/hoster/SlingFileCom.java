@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.http.RandomUserAgent;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -33,12 +34,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slingfile.com" }, urls = { "http://[\\w\\.]*?slingfile\\.com/((file|audio|video)/.+|dl/[a-z0-9]+/.*?\\.html)" }, flags = { 0 })
 public class SlingFileCom extends PluginForHost {
 
+    private static String ERRORREGEX = "class=\"errorbox\"><p><strong>(.*?</a>.</strong>";
+
     public SlingFileCom(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    public String getAGBLink() {
-        return "http://www.slingfile.com/pages/tos.html";
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -47,32 +46,12 @@ public class SlingFileCom extends PluginForHost {
         link.setUrlDownload(theLink);
     }
 
-    private static String ERRORREGEX = "class=\"errorbox\"><p><strong>(.*?</a>.</strong>";
+    public String getAGBLink() {
+        return "http://www.slingfile.com/pages/tos.html";
+    }
 
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getPage(downloadLink.getDownloadURL());
-        // Prevents errors, i don't know why the page sometimes shows this
-        // error!
-        if (br.containsHTML(">Please enable cookies to use this website")) br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().equals("http://www.slingfile.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (!br.getRedirectLocation().contains("/dl/")) throw new PluginException(LinkStatus.ERROR_FATAL, "Link redirects to a wrong link!");
-            downloadLink.setUrlDownload(br.getRedirectLocation());
-            logger.info("New link was set in the availableCheck, opening page...");
-            br.getPage(downloadLink.getDownloadURL());
-        }
-        String filename = br.getRegex("<h3>Downloading <span>(.*?)</span></h3>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?) \\- SlingFile \\- Free File Hosting \\& Online Storage</title>").getMatch(0);
-        }
-        String filesize = br.getRegex("<td>(.{2,20}) \\| Uploaded").getMatch(0);
-        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -107,16 +86,48 @@ public class SlingFileCom extends PluginForHost {
         dl.startDownload();
     }
 
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getPage(downloadLink.getDownloadURL());
+        // Prevents errors, i don't know why the page sometimes shows this
+        // error!
+        if (br.containsHTML(">Please enable cookies to use this website")) br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            if (br.getRedirectLocation().equals("http://www.slingfile.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (!br.getRedirectLocation().contains("/dl/")) throw new PluginException(LinkStatus.ERROR_FATAL, "Link redirects to a wrong link!");
+            downloadLink.setUrlDownload(br.getRedirectLocation());
+            logger.info("New link was set in the availableCheck, opening page...");
+            br.getPage(downloadLink.getDownloadURL());
+        }
+        String filename = br.getRegex("<h3>Downloading <span>(.*?)</span></h3>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?) \\- SlingFile \\- Free File Hosting \\& Online Storage</title>").getMatch(0);
+        }
+        String filesize = br.getRegex("<td>(.{2,20}) \\| Uploaded").getMatch(0);
+        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     public void reset() {
     }
 
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

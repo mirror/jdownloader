@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -36,40 +37,46 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axifile.com" }, urls = { "http://(www\\.)?axifile\\.com(/mydownload\\.php\\?file=|/en/|(/)?\\?)[A-Z0-9]+" }, flags = { 0 })
 public class AxiFileCom extends PluginForHost {
+    private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+
+    private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
+
+    private static final String COOKIE_HOST      = "http://www.axifile.com";
+
+    private static final String IPBLOCKED        = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
+
     public AxiFileCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.axifile.com/terms.php";
-    }
-
-    private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
-    private static final String COOKIE_HOST      = "http://www.axifile.com";
-    private static final String IPBLOCKED        = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
-
     public void correctDownloadLink(DownloadLink link) {
         String addedLink = link.getDownloadURL();
         if (addedLink.contains("axifile.com?"))
             link.setUrlDownload(addedLink.replace("?", "/?"));
         else if (addedLink.contains("/en/")) link.setUrlDownload(addedLink.replace("/en/", "/?"));
     }
+    private String findLink() throws Exception {
+        String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+[^\"\\']{10,500})(\"|\\')").getMatch(0);
+        if (finalLink == null) {
+            String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+            if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (String alink : sitelinks) {
+                alink = Encoding.htmlDecode(alink);
+                if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
+                    finalLink = alink;
+                    break;
+                }
+            }
+        }
+        return finalLink;
+    }
+    @Override
+    public String getAGBLink() {
+        return "http://www.axifile.com/terms.php";
+    }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
-        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
-        br.setCookiesExclusive(true);
-        br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null || br.containsHTML("<title>AxiFile: Upload and download big files</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("class=\"data\" dir=\"ltr\"><h1 style=\"font\\-size: 14px;font\\-weight:normal;\"><span title=\"[^\"\\']+\">(.*?)</span></h1>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String filesize = br.getRegex("class=\"names\"><b>File size:</b></td>[\t\n\r ]+<td class=\"data\">(.*?)</td>").getMatch(0);
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        downloadLink.setName(filename.trim());
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -162,25 +169,29 @@ public class AxiFileCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String findLink() throws Exception {
-        String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+[^\"\\']{10,500})(\"|\\')").getMatch(0);
-        if (finalLink == null) {
-            String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-            if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            for (String alink : sitelinks) {
-                alink = Encoding.htmlDecode(alink);
-                if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
-                    finalLink = alink;
-                    break;
-                }
-            }
-        }
-        return finalLink;
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
+        br.setCookiesExclusive(true);
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null || br.containsHTML("<title>AxiFile: Upload and download big files</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("class=\"data\" dir=\"ltr\"><h1 style=\"font\\-size: 14px;font\\-weight:normal;\"><span title=\"[^\"\\']+\">(.*?)</span></h1>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filesize = br.getRegex("class=\"names\"><b>File size:</b></td>[\t\n\r ]+<td class=\"data\">(.*?)</td>").getMatch(0);
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        downloadLink.setName(filename.trim());
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -188,11 +199,11 @@ public class AxiFileCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
 }

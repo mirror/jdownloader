@@ -34,9 +34,29 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptal.com", "uptal.org" }, urls = { "frrthe32676okfweziqdnmUNUSED_REGEXBZU%GFFD", "http://(www\\.)?(new\\.)?uptal\\.(com|org)/\\?d=[A-Fa-f0-9]+" }, flags = { 0, 0 })
 public class UptalCom extends PluginForHost {
 
+    private static final String CAPTCHATEXT = "captcha\\.php";
+
     public UptalCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(100l);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("uptal.com", "uptal.org"));
+    }
+
+    private String findLink() throws Exception {
+        String finalLink = null;
+        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (String alink : sitelinks) {
+            alink = Encoding.htmlDecode(alink);
+            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
+                finalLink = alink;
+                break;
+            }
+        }
+        return finalLink;
     }
 
     @Override
@@ -44,32 +64,9 @@ public class UptalCom extends PluginForHost {
         return "http://www.uptal.com/faq.php";
     }
 
-    private static final String CAPTCHATEXT = "captcha\\.php";
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("uptal.com", "uptal.org"));
-    }
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (!br.getURL().contains("uptal.org")) br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("DL_FileNotFound") || br.containsHTML(">Your requested file is not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("File name:</b></td>\\s+<td[^>]+>(.*?)</td>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("title=\"Click this to report (.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<h2 class=\"float-left\">(.*?)</h2>").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("File size:</b></td>\\s+<td[^>]+>(.*?)</td>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<strong>File size</strong></li>[\t\n\r ]+<li class=\"[a-z0-9_-]+\">(.*?)</li>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(Encoding.htmlDecode(filename.trim()));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -102,23 +99,31 @@ public class UptalCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String findLink() throws Exception {
-        String finalLink = null;
-        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        for (String alink : sitelinks) {
-            alink = Encoding.htmlDecode(alink);
-            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
-                finalLink = alink;
-                break;
-            }
-        }
-        return finalLink;
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (!br.getURL().contains("uptal.org")) br.getPage(downloadLink.getDownloadURL());
+        if (br.getURL().contains("DL_FileNotFound") || br.containsHTML(">Your requested file is not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("File name:</b></td>\\s+<td[^>]+>(.*?)</td>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("title=\"Click this to report (.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<h2 class=\"float-left\">(.*?)</h2>").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex("File size:</b></td>\\s+<td[^>]+>(.*?)</td>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<strong>File size</strong></li>[\t\n\r ]+<li class=\"[a-z0-9_-]+\">(.*?)</li>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -126,10 +131,10 @@ public class UptalCom extends PluginForHost {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

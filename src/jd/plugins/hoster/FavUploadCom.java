@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -39,6 +40,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "favupload.com" }, urls = { "http://(www\\.)?favupload\\.com/(video|file|audio)/\\d+/" }, flags = { 0 })
 public class FavUploadCom extends PluginForHost {
 
+    private static final String PASSWORDPROTECTED = "(> The uploader of this file has requested to password protect this page|Enter the password in the text box below and submit|type=\"hidden\" name=\"file_auth\")";
+
+    private static final String FILEIDREGEX       = "/(\\d+)/$";
+
     public FavUploadCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -48,25 +53,11 @@ public class FavUploadCom extends PluginForHost {
         return "http://www.favupload.com/terms-of-service/";
     }
 
-    private static final String PASSWORDPROTECTED = "(> The uploader of this file has requested to password protect this page|Enter the password in the text box below and submit|type=\"hidden\" name=\"file_auth\")";
-    private static final String FILEIDREGEX       = "/(\\d+)/$";
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("favupload.com/errors/file-not-found/") || br.containsHTML("(>The file you requested could not be found|> It may have been removed by the uploader or violated our)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<strong>File Name:</strong> (.*?) <br").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Download File: (.*?) \\| FAVUpload</title>").getMatch(0);
-        String filesize = br.getRegex("File Size:</strong> (.*?)</div>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (br.containsHTML(PASSWORDPROTECTED)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.favuploadcom.passwordprotected", "This link is password protected"));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        // Max 5 connections possible
+        return 1;
     }
-
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -110,14 +101,34 @@ public class FavUploadCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void reset() {
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return JACMethod.hasMethod("recaptcha");
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        // Max 5 connections possible
-        return 1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.getURL().contains("favupload.com/errors/file-not-found/") || br.containsHTML("(>The file you requested could not be found|> It may have been removed by the uploader or violated our)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<strong>File Name:</strong> (.*?) <br").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>Download File: (.*?) \\| FAVUpload</title>").getMatch(0);
+        String filesize = br.getRegex("File Size:</strong> (.*?)</div>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.containsHTML(PASSWORDPROTECTED)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.favuploadcom.passwordprotected", "This link is password protected"));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

@@ -43,25 +43,9 @@ public class SaveuFileInTh extends PluginForHost {
         return "http://www.saveufile.com/service.php";
     }
 
-    /**
-     * Important: Hoster is (sometimes) only accessible in Thailand (ur using a
-     * working proxy)
-     */
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(File not found\\.|<title>ฝากไฟล์ , อัพโหลด  โดย </title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex fInfo = br.getRegex("<title>ฝากไฟล์ (.*?), อัพโหลด (.*?) โดย ");
-        if (fInfo.getMatch(0) == null || fInfo.getMatch(1) == null) fInfo = br.getRegex("<h3 style=\"font\\-size: 14px; margin\\-bottom: 10px;\">ฝากไฟล์ (.*?), อัพโหลด (.*?) โดย ");
-        String filename = fInfo.getMatch(0);
-        String filesize = fInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        /** Set final filename here because server sometimes sends bad names */
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 5;
     }
 
     @Override
@@ -92,13 +76,34 @@ public class SaveuFileInTh extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    /**
+     * Important: Hoster is (sometimes) only accessible in Thailand (ur using a
+     * working proxy)
+     */
     @Override
-    public void reset() {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(File not found\\.|<title>ฝากไฟล์ , อัพโหลด  โดย </title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Regex fInfo = br.getRegex("<title>ฝากไฟล์ (.*?), อัพโหลด (.*?) โดย ");
+        if (fInfo.getMatch(0) == null || fInfo.getMatch(1) == null) fInfo = br.getRegex("<h3 style=\"font\\-size: 14px; margin\\-bottom: 10px;\">ฝากไฟล์ (.*?), อัพโหลด (.*?) โดย ");
+        String filename = fInfo.getMatch(0);
+        String filesize = fInfo.getMatch(1);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /** Set final filename here because server sometimes sends bad names */
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+    public void reset() {
     }
 
     @Override

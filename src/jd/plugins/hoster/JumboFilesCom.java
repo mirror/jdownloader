@@ -72,13 +72,49 @@ public class JumboFilesCom extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://jumbofiles.com/tos.html";
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String space = br.getRegex(Pattern.compile("<td>You are using:</td><td><b>(.*?)of.*?Mb</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (space != null) ai.setUsedSpace(space.trim() + " Mb");
+        String points = br.getRegex(Pattern.compile("<td>You have:</td><td><b>(.*?)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (points != null) {
+            // Who needs half points ? If we have a dot in the points, just
+            // remove it
+            if (points.contains(".")) {
+                String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
+                points = points.replace(dot, "");
+            }
+            ai.setPremiumPoints(Long.parseLong(points.trim()));
+        }
+        account.setValid(true);
+        String availabletraffic = new Regex(br.toString(), "Monthly hotlink traffic remaining:</TD><TD><b>(.*?)</b>").getMatch(0);
+        if (availabletraffic != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+        } else {
+            ai.setUnlimitedTraffic();
+        }
+        String expire = br.getRegex("<TD>Premium-Account expire:</TD><TD><b>(.*?)</b>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            expire = expire.replaceAll("(<b>|</b>)", "");
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+        }
+        ai.setStatus("Premium User");
+        return ai;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public String getAGBLink() {
+        return "http://jumbofiles.com/tos.html";
     }
 
     private String getDllink() {
@@ -90,6 +126,47 @@ public class JumboFilesCom extends PluginForHost {
             }
         }
         return linkurl;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        br.setFollowRedirects(true);
+        // Form um auf "Datei herunterladen" zu klicken
+        final Form dlForm = br.getFormbyProperty("name", "F1");
+        if (dlForm == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        String passCode = null;
+        if (BRBEFORE.contains("<b>Password:</b>")) {
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = getUserInput(null, downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+            dlForm.put("password", passCode);
+        }
+        br.submitForm(dlForm);
+        doSomething();
+        if (BRBEFORE.contains("Wrong password")) {
+            logger.warning("Wrong password!");
+            downloadLink.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
+        String dllink = new Regex(BRBEFORE, "SRC=\"http://jumbofiles\\.com/images/dd\\.gif\" WIDTH=\"5\" HEIGHT=\"5\"><BR> <form name=\".*?\" action=\"(.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = new Regex(BRBEFORE, "\"(http://(www\\d+|[a-z0-9]+)\\.jumbofiles\\.com:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
+        }
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl.startDownload();
     }
 
     @Override
@@ -140,47 +217,6 @@ public class JumboFilesCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        String space = br.getRegex(Pattern.compile("<td>You are using:</td><td><b>(.*?)of.*?Mb</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim() + " Mb");
-        String points = br.getRegex(Pattern.compile("<td>You have:</td><td><b>(.*?)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (points != null) {
-            // Who needs half points ? If we have a dot in the points, just
-            // remove it
-            if (points.contains(".")) {
-                String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
-                points = points.replace(dot, "");
-            }
-            ai.setPremiumPoints(Long.parseLong(points.trim()));
-        }
-        account.setValid(true);
-        String availabletraffic = new Regex(br.toString(), "Monthly hotlink traffic remaining:</TD><TD><b>(.*?)</b>").getMatch(0);
-        if (availabletraffic != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-        String expire = br.getRegex("<TD>Premium-Account expire:</TD><TD><b>(.*?)</b>").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
-        } else {
-            expire = expire.replaceAll("(<b>|</b>)", "");
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
-        }
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
     private void login(final Account account) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -197,42 +233,6 @@ public class JumboFilesCom extends PluginForHost {
         br.getPage(COOKIE_HOST + "/?op=my_account");
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!br.containsHTML("Premium-Account expire") && !br.containsHTML(">Renew premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.setFollowRedirects(true);
-        // Form um auf "Datei herunterladen" zu klicken
-        final Form dlForm = br.getFormbyProperty("name", "F1");
-        if (dlForm == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        String passCode = null;
-        if (BRBEFORE.contains("<b>Password:</b>")) {
-            if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = getUserInput(null, downloadLink);
-            } else {
-                /* gespeicherten PassCode holen */
-                passCode = downloadLink.getStringProperty("pass", null);
-            }
-            dlForm.put("password", passCode);
-        }
-        br.submitForm(dlForm);
-        doSomething();
-        if (BRBEFORE.contains("Wrong password")) {
-            logger.warning("Wrong password!");
-            downloadLink.setProperty("pass", null);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
-        }
-        String dllink = new Regex(BRBEFORE, "SRC=\"http://jumbofiles\\.com/images/dd\\.gif\" WIDTH=\"5\" HEIGHT=\"5\"><BR> <form name=\".*?\" action=\"(.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = new Regex(BRBEFORE, "\"(http://(www\\d+|[a-z0-9]+)\\.jumbofiles\\.com:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
-        }
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        dl.startDownload();
     }
 
     @Override

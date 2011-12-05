@@ -20,13 +20,18 @@ public class MetacafeCom extends PluginForHost {
         super(wrapper);
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/fplayer/", "/watch/"));
+    }
+
     @Override
     public String getAGBLink() {
         return "http://www.metacafe.com/terms/";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/fplayer/", "/watch/"));
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -83,11 +88,6 @@ public class MetacafeCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
 
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
 }

@@ -31,6 +31,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharecash.org" }, urls = { "http://(www\\.)?(sharecash\\.org/download\\.php\\?(file|id)=\\d+|jafiles\\.net/[A-Za-z0-9]+)" }, flags = { 0 })
 public class SharecashDotOrg2 extends PluginForHost {
+    private static final String ONLY4PREMIUMUSERTEXT = "This file is only downloadable for premium users!";
+
     public SharecashDotOrg2(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,7 +42,16 @@ public class SharecashDotOrg2 extends PluginForHost {
         return "http://sharecash.org/tos.php";
     }
 
-    private static final String ONLY4PREMIUMUSERTEXT = "This file is only downloadable for premium users!";
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.SharecashDotNet.only4premium", ONLY4PREMIUMUSERTEXT));
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
@@ -75,25 +86,14 @@ public class SharecashDotOrg2 extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.SharecashDotNet.only4premium", ONLY4PREMIUMUSERTEXT));
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
     public void reset() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 }

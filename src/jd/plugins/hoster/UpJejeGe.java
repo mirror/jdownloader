@@ -33,9 +33,30 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up.jeje.ge" }, urls = { "http://[\\w\\.]*?up\\.jeje\\.ge//((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 0 })
 public class UpJejeGe extends PluginForHost {
 
+    private static final String COOKIE_HOST  = "http://up.jeje.ge";
+
+    private static final String FILENOTFOUND = "Your requested file is not found";
+
     public UpJejeGe(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("http://Only4Devs2Test.com/register.php?g=3");
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL() + "&setlang=en");
+    }
+    private String findLink() throws Exception {
+        String finalLink = null;
+        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (String alink : sitelinks) {
+            alink = Encoding.htmlDecode(alink);
+            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
+                finalLink = alink;
+                break;
+            }
+        }
+        return finalLink;
     }
 
     // MhfScriptBasic 1.0, added a filename/size regex and
@@ -45,40 +66,9 @@ public class UpJejeGe extends PluginForHost {
         return COOKIE_HOST + "/rules.php";
     }
 
-    private static final String COOKIE_HOST = "http://up.jeje.ge";
-    private static final String FILENOTFOUND = "Your requested file is not found";
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL() + "&setlang=en");
-    }
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
-        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
-        br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<b>File name:</b>[\t\n\r ]+</font>[\t\n\r ]+<font face=\"Verdana\" style=\"font-size: 10px\" color=\"#666666\">(.*?)</font>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<b>File name:</b></td>[\r\t\n ]+<td align=[\r\t\n ]+width=[\r\t\n ]+>(.*?)</td>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-                    }
-                }
-            }
-        }
-        String filesize = br.getRegex("<b>File size:</b></td>[\r\t\n ]+<td align=[\r\t\n ]+>(.*?)</td>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<b>File size:</b>[\t\n\r ]+</font>[\t\n\r ]+<font face=\"Verdana\" style=\"font-size: 10px\" color=\"#666666\">(.*?)</font>").getMatch(0);
-        if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setFinalFileName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -151,18 +141,38 @@ public class UpJejeGe extends PluginForHost {
         dl.startDownload();
     }
 
-    private String findLink() throws Exception {
-        String finalLink = null;
-        String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        for (String alink : sitelinks) {
-            alink = Encoding.htmlDecode(alink);
-            if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
-                finalLink = alink;
-                break;
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
+        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
+        br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<b>File name:</b>[\t\n\r ]+</font>[\t\n\r ]+<font face=\"Verdana\" style=\"font-size: 10px\" color=\"#666666\">(.*?)</font>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<b>File name:</b></td>[\r\t\n ]+<td align=[\r\t\n ]+width=[\r\t\n ]+>(.*?)</td>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                    }
+                }
             }
         }
-        return finalLink;
+        String filesize = br.getRegex("<b>File size:</b></td>[\r\t\n ]+<td align=[\r\t\n ]+>(.*?)</td>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<b>File size:</b>[\t\n\r ]+</font>[\t\n\r ]+<font face=\"Verdana\" style=\"font-size: 10px\" color=\"#666666\">(.*?)</font>").getMatch(0);
+        if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setFinalFileName(filename.trim());
+        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -171,11 +181,6 @@ public class UpJejeGe extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
 }

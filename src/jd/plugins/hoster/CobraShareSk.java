@@ -44,11 +44,6 @@ public class CobraShareSk extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://www.cobrashare.sk/index.php?sid=2";
-    }
-
-    @Override
     public void correctDownloadLink(DownloadLink downloadLink) throws MalformedURLException {
         if (downloadLink.getDownloadURL().contains("www.cobrashare.sk:38080")) {
             downloadLink.setUrlDownload("http://www.cobrashare.sk/downloadFile.php?id=" + downloadLink.getDownloadURL().split("\\?id=")[1]);
@@ -56,18 +51,49 @@ public class CobraShareSk extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Poadovaný súbor sa na serveri nenachádza")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("File name :&nbsp;</td>.*?<td class=\"data\">(.*?)</td>").getMatch(0));
-        Regex reg = br.getRegex("Size :\\&nbsp;</td>.*?<td class=\"data\">(.*?)\\&nbsp;(.*?)</td>");
-        String filesize = reg.getMatch(0) + " " + reg.getMatch(1);
-        if (filename == null || (filesize == null || filesize.contains("null"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://cobrashare.sk/index.php?sp=u");
+        String availableTraffic = br.getRegex(">Do vyèerpania 7 dòového limitu Vám ete ostáva: </td>.*?<td style=\".*?\" align=\"right\">(.*?)</td>").getMatch(0);
+        if (availableTraffic != null) {
+            availableTraffic = availableTraffic.replace("&nbsp;", "");
+            ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic.replace("&nbsp;", "")));
+        }
+        String validUntil = br.getRegex(">Vá premium account je platný do:</td>.*?<td style=\"color:.*?; font-weight:bold;\" align=\"right\">(.*?)</td>").getMatch(0);
+        String points = br.getRegex(">Premium points:</td>.*?<td style=\"color:.*?; font-weight:bold;\" align=\"right\">(\\d+)</td>").getMatch(0);
+        if (points == null) points = br.getRegex(">Premium points: </td>.*?<td valign=\"top\"><b>(\\d+)</b></td></tr>").getMatch(0);
+        if (points != null) {
+            ai.setPremiumPoints(Integer.parseInt(points.trim()));
+        }
+        if (validUntil != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", null));
+            ai.setStatus("Premium User");
+            account.setValid(true);
+        } else {
+            account.setValid(false);
+        }
+        return ai;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.cobrashare.sk/index.php?sid=2";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 1;
     }
 
     @Override
@@ -107,6 +133,18 @@ public class CobraShareSk extends PluginForHost {
 
     }
 
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        requestFileInformation(parameter);
+        login(account);
+        br.getPage(parameter.getDownloadURL());
+        handleFree0(parameter);
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
     public void login(Account account) throws Exception {
         setBrowserExclusive();
         br.getPage("http://cobrashare.sk/index.php");
@@ -115,55 +153,22 @@ public class CobraShareSk extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        br.getPage("http://cobrashare.sk/index.php?sp=u");
-        String availableTraffic = br.getRegex(">Do vyèerpania 7 dòového limitu Vám ete ostáva: </td>.*?<td style=\".*?\" align=\"right\">(.*?)</td>").getMatch(0);
-        if (availableTraffic != null) {
-            availableTraffic = availableTraffic.replace("&nbsp;", "");
-            ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic.replace("&nbsp;", "")));
-        }
-        String validUntil = br.getRegex(">Vá premium account je platný do:</td>.*?<td style=\"color:.*?; font-weight:bold;\" align=\"right\">(.*?)</td>").getMatch(0);
-        String points = br.getRegex(">Premium points:</td>.*?<td style=\"color:.*?; font-weight:bold;\" align=\"right\">(\\d+)</td>").getMatch(0);
-        if (points == null) points = br.getRegex(">Premium points: </td>.*?<td valign=\"top\"><b>(\\d+)</b></td></tr>").getMatch(0);
-        if (points != null) {
-            ai.setPremiumPoints(Integer.parseInt(points.trim()));
-        }
-        if (validUntil != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", null));
-            ai.setStatus("Premium User");
-            account.setValid(true);
-        } else {
-            account.setValid(false);
-        }
-        return ai;
-    }
-
-    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        requestFileInformation(parameter);
-        login(account);
-        br.getPage(parameter.getDownloadURL());
-        handleFree0(parameter);
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("Poadovaný súbor sa na serveri nenachádza")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex("File name :&nbsp;</td>.*?<td class=\"data\">(.*?)</td>").getMatch(0));
+        Regex reg = br.getRegex("Size :\\&nbsp;</td>.*?<td class=\"data\">(.*?)\\&nbsp;(.*?)</td>");
+        String filesize = reg.getMatch(0) + " " + reg.getMatch(1);
+        if (filename == null || (filesize == null || filesize.contains("null"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        link.setName(filename);
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

@@ -40,6 +40,8 @@ public class ShragleCom extends PluginForHost {
 
     static String apikey = "078e5ca290d728fd874121030efb4a0d";
 
+    private String AGENT = RandomUserAgent.generate();
+
     public ShragleCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.shragle.com/index.php?p=accounts&ref=386");
@@ -50,8 +52,6 @@ public class ShragleCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\.de/", "\\.com/").replace("http://shragle", "http://www.shragle"));
     }
-
-    private String AGENT = RandomUserAgent.generate();
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
