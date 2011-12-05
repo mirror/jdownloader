@@ -94,7 +94,7 @@ public class NkPlGallery extends PluginForDecrypt {
                 } else {
                     galleryName += "_" + galleryID + "_" + profilName + "_profile" + profileNumber;
                 }
-                galleryName = galleryName.replaceAll("\\s+", "_");
+                galleryName = Encoding.htmlDecode(galleryName.replaceAll("\\s+", "_"));
 
                 // calculating ajax requests
                 final int count = Integer.parseInt(galleryCount);
@@ -103,6 +103,7 @@ public class NkPlGallery extends PluginForDecrypt {
 
                 progress.setRange(count);
                 final DecimalFormat df = new DecimalFormat("0000");
+                int c = 1;
                 for (int i = 0; i <= reqNum; i++) {
                     br.getPage(link + "/album/" + galleryID + "/ajax/0/" + i * 16 + "?t=" + basicAuth);
                     final String picID = br.getRegex("\\{\"id\":\\[(.*?)\\]").getMatch(0);
@@ -115,7 +116,7 @@ public class NkPlGallery extends PluginForDecrypt {
                     }
                     for (final String id : pictureID) {
                         final DownloadLink dl = createDownloadlink(link.replaceAll("nk\\.pl/", "nk.decryptednaszaplasa/") + "/album/" + galleryID + "/" + id + "?naszaplasalink");
-                        dl.setFinalFileName(df.format(Integer.parseInt(id)) + ".jpeg");
+                        dl.setFinalFileName(profileNumber + "_" + galleryID + "_" + df.format(c++) + ".jpeg");
                         dl.setAvailable(true);
                         decryptedLinks.add(dl);
                         progress.increase(1);
