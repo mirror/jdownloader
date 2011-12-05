@@ -24,7 +24,6 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -59,6 +58,7 @@ public class CashFileCom extends PluginForHost {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
+
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (BRBEFORE.contains("<br><b>Password:</b> <input") || BRBEFORE.contains("<br><b>Passwort:</b> <input") || BRBEFORE.contains("Wrong password")) {
@@ -122,6 +122,7 @@ public class CashFileCom extends PluginForHost {
             }
         }
     }
+
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (BRBEFORE.contains("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (BRBEFORE.contains("File Not Found") || BRBEFORE.contains("<h1>404 Not Found</h1>")) {
@@ -129,9 +130,11 @@ public class CashFileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("cash-file.com", "cash-file.net"));
     }
+
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks) throws Exception, PluginException {
         String passCode = null;
         // If the filesize regex above doesn't match you can copy this part into
@@ -440,7 +443,7 @@ public class CashFileCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

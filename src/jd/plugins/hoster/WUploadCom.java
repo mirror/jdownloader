@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.http.Browser;
@@ -57,7 +56,7 @@ public class WUploadCom extends PluginForHost implements ControlListener {
 
     private static String        geoDomain          = null;
 
-    private static final String RECAPTCHATEXT = "Recaptcha\\.create";
+    private static final String  RECAPTCHATEXT      = "Recaptcha\\.create";
 
     public WUploadCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -66,16 +65,6 @@ public class WUploadCom extends PluginForHost implements ControlListener {
             if (!initDone) {
                 initDone = true;
                 new Thread(new Runnable() {
-
-                    // do not add @Override here to keep 0.* compatibility
-                    public boolean hasAutoCaptcha() {
-                        return JACMethod.hasMethod("recaptcha");
-                    }
-
-                    // do not add @Override here to keep 0.* compatibility
-                    public boolean hasCaptcha() {
-                        return true;
-                    }
 
                     @SuppressWarnings("deprecation")
                     public void run() {
@@ -484,6 +473,16 @@ public class WUploadCom extends PluginForHost implements ControlListener {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return true;
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     private String loginAPI(final Browser useBr, final Account account) throws IOException, PluginException {

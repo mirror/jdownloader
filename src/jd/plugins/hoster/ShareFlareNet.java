@@ -44,7 +44,8 @@ public class ShareFlareNet extends PluginForHost {
     private static final String LINKFRAMEPART        = "tmpl/tmpl_frame_top\\.php\\?link=";
 
     private static final String FREEDOWNLOADPOSSIBLE = "download4";
-    private static final Object LOCK = new Object();
+    private static final Object LOCK                 = new Object();
+
     public ShareFlareNet(PluginWrapper wrapper) {
         super(wrapper);
         this.setAccountwithoutUsername(true);

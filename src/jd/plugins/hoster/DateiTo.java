@@ -22,7 +22,6 @@ import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -50,10 +49,12 @@ public class DateiTo extends PluginForHost {
     private static final String DOWNLOADPOSTPAGE = "http://datei.to/ajax/download.php";
 
     private static final String RECAPTCHATEXT    = "(Versuche es erneut, indem du|klickst und das Captcha erneut eingibst|>Deine Eingabe war leider falsch)";
+
     public DateiTo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://datei.to/premium");
     }
+
     @Override
     public void correctDownloadLink(DownloadLink link) throws MalformedURLException {
         if ("sharebase.to".equals(link.getHost())) {
@@ -69,6 +70,7 @@ public class DateiTo extends PluginForHost {
         String id = new Regex(link.getDownloadURL(), "(/files/|/1,)([\\w]+\\.html)").getMatch(1);
         if (id != null) link.setUrlDownload("http://datei.to/datei/" + id);
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -186,7 +188,7 @@ public class DateiTo extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

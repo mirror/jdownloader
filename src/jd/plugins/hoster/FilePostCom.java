@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -50,11 +49,11 @@ public class FilePostCom extends PluginForHost {
     private static final String ua                 = "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.18) Gecko/20110628 Ubuntu/10.10 (maverick) Firefox/3.6.18";
     private boolean             showAccountCaptcha = false;
 
-    private static final String FILEIDREGEX = "filepost\\.com/files/(.+)";
+    private static final String FILEIDREGEX        = "filepost\\.com/files/(.+)";
 
-    private static final String MAINPAGE    = "https://filepost.com/";
+    private static final String MAINPAGE           = "https://filepost.com/";
 
-    private static final Object LOCK        = new Object();
+    private static final Object LOCK               = new Object();
 
     public FilePostCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -127,6 +126,7 @@ public class FilePostCom extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("https:", "http:").replace("fp.io/", "filepost.com/files/"));
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -161,6 +161,7 @@ public class FilePostCom extends PluginForHost {
         ai.setStatus("Premium User");
         return ai;
     }
+
     @Override
     public String getAGBLink() {
         return "http://filepost.com/terms/";
@@ -282,7 +283,7 @@ public class FilePostCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

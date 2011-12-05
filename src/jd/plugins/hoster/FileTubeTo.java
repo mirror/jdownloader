@@ -55,6 +55,7 @@ public class FileTubeTo extends PluginForHost {
         }
         return finalLink;
     }
+
     // MhfScriptBasic 1.1
     // This plugin is for developers to easily implement hosters using the MHF
     // script, it's still just a beta but i will improve it till it works for

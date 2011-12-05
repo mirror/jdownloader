@@ -47,6 +47,7 @@ public class CoolShareCz extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://www.coolshare.cz/platby/cenik");
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();

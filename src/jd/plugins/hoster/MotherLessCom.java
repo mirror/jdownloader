@@ -39,11 +39,13 @@ public class MotherLessCom extends PluginForHost {
     private static final String ONLY4REGISTEREDTEXT = "This link is only downloadable for registered users.";
 
     private String              DLLINK              = null;
+
     public MotherLessCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(2500l);
         this.enablePremium("http://motherless.com/register");
     }
+
     public void correctDownloadLink(DownloadLink link) {
         String theLink = link.getDownloadURL();
         theLink = theLink.replace("premium", "").replaceAll("(motherlesspictures|motherlessvideos)", "motherless");

@@ -42,6 +42,7 @@ public class NicoVideoJp extends PluginForHost {
         super(wrapper);
         this.enablePremium("https://secure.nicovideo.jp/secure/register");
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();

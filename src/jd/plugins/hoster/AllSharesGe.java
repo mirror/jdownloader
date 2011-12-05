@@ -51,6 +51,7 @@ public class AllSharesGe extends PluginForHost {
             }
         }
     }
+
     // MhfScriptBasic 1.0
     @Override
     public String getAGBLink() {

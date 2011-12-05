@@ -22,7 +22,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -320,7 +319,7 @@ public class ShareYourFileBiz extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

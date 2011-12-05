@@ -46,6 +46,7 @@ public class ScribdCom extends PluginForHost {
     static {
         allFormats = new String[] { "PDF", "TXT" };
     }
+
     public ScribdCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.scribd.com");

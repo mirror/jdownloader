@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Random;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.controlling.AccountController;
 import jd.gui.UserIO;
 import jd.http.Browser;
@@ -468,7 +467,7 @@ public class FileServeCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

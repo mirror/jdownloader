@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
@@ -44,22 +43,25 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FilesMonsterCom extends PluginForHost {
     private static final String PROPERTY_NO_SLOT_WAIT_TIME = "NO_SLOT_WAIT_TIME";
 
-    private static final String POSTTHATREGEX        = "\"(http://filesmonster\\.com/dl/.*?/free/.*?)\"";
+    private static final String POSTTHATREGEX              = "\"(http://filesmonster\\.com/dl/.*?/free/.*?)\"";
 
-    private static final String POSTTHATREGEX2       = "(http://(www\\.)?filesmonster\\.com/dl/.*?/free/.+)";
+    private static final String POSTTHATREGEX2             = "(http://(www\\.)?filesmonster\\.com/dl/.*?/free/.+)";
 
-    private static final String TEMPORARYUNAVAILABLE = "Download not available at the moment";
+    private static final String TEMPORARYUNAVAILABLE       = "Download not available at the moment";
 
-    private static final String REDIRECTFNF          = "DL_FileNotFound";
-    private static final String PREMIUMONLYUSERTEXT  = "Only downloadable via premium";
+    private static final String REDIRECTFNF                = "DL_FileNotFound";
+    private static final String PREMIUMONLYUSERTEXT        = "Only downloadable via premium";
+
     public FilesMonsterCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
         this.enablePremium("http://filesmonster.com/service.php");
     }
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("filesmonsterdecrypted.com", "filesmonster.com"));
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -280,7 +282,7 @@ public class FilesMonsterCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

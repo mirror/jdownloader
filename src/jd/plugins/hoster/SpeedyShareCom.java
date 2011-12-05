@@ -40,14 +40,17 @@ public class SpeedyShareCom extends PluginForHost {
     private static final String MAINPAGE        = "http://www.speedyshare.com";
 
     private static final String CAPTCHATEXT     = "/captcha\\.php\\?";
+
     public SpeedyShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(2000l);
     }
+
     @Override
     public String getAGBLink() {
         return "http://www.speedyshare.com/terms.php";
     }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;

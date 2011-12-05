@@ -52,6 +52,7 @@ public class SaveTv extends PluginForHost {
     private static final String PREMIUMPOSTPAGE         = "https://www.save.tv/STV/M/Index.cfm?sk=PREMIUM";
     private static final String PREFERH264MOBILE        = "PREFERH264MOBILE";
     private static final String PREFERH264MOBILETEXT    = "H.264 Mobile Videos bevorzugen (diese sind kleiner)";
+
     public SaveTv(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.save.tv/stv/s/obj/registration/RegPage1.cfm");

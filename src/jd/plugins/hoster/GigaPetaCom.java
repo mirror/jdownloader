@@ -64,6 +64,7 @@ public class GigaPetaCom extends PluginForHost {
         }
         dl.startDownload();
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();

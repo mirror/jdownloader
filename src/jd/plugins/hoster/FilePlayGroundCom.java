@@ -22,7 +22,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -109,6 +108,7 @@ public class FilePlayGroundCom extends PluginForHost {
             }
         }
     }
+
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         String passCode = null;
         boolean resumable = false;
@@ -277,6 +277,7 @@ public class FilePlayGroundCom extends PluginForHost {
         }
         dl.startDownload();
     }
+
     // XfileSharingProBasic Version 1.6
     @Override
     public String getAGBLink() {
@@ -308,7 +309,7 @@ public class FilePlayGroundCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

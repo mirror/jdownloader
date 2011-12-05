@@ -21,7 +21,6 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -42,9 +41,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "buploads.com" }, urls = { "http://(www\\.)?buploads\\.com/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 0 })
 public class BUploadsCom extends PluginForHost {
 
-    private static final String COOKIE_HOST = "http://buploads.com";
+    private static final String COOKIE_HOST      = "http://buploads.com";
 
-    private static final String IPBLOCKED   = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
+    private static final String IPBLOCKED        = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
 
     private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
 
@@ -54,6 +53,7 @@ public class BUploadsCom extends PluginForHost {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/register.php?g=3");
     }
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL() + "&setlang=en");
     }
@@ -123,6 +123,7 @@ public class BUploadsCom extends PluginForHost {
         }
         return finalLink;
     }
+
     // MhfScriptBasic 1.2, added new filename/size regexes
     @Override
     public String getAGBLink() {
@@ -272,7 +273,7 @@ public class BUploadsCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

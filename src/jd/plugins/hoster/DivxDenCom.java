@@ -41,10 +41,12 @@ public class DivxDenCom extends PluginForHost {
     public boolean              nopremium     = false;
 
     private static final String INMAINTENANCE = ">This server is in maintenance mode, please try again later.<";
+
     public DivxDenCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
+
     public void checkErrors(DownloadLink theLink, boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (brbefore.contains("Wrong captcha")) {
@@ -103,6 +105,7 @@ public class DivxDenCom extends PluginForHost {
             }
         }
     }
+
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (brbefore.contains("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (brbefore.contains("File Not Found") || brbefore.contains("<h1>404 Not Found</h1>")) {

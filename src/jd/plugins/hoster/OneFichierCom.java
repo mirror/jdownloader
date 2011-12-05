@@ -40,18 +40,19 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
 
-    private static AtomicInteger maxPrem = new AtomicInteger(1);
+    private static AtomicInteger maxPrem      = new AtomicInteger(1);
 
-    private static final String PASSWORDTEXT = "(Accessing this file is protected by password|Please put it on the box bellow)";
+    private static final String  PASSWORDTEXT = "(Accessing this file is protected by password|Please put it on the box bellow)";
 
-    private static final String PREMIUMPAGE  = "https://www.1fichier.com/en/login.pl";
+    private static final String  PREMIUMPAGE  = "https://www.1fichier.com/en/login.pl";
 
-    private static final String MAINPAGE     = "www.1fichier.com";
+    private static final String  MAINPAGE     = "www.1fichier.com";
 
     public OneFichierCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.1fichier.com/en/register.pl");
     }
+
     public void correctDownloadLink(DownloadLink link) {
         // Note: We cannot replace all domains with "1fichier.com" because the
         // downloadlinks are always bind to a domains
@@ -62,6 +63,7 @@ public class OneFichierCom extends PluginForHost {
             link.setUrlDownload("http://" + idhostandName.getMatch(0) + "." + idhostandName.getMatch(1) + "/en/index.html");
         }
     }
+
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         String passCode = null;
         // Their limit is just very short so a 30 second waittime for all

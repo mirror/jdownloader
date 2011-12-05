@@ -46,10 +46,12 @@ public class ChoMikujPl extends PluginForHost {
     private static final String MAINPAGE            = "http://chomikuj.pl/";
     private static final String FILEIDREGEX         = "\\&id=(.*?)\\&";
     private boolean             videolink           = false;
+
     public ChoMikujPl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("");
     }
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("60423fhrzisweguikipo9re", "chomikuj.pl"));
     }

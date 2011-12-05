@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
@@ -42,7 +41,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com", "crocko.com" }, urls = { "sgru3465979hg354uigUNUSED_REGEX879t24uj", "http://[\\w\\d\\.]*?(easy\\-share|crocko)\\.com/([A-Z0-9]+/?|\\d+)" }, flags = { 0, 2 })
 public class CrockoCom extends PluginForHost {
 
-    private static Boolean longwait = null;
+    private static Boolean      longwait     = null;
 
     private static final String MAINPAGE     = "http://www.crocko.com/";
 
@@ -97,10 +96,12 @@ public class CrockoCom extends PluginForHost {
         ai.setStatus("Premium User");
         return ai;
     }
+
     @Override
     public String getAGBLink() {
         return "http://www.crocko.com/de/privacy.html";
     }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
@@ -217,7 +218,7 @@ public class CrockoCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

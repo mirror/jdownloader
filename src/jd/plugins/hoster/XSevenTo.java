@@ -49,6 +49,7 @@ public class XSevenTo extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://x7.to/foyer");
     }
+
     @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }

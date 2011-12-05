@@ -50,6 +50,7 @@ public class FilesGwKz extends PluginForHost {
     public String getAGBLink() {
         return "http://files.gw.kz/";
     }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;

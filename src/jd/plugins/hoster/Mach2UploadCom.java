@@ -43,6 +43,7 @@ public class Mach2UploadCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://mach2upload.com/get-premium.php");
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();

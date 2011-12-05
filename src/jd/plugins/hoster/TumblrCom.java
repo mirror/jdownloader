@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tumblr.com" }, urls = { "http://[\\w\\.]*?tumblr\\.com/post/\\d+" }, flags = { 0 })
 public class TumblrCom extends PluginForHost {
 
-    private String dllink = null;
+    private String              dllink         = null;
 
     private static final String FINALLINKREGEX = "audio_file=(http://.*?)\\&";
 
@@ -42,6 +42,7 @@ public class TumblrCom extends PluginForHost {
     public TumblrCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     @Override
     public String getAGBLink() {
         return "http://www.tumblr.com/terms_of_service";

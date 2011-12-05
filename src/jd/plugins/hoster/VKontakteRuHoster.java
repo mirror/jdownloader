@@ -45,6 +45,7 @@ public class VKontakteRuHoster extends PluginForHost {
     public VKontakteRuHoster(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     @Override
     public String getAGBLink() {
         return "http://vkontakte.ru/help.php?page=terms";

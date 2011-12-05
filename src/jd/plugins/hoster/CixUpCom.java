@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.File;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -48,6 +47,7 @@ public class CixUpCom extends PluginForHost {
     public CixUpCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     private String findLink() throws Exception {
         String finalLink = null;
         String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
@@ -61,11 +61,13 @@ public class CixUpCom extends PluginForHost {
         }
         return finalLink;
     }
+
     // MhfScriptBasic 1.1, added filename/size regexes
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/rules.php";
     }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
@@ -157,7 +159,7 @@ public class CixUpCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

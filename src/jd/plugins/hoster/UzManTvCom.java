@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uzmantv.com" }, urls = { "http://(www\\.)?uzmantv\\.com/[a-z0-9-]+" }, flags = { 0 })
 public class UzManTvCom extends PluginForHost {
 
-    private String DLLINK = null;
+    private String              DLLINK     = null;
 
     private static final String DLLINKPART = "?source=site";
 

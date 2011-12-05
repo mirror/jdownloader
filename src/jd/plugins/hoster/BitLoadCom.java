@@ -37,7 +37,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitload.com" }, urls = { "http://(www\\.)?(bitload\\.com/(f|d)/\\d+/[a-z0-9]+|mystream\\.to/file-\\d+-[a-z0-9]+)" }, flags = { 2 })
 public class BitLoadCom extends PluginForHost {
 
-    private static String agent = RandomUserAgent.generate();
+    private static String       agent    = RandomUserAgent.generate();
 
     private static final String MAINPAGE = "http://www.bitload.com/";
 

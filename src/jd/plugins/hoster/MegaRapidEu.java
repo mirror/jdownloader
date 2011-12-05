@@ -47,6 +47,7 @@ public class MegaRapidEu extends PluginForHost {
         super(wrapper);
         this.enablePremium();
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -66,6 +67,7 @@ public class MegaRapidEu extends PluginForHost {
         ai.setStatus("Premium User");
         return ai;
     }
+
     @Override
     public String getAGBLink() {
         return "http://www.megarapid.eu/static/?vypsatCo=podminky";

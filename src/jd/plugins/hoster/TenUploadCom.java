@@ -24,7 +24,6 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -58,6 +57,7 @@ public class TenUploadCom extends PluginForHost {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
+
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(BRBEFORE, PASSWORDTEXT).matches() || BRBEFORE.contains("Wrong password")) {
@@ -122,6 +122,7 @@ public class TenUploadCom extends PluginForHost {
             }
         }
     }
+
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (BRBEFORE.contains("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (new Regex(BRBEFORE, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
@@ -129,6 +130,7 @@ public class TenUploadCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
+
     private String decodeDownloadLink(String s) {
         String decoded = null;
 
@@ -438,7 +440,7 @@ public class TenUploadCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

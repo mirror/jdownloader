@@ -38,9 +38,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shragle.com" }, urls = { "http://[\\w\\.]*?shragle\\.(com|de)/files/[\\w]+/.*" }, flags = { 2 })
 public class ShragleCom extends PluginForHost {
 
-    static String apikey = "078e5ca290d728fd874121030efb4a0d";
+    static String  apikey = "078e5ca290d728fd874121030efb4a0d";
 
-    private String AGENT = RandomUserAgent.generate();
+    private String AGENT  = RandomUserAgent.generate();
 
     public ShragleCom(final PluginWrapper wrapper) {
         super(wrapper);

@@ -23,7 +23,6 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -55,6 +54,7 @@ public class QuickUploadDotNet extends PluginForHost {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
+
     public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
         // Some waittimes...
         if (br.containsHTML("You have to wait")) {
@@ -102,6 +102,7 @@ public class QuickUploadDotNet extends PluginForHost {
             }
         }
     }
+
     public void doFree(DownloadLink downloadLink, boolean doWait) throws Exception, PluginException {
         boolean resumable = true;
         int maxchunks = 0;
@@ -452,7 +453,7 @@ public class QuickUploadDotNet extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

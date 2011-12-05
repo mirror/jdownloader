@@ -37,9 +37,11 @@ public class WeTransferCom extends PluginForHost {
     private String              CODE             = null;
 
     private static final String POSTDOWNLOADLINK = "https://crazycatlady3.wetransfer.com/fsdl.php";
+
     public WeTransferCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     @Override
     public String getAGBLink() {
         // No TOS/TOSlink found

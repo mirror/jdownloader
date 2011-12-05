@@ -20,7 +20,6 @@ import java.io.File;
 import java.util.Random;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -50,6 +49,7 @@ public class ExtaBitCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://extabit.com/premium.jsp");
     }
+
     public void correctDownloadLink(DownloadLink link) {
         if (link.getDownloadURL().contains("/go/")) {
             br.setFollowRedirects(false);
@@ -64,6 +64,7 @@ public class ExtaBitCom extends PluginForHost {
             link.setUrlDownload(finallink);
         }
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -207,7 +208,7 @@ public class ExtaBitCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

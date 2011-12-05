@@ -52,6 +52,7 @@ public class CtDiskCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://www.ctdisk.com/premium.php");
     }
+
     public void doFree(DownloadLink downloadLink, boolean premium, int maxchunks) throws Exception, PluginException {
         String noCaptcha = br.getRegex("value=\"点击进入下载列表\"  style=\"width: 120px; height: 33px; font\\-weight: bold;\" onclick=\"window\\.location\\.href=\\'(/.*?)\\';\"").getMatch(0);
         if (noCaptcha == null) noCaptcha = br.getRegex("\\'(/downhtml/\\d+/\\d+/\\d+/[a-z0-9]+\\.html)\\'").getMatch(0);
@@ -101,6 +102,7 @@ public class CtDiskCom extends PluginForHost {
         }
         dl.startDownload();
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();

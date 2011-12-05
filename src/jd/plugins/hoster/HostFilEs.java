@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.File;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -37,9 +36,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hostfil.es" }, urls = { "http://(www\\.)?hostfil\\.es/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 0 })
 public class HostFilEs extends PluginForHost {
 
-    private static final String COOKIE_HOST = "http://hostfil.es";
+    private static final String COOKIE_HOST      = "http://hostfil.es";
 
-    private static final String IPBLOCKED   = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
+    private static final String IPBLOCKED        = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
 
     private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
 
@@ -49,6 +48,7 @@ public class HostFilEs extends PluginForHost {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/register.php?g=3");
     }
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL() + "&setlang=en");
     }
@@ -72,6 +72,7 @@ public class HostFilEs extends PluginForHost {
     public String getAGBLink() {
         return COOKIE_HOST + "/rules.php";
     }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
@@ -163,7 +164,7 @@ public class HostFilEs extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

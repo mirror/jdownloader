@@ -67,15 +67,15 @@ public class Rapidshare extends PluginForHost {
             return ret;
         }
 
-        private long   id;
+        private long         id;
 
-        private String name;
+        private String       name;
 
-        private String url;
+        private String       url;
 
-        private String secMD5;
+        private String       secMD5;
 
-        private String secTim;
+        private String       secTim;
         private DownloadLink link;
 
         public RSLink(final DownloadLink link) {

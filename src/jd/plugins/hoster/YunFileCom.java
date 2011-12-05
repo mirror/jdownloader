@@ -49,6 +49,7 @@ public class YunFileCom extends PluginForHost {
         this.enablePremium("http://www.yunfile.com/user/premiumMembership.html");
         // this.setStartIntervall(15 * 1000l);
     }
+
     private void checkErrors() throws NumberFormatException, PluginException {
         String waittime = br.getRegex("id=\"down_interval\" style=\"font-size: 28px; color: green;\">(\\d+)</span> 分钟</span>").getMatch(0);
         if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);

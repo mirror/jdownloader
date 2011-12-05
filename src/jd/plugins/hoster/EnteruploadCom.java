@@ -23,7 +23,6 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -99,6 +98,7 @@ public class EnteruploadCom extends PluginForHost {
             }
         }
     }
+
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (br.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (br.containsHTML("(File Not Found|<h1>404 Not Found</h1>)")) {
@@ -436,7 +436,7 @@ public class EnteruploadCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

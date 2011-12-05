@@ -46,6 +46,7 @@ public class MegaFreeKz extends PluginForHost {
         // At the moment this plugin only accepts free accounts
         this.enablePremium();
     }
+
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (br.containsHTML("Скачивание файлов через сервис MegaFree\\.KZ приостановлено\\.")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No downloads possible at the moment", 2 * 60 * 60 * 1000l);
         if (!br.getURL().contains(AREA2)) {
@@ -70,6 +71,7 @@ public class MegaFreeKz extends PluginForHost {
         }
         dl.startDownload();
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();

@@ -42,6 +42,7 @@ public class UploadHereCom extends PluginForHost {
     public UploadHereCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     @Override
     public String getAGBLink() {
         return "http://www.uploadhere.com/terms";

@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
@@ -75,16 +74,6 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
                 }).start();
             }
         }
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
     }
 
     @Override
@@ -489,6 +478,16 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return true;
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     private String loginAPI(Browser useBr, Account account, boolean showMessageDialog) throws IOException, PluginException {

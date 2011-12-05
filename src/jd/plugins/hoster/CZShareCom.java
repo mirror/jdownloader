@@ -44,17 +44,19 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czshare.com" }, urls = { "http://(www\\.)?(czshare\\.com/((files/)?\\d+/[A-Za-z0-9_\\.]+(/.{1})?|download_file\\.php\\?id=\\d+\\&code=[A-Za-z0-9]+)|www\\d+\\.czshare\\.com/profi\\.php\\?id=\\d+\\&kod=[A-Za-z0-9]+)" }, flags = { 2 })
 public class CZShareCom extends PluginForHost {
 
-    private final static int SIMULTANEOUS_PREMIUM = -1;
+    private final static int    SIMULTANEOUS_PREMIUM = -1;
 
-    private static final Object LOCK        = new Object();
+    private static final Object LOCK                 = new Object();
 
-    private static final String MAINPAGE    = "http://czshare.com/";
+    private static final String MAINPAGE             = "http://czshare.com/";
 
-    private static final String CAPTCHATEXT = "captcha\\.php";
+    private static final String CAPTCHATEXT          = "captcha\\.php";
+
     public CZShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://czshare.com/create_user.php");
     }
+
     public void correctDownloadLink(DownloadLink link) {
         Regex linkInfo = new Regex(link.getDownloadURL(), "czshare\\.com/download_file\\.php\\?id=(\\d+)\\&code=([A-Za-z0-9]+)");
         if (linkInfo.getMatch(0) == null && linkInfo.getMatch(1) == null) {

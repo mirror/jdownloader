@@ -44,6 +44,7 @@ public class FilesFlashCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://filesflash.com/premium.php");
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();

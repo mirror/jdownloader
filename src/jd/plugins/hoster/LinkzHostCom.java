@@ -22,7 +22,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -287,6 +286,7 @@ public class LinkzHostCom extends PluginForHost {
         }
         dl.startDownload();
     }
+
     // XfileSharingProBasic Version 1.6
     // redirect-links
     @Override
@@ -307,7 +307,7 @@ public class LinkzHostCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

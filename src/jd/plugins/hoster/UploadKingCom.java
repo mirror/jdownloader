@@ -47,10 +47,12 @@ public class UploadKingCom extends PluginForHost {
 
     private static final Object LOCK                         = new Object();
     private static final String MAINPAGE                     = "http://www.uploadking.com/";
+
     public UploadKingCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.uploadking.com/premium");
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();

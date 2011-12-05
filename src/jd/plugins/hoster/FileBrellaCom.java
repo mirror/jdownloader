@@ -45,6 +45,7 @@ public class FileBrellaCom extends PluginForHost {
     public String getAGBLink() {
         return "http://www.filebrella.com/terms.php";
     }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;

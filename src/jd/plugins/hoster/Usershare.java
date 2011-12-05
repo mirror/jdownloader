@@ -26,7 +26,6 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -67,10 +66,12 @@ public class Usershare extends PluginForHost {
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static String       AGENT               = RandomUserAgent.generate();
     private static final Object LOCK                = new Object();
+
     public Usershare(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
+
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(BRBEFORE, PASSWORDTEXT).matches() || BRBEFORE.contains("Wrong password")) {
@@ -141,6 +142,7 @@ public class Usershare extends PluginForHost {
         }
         if (BRBEFORE.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT), 2 * 60 * 60 * 1000l);
     }
+
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (new Regex(BRBEFORE, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (new Regex(BRBEFORE, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
@@ -148,6 +150,7 @@ public class Usershare extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
+
     private String decodeDownloadLink(String s) {
         String decoded = null;
 
@@ -505,7 +508,7 @@ public class Usershare extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

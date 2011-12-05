@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(www\\.)?justindecrypted\\.tv/[a-z0-9\\-_]+/b/\\d+" }, flags = { 0 })
 public class JustinTv extends PluginForHost {
 
-    private String DLLINK = null;
+    private String  DLLINK  = null;
 
     private boolean blocked = false;
 

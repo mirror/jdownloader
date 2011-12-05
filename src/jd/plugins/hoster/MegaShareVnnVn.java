@@ -21,7 +21,6 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -42,19 +41,21 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.vnn.vn" }, urls = { "http://(www\\.)?megashare\\.vnn\\.vn/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 2 })
 public class MegaShareVnnVn extends PluginForHost {
 
-    private static boolean      FREE        = false;
+    private static boolean      FREE             = false;
 
-    private static final String COOKIE_HOST = "http://megashare.vnn.vn";
+    private static final String COOKIE_HOST      = "http://megashare.vnn.vn";
 
-    private static final String IPBLOCKED   = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
+    private static final String IPBLOCKED        = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
 
     private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
 
     private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
+
     public MegaShareVnnVn(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/register.php?g=3");
     }
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL() + "&setlang=en");
     }
@@ -186,6 +187,7 @@ public class MegaShareVnnVn extends PluginForHost {
         account.setValid(true);
         return ai;
     }
+
     private String findLink() throws Exception {
         String finalLink = null;
         String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
@@ -279,7 +281,7 @@ public class MegaShareVnnVn extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

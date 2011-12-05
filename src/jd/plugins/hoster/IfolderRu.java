@@ -36,7 +36,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifolder.ru" }, urls = { "http://([\\w.-]*?\\.)?(ifolder\\.ru|files\\.metalarea\\.org)/\\d+" }, flags = { 0 })
 public class IfolderRu extends PluginForHost {
 
-    private String ua = RandomUserAgent.generate();
+    private String              ua      = RandomUserAgent.generate();
 
     private static final String PWTEXT  = "type=\"password\" name=\"pswd\"";
 
@@ -54,6 +54,7 @@ public class IfolderRu extends PluginForHost {
     public String getAGBLink() {
         return ("http://ifolder.ru/agreement");
     }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;

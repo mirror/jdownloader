@@ -24,7 +24,6 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -55,10 +54,12 @@ public class UploadFloorCom extends PluginForHost {
     private static final String COOKIE_HOST   = "http://uploadfloor.com";
 
     public boolean              nopremium     = false;
+
     public UploadFloorCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
+
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (BRBEFORE.contains("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
@@ -117,6 +118,7 @@ public class UploadFloorCom extends PluginForHost {
             }
         }
     }
+
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         String passCode = null;
         boolean resumable = false;
@@ -293,6 +295,7 @@ public class UploadFloorCom extends PluginForHost {
         }
         dl.startDownload();
     }
+
     // Removed fake messages which can kill the plugin
     public void doSomething() throws NumberFormatException, PluginException {
         BRBEFORE = br.toString();
@@ -463,7 +466,7 @@ public class UploadFloorCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

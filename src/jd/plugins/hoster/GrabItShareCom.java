@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.File;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -49,6 +48,7 @@ public class GrabItShareCom extends PluginForHost {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/register.php?g=3");
     }
+
     private String findLink() throws Exception {
         String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+\\&a=[a-z0-9]+\\&t=[a-z0-9]+.*?)(\\'|\")").getMatch(0);
         if (finalLink == null) {
@@ -70,6 +70,7 @@ public class GrabItShareCom extends PluginForHost {
     public String getAGBLink() {
         return COOKIE_HOST + "/rules.php";
     }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
@@ -162,7 +163,7 @@ public class GrabItShareCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

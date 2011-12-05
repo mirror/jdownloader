@@ -25,7 +25,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.config.Property;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
@@ -79,6 +78,7 @@ public class FilEarnCom extends PluginForHost {
         if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return result.toString();
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -103,6 +103,7 @@ public class FilEarnCom extends PluginForHost {
         ai.setStatus("Premium User");
         return ai;
     }
+
     private String getAction() throws Exception {
         String jsCrap = br.getRegex("</span></code>[\t\n\r ]+<div>[\t\n\r ]+<script language=\"javascript\">[\t\n\r ]+function [A-Za-z0-9]+\\(iioo\\) \\{(.*?return .*?;)").getMatch(0);
         String action = br.getRegex("\"(http://(www\\.)?filearn\\.com/files/gen/.*?)\"").getMatch(0);
@@ -215,7 +216,7 @@ public class FilEarnCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

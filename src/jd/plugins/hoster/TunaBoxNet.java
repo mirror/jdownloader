@@ -43,10 +43,12 @@ public class TunaBoxNet extends PluginForHost {
     private static final String PREMIUMLIMIT  = "out of 1000\\.00 GB</td>";
     private static final String FILENOTFOUND  = ">The file you have requested does not exist";
     private static final String APIKEY        = "QExPEQ47iXcpXx94RBqiAJlI0d7Q";
+
     public TunaBoxNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE + "/get-premium.php");
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();

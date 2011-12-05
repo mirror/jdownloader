@@ -34,6 +34,7 @@ public class FileHippoCom extends PluginForHost {
     private static final String FILENOTFOUND = "(<h1>404 Error</h1>|<b>Sorry the page you requested could not be found)";
 
     public static final String  MAINPAGE     = "http://www.filehippo.com";
+
     public FileHippoCom(PluginWrapper wrapper) {
         super(wrapper);
     }

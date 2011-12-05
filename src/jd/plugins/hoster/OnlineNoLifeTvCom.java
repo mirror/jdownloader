@@ -39,9 +39,11 @@ public class OnlineNoLifeTvCom extends PluginForHost {
     private static final String ONLYPREMIUMUSERTEXT = "Only downloadable for premium members";
 
     private boolean             notDownloadable     = false;
+
     public OnlineNoLifeTvCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     @Override
     public String getAGBLink() {
         return "http://online.nolife-tv.com/";

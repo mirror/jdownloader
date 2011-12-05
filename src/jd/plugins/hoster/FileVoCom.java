@@ -24,7 +24,6 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -54,10 +53,12 @@ public class FileVoCom extends PluginForHost {
     private static final String COOKIE_HOST   = "http://filevo.com";
 
     public boolean              nopremium     = false;
+
     public FileVoCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
+
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (brbefore.contains("<br><b>Password:</b> <input") || brbefore.contains("<br><b>Passwort:</b> <input") || brbefore.contains("Wrong password")) {
@@ -116,6 +117,7 @@ public class FileVoCom extends PluginForHost {
             }
         }
     }
+
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (brbefore.contains("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (brbefore.contains("File Not Found") || brbefore.contains("<h1>404 Not Found</h1>")) {
@@ -123,6 +125,7 @@ public class FileVoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
+
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         String passCode = null;
         boolean resumable = false;
@@ -441,7 +444,7 @@ public class FileVoCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

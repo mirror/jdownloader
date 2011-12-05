@@ -45,6 +45,7 @@ public class FastFreeFileHostingCom extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL() + "&setlang=en");
     }
+
     private String findLink() throws Exception {
         String finalLink = null;
         String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);

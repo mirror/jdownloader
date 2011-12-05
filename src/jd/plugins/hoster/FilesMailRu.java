@@ -35,8 +35,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://[\\w\\.]*?wge4zu4rjfsdehehztiuxw/[A-Z0-9]{6}(/[a-z0-9]+)?" }, flags = { 2 })
 public class FilesMailRu extends PluginForHost {
-    private static final String UA          = RandomUserAgent.generate();
-    private boolean             keepCookies = false;
+    private static final String UA           = RandomUserAgent.generate();
+    private boolean             keepCookies  = false;
 
     private static final String DLLINKREGEX  = "\"(http://[a-z0-9-]+\\.files\\.mail\\.ru/.*?/.*?)\"";
 
@@ -45,14 +45,17 @@ public class FilesMailRu extends PluginForHost {
     private static final String UNAVAILABLE2 = ">In process<";
 
     private static final String INFOREGEX    = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
+
     public FilesMailRu(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://en.reg.mail.ru/cgi-bin/signup");
     }
+
     public void correctDownloadLink(DownloadLink link) {
         // Rename the decrypted links to make them work
         link.setUrlDownload(link.getDownloadURL().replaceAll("wge4zu4rjfsdehehztiuxw", "files.mail.ru"));
     }
+
     private void doFree(DownloadLink downloadLink, boolean premium) throws Exception, PluginException {
         String finallink = null;
         keepCookies = premium;

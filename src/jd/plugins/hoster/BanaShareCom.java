@@ -24,7 +24,6 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -109,6 +108,7 @@ public class BanaShareCom extends PluginForHost {
         ai.setStatus("Premium User");
         return ai;
     }
+
     // XfileSharingProBasic Version 1.3
     @Override
     public String getAGBLink() {
@@ -465,7 +465,7 @@ public class BanaShareCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

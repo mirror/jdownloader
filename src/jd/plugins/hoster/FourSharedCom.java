@@ -41,7 +41,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
-    private static String agent = RandomUserAgent.generate();
+    private static String       agent        = RandomUserAgent.generate();
 
     private static final String PASSWORDTEXT = "enter a password to access";
 

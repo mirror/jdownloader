@@ -38,13 +38,14 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zevera.com" }, urls = { "http://[\\w\\.]*?zevera\\.com/.+" }, flags = { 2 })
 public class Zevera extends PluginForHost {
-    static public final Object LOGINLOCK  = new Object();
+    static public final Object LOGINLOCK = new Object();
+
     private static String getID(String link) {
         String id = new Regex(link, ".*fid=(.+)&.*").getMatch(0);
         return id;
     }
 
-    private boolean            showDialog = false;
+    private boolean showDialog = false;
 
     public Zevera(PluginWrapper wrapper) {
         super(wrapper);

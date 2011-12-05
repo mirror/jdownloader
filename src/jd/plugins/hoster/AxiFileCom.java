@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -48,12 +47,14 @@ public class AxiFileCom extends PluginForHost {
     public AxiFileCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     public void correctDownloadLink(DownloadLink link) {
         String addedLink = link.getDownloadURL();
         if (addedLink.contains("axifile.com?"))
             link.setUrlDownload(addedLink.replace("?", "/?"));
         else if (addedLink.contains("/en/")) link.setUrlDownload(addedLink.replace("/en/", "/?"));
     }
+
     private String findLink() throws Exception {
         String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+[^\"\\']{10,500})(\"|\\')").getMatch(0);
         if (finalLink == null) {
@@ -69,6 +70,7 @@ public class AxiFileCom extends PluginForHost {
         }
         return finalLink;
     }
+
     @Override
     public String getAGBLink() {
         return "http://www.axifile.com/terms.php";
@@ -171,7 +173,7 @@ public class AxiFileCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

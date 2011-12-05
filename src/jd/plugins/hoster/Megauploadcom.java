@@ -70,6 +70,7 @@ public class Megauploadcom extends PluginForHost {
     private static final Object   LOGINLOCK       = new Object();
 
     private static int            simultanpremium = 1;
+
     private static void workAroundTimeOut(final Browser br) {
         try {
             if (br != null) {
@@ -79,7 +80,8 @@ public class Megauploadcom extends PluginForHost {
         } catch (final Throwable e) {
         }
     }
-    private boolean               directDL        = false;
+
+    private boolean             directDL           = false;
 
     private boolean             onlyapi            = false;
 

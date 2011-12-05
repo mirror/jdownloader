@@ -111,6 +111,7 @@ public class MidUploadCom extends PluginForHost {
             }
         }
     }
+
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (br.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (br.containsHTML("(File Not Found|<h1>404 Not Found</h1>)")) {
@@ -118,6 +119,7 @@ public class MidUploadCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
+
     public void doFree(DownloadLink link) throws Exception {
         if (br.containsHTML("This server is in maintenance mode")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is in maintenance mode");
         Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");

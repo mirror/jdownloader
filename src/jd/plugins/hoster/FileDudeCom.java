@@ -64,6 +64,7 @@ public class FileDudeCom extends PluginForHost {
         ai.setStatus("Premium User");
         return ai;
     }
+
     @Override
     public String getAGBLink() {
         return "http://www.filedude.com/terms";

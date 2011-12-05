@@ -23,7 +23,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
@@ -260,7 +259,7 @@ public class IFileIt extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

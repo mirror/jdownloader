@@ -39,6 +39,7 @@ public class MangaTradersCom extends PluginForHost {
     private static final String COOKIENAME           = "SMFCookie232";
     private static final String ACCESSBLOCK          = "<p>You have attempted to download this file within the last 10 seconds.</p>";
     private static final String FILEOFFLINE          = ">Download Manager Error - Invalid Fileid";
+
     public MangaTradersCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.mangatraders.com/register/");

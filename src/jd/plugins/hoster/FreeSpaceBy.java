@@ -40,10 +40,12 @@ public class FreeSpaceBy extends PluginForHost {
     private static final String COUNTRYBLOCKED     = "Услуги FreeSpace доступны только для белорусских сетей\\.";
 
     private static final String COUNTRYBLOCKEDTEXT = "This hoster is now available in your country!";
+
     public FreeSpaceBy(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
     }
+
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (br.containsHTML(COUNTRYBLOCKED)) {
             downloadLink.getLinkStatus().setStatusText(COUNTRYBLOCKEDTEXT);

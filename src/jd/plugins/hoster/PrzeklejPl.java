@@ -42,11 +42,11 @@ public class PrzeklejPl extends PluginForHost {
 
     private static final String PATTERN_PASSWORD_WRONG = "B.*?dnie podane has";
 
-    private static final String REGISTEREDONLY = "> możesz pobrać, jeżeli jesteś zalogowany";
+    private static final String REGISTEREDONLY         = "> możesz pobrać, jeżeli jesteś zalogowany";
 
-    private static final String NOFREEMESSAGE  = "Only downloadable for registered users";
+    private static final String NOFREEMESSAGE          = "Only downloadable for registered users";
 
-    private static final String FINALLINKREGEX = "class=\"download\" href=\"(.*?)\"";
+    private static final String FINALLINKREGEX         = "class=\"download\" href=\"(.*?)\"";
 
     public PrzeklejPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -58,6 +58,7 @@ public class PrzeklejPl extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replaceAll("_", "-"));
     }
+
     public void doFree(DownloadLink downloadLink) throws Exception {
         String passCode = null;
         boolean resumable = true;
@@ -100,6 +101,7 @@ public class PrzeklejPl extends PluginForHost {
             }
         }
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();

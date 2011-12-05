@@ -36,7 +36,7 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://(www\\.)?dailymotion\\.com/video/[a-z0-9]+" }, flags = { 2 })
 public class DailyMotionCom extends PluginForHost {
 
-    public String dllink = null;
+    public String               dllink                 = null;
 
     private static final String MAINPAGE               = "http://www.dailymotion.com/";
 
@@ -45,10 +45,12 @@ public class DailyMotionCom extends PluginForHost {
     private static final String REGISTEREDONLY2        = "You must be logged in, over 18 years old, and set your family filter OFF, in order to watch it";
     private static final String REGISTEREDONLYUSERTEXT = "Download only possible for registered users";
     private String[]            subtitles              = null;
+
     public DailyMotionCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.dailymotion.com/register");
     }
+
     public void doFree(DownloadLink downloadLink) throws Exception {
         // They do allow resume and unlimited chunks but resuming or using more
         // than 1 chunk causes problems, the file will then b corrupted!

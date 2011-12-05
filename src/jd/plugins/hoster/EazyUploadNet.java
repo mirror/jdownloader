@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.config.Property;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
@@ -97,7 +96,7 @@ public class EazyUploadNet extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

@@ -46,6 +46,7 @@ public class UniBytesCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://www.unibytes.com/vippay");
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -59,6 +60,7 @@ public class UniBytesCom extends PluginForHost {
         ai.setStatus("Premium User");
         return ai;
     }
+
     @Override
     public String getAGBLink() {
         return "http://www.unibytes.com/page/terms";

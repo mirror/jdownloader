@@ -38,9 +38,11 @@ public class TriLuLiLuRo extends PluginForHost {
     private static final String VIDEOPLAYER  = "(video_player|\"video_player_swf\"|static\\.trilulilu\\.ro/swfobject/expressInstall\\.swf)";
 
     private static final String LIMITREACHED = ">Ai atins limita de 5 ascultări de piese audio pe zi. Te rugăm să intri in cont ca să poţi";
+
     public TriLuLiLuRo(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     @Override
     public String getAGBLink() {
         return "http://www.trilulilu.ro/termeni-conditii";

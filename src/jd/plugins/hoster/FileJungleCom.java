@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -139,6 +138,7 @@ public class FileJungleCom extends PluginForHost {
         }
         return true;
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -156,6 +156,7 @@ public class FileJungleCom extends PluginForHost {
         ai.setStatus("Premium User");
         return ai;
     }
+
     @Override
     public String getAGBLink() {
         return "http://www.filejungle.com/terms_and_conditions.php";
@@ -274,7 +275,7 @@ public class FileJungleCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

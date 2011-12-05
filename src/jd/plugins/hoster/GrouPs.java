@@ -37,6 +37,7 @@ public class GrouPs extends PluginForHost {
 
     private static final String VIDEOUNAVAILABLE         = "(This video is being encoded now\\.\\.\\.|Check back later\\.\\.\\.)";
     private static final String VIDEOUNAVAILABLEUSERTEXT = "This video is being encoded now, try again later!";
+
     public GrouPs(PluginWrapper wrapper) {
         super(wrapper);
     }

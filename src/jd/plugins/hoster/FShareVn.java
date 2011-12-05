@@ -22,7 +22,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.config.Property;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -95,6 +94,7 @@ public class FShareVn extends PluginForHost {
         }
         dl.startDownload();
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -129,6 +129,7 @@ public class FShareVn extends PluginForHost {
         account.setValid(true);
         return ai;
     }
+
     @Override
     public String getAGBLink() {
         return "http://www.fshare.vn/policy.php?action=sudung";
@@ -177,7 +178,7 @@ public class FShareVn extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

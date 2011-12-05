@@ -32,7 +32,7 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?api\\d+?\\.ge\\.tt/\\d/[A-Za-z0-9]+/.+" }, flags = { 0 })
 public class GeTt extends PluginForHost {
 
-    private String DLLINK = null;
+    private String              DLLINK               = null;
 
     private static final String LIMITREACHED         = "overloaded.html";
 
@@ -41,6 +41,7 @@ public class GeTt extends PluginForHost {
     public GeTt(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     @Override
     public String getAGBLink() {
         return "http://ge.tt/#terms";

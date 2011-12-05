@@ -44,10 +44,12 @@ public class AcapellasFourYouCoUk extends PluginForHost {
     private static final Object LOCK     = new Object();
 
     private static final String USERTEXT = "Only downloadable for registered users!";
+
     public AcapellasFourYouCoUk(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.acapellas4u.co.uk/ucp.php?mode=register");
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();

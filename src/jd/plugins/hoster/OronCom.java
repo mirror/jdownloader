@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -47,21 +46,23 @@ public class OronCom extends PluginForHost {
     private static AtomicInteger maxPrem            = new AtomicInteger(1);
     private boolean              showAccountCaptcha = false;
 
-    public String brbefore = "";
+    public String                brbefore           = "";
 
-    public boolean              nopremium          = false;
+    public boolean               nopremium          = false;
 
-    private static final String COOKIE_HOST        = "http://oron.com";
+    private static final String  COOKIE_HOST        = "http://oron.com";
 
-    private static final String ONLY4PREMIUMERROR0 = "The file status can only be queried by Premium Users";
+    private static final String  ONLY4PREMIUMERROR0 = "The file status can only be queried by Premium Users";
 
-    private static final String ONLY4PREMIUMERROR1 = "This file can only be downloaded by Premium Users";
+    private static final String  ONLY4PREMIUMERROR1 = "This file can only be downloaded by Premium Users";
 
-    private static final String FILEINCOMPLETE     = "File incomplete on server, please contact oron support!";
+    private static final String  FILEINCOMPLETE     = "File incomplete on server, please contact oron support!";
+
     public OronCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://oron.com/premium.html");
     }
+
     public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
         // Some waittimes...
         if (brbefore.contains("err\">Expired session<\"")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
@@ -110,6 +111,7 @@ public class OronCom extends PluginForHost {
         }
         if (brbefore.contains("File could not be found due to its possible expiration")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
     }
+
     @SuppressWarnings("deprecation")
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (brbefore.contains(ONLY4PREMIUMERROR0) || brbefore.contains(ONLY4PREMIUMERROR1)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
@@ -177,6 +179,7 @@ public class OronCom extends PluginForHost {
         }
         dl.startDownload();
     }
+
     public void doSomething() throws NumberFormatException, PluginException {
         brbefore = br.toString();
         ArrayList<String> someStuff = new ArrayList<String>();
@@ -410,7 +413,7 @@ public class OronCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

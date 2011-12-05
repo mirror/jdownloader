@@ -35,7 +35,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://(www\\.)?(u\\.)?115\\.com/file/[a-z0-9]+" }, flags = { 0 })
 public class U115Com extends PluginForHost {
 
-    private final String ua = RandomUserAgent.generate();
+    private final String        ua                    = RandomUserAgent.generate();
 
     private static final String UNDERMAINTENANCEURL   = "http://u.115.com/weihu.html";
 
@@ -47,15 +47,18 @@ public class U115Com extends PluginForHost {
 
     private static final String ACCOUNTNEEDEDUSERTEXT = "Account is needed to download this link";
     private static final String EXACTLINKREGEX        = "\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/down_group\\d+/[^<>\"\\']+)\"";
+
     public U115Com(PluginWrapper wrapper) {
         super(wrapper);
         // 10 seconds waittime between the downloadstart of simultan DLs of this
         // host
         this.setStartIntervall(10000l);
     }
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("u.115.com/file/", "115.com/file/"));
     }
+
     public String findLink(DownloadLink link) throws Exception {
         String linkToDownload = br.getRegex(EXACTLINKREGEX).getMatch(0);
         if (linkToDownload == null) {
@@ -78,6 +81,7 @@ public class U115Com extends PluginForHost {
         }
         return linkToDownload;
     }
+
     @Override
     public String getAGBLink() {
         return "http://u.115.com/tos.html";

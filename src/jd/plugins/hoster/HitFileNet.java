@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -52,10 +51,12 @@ public class HitFileNet extends PluginForHost {
     public static final Object  LOCK           = new Object();
     private static final String MAINPAGE       = "http://hitfile.net/";
     private static final String ENPAGE         = "http://hitfile.net/lang/en";
+
     public HitFileNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://hitfile.net/premium/emoney/5");
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -78,10 +79,12 @@ public class HitFileNet extends PluginForHost {
         ai.setStatus("Premium User");
         return ai;
     }
+
     @Override
     public String getAGBLink() {
         return "http://hitfile.net/rules";
     }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
@@ -200,7 +203,7 @@ public class HitFileNet extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

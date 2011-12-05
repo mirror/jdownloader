@@ -26,7 +26,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.crypt.Base64;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -77,6 +76,7 @@ public class Uploadedto extends PluginForHost {
             }
             return null;
         }
+
         private byte[] key;
 
         private byte[] prep;
@@ -435,7 +435,7 @@ public class Uploadedto extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

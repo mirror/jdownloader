@@ -40,7 +40,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ugotfile.com" }, urls = { "http://[\\w\\.]*?ugotfile.com/file/\\d+/.+" }, flags = { 2 })
 public class UgotFileCom extends PluginForHost {
 
-    private static final String ERROR404 = "(title>404 Not Found</title>|<h1>Not Found</h1>)";
+    private static final String ERROR404    = "(title>404 Not Found</title>|<h1>Not Found</h1>)";
 
     private static final String ONLYPREMIUM = "(Only premium members may download file larger than \\d+MB\\.|You are trying to download file larger than \\d+MB\\.)";
 

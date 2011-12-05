@@ -24,7 +24,6 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -49,11 +48,11 @@ public class CraMitIn extends PluginForHost {
 
     private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
 
-    public String               brbefore    = "";
+    public String               brbefore     = "";
 
-    private static final String COOKIE_HOST = "http://cramit.in";
+    private static final String COOKIE_HOST  = "http://cramit.in";
 
-    public boolean              nopremium   = false;
+    public boolean              nopremium    = false;
 
     public CraMitIn(PluginWrapper wrapper) {
         super(wrapper);
@@ -109,9 +108,11 @@ public class CraMitIn extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror");
         }
     }
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("cramitin\\.(net|eu|us)", "cramit.in"));
     }
+
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         doSomething();
         if (brbefore.contains("class=\"err\">This server is in maintenance mode")) {
@@ -504,7 +505,7 @@ public class CraMitIn extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

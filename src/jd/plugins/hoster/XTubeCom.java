@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtube.com" }, urls = { "http://(www\\.)?xtube\\.com/(watch|play_re)\\.php\\?v=[A-Za-z0-9_\\-]+" }, flags = { 0 })
 public class XTubeCom extends PluginForHost {
 
-    private String DLLINK = null;
+    private String              DLLINK   = null;
 
     private static final String MAINPAGE = "http://www.xtube.com";
 

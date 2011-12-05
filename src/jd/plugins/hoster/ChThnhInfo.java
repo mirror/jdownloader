@@ -29,9 +29,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "http://[\\w\\.]*?chauthanh\\.info/animeDownload/download/\\d+/.+/.+" }, flags = { 0 })
 public class ChThnhInfo extends PluginForHost {
 
-    public String dllink = null;
+    public String              dllink = null;
 
-    public static final Object LOCK = new Object();
+    public static final Object LOCK   = new Object();
 
     public ChThnhInfo(PluginWrapper wrapper) {
         super(wrapper);

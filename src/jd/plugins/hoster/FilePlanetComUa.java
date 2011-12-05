@@ -23,7 +23,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -52,10 +51,12 @@ public class FilePlanetComUa extends PluginForHost {
 
     private static final String ONLY4PREMIUM        = "(To download files you need to buy a premium account.<br>|Скачивание из Вашей страны доступно только при наличии премиум аккаунта\\! Сейчас вы будете перенаправлены на страницу покупки\\!<)";
     private static final String ONLYPREMIUMUSERTEXT = "Only downloadable for premium users";
+
     public FilePlanetComUa(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
+
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (brbefore.contains("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
@@ -114,6 +115,7 @@ public class FilePlanetComUa extends PluginForHost {
             }
         }
     }
+
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (brbefore.contains("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (brbefore.contains("(File Not Found|<h1>404 Not Found</h1>)")) {
@@ -121,6 +123,7 @@ public class FilePlanetComUa extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
+
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         String passCode = null;
         boolean resumable = true;
@@ -342,7 +345,7 @@ public class FilePlanetComUa extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

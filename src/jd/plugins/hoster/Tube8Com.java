@@ -37,11 +37,11 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tube8.com" }, urls = { "http://[\\w\\.]*?tube8\\.com/.*?/.*?/[0-9]+" }, flags = { 2 })
 public class Tube8Com extends PluginForHost {
 
-    private boolean setEx = true;
+    private boolean             setEx  = true;
 
     private static final String mobile = "mobile";
 
-    public String dllink = null;
+    public String               dllink = null;
 
     public Tube8Com(PluginWrapper wrapper) {
         super(wrapper);

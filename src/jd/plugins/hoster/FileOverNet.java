@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
@@ -89,6 +88,7 @@ public class FileOverNet extends PluginForHost {
     public String getAGBLink() {
         return "https://fileover.net/contacts/";
     }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
@@ -177,7 +177,7 @@ public class FileOverNet extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

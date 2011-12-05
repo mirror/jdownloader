@@ -43,14 +43,17 @@ public class LiveMixTapesCom extends PluginForHost {
     private static final String MUSTBELOGGEDIN         = ">You must be logged in to access this page";
 
     private static final String ONLYREGISTEREDUSERTEXT = "Download is only available for registered users";
+
     public LiveMixTapesCom(PluginWrapper wrapper) {
         super(wrapper);
         // Currently there is only support for free accounts
         this.enablePremium("http://www.livemixtapes.com/signup.html");
     }
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("indy.", "").replace("/mixtapes/", "/download/"));
     }
+
     private void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (!br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String captchaUrl = br.getRegex("\"(/captcha/captcha\\.gif\\?\\d+)\"").getMatch(0);

@@ -39,9 +39,11 @@ public class FileCopterNet extends PluginForHost {
     private static final String GETLINKREGEX2 = "\\'(" + "http://(www\\.)" + MAINPAGE.replaceAll("(http://|www\\.)", "") + "/get/[A-Za-z0-9]+/\\d+/.*?)\\'";
     private static final String FILENOTFOUND  = ">The file you have requested does not exist";
     private static final String APIKEY        = "lk6ucRFoBSsboU84Sx6GeHEf0TqB";
+
     public FileCopterNet(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     @Override
     public String getAGBLink() {
         return MAINPAGE + "/help/terms.php";

@@ -33,6 +33,7 @@ public class EHowCom extends PluginForHost {
     private String  dllink = null;
 
     private boolean hd     = true;
+
     public EHowCom(PluginWrapper wrapper) {
         super(wrapper);
     }

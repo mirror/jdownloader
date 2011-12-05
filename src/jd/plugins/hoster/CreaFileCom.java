@@ -41,6 +41,7 @@ public class CreaFileCom extends PluginForHost {
     private static final String WAIT2  = "WAIT2";
 
     private static final String CHUNKS = "CHUNKS2";
+
     public CreaFileCom(PluginWrapper wrapper) {
         super(wrapper);
         // this host blocks if there is no timegap between the simultan
@@ -48,6 +49,7 @@ public class CreaFileCom extends PluginForHost {
         this.setStartIntervall(15000l);
         setConfigElements();
     }
+
     @Override
     public String getAGBLink() {
         return "http://creafile.com/useragree.html";

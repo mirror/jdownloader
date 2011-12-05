@@ -51,10 +51,12 @@ public class IFilezCom extends PluginForHost {
         // Would be needed if multiple free-downloads were possible
         // this.setStartIntervall(11 * 1000l);
     }
+
     public void correctDownloadLink(DownloadLink link) {
         // Links come from a decrypter
         link.setUrlDownload(link.getDownloadURL().replace("i-filezdecrypted.com/", "i-filez.com/"));
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -77,6 +79,7 @@ public class IFilezCom extends PluginForHost {
         ai.setStatus("Premium User");
         return ai;
     }
+
     @Override
     public String getAGBLink() {
         return "http://i-filez.com/terms";

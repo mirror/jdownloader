@@ -48,6 +48,7 @@ public class Vipfilecom extends PluginForHost {
         this.setAccountwithoutUsername(true);
         enablePremium("http://vip-file.com/tmpl/premium_en.php");
     }
+
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         synchronized (LOCK) {
             AccountInfo ai = new AccountInfo();

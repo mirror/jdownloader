@@ -23,7 +23,6 @@ import java.net.URL;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.controlling.HTACCESSController;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
@@ -140,16 +139,6 @@ public class DirectHTTP extends PluginForHost {
                 this.setCode(code);
 
             }
-        }
-
-        // do not add @Override here to keep 0.* compatibility
-        public boolean hasAutoCaptcha() {
-            return JACMethod.hasMethod("recaptcha");
-        }
-
-        // do not add @Override here to keep 0.* compatibility
-        public boolean hasCaptcha() {
-            return true;
         }
 
         public boolean isSolved() throws PluginException {

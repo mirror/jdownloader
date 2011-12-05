@@ -23,7 +23,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -54,6 +53,7 @@ public class ShareSwiftCom extends PluginForHost {
     public ShareSwiftCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (brbefore.contains("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
@@ -112,6 +112,7 @@ public class ShareSwiftCom extends PluginForHost {
             }
         }
     }
+
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (brbefore.contains("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (brbefore.contains("(File Not Found|<h1>404 Not Found</h1>)")) {
@@ -119,6 +120,7 @@ public class ShareSwiftCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
+
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("6i96j4r5ffdjho45u2ddkuiqsdftjpj8.com", "shareswift.com"));
@@ -325,7 +327,7 @@ public class ShareSwiftCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

@@ -36,6 +36,7 @@ public class MovShareNet extends PluginForHost {
     public MovShareNet(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     @Override
     public String getAGBLink() {
         return "http://www.movshare.net/terms.php";

@@ -50,6 +50,7 @@ public class RemixShareCom extends PluginForHost {
         super(wrapper);
         this.setStartIntervall(3000l);
     }
+
     private String execJS() throws Exception {
         String fun = br.getRegex("/>Your Download has been started\\.[\t\n\r ]+</div>[\t\n\r ]+<script type=\"text/javascript\" language=\"Javascript\">(.*?)</script>").getMatch(0);
         if (fun == null) return null;

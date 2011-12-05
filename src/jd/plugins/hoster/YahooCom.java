@@ -44,10 +44,12 @@ public class YahooCom extends PluginForHost {
     private static final String MAINPAGE = "www.yahoo.com";
 
     private static final String USERTEXT = "Only downloadable for registered users!";
+
     public YahooCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://na.edit.yahoo.com/registration?");
     }
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("decryptedhahoo", "yahoo").replace("yahoolink", ""));
     }

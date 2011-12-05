@@ -52,6 +52,7 @@ public class MegaShareBy extends PluginForHost {
             }
         }
     }
+
     // MhfScriptBasic 1.0
     @Override
     public String getAGBLink() {

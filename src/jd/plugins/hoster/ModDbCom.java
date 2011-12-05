@@ -34,7 +34,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moddb.com" }, urls = { "http://[\\w\\.]*?moddb\\.com/(games|mods|engines|groups)/.*?/(addons|downloads)/[0-9a-z-]+" }, flags = { 0 })
 public class ModDbCom extends PluginForHost {
 
-    private static final String   moddbservers = "moddbservers";
+    private static final String   moddbservers  = "moddbservers";
 
     /** The list of server values displayed to the user */
     private static final String[] servers;
@@ -43,23 +43,25 @@ public class ModDbCom extends PluginForHost {
         servers = new String[] { "fdcservers.net(WORLDWIDE)", "moddb.com #4(TEXAS, US)", "moddb.com #5(COLORADO, US)", "moddb.com #6(COLORADO, US)", "Mod DB #8 (CALIFORNIA, US)", "Mod DB #10 (NETHERLANDS, EU)", "Mod DB #11 (NETHERLANDS, EU)", "Mod DB #13 (NETHERLANDS, EU)" };
     }
 
-    private String FDCCDNREGEX1  = "Mirror provided by FDCCDN.*?<a href=\"(.*?)\"";
+    private String                FDCCDNREGEX1  = "Mirror provided by FDCCDN.*?<a href=\"(.*?)\"";
 
-    private String FDCCDNREGEX2  = "http://www\\.fdcservers\\.net.*?<a href=\"(.*?)\"";
+    private String                FDCCDNREGEX2  = "http://www\\.fdcservers\\.net.*?<a href=\"(.*?)\"";
 
-    private String SERVER4REGEX  = "Mirror provided by Mod DB #4.*?<a href=\"(.*?)\"";
+    private String                SERVER4REGEX  = "Mirror provided by Mod DB #4.*?<a href=\"(.*?)\"";
 
-    private String SERVER5REGEX  = "Mirror provided by Mod DB #5.*?<a href=\"(.*?)\"";
+    private String                SERVER5REGEX  = "Mirror provided by Mod DB #5.*?<a href=\"(.*?)\"";
 
-    private String SERVER6REGEX  = "Mirror provided by Mod DB #6.*?<a href=\"(.*?)\"";
-    private String SERVER8REGEX  = "Mirror provided by Mod DB #8.*?<a href=\"(.*?)\"";
-    private String SERVER10REGEX = "Mirror provided by Mod DB #10.*?<a href=\"(.*?)\"";
-    private String SERVER11REGEX = "Mirror provided by Mod DB #11.*?<a href=\"(.*?)\"";
-    private String SERVER13REGEX = "Mirror provided by Mod DB #13.*?<a href=\"(.*?)\"";
+    private String                SERVER6REGEX  = "Mirror provided by Mod DB #6.*?<a href=\"(.*?)\"";
+    private String                SERVER8REGEX  = "Mirror provided by Mod DB #8.*?<a href=\"(.*?)\"";
+    private String                SERVER10REGEX = "Mirror provided by Mod DB #10.*?<a href=\"(.*?)\"";
+    private String                SERVER11REGEX = "Mirror provided by Mod DB #11.*?<a href=\"(.*?)\"";
+    private String                SERVER13REGEX = "Mirror provided by Mod DB #13.*?<a href=\"(.*?)\"";
+
     public ModDbCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
     }
+
     private String findLink(int configuredServer, String singlemirrorpage) throws IOException {
         String dllink = null;
         // Try to find the link for the selected servers
@@ -144,10 +146,12 @@ public class ModDbCom extends PluginForHost {
         }
         return dllink;
     }
+
     @Override
     public String getAGBLink() {
         return "http://www.moddb.com/terms-of-use";
     }
+
     private int getConfiguredServer() {
         switch (getPluginConfig().getIntegerProperty(moddbservers, -1)) {
         case 0:

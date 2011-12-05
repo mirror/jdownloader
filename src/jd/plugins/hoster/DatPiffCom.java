@@ -39,10 +39,12 @@ public class DatPiffCom extends PluginForHost {
     private static final String ONLYREGISTEREDUSERTEXT = "Only downloadable for registered users";
 
     private static final String MAINPAGE               = "http://www.datpiff.com/";
+
     public DatPiffCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.datpiff.com/register");
     }
+
     public void correctDownloadLink(DownloadLink link) throws IOException {
         if (!link.getDownloadURL().contains("-download.php")) {
             br.getPage(link.getDownloadURL());

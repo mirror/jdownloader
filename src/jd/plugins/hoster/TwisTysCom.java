@@ -41,6 +41,7 @@ public class TwisTysCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://secure.twistys.com/signup/signup.php?");
     }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();

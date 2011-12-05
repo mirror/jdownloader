@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.captcha.JACMethod;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -43,7 +42,7 @@ public class FilerNet extends PluginForHost {
 
     private static final Pattern PATTERN_MATCHER_ERROR = Pattern.compile("errors", Pattern.CASE_INSENSITIVE);
 
-    private static long LAST_FREE_DOWNLOAD = 0l;
+    private static long          LAST_FREE_DOWNLOAD    = 0l;
 
     public FilerNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -170,7 +169,7 @@ public class FilerNet extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return JACMethod.hasMethod("recaptcha");
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility
