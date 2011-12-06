@@ -39,11 +39,6 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
     }
 
     @Override
-    public boolean isEditable(AdvancedConfigEntry obj) {
-        return true;
-    }
-
-    @Override
     public boolean isEnabled(AdvancedConfigEntry obj) {
         return true;
     }

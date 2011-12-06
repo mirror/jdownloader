@@ -737,4 +737,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Offline Files" })
     String LinkCollector_addCrawledLink_offlinepackage();
+
+    @Default(lngs = { "en" }, values = { "Various Files" })
+    String LinkCollector_addCrawledLink_variouspackage();
 }

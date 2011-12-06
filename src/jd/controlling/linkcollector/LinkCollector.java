@@ -311,7 +311,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         });
     }
 
-    private CrawledPackage offlinePackage;
+    private CrawledPackage   offlinePackage;
+
+    protected CrawledPackage variousPackage;
 
     private void addCrawledLink(final CrawledLink link) {
 
@@ -391,13 +393,22 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         if (link.getLinkState() == LinkState.OFFLINE && LinkgrabberSettings.OFFLINE_PACKAGE_ENABLED.getValue()) {
                             if (offlinePackage == null) {
                                 offlinePackage = new CrawledPackage();
+
                                 offlinePackage.setCreated(link.getCreated());
                                 offlinePackage.setAllowAutoPackage(false);
                                 offlinePackage.setCustomName(_JDT._.LinkCollector_addCrawledLink_offlinepackage());
 
                             }
                             pkgMatch = offlinePackage;
-
+                        } else if (LinkgrabberSettings.VARIOUS_PACKAGE_LIMIT.getValue() > 0) {
+                            if (variousPackage == null) {
+                                variousPackage = new CrawledPackage();
+                                variousPackage.setExpanded(true);
+                                variousPackage.setCreated(link.getCreated());
+                                variousPackage.setAllowAutoPackage(false);
+                                variousPackage.setCustomName(_JDT._.LinkCollector_addCrawledLink_variouspackage());
+                            }
+                            pkgMatch = variousPackage;
                         } else {
 
                             /* create new Package */
@@ -422,6 +433,43 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                 /* add link to linkcollector */
                 LinkCollector.this.addmoveChildren(pkgMatch, add, -1);
+                if (pkgMatch == variousPackage) {
+                    // let's see if we should extract a new package out of
+                    // varíous
+                    List<CrawledLink> childs = variousPackage.getChildren();
+                    ArrayList<CrawledLink> matches = new ArrayList<CrawledLink>();
+                    String namei, nameii;
+                    for (int i = 0; i < childs.size(); i++) {
+                        matches.clear();
+                        CrawledLink l = childs.get(i);
+                        namei = LinknameCleaner.cleanFileName(l.getName());
+                        String autoName = namei;
+                        for (int ii = 0; ii < childs.size(); ii++) {
+                            if (i == ii) continue;
+                            nameii = LinknameCleaner.cleanFileName(childs.get(ii).getName());
+                            int res = LinknameCleaner.comparepackages(namei, nameii);
+                            if (res >= 99) {
+                                autoName = getSimString(nameii, autoName);
+                                matches.add(childs.get(ii));
+                            }
+                        }
+                        if (matches.size() >= LinkgrabberSettings.VARIOUS_PACKAGE_LIMIT.getValue()) {
+                            matches.add(l);
+                            newOnlinePackage = true;
+                            pkgMatch = new CrawledPackage();
+                            pkgMatch.setCreated(link.getCreated());
+                            pkgMatch.setAllowAutoPackage(true);
+                            if (dpi != null && dpi.getDestinationFolder() != null) {
+                                pkgMatch.setDownloadFolder(dpi.getDestinationFolder());
+
+                            }
+                            pkgMatch.setAutoPackageName(autoName);
+                            LinkCollector.this.addmoveChildren(pkgMatch, matches, -1);
+                            break;
+                        }
+                    }
+
+                }
                 if (newOnlinePackage && LinkgrabberSettings.OFFLINE_PACKAGE_ENABLED.getValue()) {
                     // check offline package if we have links that might fit in
                     // the new package
@@ -429,11 +477,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     for (CrawledLink l : offlinePackage.getChildren()) {
                         String name = LinknameCleaner.cleanFileName(l.getName());
                         int res = LinknameCleaner.comparepackages(name, pkgMatch.getAutoPackageName());
-                        System.out.println(name + " - " + pkgMatch.getAutoPackageName() + " :" + res);
-                        if (res > 99) {
+
+                        if (res >= 99) {
                             name = getSimString(pkgMatch.getAutoPackageName(), name);
                             pkgMatch.setAutoPackageName(name);
-                            System.out.println(name);
+
                             move.add(l);
                         }
 
@@ -445,6 +493,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
                 return null;
             }
+
         });
 
     }
@@ -566,6 +615,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             filteredStuff.clear();
         }
         offlinePackage = null;
+        variousPackage = null;
         broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_EMPTY));
     }
 
