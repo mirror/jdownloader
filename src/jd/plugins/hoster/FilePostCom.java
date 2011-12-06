@@ -36,6 +36,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -186,28 +187,33 @@ public class FilePostCom extends PluginForHost {
         if (br.containsHTML("The file owner has limited free downloads of this file")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium2", "Only downloadable for premium users"));
         if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
         if (br.containsHTML("(>Your IP address is already downloading a file at the moment|>Please wait till the download completion and try again)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already Loading", 20 * 60 * 1000l);
+        String passCode = downloadLink.getStringProperty("pass", null);
         String premiumlimit = br.getRegex(">Files over (.*?) can be downloaded by premium members only").getMatch(0);
         if (premiumlimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium", "Files over " + premiumlimit + " are only downloadable for premium users"));
         // Errorhandling in case their linkchecker lies
         if (br.containsHTML("(<title>FilePost\\.com: Download  \\- fast \\&amp; secure\\!</title>|>File not found<|>It may have been deleted by the uploader or due to the received complaint|<div class=\"file_info file_info_deleted\">)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        /* token used for all requests */
-        String token = br.getRegex("flp_token', '(.*?)'").getMatch(0);
-        if (token == null) token = br.getRegex("token', '(.*?)'").getMatch(0);
+        /* token and SID used for all requests */
+        String token = br.getRegex("flp_token\\', \\'(.*?)\\'").getMatch(0);
+        final String sid = br.getCookie("http://filepost.com/", "SID");
+        if (token == null) token = br.getRegex("token\\', \\'(.*?)\\'").getMatch(0);
+        if (sid == null || token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String action = "http://filepost.com/files/get/?SID=" + sid + "&JsHttpRequest=";
         String id = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
         Browser brc = br.cloneBrowser();
         Form form = new Form();
         form.setMethod(MethodType.POST);
-        form.setAction("http://filepost.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml");
+        form.setAction(action + System.currentTimeMillis() + "-xml");
         form.put("action", "set_download");
-        form.put("download", token);
+        // form.put("download", token);
         form.put("code", id);
         form.setEncoding("application/octet-stream; charset=UTF-8");
         /* click on low speed button */
         brc.submitForm(form);
         boolean nextD = false;
+        System.out.print(brc.toString());
         String nextDownload = brc.getRegex("next_download\":\"(\\d+)").getMatch(0);
         if (nextDownload != null) nextD = true;
-        if (nextDownload == null) nextDownload = brc.getRegex("wait_time\":\"(\\d+)").getMatch(0);
+        if (nextDownload == null) nextDownload = brc.getRegex("wait_time\":\"(\\-?\\d+)").getMatch(0);
         int wait = 30;
         if (nextDownload != null) {
             if (nextDownload.contains("-")) {
@@ -217,11 +223,17 @@ public class FilePostCom extends PluginForHost {
             if (wait > 300) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1000l);
         }
         sleep(wait * 1001l, downloadLink);
+        /** Password handling */
+        if (br.containsHTML("var is_pass_exists = true")) {
+            if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
+            brc.postPage(action + action + System.currentTimeMillis() + "-xml", "code=" + id + "&file_pass=" + Encoding.urlEncode(passCode) + "&token=" + token);
+            if (brc.containsHTML("\"Wrong file password\"")) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+        }
         boolean captchaNeeded = br.containsHTML("show_captcha = 1");
         if (!captchaNeeded) captchaNeeded = br.containsHTML("show_captcha = true");
         form = new Form();
         form.setMethod(MethodType.POST);
-        form.setAction("http://filepost.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml");
+        form.setAction(action + System.currentTimeMillis() + "-xml");
         form.put("download", token);
         form.put("file_pass", "undefined");
         form.put("code", id);
@@ -256,9 +268,14 @@ public class FilePostCom extends PluginForHost {
             if (br.getCookie(MAINPAGE, "error") != null) logger.warning("Unhandled error: " + br.getCookie(MAINPAGE, "error"));
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (passCode != null) downloadLink.setProperty("pass", passCode);
         dl.startDownload();
     }
 
+    /**
+     * Important: Handling for password protected links is not included yet
+     * (only in handleFree)!
+     */
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
