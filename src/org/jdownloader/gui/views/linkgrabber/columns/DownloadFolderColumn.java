@@ -137,7 +137,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             if (isAbsolute(folder)) {
                 return folder;
             } else {
-                return new File(GeneralSettings.DOWNLOAD_FOLDER.getValue(), folder).toString();
+                return new File(GeneralSettings.DEFAULT_DOWNLOAD_FOLDER.getValue(), folder).toString();
             }
         } else {
             return null;

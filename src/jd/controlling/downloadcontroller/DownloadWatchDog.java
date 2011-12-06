@@ -508,7 +508,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      */
     public int getSimultanDownloadNumPerHost() {
         int ret = 0;
-        if (Boolean.FALSE.equals(GeneralSettings.MAX_SIMULTANE_DOWNLOADS_PER_HOST_ENABLED.getValue()) || (ret = config.getMaxSimultaneDownloadsPerHost()) == 0) { return Integer.MAX_VALUE; }
+        if (Boolean.FALSE.equals(GeneralSettings.MAX_DOWNLOADS_PER_HOST_ENABLED.getValue()) || (ret = config.getMaxSimultaneDownloadsPerHost()) == 0) { return Integer.MAX_VALUE; }
         return ret;
     }
 

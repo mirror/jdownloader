@@ -2,27 +2,26 @@ package jd.controlling.linkcollector;
 
 import java.util.regex.Pattern;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.jdownloader.settings.GeneralSettings;
 
 public class LinknameCleaner {
-    public static final Pattern   pat0        = Pattern.compile("(.*)(\\.|_|-)pa?r?t?\\.?[0-9]+.(rar|exe)$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat1        = Pattern.compile("(.*)(\\.|_|-)part\\.?[0]*[1].(rar|exe)$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat3        = Pattern.compile("(.*)\\.rar$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat4        = Pattern.compile("(.*)\\.r\\d+$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat5        = Pattern.compile("(.*)(\\.|_|-)\\d+$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern[] rarPats     = new Pattern[] { pat0, pat1, pat3, pat4, pat5 };
+    public static final Pattern   pat0     = Pattern.compile("(.*)(\\.|_|-)pa?r?t?\\.?[0-9]+.(rar|exe)$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat1     = Pattern.compile("(.*)(\\.|_|-)part\\.?[0]*[1].(rar|exe)$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat3     = Pattern.compile("(.*)\\.rar$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat4     = Pattern.compile("(.*)\\.r\\d+$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat5     = Pattern.compile("(.*)(\\.|_|-)\\d+$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern[] rarPats  = new Pattern[] { pat0, pat1, pat3, pat4, pat5 };
 
-    public static final Pattern   pat6        = Pattern.compile("(.*)\\.zip$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat7        = Pattern.compile("(.*)\\.z\\d+$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat8        = Pattern.compile("(?is).*\\.7z\\.[\\d]+$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat9        = Pattern.compile("(.*)\\.a.$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern[] zipPats     = new Pattern[] { pat6, pat7, pat8, pat9 };
+    public static final Pattern   pat6     = Pattern.compile("(.*)\\.zip$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat7     = Pattern.compile("(.*)\\.z\\d+$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat8     = Pattern.compile("(?is).*\\.7z\\.[\\d]+$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat9     = Pattern.compile("(.*)\\.a.$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern[] zipPats  = new Pattern[] { pat6, pat7, pat8, pat9 };
 
-    public static final Pattern   pat10       = Pattern.compile("(.*)\\._((_[a-z]{1})|([a-z]{2}))(\\.|$)");
-    public static Pattern         pat11       = null;
-    public static Pattern[]       ffsjPats    = null;
+    public static final Pattern   pat10    = Pattern.compile("(.*)\\._((_[a-z]{1})|([a-z]{2}))(\\.|$)");
+    public static Pattern         pat11    = null;
+    public static Pattern[]       ffsjPats = null;
     static {
         try {
             /* this should be done on a better way with next major update */
@@ -33,23 +32,18 @@ public class LinknameCleaner {
         }
     }
 
-    public static final Pattern   pat12       = Pattern.compile("(CD\\d+)", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat13       = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat12    = Pattern.compile("(CD\\d+)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat13    = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
 
-    public static final Pattern   pat14       = Pattern.compile("(.+)\\.+$");
-    public static final Pattern   pat15       = Pattern.compile("(.+)-+$");
-    public static final Pattern   pat16       = Pattern.compile("(.+)_+$");
+    public static final Pattern   pat14    = Pattern.compile("(.+)\\.+$");
+    public static final Pattern   pat15    = Pattern.compile("(.+)-+$");
+    public static final Pattern   pat16    = Pattern.compile("(.+)_+$");
 
-    public static final Pattern   pat17       = Pattern.compile("(.+)\\.\\d+\\.xtm$");
+    public static final Pattern   pat17    = Pattern.compile("(.+)\\.\\d+\\.xtm$");
 
-    public static final Pattern   pat18       = Pattern.compile("(.*)\\.isz$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat19       = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern[] iszPats     = new Pattern[] { pat18, pat19 };
-    private static boolean        nameCleanup = false;                                                                                  ;
-
-    static {
-        nameCleanup = JsonConfig.create(GeneralSettings.class).isCleanUpFilenames();
-    }
+    public static final Pattern   pat18    = Pattern.compile("(.*)\\.isz$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat19    = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern[] iszPats  = new Pattern[] { pat18, pat19 };                                                         ;
 
     public static String cleanFileName(String name) {
         /** remove rar extensions */
@@ -112,11 +106,32 @@ public class LinknameCleaner {
         name = getNameMatch(name, pat15);
         name = getNameMatch(name, pat16);
 
-        /* if enabled, replace dots and _ with spaces */
-        if (nameCleanup) {
+        /* if enabled, replace dots and _ with spaces and do further clean ups */
+
+        if (GeneralSettings.CLEAN_UP_FILENAMES.getValue()) {
             name = name.replaceAll("_", " ");
             name = name.replaceAll("\\.", " ");
+
+            StringBuilder sb = new StringBuilder();
+            char[] cs = name.toCharArray();
+            for (int i = 0; i < cs.length; i++) {
+                // splitFileNamesLikeThis to "split File Names Like This"
+                if (i > 0 && Character.isUpperCase(cs[i]) && Character.isLowerCase(cs[i - 1])) {
+                    sb.append(' ');
+                }
+                switch (cs[i]) {
+                case '_':
+                case '.':
+                    sb.append(' ');
+                    break;
+
+                default:
+                    sb.append(cs[i]);
+
+                }
+            }
         }
+
         return name.trim();
     }
 

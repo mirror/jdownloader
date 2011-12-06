@@ -11,10 +11,13 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
+import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 
 public class ContextMenuFactory {
@@ -26,7 +29,7 @@ public class ContextMenuFactory {
     }
 
     public JPopupMenu createPopup(AbstractNode contextObject, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent event) {
-        if (selection == null || selection.size() == 0) return null;
+
         boolean isLinkContext = contextObject instanceof CrawledLink;
         boolean isShift = event.isShiftDown();
         boolean isPkgContext = contextObject instanceof CrawledPackage;
@@ -34,6 +37,14 @@ public class ContextMenuFactory {
         CrawledPackage pkg = isPkgContext ? (CrawledPackage) contextObject : null;
         JPopupMenu p = new JPopupMenu();
         JMenu m;
+        if (selection == null || selection.size() == 0) {
+            p.add(new AddLinksAction().toContextMenuAction());
+            return p;
+        } else if (JsonConfig.create(LinkgrabberSettings.class).isContextMenuAddLinksActionAlwaysVisible()) {
+            p.add(new AddLinksAction().toContextMenuAction());
+            p.add(new JSeparator());
+        }
+
         p.add(new ConfirmAction(isShift, selection).toContextMenuAction());
         p.add(new EnabledAction(selection).toContextMenuAction());
         if (isLinkContext) {
