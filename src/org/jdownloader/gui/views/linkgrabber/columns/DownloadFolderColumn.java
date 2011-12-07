@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.util.ArrayList;
 
 import javax.swing.JTextField;
 
@@ -49,7 +50,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             public void actionPerformed(ActionEvent e) {
                 editorField.selectAll();
                 noset = true;
-                SetDownloadFolderAction sna = new SetDownloadFolderAction(editing);
+                SetDownloadFolderAction sna = new SetDownloadFolderAction(editing, null);
                 sna.actionPerformed(null);
                 if (sna.newValueSet()) {
                     DownloadFolderColumn.this.stopCellEditing();
@@ -71,7 +72,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
             public void actionPerformed(ActionEvent e) {
                 noset = true;
-                new OpenDownloadFolderAction(editing).actionPerformed(e);
+                new OpenDownloadFolderAction((ArrayList<CrawledPackage>) editing).actionPerformed(e);
                 DownloadFolderColumn.this.stopCellEditing();
             }
         });
@@ -128,6 +129,16 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
         if (object instanceof CrawledPackage) {
             ((CrawledPackage) object).setDownloadFolder(value);
         }
+    }
+
+    @Override
+    public boolean isEnabled(final AbstractNode obj) {
+        return obj.isEnabled();
+    }
+
+    protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
+
+        return isEditable(obj);
     }
 
     @Override

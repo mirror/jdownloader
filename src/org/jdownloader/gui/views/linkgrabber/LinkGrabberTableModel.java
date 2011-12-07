@@ -17,9 +17,14 @@ import org.jdownloader.gui.views.linkgrabber.columns.UrlColumn;
 
 public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPackage, CrawledLink> {
 
-    private static final long serialVersionUID = -198189279671615981L;
+    private static final long                  serialVersionUID = -198189279671615981L;
+    private static final LinkGrabberTableModel INSTANCE         = new LinkGrabberTableModel();
 
-    public LinkGrabberTableModel() {
+    public static LinkGrabberTableModel getInstance() {
+        return INSTANCE;
+    }
+
+    private LinkGrabberTableModel() {
         super(LinkCollector.getInstance(), "LinkGrabberTableModel");
     }
 

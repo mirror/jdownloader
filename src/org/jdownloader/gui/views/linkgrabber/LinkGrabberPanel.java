@@ -67,7 +67,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     public LinkGrabberPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
-        tableModel = new LinkGrabberTableModel();
+        tableModel = LinkGrabberTableModel.getInstance();
         table = new LinkGrabberTable(tableModel);
         tableScrollPane = new JScrollPane(table);
         // tableScrollPane.setBorder(null);

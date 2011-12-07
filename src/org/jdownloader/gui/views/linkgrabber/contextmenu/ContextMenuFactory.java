@@ -37,36 +37,39 @@ public class ContextMenuFactory {
         CrawledPackage pkg = isPkgContext ? (CrawledPackage) contextObject : null;
         JPopupMenu p = new JPopupMenu();
         JMenu m;
+
+        p.add(new ConfirmAction(isShift, selection).toContextMenuAction());
+
         if (selection == null || selection.size() == 0) {
             p.add(new AddLinksAction().toContextMenuAction());
             return p;
         } else if (JsonConfig.create(LinkgrabberSettings.class).isContextMenuAddLinksActionAlwaysVisible()) {
             p.add(new AddLinksAction().toContextMenuAction());
-            p.add(new JSeparator());
+
         }
 
-        p.add(new ConfirmAction(isShift, selection).toContextMenuAction());
-        p.add(new EnabledAction(selection).toContextMenuAction());
-        if (isLinkContext) {
-            m = new JMenu(_GUI._.ContextMenuFactory_createPopup_link());
-            m.setIcon(link.getIcon());
-            m.add(new OpenUrlAction(link).toContextMenuAction());
-            m.add(new SetDownloadPassword(link, getChildren(selection)).toContextMenuAction());
-            p.add(m);
-        }
-        if (isPkgContext) {
-            m = new JMenu(_GUI._.ContextMenuFactory_createPopup_pkg());
-            m.setIcon(NewTheme.I().getIcon("package_open", 18));
-            m.add(new OpenDownloadFolderAction(contextObject).toContextMenuAction());
-            m.add(new SetDownloadFolderAction(contextObject, getPackages(selection)).toContextMenuAction());
-            m.add(new SortAction(selection, column).toContextMenuAction());
-            p.add(m);
-        }
-        p.add(new MergeToPackageAction(selection).toContextMenuAction());
+        p.add(new JSeparator());
+
+        p.add(new SetDownloadPassword(link, selection).toContextMenuAction());
+
+        p.add(new OpenDownloadFolderAction(contextObject, selection).toContextMenuAction());
+        p.add(new SetDownloadFolderAction(contextObject, selection).toContextMenuAction());
+
         p.add(new FileCheckAction(selection).toContextMenuAction());
         p.add(new CreateDLCAction(selection).toContextMenuAction());
-        p.add(new SplitPackagesByHost(getPackages(selection)).toContextMenuAction());
         p.add(new JSeparator());
+        p.add(new MergeToPackageAction(selection).toContextMenuAction());
+        p.add(new SplitPackagesByHost(contextObject, selection).toContextMenuAction());
+
+        p.add(new JSeparator());
+        p.add(new SortAction(contextObject, selection, column).toContextMenuAction());
+        if (isLinkContext) {
+
+            p.add(new OpenUrlAction(link).toContextMenuAction());
+
+        }
+        p.add(new JSeparator());
+        p.add(new EnabledAction(selection).toContextMenuAction());
         /* remove menu */
         m = new JMenu(_GUI._.ContextMenuFactory_createPopup_cleanup());
         m.setIcon(NewTheme.I().getIcon("clear", 18));
@@ -76,28 +79,7 @@ public class ContextMenuFactory {
         m.add(new RemoveOfflineAction().toContextMenuAction());
         m.add(new RemoveIncompleteArchives(selection).toContextMenuAction());
         p.add(m);
-        p.add(new JSeparator());
-        p.add(new PropertiesAction(link, pkg).toContextMenuAction());
+
         return p;
-    }
-
-    private ArrayList<CrawledPackage> getPackages(ArrayList<AbstractNode> selection) {
-        ArrayList<CrawledPackage> ret = new ArrayList<CrawledPackage>();
-        for (AbstractNode a : selection) {
-            if (a instanceof CrawledPackage) ret.add((CrawledPackage) a);
-        }
-        return ret;
-    }
-
-    private ArrayList<CrawledLink> getChildren(ArrayList<AbstractNode> selection) {
-        ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
-        for (AbstractNode a : selection) {
-            if (a instanceof CrawledLink) {
-                ret.add((CrawledLink) a);
-            } else if (a instanceof CrawledPackage) {
-                ret.addAll(((CrawledPackage) a).getChildren());
-            }
-        }
-        return ret;
     }
 }

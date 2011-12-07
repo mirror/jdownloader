@@ -6,12 +6,14 @@ import java.util.List;
 
 import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 
 public class EnabledAction extends AppAction {
     /**
@@ -25,21 +27,21 @@ public class EnabledAction extends AppAction {
         MIXED;
     }
 
-    private ArrayList<AbstractNode> selection;
-    private State                   state = State.MIXED;
+    private ArrayList<CrawledLink> selection;
+    private State                  state = State.MIXED;
 
     public EnabledAction(ArrayList<AbstractNode> selection) {
-        this.selection = selection;
+        this.selection = LinkTreeUtils.getSelectedChildren(selection);
         setName(_GUI._.EnabledAction_EnabledAction_object_());
         switch (state = getState(selection)) {
         case MIXED:
             setIconKey("checkbox_undefined");
             break;
         case ALL_DISABLED:
-            setIconKey("enabled");
+            setIconKey("disabled");
             break;
         case ALL_ENABLED:
-            setIconKey("disabled");
+            setIconKey("enabled");
             break;
         }
 

@@ -36,6 +36,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
     }
 
     public boolean isPaintWidthLockIcon() {
+
         return false;
     }
 
@@ -59,6 +60,11 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
         if (obj instanceof CrawledPackage) return true;
         if (obj instanceof CrawledLink) return true;
         return true;
+    }
+
+    protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
+
+        return isEditable(obj);
     }
 
     @Override

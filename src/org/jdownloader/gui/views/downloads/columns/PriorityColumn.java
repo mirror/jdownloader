@@ -115,6 +115,11 @@ public class PriorityColumn extends ExtIconColumn<AbstractNode> {
         return 30;
     }
 
+    protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
+
+        return isEditable(obj);
+    }
+
     protected int getPriority(AbstractNode value) {
         Integer p = null;
         if (value instanceof DownloadLink) {

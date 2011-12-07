@@ -28,6 +28,16 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
     private ExtButton         bt;
     private AbstractNode      editing          = null;
 
+    @Override
+    public boolean isEnabled(final AbstractNode obj) {
+        return obj.isEnabled();
+    }
+
+    protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
+
+        return isEditable(obj);
+    }
+
     public UrlColumn() {
         super(_GUI._.LinkGrabberTableModel_initColumns_url());
         this.setClickcount(2);
@@ -43,6 +53,7 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
             }
         });
         editorField.setBorder(new JTextField().getBorder());
+        editorField.setEditable(false);
         bt = new ExtButton(new BasicAction() {
             /**
              * 

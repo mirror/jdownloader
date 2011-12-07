@@ -25,6 +25,16 @@ public class CommentColumn extends ExtTextAreaColumn<AbstractNode> {
         return true;
     }
 
+    @Override
+    public boolean isEnabled(final AbstractNode obj) {
+        return obj.isEnabled();
+    }
+
+    protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
+
+        return isEditable(obj);
+    }
+
     public boolean isPaintWidthLockIcon() {
         return false;
     }

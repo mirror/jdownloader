@@ -6,6 +6,7 @@ import java.util.ArrayList;
 
 import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
@@ -22,28 +23,27 @@ public class SetDownloadFolderAction extends AppAction {
      * 
      */
     private static final long         serialVersionUID = -6632019767606316873L;
-    private ArrayList<CrawledPackage> selection        = null;
+    private ArrayList<AbstractNode>   selection        = null;
     private CrawledPackage            pkg              = null;
     private boolean                   retOkay          = false;
+    private ArrayList<CrawledLink>    links;
+    private ArrayList<CrawledPackage> packages;
 
     public boolean newValueSet() {
         return retOkay;
     }
 
-    public SetDownloadFolderAction(AbstractNode node, ArrayList<CrawledPackage> selection) {
-        if (node != null && node instanceof CrawledPackage) {
-            pkg = (CrawledPackage) node;
+    public SetDownloadFolderAction(AbstractNode node, ArrayList<AbstractNode> selectio2) {
+        if (selectio2 == null) {
+            selectio2 = new ArrayList<AbstractNode>();
+            selectio2.add(node);
         }
-        this.selection = selection;
-        setName(_GUI._.SetDownloadFolderAction_SetDownloadFolderAction_());
-        setIconKey("save");
-    }
-
-    public SetDownloadFolderAction(AbstractNode node) {
         if (node != null && node instanceof CrawledPackage) {
             pkg = (CrawledPackage) node;
-            this.selection = new ArrayList<CrawledPackage>();
+            this.selection = new ArrayList<AbstractNode>();
             this.selection.add(pkg);
+            packages = new ArrayList<CrawledPackage>();
+            packages.add(pkg);
         }
         setName(_GUI._.SetDownloadFolderAction_SetDownloadFolderAction_());
         setIconKey("save");
@@ -51,6 +51,7 @@ public class SetDownloadFolderAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
+
         try {
             final File[] dest = Dialog.getInstance().showFileChooser("downloadFolderDialog", _GUI._.SetDownloadFolderAction_SetDownloadFolderAction_(), FileChooserSelectionMode.DIRECTORIES_ONLY, null, false, FileChooserType.SAVE_DIALOG, new File(pkg.getDownloadFolder()));
             if (!isDownloadFolderValid(dest[0])) return;
@@ -58,7 +59,7 @@ public class SetDownloadFolderAction extends AppAction {
             IOEQ.add(new Runnable() {
 
                 public void run() {
-                    for (CrawledPackage pkg : selection) {
+                    for (CrawledPackage pkg : packages) {
                         pkg.setDownloadFolder(dest[0].getAbsolutePath());
                     }
                     LinkCollector.getInstance().refreshData();
@@ -72,7 +73,15 @@ public class SetDownloadFolderAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-        return pkg != null && selection != null && selection.size() > 0;
+
+        if (links != null && links.size() > 0) {
+            // if user selected links and packages, all links must have the same
+            // package as parent. We cannot edit different linsk from differenbt
+            // packages
+            if (packages != null && packages.size() > 1) return false;
+
+        }
+        return packages != null && packages.size() > 0;
     }
 
     /**

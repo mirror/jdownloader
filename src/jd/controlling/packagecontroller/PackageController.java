@@ -487,4 +487,5 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
     public LinkedList<E> getPackages() {
         return packages;
     }
+
 }

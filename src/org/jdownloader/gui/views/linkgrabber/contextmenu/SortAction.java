@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 
 import jd.controlling.IOEQ;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
@@ -14,22 +15,24 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
+import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 
 public class SortAction extends AppAction {
 
     /**
      * 
      */
-    private static final long       serialVersionUID = -3883739313644803093L;
-    private ExtColumn<AbstractNode> column;
-    private ArrayList<AbstractNode> selection        = null;
-    private static String           sortOrder        = null;
+    private static final long         serialVersionUID = -3883739313644803093L;
+    private ExtColumn<AbstractNode>   column;
+    private ArrayList<CrawledPackage> selection        = null;
+    private static String             sortOrder        = null;
 
-    public SortAction(ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column) {
+    public SortAction(AbstractNode contextObject, ArrayList<AbstractNode> selection2, ExtColumn<AbstractNode> column2) {
+        this.column = column2;
+        this.selection = LinkTreeUtils.getPackages(contextObject, selection2);
         setIconKey("sort");
         setName(_GUI._.SortAction_SortAction_object_(column.getName()));
-        this.column = column;
-        this.selection = selection;
+
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -69,12 +72,8 @@ public class SortAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-        if (selection != null) {
-            for (AbstractNode node : selection) {
-                if (node instanceof AbstractPackageNode) return true;
-            }
-        }
-        return false;
+
+        return selection != null && selection.size() > 0;
     }
 
 }

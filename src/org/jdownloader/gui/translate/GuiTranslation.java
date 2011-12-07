@@ -209,7 +209,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Move selected links up" })
     String action_move_up_tooltip();
 
-    @Default(lngs = { "en" }, values = { "Open Downloadfolder" })
+    @Default(lngs = { "en" }, values = { "Open Download Directory" })
     String action_open_dlfolder();
 
     @Default(lngs = { "en" }, values = { "-" })
@@ -2986,10 +2986,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Choose Download Directory" })
     String SetDownloadFolderAction_SetDownloadFolderAction_();
 
-    @Default(lngs = { "en" }, values = { "Open" })
+    @Default(lngs = { "en" }, values = { "Open Download Directory" })
     String OpenDownloadFolderAction_OpenDownloadFolderAction_();
 
-    @Default(lngs = { "en" }, values = { "Enable/Disable" })
+    @Default(lngs = { "en" }, values = { "Enabled" })
     String EnabledAction_EnabledAction_object_();
 
     @Default(lngs = { "en" }, values = { "Set Download Password" })

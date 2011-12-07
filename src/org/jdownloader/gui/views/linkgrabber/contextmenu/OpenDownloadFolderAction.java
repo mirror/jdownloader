@@ -2,7 +2,9 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.util.ArrayList;
 
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
@@ -19,10 +21,25 @@ public class OpenDownloadFolderAction extends AppAction {
     private CrawledPackage    pkg;
     private File              path             = null;
 
-    public OpenDownloadFolderAction(AbstractNode contextObject) {
-        if (contextObject != null && contextObject instanceof CrawledPackage) {
-            this.pkg = (CrawledPackage) contextObject;
+    public OpenDownloadFolderAction(ArrayList<CrawledPackage> arrayList) {
+
+        this(arrayList.get(0));
+
+    }
+
+    public OpenDownloadFolderAction(CrawledPackage editing) {
+        this(editing, null);
+    }
+
+    public OpenDownloadFolderAction(AbstractNode contextObject, ArrayList<AbstractNode> selection) {
+
+        if (contextObject instanceof CrawledLink) {
+            pkg = ((CrawledLink) contextObject).getParentNode();
+
+        } else {
+            pkg = (CrawledPackage) contextObject;
         }
+
         setName(_GUI._.OpenDownloadFolderAction_OpenDownloadFolderAction_());
         setIconKey("load");
     }

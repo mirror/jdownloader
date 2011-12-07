@@ -13,6 +13,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
 
 public class SetDownloadPassword extends AppAction {
@@ -22,13 +23,10 @@ public class SetDownloadPassword extends AppAction {
      */
     private static final long      serialVersionUID = -8280535886054721277L;
     private ArrayList<CrawledLink> selection;
-    private CrawledLink            link             = null;
 
-    public SetDownloadPassword(AbstractNode node, ArrayList<CrawledLink> selection) {
-        if (node != null && node instanceof CrawledLink) {
-            link = (CrawledLink) node;
-        }
-        this.selection = selection;
+    public SetDownloadPassword(AbstractNode node, ArrayList<AbstractNode> selection2) {
+
+        this.selection = LinkTreeUtils.getSelectedChildren(selection2);
         setName(_GUI._.SetDownloadPassword_SetDownloadPassword_());
         setIconKey("password");
     }
@@ -36,7 +34,7 @@ public class SetDownloadPassword extends AppAction {
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
         try {
-            final String newPW = Dialog.getInstance().showInputDialog(0, _GUI._.SetDownloadPassword_SetDownloadPassword_(), _GUI._.jd_gui_userio_defaulttitle_input(), link.getDownloadLink().getDownloadPassword(), NewTheme.I().getIcon("password", 32), null, null);
+            final String newPW = Dialog.getInstance().showInputDialog(0, _GUI._.SetDownloadPassword_SetDownloadPassword_(), _GUI._.jd_gui_userio_defaulttitle_input(), selection.get(0).getDownloadLink().getDownloadPassword(), NewTheme.I().getIcon("password", 32), null, null);
             IOEQ.add(new Runnable() {
 
                 public void run() {
@@ -54,7 +52,7 @@ public class SetDownloadPassword extends AppAction {
 
     @Override
     public boolean isEnabled() {
-        return link != null && link.getDownloadLink() != null;
+        return selection != null && selection.size() > 0;
     }
 
 }
