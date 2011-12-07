@@ -49,7 +49,7 @@ public class ChoMikujPl extends PluginForHost {
 
     public ChoMikujPl(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("");
+        this.enablePremium("http://chomikuj.pl/Create.aspx");
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -77,17 +77,18 @@ public class ChoMikujPl extends PluginForHost {
         return "http://chomikuj.pl/Regulamin.aspx";
     }
 
-    public void getDllink(DownloadLink theLink, Browser br2) throws NumberFormatException, PluginException, IOException {
+    public boolean getDllink(DownloadLink theLink, Browser br2) throws NumberFormatException, PluginException, IOException {
         // Set by the decrypter if the link is password protected
         String savedLink = theLink.getStringProperty("savedlink");
         String savedPost = theLink.getStringProperty("savedpost");
         if (savedLink != null && savedPost != null) br.postPage(savedLink, savedPost);
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br2.postPage("http://chomikuj.pl/Chomik/License/Download", "fileId=" + new Regex(theLink.getDownloadURL(), FILEIDREGEX).getMatch(0));
-        if (br2.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
+        if (br2.containsHTML(PREMIUMONLY)) return false;
         DLLINK = br2.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
         if (DLLINK == null) DLLINK = br2.getRegex("\\\\u003ca href=\\\\\"(.*?)\\\\\"").getMatch(0);
         if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
+        return true;
     }
 
     @Override
@@ -104,7 +105,9 @@ public class ChoMikujPl extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
-        if (!videolink) getDllink(downloadLink, br);
+        if (!videolink) {
+            if (!getDllink(downloadLink, br)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
+        }
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -163,7 +166,10 @@ public class ChoMikujPl extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         if (link.getStringProperty("video") == null) {
-            getDllink(link, br.cloneBrowser());
+            if (!getDllink(link, br.cloneBrowser())) {
+                link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
+                return AvailableStatus.TRUE;
+            }
             if (br.containsHTML("Najprawdopodobniej plik został w miedzyczasie usunięty z konta")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML(PREMIUMONLY)) {
                 link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
