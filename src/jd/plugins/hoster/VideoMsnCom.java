@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.msn.com" }, urls = { "http://(www\\.)?video\\.de\\.msn\\.com/watch/video/[a-z0-9\\-]+/[a-z0-9]+" }, flags = { 0 })
 public class VideoMsnCom extends PluginForHost {
@@ -61,15 +62,38 @@ public class VideoMsnCom extends PluginForHost {
         return -1;
     }
 
+    private boolean isStableEnviroment() {
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
+        } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        final int rev = Integer.parseInt(prev);
+        if (rev < 10000) { return true; }
+        return false;
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK.startsWith("rtmp")) {
+            if (isStableEnviroment()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD needed!"); }
+            dl = new RTMPDownload(this, downloadLink, DLLINK);
+            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+
+            rtmp.setUrl(DLLINK);
+            rtmp.setResume(true);
+
+            ((RTMPDownload) dl).startDownload();
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override
@@ -101,8 +125,7 @@ public class VideoMsnCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br2.openGetConnection(DLLINK);
-                if (!con.getContentType().contains("html"))
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                if (!con.getContentType().contains("html")) downloadLink.setDownloadSize(con.getLongContentLength());
                 else
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 return AvailableStatus.TRUE;
@@ -113,7 +136,7 @@ public class VideoMsnCom extends PluginForHost {
                 }
             }
         } else {
-            /** Bismarck handling :D */
+            // rtmp
             return AvailableStatus.TRUE;
         }
     }
