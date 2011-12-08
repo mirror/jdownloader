@@ -1,6 +1,5 @@
 package jd.controlling.linkcrawler;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -8,90 +7,38 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
 
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.settings.GeneralSettings;
 
 public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledPackage> {
 
-    private ArrayList<CrawledLink>                         children         = new ArrayList<CrawledLink>();
-    private PackageController<CrawledPackage, CrawledLink> controller       = null;
-    private boolean                                        expanded         = false;
-    private String                                         autoPackageName  = null;
-    private boolean                                        allowAutoPackage = true;
-    private transient CrawledPackageInfo                   fpInfo           = null;
-    private String                                         comment          = null;
-    private String                                         downloadFolder   = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
-    protected static final String                          PACKAGETAG       = "<jd:" + PackagizerController.PACKAGENAME + ">";
+    protected static final String                          PACKAGETAG            = "<jd:" + PackagizerController.PACKAGENAME + ">";
+    private boolean                                        allowAutoPackage      = true;
+    private boolean                                        autoAddEnabled;
+    private boolean                                        autoExtractionEnabled = true;
+    private String                                         autoPackageName       = null;
+    private boolean                                        autoStartEnabled;
+    private ChildrenCollection                             children;
+    private String                                         comment               = null;
+    private PackageController<CrawledPackage, CrawledLink> controller            = null;
 
-    public String getDownloadFolder() {
-        // replace variables in downloadfolder
-        return downloadFolder.replace(PACKAGETAG, getName());
-    }
+    private long                                           created               = -1;
 
-    public HashSet<String> getExtractionPasswords() {
-        return extractionPasswords;
-    }
+    private String                                         customName            = null;
 
-    private boolean autoAddEnabled;
+    private String                                         downloadFolder        = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
 
-    public boolean isAutoAddEnabled() {
-        return autoAddEnabled;
-    }
+    private boolean                                        downloadFolderSet     = false;
 
-    private boolean autoExtractionEnabled = true;
+    private boolean                                        expanded              = false;
 
-    public boolean isAutoExtractionEnabled() {
-        return autoExtractionEnabled;
-    }
+    private HashSet<String>                                extractionPasswords   = new HashSet<String>();
 
-    public void setAutoExtractionEnabled(boolean autoExtractionEnabled) {
-        this.autoExtractionEnabled = autoExtractionEnabled;
-    }
-
-    public void setAutoAddEnabled(boolean autoAddEnabled) {
-        this.autoAddEnabled = autoAddEnabled;
-    }
-
-    public boolean isAutoStartEnabled() {
-        return autoStartEnabled;
-    }
-
-    public void setAutoStartEnabled(boolean autoStartEnabled) {
-        this.autoStartEnabled = autoStartEnabled;
-    }
-
-    private boolean         autoStartEnabled;
-    private HashSet<String> extractionPasswords = new HashSet<String>();
-    private boolean         downloadFolderSet   = false;
-
-    public boolean isDownloadFolderSet() {
-        return downloadFolderSet;
-    }
-
-    public void setDownloadFolder(String downloadFolder) {
-        if (downloadFolder != null) {
-            downloadFolderSet = true;
-            this.downloadFolder = downloadFolder;
-        }
-    }
-
-    /**
-     * @return the allowAutoPackage
-     */
-    public boolean isAllowAutoPackage() {
-        return allowAutoPackage;
-    }
-
-    /**
-     * @param allowAutoPackage
-     *            the allowAutoPackage to set
-     */
-    public void setAllowAutoPackage(boolean allowAutoPackage) {
-        this.allowAutoPackage = allowAutoPackage;
-    }
+    // private transient CrawledPackageInfo fpInfo = null;
 
     public CrawledPackage() {
-
+        children = new ChildrenCollection(this);
     }
 
     /**
@@ -101,103 +48,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         return autoPackageName;
     }
 
-    /**
-     * @param autoPackageName
-     *            the autoPackageName to set
-     */
-    public void setAutoPackageName(String autoPackageName) {
-        this.autoPackageName = autoPackageName;
-    }
-
-    private String customName = null;
-    private long   created    = -1;
-
-    /**
-     * @param created
-     *            the created to set
-     */
-    public void setCreated(long created) {
-        this.created = created;
-    }
-
-    public PackageController<CrawledPackage, CrawledLink> getControlledBy() {
-        return controller;
-    }
-
-    public void setControlledBy(PackageController<CrawledPackage, CrawledLink> controller) {
-        this.controller = controller;
-    }
-
     public List<CrawledLink> getChildren() {
         return children;
-    }
-
-    public void notifyStructureChanges() {
-        if (fpInfo != null) {
-            synchronized (fpInfo) {
-                fpInfo.structureVersion++;
-            }
-        }
-    }
-
-    public boolean isExpanded() {
-        return expanded;
-    }
-
-    public void setExpanded(boolean b) {
-        this.expanded = b;
-    }
-
-    public String getName() {
-        if (customName != null) return customName;
-        return autoPackageName;
-    }
-
-    public String getCustomName() {
-        return customName;
-    }
-
-    public void setCustomName(String name) {
-        customName = name;
-    }
-
-    public boolean isEnabled() {
-        return true;
-    }
-
-    public long getCreated() {
-        return created;
-    }
-
-    public long getFinishedDate() {
-        return 0;
-    }
-
-    /*
-     * fpInfo is null by default, will get created on first use
-     */
-    public CrawledPackageInfo getCrawledPackageInfo() {
-        if (fpInfo != null) return fpInfo;
-        synchronized (this) {
-            if (fpInfo == null) {
-                fpInfo = new CrawledPackageInfo(this);
-            }
-        }
-        return fpInfo;
-    }
-
-    public void setEnabled(boolean b) {
-    }
-
-    public void notifyPropertyChanges() {
-    }
-
-    /**
-     * @param comment
-     *            the comment to set
-     */
-    public void setComment(String comment) {
-        this.comment = comment;
     }
 
     /**
@@ -205,6 +57,50 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
      */
     public String getComment() {
         return comment;
+    }
+
+    public PackageController<CrawledPackage, CrawledLink> getControlledBy() {
+        return controller;
+    }
+
+    // /*
+    // * fpInfo is null by default, will get created on first use
+    // */
+    // public CrawledPackageInfo getCrawledPackageInfo() {
+    // if (fpInfo != null) return fpInfo;
+    // synchronized (this) {
+    // if (fpInfo == null) {
+    // fpInfo = new CrawledPackageInfo(this);
+    // }
+    // }
+    // return fpInfo;
+    // }
+
+    public long getCreated() {
+        return created;
+    }
+
+    public String getCustomName() {
+        return customName;
+    }
+
+    public String getDownloadFolder() {
+
+        // replace variables in downloadfolder
+        return downloadFolder.replace(PACKAGETAG, getName());
+    }
+
+    public HashSet<String> getExtractionPasswords() {
+        return extractionPasswords;
+    }
+
+    public long getFinishedDate() {
+        return 0;
+    }
+
+    public String getName() {
+        if (customName != null) return customName;
+        return autoPackageName;
     }
 
     /**
@@ -216,6 +112,119 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
      */
     public String getRawDownloadFolder() {
         return downloadFolder;
+    }
+
+    /**
+     * @return the allowAutoPackage
+     */
+    public boolean isAllowAutoPackage() {
+        return allowAutoPackage;
+    }
+
+    public boolean isAutoAddEnabled() {
+        return autoAddEnabled;
+    }
+
+    public boolean isAutoExtractionEnabled() {
+        return autoExtractionEnabled;
+    }
+
+    public boolean isAutoStartEnabled() {
+        return autoStartEnabled;
+    }
+
+    public boolean isDownloadFolderSet() {
+        return downloadFolderSet;
+    }
+
+    public boolean isEnabled() {
+        return children.isEnabled();
+    }
+
+    public boolean isExpanded() {
+        return expanded;
+    }
+
+    public void notifyStructureChanges() {
+
+    }
+
+    /**
+     * @param allowAutoPackage
+     *            the allowAutoPackage to set
+     */
+    public void setAllowAutoPackage(boolean allowAutoPackage) {
+        this.allowAutoPackage = allowAutoPackage;
+    }
+
+    public void setAutoAddEnabled(boolean autoAddEnabled) {
+        this.autoAddEnabled = autoAddEnabled;
+    }
+
+    public void setAutoExtractionEnabled(boolean autoExtractionEnabled) {
+        this.autoExtractionEnabled = autoExtractionEnabled;
+    }
+
+    /**
+     * @param autoPackageName
+     *            the autoPackageName to set
+     */
+    public void setAutoPackageName(String autoPackageName) {
+        this.autoPackageName = autoPackageName;
+    }
+
+    public void setAutoStartEnabled(boolean autoStartEnabled) {
+        this.autoStartEnabled = autoStartEnabled;
+    }
+
+    /**
+     * @param comment
+     *            the comment to set
+     */
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public void setControlledBy(PackageController<CrawledPackage, CrawledLink> controller) {
+        this.controller = controller;
+    }
+
+    /**
+     * @param created
+     *            the created to set
+     */
+    public void setCreated(long created) {
+        this.created = created;
+    }
+
+    public void setCustomName(String name) {
+        customName = name;
+    }
+
+    public void setDownloadFolder(String downloadFolder) {
+        if (downloadFolder != null) {
+            downloadFolderSet = true;
+            this.downloadFolder = downloadFolder;
+        }
+    }
+
+    public void setEnabled(boolean b) {
+    }
+
+    public void setExpanded(boolean b) {
+        this.expanded = b;
+    }
+
+    public void onChildEnabledStateChanged(CrawledLink crawledLink) {
+        children.updateInfo(crawledLink);
+    }
+
+    public DomainInfo[] getDomainInfos() {
+        return children.getDomainInfos();
+    }
+
+    public long getSize() {
+        return children.getFileSize();
     }
 
 }

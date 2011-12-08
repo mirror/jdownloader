@@ -170,6 +170,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private transient UniqueID                 uniqueID                = null;
     private transient String                   iconHost                = null;
+    private DLinkPropertyListener              propertyListener;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -586,65 +587,71 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public AvailableStatus getAvailableStatus(PluginForHost plgToUse) {
         if (availableStatus != AvailableStatus.UNCHECKED) return availableStatus;
-        int wait = 0;
-        if (getDefaultPlugin() != null) {
-            PluginForHost plg = plgToUse;
-            /* we need extra plugin instance and browser instance too here */
-            if (plg == null) {
-                LazyHostPlugin lazyp = HostPluginController.getInstance().get(getHost());
-                plg = lazyp.newInstance();
-            }
-            if (plg.getBrowser() == null) {
-                plg.setBrowser(new Browser());
-            }
-            plg.init();
-            for (int retry = 0; retry < 5; retry++) {
-                try {
-                    availableStatus = plg.requestFileInformation(this);
+        try {
+            int wait = 0;
+            if (getDefaultPlugin() != null) {
+                PluginForHost plg = plgToUse;
+                /* we need extra plugin instance and browser instance too here */
+                if (plg == null) {
+                    LazyHostPlugin lazyp = HostPluginController.getInstance().get(getHost());
+                    plg = lazyp.newInstance();
+                }
+                if (plg.getBrowser() == null) {
+                    plg.setBrowser(new Browser());
+                }
+                plg.init();
+                for (int retry = 0; retry < 5; retry++) {
                     try {
-                        plg.getBrowser().getHttpConnection().disconnect();
-                    } catch (Exception e) {
-                    }
-                    break;
-                } catch (UnknownHostException e) {
-                    availableStatus = AvailableStatus.UNCHECKABLE;
-                    break;
-                } catch (PluginException e) {
-                    e.fillLinkStatus(this.getLinkStatus());
-                    if (this.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) || this.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) || this.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
-                        availableStatus = AvailableStatus.UNCHECKABLE;
-                    } else {
-                        availableStatus = AvailableStatus.FALSE;
-                    }
-                    break;
-                } catch (IOException e) {
-                    if (e.getMessage().contains("code: 500")) {
+                        availableStatus = plg.requestFileInformation(this);
                         try {
-                            wait += 500;
-                            JDLogger.getLogger().finer("500 Error Code, retrying in " + wait);
-                            Thread.sleep(wait);
-                        } catch (InterruptedException e1) {
+                            plg.getBrowser().getHttpConnection().disconnect();
+                        } catch (Exception e) {
+                        }
+                        break;
+                    } catch (UnknownHostException e) {
+                        availableStatus = AvailableStatus.UNCHECKABLE;
+                        break;
+                    } catch (PluginException e) {
+                        e.fillLinkStatus(this.getLinkStatus());
+                        if (this.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) || this.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) || this.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
                             availableStatus = AvailableStatus.UNCHECKABLE;
+                        } else {
+                            availableStatus = AvailableStatus.FALSE;
+                        }
+                        break;
+                    } catch (IOException e) {
+                        if (e.getMessage().contains("code: 500")) {
+                            try {
+                                wait += 500;
+                                JDLogger.getLogger().finer("500 Error Code, retrying in " + wait);
+                                Thread.sleep(wait);
+                            } catch (InterruptedException e1) {
+                                availableStatus = AvailableStatus.UNCHECKABLE;
+                                break;
+                            }
+                            continue;
+                        } else {
                             break;
                         }
-                        continue;
-                    } else {
+
+                    } catch (Throwable e) {
+                        JDLogger.exception(e);
+                        availableStatus = AvailableStatus.UNCHECKABLE;
                         break;
                     }
-
-                } catch (Throwable e) {
-                    JDLogger.exception(e);
-                    availableStatus = AvailableStatus.UNCHECKABLE;
-                    break;
                 }
             }
+            if (availableStatus == null || getDefaultPlugin() == null) availableStatus = AvailableStatus.UNCHECKABLE;
+            return availableStatus;
+        } finally {
+            if (propertyListener != null) propertyListener.onDownloadLinkUpdated();
         }
-        if (availableStatus == null || getDefaultPlugin() == null) availableStatus = AvailableStatus.UNCHECKABLE;
-        return availableStatus;
     }
 
     public void setAvailableStatus(AvailableStatus availableStatus) {
         this.availableStatus = availableStatus;
+        DLinkPropertyListener pl;
+        if ((pl = propertyListener) != null) pl.onDownloadLinkUpdated();
     }
 
     /**
@@ -794,6 +801,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setDownloadSize(long downloadMax) {
         this.downloadMax = downloadMax;
+        DLinkPropertyListener pl;
+        if ((pl = propertyListener) != null) pl.onDownloadLinkUpdated();
     }
 
     /**
@@ -1145,6 +1154,23 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public DownloadLink getDownloadLink() {
         return this;
+    }
+
+    /**
+     * INterface is implemended by Crawledlink. downloadlink can notify his
+     * master this way. can be removed as soona s we kick downloadlink
+     * 
+     * @author Thomas
+     * 
+     */
+    public static interface DLinkPropertyListener {
+
+        void onDownloadLinkUpdated();
+
+    }
+
+    public void setPropertyListener(DLinkPropertyListener crawledLink) {
+        this.propertyListener = crawledLink;
     }
 
 }

@@ -473,21 +473,24 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (newOnlinePackage && LinkgrabberSettings.OFFLINE_PACKAGE_ENABLED.getValue()) {
                     // check offline package if we have links that might fit in
                     // the new package
-                    List<CrawledLink> move = new ArrayList<CrawledLink>();
-                    for (CrawledLink l : offlinePackage.getChildren()) {
-                        String name = LinknameCleaner.cleanFileName(l.getName());
-                        int res = LinknameCleaner.comparepackages(name, pkgMatch.getAutoPackageName());
 
-                        if (res >= 99) {
-                            name = getSimString(pkgMatch.getAutoPackageName(), name);
-                            pkgMatch.setAutoPackageName(name);
+                    if (offlinePackage != null) {
+                        List<CrawledLink> move = new ArrayList<CrawledLink>();
+                        for (CrawledLink l : offlinePackage.getChildren()) {
+                            String name = LinknameCleaner.cleanFileName(l.getName());
+                            int res = LinknameCleaner.comparepackages(name, pkgMatch.getAutoPackageName());
 
-                            move.add(l);
+                            if (res >= 99) {
+                                name = getSimString(pkgMatch.getAutoPackageName(), name);
+                                pkgMatch.setAutoPackageName(name);
+
+                                move.add(l);
+                            }
+
                         }
-
-                    }
-                    if (move.size() > 0) {
-                        LinkCollector.this.addmoveChildren(pkgMatch, move, -1);
+                        if (move.size() > 0) {
+                            LinkCollector.this.addmoveChildren(pkgMatch, move, -1);
+                        }
                     }
 
                 }

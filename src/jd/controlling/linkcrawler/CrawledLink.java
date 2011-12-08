@@ -5,18 +5,21 @@ import javax.swing.ImageIcon;
 import jd.controlling.captcha.CaptchaController;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.DLinkPropertyListener;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 
-public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink {
+public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, DLinkPropertyListener {
 
     public static enum LinkState {
         ONLINE,
@@ -147,6 +150,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public CrawledLink(DownloadLink dlLink) {
         this.dlLink = dlLink;
+        dlLink.setPropertyListener(this);
 
     }
 
@@ -250,11 +254,15 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return enabledState;
     }
 
+    public static enum Property {
+        ENABLED,
+    }
+
     public void setEnabled(boolean b) {
         if (b == enabledState) return;
         enabledState = b;
         CrawledPackage lparent = parent;
-        if (lparent != null) lparent.notifyPropertyChanges();
+        if (lparent != null) lparent.onChildEnabledStateChanged(this);
     }
 
     public long getCreated() {
@@ -349,6 +357,16 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
         }
         return false;
+    }
+
+    public DomainInfo getDomainInfo() {
+        // TODO: improve speed
+        return DomainInfo.getInstance(Browser.getHost(getURL(), false));
+    }
+
+    public void onDownloadLinkUpdated() {
+        CrawledPackage lparent = parent;
+        if (lparent != null) lparent.onChildEnabledStateChanged(this);
     }
 
 }

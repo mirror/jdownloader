@@ -21,7 +21,7 @@ import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 
-public abstract class PackageController<E extends AbstractPackageNode<V, E>, V extends AbstractPackageChildrenNode<E>> {
+public abstract class PackageController<PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> {
     private final AtomicLong structureChanged = new AtomicLong(0);
     private final AtomicLong childrenChanged  = new AtomicLong(0);
 
@@ -33,7 +33,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
         return childrenChanged.get();
     }
 
-    protected LinkedList<E>              packages  = new LinkedList<E>();
+    protected LinkedList<PackageType>              packages  = new LinkedList<PackageType>();
 
     private final ReentrantReadWriteLock lock      = new ReentrantReadWriteLock();
     private final ReadLock               readLock  = this.lock.readLock();
@@ -47,11 +47,11 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
      * @param pkg
      * @param index
      */
-    public void addmovePackageAt(final E pkg, final int index) {
+    public void addmovePackageAt(final PackageType pkg, final int index) {
         addmovePackageAt(pkg, index, false);
     }
 
-    public void sortPackageChildren(final E pkg, final Comparator<V> comparator) {
+    public void sortPackageChildren(final PackageType pkg, final Comparator<ChildType> comparator) {
         if (pkg != null && comparator != null) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
@@ -60,7 +60,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                     writeLock();
                     try {
                         synchronized (pkg) {
-                            List<V> children = pkg.getChildren();
+                            List<ChildType> children = pkg.getChildren();
                             Collections.sort(children, comparator);
                         }
                     } finally {
@@ -75,7 +75,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
         }
     }
 
-    protected void addmovePackageAt(final E pkg, final int index, final boolean allowEmpty) {
+    protected void addmovePackageAt(final PackageType pkg, final int index, final boolean allowEmpty) {
         if (pkg != null) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
@@ -91,7 +91,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                      * iterate through all packages, remove the existing one and
                      * add at given position
                      */
-                    PackageController<E, V> controller = pkg.getControlledBy();
+                    PackageController<PackageType, ChildType> controller = pkg.getControlledBy();
                     boolean need2Remove = false;
                     if (PackageController.this == controller) {
                         /* we have to reposition the package */
@@ -102,7 +102,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                     }
                     writeLock();
                     try {
-                        ListIterator<E> li = packages.listIterator();
+                        ListIterator<PackageType> li = packages.listIterator();
                         int currentIndex = 0;
                         boolean done = false;
                         boolean addLast = false;
@@ -116,7 +116,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                                 /* we no longer need to iterate through list */
                                 break;
                             }
-                            E c = li.next();
+                            PackageType c = li.next();
                             if (c == pkg && currentIndex == index) {
                                 /*
                                  * current element is pkg and index is correct,
@@ -128,7 +128,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                                  * current position is wished index, lets add
                                  * pkg here
                                  */
-                                E replaced = c;
+                                PackageType replaced = c;
                                 li.set(pkg);
                                 li.add(replaced);
                                 done = true;
@@ -165,15 +165,15 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
     }
 
     /* remove the Package from this PackageController */
-    public void removePackage(final E pkg) {
+    public void removePackage(final PackageType pkg) {
         if (pkg != null) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
                     boolean removed = false;
-                    ArrayList<V> remove = null;
-                    PackageController<E, V> controller = pkg.getControlledBy();
+                    ArrayList<ChildType> remove = null;
+                    PackageController<PackageType, ChildType> controller = pkg.getControlledBy();
                     if (controller == null) {
                         Log.exception(new Throwable("NO CONTROLLER!!!"));
                         return null;
@@ -192,7 +192,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                         }
                     }
                     synchronized (pkg) {
-                        remove = new ArrayList<V>(pkg.getChildren());
+                        remove = new ArrayList<ChildType>(pkg.getChildren());
                     }
                     if (removed && remove != null) {
                         if (remove.size() > 0) {
@@ -210,36 +210,36 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
         }
     }
 
-    public void removeChildren(final List<V> removechildren) {
+    public void removeChildren(final List<ChildType> removechildren) {
         if (removechildren != null && removechildren.size() > 0) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    LinkedList<V> children = new LinkedList<V>(removechildren);
+                    LinkedList<ChildType> children = new LinkedList<ChildType>(removechildren);
                     /* build map for removal of children links */
                     boolean childrenRemoved = false;
-                    HashMap<E, LinkedList<V>> removeaddMap = new HashMap<E, LinkedList<V>>();
-                    for (V child : children) {
-                        E parent = child.getParentNode();
+                    HashMap<PackageType, LinkedList<ChildType>> removeaddMap = new HashMap<PackageType, LinkedList<ChildType>>();
+                    for (ChildType child : children) {
+                        PackageType parent = child.getParentNode();
                         if (parent == null) {
                             continue;
                         }
-                        LinkedList<V> pmap = removeaddMap.get(parent);
+                        LinkedList<ChildType> pmap = removeaddMap.get(parent);
                         if (pmap == null) {
                             childrenRemoved = true;
-                            pmap = new LinkedList<V>();
+                            pmap = new LinkedList<ChildType>();
                             removeaddMap.put(parent, pmap);
                         }
                         pmap.add(child);
                     }
-                    Set<Entry<E, LinkedList<V>>> eset = removeaddMap.entrySet();
-                    Iterator<Entry<E, LinkedList<V>>> it = eset.iterator();
+                    Set<Entry<PackageType, LinkedList<ChildType>>> eset = removeaddMap.entrySet();
+                    Iterator<Entry<PackageType, LinkedList<ChildType>>> it = eset.iterator();
                     while (it.hasNext()) {
                         /* remove children from other packages */
-                        Entry<E, LinkedList<V>> next = it.next();
-                        E cpkg = next.getKey();
-                        PackageController<E, V> controller = cpkg.getControlledBy();
+                        Entry<PackageType, LinkedList<ChildType>> next = it.next();
+                        PackageType cpkg = next.getKey();
+                        PackageController<PackageType, ChildType> controller = cpkg.getControlledBy();
                         if (controller == null) {
                             Log.exception(new Throwable("NO CONTROLLER!!!"));
                         } else {
@@ -255,13 +255,13 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
         }
     }
 
-    public List<V> getChildrenByFilter(AbstractPackageChildrenNodeFilter<V> filter) {
-        ArrayList<V> ret = new ArrayList<V>();
+    public List<ChildType> getChildrenByFilter(AbstractPackageChildrenNodeFilter<ChildType> filter) {
+        ArrayList<ChildType> ret = new ArrayList<ChildType>();
         boolean readL = readLock();
         try {
-            for (E pkg : packages) {
+            for (PackageType pkg : packages) {
                 synchronized (pkg) {
-                    for (V child : pkg.getChildren()) {
+                    for (ChildType child : pkg.getChildren()) {
                         if (filter.returnMaxResults() > 0 && ret.size() == filter.returnMaxResults()) {
                             /* max results found, lets return */
                             return ret;
@@ -278,13 +278,13 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
         return ret;
     }
 
-    public void addmoveChildren(final E pkg, final List<V> movechildren, final int index) {
+    public void addmoveChildren(final PackageType pkg, final List<ChildType> movechildren, final int index) {
         if (pkg != null && movechildren != null && movechildren.size() > 0) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    LinkedList<V> children = new LinkedList<V>(movechildren);
+                    LinkedList<ChildType> children = new LinkedList<ChildType>(movechildren);
                     if (PackageController.this != pkg.getControlledBy()) {
                         /*
                          * package not yet under control of this
@@ -294,9 +294,9 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                     }
                     /* build map for removal of children links */
                     boolean newChildren = false;
-                    HashMap<E, LinkedList<V>> removeaddMap = new HashMap<E, LinkedList<V>>();
-                    for (V child : children) {
-                        E parent = child.getParentNode();
+                    HashMap<PackageType, LinkedList<ChildType>> removeaddMap = new HashMap<PackageType, LinkedList<ChildType>>();
+                    for (ChildType child : children) {
+                        PackageType parent = child.getParentNode();
                         if (parent == null || pkg == parent) {
                             /* parent is our destination, so no need here */
                             if (parent == null) {
@@ -304,20 +304,20 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                             }
                             continue;
                         }
-                        LinkedList<V> pmap = removeaddMap.get(parent);
+                        LinkedList<ChildType> pmap = removeaddMap.get(parent);
                         if (pmap == null) {
-                            pmap = new LinkedList<V>();
+                            pmap = new LinkedList<ChildType>();
                             removeaddMap.put(parent, pmap);
                         }
                         pmap.add(child);
                     }
-                    Set<Entry<E, LinkedList<V>>> eset = removeaddMap.entrySet();
-                    Iterator<Entry<E, LinkedList<V>>> it = eset.iterator();
+                    Set<Entry<PackageType, LinkedList<ChildType>>> eset = removeaddMap.entrySet();
+                    Iterator<Entry<PackageType, LinkedList<ChildType>>> it = eset.iterator();
                     while (it.hasNext()) {
                         /* remove children from other packages */
-                        Entry<E, LinkedList<V>> next = it.next();
-                        E cpkg = next.getKey();
-                        PackageController<E, V> controller = cpkg.getControlledBy();
+                        Entry<PackageType, LinkedList<ChildType>> next = it.next();
+                        PackageType cpkg = next.getKey();
+                        PackageController<PackageType, ChildType> controller = cpkg.getControlledBy();
                         if (controller == null) {
                             Log.exception(new Throwable("NO CONTROLLER!!!"));
                         } else {
@@ -328,13 +328,13 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                     try {
                         synchronized (pkg) {
                             int destIndex = index;
-                            List<V> pkgchildren = pkg.getChildren();
+                            List<ChildType> pkgchildren = pkg.getChildren();
                             /* remove all */
                             /*
                              * TODO: speed optimization, we have to correct the
                              * index to match changes in children structure
                              */
-                            for (V child : children) {
+                            for (ChildType child : children) {
                                 int childI = pkgchildren.indexOf(child);
                                 if (childI >= 0) {
                                     if (childI < destIndex) destIndex -= 1;
@@ -348,7 +348,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                             } else {
                                 pkgchildren.addAll(destIndex, children);
                             }
-                            for (V child : children) {
+                            for (ChildType child : children) {
                                 child.setParentNode(pkg);
                             }
                         }
@@ -372,14 +372,14 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
      * @param pkg
      * @param children
      */
-    public void removeChildren(final E pkg, final List<V> children, final boolean doNotifyParentlessLinks) {
+    public void removeChildren(final PackageType pkg, final List<ChildType> children, final boolean doNotifyParentlessLinks) {
         if (pkg != null && children != null && children.size() > 0) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    LinkedList<V> links = new LinkedList<V>(children);
-                    PackageController<E, V> controller = pkg.getControlledBy();
+                    LinkedList<ChildType> links = new LinkedList<ChildType>(children);
+                    PackageController<PackageType, ChildType> controller = pkg.getControlledBy();
                     if (controller == null) {
                         Log.exception(new Throwable("NO CONTROLLER!!!"));
                         return null;
@@ -387,10 +387,10 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
                     writeLock();
                     try {
                         synchronized (pkg) {
-                            List<V> pkgchildren = pkg.getChildren();
-                            Iterator<V> it = links.iterator();
+                            List<ChildType> pkgchildren = pkg.getChildren();
+                            Iterator<ChildType> it = links.iterator();
                             while (it.hasNext()) {
-                                V dl = it.next();
+                                ChildType dl = it.next();
                                 if (pkgchildren.remove(dl)) {
                                     /*
                                      * set FilePackage to null if the link was
@@ -432,14 +432,14 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
 
             @Override
             protected Void run() throws RuntimeException {
-                ArrayList<E> clearList = null;
+                ArrayList<PackageType> clearList = null;
                 boolean readL = readLock();
                 try {
-                    clearList = new ArrayList<E>(packages);
+                    clearList = new ArrayList<PackageType>(packages);
                 } finally {
                     readUnlock(readL);
                 }
-                for (E pkg : clearList) {
+                for (PackageType pkg : clearList) {
                     removePackage(pkg);
                 }
                 return null;
@@ -447,13 +447,13 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
         });
     }
 
-    abstract protected void _controllerParentlessLinks(final List<V> links, QueuePriority priority);
+    abstract protected void _controllerParentlessLinks(final List<ChildType> links, QueuePriority priority);
 
-    abstract protected void _controllerPackageNodeRemoved(E pkg, QueuePriority priority);
+    abstract protected void _controllerPackageNodeRemoved(PackageType pkg, QueuePriority priority);
 
     abstract protected void _controllerStructureChanged(QueuePriority priority);
 
-    abstract protected void _controllerPackageNodeAdded(E pkg, QueuePriority priority);
+    abstract protected void _controllerPackageNodeAdded(PackageType pkg, QueuePriority priority);
 
     public boolean readLock() {
         if (!this.writeLock.isHeldByCurrentThread()) {
@@ -484,7 +484,7 @@ public abstract class PackageController<E extends AbstractPackageNode<V, E>, V e
         this.writeLock.unlock();
     }
 
-    public LinkedList<E> getPackages() {
+    public LinkedList<PackageType> getPackages() {
         return packages;
     }
 

@@ -20,6 +20,7 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.HosterToolTip;
 
@@ -161,9 +162,9 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
             }
         } else if (value instanceof CrawledPackage) {
             int i = 0;
-            for (PluginForHost link : ((CrawledPackage) value).getCrawledPackageInfo().getIcons()) {
+            for (DomainInfo link : ((CrawledPackage) value).getDomainInfos()) {
                 if (i == maxIcons) break;
-                ImageIcon icon = link.getHosterIcon();
+                ImageIcon icon = link.getFavIcon();
                 if (icon != null) {
                     labels[i].setVisible(true);
                     labels[i].setIcon(icon);
@@ -225,7 +226,11 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     private int getHosterCounter(AbstractNode value) {
         if (value instanceof FilePackage) {
             return ((FilePackage) value).getFilePackageInfo().getIcons().length;
-        } else if (value instanceof CrawledPackage) { return ((CrawledPackage) value).getCrawledPackageInfo().getIcons().length; }
+        } else if (value instanceof CrawledPackage) {
+
+        return ((CrawledPackage) value).getDomainInfos().length;
+
+        }
         return 1;
     }
 

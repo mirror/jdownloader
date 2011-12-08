@@ -12,7 +12,7 @@ public interface AbstractPackageNode<V extends AbstractPackageChildrenNode<E>, E
 
     void notifyStructureChanges();
 
-    void notifyPropertyChanges();
+    // void notifyPropertyChanges();
 
     boolean isExpanded();
 

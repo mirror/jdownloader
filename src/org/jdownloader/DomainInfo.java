@@ -29,6 +29,10 @@ public class DomainInfo implements FavIconRequestor {
         this.tld = tld;
     }
 
+    public String toString() {
+        return tld;
+    }
+
     private String tld;
 
     public String getTld() {
@@ -97,7 +101,9 @@ public class DomainInfo implements FavIconRequestor {
     private static HashMap<String, DomainInfo> CACHE = new HashMap<String, DomainInfo>();
 
     public static DomainInfo getInstance(String host) {
+        if (host == null) return null;
         // WARNING: can be a memleak
+
         synchronized (CACHE) {
             DomainInfo ret = CACHE.get(host);
             if (ret == null) {
