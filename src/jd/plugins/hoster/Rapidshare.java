@@ -693,8 +693,9 @@ public class Rapidshare extends PluginForHost {
         }
         this.workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
         br.forceDebug(true);
-
-        if (account != null && useSSL()) {
+        // ssl works in free mode, too we have connection timeouts for many
+        // calls without ssl
+        if (useSSL()) {
             req = req.replaceFirst("http:", "https:");
         }
         boolean follow = br.isFollowingRedirects();
