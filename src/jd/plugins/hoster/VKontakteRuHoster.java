@@ -51,45 +51,25 @@ public class VKontakteRuHoster extends PluginForHost {
         return "http://vkontakte.ru/help.php?page=terms";
     }
 
-    @SuppressWarnings("unchecked")
-    private void getLink(DownloadLink downloadLink) throws PluginException, IOException {
-        br.setFollowRedirects(false);
-        /**
-         * Decrypter will always have working cookies so we can just get em from
-         * // there ;)
-         */
-        final PluginForDecrypt vkontakteDecrypter = JDUtilities.getPluginForDecrypt("vkontakte.ru");
-        final Object ret = vkontakteDecrypter.getPluginConfig().getProperty("cookies", null);
-        String albumID = downloadLink.getStringProperty("albumid");
-        String photoID = new Regex(downloadLink.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/(\\d+_\\d+)").getMatch(0);
-        if (ret == null || albumID == null || photoID == null) {
-            // This should never happen
-            logger.warning("A property couldn't be found!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-        for (Map.Entry<String, String> entry : cookies.entrySet()) {
-            this.br.setCookie(DOMAIN, entry.getKey(), entry.getValue());
-        }
-        br.postPage("http://vkontakte.ru/al_photos.php", "act=show&al=1&list=" + albumID + "&photo=" + photoID);
-        String correctedBR = br.toString().replace("\\", "");
-        /** Try to get best quality */
-        FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"w_src\":\"(http://.*?)\"").getMatch(0);
-        if (FINALLINK == null) {
-            FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"http://[^\"\\']+\",\"z_src\":\"http://[^\"\\']+\",\"w_src\":\"(http://.*?)\"").getMatch(0);
-            if (FINALLINK == null) {
-                FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"http://[^\"\\']+\",\"z_src\":\"(http://.*?)\"").getMatch(0);
-                if (FINALLINK == null) {
-                    FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"(http://.*?)\"").getMatch(0);
-                    if (FINALLINK == null) {
-                        FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"(http://.*?)\"").getMatch(0);
-                    }
-                }
+    private boolean linkOk(DownloadLink downloadLink) throws IOException {
+        Browser br2 = br.cloneBrowser();
+        // In case the link redirects to the finallink
+        br2.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = br2.openGetConnection(FINALLINK);
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+            } else {
+                return false;
             }
-        }
-        if (FINALLINK == null) {
-            logger.warning("Finallink is null for photoID: " + photoID);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            return true;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
         }
     }
 
@@ -114,29 +94,54 @@ public class VKontakteRuHoster extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        getLink(link);
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(FINALLINK);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
+
+        br.setFollowRedirects(false);
+        /**
+         * Decrypter will always have working cookies so we can just get em from
+         * // there ;)
+         */
+        final PluginForDecrypt vkontakteDecrypter = JDUtilities.getPluginForDecrypt("vkontakte.ru");
+        final Object ret = vkontakteDecrypter.getPluginConfig().getProperty("cookies", null);
+        String albumID = link.getStringProperty("albumid");
+        String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/(\\d+_\\d+)").getMatch(0);
+        if (ret == null || albumID == null || photoID == null) {
+            // This should never happen
+            logger.warning("A property couldn't be found!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+        for (Map.Entry<String, String> entry : cookies.entrySet()) {
+            this.br.setCookie(DOMAIN, entry.getKey(), entry.getValue());
+        }
+        br.postPage("http://vkontakte.ru/al_photos.php", "act=show&al=1&list=" + albumID + "&photo=" + photoID);
+        String correctedBR = br.toString().replace("\\", "");
+        /**
+         * Try to get best quality and test links till a working link is found
+         * as it can happen that the found link is offline but others are online
+         */
+        FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"w_src\":\"(http://.*?)\"").getMatch(0);
+        if (FINALLINK == null || (FINALLINK != null && !linkOk(link))) {
+            FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"http://[^\"\\']+\",\"z_src\":\"http://[^\"\\']+\",\"w_src\":\"(http://.*?)\"").getMatch(0);
+            if (FINALLINK == null || (FINALLINK != null && !linkOk(link))) {
+                FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"http://[^\"\\']+\",\"z_src\":\"(http://.*?)\"").getMatch(0);
+                if (FINALLINK == null || (FINALLINK != null && !linkOk(link))) {
+                    FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"(http://.*?)\"").getMatch(0);
+                    if (FINALLINK == null || (FINALLINK != null && !linkOk(link))) {
+                        FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"(http://.*?)\"").getMatch(0);
+                    }
+                }
             }
         }
+        if (FINALLINK == null) {
+            logger.warning("Finallink is null for photoID: " + photoID);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return AvailableStatus.TRUE;
+
     }
 
     @Override

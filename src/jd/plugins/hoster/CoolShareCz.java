@@ -100,7 +100,7 @@ public class CoolShareCz extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRegex("class=\"cleaner oddelovac\"><\\!\\-\\- \\-\\-></div>[\t\n\r ]+<p><a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://csd\\d+\\.coolshare\\.cz/dwn\\-premium\\.php\\?fid=\\d+\\&amp;uid=\\d+\\&amp;hid=[a-z0-9]+)\"").getMatch(0);

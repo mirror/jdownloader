@@ -37,7 +37,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)\\d+|(video\\-?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+)|(photos|id)\\d+|albums\\d+|([A-Za-z0-9_\\-]+#/)?album\\d+_\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)\\d+|(video\\-?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+)|(photos|id)\\d+|albums\\d+|([A-Za-z0-9_\\-]+#/)?album\\d+_\\d+|photo\\d+_\\d+)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -164,6 +164,20 @@ public class VKontakteRu extends PluginForDecrypt {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(new Regex(parameter, "/album(.+)").getMatch(0));
                 fp.addLinks(decryptedLinks);
+            } else if (parameter.matches(".*?vkontakte\\.ru/photo\\d+_\\d+")) {
+                /**
+                 * Single photo links, those are just passed to the
+                 * hosterplugin!
+                 * Example:http://vkontakte.ru/photo125005168_269986868
+                 */
+                String albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
+                if (albumID == null) {
+                    logger.warning("Decrypter broken for link: " + parameter + "\n");
+                    return null;
+                }
+                DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + new Regex(parameter, ".*?vkontakte\\.ru/photo(.+)").getMatch(0));
+                dl.setProperty("albumid", albumID);
+                decryptedLinks.add(dl);
             } else if (parameter.matches(".*?vkontakte\\.ru/albums\\d+")) {
                 /**
                  * Photo Album lists/overviews Example:
