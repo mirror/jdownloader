@@ -8,6 +8,7 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.jdownloader.api.config.AdvancedConfigManagerAPI;
 
 public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
 

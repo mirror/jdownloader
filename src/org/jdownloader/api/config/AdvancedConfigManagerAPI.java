@@ -1,4 +1,4 @@
-package org.jdownloader.settings.advanced;
+package org.jdownloader.api.config;
 
 import java.util.ArrayList;
 
@@ -6,6 +6,7 @@ import org.appwork.remoteapi.ApiDoc;
 import org.appwork.remoteapi.ApiNamespace;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.storage.config.annotations.AllowStorage;
+import org.jdownloader.settings.advanced.AdvancedConfigAPIEntry;
 
 @ApiNamespace("config")
 public interface AdvancedConfigManagerAPI extends RemoteAPIInterface {
