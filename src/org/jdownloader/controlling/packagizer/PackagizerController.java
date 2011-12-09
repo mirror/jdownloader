@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import jd.config.Property;
 import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.PackagizerInterface;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -280,7 +279,6 @@ public class PackagizerController implements PackagizerInterface {
             if (Boolean.FALSE.equals(dp.getBooleanProperty(ALLOW_MERGE, false))) {
                 fpi.setUniqueId(dp.getUniqueID());
             }
-            dp.setProperty(ALLOW_MERGE, Property.NULL);
             for (String s : dp.getPasswordList()) {
                 fpi.getExtractionPasswords().add(s);
             }
