@@ -784,6 +784,11 @@ public class Megauploadcom extends PluginForHost {
                 if (url == null) {
                     url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"down_ad_butt1\">").getMatch(0);
                 }
+
+                if (url == null) {
+
+                    url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"download_regular_usual\"").getMatch(0);
+                }
                 if (url == null) {
                     /*
                      * seems free users get directdownload too sometimes, maybe
@@ -1082,9 +1087,16 @@ public class Megauploadcom extends PluginForHost {
             }
             if (br.containsHTML("The file has been deleted because it was violating")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (br.containsHTML("Invalid link")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-
+            // coálado:outdated Regexed?
             String filename = br.getRegex(">File name:</.*?txt2\">(.*?)</span").getMatch(0);
             String filesize = br.getRegex(">File size:</.*?>(.*?)<").getMatch(0);
+
+            if (filename == null) {
+                filename = br.getRegex("<div class=\"download_file_name\">(.*?)</div>").getMatch(0);
+            }
+            if (filesize == null) {
+                filesize = br.getRegex("<div class=\"download_file_size\">(.*?)</div>").getMatch(0);
+            }
             if (br.containsHTML("The file you are trying to download is larger than")) {
                 l.setAvailableStatus(AvailableStatus.TRUE);
                 this.checkLinks(new DownloadLink[] { l });
