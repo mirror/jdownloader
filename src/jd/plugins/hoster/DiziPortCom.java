@@ -51,9 +51,6 @@ public class DiziPortCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        // We have to connect twice to the url or we will get html code
-        // instead of the video
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -65,26 +62,27 @@ public class DiziPortCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">sayfa bulunamadı")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("class=\"dizidetaybaslik\"><h2>(.*?)</h2>").getMatch(0);
+        if (br.containsHTML(">sayfa bulunamadý")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?) izle \\- Diziport\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>(.*?) izle - Diziport</title>").getMatch(0);
         DLLINK = br.getRegex("\\&sid=(.*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage("http://diziport.com/nesne.php?olay=sayac&sid=" + DLLINK);
-        DLLINK = br.getRegex("\\&strSource=(http://.*?)\\'").getMatch(0);
+        DLLINK = br.getRegex("\\&strSource=(http.*?)(\\&publisherLogo=|\\')").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = Encoding.htmlDecode(DLLINK);
+        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (ext == null || ext.length() > 5) ext = ".mp4";
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + DLLINK.substring(DLLINK.length() - 4, DLLINK.length()));
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            // We have to connect twice to the url or we will get html code
-            // instead of the video
-            con = br2.openGetConnection(DLLINK);
             con = br2.openGetConnection(DLLINK);
             if (!con.getContentType().contains("html"))
                 downloadLink.setDownloadSize(con.getLongContentLength());

@@ -38,22 +38,22 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filekeen.com" }, urls = { "http://(www\\.)?filekeen\\.com/[a-z0-9]{12}" }, flags = { PluginWrapper.DEBUG_ONLY })
-public class FileKeenCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filerio.com", "filekeen.com" }, urls = { "http://(www\\.)?(filekeen|filerio)\\.com/[a-z0-9]{12}", "vSGzhkIKEfRUhbUNUSED_REGEXfdgrtjRET36fdfjhtwe85t7459zghwghior" }, flags = { 0, 0 })
+public class FileRioCom extends PluginForHost {
 
     private String              BRBEFORE      = "";
-
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
-
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-
-    private static final String COOKIE_HOST   = "http://filekeen.com";
-
+    private static final String COOKIE_HOST   = "http://filerio.com";
     public boolean              NOPREMIUM     = false;
 
-    public FileKeenCom(PluginWrapper wrapper) {
+    public FileRioCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("filekeen.com/", "filerio.com/"));
     }
 
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode, boolean loggedIn) throws NumberFormatException, PluginException {
