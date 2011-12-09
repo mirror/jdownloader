@@ -93,6 +93,7 @@ public class FilestoreTo extends PluginForHost {
         final ArrayList<String> regexStuff = new ArrayList<String>();
         regexStuff.add("(<.*?>)");
         regexStuff.add("( )");
+        regexStuff.add("(\r)");
         for (final String aRegex : regexStuff) {
             aBrowser = br.toString();
             final String replaces[] = br.getRegex(aRegex).getColumn(0);
