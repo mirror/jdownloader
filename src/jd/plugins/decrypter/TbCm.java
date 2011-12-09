@@ -169,11 +169,14 @@ public class TbCm extends PluginForDecrypt {
         info.add(tmp);
     }
 
-    private void addVideosCurrentPage(final ArrayList<DownloadLink> links) {
-        final String[] videos = this.br.getRegex("href=\"(/watch\\?v=.*?)&").getColumn(0);
-        for (final String video : videos) {
+    private void addVideosCurrentPage(final ArrayList<DownloadLink> links, String playlistID) {
+        final String[] videos = this.br.getRegex("href=\"(/watch\\?v=.*?)\"").getColumn(0);
+        for (String video : videos) {
             if (done.contains(video)) continue;
             done.add(video);
+            if (playlistID != null && !video.contains(playlistID)) continue;
+            video = new Regex(video, "(/watch\\?v=.*?)&").getMatch(0);
+            if (video == null) continue;
             links.add(this.createDownloadlink("http://www.youtube.com" + video));
         }
     }
@@ -204,14 +207,16 @@ public class TbCm extends PluginForDecrypt {
                 }
                 if (id != null) parameter = "http://www.youtube.com/view_play_list?p=" + id;
             }
+            String playlistID = new Regex(parameter, "\\?list=([a-zA-Z0-9]+)").getMatch(0);
+            if (playlistID == null) playlistID = new Regex(parameter, "list\\?p=([a-zA-Z0-9]+)").getMatch(0);
             parameter = parameter.replaceFirst("playlist\\?", "view_play_list?");
             this.br.getPage(parameter);
-            this.addVideosCurrentPage(decryptedLinks);
+            this.addVideosCurrentPage(decryptedLinks, playlistID);
             if (!parameter.contains("page=")) {
                 final String[] pages = this.br.getRegex("<a href=(\"|')(http://www.youtube.com/view_play_list\\?p=.*?page=\\d+)(\"|')").getColumn(1);
                 for (int i = 0; i < pages.length - 1; i++) {
                     this.br.getPage(pages[i]);
-                    this.addVideosCurrentPage(decryptedLinks);
+                    this.addVideosCurrentPage(decryptedLinks, playlistID);
                 }
             }
         } else {

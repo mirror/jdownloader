@@ -347,10 +347,11 @@ public class Megauploadcom extends PluginForHost {
                 return ai;
             }
         }
-        final String type = this.br.getRegex(Pattern.compile("Account type:.*?<b>([^</ ]+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        final String type = this.br.getRegex(Pattern.compile("class=\"account_txt\">(Premium)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (type != null && !type.contains("Lifetime")) {
             ai.setStatus("Premium Membership");
-            final String days = this.br.getRegex("<b>Premium</b>.*?\\((\\d+) days remaining").getMatch(0);
+            String days = this.br.getRegex("class=\"account_txt\"> ([^<>/]*?) days remaining").getMatch(0);
+            if (days != null) days = days.trim();
             if (days != null && !days.equalsIgnoreCase("Unlimited")) {
                 /* x days left */
                 ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(days) * 24 * 60 * 60 * 1000);
@@ -374,10 +375,6 @@ public class Megauploadcom extends PluginForHost {
             }
         } else if (type != null && type.contains("Lifetime")) {
             ai.setStatus("Lifetime Membership");
-        }
-        final String points = this.br.getRegex(Pattern.compile("Reward points available:.*?<strong>(\\d+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (points != null) {
-            ai.setPremiumPoints(Long.parseLong(points));
         }
         try {
             account.setMaxSimultanDownloads(-1);
@@ -810,7 +807,7 @@ public class Megauploadcom extends PluginForHost {
                     this.limitReached(link, l * 60, "Limit Reached (1)!");
                 }
                 /* free users can download filesizes up to 1gb max */
-                if (this.br.containsHTML("trying to download is larger than")) { throw new PluginException(LinkStatus.ERROR_FATAL, "File is over 1GB and needs Premium Account"); }
+                if (br.containsHTML("class=\"download_l_descr\">")) { throw new PluginException(LinkStatus.ERROR_FATAL, "File is over 1GB and needs Premium Account"); }
 
                 form = this.br.getForm(0);
                 if (form != null && form.containsHTML("logout")) {
@@ -909,7 +906,7 @@ public class Megauploadcom extends PluginForHost {
                 }
                 this.antiJDBlock(brc);
                 brc.getPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/?c=account");
-                final String type = brc.getRegex(Pattern.compile("Account type:.*?<b>([^</ ]+)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+                final String type = brc.getRegex(Pattern.compile("class=\"account_txt\">(Premium)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
                 if (type == null || type.equalsIgnoreCase("regular")) {
                     account.setProperty("ispremium", false);
                     if (type != null) {
@@ -1097,7 +1094,7 @@ public class Megauploadcom extends PluginForHost {
             if (filesize == null) {
                 filesize = br.getRegex("<div class=\"download_file_size\">(.*?)</div>").getMatch(0);
             }
-            if (br.containsHTML("The file you are trying to download is larger than")) {
+            if (br.containsHTML("class=\"download_l_descr\">")) {
                 l.setAvailableStatus(AvailableStatus.TRUE);
                 this.checkLinks(new DownloadLink[] { l });
                 return;

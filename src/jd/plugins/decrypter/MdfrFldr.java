@@ -41,6 +41,7 @@ public class MdfrFldr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("mfi.re/", "mediafire.com/");
+        parameter = parameter.replaceAll("(&.+)", "");
         this.setBrowserExclusive();
         if (parameter.matches("http://download\\d+\\.mediafire.+")) {
             /* direct download */
