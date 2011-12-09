@@ -146,16 +146,18 @@ public class Main {
     }
 
     public static void statics() {
+
         try {
             Dynamic.runPreStatic();
         } catch (Throwable e) {
             e.printStackTrace();
         }
+        Application.setApplication(".jd_home");
+        Application.getRoot(Main.class);
         // USe Jacksonmapper in this project
         JSonStorage.setMapper(new JacksonMapper());
         // do this call to keep the correct root in Application Cache
-        Application.setApplication(".jd_home");
-        Application.getRoot(Main.class);
+
         NewUIO.setUserIO(new JDSwingUserIO());
     }
 

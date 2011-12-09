@@ -184,13 +184,18 @@ public class ReconnectPluginController {
         // make sure that we have the current ip
         System.out.println("IP Before=" + IPController.getInstance().getIP());
         try {
-            plg.getReconnectInvoker().run();
+            ReconnectInvoker invoker = plg.getReconnectInvoker();
+            if (invoker == null) { throw new ReconnectException("Reconnect Plugin  " + plg.getName() + " is not set up correctly. Invoker==null"); }
+            invoker.run();
 
             ReconnectPluginController.LOG.finer("Initial Waittime: " + waittime + " seconds");
 
             Thread.sleep(waittime * 1000);
 
             return IPController.getInstance().validateAndWait(this.getWaitForIPTime(), storage.getSecondsToWaitForOffline(), this.getIpCheckInterval());
+
+        } catch (RuntimeException e) {
+            throw new ReconnectException(e);
         } finally {
             System.out.println("IP AFTER=" + IPController.getInstance().getIP());
         }

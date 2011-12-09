@@ -28,6 +28,7 @@ import org.appwork.controlling.State;
 import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging.Log;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
@@ -188,49 +189,54 @@ public final class Reconnecter implements StateMachineInterface {
      */
     public boolean doReconnect() {
         if (!this.statemachine.isStartState()) { return false; }
-
-        this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.Type.BEFORE));
-        Reconnecter.LOG.info("Try to reconnect...");
-        this.statemachine.setStatus(Reconnecter.RECONNECT_RUNNING);
-        DownloadWatchDog.getInstance().abortAllSingleDownloadControllers();
-
-        int retry;
-
-        int maxretries = storage.getMaxReconnectRetryNum();
         boolean ret = false;
-        retry = 0;
-        if (maxretries < 0) {
-            maxretries = Integer.MAX_VALUE;
-        } else if (maxretries == 0) {
-            maxretries = 1;
-        }
-
-        IPController.getInstance().invalidate();
         try {
-            for (retry = 0; retry < maxretries; retry++) {
-                ReconnectPluginController.LOG.info("Starting " + this.toString() + " #" + (retry + 1));
+            this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.Type.BEFORE));
+            Reconnecter.LOG.info("Try to reconnect...");
+            this.statemachine.setStatus(Reconnecter.RECONNECT_RUNNING);
+            DownloadWatchDog.getInstance().abortAllSingleDownloadControllers();
 
-                ret = ReconnectPluginController.getInstance().doReconnect();
-                if (ret) {
-                    reconnectCounter.incrementAndGet();
-                    lastReconnect = System.currentTimeMillis();
-                    break;
-                }
+            int retry;
+
+            int maxretries = storage.getMaxReconnectRetryNum();
+
+            retry = 0;
+            if (maxretries < 0) {
+                maxretries = Integer.MAX_VALUE;
+            } else if (maxretries == 0) {
+                maxretries = 1;
             }
 
-        } catch (final InterruptedException e) {
-            e.printStackTrace();
-            ret = false;
-        } catch (final ReconnectException e) {
-            e.printStackTrace();
-            ret = false;
-        } finally {
+            IPController.getInstance().invalidate();
+            try {
+                for (retry = 0; retry < maxretries; retry++) {
+                    ReconnectPluginController.LOG.info("Starting " + this.toString() + " #" + (retry + 1));
+
+                    ret = ReconnectPluginController.getInstance().doReconnect();
+                    if (ret) {
+                        reconnectCounter.incrementAndGet();
+                        lastReconnect = System.currentTimeMillis();
+                        break;
+                    }
+                }
+
+            } catch (final InterruptedException e) {
+                e.printStackTrace();
+                ret = false;
+            } catch (final ReconnectException e) {
+                e.printStackTrace();
+                ret = false;
+            } finally {
+
+            }
+        } catch (Throwable e) {
+            Log.exception(e);
 
         }
-
         this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.Type.AFTER, ret));
 
         this.statemachine.setStatus(Reconnecter.IDLE);
+
         if (!ret) {
             counterFailed(+1);
             counterGlobalFailed(+1);
@@ -243,6 +249,7 @@ public final class Reconnecter implements StateMachineInterface {
             storage.setFailedCounter(0);
         }
         return ret;
+
     }
 
     private void counterGlobalSuccess(int i) {
@@ -319,6 +326,7 @@ public final class Reconnecter implements StateMachineInterface {
                 Reconnecter.LOG.info("Reconnect failed!");
             }
         } catch (final Exception e) {
+            Log.exception(e);
             Reconnecter.LOG.finest("Reconnect failed.");
         }
         if (ret == false) {

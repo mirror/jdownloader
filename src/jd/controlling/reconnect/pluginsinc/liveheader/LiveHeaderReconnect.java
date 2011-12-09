@@ -434,7 +434,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
         String script;
 
         script = settings.getScript();
-        System.out.println("H");
+        if (script == null) return null;
         final String user = settings.getUserName();
         final String pass = settings.getPassword();
         final String ip = settings.getRouterIP();

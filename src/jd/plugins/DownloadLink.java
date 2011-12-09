@@ -170,7 +170,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private transient UniqueID                 uniqueID                = null;
     private transient String                   iconHost                = null;
-    private DLinkPropertyListener              propertyListener;
+    transient private DLinkPropertyListener    propertyListener;
 
     /**
      * Erzeugt einen neuen DownloadLink
