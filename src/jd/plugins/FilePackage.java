@@ -170,6 +170,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     private transient FilePackageInfo fpInfo = null;
 
+    private FilePackageView           view;
+
     /*
      * (non-Javadoc)
      * 
@@ -208,6 +210,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      */
     private FilePackage() {
         uniqueID = new UniqueID();
+        view = new FilePackageView();
         downloadDirectory = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         created = System.currentTimeMillis();
         /* till refactoring is complete */
@@ -682,5 +685,9 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     public void notifyPropertyChanges() {
+    }
+
+    public FilePackageView getView() {
+        return view;
     }
 }

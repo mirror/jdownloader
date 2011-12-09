@@ -4,6 +4,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -109,6 +110,7 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public boolean isEnabled(AbstractNode obj) {
+        if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
         return obj.isEnabled();
     }
 

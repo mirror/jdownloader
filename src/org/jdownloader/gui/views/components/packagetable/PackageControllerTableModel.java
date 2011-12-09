@@ -212,11 +212,11 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 Log.exception(e);
             }
         }
-        ArrayList<AbstractNode> packages = null;
+        ArrayList<PackageType> packages = null;
         final boolean readL = pc.readLock();
         try {
             /* get all packages from controller */
-            packages = new ArrayList<AbstractNode>(pc.size());
+            packages = new ArrayList<PackageType>(pc.size());
             packages.addAll(pc.getPackages());
         } finally {
             pc.readUnlock(readL);
@@ -225,9 +225,10 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
         /* filter packages */
         for (int index = packages.size() - 1; index >= 0; index--) {
-            AbstractNode pkg = packages.get(index);
+            PackageType pkg = packages.get(index);
             for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
                 if (filter.isFiltered((PackageType) pkg)) {
+                    pkg.getView().clear();
                     /* remove package because it is filtered */
                     packages.remove(index);
                     break;
@@ -237,14 +238,14 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         /* sort packages */
         if (column != null) Collections.sort(packages, column.getRowSorter());
         ArrayList<AbstractNode> newData = new ArrayList<AbstractNode>(Math.max(data.size(), packages.size()));
-        for (AbstractNode node : packages) {
-            ArrayList<AbstractNode> files = null;
+        for (PackageType node : packages) {
+            ArrayList<ChildrenType> files = null;
             synchronized (node) {
-                files = new ArrayList<AbstractNode>(((PackageType) node).getChildren());
+                files = new ArrayList<ChildrenType>(((PackageType) node).getChildren());
             }
             /* filter children of this package */
             for (int index = files.size() - 1; index >= 0; index--) {
-                AbstractNode child = files.get(index);
+                ChildrenType child = files.get(index);
                 for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
                     if (filter.isFiltered((ChildrenType) child)) {
                         /* remove child because it is filtered */
@@ -253,6 +254,8 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                     }
                 }
             }
+            node.getView().clear();
+            node.getView().addAll(files);
             boolean expanded = ((PackageType) node).isExpanded();
             if (column != null && expanded) {
                 /* we only have to sort children if the package is expanded */

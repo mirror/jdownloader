@@ -109,8 +109,6 @@ public class LinknameCleaner {
         /* if enabled, replace dots and _ with spaces and do further clean ups */
 
         if (GeneralSettings.CLEAN_UP_FILENAMES.getValue()) {
-            name = name.replaceAll("_", " ");
-            name = name.replaceAll("\\.", " ");
 
             StringBuilder sb = new StringBuilder();
             char[] cs = name.toCharArray();
@@ -130,6 +128,7 @@ public class LinknameCleaner {
 
                 }
             }
+            name = sb.toString();
         }
 
         return name.trim();

@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber;
 
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 
@@ -29,6 +30,12 @@ public class DownloadPasswordColumn extends ExtTextColumn<AbstractNode> {
         if (obj instanceof CrawledLink) return true;
         if (obj instanceof DownloadLink) return true;
         return false;
+    }
+
+    @Override
+    public boolean isEnabled(final AbstractNode obj) {
+        if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
+        return obj.isEnabled();
     }
 
     @Override

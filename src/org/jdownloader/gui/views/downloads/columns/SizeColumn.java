@@ -44,7 +44,7 @@ public class SizeColumn extends ExtFileSizeColumn<AbstractNode> {
     @Override
     protected long getBytes(AbstractNode o2) {
         if (o2 instanceof CrawledPackage) {
-            return ((CrawledPackage) o2).getSize();
+            return ((CrawledPackage) o2).getView().getFileSize();
         } else if (o2 instanceof CrawledLink) {
             return ((CrawledLink) o2).getSize();
         } else if (o2 instanceof DownloadLink) {
@@ -57,6 +57,7 @@ public class SizeColumn extends ExtFileSizeColumn<AbstractNode> {
 
     @Override
     public boolean isEnabled(AbstractNode obj) {
+        if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
         return obj.isEnabled();
     }
 

@@ -27,6 +27,7 @@ public class CommentColumn extends ExtTextAreaColumn<AbstractNode> {
 
     @Override
     public boolean isEnabled(final AbstractNode obj) {
+        if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
         return obj.isEnabled();
     }
 

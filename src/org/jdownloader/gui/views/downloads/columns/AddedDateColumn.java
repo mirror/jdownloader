@@ -4,6 +4,7 @@ import java.util.Date;
 
 import javax.swing.SwingConstants;
 
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.swing.exttable.columns.ExtDateColumn;
@@ -28,6 +29,7 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
 
     @Override
     public boolean isEnabled(AbstractNode obj) {
+        if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
         return obj.isEnabled();
     }
 

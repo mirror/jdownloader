@@ -108,6 +108,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public boolean isEnabled(AbstractNode obj) {
+        if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
         return obj.isEnabled();
     }
 
@@ -162,7 +163,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
             }
         } else if (value instanceof CrawledPackage) {
             int i = 0;
-            for (DomainInfo link : ((CrawledPackage) value).getDomainInfos()) {
+            for (DomainInfo link : ((CrawledPackage) value).getView().getDomainInfos()) {
                 if (i == maxIcons) break;
                 ImageIcon icon = link.getFavIcon();
                 if (icon != null) {
@@ -188,11 +189,16 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public ExtTooltip createToolTip(Point position, AbstractNode obj) {
+
         if (obj instanceof DownloadLink) {
-            return new IconLabelToolTip(((DownloadLink) obj).getHost(), ((DownloadLink) obj).getHosterIcon());
+            DomainInfo di = DomainInfo.getInstance(((DownloadLink) obj).getHost());
+            return new IconLabelToolTip(di.getTld(), di.getFavIcon());
         } else if (obj instanceof CrawledLink) {
-            return new IconLabelToolTip(((CrawledLink) obj).getHost(), ((CrawledLink) obj).getHosterIcon());
-        } else if (obj instanceof FilePackage) { return new HosterToolTip((FilePackage) obj); }
+            DomainInfo di = ((CrawledLink) obj).getDomainInfo();
+            return new IconLabelToolTip(di.getTld(), di.getFavIcon());
+            // } else if (obj instanceof FilePackage) { return new
+            // HosterToolTip( ((FilePackage) obj).getView().);
+        } else if (obj instanceof CrawledPackage) { return new HosterToolTip(((CrawledPackage) obj).getView().getDomainInfos()); }
         return null;
     }
 

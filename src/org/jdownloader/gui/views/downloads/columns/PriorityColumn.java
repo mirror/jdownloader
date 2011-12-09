@@ -8,6 +8,7 @@ import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 
@@ -180,6 +181,7 @@ public class PriorityColumn extends ExtIconColumn<AbstractNode> {
 
     @Override
     public boolean isEnabled(AbstractNode obj) {
+        if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
         return obj.isEnabled();
     }
 

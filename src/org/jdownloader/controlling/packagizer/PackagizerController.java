@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.controlling.IOEQ;
+import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.linkcollector.PackagizerInterface;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
@@ -275,7 +276,7 @@ public class PackagizerController implements PackagizerInterface {
             }
 
             fpi.setAutoExtractionEnabled(dp.isPostProcessing());
-            fpi.setName(dp.getName());
+            fpi.setName(LinknameCleaner.cleanFileName(dp.getName()));
             if (Boolean.FALSE.equals(dp.getBooleanProperty(ALLOW_MERGE, false))) {
                 fpi.setUniqueId(dp.getUniqueID());
             }

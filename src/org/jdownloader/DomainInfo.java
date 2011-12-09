@@ -20,7 +20,7 @@ import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
 import org.jdownloader.images.NewTheme;
 
-public class DomainInfo implements FavIconRequestor {
+public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
     private static final long CACHE_TIMEOUT = 30000;
     private static final int  WIDTH         = 16;
     private static final int  HEIGHT        = 16;
@@ -161,5 +161,9 @@ public class DomainInfo implements FavIconRequestor {
 
     public PluginForHost findPlugin() {
         return JDUtilities.getPluginForHost(getTld());
+    }
+
+    public int compareTo(DomainInfo o) {
+        return getTld().compareTo(o.getTld());
     }
 }

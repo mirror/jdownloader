@@ -19,7 +19,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private boolean                                        autoExtractionEnabled = true;
     private String                                         autoPackageName       = null;
     private boolean                                        autoStartEnabled;
-    private ChildrenCollection                             children;
+    private CrawledPackageView                             children;
     private String                                         comment               = null;
     private PackageController<CrawledPackage, CrawledLink> controller            = null;
 
@@ -34,11 +34,13 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private boolean                                        expanded              = false;
 
     private HashSet<String>                                extractionPasswords   = new HashSet<String>();
+    private CrawledPackageView                             view;
 
     // private transient CrawledPackageInfo fpInfo = null;
 
     public CrawledPackage() {
         children = new ChildrenCollection(this);
+        view = new CrawledPackageView();
     }
 
     /**
@@ -225,6 +227,10 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     public long getSize() {
         return children.getFileSize();
+    }
+
+    public CrawledPackageView getView() {
+        return view;
     }
 
 }
