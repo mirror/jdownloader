@@ -28,14 +28,14 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author typek_pb
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = { "http://(www\\.)?avaxhome\\.ws/(ebooks|music|software|video|magazines|games|graphics|misc|hraphile)/.+" }, flags = { 0 }, names = { "avaxhome.ws" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avaxhome.ws" }, urls = { "http://(www\\.)?avaxhome\\.ws/(ebooks|music|software|video|magazines|games|graphics|misc|hraphile|comics)/.+" }, flags = { 0 })
 public class AvxHmeW extends PluginForDecrypt {
 
     public AvxHmeW(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String AVXHMEREGEX = "http://(www\\.)?avaxhome\\.ws/(ebooks|music|software|video|magazines|games|graphics|misc|hraphile)/.+";
+    private static final String AVXHMEREGEX = "http://(www\\.)?avaxhome\\.ws/(ebooks|music|software|video|magazines|games|graphics|misc|hraphile|comics)/.+";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
