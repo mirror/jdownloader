@@ -24,6 +24,7 @@ import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -65,13 +66,14 @@ public class Tube8Com extends PluginForHost {
         return ai;
     }
 
-    public void find3gpLinks() throws NumberFormatException, PluginException {
-        dllink = br.getRegex("\"(http://mobile[0-9]+\\.tube8\\.com/flv/.*?/.*?\\.3gp)\"").getMatch(0);
+    public void find3gpLinks(final String correctedBR) throws NumberFormatException, PluginException {
+        dllink = new Regex(correctedBR, "\"mobile_url\":\"(http:.*?)\"").getMatch(0);
+        if (dllink == null) dllink = new Regex(correctedBR, "\"(http://cdn\\d+\\.mobile\\.tube8\\.com/.*?)\"").getMatch(0);
     }
 
-    public void findNormalLinks() throws NumberFormatException, PluginException {
-        dllink = br.getRegex("\"video_url\":\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://media[0-9]+\\.tube8\\.com/flv/.*?\\.flv)\"").getMatch(0);
+    public void findNormalLinks(final String correctedBR) throws NumberFormatException, PluginException, IOException {
+        dllink = new Regex(correctedBR, "\"standard_url\":\"(http.*?)\"").getMatch(0);
+        if (dllink == null) dllink = new Regex(correctedBR, "\"(http://cdn\\d+\\.public\\.tube8\\.com/.*?)\"").getMatch(0);
     }
 
     @Override
@@ -140,18 +142,24 @@ public class Tube8Com extends PluginForHost {
                 filename = br.getRegex("Tube8 bring you(.*?)for all").getMatch(0);
             }
         }
+        Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        final String hash = br.getRegex("var hash = \"([a-z0-9]+)\"").getMatch(0);
+        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br2.getPage("http://www.tube8.com/ajax/getVideoDownloadURL.php?_=" + System.currentTimeMillis() + "&hash=" + hash + "&video=" + new Regex(downloadLink.getDownloadURL(), ".*?(\\d+)$").getMatch(0));
+        final String correctedBR = br2.toString().replace("\\", "");
         boolean prefer3gp = getPluginConfig().getBooleanProperty(mobile, false);
         if (prefer3gp) {
-            find3gpLinks();
+            find3gpLinks(correctedBR);
             if (dllink == null) {
                 logger.warning("Couldn't find 3gp links even if they're prefered, trying to get the normal links now!");
-                findNormalLinks();
+                findNormalLinks(correctedBR);
             }
         } else {
-            findNormalLinks();
+            findNormalLinks(correctedBR);
             if (dllink == null) {
                 logger.warning("Couldn't find normal links even if they're prefered, trying to get the 3gp links now!");
-                find3gpLinks();
+                find3gpLinks(correctedBR);
             }
         }
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

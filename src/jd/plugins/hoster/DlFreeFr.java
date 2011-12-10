@@ -45,7 +45,7 @@ public class DlFreeFr extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
@@ -61,7 +61,8 @@ public class DlFreeFr extends PluginForHost {
             String filename = br.getRegex(Pattern.compile("Fichier:</td>.*?<td.*?>(.*?)<", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)soit", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            String dlLink = br.getRegex("<tr><td colspan=\"2\" style=\"text-align: center; border: 1px solid #ffffff\"><a style=\"text-decoration: underline\" href=\"(.*?free.*?fr.*?)\">").getMatch(0);
+            String dlLink = br.getRegex("window\\.location\\.href = \\'(http://.*?)\\'").getMatch(0);
+            if (dlLink == null) dlLink = br.getRegex("<tr><td colspan=\"2\" style=\"text\\-align: center; border: 1px solid #ffffff\"><a style=\"text\\-decoration: underline\" href=\"(.*?free.*?fr.*?)\">").getMatch(0);
             if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, 1);
             if (!dl.getConnection().isContentDisposition()) {

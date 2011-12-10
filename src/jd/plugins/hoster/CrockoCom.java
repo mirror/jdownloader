@@ -130,7 +130,7 @@ public class CrockoCom extends PluginForHost {
                  */
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 1000l);
             } else {
-                if (br.getRegex("Recaptcha.create\\(\"(.*?)\"").getMatch(0) == null) {
+                if (br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0) == null) {
                     sleep(waittime * 1000l, downloadLink);
                 }
             }
@@ -263,8 +263,9 @@ public class CrockoCom extends PluginForHost {
             }
         }
         if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Download:<.*?strong>(.*?)</strong").getMatch(0);
-        String filesize = br.getRegex("Download:<.*?inner\">(.*?)<").getMatch(0);
+        String filename = br.getRegex(">Download: +<strong>(.*?)</strong>").getMatch(0);
+        if (filename == null) filename = br.getRegex(">Download:</span> <br />[\t\n\r ]+<strong>(.*?)</strong>").getMatch(0);
+        final String filesize = br.getRegex("<span class=\"tip1\"><span class=\"inner\">(.*?)</span></span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.replaceAll("<br>", "");
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));

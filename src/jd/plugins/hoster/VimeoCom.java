@@ -141,13 +141,16 @@ public class VimeoCom extends PluginForHost {
             doFree(link);
             return;
         }
-        String dllink = br.getRegex("class=\"download\">[\t\n\r ]+<a href=\"(/.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(/download/video:\\d+\\?v=\\d+\\&e=\\d+\\&h=[a-z0-9]+\\&uh=[a-z0-9]+)\"").getMatch(0);
+        String dllink = br.getRegex("class=\"download\">[\t\n\r ]+<a href=\"(.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(/?download/video:\\d+\\?v=\\d+\\&e=\\d+\\&h=[a-z0-9]+\\&uh=[a-z0-9]+)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = MAINPAGE + dllink;
+        if (!dllink.startsWith("/"))
+            dllink = MAINPAGE + "/" + dllink;
+        else
+            dllink = MAINPAGE + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
