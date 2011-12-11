@@ -184,12 +184,12 @@ public class FilePostCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getHeaders().put("User-Agent", ua);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("The file owner has limited free downloads of this file")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium2", "Only downloadable for premium users"));
+        String premiumlimit = br.getRegex("Files over (.*?) can be downloaded by premium").getMatch(0);
+        if (premiumlimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium", "Files over " + premiumlimit + " are only downloadable for premium users"));
+        if (br.containsHTML("(members only\\. Please upgrade to premium to|>download this file at the highest speed)")) if (br.containsHTML("The file owner has limited free downloads of this file")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium2", "Only downloadable for premium users"));
         if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
         if (br.containsHTML("(>Your IP address is already downloading a file at the moment|>Please wait till the download completion and try again)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already Loading", 20 * 60 * 1000l);
         String passCode = downloadLink.getStringProperty("pass", null);
-        String premiumlimit = br.getRegex(">Files over (.*?) can be downloaded by premium members only").getMatch(0);
-        if (premiumlimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium", "Files over " + premiumlimit + " are only downloadable for premium users"));
         // Errorhandling in case their linkchecker lies
         if (br.containsHTML("(<title>FilePost\\.com: Download  \\- fast \\&amp; secure\\!</title>|>File not found<|>It may have been deleted by the uploader or due to the received complaint|<div class=\"file_info file_info_deleted\">)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         /* token and SID used for all requests */
@@ -210,7 +210,6 @@ public class FilePostCom extends PluginForHost {
         /* click on low speed button */
         brc.submitForm(form);
         boolean nextD = false;
-        System.out.print(brc.toString());
         String nextDownload = brc.getRegex("next_download\":\"(\\d+)").getMatch(0);
         if (nextDownload != null) nextD = true;
         if (nextDownload == null) nextDownload = brc.getRegex("wait_time\":\"(\\-?\\d+)").getMatch(0);
@@ -251,6 +250,7 @@ public class FilePostCom extends PluginForHost {
         }
         brc = br.cloneBrowser();
         brc.submitForm(form);
+        if (brc.containsHTML("\"file_too_big_for_user\"")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium2", "Only downloadable for premium"));
         if (brc.containsHTML("You entered a wrong CAPTCHA code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String correctedBR = brc.toString().replace("\\", "");
         if (correctedBR.contains("Your download is not found or has expired")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 10 * 60 * 1000l);
