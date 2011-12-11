@@ -393,7 +393,13 @@ public class FileServeCom extends PluginForHost {
     private void handleErrorsShowDialog(Account blocked) throws Exception {
         int ret = -100;
         UserIO.setCountdownTime(120);
-        ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_LARGE, "FileServe landing error 612(Account '" + blocked.getUser() + "' blocked)!", "It seems like your account has been blocked by fileserve.\r\nTo unblock it, please visit the fileserve Supportforum and contact the User \"RickyFS\".\r\nBy clicking on OK a browser instance will open which leads to the fileserve Supportforum.\r\n\r\nYour premium account has been deactivated in JD to prevent further problems.\r\nIf you leave it that way JDownloader will continue to download as a free user from fileserve.com.\r\n\r\nJDTeam", null, "OK", "Cancel");
+        ret = UserIO
+                .getInstance()
+                .requestConfirmDialog(
+                        UserIO.STYLE_LARGE,
+                        "FileServe landing error 612(Account '" + blocked.getUser() + "' blocked)!",
+                        "English:\n\nIt seems like your account has been blocked by fileserve.\r\nTo unblock it, please visit the fileserve Supportforum and contact the User \"RickyFS\".\r\nBy clicking on OK a browser instance will open which leads to the fileserve Supportforum.\r\n\nYour premium account has been deactivated in JD to prevent further problems.\r\nIf you leave it that way JDownloader will continue to download as a free user from fileserve.com.\r\rPolish:\r\rTwoje konto Premium zosta³o prawdopodobnie zablokowane przez serwis fileserve.\nAby je odblokowaæ, odwied¼ forum wsparcia tego serwisu i skontaktuj siê z u¿ytkownikiem \"RickyFS\".\nNaci¶niêcie klawisza OK wywo³a przegl±darkê z odpowiedni± stron± tego forum.\r\n\nTwoje konto Premium zosta³o wy³±czone przez JD aby zapobiec dalszym problemom.\rJD bêdzie kontynuowa³ ¶ci±ganie z serwisu fileserve.com, lecz jako u¿ytkownik darmowy (Free).\r\n\r\nJDTeam",
+                        null, "OK", "Cancel");
         if (ret != -100) {
             if (UserIO.isOK(ret)) {
                 LocalBrowser.openDefaultURL(new URL("http://www.wjunction.com/95-file-hosts-official-support/35113-fileserve-make-money-upto-%2425-per-1000-downloads-official-thread.html"));
