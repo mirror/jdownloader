@@ -59,7 +59,7 @@ public class DataHu extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://data.hu/");
+        br.getPage("http://data.hu/index.php?isl=1");
         if (!br.containsHTML("<td>Prémium:</td>")) {
             account.setValid(false);
             return ai;
@@ -144,9 +144,10 @@ public class DataHu extends PluginForHost {
             br.setFollowRedirects(true);
             this.setBrowserExclusive();
             br.forceDebug(true);
-            br.getPage("http://data.hu/");
-            String loginID = br.getRegex("name=\"login_passfield\" value=\"(.*?)\"").getMatch(0);
-            String postData = "act=dologin&login_passfield=" + loginID + "&target=%2Findex.php&t=&id=&data=&username=" + Encoding.urlEncode(account.getUser()) + "&" + loginID + "=" + Encoding.urlEncode(account.getPass()) + "&remember=on&url_for_login=%2F&need_redirect=1&";
+            br.getPage("http://data.hu/index.php?isl=1");
+            final String loginID = br.getRegex("name=\"login_passfield\" value=\"(.*?)\"").getMatch(0);
+            if (loginID == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            String postData = "act=dologin&login_passfield=" + loginID + "&target=%2Findex.php&t=&id=&data=&url_for_login=%2Findex.php%3Fisl%3D1&need_redirect=1&username=" + Encoding.urlEncode(account.getUser()) + "&" + loginID + "=" + Encoding.urlEncode(account.getPass()) + "&remember=on";
             br.postPage("http://data.hu/login.php", postData);
             if (br.getCookie("http://data.hu/", "datapremiumseccode") == null) {
                 logger.warning("Cookie error!");
