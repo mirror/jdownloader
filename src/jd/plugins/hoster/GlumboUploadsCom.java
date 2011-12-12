@@ -50,7 +50,7 @@ public class GlumboUploadsCom extends PluginForHost {
 
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
 
-    private static final String COOKIE_HOST         = "http://uploads.glumbo.com";
+    private static final String COOKIE_HOST         = "http://glumbouploads.com";
 
     public boolean              NOPREMIUM           = false;
 
@@ -148,7 +148,7 @@ public class GlumboUploadsCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("glumbouploads.com/", "uploads.glumbo.com/"));
+        link.setUrlDownload(link.getDownloadURL().replace("uploads.glumbo.com/", "glumbouploads.com/"));
     }
 
     private String decodeDownloadLink(String s) {
