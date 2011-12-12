@@ -32,97 +32,91 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision: 11612 $", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://[\\w\\.]*?antena3.com/[-/\\dA-Za-c]+_\\d+.html" }, flags = { 0 })
 public class Antena3Com extends PluginForHost {
 
-	private String baseLink = "http://desprogresiva.antena3.com/";
-	static private final String AGB = "http://www.antena3.com/a3tv2004/web/html/legal/index.html";
-	private String finalURL;
+    private String              baseLink = "http://desprogresiva.antena3.com/";
+    static private final String AGB      = "http://www.antena3.com/a3tv2004/web/html/legal/index.html";
+    private String              finalURL;
 
-	public Antena3Com(PluginWrapper wrapper) {
-		super(wrapper);
-	}
+    public Antena3Com(PluginWrapper wrapper) {
+        super(wrapper);
+    }
 
-	@Override
-	public String getAGBLink() {
-		return AGB;
-	}
+    @Override
+    public String getAGBLink() {
+        return AGB;
+    }
 
-	@Override
-	public AvailableStatus requestFileInformation(DownloadLink downloadLink)
-			throws Exception {
-		// link online?
-		this.setBrowserExclusive();
-		String html = br.getPage(downloadLink.getDownloadURL());
-		if (br.containsHTML("<h1>¡Uy! No encontramos la página que buscas.</h1>"))
-			throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        // link online?
+        this.setBrowserExclusive();
+        String html = br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("<h1>¡Uy! No encontramos la página que buscas.</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-		// set file and package name
-		String name = new Regex(html, "<title>(.*?)</title>").getMatch(0);
-		downloadLink.setName(name + ".mp4");
-		FilePackage fp = FilePackage.getInstance();
-		fp.setName(name);
-		downloadLink.setParentNode(fp);
+        // set file and package name
+        String name = new Regex(html, "<title>(.*?)</title>").getMatch(0);
+        downloadLink.setName(name + ".mp4");
+        FilePackage fp = FilePackage.getInstance();
+        fp.setName(name);
+        downloadLink.setParentNode(fp);
 
-		// get final url (.mp4)
-		String xml = getXML(downloadLink);
-		finalURL = baseLink + getXmlLabels(xml, "archivo").get(0);
+        // get final url (.mp4)
+        String xml = getXML(downloadLink);
+        finalURL = baseLink + getXmlLabels(xml, "archivo").get(0);
 
-		// set real size
-		URLConnectionAdapter con = null;
-		try {
-			con = br.openGetConnection(finalURL);
-			downloadLink.setDownloadSize(con.getLongContentLength());
-		} finally {
-			try {
-				con.disconnect();
-			} catch (Throwable e) {
-			}
-		}
+        // set real size
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(finalURL);
+            downloadLink.setDownloadSize(con.getLongContentLength());
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
 
-		return AvailableStatus.TRUE;
-	}
+        return AvailableStatus.TRUE;
+    }
 
-	private String getXML(DownloadLink downloadLink) throws IOException {
-		String urlxml = new Regex(
-				br.getPage(downloadLink.getDownloadURL()),
-				"<link rel=\"video_src\" href=\"http://www.antena3.com/static/swf/A3Player.swf\\?xml=(.*?)\"/>")
-				.getMatch(0);
+    private String getXML(DownloadLink downloadLink) throws IOException {
+        String urlxml = new Regex(br.getPage(downloadLink.getDownloadURL()), "<link rel=\"video_src\" href=\"http://www.antena3.com/static/swf/A3Player.swf\\?xml=(.*?)\"/>").getMatch(0);
 
-		return br.getPage(urlxml);
-	}
+        return br.getPage(urlxml);
+    }
 
-	private List<String> getXmlLabels(String xml, String key) {
-		Regex rlist = new Regex(xml, "<" + key + ">(.*?)</" + key + ">");
+    private List<String> getXmlLabels(String xml, String key) {
+        Regex rlist = new Regex(xml, "<" + key + ">(.*?)</" + key + ">");
 
-		List<String> list = new LinkedList<String>();
-		for (int i = 0; i < rlist.count(); i++) {
-			list.add(rlist.getMatch(0, i).replace("<![CDATA[", "")
-					.replace("]]>", ""));
-		}
-		return list;
-	}
+        List<String> list = new LinkedList<String>();
+        for (int i = 0; i < rlist.count(); i++) {
+            list.add(rlist.getMatch(0, i).replace("<![CDATA[", "").replace("]]>", ""));
+        }
+        return list;
+    }
 
-	@Override
-	public void handleFree(DownloadLink downloadLink) throws Exception {
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
 
-		String xml = getXML(downloadLink);
-		finalURL = baseLink + getXmlLabels(xml, "archivo").get(0);
+        String xml = getXML(downloadLink);
+        finalURL = baseLink + getXmlLabels(xml, "archivo").get(0);
 
-		dl = BrowserAdapter.openDownload(br, downloadLink, finalURL, true, 0);
+        dl = BrowserAdapter.openDownload(br, downloadLink, finalURL, true, 0);
 
-		if (!dl.getConnection().getContentType().contains("mp4")) {
-			logger.warning("The final dllink seems not to be a mp4 file!");
-			br.followConnection();
-			throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-		}
+        if (!dl.getConnection().getContentType().contains("mp4")) {
+            logger.warning("The final dllink seems not to be a mp4 file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
-		dl.startDownload();
-	}
+        dl.startDownload();
+    }
 
-	@Override
-	public void reset() {
-	}
+    @Override
+    public void reset() {
+    }
 
-	@Override
-	public void resetDownloadlink(DownloadLink link) {
-	}
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
+    }
 
 }
