@@ -118,11 +118,26 @@ public class FourSharedCom extends PluginForHost {
     }
 
     private String getDllink() {
-        /* maybe directdownload */
-        String url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
+        String url = br.getRegex("<meta property=\"og:audio\" content=\"(http://.*?)\"").getMatch(0);
         if (url == null) {
-            /* maybe picture download */
-            url = br.getRegex("\"(http://dc\\d+\\.4shared(\\-china)?\\.com/download/[A-Za-z0-9]+/(?!desktop4shared).*?)\"").getMatch(0);
+            url = br.getRegex("var (flvLink|mp4Link|oggLink|mp3Link|streamerLink) = \\'(http://[^<>\"\\']{5,500})\\'").getMatch(1);
+            if (url == null) {
+                /* maybe picture download */
+                url = br.getRegex("\"(http://dc\\d+\\.4shared(\\-china)?\\.com/download/[A-Za-z0-9]+/(?!desktop4shared).*?)\"").getMatch(0);
+                if (url == null) {
+                    url = br.getRegex("\\'(http://dc\\d+\\.4shared(\\-china)?\\.com/.*?)\\'").getMatch(0);
+                    if (url == null) {
+                        url = br.getRegex("<div class=\"dl\">[\t\n\r ]+<a href=(\\'|\")(http://.*?)(\\'|\")").getMatch(1);
+                        if (url == null) {
+                            url = br.getRegex("(\\'|\")(http://dc\\d+\\.4shared(\\-china)?\\.com/download/[a-zA-Z0-9_\\-]+/.*?\\?tsid=\\d+\\-\\d+[a-z0-9\\-]+)(\\'|\")").getMatch(1);
+                            if (url == null) {
+                                /* maybe directdownload */
+                                url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
+                            }
+                        }
+                    }
+                }
+            }
         }
         return url;
     }
@@ -137,29 +152,18 @@ public class FourSharedCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String pass = handlePassword(downloadLink);
-        String url = null;
+        String url = getDllink();
         // If file isn't available for freeusers we can still try to get the
         // streamlink
-        if (br.containsHTML("In order to download files bigger that 500MB you need to login at 4shared")) {
-            logger.info("Original file not available for freeusers, trying to find streamlink...");
-            url = br.getRegex("var (flvLink|streamerLink) = \\'(http://.*?)\\'").getMatch(1);
-            if (url == null) {
-                url = br.getRegex("\\'(http://dc\\d+\\.4shared(\\-china)?\\.com/.*?)\\'").getMatch(0);
-            }
-            if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.foursharedcom.only4premium", "Files over 500MB are only downloadable for premiumusers!"));
-            // New link, new extension
-            downloadLink.setName(downloadLink.getName().replace(downloadLink.getName().substring(downloadLink.getName().length() - 4, downloadLink.getName().length()), url.substring(url.length() - 4, url.length())));
-        }
+        if (br.containsHTML("In order to download files bigger that 500MB you need to login at 4shared") && url == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.foursharedcom.only4premium", "Files over 500MB are only downloadable for premiumusers!"));
         if (url == null) {
             url = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]*).*?\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
             if (url == null) url = br.getRegex("\"(http://(www\\.)?4shared(\\-china)?\\.com/get/[A-Za-z0-9\\-_]+/.*?)\"").getMatch(0);
             if (url == null) {
-                url = getDllink();
-                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 br.getPage(url);
-                url = br.getRegex("<div class=\"dl\">[\t\n\r ]+<a href=(\\'|\")(http://.*?)(\\'|\")").getMatch(1);
-                if (url == null) url = br.getRegex("(\\'|\")(http://dc\\d+\\.4shared(\\-china)?\\.com/download/[a-zA-Z0-9_\\-]+/.*?\\?tsid=\\d+\\-\\d+[a-z0-9\\-]+)(\\'|\")").getMatch(1);
+                url = getDllink();
                 if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 // Ticket Time
@@ -179,11 +183,6 @@ public class FourSharedCom extends PluginForHost {
         if (error != null) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
-        }
-        if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            handleFreeErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

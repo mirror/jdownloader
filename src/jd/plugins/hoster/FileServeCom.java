@@ -370,6 +370,10 @@ public class FileServeCom extends PluginForHost {
         }
         if (br2.containsHTML("landing-error\\.php\\?error_code=404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br2.containsHTML("(landing-406\\.php|landing\\-error\\.php\\?error_code=1703)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
+        if (br2.containsHTML("landing\\-error\\.php\\?error_code=1707") || br2.getURL().contains("/landing-1707.html")) {
+            logger.info("Received error 1707, account temporarily blocked, user has to change password to use it again!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         if (br2.containsHTML("<p>You can only download 1 file at a time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
         if (br2.containsHTML("(landing\\-error\\.php\\?error_code=2702|is already downloading a file</li>|is already downloading a file <br>|landing\\-1403)") || br2.getURL().contains("landing-2702.html") || br.getURL().contains("landing-1403")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your IP is already downloading", 5 * 60 * 1000l);
         // error 612(Account gesperrt) --> Dialogfenster aufrufen

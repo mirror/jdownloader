@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -67,7 +68,16 @@ public class MovShareNet extends PluginForHost {
             dllink = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"file\",\"(http:.*?)\"").getMatch(0);
-                if (dllink == null) dllink = br.getRegex("flashvars\\.file=\"(http:.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("flashvars\\.file=\"(http:.*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        final String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
+                        if (key != null) {
+                            br.getPage("http://www.movshare.net/api/player.api.php?key=" + Encoding.urlEncode(key) + "&user=undefined&codes=undefined&pass=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "movshare\\.net/video/(.+)").getMatch(0));
+                            dllink = br.getRegex("url=(http://.*?)\\&title=").getMatch(0);
+                        }
+                    }
+                }
             }
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
