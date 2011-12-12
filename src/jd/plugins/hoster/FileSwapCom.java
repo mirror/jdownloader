@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -43,23 +44,24 @@ public class FileSwapCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("id=\"bttnDownloadLink\" href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("id=\"textDownloadLink\" href=\"(http.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("\"(http://dl\\d+\\.fileswap\\.com/download/\\?id=[^<>]+)\"").getMatch(0);
-            }
-        }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        int wait = 1;
+        String waittime = br.getRegex("var time=(\\d+);").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        sleep(wait * 1001l, downloadLink);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage("http://www.fileswap.com/ajax_requests.php", "id=" + new Regex(downloadLink.getDownloadURL(), "fileswap\\.com/dl/([A-Za-z0-9]+)/").getMatch(0));
+        String dllink = br.toString();
+        if (!dllink.startsWith("http") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("(There has been an error on the page you tried to access\\.|Support staff has been notified of this error\\.)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

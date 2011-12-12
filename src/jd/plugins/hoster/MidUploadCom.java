@@ -353,6 +353,7 @@ public class MidUploadCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.setCookie("http://www.midupload.com", "lang", "english");
         br.getPage(parameter.getDownloadURL());
         Form freeform = br.getFormBySubmitvalue("Kostenloser+Download");
