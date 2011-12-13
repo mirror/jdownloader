@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiupload.com" }, urls = { "http://[\\w\\.]*?multiupload\\.com/([A-Z0-9]{2}_[A-Z0-9]+|[0-9A-Z]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiupload.com" }, urls = { "http://(www\\.)?multiupload\\.com/([A-Z0-9]{2}_[A-Z0-9]+|[0-9A-Z]+)" }, flags = { 0 })
 public class MltpldCm extends PluginForDecrypt {
 
     public MltpldCm(PluginWrapper wrapper) {
@@ -40,11 +40,12 @@ public class MltpldCm extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("(the link you have clicked is not available|Invalid link|The file has been deleted because it was violating our|No htmlCode read)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML(">Unfortunately, the link you have clicked is not available")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (br.containsHTML(">UNKNOWN ERROR<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unknownerror", "Unknown error caused by multiupload.com."));
-        String directMultiuploadLink = br.getRegex("<div id=\"downloadbutton_\" style=\".*?><a href=\"(.*?)\"").getMatch(0);
-        if (directMultiuploadLink == null) directMultiuploadLink = br.getRegex("\"(http://[a-z0-9]+\\.multiupload\\.com:[0-9]+/files/[A-Za-z0-9]{40,}/.*?)\"").getMatch(0);
-        if (directMultiuploadLink != null) decryptedLinks.add(createDownloadlink("directhttp://" + directMultiuploadLink));
+        /** Check if there are links for the hosterplugin */
+        if (br.containsHTML("(<div[^>]+id=\"downloadbutton_\"|document\\.getElementById\\(\\'dlbutton\\'\\))")) {
+            decryptedLinks.add(createDownloadlink(parameter.replace("multiupload.com/", "multiuploaddecrypted.com/")));
+        }
         if (!parameter.contains("_")) {
             String[] redirectLinks = br.getRegex(Pattern.compile("id=\"url_\\d+\"><a href=\"(http://(www\\.)?multiupload\\.com/.*?)\"")).getColumn(0);
             if (redirectLinks == null || redirectLinks.length == 0) {

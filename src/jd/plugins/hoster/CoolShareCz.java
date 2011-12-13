@@ -71,7 +71,7 @@ public class CoolShareCz extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.coolshare.cz/kontakt";
+        return "http://www.coolshare.cz/caste-dotazy";
     }
 
     @Override

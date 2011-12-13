@@ -47,7 +47,7 @@ public class OneClickShareCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.1-clickshare.com/index.php?page=tos";
+        return "http://1clickshare.net/terms-service";
     }
 
     @Override

@@ -81,7 +81,8 @@ public class NuVidCom extends PluginForHost {
         final String linkPart = br.getRegex("\\'(/player/config\\.php\\?t=.*?)\\'\\);").getMatch(0);
         if (filename == null || linkPart == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         getDllink(linkPart);
-        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (DLLINK == null && br.containsHTML("Invalid video key")) throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin outdated, key has changed!");
+        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));

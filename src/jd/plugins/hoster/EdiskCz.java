@@ -70,7 +70,7 @@ public class EdiskCz extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.edisk.cz/kontakt";
+        return "http://www.edisk.cz/podminky";
     }
 
     @Override
