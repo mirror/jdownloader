@@ -532,7 +532,9 @@ public class AnnonHostNet extends PluginForHost {
             if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             loginform.put("login", Encoding.urlEncode(account.getUser()));
             loginform.put("password", Encoding.urlEncode(account.getPass()));
+            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
             br.submitForm(loginform);
+            br.getHeaders().put("Content-Type", null);
             if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             br.getPage(COOKIE_HOST2 + "/?op=my_account");
             doSomething();
