@@ -22,6 +22,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
@@ -45,10 +46,20 @@ public class Indowebster extends PluginForHost {
         return -1;
     }
 
+    private static final String PASSWORDTEXT = "(>THIS FILE IS PASSWORD PROTECTED<|>INSERT PASSWORD<|class=\"redbtn\" value=\"Unlock\"|method=\"post\" id=\"form_pass\")";
+
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         if (br.containsHTML("Storage Maintenance, Back Later")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Storage maintenance", 60 * 60 * 1000l);
+        String passCode = link.getStringProperty("pass", null);
+        if (br.containsHTML(PASSWORDTEXT)) {
+            final String valueName = br.getRegex("type=\"password\" name=\"(.*?)\"").getMatch(0);
+            if (valueName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (passCode == null) passCode = Plugin.getUserInput("Password?", link);
+            br.postPage(link.getDownloadURL(), valueName + "=" + Encoding.urlEncode(passCode));
+            if (br.containsHTML(PASSWORDTEXT)) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+        }
         String ad_url = br.getRegex("<a id=\"download\" href=\"(http://.*?)\"").getMatch(0);
         if (ad_url == null) {
             ad_url = br.getRegex("\"(http://v\\d+\\.indowebster\\.com/downloads/jgjbcf/[a-z0-9]+)\"").getMatch(0);
@@ -62,6 +73,11 @@ public class Indowebster extends PluginForHost {
         String dllink = br.getRegex("id=\"link\\-download\" align=\"center\"><a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://cdn\\.(x|\\s+)\\.indowebster\\.com/download\\-vip/\\d+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /**
+         * If we reach this line the password should be correct even if the
+         * download fails
+         */
+        if (passCode != null) link.setProperty("pass", passCode);
         dllink = dllink.trim();
         String waittime = br.getRegex("var sec = (\\d+);").getMatch(0);
         if (waittime == null) waittime = br.getRegex("document\\.counter\\.dl2\\.value=\\'(\\d+)\\';").getMatch(0);
@@ -97,6 +113,7 @@ public class Indowebster extends PluginForHost {
         String filename = br.getRegex("<title>Free Download (.*?) \\| ").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=\"dl\\-title\" title=\"(.*?)\">").getMatch(0);
+            if (filename == null) filename = br.getRegex("<title>(.*?) \\- Indowebster\\.com</title>").getMatch(0);
         }
         String filesize = br.getRegex(">Size : <span style=\"float:none;\">(.*?)</span><").getMatch(0);
         if (filesize == null) filesize = br.getRegex("Date upload: .{1,20} Size: (.*?)\"").getMatch(0);
@@ -106,6 +123,7 @@ public class Indowebster extends PluginForHost {
         else
             downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.containsHTML(PASSWORDTEXT)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.indowebstercom.passwordprotected", "This link is password protected"));
         return AvailableStatus.TRUE;
     }
 
