@@ -170,7 +170,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     private transient FilePackageInfo fpInfo = null;
 
-    private FilePackageView           view;
+    private transient FilePackageView view;
 
     /*
      * (non-Javadoc)
@@ -231,6 +231,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         stream.defaultReadObject();
         isExpanded = getBooleanProperty(PROPERTY_EXPANDED, false);
         uniqueID = new UniqueID();
+        view = new FilePackageView();
     }
 
     /*

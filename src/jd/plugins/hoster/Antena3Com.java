@@ -23,7 +23,6 @@ import jd.parser.Regex;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -32,9 +31,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision: 11612 $", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://[\\w\\.]*?antena3.com/[-/\\dA-Za-c]+_\\d+.html" }, flags = { 0 })
 public class Antena3Com extends PluginForHost {
 
-    private String              baseLink = "http://desprogresiva.antena3.com/";
-    static private final String AGB      = "http://www.antena3.com/a3tv2004/web/html/legal/index.html";
-    private String              finalURL;
+    private static String baseLink = "http://desprogresiva.antena3.com/";
 
     public Antena3Com(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,7 +39,7 @@ public class Antena3Com extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return AGB;
+        return "http://www.antena3.com/a3tv2004/web/html/legal/index.html";
     }
 
     @Override
@@ -55,18 +52,15 @@ public class Antena3Com extends PluginForHost {
         // set file and package name
         String name = new Regex(html, "<title>(.*?)</title>").getMatch(0);
         downloadLink.setName(name + ".mp4");
-        FilePackage fp = FilePackage.getInstance();
-        fp.setName(name);
-        downloadLink.setParentNode(fp);
-
         // get final url (.mp4)
         String xml = getXML(downloadLink);
-        finalURL = baseLink + getXmlLabels(xml, "archivo").get(0);
+        String finalURL = baseLink + getXmlLabels(xml, "archivo").get(0);
 
         // set real size
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(finalURL);
+            if (!con.getContentType().contains("mp4")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             downloadLink.setDownloadSize(con.getLongContentLength());
         } finally {
             try {
@@ -74,13 +68,12 @@ public class Antena3Com extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-
         return AvailableStatus.TRUE;
     }
 
-    private String getXML(DownloadLink downloadLink) throws IOException {
+    private String getXML(DownloadLink downloadLink) throws IOException, PluginException {
         String urlxml = new Regex(br.getPage(downloadLink.getDownloadURL()), "<link rel=\"video_src\" href=\"http://www.antena3.com/static/swf/A3Player.swf\\?xml=(.*?)\"/>").getMatch(0);
-
+        if (urlxml == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return br.getPage(urlxml);
     }
 
@@ -96,10 +89,8 @@ public class Antena3Com extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
         String xml = getXML(downloadLink);
-        finalURL = baseLink + getXmlLabels(xml, "archivo").get(0);
-
+        String finalURL = baseLink + getXmlLabels(xml, "archivo").get(0);
         dl = BrowserAdapter.openDownload(br, downloadLink, finalURL, true, 0);
 
         if (!dl.getConnection().getContentType().contains("mp4")) {
@@ -107,7 +98,6 @@ public class Antena3Com extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         dl.startDownload();
     }
 

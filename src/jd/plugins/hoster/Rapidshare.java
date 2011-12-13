@@ -56,11 +56,11 @@ public class Rapidshare extends PluginForHost {
                  * remove html ending, because rs now checks the complete
                  * filename
                  */
-                ret.name = new Regex(ret.url, "files/\\d+/(.*?/)?(.*?)(\\.html?|$)").getMatch(1);
+                ret.name = new Regex(ret.url, "files/\\d+/(.*?/)?(.*?)(\\.html?|$|;$)").getMatch(1);
                 ret.secMD5 = new Regex(ret.url, "files/\\d+/t(.*?)-(.*?)/").getMatch(1);
                 ret.secTim = new Regex(ret.url, "files/\\d+/t(.*?)-(.*?)/").getMatch(0);
             } else {
-                ret.name = new Regex(ret.url, "files/\\d+/(.*?/)?(.*?)$").getMatch(1);
+                ret.name = new Regex(ret.url, "files/\\d+/(.*?/)?(.*?)($|;$)").getMatch(1);
                 ret.secMD5 = new Regex(ret.url, "files/\\d+/t(.*?)-(.*?)/").getMatch(1);
                 ret.secTim = new Regex(ret.url, "files/\\d+/t(.*?)-(.*?)/").getMatch(0);
             }

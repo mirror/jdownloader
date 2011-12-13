@@ -347,7 +347,7 @@ public class Megauploadcom extends PluginForHost {
                 return ai;
             }
         }
-        final String type = this.br.getRegex(Pattern.compile("class=\"account_txt\">(Premium)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String type = getAccountType(br);
         if (type != null && !type.contains("Lifetime")) {
             ai.setStatus("Premium Membership");
             String days = this.br.getRegex("class=\"account_txt\"> ([^<>/]*?) days remaining").getMatch(0);
@@ -705,13 +705,7 @@ public class Megauploadcom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
                     }
                 }
-                url = this.br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
-                if (url == null) {
-                    url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"down_ad_butt1\">").getMatch(0);
-                }
-                if (url == null) {
-                    url = this.br.getRedirectLocation();
-                }
+                url = getDownloadURL(br);
             } else {
                 /* direct download */
                 url = this.br.getRedirectLocation();
@@ -766,6 +760,29 @@ public class Megauploadcom extends PluginForHost {
         }
     }
 
+    private String getDownloadURL(Browser br) {
+        if (br == null) return null;
+        String url = br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
+        if (url == null) {
+            url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"down_ad_butt1\">").getMatch(0);
+        }
+        if (url == null) {
+            url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"download_regular_usual\"").getMatch(0);
+        }
+        if (url == null) {
+            url = br.getRegex("class=\"download_member_bl\".*?<a href=\"(.*?)\"").getMatch(0);
+            if (url != null && !url.startsWith("http")) url = null;
+        }
+        if (url == null) {
+            /*
+             * seems free users get directdownload too sometimes, maybe for
+             * special links?
+             */
+            url = br.getRedirectLocation();
+        }
+        return url;
+    }
+
     public void handleWebsiteDownload(final DownloadLink link, final Account account) throws Exception {
         String url = null;
         if (directDL == false) {
@@ -777,22 +794,7 @@ public class Megauploadcom extends PluginForHost {
             String code = null;
             while (captchTries-- >= 0) {
                 this.br.getPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/?d=" + this.getDownloadID(link));
-                url = this.br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
-                if (url == null) {
-                    url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"down_ad_butt1\">").getMatch(0);
-                }
-
-                if (url == null) {
-
-                    url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"download_regular_usual\"").getMatch(0);
-                }
-                if (url == null) {
-                    /*
-                     * seems free users get directdownload too sometimes, maybe
-                     * for special links?
-                     */
-                    url = br.getRedirectLocation();
-                }
+                url = getDownloadURL(br);
                 if (url != null) break;
                 /* check for iplimit */
                 final String red = this.br.getRegex("document\\.location='(.*?)'").getMatch(0);
@@ -857,6 +859,8 @@ public class Megauploadcom extends PluginForHost {
                         break;
                     }
                 }
+                url = getDownloadURL(br);
+                if (url != null) break;
             }
             if (form != null && form.containsHTML("captchacode")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
             if (this.br.containsHTML("location='http://www\\.megaupload\\.com/\\?c=msg")) {
@@ -870,17 +874,7 @@ public class Megauploadcom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
                 }
             }
-            if (url == null) url = this.br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
-            if (url == null) {
-                url = br.getRegex("href=\"(http://[^\"]*?)\" class=\"down_ad_butt1\">").getMatch(0);
-            }
-            if (url == null) {
-                /*
-                 * seems free users get directdownload too sometimes, maybe for
-                 * special links?
-                 */
-                url = br.getRedirectLocation();
-            }
+            if (url == null) url = getDownloadURL(br);
         } else {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
@@ -906,7 +900,7 @@ public class Megauploadcom extends PluginForHost {
                 }
                 this.antiJDBlock(brc);
                 brc.getPage("http://" + Megauploadcom.wwwWorkaround + "megaupload.com/?c=account");
-                final String type = brc.getRegex(Pattern.compile("class=\"account_txt\">(Premium)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+                String type = getAccountType(brc);
                 if (type == null || type.equalsIgnoreCase("regular")) {
                     account.setProperty("ispremium", false);
                     if (type != null) {
@@ -924,6 +918,12 @@ public class Megauploadcom extends PluginForHost {
                 return account.getBooleanProperty("ispremium", false);
             }
         }
+    }
+
+    private String getAccountType(Browser brc) {
+        String type = brc.getRegex(Pattern.compile("class=\"account_txt\">(Premium)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (type == null) type = brc.getRegex(Pattern.compile("class=\"account_txt\">(Lifetime Platinum)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        return type;
     }
 
     /*

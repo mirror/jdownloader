@@ -397,6 +397,7 @@ public class GlumboUploadsCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        this.correctDownloadLink(link);
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());

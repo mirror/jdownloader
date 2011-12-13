@@ -101,7 +101,8 @@ public class FourSharedCom extends PluginForHost {
         br.getPage(accountDetails);
         final String expire = br.getRegex("<td>Expiration Date:</td>.*?<td>(.*?)<span").getMatch(0);
         ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "yyyy-MM-dd", Locale.UK));
-        String accType = br.getRegex("Account Type:</td>.*?>(FREE)").getMatch(0);
+        String accType = br.getRegex("Account Type:</td>.*?>(.*?)<").getMatch(0);
+        if (accType != null) accType = accType.trim();
         if ("FREE".equalsIgnoreCase(accType)) {
             ai.setStatus("Free accounts are not supported");
             account.setValid(false);

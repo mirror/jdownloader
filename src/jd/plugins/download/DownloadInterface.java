@@ -716,7 +716,6 @@ abstract public class DownloadInterface {
             } finally {
                 connection = null;
             }
-            logger.info("Closed connection before closing file");
         }
 
     }

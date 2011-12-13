@@ -20,9 +20,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision: 11612 $", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://[\\w\\.]*?antena3.com/videos/[-/\\dA-Za-c]+.html" }, flags = { 0 })
 public class Antena3ComSalon extends PluginForDecrypt {
@@ -33,22 +35,26 @@ public class Antena3ComSalon extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink link, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String html = br.getPage(link.toString());
-        if (html.contains("<h1>¡Uy\\! No encontramos la página que buscas\\.</h1>")) return decryptedLinks;
+        if (html.contains("<h1>¡Uy! No encontramos la página que buscas.</h1>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
 
         String xmlURL = "http://www.antena3.com" + new Regex(html, "player_capitulo.xml='(.*?)';").getMatch(0);
         br.getPage(xmlURL);
+
         String[] links = br.getRegex("<archivo>(.*?)</archivo>").getColumn(0);
         if (links == null || links.length == 0) return null;
+
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         for (String sdl : links) {
             if (sdl.contains(".mp4")) {
                 sdl = "http://desprogresiva.antena3.com/" + sdl.replace("<![CDATA[", "").replace("]]>", "");
                 DownloadLink dl = createDownloadlink(sdl);
                 dl.setName(br.getRegex("<descripcion>(.*?)</descripcion>").getMatch(0).replace("<![CDATA[", "").replace("]]>", "") + " - " + dl.getName());
+
                 decryptedLinks.add(dl);
             }
         }
+
         return decryptedLinks;
     }
 }
