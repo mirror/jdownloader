@@ -13,6 +13,7 @@ import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,6 +39,7 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.images.NewTheme;
 
@@ -242,11 +244,7 @@ public class FavIcons {
         return image;
     }
 
-    /**
-     * downloads a favicon from the given host, icon must be bigger than 1x1,
-     * cause some hosts have fake favicon.ico with 1x1 size
-     */
-    public static BufferedImage downloadFavIcon(String host) {
+    private static BufferedImage download_FavIconIco(String host) throws IOException {
         String url = "http://" + host + "/favicon.ico";
         final Browser favBr = new Browser();
         favBr.setLogger(JDPluginLogger.Trash);
@@ -279,7 +277,8 @@ public class FavIcons {
                     if (img != null && img.getHeight() > 1 && img.getWidth() > 1) return img;
                 }
             }
-            /* now we look for a favicon tag */
+            return null;
+        } finally {
             try {
                 inputStream.close();
             } catch (final Throwable e) {
@@ -288,10 +287,22 @@ public class FavIcons {
                 con.disconnect();
             } catch (final Throwable e) {
             }
+        }
+    }
+
+    private static BufferedImage download_FavIconTag(String host) throws IOException {
+        final Browser favBr = new Browser();
+        favBr.setLogger(JDPluginLogger.Trash);
+        favBr.setConnectTimeout(10000);
+        favBr.setReadTimeout(10000);
+        URLConnectionAdapter con = null;
+        BufferedInputStream inputStream = null;
+        try {
+            favBr.setFollowRedirects(true);
             favBr.getPage("http://" + host);
-            url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=('|\")([^>'\"]*?)('|\")").getMatch(4);
-            if (url == null || url.length() == 0) url = favBr.getRegex("href=('|\")([^>'\"]*?)('|\")[^>]*?rel=('|\")(SHORTCUT )?ICON('|\")").getMatch(1);
-            if (url == null || url.length() == 0) {
+            String url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=('|\")([^>'\"]*?)('|\")").getMatch(4);
+            if (StringUtils.isEmpty(url)) url = favBr.getRegex("href=('|\")([^>'\"]*?)('|\")[^>]*?rel=('|\")(SHORTCUT )?ICON('|\")").getMatch(1);
+            if (StringUtils.isEmpty(url)) {
                 /*
                  * workaround for hoster with not complete url, eg
                  * rapidshare.com
@@ -301,6 +312,7 @@ public class FavIcons {
             }
             if (url != null && url.length() > 0) {
                 /* favicon tag with ico extension */
+                favBr.setFollowRedirects(false);
                 favBr.getHeaders().put("Accept-Encoding", "");
                 con = favBr.openGetConnection(url);
                 /* we use bufferedinputstream to reuse it later if needed */
@@ -324,8 +336,7 @@ public class FavIcons {
                     }
                 }
             }
-        } catch (Throwable e) {
-            // JDLogger.exception(e);
+            return null;
         } finally {
             try {
                 inputStream.close();
@@ -336,7 +347,27 @@ public class FavIcons {
             } catch (final Throwable e) {
             }
         }
-        return null;
+    }
+
+    /**
+     * downloads a favicon from the given host, icon must be bigger than 1x1,
+     * cause some hosts have fake favicon.ico with 1x1 size
+     */
+    public static BufferedImage downloadFavIcon(String host) {
+        BufferedImage ret = null;
+        try {
+            /* first try to get the FavIcon specified in FavIconTag */
+            ret = download_FavIconTag(host);
+        } catch (Throwable e) {
+        }
+        if (ret == null) {
+            try {
+                /* fallback to favicon.ico in host root */
+                ret = download_FavIconIco(host);
+            } catch (Throwable e) {
+            }
+        }
+        return ret;
     }
 
     private static BufferedImage downloadImage(BufferedInputStream is) {
