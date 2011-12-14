@@ -2,7 +2,6 @@ package jd.controlling.linkcrawler;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.TreeSet;
@@ -14,6 +13,10 @@ import org.jdownloader.DomainInfo;
 
 public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
+    /**
+     * 
+     */
+    private static final long              serialVersionUID = 4415726693932960026L;
     protected long                         fileSize;
     protected HashMap<DomainInfo, Integer> hostCountMap;
     protected TreeSet<DomainInfo>          domainList;
@@ -21,15 +24,8 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     protected CrawledPackage               crawledPackage;
     protected HashSet<CrawledLink>         enabled;
     protected HashMap<CrawledLink, Long>   sizes;
-    private Comparator<DomainInfo>         domainComparator;
 
     public CrawledPackageView() {
-        domainComparator = new Comparator<DomainInfo>() {
-
-            public int compare(DomainInfo o1, DomainInfo o2) {
-                return o1.getTld().compareToIgnoreCase(o2.getTld());
-            }
-        };
         this.fileSize = 0l;
         hostCountMap = new HashMap<DomainInfo, Integer>();
         domainList = new TreeSet<DomainInfo>();
@@ -74,54 +70,41 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     }
 
     private void addInfo(CrawledLink element) {
-        synchronized (this) {
-            // domain
-            DomainInfo domainInfo = element.getDomainInfo();
-            Integer current = hostCountMap.get(domainInfo);
-            if (current == null) current = 0;
-            hostCountMap.put(domainInfo, current + 1);
-            domainList.add(domainInfo);
-            domainInfos = domainList.toArray(new DomainInfo[] {});
-            // enabled
-            if (element.isEnabled()) enabled.add(element);
-
-            // size
-            sizes.put(element, element.getSize());
-            fileSize += element.getSize();
-
-            // System.out.println(element + " add: " + crawledPackage.getName()
-            // + " : " + hostCountMap + " " + domainList);
-        }
-
+        // domain
+        DomainInfo domainInfo = element.getDomainInfo();
+        Integer current = hostCountMap.get(domainInfo);
+        if (current == null) current = 0;
+        hostCountMap.put(domainInfo, current + 1);
+        domainList.add(domainInfo);
+        domainInfos = domainList.toArray(new DomainInfo[] {});
+        // enabled
+        if (element.isEnabled()) enabled.add(element);
+        // size
+        sizes.put(element, element.getSize());
+        fileSize += element.getSize();
+        // System.out.println(element + " add: " + crawledPackage.getName()
+        // + " : " + hostCountMap + " " + domainList);
     }
 
     private void removeInfo(CrawledLink element) {
+        // domain
+        DomainInfo domainInfo = element.getDomainInfo();
+        Integer current = hostCountMap.get(domainInfo);
+        if (current == null || current < 1) throw new WTFException("cannot remove element. Is not there");
 
-        synchronized (this) {
-            // domain
-            DomainInfo domainInfo = element.getDomainInfo();
-            Integer current = hostCountMap.get(domainInfo);
-            if (current == null || current < 1) throw new WTFException("cannot remove element. Is not there");
-
-            if (current == 1) {
-                hostCountMap.remove(domainInfo);
-                domainList.remove(domainInfo);
-            } else {
-                hostCountMap.put(domainInfo, current - 1);
-            }
-
-            domainInfos = domainList.toArray(new DomainInfo[] {});
-            // enabled
-
-            enabled.remove(element);
-
-            // size
-
-            fileSize -= sizes.get(element);
-            if (fileSize < 0) throw new WTFException("Filesize cannot be less than 0");
-            // System.out.println(element + " rem: " + crawledPackage.getName()
-            // + " : " + hostCountMap + " " + domainList);
+        if (current == 1) {
+            hostCountMap.remove(domainInfo);
+            domainList.remove(domainInfo);
+        } else {
+            hostCountMap.put(domainInfo, current - 1);
         }
+        domainInfos = domainList.toArray(new DomainInfo[] {}); // enabled
+        enabled.remove(element);
+        // size
+        fileSize -= sizes.get(element);
+        if (fileSize < 0) throw new WTFException("Filesize cannot be less than 0");
+        // System.out.println(element + " rem: " + crawledPackage.getName()
+        // + " : " + hostCountMap + " " + domainList);
     }
 
     @Override
@@ -148,7 +131,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
             super.clear();
         } finally {
-
             this.fileSize = 0l;
             hostCountMap.clear();
             domainList.clear();
@@ -161,13 +143,10 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     @Override
     public boolean addAll(Collection<? extends CrawledLink> c) {
         try {
-
             return super.addAll(c);
-
         } finally {
             for (CrawledLink cc : c) {
                 addInfo(cc);
-
             }
         }
     }
@@ -179,7 +158,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         } finally {
             for (CrawledLink cc : c) {
                 addInfo(cc);
-
             }
         }
     }
@@ -216,11 +194,9 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     }
 
     public void updateInfo(CrawledLink crawledLink) {
-        synchronized (this) {
-            removeInfo(crawledLink);
-            addInfo(crawledLink);
+        removeInfo(crawledLink);
+        addInfo(crawledLink);
 
-        }
     }
 
     public DomainInfo[] getDomainInfos() {

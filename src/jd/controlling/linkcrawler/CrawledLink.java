@@ -170,7 +170,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
             if (lparent == null) return lname;
             /* special case of PackageCustomizer Filename */
             return name.replace(PACKAGETAG, lparent.getName());
-
         }
         if (dlLink != null) return dlLink.getName();
         return "DUMMY";
@@ -351,11 +350,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public boolean hasCaptcha() {
-        if (gethPlugin() != null) {
-
-        return gethPlugin().hasCaptcha();
-
-        }
+        if (gethPlugin() != null) { return gethPlugin().hasCaptcha(); }
         return false;
     }
 
