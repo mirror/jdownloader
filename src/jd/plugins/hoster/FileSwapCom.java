@@ -57,6 +57,9 @@ public class FileSwapCom extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("http://www.fileswap.com/ajax_requests.php", "id=" + new Regex(downloadLink.getDownloadURL(), "fileswap\\.com/dl/([A-Za-z0-9]+)/").getMatch(0));
         String dllink = br.toString();
+        /* remove newline */
+        dllink = dllink.replaceAll("%0D%0A", "");
+        dllink = dllink.trim();
         if (!dllink.startsWith("http") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
