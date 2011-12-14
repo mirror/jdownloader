@@ -46,9 +46,8 @@ public class NuVidCom extends PluginForHost {
     }
 
     private void getDllink(final String linkPart) throws IOException {
-        final String part = Encoding.htmlDecode(linkPart);
-        final String vkey = new Regex(part, "vkey=([0-9a-f]+)").getMatch(0);
-        br.getPage("http://www.nuvid.com" + Encoding.htmlDecode(linkPart) + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("c3RFc3BhdmFWNjhFd1I=")));
+        final String vkey = new Regex(Encoding.htmlDecode(linkPart), "vkey=([0-9a-f]+)").getMatch(0);
+        br.getPage("http://www.nuvid.com" + Encoding.htmlDecode(linkPart) + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("V2Q3bzY3RG40WDV4OTJj")));
         DLLINK = br.getRegex("<video_file>(http://.*?)</video_file>").getMatch(0);
     }
 
