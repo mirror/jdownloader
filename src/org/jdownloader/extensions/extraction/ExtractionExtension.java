@@ -140,7 +140,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      *            Path of the packed file
      * @return True if a extractor was found
      */
-    private final boolean isLinkSupported(String file) {
+    public final boolean isLinkSupported(String file) {
         for (IExtraction extractor : extractors) {
             if (extractor.isArchivSupported(file)) { return true; }
         }

@@ -117,6 +117,10 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         return ret;
     }
 
+    public File toFile(String path) {
+        return new File(path);
+    }
+
     public void fireExtractToChange(Archive archive) {
         for (ArchiveFile link1 : archive.getArchiveFiles()) {
             ((DownloadLinkArchiveFile) link1).getDownloadLink().setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTEDPATH, archive.getExtractTo().getAbsolutePath());

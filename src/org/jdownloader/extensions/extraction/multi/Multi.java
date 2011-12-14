@@ -59,6 +59,7 @@ public class Multi extends IExtraction {
 
     private static final String      PATTERN_RAR        = "(?i).*\\.rar$";
     private static final String      PATTERN_RAR_MULTI  = "(?i).*\\.pa?r?t?\\.?\\d+.rar$";
+    private static final String      PATTERN_RAR_MULTI2 = "(?i).*\\.r\\d+$";
     private static final String      PATTERN_ZIP        = "(?i).*\\.zip$";
     private static final String      PATTERN_TAR        = "(?i).*\\.tar$";
     private static final String      PATTERN_TAR_GZ     = "(?i).*\\.tar\\.gz$";
@@ -101,6 +102,9 @@ public class Multi extends IExtraction {
         } else if (file.matches(PATTERN_RAR)) {
             matches.add(link);
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.rar$", "")) + "\\.r\\d+$";
+        } else if (file.matches(PATTERN_RAR_MULTI2)) {
+            // matches.add(link);
+            pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.r\\d+$", "")) + "\\.(r\\d+|rar)$";
         } else if (file.matches(PATTERN_7Z_PART)) {
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.7z\\.\\d+$", "")) + "\\.7z\\.\\d+$";
         } else {
@@ -336,7 +340,7 @@ public class Multi extends IExtraction {
                 if (StringUtils.isEmpty(path)) {
                     // example: test.tar.gz contains a test.tar file, that has
                     // NO name. we create a dummy name here.
-                    String archivename = new File(archive.getFirstArchiveFile().getFilePath()).getName();
+                    String archivename = archive.getFactory().toFile(archive.getFirstArchiveFile().getFilePath()).getName();
                     int in = archivename.lastIndexOf(".");
                     if (in > 0) {
                         path = archivename.substring(0, in);
@@ -613,6 +617,8 @@ public class Multi extends IExtraction {
         match = new Regex(new File(link.getFilePath()).getName(), "(?i)(.*)\\.tar\\.bz2$", Pattern.CASE_INSENSITIVE).getMatch(0);
         if (match != null) return match;
         match = new Regex(new File(link.getFilePath()).getName(), "(?i)(.*)\\.r\\d+$", Pattern.CASE_INSENSITIVE).getMatch(0);
+        if (match != null) return match;
+        match = new Regex(new File(link.getFilePath()).getName(), "(?i)(.*)\\.tar+$", Pattern.CASE_INSENSITIVE).getMatch(0);
         return match;
     }
 
@@ -620,6 +626,7 @@ public class Multi extends IExtraction {
     public boolean isArchivSupported(String file) {
         if (file.matches(PATTERN_RAR_MULTI)) return true;
         if (file.matches(PATTERN_RAR)) return true;
+        if (file.matches(PATTERN_RAR_MULTI2)) return true;
         if (file.matches(PATTERN_ZIP)) return true;
         if (file.matches(PATTERN_7Z)) return true;
         if (file.matches(PATTERN_7Z_PART)) return true;
@@ -634,7 +641,7 @@ public class Multi extends IExtraction {
         // Deleteing rar recovery volumes
         if (archive.getExitCode() == ExtractionControllerConstants.EXIT_CODE_SUCCESS && archive.getFirstArchiveFile().getFilePath().matches(PATTERN_RAR_MULTI)) {
             for (ArchiveFile link : archive.getArchiveFiles()) {
-                File f = new File(link.getFilePath().replace(".rar", ".rev"));
+                File f = archive.getFactory().toFile(link.getFilePath().replace(".rar", ".rev"));
                 if (f.exists()) {
                     logger.info("Deleteing rar recovery volume " + f.getAbsolutePath());
                     if (!f.delete()) {
@@ -762,6 +769,7 @@ public class Multi extends IExtraction {
         List<Integer> erg = new ArrayList<Integer>();
         for (ArchiveFile l : archive.getArchiveFiles()) {
             String e = "";
+            String name = l.getName();
             if ((e = new Regex(l.getFilePath(), getpartid).getMatch(0)) != null) {
                 int p = Integer.parseInt(e);
 
@@ -779,13 +787,14 @@ public class Multi extends IExtraction {
                 missing.add(part);
             }
         }
-
-        if (new File(first).length() <= new File(new File(first).getParent() + File.separator + getArchiveName(firstdl) + new Regex(first, getwhole).getMatch(0) + StringFormatter.fillString(last + "", "0", "", length) + postfix).length()) {
+        File firstFile = archive.getFactory().toFile(first);
+        File lastFile = new File(firstFile.getParent() + File.separator + getArchiveName(firstdl) + new Regex(first, getwhole).getMatch(0) + StringFormatter.fillString(last + "", "0", "", length) + postfix);
+        // ignore this check if both files do not exist
+        if ((firstFile.exists() || lastFile.exists()) && firstFile.length() <= lastFile.length()) {
             String part = getArchiveName(firstdl) + new Regex(first, getwhole).getMatch(0) + StringFormatter.fillString(last++ + "", "0", "", length) + postfix;
             missing.add(part);
         }
 
         return missing;
     }
-
 }

@@ -62,8 +62,8 @@ public class HJSplit extends IExtraction {
 
     @Override
     public void extract() {
-        File f = new File(archive.getFirstArchiveFile().getFilePath().replaceFirst("\\.[\\d]+$", ""));
-        String extension = SplitUtil.getCutKillerExtension(new File(archive.getFirstArchiveFile().getFilePath()), archive.getArchiveFiles().size());
+        File f = archive.getFactory().toFile(archive.getFirstArchiveFile().getFilePath().replaceFirst("\\.[\\d]+$", ""));
+        String extension = SplitUtil.getCutKillerExtension(archive.getFactory().toFile(archive.getFirstArchiveFile().getFilePath()), archive.getArchiveFiles().size());
         boolean ret;
 
         if (extension != null) {
@@ -94,7 +94,7 @@ public class HJSplit extends IExtraction {
     }
 
     public String getArchiveName(ArchiveFile link) {
-        return new File(link.getFilePath()).getName().replaceFirst("\\.[\\d]+$", "");
+        return archive.getFactory().toFile(link.getFilePath()).getName().replaceFirst("\\.[\\d]+$", "");
     }
 
     public boolean isArchivSupported(String file) {
@@ -104,7 +104,7 @@ public class HJSplit extends IExtraction {
             } else {
                 // TODO
 
-                Archive a = buildArchive(new FileArchiveFactory(new File(file)));
+                Archive a = buildArchive(new FileArchiveFactory(archive.getFactory().toFile(file)));
                 if (a.getFirstArchiveFile() == null || a.getArchiveFiles().size() <= 1) {
                     return false;
                 } else {

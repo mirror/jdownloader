@@ -8,6 +8,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
@@ -21,32 +22,20 @@ public class ValidateArchiveAction extends AppAction {
         setName(_GUI._.ValidateArchiveAction_ValidateArchiveAction_object_());
         setIconKey("archive");
         this.selection = LinkTreeUtils.getSelectedChildren(selection);
-        setEnabled(false);
+        setEnabled(true);
         extractor = (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
-        for (CrawledLink l : this.selection) {
-
-            // if (extractor.isFilenameSupported(l.getName())) {
-            // IExtraction ext = extractor.getExtractorByFilename(l.getName());
-            // // ext.buildArchive(null);
-            //
-            // setEnabled(true);
-            // break;
-            // }
-        }
 
     }
 
     public void actionPerformed(ActionEvent e) {
         for (CrawledLink l : this.selection) {
-
-            // if (extractor.isFilenameSupported(l.getName())) {
-            // IExtraction ext = extractor.getExtractorByFilename(l.getName());
-            // // ext.buildArchive(null);
-            // Matcher archiveName = ext.getMatcher();
-            // Archive archive = ext.System.out.println(1);
-            // }
+            if (extractor.isLinkSupported(l.getName())) {
+                Archive archive = extractor.buildArchive(new CrawledLinkFactory(l));
+                System.out.println(archive);
+                boolean compl = archive.isComplete();
+                System.out.println(compl);
+            }
         }
-
     }
 
 }

@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.extraction;
 
+import java.io.File;
 import java.util.Collection;
 
 public interface ArchiveFactory extends ArchiveFile {
@@ -31,5 +32,7 @@ public interface ArchiveFactory extends ArchiveFile {
     String createExtractSubPath(String path, Archive archiv);
 
     Archive createArchive();
+
+    File toFile(String path);
 
 }

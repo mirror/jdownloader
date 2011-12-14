@@ -124,4 +124,8 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
         return null;
     }
 
+    public File toFile(String path) {
+        return new File(path);
+    }
+
 }
