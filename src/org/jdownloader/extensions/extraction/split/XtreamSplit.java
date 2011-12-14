@@ -32,12 +32,13 @@ import java.util.List;
 
 import jd.config.ConfigContainer;
 import jd.controlling.JSonWrapper;
-import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.ArchiveFactory;
+import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
 
@@ -57,19 +58,20 @@ public class XtreamSplit extends IExtraction {
     private HashMap<String, String> hashes      = new HashMap<String, String>();
     private List<String>            files       = new ArrayList<String>();
 
-    public Archive buildArchive(DownloadLink link) {
-        String pattern = "^" + Regex.escape(link.getFileOutput().replaceAll("(?i)\\.[\\d]+\\.xtm$", "")) + "\\.[\\d]+\\.xtm$";
+    public Archive buildArchive(ArchiveFactory link) {
+        String pattern = "^" + Regex.escape(link.getFilePath().replaceAll("(?i)\\.[\\d]+\\.xtm$", "")) + "\\.[\\d]+\\.xtm$";
         Archive a = SplitUtil.buildArchive(link, pattern, ".*\\.001\\.xtm$");
         a.setExtractor(this);
         return a;
     }
 
-    @Override
-    public Archive buildDummyArchive(String file) {
-        Archive a = SplitUtil.buildDummyArchive(file, ".*\\.[\\d]+\\.xtm$", ".*\\.001\\.xtm$");
-        a.setExtractor(this);
-        return a;
-    }
+    // @Override
+    // public Archive buildDummyArchive(String file) {
+    // Archive a = SplitUtil.buildDummyArchive(file, ".*\\.[\\d]+\\.xtm$",
+    // ".*\\.001\\.xtm$");
+    // a.setExtractor(this);
+    // return a;
+    // }
 
     @Override
     public boolean findPassword(String password) {
@@ -170,8 +172,8 @@ public class XtreamSplit extends IExtraction {
                     final String calculatedHash = HexFormatter.byteArrayToHex(md.digest()).toUpperCase();
                     final String hashStoredWithinFiles = hashes.get(source.getAbsolutePath());
                     if (hashStoredWithinFiles != null && !hashStoredWithinFiles.equals(calculatedHash)) {
-                        for (DownloadLink link : archive.getDownloadLinks()) {
-                            if (link.getFileOutput().equals(source.getAbsolutePath())) {
+                        for (ArchiveFile link : archive.getArchiveFiles()) {
+                            if (link.getFilePath().equals(source.getAbsolutePath())) {
                                 archive.addCrcError(link);
                                 break;
                             }
@@ -224,16 +226,16 @@ public class XtreamSplit extends IExtraction {
 
     @Override
     public boolean prepare() {
-        for (DownloadLink l : archive.getDownloadLinks()) {
-            files.add(l.getFileOutput());
+        for (ArchiveFile l : archive.getArchiveFiles()) {
+            files.add(l.getFilePath());
         }
 
         Collections.sort(files);
 
-        file = new File(archive.getFirstDownloadLink().getFileOutput().replaceFirst("\\.[\\d]+\\.xtm$", ""));
+        file = new File(archive.getFirstArchiveFile().getFilePath().replaceFirst("\\.[\\d]+\\.xtm$", ""));
         BufferedInputStream in = null;
         try {
-            in = new BufferedInputStream(new FileInputStream(archive.getFirstDownloadLink().getFileOutput()));
+            in = new BufferedInputStream(new FileInputStream(archive.getFirstArchiveFile().getFilePath()));
             // Skip useless bytes
             in.skip(40);
 
@@ -285,8 +287,8 @@ public class XtreamSplit extends IExtraction {
     public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
     }
 
-    public String getArchiveName(DownloadLink link) {
-        return new File(link.getFileOutput()).getName().replaceFirst("\\.[\\d]+\\.xtm$", "");
+    public String getArchiveName(ArchiveFile link) {
+        return new File(link.getFilePath()).getName().replaceFirst("\\.[\\d]+\\.xtm$", "");
     }
 
     public boolean isArchivSupported(String file) {
@@ -307,13 +309,13 @@ public class XtreamSplit extends IExtraction {
         List<String> missing = new ArrayList<String>();
         List<Integer> erg = new ArrayList<Integer>();
 
-        Regex r = new Regex(archive.getFirstDownloadLink().getFileOutput(), ".*\\.([\\d]+)\\.xtm$");
+        Regex r = new Regex(archive.getFirstArchiveFile().getFilePath(), ".*\\.([\\d]+)\\.xtm$");
         int length = r.getMatch(0).length();
-        String archivename = getArchiveName(archive.getFirstDownloadLink());
+        String archivename = getArchiveName(archive.getFirstArchiveFile());
 
-        for (DownloadLink l : archive.getDownloadLinks()) {
+        for (ArchiveFile l : archive.getArchiveFiles()) {
             String e = "";
-            if ((e = new Regex(l.getFileOutput(), ".*\\.([\\d]+)\\.xtm$").getMatch(0)) != null) {
+            if ((e = new Regex(l.getFilePath(), ".*\\.([\\d]+)\\.xtm$").getMatch(0)) != null) {
                 int p = Integer.parseInt(e);
 
                 if (p > last) last = p;

@@ -57,6 +57,7 @@ public class ContextMenuFactory {
 
         p.add(new FileCheckAction(selection).toContextMenuAction());
         p.add(new CreateDLCAction(selection).toContextMenuAction());
+        p.add(new ValidateArchiveAction(selection).toContextMenuAction());
         p.add(new JSeparator());
         p.add(new MergeToPackageAction(selection).toContextMenuAction());
         p.add(new SplitPackagesByHost(contextObject, selection).toContextMenuAction());

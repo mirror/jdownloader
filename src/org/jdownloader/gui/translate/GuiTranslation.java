@@ -3382,4 +3382,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Captchas must be entered manually" })
     String FilterRule_toString_autocaptcha_not();
 
+    @Default(lngs = { "en" }, values = { "Validate Split Archives" })
+    String ValidateArchiveAction_ValidateArchiveAction_object_();
+
 }

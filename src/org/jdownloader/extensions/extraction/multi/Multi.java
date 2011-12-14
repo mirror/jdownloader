@@ -26,12 +26,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.nutils.io.FileSignatures;
 import jd.nutils.io.Signature;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IInStream;
@@ -45,9 +41,11 @@ import net.sf.sevenzipjbinding.impl.VolumedArchiveInStream;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.DummyDownloadLink;
+import org.jdownloader.extensions.extraction.ArchiveFactory;
+import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
 
@@ -59,13 +57,14 @@ import org.jdownloader.extensions.extraction.IExtraction;
  */
 public class Multi extends IExtraction {
 
-    private static final String      PatternRar         = "(?i).*\\.rar$";
-    private static final String      PatternRarMulti    = "(?i).*\\.pa?r?t?\\.?\\d+.rar$";
-    private static final String      PatternZip         = "(?i).*\\.zip$";
-    private static final String      PatternTarGz       = "(?i).*\\.tar\\.gz$";
-    private static final String      PatternTarBz2      = "(?i).*\\.tar\\.bz2$";
-    private static final String      Pattern7z          = "(?i).*\\.7z$";
-    private static final String      Pattern7zMulti     = "(?i).*\\.7z\\.\\d+$";
+    private static final String      PATTERN_RAR        = "(?i).*\\.rar$";
+    private static final String      PATTERN_RAR_MULTI  = "(?i).*\\.pa?r?t?\\.?\\d+.rar$";
+    private static final String      PATTERN_ZIP        = "(?i).*\\.zip$";
+    private static final String      PATTERN_TAR        = "(?i).*\\.tar$";
+    private static final String      PATTERN_TAR_GZ     = "(?i).*\\.tar\\.gz$";
+    private static final String      PATTERB_TAR_BZ2    = "(?i).*\\.tar\\.bz2$";
+    private static final String      PATTERN_7Z         = "(?i).*\\.7z$";
+    private static final String      PATTERN_7Z_PART    = "(?i).*\\.7z\\.\\d+$";
 
     private int                      crack;
     private ISevenZipInArchive       inArchive;
@@ -89,20 +88,20 @@ public class Multi extends IExtraction {
     }
 
     @Override
-    public Archive buildArchive(DownloadLink link) {
-        String file = link.getFileOutput();
-        Archive archive = new Archive();
+    public Archive buildArchive(ArchiveFactory link) {
+        String file = link.getFilePath();
+        Archive archive = link.createArchive();
         archive.setExtractor(this);
 
         String pattern = "";
-        ArrayList<DownloadLink> matches = new ArrayList<DownloadLink>();
+        ArrayList<ArchiveFile> matches = new ArrayList<ArchiveFile>();
 
-        if (file.matches(PatternRarMulti)) {
+        if (file.matches(PATTERN_RAR_MULTI)) {
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.pa?r?t?\\.?[0-9]+\\.rar$", "")) + "\\.pa?r?t?\\.?[0-9]+\\.rar$";
-        } else if (file.matches(PatternRar)) {
+        } else if (file.matches(PATTERN_RAR)) {
             matches.add(link);
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.rar$", "")) + "\\.r\\d+$";
-        } else if (file.matches(Pattern7zMulti)) {
+        } else if (file.matches(PATTERN_7Z_PART)) {
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.7z\\.\\d+$", "")) + "\\.7z\\.\\d+$";
         } else {
             matches.add(link);
@@ -119,65 +118,56 @@ public class Multi extends IExtraction {
         // pattern = pattern.replaceAll("(?i)\\.7z\\.\\d+$", "");
         // pattern = "^" + Regex.escape(pattern) + ".*";
 
-        if (!pattern.equals("")) {
-            if (link instanceof DummyDownloadLink) {
-                for (File f : new File(link.getFileOutput()).getParentFile().listFiles()) {
-                    if (f.isDirectory()) continue;
-                    if (new Regex(f.getAbsolutePath(), pattern, Pattern.CASE_INSENSITIVE).matches()) {
-                        matches.add(buildDownloadLinkFromFile(f.getAbsolutePath()));
-                    }
-                }
-            } else {
-                final Pattern pat = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
-                List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+        // if (!pattern.equals("")) {
+        // // if (link instanceof DummyArchiveFile) {
+        // // for (File f : new
+        // File(link.getFilePath()).getParentFile().listFiles()) {
+        // // if (f.isDirectory()) continue;
+        // // if (new Regex(f.getAbsolutePath(), pattern,
+        // Pattern.CASE_INSENSITIVE).matches()) {
+        // // matches.add(buildArchiveFileFromFile(f.getAbsolutePath()));
+        // // }
+        // // }
+        // // } else {
 
-                    public boolean isChildrenNodeFiltered(DownloadLink node) {
-                        return pat.matcher(node.getFileOutput()).matches();
-                    }
+        if (!StringUtils.isEmpty(pattern)) matches.addAll(link.createPartFileList(pattern));
 
-                    public int returnMaxResults() {
-                        return 0;
-                    }
-                });
-                matches.addAll(links);
-
-            }
-        }
-
-        archive.setDownloadLinks(matches);
+        archive.setArchiveFiles(matches);
 
         if (matches.size() == 1) {
             archive.setType(Archive.SINGLE_FILE);
-            archive.setFirstDownloadLink(link);
+            archive.setFirstArchiveFile(link);
         } else {
-            for (DownloadLink l : matches) {
-                if (archive.getFirstDownloadLink() == null && l.getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0]*1.rar$")) {
+            for (ArchiveFile l : matches) {
+                if (archive.getFirstArchiveFile() == null && l.getFilePath().matches("(?i).*\\.pa?r?t?\\.?[0]*1.rar$")) {
                     archive.setType(Archive.MULTI_RAR);
-                    archive.setFirstDownloadLink(l);
-                    if (l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
-                        /* this should help finding the link that got downloaded */
-                        continue;
-                    }
-                } else if (l.getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0]*0.rar$")) {
-                    archive.setType(Archive.MULTI_RAR);
-                    archive.setFirstDownloadLink(l);
-                    if (l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
+                    archive.setFirstArchiveFile(l);
+                    // l.isValid()
+                    if (!l.isValid()) {
                         /* this should help finding the link that got downloaded */
                         continue;
                     }
                     break;
-                } else if (l.getFileOutput().matches("(?i).*\\.rar$") && !l.getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0-9]+.*?.rar$")) {
+                } else if (l.getFilePath().matches("(?i).*\\.pa?r?t?\\.?[0]*0.rar$")) {
                     archive.setType(Archive.MULTI_RAR);
-                    archive.setFirstDownloadLink(l);
-                    if (l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
+                    archive.setFirstArchiveFile(l);
+                    if (!l.isValid()) {
                         /* this should help finding the link that got downloaded */
                         continue;
                     }
                     break;
-                } else if (l.getFileOutput().matches("(?i).*\\.7z\\.001$")) {
+                } else if (l.getFilePath().matches("(?i).*\\.rar$") && !l.getFilePath().matches("(?i).*\\.pa?r?t?\\.?[0-9]+.*?.rar$")) {
+                    archive.setType(Archive.MULTI_RAR);
+                    archive.setFirstArchiveFile(l);
+                    if (!l.isValid()) {
+                        /* this should help finding the link that got downloaded */
+                        continue;
+                    }
+                    break;
+                } else if (l.getFilePath().matches("(?i).*\\.7z\\.001$")) {
                     archive.setType(Archive.MULTI);
-                    archive.setFirstDownloadLink(l);
-                    if (l.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
+                    archive.setFirstArchiveFile(l);
+                    if (!l.isValid()) {
                         /* this should help finding the link that got downloaded */
                         continue;
                     }
@@ -190,42 +180,19 @@ public class Multi extends IExtraction {
     }
 
     /**
-     * Builds an Dummydownloadlink from an file.
+     * Builds an DummyArchiveFile from an file.
      * 
      * @param file
      *            The file from the harddisk.
-     * @return The Downloadlink.
+     * @return The ArchiveFile.
      */
-    private DownloadLink buildDownloadLinkFromFile(String file) {
-        File file0 = new File(file);
-        DummyDownloadLink link = new DummyDownloadLink(file0.getName());
-        link.setFile(file0);
-        return link;
-    }
-
-    @Override
-    public Archive buildDummyArchive(final String file) {
-        List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-
-            public boolean isChildrenNodeFiltered(DownloadLink node) {
-                if (node.getFileOutput().equals(file)) {
-                    if (node.getLinkStatus().hasStatus(LinkStatus.FINISHED)) return true;
-                }
-                return false;
-            }
-
-            public int returnMaxResults() {
-                return 1;
-            }
-        });
-        DownloadLink link = null;
-        if (links == null || links.size() == 0) {
-            link = buildDownloadLinkFromFile(file);
-        } else {
-            link = links.get(0);
-        }
-        return buildArchive(link);
-    }
+    // private ArchiveFile buildArchiveFileFromFile(String file) {
+    // File file0 = new File(file);
+    // DummyArchiveFile link = new DummyArchiveFile(file0.getName());
+    // link.setFile(file0);
+    // return link;
+    // }
+    //
 
     @Override
     public boolean findPassword(String password) {
@@ -248,7 +215,7 @@ public class Multi extends IExtraction {
                 }
 
                 multiopener = new MultiOpener(password);
-                IInStream inStream = new VolumedArchiveInStream(archive.getFirstDownloadLink().getFileOutput(), multiopener);
+                IInStream inStream = new VolumedArchiveInStream(archive.getFirstArchiveFile().getFilePath(), multiopener);
                 inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
             } else if (archive.getType() == Archive.MULTI_RAR) {
                 if (raropener != null) {
@@ -256,7 +223,7 @@ public class Multi extends IExtraction {
                 }
 
                 raropener = new RarOpener(password);
-                IInStream inStream = raropener.getStream(archive.getFirstDownloadLink().getFileOutput());
+                IInStream inStream = raropener.getStream(archive.getFirstArchiveFile().getFilePath());
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
             }
 
@@ -364,13 +331,23 @@ public class Multi extends IExtraction {
                 if (item == null || item.isFolder()) {
                     continue;
                 }
+                String path = item.getPath();
 
+                if (StringUtils.isEmpty(path)) {
+                    // example: test.tar.gz contains a test.tar file, that has
+                    // NO name. we create a dummy name here.
+                    String archivename = new File(archive.getFirstArchiveFile().getFilePath()).getName();
+                    int in = archivename.lastIndexOf(".");
+                    if (in > 0) {
+                        path = archivename.substring(0, in);
+                    }
+                }
                 if (filter(item.getPath())) {
-                    logger.info("Filtering file " + item.getPath() + " in " + archive.getFirstDownloadLink().getFileOutput());
+                    logger.info("Filtering file " + item.getPath() + " in " + archive.getFirstArchiveFile().getFilePath());
                     continue;
                 }
 
-                String filename = archive.getExtractTo().getAbsoluteFile() + File.separator + item.getPath();
+                String filename = archive.getExtractTo().getAbsoluteFile() + File.separator + path;
 
                 try {
                     filename = new String(filename.getBytes(), Charset.defaultCharset());
@@ -433,8 +410,8 @@ public class Multi extends IExtraction {
                 // if(item.getCRC() > 0 && !call.getComputedCRC().equals("0")) {
                 // if(!call.getComputedCRC().equals(Integer.toHexString(item.getCRC())))
                 // {
-                // for(DownloadLink link :
-                // getAffectedDownloadLinkFromArchvieFiles(item.getPath())) {
+                // for(ArchiveFile link :
+                // getAffectedArchiveFileFromArchvieFiles(item.getPath())) {
                 // archive.addCrcError(link);
                 // }
                 // archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
@@ -443,7 +420,7 @@ public class Multi extends IExtraction {
                 // }
 
                 if (item.getSize() != extractTo.length()) {
-                    for (DownloadLink link : getAffectedDownloadLinkFromArchvieFiles(item.getPath())) {
+                    for (ArchiveFile link : getAffectedArchiveFileFromArchvieFiles(item.getPath())) {
                         archive.addCrcError(link);
                     }
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
@@ -467,26 +444,26 @@ public class Multi extends IExtraction {
     }
 
     /**
-     * Returns the downloadlinks in which the given extracted file is present.
+     * Returns the ArchiveFiles in which the given extracted file is present.
      * Works only with Rar multipart files.
      * 
      * @param path
      *            The extracted file.
-     * @return The downloadlinks.
+     * @return The ArchiveFiles.
      * @throws FileNotFoundException
      * @throws SevenZipException
      */
-    private List<DownloadLink> getAffectedDownloadLinkFromArchvieFiles(String path) throws FileNotFoundException, SevenZipException {
-        ArrayList<DownloadLink> result = new ArrayList<DownloadLink>();
+    private List<ArchiveFile> getAffectedArchiveFileFromArchvieFiles(String path) throws FileNotFoundException, SevenZipException {
+        ArrayList<ArchiveFile> result = new ArrayList<ArchiveFile>();
 
         if (archive.getType() == Archive.MULTI || archive.getType() == Archive.SINGLE_FILE) {
-            result = archive.getDownloadLinks();
+            result = archive.getArchiveFiles();
             return result;
         }
 
         ISevenZipInArchive in;
-        for (DownloadLink link : archive.getDownloadLinks()) {
-            in = SevenZip.openInArchive(null, new RandomAccessFileInStream(new RandomAccessFile(link.getFileOutput(), "r")));
+        for (ArchiveFile link : archive.getArchiveFiles()) {
+            in = SevenZip.openInArchive(null, new RandomAccessFileInStream(new RandomAccessFile(link.getFilePath(), "r")));
 
             for (ISimpleInArchiveItem item : in.getSimpleInterface().getArchiveItems()) {
                 if (item.getPath().equals(path)) {
@@ -532,11 +509,11 @@ public class Multi extends IExtraction {
     @Override
     public boolean prepare() {
         try {
-            if (archive.getFirstDownloadLink() instanceof DummyDownloadLink) {
-                Archive a = buildArchive(archive.getFirstDownloadLink());
-                archive.setDownloadLinks(a.getDownloadLinks());
-                archive.setType(a.getType());
-            }
+            // if (archive.getFirstArchiveFile() instanceof DummyArchiveFile) {
+            // Archive a = buildArchive(archive.getFirstArchiveFile());
+            // archive.setArchiveFiles(a.getArchiveFiles());
+            // archive.setType(a.getType());
+            // }
 
             String[] entries = config.getBlacklistPatterns();
             if (entries != null) {
@@ -548,27 +525,27 @@ public class Multi extends IExtraction {
             }
 
             if (archive.getType() == Archive.SINGLE_FILE) {
-                if (new Regex(archive.getFirstDownloadLink().getFileOutput(), "(?i)(.*)\\.rar$", Pattern.CASE_INSENSITIVE).matches()) {
+                if (new Regex(archive.getFirstArchiveFile().getFilePath(), "(?i)(.*)\\.rar$", Pattern.CASE_INSENSITIVE).matches()) {
                     format = ArchiveFormat.RAR;
-                } else if (new Regex(archive.getFirstDownloadLink().getFileOutput(), "(?i)(.*)\\.7z$", Pattern.CASE_INSENSITIVE).matches()) {
+                } else if (new Regex(archive.getFirstArchiveFile().getFilePath(), "(?i)(.*)\\.7z$", Pattern.CASE_INSENSITIVE).matches()) {
                     format = ArchiveFormat.SEVEN_ZIP;
-                } else if (new Regex(archive.getFirstDownloadLink().getFileOutput(), "(?i)(.*)\\.zip$", Pattern.CASE_INSENSITIVE).matches()) {
+                } else if (new Regex(archive.getFirstArchiveFile().getFilePath(), "(?i)(.*)\\.zip$", Pattern.CASE_INSENSITIVE).matches()) {
                     format = ArchiveFormat.ZIP;
-                } else if (new Regex(archive.getFirstDownloadLink().getFileOutput(), "(?i)(.*)\\.tar\\.gz$", Pattern.CASE_INSENSITIVE).matches()) {
+                } else if (new Regex(archive.getFirstArchiveFile().getFilePath(), "(?i)(.*)\\.tar\\.gz$", Pattern.CASE_INSENSITIVE).matches()) {
                     format = ArchiveFormat.GZIP;
-                } else if (new Regex(archive.getFirstDownloadLink().getFileOutput(), "(?i)(.*)\\.tar\\.bz2$", Pattern.CASE_INSENSITIVE).matches()) {
+                } else if (new Regex(archive.getFirstArchiveFile().getFilePath(), "(?i)(.*)\\.tar\\.bz2$", Pattern.CASE_INSENSITIVE).matches()) {
                     format = ArchiveFormat.BZIP2;
                 }
 
-                stream = new RandomAccessFileInStream(new RandomAccessFile(archive.getFirstDownloadLink().getFileOutput(), "r"));
+                stream = new RandomAccessFileInStream(new RandomAccessFile(archive.getFirstArchiveFile().getFilePath(), "r"));
                 inArchive = SevenZip.openInArchive(format, stream);
             } else if (archive.getType() == Archive.MULTI) {
                 multiopener = new MultiOpener();
-                IInStream inStream = new VolumedArchiveInStream(archive.getFirstDownloadLink().getFileOutput(), multiopener);
+                IInStream inStream = new VolumedArchiveInStream(archive.getFirstArchiveFile().getFilePath(), multiopener);
                 inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
             } else if (archive.getType() == Archive.MULTI_RAR) {
                 raropener = new RarOpener();
-                IInStream inStream = raropener.getStream(archive.getFirstDownloadLink().getFileOutput());
+                IInStream inStream = raropener.getStream(archive.getFirstArchiveFile().getFilePath());
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
             } else {
                 return false;
@@ -620,43 +597,44 @@ public class Multi extends IExtraction {
     }
 
     @Override
-    public String getArchiveName(DownloadLink link) {
-        String match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.pa?r?t?\\.?[0-9]+.rar$", Pattern.CASE_INSENSITIVE).getMatch(0);
+    public String getArchiveName(ArchiveFile link) {
+        String match = new Regex(new File(link.getFilePath()).getName(), "(?i)(.*)\\.pa?r?t?\\.?[0-9]+.rar$", Pattern.CASE_INSENSITIVE).getMatch(0);
         if (match != null) return match;
-        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.rar$", Pattern.CASE_INSENSITIVE).getMatch(0);
+        match = new Regex(new File(link.getFilePath()).getName(), "(?i)(.*)\\.rar$", Pattern.CASE_INSENSITIVE).getMatch(0);
         if (match != null) return match;
-        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.zip$", Pattern.CASE_INSENSITIVE).getMatch(0);
+        match = new Regex(new File(link.getFilePath()).getName(), "(?i)(.*)\\.zip$", Pattern.CASE_INSENSITIVE).getMatch(0);
         if (match != null) return match;
-        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.7z$", Pattern.CASE_INSENSITIVE).getMatch(0);
+        match = new Regex(new File(link.getFilePath()).getName(), "(?i)(.*)\\.7z$", Pattern.CASE_INSENSITIVE).getMatch(0);
         if (match != null) return match;
-        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.7z\\.\\d+$", Pattern.CASE_INSENSITIVE).getMatch(0);
+        match = new Regex(new File(link.getFilePath()).getName(), "(?i)(.*)\\.7z\\.\\d+$", Pattern.CASE_INSENSITIVE).getMatch(0);
         if (match != null) return match;
-        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.tar\\.gz$", Pattern.CASE_INSENSITIVE).getMatch(0);
+        match = new Regex(new File(link.getFilePath()).getName(), "(?i)(.*)\\.tar\\.gz$", Pattern.CASE_INSENSITIVE).getMatch(0);
         if (match != null) return match;
-        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.tar\\.bz2$", Pattern.CASE_INSENSITIVE).getMatch(0);
+        match = new Regex(new File(link.getFilePath()).getName(), "(?i)(.*)\\.tar\\.bz2$", Pattern.CASE_INSENSITIVE).getMatch(0);
         if (match != null) return match;
-        match = new Regex(new File(link.getFileOutput()).getName(), "(?i)(.*)\\.r\\d+$", Pattern.CASE_INSENSITIVE).getMatch(0);
+        match = new Regex(new File(link.getFilePath()).getName(), "(?i)(.*)\\.r\\d+$", Pattern.CASE_INSENSITIVE).getMatch(0);
         return match;
     }
 
     @Override
     public boolean isArchivSupported(String file) {
-        if (file.matches(PatternRarMulti)) return true;
-        if (file.matches(PatternRar)) return true;
-        if (file.matches(PatternZip)) return true;
-        if (file.matches(Pattern7z)) return true;
-        if (file.matches(Pattern7zMulti)) return true;
-        if (file.matches(PatternTarGz)) return true;
-        if (file.matches(PatternTarBz2)) return true;
+        if (file.matches(PATTERN_RAR_MULTI)) return true;
+        if (file.matches(PATTERN_RAR)) return true;
+        if (file.matches(PATTERN_ZIP)) return true;
+        if (file.matches(PATTERN_7Z)) return true;
+        if (file.matches(PATTERN_7Z_PART)) return true;
+        if (file.matches(PATTERN_TAR)) return true;
+        if (file.matches(PATTERN_TAR_GZ)) return true;
+        if (file.matches(PATTERB_TAR_BZ2)) return true;
         return false;
     }
 
     @Override
     public void close() {
         // Deleteing rar recovery volumes
-        if (archive.getExitCode() == ExtractionControllerConstants.EXIT_CODE_SUCCESS && archive.getFirstDownloadLink().getFileOutput().matches(PatternRarMulti)) {
-            for (DownloadLink link : archive.getDownloadLinks()) {
-                File f = new File(link.getFileOutput().replace(".rar", ".rev"));
+        if (archive.getExitCode() == ExtractionControllerConstants.EXIT_CODE_SUCCESS && archive.getFirstArchiveFile().getFilePath().matches(PATTERN_RAR_MULTI)) {
+            for (ArchiveFile link : archive.getArchiveFiles()) {
+                File f = new File(link.getFilePath().replace(".rar", ".rev"));
                 if (f.exists()) {
                     logger.info("Deleteing rar recovery volume " + f.getAbsolutePath());
                     if (!f.delete()) {
@@ -733,7 +711,7 @@ public class Multi extends IExtraction {
     public List<String> checkComplete(Archive archive) {
         List<String> missing = new ArrayList<String>();
 
-        if (archive.getType() == Archive.SINGLE_FILE || archive.getDownloadLinks().size() < 2) return missing;
+        if (archive.getType() == Archive.SINGLE_FILE || archive.getArchiveFiles().size() < 2) return missing;
 
         int last = 1;
         int length = 0;
@@ -742,26 +720,26 @@ public class Multi extends IExtraction {
         String getwhole = "";
         String postfix = "";
         String first = "";
-        DownloadLink firstdl = null;
+        ArchiveFile firstdl = null;
 
         switch (archive.getType()) {
         case Archive.MULTI:
-            firstdl = archive.getFirstDownloadLink();
+            firstdl = archive.getFirstArchiveFile();
             getpartid = "\\.7z\\.?(\\d+)";
             getwhole = "(\\.7z\\.?)(\\d+)";
             break;
         case Archive.MULTI_RAR:
-            if (archive.getFirstDownloadLink().getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0]*1.rar$") || archive.getFirstDownloadLink().getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0]*0.rar$")) {
+            if (archive.getFirstArchiveFile().getFilePath().matches("(?i).*\\.pa?r?t?\\.?[0]*1.rar$") || archive.getFirstArchiveFile().getFilePath().matches("(?i).*\\.pa?r?t?\\.?[0]*0.rar$")) {
                 getpartid = "\\.pa?r?t?\\.?(\\d+)\\.";
                 getwhole = "(\\.pa?r?t?\\.?)(\\d+)\\.";
                 postfix = ".rar";
-                firstdl = archive.getFirstDownloadLink();
-            } else if (archive.getFirstDownloadLink().getFileOutput().matches("(?i).*\\.rar$") && !archive.getFirstDownloadLink().getFileOutput().matches("(?i).*\\.pa?r?t?\\.?[0-9]+.*?.rar$")) {
+                firstdl = archive.getFirstArchiveFile();
+            } else if (archive.getFirstArchiveFile().getFilePath().matches("(?i).*\\.rar$") && !archive.getFirstArchiveFile().getFilePath().matches("(?i).*\\.pa?r?t?\\.?[0-9]+.*?.rar$")) {
                 start = 0;
                 getpartid = "\\.r(\\d+)";
                 getwhole = "(\\.r)(\\d+)";
-                for (DownloadLink l : archive.getDownloadLinks()) {
-                    if (l.getFileOutput().endsWith(".r00")) {
+                for (ArchiveFile l : archive.getArchiveFiles()) {
+                    if (l.getFilePath().endsWith(".r00")) {
                         firstdl = l;
                         break;
                     }
@@ -772,9 +750,9 @@ public class Multi extends IExtraction {
             return missing;
         }
 
-        first = firstdl.getFileOutput();
+        first = firstdl.getFilePath();
 
-        if (archive.getDownloadLinks().size() == 1) {
+        if (archive.getArchiveFiles().size() == 1) {
             String part = getArchiveName(firstdl) + new Regex(first, getwhole).getMatch(0) + StringFormatter.fillString(last++ + "", "0", "", length) + postfix;
             missing.add(part);
             return missing;
@@ -782,9 +760,9 @@ public class Multi extends IExtraction {
 
         // Just get partnumbers to speed up the checking.
         List<Integer> erg = new ArrayList<Integer>();
-        for (DownloadLink l : archive.getDownloadLinks()) {
+        for (ArchiveFile l : archive.getArchiveFiles()) {
             String e = "";
-            if ((e = new Regex(l.getFileOutput(), getpartid).getMatch(0)) != null) {
+            if ((e = new Regex(l.getFilePath(), getpartid).getMatch(0)) != null) {
                 int p = Integer.parseInt(e);
 
                 if (p > last) last = p;

@@ -82,17 +82,7 @@ public abstract class IExtraction {
      *            An complete downloaded file.
      * @return An {@link Archive} that contains all {@link Downloadlink}s.
      */
-    public abstract Archive buildArchive(DownloadLink link);
-
-    /**
-     * Similar to the buildArchive, but contains only dummy {@link DownloadLink}
-     * s. It's used to extract arcvhivs that are not in the downloadlist.
-     * 
-     * @param file
-     *            Path the first archive.
-     * @return An {@link Archive} that contains all dummy {@link Downloadlink}s.
-     */
-    public abstract Archive buildDummyArchive(String file);
+    public abstract Archive buildArchive(ArchiveFactory link);
 
     /**
      * Checks a single password if the archive is encrypted with it.
@@ -141,7 +131,7 @@ public abstract class IExtraction {
      *            The {@link Archive}.
      * @return The name of the archive.
      */
-    public abstract String getArchiveName(DownloadLink link);
+    public abstract String getArchiveName(ArchiveFile link);
 
     /**
      * Checks if the file is supported.

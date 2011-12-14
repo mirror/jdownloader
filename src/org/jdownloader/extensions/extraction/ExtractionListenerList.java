@@ -23,9 +23,6 @@ import java.util.logging.Logger;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginProgress;
 
 import org.jdownloader.extensions.extraction.translate.T;
 
@@ -48,37 +45,37 @@ public class ExtractionListenerList implements ExtractionListener {
 
         // if (controller.getProgressController() != null) return;
 
-        LinkStatus ls = controller.getArchiv().getFirstDownloadLink().getLinkStatus();
         // Falls der link entfernt wird während dem entpacken
-        // if (controller.getArchiv().getFirstDownloadLink().getFilePackage() ==
+        // if (controller.getArchiv().getFirstArchiveFile().getFilePackage() ==
         // FilePackage.getDefaultFilePackage() &&
         // controller.getProgressController() == null) {
         // logger.warning("LINK GOT REMOVED_: " +
-        // controller.getArchiv().getFirstDownloadLink());
+        // controller.getArchiv().getFirstArchiveFile());
         // ProgressController progress = new
-        // ProgressController(T._.plugins_optional_extraction_progress_extractfile(controller.getArchiv().getFirstDownloadLink().getFileOutput()),
+        // ProgressController(T._.plugins_optional_extraction_progress_extractfile(controller.getArchiv().getFirstArchiveFile().getFileOutput()),
         // 100, ex.getIconKey());
         // controller.setProgressController(progress);
         // }
 
         switch (event.getType()) {
         case QUEUED:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_queued());
-            controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
+
+            controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_queued());
+
             break;
         case EXTRACTION_FAILED:
-            for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
+            for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                 if (link == null) continue;
-                LinkStatus lls = link.getLinkStatus();
 
                 if (controller.getException() != null) {
-                    lls.addStatus(LinkStatus.ERROR_POST_PROCESS);
-                    lls.setErrorMessage("Extract failed: " + controller.getException().getMessage());
-                    link.requestGuiUpdate();
+
+                    link.setStatus(ArchiveFile.Status.ERROR);
+                    link.setMessage("Extract failed: " + controller.getException().getMessage());
+
                 } else {
-                    lls.addStatus(LinkStatus.ERROR_POST_PROCESS);
-                    lls.setErrorMessage("Extract failed");
-                    link.requestGuiUpdate();
+                    link.setStatus(ArchiveFile.Status.ERROR);
+                    link.setMessage("Extract failed");
+
                 }
             }
 
@@ -94,13 +91,16 @@ public class ExtractionListenerList implements ExtractionListener {
             ex.onFinished(controller);
             break;
         case PASSWORD_NEEDED_TO_CONTINUE:
-            controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
+            // ??
+            // //
+            // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
 
             if (ex.getSettings().isAskForUnknownPasswordsEnabled()) {
-                String pass = UserIO.getInstance().requestInputDialog(0, T._.plugins_optional_extraction_askForPassword(controller.getArchiv().getFirstDownloadLink().getName()), "");
+                String pass = UserIO.getInstance().requestInputDialog(0, T._.plugins_optional_extraction_askForPassword(controller.getArchiv().getFirstArchiveFile().getName()), "");
                 if (pass == null || pass.length() == 0) {
-                    ls.addStatus(LinkStatus.ERROR_POST_PROCESS);
-                    ls.setStatusText(T._.plugins_optional_extraction_status_extractfailedpass());
+
+                    controller.getArchiv().getFirstArchiveFile().setStatus(ArchiveFile.Status.ERROR);
+                    controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_extractfailedpass());
                     ex.onFinished(controller);
                     break;
                 }
@@ -108,55 +108,48 @@ public class ExtractionListenerList implements ExtractionListener {
             }
             break;
         case START_CRACK_PASSWORD:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_crackingpass());
-            controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
+            controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_crackingpass());
+            // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
             break;
         case START:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_openingarchive());
-            controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
+            controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_openingarchive());
+            // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
             break;
         case OPEN_ARCHIVE_SUCCESS:
             ex.assignRealDownloadDir(controller);
             break;
         case PASSWORD_FOUND:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_passfound());
-            controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
-            controller.getArchiv().getFirstDownloadLink().setPluginProgress(null);
+            controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_passfound());
+            // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
+            controller.getArchiv().getFirstArchiveFile().setProgress(0, 0, null);
             break;
         case PASSWORT_CRACKING:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_crackingpass());
-            if (controller.getArchiv().getFirstDownloadLink().getPluginProgress() == null) {
-                controller.getArchiv().getFirstDownloadLink().setPluginProgress(new PluginProgress(controller.getCrackProgress(), controller.getPasswordListSize(), Color.GREEN.darker()));
-            } else {
-                controller.getArchiv().getFirstDownloadLink().getPluginProgress().setCurrent(controller.getCrackProgress());
-            }
-            controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
+            controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_crackingpass());
+
+            controller.getArchiv().getFirstArchiveFile().setProgress(controller.getCrackProgress(), controller.getPasswordListSize(), Color.GREEN.darker());
+
+            // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
             break;
         case EXTRACTING:
-            controller.getArchiv().getFirstDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_extracting());
-            if (controller.getArchiv().getFirstDownloadLink().getPluginProgress() == null) {
-                controller.getArchiv().getFirstDownloadLink().setPluginProgress(new PluginProgress(controller.getArchiv().getExtracted(), controller.getArchiv().getSize(), Color.YELLOW.darker()));
-            } else {
-                controller.getArchiv().getFirstDownloadLink().getPluginProgress().setCurrent(controller.getArchiv().getExtracted());
-            }
-            controller.getArchiv().getFirstDownloadLink().requestGuiUpdate();
+            controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_extracting());
+
+            controller.getArchiv().getFirstArchiveFile().setProgress(controller.getArchiv().getExtracted(), controller.getArchiv().getSize(), Color.YELLOW.darker());
+
+            // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
             break;
         case EXTRACTION_FAILED_CRC:
             if (controller.getArchiv().getCrcError().size() != 0) {
-                for (DownloadLink link : controller.getArchiv().getCrcError()) {
+                for (ArchiveFile link : controller.getArchiv().getCrcError()) {
                     if (link == null) continue;
-                    link.getLinkStatus().removeStatus(LinkStatus.FINISHED);
-                    link.getLinkStatus().removeStatus(LinkStatus.ERROR_ALREADYEXISTS);
-                    link.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
-                    link.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
-                    link.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_crcerrorin(link.getName()));
-                    link.requestGuiUpdate();
+
+                    link.setStatus(ArchiveFile.Status.ERROR_CRC);
+
                 }
             } else {
-                for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
+                for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                     if (link == null) continue;
-                    link.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_error_extrfailedcrc());
-                    link.requestGuiUpdate();
+                    link.setMessage(T._.plugins_optional_extraction_error_extrfailedcrc());
+
                 }
             }
 
@@ -179,24 +172,19 @@ public class ExtractionListenerList implements ExtractionListener {
             }
             JDController.getInstance().fireControlEvent(new ControlEvent(controller, ControlEvent.CONTROL_ON_FILEOUTPUT, files));
 
-            for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
+            for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                 if (link == null) continue;
-                link.getLinkStatus().addStatus(LinkStatus.FINISHED);
-                link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
-                link.getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_extractok());
-                link.requestGuiUpdate();
+                link.setStatus(ArchiveFile.Status.SUCCESSFUL);
+
             }
 
             controller.getArchiv().setActive(false);
             ex.onFinished(controller);
             break;
         case NOT_ENOUGH_SPACE:
-            for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
+            for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                 if (link == null) continue;
-
-                link.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                link.getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_notenoughspace());
-                link.requestGuiUpdate();
+                link.setStatus(ArchiveFile.Status.ERROR_NOT_ENOUGH_SPACE);
             }
 
             ex.onFinished(controller);
@@ -206,19 +194,16 @@ public class ExtractionListenerList implements ExtractionListener {
             break;
         case FILE_NOT_FOUND:
             if (controller.getArchiv().getCrcError().size() != 0) {
-                for (DownloadLink link : controller.getArchiv().getCrcError()) {
+                for (ArchiveFile link : controller.getArchiv().getCrcError()) {
                     if (link == null) continue;
-                    link.getLinkStatus().removeStatus(LinkStatus.FINISHED);
-                    link.getLinkStatus().removeStatus(LinkStatus.ERROR_ALREADYEXISTS);
-                    link.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
-                    link.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_filenotfound());
-                    link.requestGuiUpdate();
+                    link.setStatus(ArchiveFile.Status.ERRROR_FILE_NOT_FOUND);
+
                 }
             } else {
-                for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
+                for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                     if (link == null) continue;
-                    link.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_filenotfound());
-                    link.requestGuiUpdate();
+                    link.setMessage(T._.plugins_optional_extraction_filenotfound());
+
                 }
             }
 

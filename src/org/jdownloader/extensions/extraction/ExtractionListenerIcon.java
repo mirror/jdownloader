@@ -22,7 +22,7 @@ public class ExtractionListenerIcon implements ExtractionListener {
         case QUEUED:
             break;
         case START:
-            cacheJobName = con.getArchiv().getFirstDownloadLink().getName();
+            cacheJobName = con.getArchiv().getFirstArchiveFile().getName();
             cacheJobStatus = T._.plugins_optional_extraction_status_openingarchive();
             break;
         case START_CRACK_PASSWORD:

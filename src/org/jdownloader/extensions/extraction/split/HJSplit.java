@@ -22,13 +22,15 @@ import java.util.List;
 
 import jd.config.ConfigContainer;
 import jd.controlling.JSonWrapper;
-import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.ArchiveFactory;
+import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
+import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 
 /**
  * Joins HJSplit files.
@@ -38,19 +40,20 @@ import org.jdownloader.extensions.extraction.IExtraction;
  */
 public class HJSplit extends IExtraction {
 
-    public Archive buildArchive(DownloadLink link) {
-        String pattern = "^" + Regex.escape(link.getFileOutput().replaceAll("(?i)\\.[\\d]+$", "")) + "\\.[\\d]+$";
+    public Archive buildArchive(ArchiveFactory link) {
+        String pattern = "^" + Regex.escape(link.getFilePath().replaceAll("(?i)\\.[\\d]+$", "")) + "\\.[\\d]+$";
         Archive a = SplitUtil.buildArchive(link, pattern, ".*\\.001$");
         a.setExtractor(this);
         return a;
     }
 
-    @Override
-    public Archive buildDummyArchive(String file) {
-        Archive a = SplitUtil.buildDummyArchive(file, ".*\\.[\\d]+$", ".*\\.001$");
-        a.setExtractor(this);
-        return a;
-    }
+    // @Override
+    // public Archive buildDummyArchive(String file) {
+    // Archive a = SplitUtil.buildDummyArchive(file, ".*\\.[\\d]+$",
+    // ".*\\.001$");
+    // a.setExtractor(this);
+    // return a;
+    // }
 
     @Override
     public boolean findPassword(String password) {
@@ -59,8 +62,8 @@ public class HJSplit extends IExtraction {
 
     @Override
     public void extract() {
-        File f = new File(archive.getFirstDownloadLink().getFileOutput().replaceFirst("\\.[\\d]+$", ""));
-        String extension = SplitUtil.getCutKillerExtension(new File(archive.getFirstDownloadLink().getFileOutput()), archive.getDownloadLinks().size());
+        File f = new File(archive.getFirstArchiveFile().getFilePath().replaceFirst("\\.[\\d]+$", ""));
+        String extension = SplitUtil.getCutKillerExtension(new File(archive.getFirstArchiveFile().getFilePath()), archive.getArchiveFiles().size());
         boolean ret;
 
         if (extension != null) {
@@ -90,8 +93,8 @@ public class HJSplit extends IExtraction {
     public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
     }
 
-    public String getArchiveName(DownloadLink link) {
-        return new File(link.getFileOutput()).getName().replaceFirst("\\.[\\d]+$", "");
+    public String getArchiveName(ArchiveFile link) {
+        return new File(link.getFilePath()).getName().replaceFirst("\\.[\\d]+$", "");
     }
 
     public boolean isArchivSupported(String file) {
@@ -99,8 +102,10 @@ public class HJSplit extends IExtraction {
             if (file.matches("(?i).*\\.7z\\.\\d+$")) {
                 return false;
             } else {
-                Archive a = buildDummyArchive(file);
-                if (a.getFirstDownloadLink() == null || a.getDownloadLinks().size() <= 1) {
+                // TODO
+
+                Archive a = buildArchive(new FileArchiveFactory(new File(file)));
+                if (a.getFirstArchiveFile() == null || a.getArchiveFiles().size() <= 1) {
                     return false;
                 } else {
                     return true;
@@ -130,13 +135,13 @@ public class HJSplit extends IExtraction {
         List<String> missing = new ArrayList<String>();
         List<Integer> erg = new ArrayList<Integer>();
 
-        Regex r = new Regex(archive.getFirstDownloadLink().getFileOutput(), ".*\\.([\\d]+)$");
+        Regex r = new Regex(archive.getFirstArchiveFile().getFilePath(), ".*\\.([\\d]+)$");
         int length = r.getMatch(0).length();
-        String archivename = getArchiveName(archive.getFirstDownloadLink());
+        String archivename = getArchiveName(archive.getFirstArchiveFile());
 
-        for (DownloadLink l : archive.getDownloadLinks()) {
+        for (ArchiveFile l : archive.getArchiveFiles()) {
             String e = "";
-            if ((e = new Regex(l.getFileOutput(), ".*\\.([\\d]+)$").getMatch(0)) != null) {
+            if ((e = new Regex(l.getFilePath(), ".*\\.([\\d]+)$").getMatch(0)) != null) {
                 int p = Integer.parseInt(e);
 
                 if (p > last) last = p;

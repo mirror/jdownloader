@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.JDLogger;
-import jd.plugins.DownloadLink;
 
 /**
  * Contains information about the archivefile.
@@ -30,275 +29,293 @@ import jd.plugins.DownloadLink;
  * 
  */
 public class Archive {
-	/**
-	 * Is a single file archive.
-	 */
-	public static final int SINGLE_FILE = 0;
-	/**
-	 * Is a 7zip or HJSplit multipar archive.
-	 */
-	public static final int MULTI = 1;
-	/**
-	 * Is a multipart rar archive.
-	 */
-	public static final int MULTI_RAR = 2;
+    /**
+     * Is a single file archive.
+     */
+    public static final int        SINGLE_FILE      = 0;
+    /**
+     * Is a 7zip or HJSplit multipar archive.
+     */
+    public static final int        MULTI            = 1;
+    /**
+     * Is a multipart rar archive.
+     */
+    public static final int        MULTI_RAR        = 2;
 
-	/**
-	 * Extractionpath
-	 */
-	private File extractTo;
+    /**
+     * Extractionpath
+     */
+    private File                   extractTo;
 
-	/**
-	 * Encrypted archive
-	 */
-	private boolean protect = false;
+    /**
+     * Encrypted archive
+     */
+    private boolean                protect          = false;
 
-	/**
-	 * DownloadLinks of the archive.
-	 */
-	private ArrayList<DownloadLink> archives;
+    /**
+     * ArchiveFiles of the archive.
+     */
+    private ArrayList<ArchiveFile> archives;
 
-	/**
-	 * First part of the archives.
-	 */
-	private DownloadLink firstDownloadLink = null;
+    /**
+     * First part of the archives.
+     */
+    private ArchiveFile            firstArchiveFile = null;
 
-	/**
-	 * Overwrite existing files.
-	 */
-	private boolean overwriteFiles = false;
+    /**
+     * Overwrite existing files.
+     */
+    private boolean                overwriteFiles   = false;
 
-	/**
-	 * Password for the archive.
-	 */
-	private String password = "";
+    /**
+     * Password for the archive.
+     */
+    private String                 password         = "";
 
-	/**
-	 * Exitcode of the extrraction.
-	 */
-	private int exitCode = -1;
+    /**
+     * Exitcode of the extrraction.
+     */
+    private int                    exitCode         = -1;
 
-	/**
-	 * Status of the extraction.
-	 */
-	private int status = -1;
+    /**
+     * Status of the extraction.
+     */
+    private int                    status           = -1;
 
-	/**
-	 * Extractionprocress got interrupted
-	 */
-	private boolean gotInterrupted = false;
+    /**
+     * Extractionprocress got interrupted
+     */
+    private boolean                gotInterrupted   = false;
 
-	/**
-	 * Total size of the extracted ffiles.
-	 */
-	private long size = 0;
+    /**
+     * Total size of the extracted ffiles.
+     */
+    private long                   size             = 0;
 
-	/**
-	 * Size of the corrent extracted files.
-	 */
-	private long extracted = 0;
+    /**
+     * Size of the corrent extracted files.
+     */
+    private long                   extracted        = 0;
 
-	/**
-	 * Is extraction process active.
-	 */
-	private boolean active = false;
+    /**
+     * Is extraction process active.
+     */
+    private boolean                active           = false;
 
-	/**
-	 * Type of the archive.
-	 */
-	private int type = 0;
+    /**
+     * Type of the archive.
+     */
+    private int                    type             = 0;
 
-	/**
-	 * Number of files in the archive.
-	 */
-	private int numberOfFiles = 0;
+    /**
+     * Number of files in the archive.
+     */
+    private int                    numberOfFiles    = 0;
 
-	/**
-	 * Downloadlinks CRC error.
-	 */
-	private ArrayList<DownloadLink> crcError;
+    /**
+     * ArchiveFiles CRC error.
+     */
+    private ArrayList<ArchiveFile> crcError;
 
-	/**
-	 * List of the extracted files.
-	 */
-	private ArrayList<File> extractedFiles;
+    /**
+     * List of the extracted files.
+     */
+    private ArrayList<File>        extractedFiles;
 
-	/**
-	 * Indicates that the archive has no folders.
-	 */
-	private boolean noFolder = true;
+    /**
+     * Indicates that the archive has no folders.
+     */
+    private boolean                noFolder         = true;
 
-	/**
-	 * The extractor for the archive.
-	 */
-	private IExtraction extractor;
+    /**
+     * The extractor for the archive.
+     */
+    private IExtraction            extractor;
+    private ArchiveFactory         factory;
 
-	public Archive() {
-		archives = new ArrayList<DownloadLink>();
-		crcError = new ArrayList<DownloadLink>();
-		extractedFiles = new ArrayList<File>();
-	}
+    public ArchiveFactory getFactory() {
+        return factory;
+    }
 
-	public boolean isProtected() {
-		return protect;
-	}
+    public Archive(ArchiveFactory link) {
+        factory = link;
+        archives = new ArrayList<ArchiveFile>();
+        crcError = new ArrayList<ArchiveFile>();
+        extractedFiles = new ArrayList<File>();
+    }
 
-	public void setProtected(final boolean b) {
-		this.protect = b;
-	}
+    public boolean isProtected() {
+        return protect;
+    }
 
-	public boolean isOverwriteFiles() {
-		return overwriteFiles;
-	}
+    public void setProtected(final boolean b) {
+        this.protect = b;
+    }
 
-	public void setOverwriteFiles(boolean overwriteFiles) {
-		this.overwriteFiles = overwriteFiles;
-	}
+    public boolean isOverwriteFiles() {
+        return overwriteFiles;
+    }
 
-	public String getPassword() {
-		return password;
-	}
+    public void setOverwriteFiles(boolean overwriteFiles) {
+        this.overwriteFiles = overwriteFiles;
+    }
 
-	public void setPassword(String password) {
-		if (password == null) {
-			password = "";
-		}
-		this.password = password;
-	}
+    public String getPassword() {
+        return password;
+    }
 
-	public File getExtractTo() {
-		return extractTo;
-	}
+    public void setPassword(String password) {
+        if (password == null) {
+            password = "";
+        }
+        this.password = password;
+    }
 
-	public void setExtractTo(File extractTo) {
-		this.extractTo = extractTo;
-	}
+    public File getExtractTo() {
+        return extractTo;
+    }
 
-	public int getExitCode() {
-		return exitCode;
-	}
+    public void setExtractTo(File extractTo) {
 
-	public void setExitCode(int exitCode) {
-		this.exitCode = exitCode;
-	}
+        this.extractTo = extractTo;
+        getFactory().fireExtractToChange(this);
+    }
 
-	public int getStatus() {
-		return status;
-	}
+    public String toString() {
+        return "Archive " + getFirstArchiveFile().getFilePath();
+    }
 
-	public void setStatus(int status) {
-		this.status = status;
-	}
+    public int getExitCode() {
+        return exitCode;
+    }
 
-	public ArrayList<DownloadLink> getDownloadLinks() {
-		return archives;
-	}
+    public void setExitCode(int exitCode) {
+        this.exitCode = exitCode;
+    }
 
-	public void setDownloadLinks(ArrayList<DownloadLink> archives) {
-		this.archives = archives;
-	}
+    public int getStatus() {
+        return status;
+    }
 
-	public void setGotInterrupted(final boolean gotInterrupted) {
-		this.gotInterrupted = gotInterrupted;
-	}
+    public void setStatus(int status) {
+        this.status = status;
+    }
 
-	public boolean getGotInterrupted() {
-		return gotInterrupted;
-	}
+    public ArrayList<ArchiveFile> getArchiveFiles() {
+        return archives;
+    }
 
-	public void setSize(final long size) {
-		this.size = size;
-	}
+    public void setArchiveFiles(ArrayList<ArchiveFile> archives) {
 
-	public long getSize() {
-		return size;
-	}
+        this.archives = archives;
+    }
 
-	public void setFirstDownloadLink(DownloadLink firstDownloadLink) {
-		this.firstDownloadLink = firstDownloadLink;
-	}
+    public void setGotInterrupted(final boolean gotInterrupted) {
+        this.gotInterrupted = gotInterrupted;
+    }
 
-	public DownloadLink getFirstDownloadLink() {
-		return firstDownloadLink;
-	}
+    public boolean getGotInterrupted() {
+        return gotInterrupted;
+    }
 
-	public void setExtracted(long extracted) {
-		this.extracted = extracted;
-	}
+    public void setSize(final long size) {
+        this.size = size;
+    }
 
-	public long getExtracted() {
-		return extracted;
-	}
+    public long getSize() {
+        return size;
+    }
 
-	public boolean isComplete() {
-		for (DownloadLink l : archives) {
-			if (!l.getLinkStatus().isFinished() || !new File(l.getFileOutput()).exists()) { return false; }
-		}
+    public void setFirstArchiveFile(ArchiveFile firstArchiveFile) {
+        this.firstArchiveFile = firstArchiveFile;
+    }
 
-		List<String> missing = extractor.checkComplete(this);
-		if (missing.size() > 0) {
-			for (String entry : missing) {
-				JDLogger.getLogger().warning("Missing archive file: " + entry);
-			}
-			return false;
-		}
+    public ArchiveFile getFirstArchiveFile() {
+        return firstArchiveFile;
+    }
 
-		return true;
-	}
+    public void setExtracted(long extracted) {
+        this.extracted = extracted;
+    }
 
-	public void setActive(boolean active) {
-		this.active = active;
-	}
+    public long getExtracted() {
+        return extracted;
+    }
 
-	public boolean isActive() {
-		return active;
-	}
+    public boolean isComplete() {
+        for (ArchiveFile l : archives) {
 
-	public void setType(int type) {
-		this.type = type;
-	}
+            if (!l.isComplete()) { return false; }
+        }
 
-	public int getType() {
-		return type;
-	}
+        List<String> missing = extractor.checkComplete(this);
+        if (missing.size() > 0) {
+            for (String entry : missing) {
+                JDLogger.getLogger().warning("Missing archive file: " + entry);
+            }
+            return false;
+        }
 
-	public void setNumberOfFiles(int numberOfFiles) {
-		this.numberOfFiles = numberOfFiles;
-	}
+        return true;
+    }
 
-	public int getNumberOfFiles() {
-		return numberOfFiles;
-	}
+    public void setActive(boolean active) {
+        this.active = active;
+    }
 
-	public void addCrcError(DownloadLink crc) {
-		this.crcError.add(crc);
-	}
+    public boolean isActive() {
+        return active;
+    }
 
-	public ArrayList<DownloadLink> getCrcError() {
-		return crcError;
-	}
+    public void setType(int type) {
+        this.type = type;
+    }
 
-	public void addExtractedFiles(File file) {
-		this.extractedFiles.add(file);
-	}
+    public int getType() {
+        return type;
+    }
 
-	public ArrayList<File> getExtractedFiles() {
-		return extractedFiles;
-	}
+    public void setNumberOfFiles(int numberOfFiles) {
+        this.numberOfFiles = numberOfFiles;
+    }
 
-	public void setNoFolder(boolean noFolder) {
-		this.noFolder = noFolder;
-	}
+    public int getNumberOfFiles() {
+        return numberOfFiles;
+    }
 
-	public boolean isNoFolder() {
-		return noFolder;
-	}
+    public void addCrcError(ArchiveFile crc) {
+        this.crcError.add(crc);
+    }
 
-	public void setExtractor(IExtraction extractor) {
-		this.extractor = extractor;
-	}
+    public ArrayList<ArchiveFile> getCrcError() {
+        return crcError;
+    }
 
-	public IExtraction getExtractor() {
-		return extractor;
-	}
+    public void addExtractedFiles(File file) {
+        this.extractedFiles.add(file);
+    }
+
+    public ArrayList<File> getExtractedFiles() {
+        return extractedFiles;
+    }
+
+    public void setNoFolder(boolean noFolder) {
+        this.noFolder = noFolder;
+    }
+
+    public boolean isNoFolder() {
+        return noFolder;
+    }
+
+    public void setExtractor(IExtraction extractor) {
+        this.extractor = extractor;
+    }
+
+    public IExtraction getExtractor() {
+        return extractor;
+    }
+
+    public boolean contains(ArchiveFile link) {
+        return getArchiveFiles().contains(link);
+    }
 }

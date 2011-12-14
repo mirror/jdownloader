@@ -19,11 +19,8 @@ package org.jdownloader.extensions.extraction;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
-import java.util.List;
 
 import javax.swing.filechooser.FileFilter;
 
@@ -32,7 +29,6 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
@@ -43,14 +39,17 @@ import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
+import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 import org.jdownloader.extensions.extraction.multi.Multi;
 import org.jdownloader.extensions.extraction.split.HJSplit;
 import org.jdownloader.extensions.extraction.split.Unix;
@@ -60,41 +59,37 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.settings.GeneralSettings;
 
 public class ExtractionExtension extends AbstractExtension<ExtractionConfig> implements ControlListener, ActionListener {
-    private static final int             EXTRACT_LINK                   = 1000;
+    private static final int             EXTRACT_LINK            = 1000;
 
-    private static final int             EXTRACT_PACKAGE                = 1001;
+    private static final int             EXTRACT_PACKAGE         = 1001;
 
-    private static final int             OPEN_EXTRACT                   = 1002;
+    private static final int             OPEN_EXTRACT            = 1002;
 
-    private static final int             SET_EXTRACT_TO                 = 1003;
+    private static final int             SET_EXTRACT_TO          = 1003;
 
-    private static final int             SET_LINK_AUTOEXTRACT           = 1005;
+    private static final int             SET_LINK_AUTOEXTRACT    = 1005;
 
-    private static final int             SET_PACKAGE_AUTOEXTRACT        = 1006;
+    private static final int             SET_PACKAGE_AUTOEXTRACT = 1006;
 
-    private static final String          MENU_PACKAGES                  = "MENU_EXTRACT_PACKAGE";
+    private static final String          MENU_PACKAGES           = "MENU_EXTRACT_PACKAGE";
 
-    private static final String          MENU_LINKS                     = "MENU_EXTRACT_LINK";
+    private static final String          MENU_LINKS              = "MENU_EXTRACT_LINK";
 
-    public static final String           DOWNLOADLINK_KEY_EXTRACTTOPATH = "EXTRAXT_TO_PATH";
+    private static MenuAction            menuAction              = null;
 
-    public static final String           DOWNLOADLINK_KEY_EXTRACTEDPATH = "EXTRACTEDPATH";
+    private ExtractionQueue              ExtractionQueue         = new ExtractionQueue();
 
-    private static MenuAction            menuAction                     = null;
+    private ExtractionEventSender        broadcaster             = new ExtractionEventSender();
 
-    private ExtractionQueue              ExtractionQueue                = new ExtractionQueue();
+    private final ArrayList<IExtraction> extractors              = new ArrayList<IExtraction>();
 
-    private ExtractionEventSender        broadcaster                    = new ExtractionEventSender();
-
-    private final ArrayList<IExtraction> extractors                     = new ArrayList<IExtraction>();
-
-    private final ArrayList<Archive>     archives                       = new ArrayList<Archive>();
+    private final ArrayList<Archive>     archives                = new ArrayList<Archive>();
 
     private ExtractionConfigPanel        configPanel;
 
     private static ExtractionExtension   INSTANCE;
 
-    private ExtractionListenerIcon       statusbarListener              = null;
+    private ExtractionListenerIcon       statusbarListener       = null;
 
     public ExtractionExtension() throws StartException {
         super(T._.name());
@@ -156,12 +151,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     /**
      * Startet das abwarbeiten der extractqueue
      */
-    private void addToQueue(final Archive archive) {
+    public void addToQueue(final Archive archive) {
         IExtraction extractor = archive.getExtractor();
 
-        if (!new File(archive.getFirstDownloadLink().getFileOutput()).exists()) return;
-        archive.getFirstDownloadLink().getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
-        archive.getFirstDownloadLink().getLinkStatus().setErrorMessage(null);
+        if (!archive.getFirstArchiveFile().exists()) return;
+        archive.getFactory().fireArchiveAddedToQueue(archive);
 
         archive.setOverwriteFiles(getSettings().isOverwriteExistingFilesEnabled());
 
@@ -179,17 +173,17 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     /**
      * Bestimmt den Pfad in den das Archiv entpackt werden soll
      * 
-     * @param link
+     * @param archiveFactory
+     * 
+     * @param archive
+     *            .getFactory()
      * @return
      */
-    File getExtractToPath(DownloadLink link) {
-        if (link.getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH) != null) return (File) link.getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
-        if (link instanceof DummyDownloadLink) return new File(link.getFileOutput()).getParentFile();
-        String path;
+    File getExtractToPath(ArchiveFactory archiveFactory, Archive archive) {
+        String path = archiveFactory.getExtractPath(archive);
 
-        if (!getSettings().isCustomExtractionPathEnabled()) {
-            path = new File(link.getFileOutput()).getParent();
-        } else {
+        if (getSettings().isCustomExtractionPathEnabled()) {
+
             path = getSettings().getCustomExtractionPath();
             if (path == null) {
                 path = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
@@ -216,47 +210,50 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      * @param link
      * @return
      */
-    private Archive buildArchive(DownloadLink link) {
+    public Archive buildArchive(ArchiveFactory link) {
         for (Archive archive : archives) {
-            if (archive.getDownloadLinks().contains(link)) { return archive; }
+            if (archive.contains(link)) { return archive; }
         }
 
         Archive archive = getExtractor(link).buildArchive(link);
-
+        Log.L.info("Created Archive: " + archive);
+        Log.L.info("Files: " + archive.getArchiveFiles());
         archives.add(archive);
 
         return archive;
     }
 
-    /**
-     * Builds an dummy archive for an file.
-     * 
-     * @param file
-     * @return
-     */
-    private Archive buildDummyArchive(final File file) {
-        final String lfile = file.getAbsolutePath();
-        List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-
-            public boolean isChildrenNodeFiltered(DownloadLink node) {
-                if (node.getFileOutput().equals(lfile)) {
-                    if (node.getLinkStatus().hasStatus(LinkStatus.FINISHED)) return true;
-                }
-                return false;
-            }
-
-            public int returnMaxResults() {
-                return 1;
-            }
-        });
-        if (links == null || links.size() == 0) {
-            /* link no longer in list */
-            DummyDownloadLink link0 = new DummyDownloadLink(file.getName());
-            link0.setFile(file);
-            return buildArchive(link0);
-        }
-        return buildArchive(links.get(0));
-    }
+    // /**
+    // * Builds an dummy archive for an file.
+    // *
+    // * @param file
+    // * @return
+    // */
+    // private Archive buildDummyArchive(final File file) {
+    // final String lfile = file.getAbsolutePath();
+    // List<DownloadLink> links =
+    // DownloadController.getInstance().getChildrenByFilter(new
+    // AbstractPackageChildrenNodeFilter<DownloadLink>() {
+    //
+    // public boolean isChildrenNodeFiltered(DownloadLink node) {
+    // if (node.getFileOutput().equals(lfile)) {
+    // if (node.getLinkStatus().hasStatus(LinkStatus.FINISHED)) return true;
+    // }
+    // return false;
+    // }
+    //
+    // public int returnMaxResults() {
+    // return 1;
+    // }
+    // });
+    // if (links == null || links.size() == 0) {
+    // /* link no longer in list */
+    // DummyDownloadLink link0 = new DummyDownloadLink(file.getName());
+    // link0.setFile(file);
+    // return buildArchive(link0);
+    // }
+    // return buildArchive(links.get(0));
+    // }
 
     /**
      * ActionListener for the menuitems.
@@ -272,7 +269,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         case EXTRACT_LINK:
             if (dlinks == null) return;
             for (DownloadLink link : dlinks) {
-                final Archive archive = buildArchive(link);
+                final Archive archive = buildArchive(new DownloadLinkArchiveFactory(link));
                 new Thread() {
                     @Override
                     public void run() {
@@ -300,7 +297,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             }
             if (links.size() == 0) return;
             for (DownloadLink link0 : links) {
-                final Archive archive0 = buildArchive(link0);
+                final Archive archive0 = buildArchive(new DownloadLinkArchiveFactory(link0));
                 new Thread() {
                     @Override
                     public void run() {
@@ -312,7 +309,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         case OPEN_EXTRACT:
             DownloadLink link = (DownloadLink) source.getProperty("LINK");
             if (link == null) { return; }
-            String path = link.getStringProperty(DOWNLOADLINK_KEY_EXTRACTEDPATH + "2");
+            String path = link.getStringProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2");
 
             if (!new File(path).exists()) {
                 UserIO.getInstance().requestMessageDialog(T._.plugins_optional_extraction_messages(path));
@@ -339,7 +336,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 }
             };
 
-            File extractto = this.getExtractToPath(link0);
+            File extractto = this.getExtractToPath(new DownloadLinkArchiveFactory(link0), null);
             while (extractto != null && !extractto.isDirectory()) {
                 extractto = extractto.getParentFile();
             }
@@ -348,9 +345,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             if (files == null) return;
 
             for (DownloadLink ll : dlinks) {
-                Archive archive0 = buildArchive(ll);
-                for (DownloadLink l : archive0.getDownloadLinks()) {
-                    l.setProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0]);
+                Archive archive0 = buildArchive(new DownloadLinkArchiveFactory(ll));
+                for (ArchiveFile l : archive0.getArchiveFiles()) {
+
+                    ((DownloadLinkArchiveFile) l).getDownloadLink().setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0]);
                 }
             }
             break;
@@ -384,70 +382,13 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             }
 
             String path = getSettings().getSubPath();
-            DownloadLink link = controller.getArchiv().getFirstDownloadLink();
 
-            try {
-                if (link.getFilePackage().getName() != null) {
-                    if (link instanceof DummyDownloadLink && controller.getArchiv().getExtractor().getArchiveName(link) != null) {
-                        path = path.replace("%PACKAGENAME%", controller.getArchiv().getExtractor().getArchiveName(link));
-                    } else {
-                        path = path.replace("%PACKAGENAME%", link.getFilePackage().getName());
-                    }
-                } else {
-                    path = path.replace("%PACKAGENAME%", "");
-                    logger.severe("Could not set packagename for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
-                }
-
-                if (controller.getArchiv().getExtractor().getArchiveName(link) != null) {
-                    path = path.replace("%ARCHIVENAME%", controller.getArchiv().getExtractor().getArchiveName(link));
-                } else {
-                    path = path.replace("%ARCHIVENAME%", "");
-                    logger.severe("Could not set archivename for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
-                }
-
-                if (link.getHost() != null) {
-                    path = path.replace("%HOSTER%", link.getHost());
-                } else {
-                    path = path.replace("%HOSTER%", "");
-                    logger.severe("Could not set hoster for " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
-                }
-
-                if (path.contains("$DATE:")) {
-                    int start = path.indexOf("$DATE:");
-                    int end = start + 6;
-
-                    while (end < path.length() && path.charAt(end) != '$') {
-                        end++;
-                    }
-
-                    try {
-                        SimpleDateFormat format = new SimpleDateFormat(path.substring(start + 6, end));
-                        path = path.replace(path.substring(start, end + 1), format.format(new Date()));
-                    } catch (Exception e) {
-                        path = path.replace(path.substring(start, end + 1), "");
-                        logger.severe("Could not set extraction date. Maybe pattern is wrong. For " + controller.getArchiv().getFirstDownloadLink().getFileOutput());
-                    }
-                }
-
-                String dif = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).getAbsolutePath().replace(new File(link.getFileOutput()).getParent(), "");
-                if (new File(dif).isAbsolute()) {
-                    dif = "";
-                }
-                path = path.replace("%SUBFOLDER%", dif);
-
-                path = path.replaceAll("[/]+", "\\\\");
-                path = path.replaceAll("[\\\\]+", "\\\\");
-
+            path = controller.getArchiv().getFactory().createExtractSubPath(path, controller.getArchiv());
+            if (path != null) {
                 controller.getArchiv().setExtractTo(new File(controller.getArchiv().getExtractTo(), path));
-            } catch (Exception e) {
-                JDLogger.exception(e);
-            }
-
-            for (DownloadLink l : controller.getArchiv().getDownloadLinks()) {
-                if (l == null) continue;
-                l.setProperty(DOWNLOADLINK_KEY_EXTRACTEDPATH, controller.getArchiv().getExtractTo().getAbsolutePath());
             }
         }
+
     }
 
     /**
@@ -456,17 +397,17 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      * @param link
      * @return
      */
-    private IExtraction getExtractor(DownloadLink link) {
+    private IExtraction getExtractor(ArchiveFactory link) {
         for (IExtraction extractor : extractors) {
             try {
-                if (extractor.isArchivSupported(link.getFileOutput())) { return extractor.getClass().newInstance(); }
+                if (extractor.isArchivSupported(link.getFilePath())) { return extractor.getClass().newInstance(); }
             } catch (InstantiationException e) {
                 e.printStackTrace();
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
         }
-
+        System.err.println(1);
         return null;
     }
 
@@ -476,7 +417,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      * @param controller
      */
     void onFinished(ExtractionController controller) {
-        controller.getArchiv().getFirstDownloadLink().setPluginProgress(null);
+        // controller.getArchiv().
+        // getFgetFirstDownloadLink().setPluginProgress(null);
     }
 
     /**
@@ -496,9 +438,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             if (event.getCaller() instanceof SingleDownloadController) {
                 link = ((SingleDownloadController) event.getCaller()).getDownloadLink();
                 if (link.getFilePackage().isPostProcessing() && this.getPluginConfig().getBooleanProperty("ACTIVATED", true) && isLinkSupported(link.getFileOutput())) {
-                    Archive archive = buildArchive(link);
+                    Archive archive = buildArchive(new DownloadLinkArchiveFactory(link));
 
-                    if (!archive.isActive() && archive.getDownloadLinks().size() > 0 && archive.isComplete()) {
+                    if (!archive.isActive() && archive.getArchiveFiles().size() > 0 && archive.isComplete()) {
                         this.addToQueue(archive);
                     }
                 }
@@ -510,8 +452,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                     File[] list = (File[]) event.getParameter();
                     for (File archiveStartFile : list) {
                         if (isLinkSupported(archiveStartFile.getAbsolutePath())) {
-                            Archive ar = buildDummyArchive(archiveStartFile);
-                            if (ar.isActive() || ar.getDownloadLinks().size() < 1 || !ar.isComplete()) continue;
+                            Archive ar = buildArchive(new FileArchiveFactory(archiveStartFile));
+                            if (ar.isActive() || ar.getArchiveFiles().size() < 1 || !ar.isComplete()) continue;
                             addToQueue(ar);
                         }
                     }
@@ -648,7 +590,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
                 m.setProperty("LINK", link);
                 m.setProperty(MENU_LINKS, ((DownloadsTable) source).getSelectedChildren());
-                File dir = this.getExtractToPath(link);
+                File dir = this.getExtractToPath(new DownloadLinkArchiveFactory(link), null);
                 while (dir != null && !dir.exists()) {
                     if (dir.getParentFile() == null) break;
                     dir = dir.getParentFile();
@@ -680,7 +622,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                     m.setEnabled(false);
                 }
 
-                link.setProperty(DOWNLOADLINK_KEY_EXTRACTEDPATH + "2", dir.getAbsolutePath());
+                link.setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2", dir.getAbsolutePath());
                 m.setProperty("LINK", link);
             } else {
                 FilePackage fp = (FilePackage) event.getCaller();
@@ -837,7 +779,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 if (files == null) return;
 
                 for (File archiveStartFile : files) {
-                    final Archive archive = buildDummyArchive(archiveStartFile);
+                    final Archive archive = buildArchive(new FileArchiveFactory(archiveStartFile));
                     new Thread() {
                         @Override
                         public void run() {
@@ -894,7 +836,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 if (files == null) return;
 
                 for (File archiveStartFile : files) {
-                    final Archive archive = buildDummyArchive(archiveStartFile);
+                    final Archive archive = buildArchive(new FileArchiveFactory(archiveStartFile));
                     new Thread() {
                         @Override
                         public void run() {

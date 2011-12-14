@@ -17,7 +17,7 @@
 package org.jdownloader.extensions.extraction;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -26,8 +26,6 @@ import jd.controlling.IOEQ;
 import jd.controlling.JDLogger;
 import jd.controlling.PasswordListController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.appwork.utils.event.queue.QueueAction;
 
@@ -39,7 +37,7 @@ import org.appwork.utils.event.queue.QueueAction;
  * 
  */
 public class ExtractionController extends QueueAction<Void, RuntimeException> {
-    private ArrayList<String>  passwordList;
+    private HashSet<String>    passwordList;
     private int                passwordListSize = 0;
     private Exception          exception;
     private boolean            removeAfterExtraction;
@@ -57,7 +55,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
         this.logger = logger;
         extractor.setLogger(logger);
-        passwordList = new ArrayList<String>();
+        passwordList = new HashSet<String>();
     }
 
     public ExtractionQueue getExtractionQueue() {
@@ -96,11 +94,11 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         try {
             fireEvent(ExtractionEvent.Type.START);
 
-            logger.info("Start unpacking of " + archive.getFirstDownloadLink().getFileOutput());
+            logger.info("Start unpacking of " + archive.getFirstArchiveFile().getFilePath());
 
-            for (DownloadLink l : archive.getDownloadLinks()) {
-                if (!new File(l.getFileOutput()).exists()) {
-                    logger.info("Could not find archive file " + l.getFileOutput());
+            for (ArchiveFile l : archive.getArchiveFiles()) {
+                if (!new File(l.getFilePath()).exists()) {
+                    logger.info("Could not find archive file " + l.getFilePath());
                     archive.addCrcError(l);
                 }
             }
@@ -109,33 +107,26 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 return null;
             }
 
-            File dl = ExtractionExtension.getIntance().getExtractToPath(archive.getFirstDownloadLink());
+            File dl = ExtractionExtension.getIntance().getExtractToPath(archive.getFactory(), archive);
             archive.setExtractTo(dl);
-
-            for (DownloadLink link1 : archive.getDownloadLinks()) {
-                link1.setProperty(ExtractionExtension.DOWNLOADLINK_KEY_EXTRACTEDPATH, dl.getAbsolutePath());
-            }
 
             if (extractor.prepare()) {
                 if (!checkSize()) {
                     fireEvent(ExtractionEvent.Type.NOT_ENOUGH_SPACE);
-                    logger.info("Not enough harddisk space for unpacking archive " + archive.getFirstDownloadLink().getFileOutput());
+                    logger.info("Not enough harddisk space for unpacking archive " + archive.getFirstArchiveFile().getFilePath());
                     extractor.close();
                     return null;
                 }
 
                 if (archive.isProtected() && archive.getPassword().equals("")) {
-                    passwordList.addAll(FilePackage.getPasswordAuto(archive.getFirstDownloadLink().getFilePackage()));
-                    String dlpw = archive.getFirstDownloadLink().getDownloadPassword();
-                    if (dlpw != null) passwordList.add(dlpw);
-                    // passwordList.addAll(PasswordListController.getInstance().getPasswordList());
-                    // passwordList.add(extractor.getArchiveName(archive.getFirstDownloadLink()));
-                    // passwordList.add(new
-                    // File(archive.getFirstDownloadLink().getFileOutput()).getName());
+                    passwordList.addAll(archive.getFactory().getPasswordList(archive));
+                    passwordList.addAll(PasswordListController.getInstance().getPasswordList());
+                    passwordList.add(extractor.getArchiveName(archive.getFirstArchiveFile()));
+
                     passwordListSize = passwordList.size() + PasswordListController.getInstance().getPasswordList().size() + 2;
 
                     fireEvent(ExtractionEvent.Type.START_CRACK_PASSWORD);
-                    logger.info("Start password finding for " + archive.getFirstDownloadLink().getFileOutput());
+                    logger.info("Start password finding for " + archive);
 
                     for (String password : passwordList) {
                         if (checkPassword(password)) {
@@ -152,9 +143,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
                         if (archive.getPassword().equals("")) {
                             passwordList.clear();
-                            passwordList.add(extractor.getArchiveName(archive.getFirstDownloadLink()));
-                            passwordList.add(new File(archive.getFirstDownloadLink().getFileOutput()).getName());
-
+                            //
+                            passwordList.add(extractor.getArchiveName(archive.getFirstArchiveFile()));
+                            passwordList.addAll(archive.getFactory().getPasswordList(archive));
                             for (String password : passwordList) {
                                 if (checkPassword(password)) {
                                     break;
@@ -165,11 +156,11 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
                     if (archive.getPassword().equals("")) {
                         fireEvent(ExtractionEvent.Type.PASSWORD_NEEDED_TO_CONTINUE);
-                        logger.info("Found no password in passwordlist " + archive.getFirstDownloadLink().getFileOutput());
+                        logger.info("Found no password in passwordlist " + archive);
 
                         if (!checkPassword(archive.getPassword())) {
                             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
-                            logger.info("No password found for " + archive.getFirstDownloadLink().getFileOutput());
+                            logger.info("No password found for " + archive);
                             extractor.close();
                             return null;
                         }
@@ -177,7 +168,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     }
 
                     fireEvent(ExtractionEvent.Type.PASSWORD_FOUND);
-                    logger.info("Found password for " + archive.getFirstDownloadLink().getFileOutput());
+                    logger.info("Found password for " + archive);
                 }
                 fireEvent(ExtractionEvent.Type.OPEN_ARCHIVE_SUCCESS);
 
@@ -188,7 +179,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     }
                 }
 
-                logger.info("Execute unpacking of " + archive.getFirstDownloadLink().getFileOutput());
+                logger.info("Execute unpacking of " + archive);
 
                 timer = IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
                     public void run() {
@@ -204,35 +195,35 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 extractor.close();
                 switch (archive.getExitCode()) {
                 case ExtractionControllerConstants.EXIT_CODE_SUCCESS:
-                    logger.info("Unpacking successful for " + archive.getFirstDownloadLink().getFileOutput());
+                    logger.info("Unpacking successful for " + archive);
                     if (!archive.getGotInterrupted() && removeAfterExtraction) {
                         removeArchiveFiles();
                     }
                     fireEvent(ExtractionEvent.Type.FINISHED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_CRC_ERROR:
-                    JDLogger.getLogger().warning("A CRC error occurred when unpacking " + archive.getFirstDownloadLink().getFileOutput());
+                    JDLogger.getLogger().warning("A CRC error occurred when unpacking " + archive);
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED_CRC);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_USER_BREAK:
-                    JDLogger.getLogger().info("User interrupted unpacking of " + archive.getFirstDownloadLink().getFileOutput());
+                    JDLogger.getLogger().info("User interrupted unpacking of " + archive);
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR:
-                    JDLogger.getLogger().warning("Could not create Outputfile for" + archive.getFirstDownloadLink().getFileOutput());
+                    JDLogger.getLogger().warning("Could not create Outputfile for" + archive);
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR:
-                    JDLogger.getLogger().warning("Unable to write unpacked data on harddisk for " + archive.getFirstDownloadLink().getFileOutput());
+                    JDLogger.getLogger().warning("Unable to write unpacked data on harddisk for " + archive);
                     this.exception = new ExtractionException("Write to disk error");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR:
-                    JDLogger.getLogger().warning("A unknown fatal error occurred while unpacking " + archive.getFirstDownloadLink().getFileOutput());
+                    JDLogger.getLogger().warning("A unknown fatal error occurred while unpacking " + archive);
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_WARNING:
-                    JDLogger.getLogger().warning("Non fatal error(s) occurred while unpacking " + archive.getFirstDownloadLink().getFileOutput());
+                    JDLogger.getLogger().warning("Non fatal error(s) occurred while unpacking " + archive);
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 default:
@@ -259,9 +250,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      * Deletes the archive files.
      */
     private void removeArchiveFiles() {
-        for (DownloadLink link : archive.getDownloadLinks()) {
-            if (!new File(link.getFileOutput()).delete()) {
-                JDLogger.getLogger().warning("Could not delete archive: " + link.getFileOutput());
+        for (ArchiveFile link : archive.getArchiveFiles()) {
+            if (!link.delete()) {
+                JDLogger.getLogger().warning("Could not delete archive: " + link);
             }
         }
     }

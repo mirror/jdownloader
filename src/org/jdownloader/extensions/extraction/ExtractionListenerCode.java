@@ -22,8 +22,6 @@ import java.util.logging.Logger;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 
 import org.jdownloader.extensions.extraction.translate.T;
 
@@ -61,7 +59,7 @@ public class ExtractionListenerCode implements ExtractionListener {
             break;
         case PASSWORD_NEEDED_TO_CONTINUE:
             if (ex.getSettings().isAskForUnknownPasswordsEnabled()) {
-                String pass = UserIO.getInstance().requestInputDialog(0, T._.plugins_optional_extraction_askForPassword(controller.getArchiv().getFirstDownloadLink().getName()), "");
+                String pass = UserIO.getInstance().requestInputDialog(0, T._.plugins_optional_extraction_askForPassword(controller.getArchiv().getFirstArchiveFile().getName()), "");
                 if (pass == null || pass.length() == 0) {
                     ex.onFinished(controller);
                     break;
@@ -94,7 +92,7 @@ public class ExtractionListenerCode implements ExtractionListener {
             JDController.getInstance().fireControlEvent(new ControlEvent(controller, ControlEvent.CONTROL_ON_FILEOUTPUT, files));
 
             if (ex.getSettings().isDeleteInfoFilesAfterExtraction()) {
-                File fileOutput = new File(controller.getArchiv().getFirstDownloadLink().getFileOutput());
+                File fileOutput = new File(controller.getArchiv().getFirstArchiveFile().getFilePath());
                 File infoFiles = new File(fileOutput.getParentFile(), fileOutput.getName().replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$", "") + ".info");
                 if (infoFiles.exists() && infoFiles.delete()) {
                     logger.info(infoFiles.getName() + " removed");
@@ -104,12 +102,10 @@ public class ExtractionListenerCode implements ExtractionListener {
             ex.onFinished(controller);
             break;
         case NOT_ENOUGH_SPACE:
-            for (DownloadLink link : controller.getArchiv().getDownloadLinks()) {
+            for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                 if (link == null) continue;
+                link.setStatus(ArchiveFile.Status.ERROR_NOT_ENOUGH_SPACE);
 
-                link.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                link.getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_notenoughspace());
-                link.requestGuiUpdate();
             }
 
             ex.onFinished(controller);

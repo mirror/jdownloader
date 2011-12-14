@@ -23,10 +23,11 @@ import java.util.List;
 
 import jd.config.ConfigContainer;
 import jd.controlling.JSonWrapper;
-import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.ArchiveFactory;
+import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
 
@@ -38,19 +39,20 @@ import org.jdownloader.extensions.extraction.IExtraction;
  */
 public class Unix extends IExtraction {
 
-    public Archive buildArchive(DownloadLink link) {
-        String pattern = "^" + Regex.escape(link.getFileOutput().replaceAll("(?i)\\.[a-z][a-z]$", "")) + "\\.[a-z][a-z]$";
+    public Archive buildArchive(ArchiveFactory link) {
+        String pattern = "^" + Regex.escape(link.getFilePath().replaceAll("(?i)\\.[a-z][a-z]$", "")) + "\\.[a-z][a-z]$";
         Archive a = SplitUtil.buildArchive(link, pattern, ".*\\.aa$");
         a.setExtractor(this);
         return a;
     }
 
-    @Override
-    public Archive buildDummyArchive(String file) {
-        Archive a = SplitUtil.buildDummyArchive(file, ".*\\.[a-z][a-z]$", ".*\\.aa$");
-        a.setExtractor(this);
-        return a;
-    }
+    // @Override
+    // public Archive buildDummyArchive(String file) {
+    // Archive a = SplitUtil.buildDummyArchive(file, ".*\\.[a-z][a-z]$",
+    // ".*\\.aa$");
+    // a.setExtractor(this);
+    // return a;
+    // }
 
     @Override
     public boolean findPassword(String password) {
@@ -59,8 +61,8 @@ public class Unix extends IExtraction {
 
     @Override
     public void extract() {
-        File f = new File(archive.getFirstDownloadLink().getFileOutput().replaceFirst("\\.[a-z][a-z]$", ""));
-        String extension = SplitUtil.getCutKillerExtension(new File(archive.getFirstDownloadLink().getFileOutput()), archive.getDownloadLinks().size());
+        File f = new File(archive.getFirstArchiveFile().getFilePath().replaceFirst("\\.[a-z][a-z]$", ""));
+        String extension = SplitUtil.getCutKillerExtension(new File(archive.getFirstArchiveFile().getFilePath()), archive.getArchiveFiles().size());
         boolean ret;
 
         if (extension != null) {
@@ -90,8 +92,8 @@ public class Unix extends IExtraction {
     public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
     }
 
-    public String getArchiveName(DownloadLink link) {
-        return new File(link.getFileOutput()).getName().replaceFirst("\\.[a-z][a-z]$", "");
+    public String getArchiveName(ArchiveFile link) {
+        return new File(link.getFilePath()).getName().replaceFirst("\\.[a-z][a-z]$", "");
     }
 
     public boolean isArchivSupported(String file) {
@@ -111,15 +113,15 @@ public class Unix extends IExtraction {
         List<String> missing = new ArrayList<String>();
         List<String> files = new ArrayList<String>();
 
-        for (DownloadLink l : archive.getDownloadLinks()) {
-            files.add(l.getFileOutput());
+        for (ArchiveFile l : archive.getArchiveFiles()) {
+            files.add(l.getFilePath());
         }
 
         Collections.sort(files);
 
         String suffix = "aa";
 
-        String archivename = getArchiveName(archive.getFirstDownloadLink()) + ".";
+        String archivename = getArchiveName(archive.getFirstArchiveFile()) + ".";
 
         for (String f : files) {
             while (!f.endsWith(suffix)) {

@@ -27,19 +27,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.nutils.io.FileSignatures;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 import jd.utils.JDHexUtils;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
 import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.ArchiveFactory;
+import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.CPUPriority;
-import org.jdownloader.extensions.extraction.DummyDownloadLink;
 import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
@@ -53,49 +50,55 @@ import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 class SplitUtil {
 
     /**
-     * Abstract method to build an archive from. The DownloadLink has to be in
+     * Abstract method to build an archive from. The ArchiveFile has to be in
      * the DownloadList.
      * 
      * @param link
-     *            DownloadLink from the event.
+     *            ArchiveFile from the event.
      * @param pattern
      *            Regex to find all files.
      * @param startfile
      *            Regex for the startfile.
      * @return The archive.
      */
-    static Archive buildArchive(DownloadLink link, String pattern, String startfile) {
-        Archive archive = new Archive();
+    static Archive buildArchive(ArchiveFactory link, String pattern, String startfile) {
+        Archive archive = link.createArchive();
 
-        ArrayList<DownloadLink> matches = new ArrayList<DownloadLink>();
+        ArrayList<ArchiveFile> matches = new ArrayList<ArchiveFile>();
 
-        if (link instanceof DummyDownloadLink) {
-            for (File f : new File(link.getFileOutput()).getParentFile().listFiles()) {
-                if (f.isDirectory()) continue;
-                if (new Regex(f.getAbsolutePath(), pattern, Pattern.CASE_INSENSITIVE).matches()) {
-                    matches.add(buildDownloadLinkFromFile(f.getAbsolutePath()));
-                }
-            }
-        } else {
-            final Pattern pat = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
-            List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+        // if (link instanceof DummyArchiveFile) {
+        // for (File f : new
+        // File(link.getFileOutput()).getParentFile().listFiles()) {
+        // if (f.isDirectory()) continue;
+        // if (new Regex(f.getAbsolutePath(), pattern,
+        // Pattern.CASE_INSENSITIVE).matches()) {
+        // matches.add(buildArchiveFileFromFile(f.getAbsolutePath()));
+        // }
+        // }
+        // } else {
 
-                public boolean isChildrenNodeFiltered(DownloadLink node) {
-                    return pat.matcher(node.getFileOutput()).matches();
-                }
+        // final Pattern pat = Pattern.compile(pattern,
+        // Pattern.CASE_INSENSITIVE);
+        // List<ArchiveFile> links =
+        // DownloadController.getInstance().getChildrenByFilter(new
+        // AbstractPackageChildrenNodeFilter<ArchiveFile>() {
+        //
+        // public boolean isChildrenNodeFiltered(ArchiveFile node) {
+        // return pat.matcher(node.getFileOutput()).matches();
+        // }
+        //
+        // public int returnMaxResults() {
+        // return 0;
+        // }
+        // });
+        matches.addAll(link.createPartFileList(pattern));
+        // }
 
-                public int returnMaxResults() {
-                    return 0;
-                }
-            });
-            matches.addAll(links);
-        }
+        archive.setArchiveFiles(matches);
 
-        archive.setDownloadLinks(matches);
-
-        for (DownloadLink l : matches) {
-            if (new Regex(l.getFileOutput(), startfile, Pattern.CASE_INSENSITIVE).matches()) {
-                archive.setFirstDownloadLink(l);
+        for (ArchiveFile l : matches) {
+            if (new Regex(l.getFilePath(), startfile, Pattern.CASE_INSENSITIVE).matches()) {
+                archive.setFirstArchiveFile(l);
                 break;
             }
         }
@@ -103,46 +106,50 @@ class SplitUtil {
         return archive;
     }
 
-    private static DownloadLink buildDownloadLinkFromFile(String file) {
-        File file0 = new File(file);
-        DummyDownloadLink link = new DummyDownloadLink(file0.getName());
-        link.setFile(file0);
-        return link;
-    }
+    // private static ArchiveFile buildArchiveFileFromFile(String file) {
+    // File file0 = new File(file);
+    // DummyArchiveFile link = new DummyArchiveFile(file0.getName());
+    // link.setFile(file0);
+    // return link;
+    // }
 
-    /**
-     * Abstract method to build an archive from. The file has to come from Menu.
-     * 
-     * @param file
-     *            Filepath
-     * @param pattern
-     *            Regex to find all files.
-     * @param startfile
-     *            Regex for the startfile.
-     * @return The archive.
-     */
-    static Archive buildDummyArchive(final String file, String pattern, String startfile) {
-        List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-
-            public boolean isChildrenNodeFiltered(DownloadLink node) {
-                if (node.getFileOutput().equals(file)) {
-                    if (node.getLinkStatus().hasStatus(LinkStatus.FINISHED)) return true;
-                }
-                return false;
-            }
-
-            public int returnMaxResults() {
-                return 1;
-            }
-        });
-        DownloadLink link = null;
-        if (links == null || links.size() == 0) {
-            link = buildDownloadLinkFromFile(file);
-        } else {
-            link = links.get(0);
-        }
-        return buildArchive(link, pattern, startfile);
-    }
+    // /**
+    // * Abstract method to build an archive from. The file has to come from
+    // Menu.
+    // *
+    // * @param file
+    // * Filepath
+    // * @param pattern
+    // * Regex to find all files.
+    // * @param startfile
+    // * Regex for the startfile.
+    // * @return The archive.
+    // */
+    // static Archive buildDummyArchive(final String file, String pattern,
+    // String startfile) {
+    // List<ArchiveFile> links =
+    // DownloadController.getInstance().getChildrenByFilter(new
+    // AbstractPackageChildrenNodeFilter<ArchiveFile>() {
+    //
+    // public boolean isChildrenNodeFiltered(ArchiveFile node) {
+    // if (node.getFileOutput().equals(file)) {
+    // if (node.getLinkStatus().hasStatus(LinkStatus.FINISHED)) return true;
+    // }
+    // return false;
+    // }
+    //
+    // public int returnMaxResults() {
+    // return 1;
+    // }
+    // });
+    // ArchiveFile link = null;
+    // if (links == null || links.size() == 0) {
+    // link = buildArchiveFileFromFile(file);
+    // } else {
+    // link = links.get(0);
+    // }
+    // return buildArchive(link, pattern, startfile);
+    // }
 
     /**
      * Merges the files from the archive. The filepaths need to be sortable.
@@ -162,8 +169,8 @@ class SplitUtil {
         Archive archive = controller.getArchiv();
         List<String> files = new ArrayList<String>();
 
-        for (DownloadLink l : archive.getDownloadLinks()) {
-            files.add(l.getFileOutput());
+        for (ArchiveFile l : archive.getArchiveFiles()) {
+            files.add(l.getFilePath());
         }
 
         Collections.sort(files);
