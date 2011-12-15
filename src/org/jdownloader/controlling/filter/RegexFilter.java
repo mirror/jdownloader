@@ -70,7 +70,6 @@ public class RegexFilter extends Filter implements Storable {
     public int calcPlaceholderCount() {
         int i = 0;
         try {
-
             Matcher matcher = Pattern.compile("\\(.*?\\)", Pattern.CASE_INSENSITIVE).matcher(LinkgrabberFilterRuleWrapper.createPattern(regex, useRegex).pattern());
             while (matcher.find()) {
                 // System.out.println(matcher.group());

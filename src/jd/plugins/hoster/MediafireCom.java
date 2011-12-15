@@ -601,8 +601,9 @@ public class MediafireCom extends PluginForHost {
         for (int i = 0; i < MediafireCom.NUMBER_OF_RETRIES; i++) {
             try {
                 this.br.getPage(url);
-                final String redirectURL = this.br.getRedirectLocation();
+                String redirectURL = this.br.getRedirectLocation();
                 if (redirectURL != null && redirectURL.indexOf(MediafireCom.ERROR_PAGE) > 0) {
+                    /* check for offline status */
                     status = AvailableStatus.FALSE;
                     final String errorCode = redirectURL.substring(redirectURL.indexOf("=") + 1, redirectURL.length());
                     if (errorCode.equals("320")) {
@@ -638,6 +639,16 @@ public class MediafireCom extends PluginForHost {
                     }
 
                     br.getPage(redirectURL);
+                    redirectURL = this.br.getRedirectLocation();
+                    if (redirectURL != null && redirectURL.indexOf(MediafireCom.ERROR_PAGE) > 0) {
+                        /* check for offline status */
+                        status = AvailableStatus.FALSE;
+                        final String errorCode = redirectURL.substring(redirectURL.indexOf("=") + 1, redirectURL.length());
+                        if (errorCode.equals("320")) {
+                            logger.warning("The requested file ['" + url + "'] is invalid");
+                        }
+                        break;
+                    }
                     String name = br.getRegex("<div class=\"download_file_title\"> (.*?) </div>").getMatch(0);
                     String size = br.getRegex(" <input type=\"hidden\" id=\"sharedtabsfileinfo1-fs\" value=\"(.*?)\">").getMatch(0);
 
