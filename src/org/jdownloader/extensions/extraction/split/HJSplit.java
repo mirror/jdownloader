@@ -44,6 +44,7 @@ public class HJSplit extends IExtraction {
         String pattern = "^" + Regex.escape(link.getFilePath().replaceAll("(?i)\\.[\\d]+$", "")) + "\\.[\\d]+$";
         Archive a = SplitUtil.buildArchive(link, pattern, ".*\\.001$");
         a.setExtractor(this);
+        a.setName(getArchiveName(new File(link.getFilePath()).getName()));
         return a;
     }
 
@@ -93,8 +94,9 @@ public class HJSplit extends IExtraction {
     public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
     }
 
-    public String getArchiveName(ArchiveFile link) {
-        return archive.getFactory().toFile(link.getFilePath()).getName().replaceFirst("\\.[\\d]+$", "");
+    public String getArchiveName(String filename) {
+        return createID(filename);
+
     }
 
     public boolean isArchivSupported(String file) {
@@ -137,7 +139,7 @@ public class HJSplit extends IExtraction {
 
         Regex r = new Regex(archive.getFirstArchiveFile().getFilePath(), ".*\\.([\\d]+)$");
         int length = r.getMatch(0).length();
-        String archivename = getArchiveName(archive.getFirstArchiveFile());
+        String archivename = archive.getName();
 
         for (ArchiveFile l : archive.getArchiveFiles()) {
             String e = "";
@@ -158,6 +160,16 @@ public class HJSplit extends IExtraction {
         }
 
         return missing;
+    }
+
+    @Override
+    public String createID(String filename) {
+        return filename.replaceFirst("\\.[\\d]+$", "");
+    }
+
+    @Override
+    public boolean isMultiPartArchive(String filename) {
+        return true;
     }
 
 }

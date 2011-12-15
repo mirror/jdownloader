@@ -1,11 +1,12 @@
 package org.jdownloader.extensions.extraction;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 
 public interface ArchiveFactory extends ArchiveFile {
 
-    Collection<? extends ArchiveFile> createPartFileList(String pattern);
+    ArrayList<ArchiveFile> createPartFileList(String pattern);
 
     // for (DownloadLink link1 : archive.getDownloadLinks()) {
     // link1.setProperty(ExtractionExtension.DOWNLOADLINK_KEY_EXTRACTEDPATH,

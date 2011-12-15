@@ -47,8 +47,8 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
     // return buildArchive(link);
     // }
 
-    public Collection<? extends ArchiveFile> createPartFileList(String pattern) {
-        ArrayList<FileArchiveFile> ret = new ArrayList<FileArchiveFile>();
+    public ArrayList<ArchiveFile> createPartFileList(String pattern) {
+        ArrayList<ArchiveFile> ret = new ArrayList<ArchiveFile>();
         for (File f : getFile().getParentFile().listFiles()) {
             if (f.isDirectory()) continue;
             if (new Regex(f.getAbsolutePath(), pattern, Pattern.CASE_INSENSITIVE).matches()) {
@@ -84,8 +84,8 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
 
         try {
 
-            if (archiv.getExtractor().getArchiveName(archiv.getFirstArchiveFile()) != null) {
-                path = path.replace("%ARCHIVENAME%", archiv.getExtractor().getArchiveName(archiv.getFirstArchiveFile()));
+            if (archiv.getName() != null) {
+                path = path.replace("%ARCHIVENAME%", archiv.getName());
             } else {
                 path = path.replace("%ARCHIVENAME%", "");
                 Log.L.severe("Could not set archivename for " + archiv.getFirstArchiveFile().getFilePath());

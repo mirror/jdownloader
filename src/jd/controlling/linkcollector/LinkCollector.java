@@ -29,6 +29,8 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.translate._JDT;
 
@@ -337,6 +339,29 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (dpi != null) {
                     packageID = dpi.createPackageID();
                 }
+                boolean archive = false;
+
+                if (packageID == null && LinkgrabberSettings.ARCHIVE_PACKAGIZER_ENABLED.getValue()) {
+
+                    ExtractionExtension extractor = (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
+
+                    if (extractor.isMultiPartArchive(link.getName())) {
+                        String archiveID = extractor.createArchiveID(link.getName());
+
+                        packageID = archiveID;
+                        if (packageID != null) {
+                            archive = true;
+                            if (dpi == null) {
+                                dpi = new PackageInfo();
+                                link.setDesiredPackageInfo(dpi);
+                                dpi.setName((LinknameCleaner.cleanFileName(extractor.getArchiveNameByFileName(link.getName()))));
+                            } else if (dpi.getName() == null) {
+                                dpi.setName((LinknameCleaner.cleanFileName(extractor.getArchiveNameByFileName(link.getName()))));
+                            }
+                        }
+                    }
+
+                }
                 if (packageID != null) {
                     /*
                      * packageID available, lets reuse an existing package with
@@ -351,7 +376,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     // packageName);
 
                     if (pkgMatch == null) {
-                        pkgMatch = PackageInfo.createCrawledPackage(link);
+
+                        pkgMatch = PackageInfo.createCrawledPackage(link, archive);
+
                         if (pkgMatch != null) {
                             /*
                              * we dont want autopackager(by filename) to work

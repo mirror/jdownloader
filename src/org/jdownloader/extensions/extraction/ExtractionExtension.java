@@ -148,6 +148,41 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         return false;
     }
 
+    public boolean isMultiPartArchive(String filename) {
+        for (IExtraction extractor : extractors) {
+            if (extractor.isArchivSupported(filename)) { return extractor.isMultiPartArchive(filename);
+
+            }
+        }
+        return false;
+    }
+
+    /**
+     * CReates and returns an id for the archive filenames belongs to.
+     * 
+     * @param filename
+     * @return
+     */
+    public String createArchiveID(String filename) {
+        for (IExtraction extractor : extractors) {
+            if (extractor.isArchivSupported(filename)) { return extractor.createID(filename);
+
+            }
+        }
+
+        return null;
+    }
+
+    public String getArchiveNameByFileName(String filename) {
+        filename = new File(filename).getName();
+        for (IExtraction extractor : extractors) {
+            if (extractor.isArchivSupported(filename)) { return extractor.getArchiveName(filename);
+
+            }
+        }
+        return null;
+    }
+
     /**
      * Startet das abwarbeiten der extractqueue
      */
@@ -210,12 +245,12 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      * @param link
      * @return
      */
-    public Archive buildArchive(ArchiveFactory link) {
+    private Archive buildArchive(ArchiveFactory link) {
         for (Archive archive : archives) {
             if (archive.contains(link)) { return archive; }
         }
 
-        Archive archive = getExtractor(link).buildArchive(link);
+        Archive archive = getExtractorByFactory(link).buildArchive(link);
         Log.L.info("Created Archive: " + archive);
         Log.L.info("Files: " + archive.getArchiveFiles());
         archives.add(archive);
@@ -397,7 +432,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      * @param link
      * @return
      */
-    private IExtraction getExtractor(ArchiveFactory link) {
+    public IExtraction getExtractorByFactory(ArchiveFactory link) {
         for (IExtraction extractor : extractors) {
             try {
                 if (extractor.isArchivSupported(link.getFilePath())) { return extractor.getClass().newInstance(); }
@@ -407,7 +442,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 e.printStackTrace();
             }
         }
-        System.err.println(1);
         return null;
     }
 
@@ -901,4 +935,5 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     public ExtensionConfigPanel<ExtractionExtension> getConfigPanel() {
         return configPanel;
     }
+
 }

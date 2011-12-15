@@ -151,6 +151,10 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         }
     }
 
+    public void update() {
+
+    }
+
     @Override
     public boolean addAll(int index, Collection<? extends CrawledLink> c) {
         try {

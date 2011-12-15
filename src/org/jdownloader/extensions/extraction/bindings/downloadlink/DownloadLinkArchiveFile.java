@@ -8,7 +8,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginProgress;
 
 import org.jdownloader.extensions.extraction.ArchiveFile;
-import org.jdownloader.extensions.extraction.ArchiveFile.Status;
 import org.jdownloader.extensions.extraction.translate.T;
 
 public class DownloadLinkArchiveFile implements ArchiveFile {
@@ -17,6 +16,17 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     public DownloadLinkArchiveFile(DownloadLink link) {
         this.downloadLink = link;
+    }
+
+    @Override
+    public int hashCode() {
+        return downloadLink.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || !(obj instanceof DownloadLinkArchive)) return false;
+        return downloadLink.equals(((DownloadLinkArchiveFile) obj).downloadLink);
     }
 
     public boolean isComplete() {

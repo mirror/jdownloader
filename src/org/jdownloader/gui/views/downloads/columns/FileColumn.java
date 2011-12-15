@@ -7,6 +7,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.border.Border;
 
+import jd.controlling.linkcrawler.ArchiveCrawledPackage;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -27,11 +28,15 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
     private Border            leftGapBorder;
     private ImageIcon         iconPackageOpen;
     private ImageIcon         iconPackageClosed;
+    private ImageIcon         iconArchive;
+    private ImageIcon         iconArchiveOpen;
 
     public FileColumn() {
         super(_GUI._.filecolumn_title());
         leftGapBorder = BorderFactory.createEmptyBorder(0, 32, 0, 0);
         iconPackageOpen = NewTheme.I().getIcon("tree_package_open", 32);
+        iconArchiveOpen = NewTheme.I().getIcon("tree_archive_open", 32);
+        iconArchive = NewTheme.I().getIcon("tree_archive", 32);
         iconPackageClosed = NewTheme.I().getIcon("tree_package_closed", 32);
     }
 
@@ -80,7 +85,10 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected Icon getIcon(AbstractNode value) {
-        if (value instanceof AbstractPackageNode) {
+
+        if (false && value instanceof ArchiveCrawledPackage) {
+            return (((AbstractPackageNode<?, ?>) value).isExpanded() ? iconArchiveOpen : iconArchive);
+        } else if (value instanceof AbstractPackageNode) {
             return (((AbstractPackageNode<?, ?>) value).isExpanded() ? iconPackageOpen : iconPackageClosed);
         } else if (value instanceof DownloadLink) {
             return (((DownloadLink) value).getIcon());

@@ -16,7 +16,7 @@ public class Test {
         extension.init();
         File[] files = Dialog.getInstance().showFileChooser("test", "Choose archive", FileChooserSelectionMode.FILES_ONLY, null, true, null, null);
         for (File f : files) {
-            final Archive archive = extension.buildArchive(new FileArchiveFactory(f));
+            final Archive archive = extension.getExtractorByFactory(new FileArchiveFactory(f)).buildArchive(new FileArchiveFactory(f));
             new Thread() {
                 @Override
                 public void run() {

@@ -64,8 +64,6 @@ class SplitUtil {
     static Archive buildArchive(ArchiveFactory link, String pattern, String startfile) {
         Archive archive = link.createArchive();
 
-        ArrayList<ArchiveFile> matches = new ArrayList<ArchiveFile>();
-
         // if (link instanceof DummyArchiveFile) {
         // for (File f : new
         // File(link.getFileOutput()).getParentFile().listFiles()) {
@@ -91,12 +89,12 @@ class SplitUtil {
         // return 0;
         // }
         // });
-        matches.addAll(link.createPartFileList(pattern));
+
         // }
 
-        archive.setArchiveFiles(matches);
+        archive.setArchiveFiles(link.createPartFileList(pattern));
 
-        for (ArchiveFile l : matches) {
+        for (ArchiveFile l : archive.getArchiveFiles()) {
             if (new Regex(l.getFilePath(), startfile, Pattern.CASE_INSENSITIVE).matches()) {
                 archive.setFirstArchiveFile(l);
                 break;

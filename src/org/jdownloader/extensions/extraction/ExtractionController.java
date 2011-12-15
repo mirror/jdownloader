@@ -121,7 +121,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 if (archive.isProtected() && archive.getPassword().equals("")) {
                     passwordList.addAll(archive.getFactory().getPasswordList(archive));
                     passwordList.addAll(PasswordListController.getInstance().getPasswordList());
-                    passwordList.add(extractor.getArchiveName(archive.getFirstArchiveFile()));
+                    passwordList.add(archive.getName());
 
                     passwordListSize = passwordList.size() + PasswordListController.getInstance().getPasswordList().size() + 2;
 
@@ -144,7 +144,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         if (archive.getPassword().equals("")) {
                             passwordList.clear();
                             //
-                            passwordList.add(extractor.getArchiveName(archive.getFirstArchiveFile()));
+                            passwordList.add(archive.getName());
                             passwordList.addAll(archive.getFactory().getPasswordList(archive));
                             for (String password : passwordList) {
                                 if (checkPassword(password)) {

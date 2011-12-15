@@ -131,7 +131,7 @@ public abstract class IExtraction {
      *            The {@link Archive}.
      * @return The name of the archive.
      */
-    public abstract String getArchiveName(ArchiveFile link);
+    public abstract String getArchiveName(String fileName);
 
     /**
      * Checks if the file is supported.
@@ -164,5 +164,15 @@ public abstract class IExtraction {
      * @return A list of parts which are missing.
      */
     public abstract List<String> checkComplete(Archive archive);
+
+    /**
+     * tries to create an ID for the archive the given filename belongs to.
+     * 
+     * @param filename
+     * @return
+     */
+    public abstract String createID(String filename);
+
+    public abstract boolean isMultiPartArchive(String filename);
 
 }

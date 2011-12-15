@@ -25,6 +25,17 @@ public class FileArchiveFile implements ArchiveFile {
         return file.getAbsolutePath();
     }
 
+    @Override
+    public int hashCode() {
+        return file.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || !(obj instanceof File)) return false;
+        return file.equals(((FileArchiveFile) obj).file);
+    }
+
     public boolean isValid() {
         return exists();
     }

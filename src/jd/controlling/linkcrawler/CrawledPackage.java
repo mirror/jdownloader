@@ -34,7 +34,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private boolean                                        expanded              = false;
 
     private HashSet<String>                                extractionPasswords   = new HashSet<String>();
-    private CrawledPackageView                             view;
+    protected CrawledPackageView                           view;
 
     // private transient CrawledPackageInfo fpInfo = null;
 

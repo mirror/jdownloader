@@ -48,8 +48,8 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 Log.L.severe("Could not set packagename for " + archiv.getFirstArchiveFile().getFilePath());
             }
 
-            if (archiv.getExtractor().getArchiveName(archiv.getFirstArchiveFile()) != null) {
-                path = path.replace("%ARCHIVENAME%", archiv.getExtractor().getArchiveName(archiv.getFirstArchiveFile()));
+            if (archiv.getName() != null) {
+                path = path.replace("%ARCHIVENAME%", archiv.getExtractor().getArchiveName(archiv.getFirstArchiveFile().getFilePath()));
             } else {
                 path = path.replace("%ARCHIVENAME%", "");
                 Log.L.severe("Could not set archivename for " + archiv.getFirstArchiveFile().getFilePath());
@@ -95,7 +95,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         return null;
     }
 
-    public Collection<? extends ArchiveFile> createPartFileList(String pattern) {
+    public ArrayList<ArchiveFile> createPartFileList(String pattern) {
 
         final Pattern pat = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
         List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
@@ -109,7 +109,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
             }
         });
 
-        ArrayList<DownloadLinkArchiveFile> ret = new ArrayList<DownloadLinkArchiveFile>();
+        ArrayList<ArchiveFile> ret = new ArrayList<ArchiveFile>();
         for (DownloadLink l : links) {
             ret.add(new DownloadLinkArchiveFile(l));
         }

@@ -43,6 +43,7 @@ public class Unix extends IExtraction {
         String pattern = "^" + Regex.escape(link.getFilePath().replaceAll("(?i)\\.[a-z][a-z]$", "")) + "\\.[a-z][a-z]$";
         Archive a = SplitUtil.buildArchive(link, pattern, ".*\\.aa$");
         a.setExtractor(this);
+        a.setName(getArchiveName(new File(link.getFilePath()).getName()));
         return a;
     }
 
@@ -92,8 +93,9 @@ public class Unix extends IExtraction {
     public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
     }
 
-    public String getArchiveName(ArchiveFile link) {
-        return new File(link.getFilePath()).getName().replaceFirst("\\.[a-z][a-z]$", "");
+    public String getArchiveName(String link) {
+        return createID(archive.getFactory().toFile(link).getName());
+
     }
 
     public boolean isArchivSupported(String file) {
@@ -121,7 +123,7 @@ public class Unix extends IExtraction {
 
         String suffix = "aa";
 
-        String archivename = getArchiveName(archive.getFirstArchiveFile()) + ".";
+        String archivename = archive.getName() + ".";
 
         for (String f : files) {
             while (!f.endsWith(suffix)) {
@@ -161,6 +163,16 @@ public class Unix extends IExtraction {
         newSuffix = String.valueOf(first) + String.valueOf(last);
 
         return newSuffix;
+    }
+
+    @Override
+    public String createID(String filename) {
+        return filename.replaceFirst("\\.[a-z][a-z]$", "");
+    }
+
+    @Override
+    public boolean isMultiPartArchive(String filename) {
+        return true;
     }
 
 }

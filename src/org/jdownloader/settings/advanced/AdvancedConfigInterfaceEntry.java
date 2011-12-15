@@ -88,4 +88,8 @@ public class AdvancedConfigInterfaceEntry implements AdvancedConfigEntry {
         }
         return ret;
     }
+
+    public boolean isEditable() {
+        return true;
+    }
 }

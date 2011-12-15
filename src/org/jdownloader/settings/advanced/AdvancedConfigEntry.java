@@ -18,4 +18,6 @@ public interface AdvancedConfigEntry {
 
     public String getTypeString();
 
+    public boolean isEditable();
+
 }

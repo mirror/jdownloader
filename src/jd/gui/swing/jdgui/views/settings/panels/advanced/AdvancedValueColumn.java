@@ -57,6 +57,11 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             }
 
             @Override
+            public boolean isEditable(final AdvancedConfigEntry obj) {
+                return obj.isEditable();
+            }
+
+            @Override
             public String getStringValue(AdvancedConfigEntry value) {
                 return value.getValue() + "";
             }
@@ -82,6 +87,11 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             @Override
             protected String getTooltipText(AdvancedConfigEntry obj) {
                 return obj.getDescription();
+            }
+
+            @Override
+            public boolean isEditable(final AdvancedConfigEntry obj) {
+                return obj.isEditable();
             }
 
             @Override
@@ -114,6 +124,11 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                 return (Boolean) value.getValue();
             }
 
+            @Override
+            public boolean isEditable(final AdvancedConfigEntry obj) {
+                return obj.isEditable();
+            }
+
             {
                 this.renderer.setHorizontalAlignment(SwingConstants.RIGHT);
                 renderer.setHorizontalTextPosition(SwingConstants.LEFT);
@@ -131,6 +146,11 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
         longColumn = new ExtSpinnerColumn<AdvancedConfigEntry>(getName()) {
 
             private static final long serialVersionUID = 1L;
+
+            @Override
+            public boolean isEditable(final AdvancedConfigEntry obj) {
+                return obj.isEditable();
+            }
 
             @Override
             protected SpinnerNumberModel getModel(AdvancedConfigEntry value, Number n) {
@@ -191,6 +211,11 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
 
         enumColumn = new ExtComboColumn<AdvancedConfigEntry>(getName(), null) {
             private static final long serialVersionUID = 1L;
+
+            @Override
+            public boolean isEditable(final AdvancedConfigEntry obj) {
+                return obj.isEditable();
+            }
 
             public ComboBoxModel updateModel(final ComboBoxModel dataModel, final AdvancedConfigEntry value) {
 

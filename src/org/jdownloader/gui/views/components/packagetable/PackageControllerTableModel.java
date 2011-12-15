@@ -258,6 +258,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 node.getView().clear();
                 node.getView().addAll(files);
             }
+            node.getView().update();
             boolean expanded = ((PackageType) node).isExpanded();
             if (column != null && expanded) {
                 /* we only have to sort children if the package is expanded */

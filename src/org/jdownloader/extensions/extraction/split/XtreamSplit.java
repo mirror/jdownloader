@@ -62,7 +62,13 @@ public class XtreamSplit extends IExtraction {
         String pattern = "^" + Regex.escape(link.getFilePath().replaceAll("(?i)\\.[\\d]+\\.xtm$", "")) + "\\.[\\d]+\\.xtm$";
         Archive a = SplitUtil.buildArchive(link, pattern, ".*\\.001\\.xtm$");
         a.setExtractor(this);
+        a.setName(getArchiveName(new File(link.getFilePath()).getName()));
         return a;
+    }
+
+    @Override
+    public boolean isMultiPartArchive(String filename) {
+        return true;
     }
 
     // @Override
@@ -287,8 +293,8 @@ public class XtreamSplit extends IExtraction {
     public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
     }
 
-    public String getArchiveName(ArchiveFile link) {
-        return new File(link.getFilePath()).getName().replaceFirst("\\.[\\d]+\\.xtm$", "");
+    public String getArchiveName(String link) {
+        return createID(link);
     }
 
     public boolean isArchivSupported(String file) {
@@ -311,7 +317,7 @@ public class XtreamSplit extends IExtraction {
 
         Regex r = new Regex(archive.getFirstArchiveFile().getFilePath(), ".*\\.([\\d]+)\\.xtm$");
         int length = r.getMatch(0).length();
-        String archivename = getArchiveName(archive.getFirstArchiveFile());
+        String archivename = archive.getName();
 
         for (ArchiveFile l : archive.getArchiveFiles()) {
             String e = "";
@@ -332,6 +338,11 @@ public class XtreamSplit extends IExtraction {
         }
 
         return missing;
+    }
+
+    @Override
+    public String createID(String filename) {
+        return filename.replaceFirst("\\.[\\d]+\\.xtm$", "");
     }
 
 }

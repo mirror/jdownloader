@@ -20,7 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.controlling.JDLogger;
+import org.appwork.utils.logging.Log;
 
 /**
  * Contains information about the archivefile.
@@ -132,6 +132,8 @@ public class Archive {
      */
     private IExtraction            extractor;
     private ArchiveFactory         factory;
+    private List<String>           missing;
+    private String                 name;
 
     public ArchiveFactory getFactory() {
         return factory;
@@ -182,6 +184,7 @@ public class Archive {
     }
 
     public String toString() {
+        if (getFirstArchiveFile() == null) return "Incomplete Archive";
         return "Archive " + getFirstArchiveFile().getFilePath();
     }
 
@@ -205,9 +208,9 @@ public class Archive {
         return archives;
     }
 
-    public void setArchiveFiles(ArrayList<ArchiveFile> archives) {
+    public void setArchiveFiles(ArrayList<ArchiveFile> collection) {
 
-        this.archives = archives;
+        this.archives = collection;
     }
 
     public void setGotInterrupted(final boolean gotInterrupted) {
@@ -243,20 +246,29 @@ public class Archive {
     }
 
     public boolean isComplete() {
+        missing = new ArrayList<String>();
+
         for (ArchiveFile l : archives) {
 
-            if (!l.isComplete()) { return false; }
-        }
+            if (!l.isComplete()) {
+                missing.add(l.getFilePath());
 
-        List<String> missing = extractor.checkComplete(this);
+            }
+        }
+        List<String> ms = extractor.checkComplete(this);
+        if (ms != null) this.missing.addAll(ms);
         if (missing.size() > 0) {
             for (String entry : missing) {
-                JDLogger.getLogger().warning("Missing archive file: " + entry);
+                Log.L.info("Missing archive file: " + entry);
             }
             return false;
         }
 
         return true;
+    }
+
+    public List<String> getMissing() {
+        return missing;
     }
 
     public void setActive(boolean active) {
@@ -317,5 +329,13 @@ public class Archive {
 
     public boolean contains(ArchiveFile link) {
         return getArchiveFiles().contains(link);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String archiveName) {
+        this.name = archiveName;
     }
 }

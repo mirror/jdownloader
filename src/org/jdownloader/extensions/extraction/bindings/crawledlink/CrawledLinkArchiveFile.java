@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.linkgrabber.contextmenu;
+package org.jdownloader.extensions.extraction.bindings.crawledlink;
 
 import java.awt.Color;
 
@@ -14,8 +14,32 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
         this.link = l;
     }
 
+    public CrawledLink getLink() {
+        return link;
+    }
+
+    @Override
+    public int hashCode() {
+        return link.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || !(obj instanceof CrawledLinkArchiveFile)) return false;
+        return link.getName().equals(((CrawledLinkArchiveFile) obj).link.getName());
+    }
+
     public boolean isComplete() {
-        return true;
+        switch (link.getLinkState()) {
+        case OFFLINE:
+            return false;
+        default:
+            return true;
+        }
+    }
+
+    public String toString() {
+        return link.getName();
     }
 
     public String getFilePath() {
