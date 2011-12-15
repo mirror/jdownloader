@@ -86,7 +86,7 @@ public class FileOverNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://fileover.net/contacts/";
+        return "https://fileover.net/terms-of-service/";
     }
 
     @Override

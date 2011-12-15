@@ -77,11 +77,9 @@ public class GameFrontCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        // Correct old links because of domainchange
-        correctDownloadLink(downloadLink);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">File not found, you will be redirected to")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>File not found, you will be redirected to|<title>Game Front</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().contains("errno=ERROR_CONTENT_QUICKKEY_INVALID")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.getRedirectLocation().matches(".*?gamefront\\.com/\\d+/.+")) {
@@ -91,9 +89,13 @@ public class GameFrontCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        String filename = br.getRegex("<td><div style=\"width: 300px; overflow: hidden; margin-top: 0pt;\">(.*?)</div></td>").getMatch(0);
-        if (filename == null) filename = br.getRegex("Lucida Grande\\',\\'Lucida Sans Unicode\\',Arial,sans-serif; font-size: 28px; font-weight: normal;\">(.*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("File Name:<.*?<.*?>(.*?)<").getMatch(0);
+        String filename = br.getRegex("<dt>File Name:</dt>[\t\n\r ]+<dd>(<span title=\")?(.*?)(\"|</dd>)").getMatch(1);
+        if (filename == null) {
+            filename = br.getRegex("Lucida Grande\\',\\'Lucida Sans Unicode\\',Arial,sans-serif; font\\-size: 28px; font\\-weight: normal;\">(.*?)</h1>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?) \\| Game Front</title>").getMatch(0);
+            }
+        }
         String filesize = br.getRegex("\">File size:</td>[\t\n\r ]+<td>(.*?)</td>").getMatch(0);
         if (filesize == null) filesize = br.getRegex("File Size:<.*?<.*?>(.*?)<").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
