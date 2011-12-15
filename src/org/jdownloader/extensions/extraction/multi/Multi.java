@@ -544,7 +544,7 @@ public class Multi extends IExtraction {
     @Override
     public boolean findPassword(String password) {
         crack++;
-
+        System.out.println("Check Password: " + password);
         try {
             if (inArchive != null) {
                 try {

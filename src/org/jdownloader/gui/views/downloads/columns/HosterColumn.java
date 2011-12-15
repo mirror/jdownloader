@@ -234,7 +234,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
             return ((FilePackage) value).getFilePackageInfo().getIcons().length;
         } else if (value instanceof CrawledPackage) {
 
-        return ((CrawledPackage) value).getDomainInfos().length;
+        return ((CrawledPackage) value).getView().getDomainInfos().length;
 
         }
         return 1;

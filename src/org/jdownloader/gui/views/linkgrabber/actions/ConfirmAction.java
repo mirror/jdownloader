@@ -57,8 +57,9 @@ public class ConfirmAction extends AppAction {
                     if (node instanceof CrawledPackage) {
                         /* first convert all CrawledPackages to FilePackages */
                         CrawledPackage pkg = (CrawledPackage) node;
-                        FilePackage fpkg = LinkCollector.getInstance().removeAndConvert(pkg);
-                        if (fpkg != null) fpkgs.add(fpkg);
+                        ArrayList<CrawledLink> links = new ArrayList<CrawledLink>(((CrawledPackage) node).getView());
+                        ArrayList<FilePackage> packages = LinkCollector.getInstance().removeAndConvert(links);
+                        if (packages != null) fpkgs.addAll(packages);
                     } else if (node instanceof CrawledLink) {
                         /* collect all CrawledLinks */
                         clinks.add((CrawledLink) node);

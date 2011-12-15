@@ -2935,7 +2935,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter Filename Filter Expression..." })
     String SearchField_SearchField_helptext();
 
-    @Default(lngs = { "en" }, values = { "Start Download" })
+    @Default(lngs = { "en" }, values = { "Start Downloads" })
     String ConfirmAction_ConfirmAction_context_add_and_start();
 
     @Default(lngs = { "en" }, values = { "Add to Download List" })
@@ -3384,5 +3384,8 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Validate Split Archives" })
     String ValidateArchiveAction_ValidateArchiveAction_object_();
+
+    @Default(lngs = { "en" }, values = { "%s1/%s2 online" })
+    String AvailabilityColumn_getStringValue_object_(int i, int size);
 
 }

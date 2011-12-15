@@ -47,15 +47,21 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
         if (value instanceof DownloadLink) {
             dl = (DownloadLink) value;
             status = dl.getAvailableStatusInfo();
+            if (status == null) return unknown;
+            switch (status) {
+            case TRUE:
+                return online;
+            case FALSE:
+                return offline;
+            default:
+                return unknown;
+            }
         } else if (value instanceof CrawledLink) {
             CrawledLink cl = (CrawledLink) value;
             dl = cl.getDownloadLink();
             if (dl != null) {
                 status = dl.getAvailableStatusInfo();
-            }
-        }
-        if (dl != null) {
-            if (status != null) {
+                if (status == null) return unknown;
                 switch (status) {
                 case TRUE:
                     return online;
@@ -65,8 +71,14 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
                     return unknown;
                 }
             }
-            return unknown;
+        } else if (value instanceof CrawledPackage) {
+            if (((CrawledPackage) value).getView().getOfflineCount() > 0) {
+                return offline;
+            } else {
+                return online;
+            }
         }
+
         return null;
     }
 
@@ -126,6 +138,7 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public String getStringValue(AbstractNode value) {
+        if (value instanceof CrawledPackage) { return _GUI._.AvailabilityColumn_getStringValue_object_((((CrawledPackage) value).getView().size() - ((CrawledPackage) value).getView().getOfflineCount()), ((CrawledPackage) value).getView().size()); }
         return nothing;
     }
 

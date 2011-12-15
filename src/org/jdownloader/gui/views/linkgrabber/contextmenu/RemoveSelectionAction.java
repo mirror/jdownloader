@@ -13,6 +13,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 
 public class RemoveSelectionAction extends AppAction {
 
@@ -38,7 +39,7 @@ public class RemoveSelectionAction extends AppAction {
             IOEQ.add(new Runnable() {
 
                 public void run() {
-                    ArrayList<CrawledLink> remove = table.getAllSelectedChildren(selection);
+                    ArrayList<CrawledLink> remove = LinkTreeUtils.getSelectedChildren(selection);
                     LinkCollector.getInstance().removeChildren(remove);
                 }
 

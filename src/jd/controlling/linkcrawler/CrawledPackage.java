@@ -1,5 +1,6 @@
 package jd.controlling.linkcrawler;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -7,7 +8,6 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
 
 import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -19,7 +19,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private boolean                                        autoExtractionEnabled = true;
     private String                                         autoPackageName       = null;
     private boolean                                        autoStartEnabled;
-    private CrawledPackageView                             children;
+    private ArrayList<CrawledLink>                         children;
     private String                                         comment               = null;
     private PackageController<CrawledPackage, CrawledLink> controller            = null;
 
@@ -39,7 +39,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     // private transient CrawledPackageInfo fpInfo = null;
 
     public CrawledPackage() {
-        children = new ChildrenCollection(this);
+        children = new ArrayList<CrawledLink>();
         view = new CrawledPackageView();
     }
 
@@ -139,10 +139,6 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         return downloadFolderSet;
     }
 
-    public boolean isEnabled() {
-        return children.isEnabled();
-    }
-
     public boolean isExpanded() {
         return expanded;
     }
@@ -218,19 +214,15 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     public void onChildEnabledStateChanged(CrawledLink crawledLink) {
-        children.updateInfo(crawledLink);
-    }
-
-    public DomainInfo[] getDomainInfos() {
-        return children.getDomainInfos();
-    }
-
-    public long getSize() {
-        return children.getFileSize();
+        getView().updateInfo(crawledLink);
     }
 
     public CrawledPackageView getView() {
         return view;
+    }
+
+    public boolean isEnabled() {
+        return getView().isEnabled();
     }
 
 }

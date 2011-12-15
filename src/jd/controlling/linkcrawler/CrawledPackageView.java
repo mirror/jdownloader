@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.TreeSet;
 
+import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.packagecontroller.ChildrenView;
 
 import org.appwork.exceptions.WTFException;
@@ -24,12 +25,14 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     protected CrawledPackage               crawledPackage;
     protected HashSet<CrawledLink>         enabled;
     protected HashMap<CrawledLink, Long>   sizes;
+    private HashSet<CrawledLink>           offline;
 
     public CrawledPackageView() {
         this.fileSize = 0l;
         hostCountMap = new HashMap<DomainInfo, Integer>();
         domainList = new TreeSet<DomainInfo>();
         enabled = new HashSet<CrawledLink>();
+        offline = new HashSet<CrawledLink>();
         sizes = new HashMap<CrawledLink, Long>();
     }
 
@@ -79,6 +82,8 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         domainInfos = domainList.toArray(new DomainInfo[] {});
         // enabled
         if (element.isEnabled()) enabled.add(element);
+        // online
+        if (element.getLinkState() == LinkState.OFFLINE) offline.add(element);
         // size
         sizes.put(element, element.getSize());
         fileSize += element.getSize();
@@ -100,6 +105,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         }
         domainInfos = domainList.toArray(new DomainInfo[] {}); // enabled
         enabled.remove(element);
+        offline.remove(element);
         // size
         fileSize -= sizes.get(element);
         if (fileSize < 0) throw new WTFException("Filesize cannot be less than 0");
@@ -134,6 +140,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             this.fileSize = 0l;
             hostCountMap.clear();
             domainList.clear();
+            offline.clear();
             enabled.clear();
             sizes.clear();
 
@@ -209,6 +216,10 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
     public boolean isEnabled() {
         return enabled.size() > 0;
+    }
+
+    public int getOfflineCount() {
+        return offline.size();
     }
 
     public long getFileSize() {

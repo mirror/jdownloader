@@ -88,13 +88,14 @@ public class LinkGrabberSidebar extends MigPanel {
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         });
-        add(hosterFilter, "gaptop 7,hidemode 3");
-        add(hosterFilterTable, "hidemode 3");
-        add(filetypeFilter, "gaptop 7,hidemode 3");
-        add(filetypeFilterTable, "hidemode 3");
 
         add(exceptions, "gaptop 7,hidemode 3");
         add(exceptionsFilterTable, "hidemode 3");
+        add(filetypeFilter, "gaptop 7,hidemode 3");
+        add(filetypeFilterTable, "hidemode 3");
+        add(hosterFilter, "gaptop 7,hidemode 3");
+        add(hosterFilterTable, "hidemode 3");
+
         add(Box.createGlue(), "pushy,growy");
         add(quickSettingsHeader, "gaptop 7");
         add(quicksettings, "hidemode 3");

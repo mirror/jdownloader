@@ -7,12 +7,12 @@ import java.util.ArrayList;
 import javax.swing.ImageIcon;
 
 import jd.controlling.IOEQ;
-import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.images.NewTheme;
 
 public class ConfirmAllAction extends AppAction {
@@ -46,8 +46,10 @@ public class ConfirmAllAction extends AppAction {
         IOEQ.add(new Runnable() {
 
             public void run() {
-                ArrayList<AbstractNode> pkgs = new ArrayList<AbstractNode>(LinkCollector.getInstance().getPackages());
-                new ConfirmAction(autostart, pkgs).actionPerformed(null);
+
+                ArrayList<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
+
+                new ConfirmAction(autostart, packages).actionPerformed(null);
             }
 
         }, true);

@@ -15,6 +15,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 
 public class RemoveNonSelectedAction extends AppAction {
 
@@ -40,7 +41,8 @@ public class RemoveNonSelectedAction extends AppAction {
             IOEQ.add(new Runnable() {
 
                 public void run() {
-                    final ArrayList<CrawledLink> selected = table.getAllSelectedChildren(selection);
+
+                    final ArrayList<CrawledLink> selected = LinkTreeUtils.getSelectedChildren(selection);
                     List<CrawledLink> nonselected = LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
 
                         public boolean isChildrenNodeFiltered(CrawledLink node) {

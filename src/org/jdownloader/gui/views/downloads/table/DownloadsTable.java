@@ -241,6 +241,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     protected boolean onShortcutDelete(final ArrayList<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
+
         new DeleteAction(getAllSelectedChildren(selectedObjects), direct).actionPerformed(null);
         return true;
     }
