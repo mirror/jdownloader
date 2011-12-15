@@ -646,7 +646,11 @@ public class Megauploadcom extends PluginForHost {
                  * check if we are still premium user, because we login via
                  * cookie
                  */
-                final String red = this.br.getRegex("document\\.location='(.*?)'").getMatch(0);
+                String red = this.br.getRegex("document\\.location='(.*?)'").getMatch(0);
+                if (red != null && red.contains("megavideo")) {
+                    /* View on Megavideo uses the document.location stuff too */
+                    red = null;
+                }
                 if (red != null || this.br.containsHTML("trying to download is larger than")) {
                     if (!this.isPremium(account, this.br.cloneBrowser(), true, true)) {
                         /* no longer premium retry */
@@ -797,7 +801,11 @@ public class Megauploadcom extends PluginForHost {
                 url = getDownloadURL(br);
                 if (url != null) break;
                 /* check for iplimit */
-                final String red = this.br.getRegex("document\\.location='(.*?)'").getMatch(0);
+                String red = this.br.getRegex("document\\.location='(.*?)'").getMatch(0);
+                if (red != null && red.contains("megavideo")) {
+                    /* View on Megavideo uses the document.location stuff too */
+                    red = null;
+                }
                 if (red != null) {
                     logger.severe("Your IP got banned");
                     this.br.getPage(red);
