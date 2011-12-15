@@ -512,6 +512,73 @@ abstract public class DownloadInterface {
             }
         }
 
+        /**
+         * returns Long[] with Start/Stop/Size if available
+         * 
+         * @param connection
+         * @return
+         */
+        private Long[] parseContentRange(URLConnectionAdapter connection, long startByte, long endByte) {
+            String contentRange = connection.getHeaderField("Content-Range");
+            String[] range = null;
+            if (contentRange != null) {
+                if ((range = new Regex(contentRange, ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getRow(0)) != null) {
+                    /* RFC-2616 */
+                    /* START-STOP/SIZE */
+                    /* Content-Range=[133333332-199999999/200000000] */
+                    long gotSB = Formatter.filterLong(range[0]);
+                    long gotEB = Formatter.filterLong(range[1]);
+                    long gotS = Formatter.filterLong(range[2]);
+                    if (gotSB != startByte) {
+                        logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wished start: " + 0);
+                    }
+                    if (endByte <= 0) {
+                        endByte = gotS - 1;
+                    }
+                    if (gotEB == endByte) {
+                        logger.finer("ServerType: RETURN Rangeend-1");
+                    } else if (gotEB == endByte + 1) {
+                        logger.finer("ServerType: RETURN exact rangeend");
+                    } else if (gotEB < endByte) {
+                        logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wishedend: " + endByte);
+                    } else if (gotEB > endByte + 1) {
+                        logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
+                    }
+                    endByte = Math.min(endByte, gotEB);
+                    return new Long[] { gotSB, endByte, gotS };
+                } else if ((range = new Regex(contentRange, ".*?(\\d+).*?-/.*?(\\d+)").getRow(0)) != null) {
+                    /* NON RFC-2616! STOP is missing */
+                    /*
+                     * this happend for some stupid servers, seems to happen
+                     * when request is bytes=9500- (x till end)
+                     */
+                    /* START-/SIZE */
+                    /* content-range: bytes 1020054729-/1073741824 */
+                    long gotSB = Formatter.filterLong(range[0]);
+                    long gotS = Formatter.filterLong(range[1]);
+                    if (gotSB != startByte) {
+                        logger.severe("Range Conflict " + range[0] + "->wished start: " + 0);
+                    }
+                    if (endByte <= 0) {
+                        endByte = gotS - 1;
+                    }
+                    long guessEB = gotSB + connection.getLongContentLength();
+                    if (guessEB == endByte) {
+                        logger.finer("ServerType: RETURN Rangeend-1");
+                    } else if (guessEB == endByte + 1) {
+                        logger.finer("ServerType: RETURN exact rangeend");
+                    } else if (guessEB < endByte) {
+                        logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wishedend: " + endByte);
+                    } else if (guessEB > endByte + 1) {
+                        logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + guessEB);
+                    }
+                    endByte = Math.min(endByte, guessEB);
+                    return new Long[] { gotSB, endByte, gotS };
+                }
+            }
+            return null;
+        }
+
         public void run0() {
             try {
                 logger.finer("Start Chunk " + getID() + " : " + startByte + " - " + endByte);
@@ -551,60 +618,11 @@ abstract public class DownloadInterface {
                         return;
                     }
                 }
+                Long[] ContentRange = parseContentRange(connection, startByte, endByte);
                 if (startByte > 0) {
                     /* startByte >0, we should have a Content-Range in response! */
-                    String contentRange = connection.getHeaderField("Content-Range");
-                    String[] range = null;
-                    if ((range = new Regex(contentRange, ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getRow(0)) != null) {
-                        /* RFC-2616 */
-                        /* START-STOP/SIZE */
-                        /* Content-Range=[133333332-199999999/200000000] */
-                        long gotSB = Formatter.filterLong(range[0]);
-                        long gotEB = Formatter.filterLong(range[1]);
-                        long gotS = Formatter.filterLong(range[2]);
-                        if (gotSB != startByte) {
-                            logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wished start: " + 0);
-                        }
-                        if (endByte <= 0) {
-                            endByte = gotS - 1;
-                        }
-                        if (gotEB == endByte) {
-                            logger.finer("ServerType: RETURN Rangeend-1");
-                        } else if (gotEB == endByte + 1) {
-                            logger.finer("ServerType: RETURN exact rangeend");
-                        } else if (gotEB < endByte) {
-                            logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wishedend: " + endByte);
-                        } else if (gotEB > endByte + 1) {
-                            logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
-                        }
-                        endByte = Math.min(endByte, gotEB);
-                    } else if ((range = new Regex(contentRange, ".*?(\\d+).*?-/.*?(\\d+)").getRow(0)) != null) {
-                        /* NON RFC-2616! STOP is missing */
-                        /*
-                         * this happend for some stupid servers, seems to happen
-                         * when request is bytes=9500- (x till end)
-                         */
-                        /* START-/SIZE */
-                        /* content-range: bytes 1020054729-/1073741824 */
-                        long gotSB = Formatter.filterLong(range[0]);
-                        long gotS = Formatter.filterLong(range[1]);
-                        if (gotSB != startByte) {
-                            logger.severe("Range Conflict " + range[0] + "->wished start: " + 0);
-                        }
-                        if (endByte <= 0) {
-                            endByte = gotS - 1;
-                        }
-                        long guessEB = gotSB + connection.getLongContentLength();
-                        if (guessEB == endByte) {
-                            logger.finer("ServerType: RETURN Rangeend-1");
-                        } else if (guessEB == endByte + 1) {
-                            logger.finer("ServerType: RETURN exact rangeend");
-                        } else if (guessEB < endByte) {
-                            logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wishedend: " + endByte);
-                        } else if (guessEB > endByte + 1) {
-                            logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + guessEB);
-                        }
-                        endByte = Math.min(endByte, guessEB);
+                    if (ContentRange != null && ContentRange.length == 3) {
+                        endByte = ContentRange[1];
                     } else if (chunkNum > 1) {
                         /* WTF? no Content-Range response available! */
                         if (connection.getLongContentLength() == startByte) {
@@ -621,6 +639,13 @@ abstract public class DownloadInterface {
                         /* only one chunk requested, set correct endByte */
                         endByte = connection.getLongContentLength() - 1;
                     }
+                } else if (ContentRange != null) {
+                    /*
+                     * we did not request a range but got a content-range
+                     * response,WTF?!
+                     */
+                    logger.severe("No Range Request->Content-Range Response?!");
+                    endByte = ContentRange[1];
                 }
                 if (endByte <= 0) {
                     /* endByte not yet set!, use Content-Length */

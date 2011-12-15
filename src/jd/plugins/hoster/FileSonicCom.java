@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\..*?/.*?file/([0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\..*?/.*?file/([a-zA-Z0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?|[0-9]+(/.+)?)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost implements ControlListener {
 
     private static final Object  LOCK               = new Object();
@@ -277,9 +277,12 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
     }
 
     public String getID(final DownloadLink link) {
-        String id = new Regex(link.getDownloadURL(), "/file/([0-9]+(/.+)?)").getMatch(0);
+        String id = new Regex(link.getDownloadURL(), "/file/([a-zA-Z0-9]+(/.+)?)").getMatch(0);
         if (id == null) {
             id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+(/.+)?)").getMatch(0);
+        }
+        if (id == null) {
+            id = new Regex(link.getDownloadURL(), "/file/([0-9]+(/.+)?)").getMatch(0);
         }
         return id;
     }
@@ -295,9 +298,15 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
     }
 
     public String getPureID(final DownloadLink link) {
-        String id = new Regex(link.getDownloadURL(), "/file/([0-9]+)").getMatch(0);
+        /* new format, Hashes */
+        String id = new Regex(link.getDownloadURL(), "/file/([a-zA-Z0-9]+)").getMatch(0);
         if (id == null) {
+            /* hash + old format, not very common */
             id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+)").getMatch(0);
+        }
+        if (id == null) {
+            /* fileID */
+            id = new Regex(link.getDownloadURL(), "/file/([0-9]+)").getMatch(0);
         }
         return id;
     }

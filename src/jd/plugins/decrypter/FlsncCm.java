@@ -75,7 +75,7 @@ public class FlsncCm extends PluginForDecrypt {
         if (links == null || links.length == 0) {
             failed = true;
             links = br.getRegex("<td><a href=\"(http://.*?)\"").getColumn(0);
-            if (links == null || links.length == 0) links = br.getRegex("\"(http://[^/\" ]*?filesonic\\..*?/[^\" ]*?file/\\d+/.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) links = br.getRegex("\"(http://[^/\" ]*?filesonic\\..*?/[^\" ]*?file/[a-zA-Z0-9]+/.*?)\"").getColumn(0);
         }
         String[][] folderLinks = br.getRegex("\"(http://(www\\.)?filesonic\\..{2,3}/folder/\\d+)\">(.*?)</a> \\(folder\\)</td>").getMatches();
         if ((links == null || links.length == 0) && (folderLinks == null || folderLinks.length == 0)) {

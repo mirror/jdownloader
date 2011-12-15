@@ -39,7 +39,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio)/.+?/.*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://[\\w\\.]*?4shared(-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
     private static String       agent        = RandomUserAgent.generate();
 
@@ -52,7 +52,7 @@ public class FourSharedCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("\\.viajd", ".com"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("\\.viajd", ".com").replaceFirst("https:", "http:"));
         if (link.getDownloadURL().contains(".com/download")) {
             boolean fixLink = true;
             try {
@@ -233,7 +233,7 @@ public class FourSharedCom extends PluginForHost {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         }
-        if (!dl.getConnection().isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
