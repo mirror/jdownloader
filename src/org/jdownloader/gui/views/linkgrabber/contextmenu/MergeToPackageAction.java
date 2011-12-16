@@ -41,8 +41,8 @@ public class MergeToPackageAction extends AppAction {
                 @Override
                 protected Void run() throws RuntimeException {
                     CrawledPackage newPackage = new CrawledPackage();
-                    newPackage.setAllowAutoPackage(false);
-                    newPackage.setCustomName(name);
+
+                    newPackage.setName(name);
                     HashSet<CrawledLink> links = new HashSet<CrawledLink>();
                     for (AbstractNode node : selection) {
                         if (node instanceof CrawledLink) {

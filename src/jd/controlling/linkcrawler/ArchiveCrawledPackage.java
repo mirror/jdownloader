@@ -5,13 +5,13 @@ public class ArchiveCrawledPackage extends CrawledPackage {
 
     public ArchiveCrawledPackage(String packageID, String name) {
         super();
-        setCustomName(name);
+        setName(name);
         this.id = packageID;
         view = new ArchiveCrawledPackageView();
     }
 
     public String getName() {
-        return super.getName();
+        return id;
     }
 
     public String getAutoPackageName() {

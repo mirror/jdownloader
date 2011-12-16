@@ -113,9 +113,9 @@ public class PackageInfo {
         if (StringUtils.isEmpty(pkgName)) {
             /* no info available, so lets cleanup filename */
             pkgName = LinknameCleaner.cleanFileName(link.getName());
-            ret.setAutoPackageName(pkgName);
+            ret.setName(pkgName);
         } else {
-            ret.setCustomName(pkgName);
+            ret.setName(pkgName);
         }
         ret.setCreated(link.getCreated());
         ret.setComment(dpi.getComment());

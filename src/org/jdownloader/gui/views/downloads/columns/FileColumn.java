@@ -77,7 +77,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
     protected void setStringValue(final String value, final AbstractNode object) {
         if (StringUtils.isEmpty(value)) return;
         if (object instanceof CrawledPackage) {
-            ((CrawledPackage) object).setCustomName(value);
+            ((CrawledPackage) object).setName(value);
         } else if (object instanceof CrawledLink) {
             ((CrawledLink) object).setName(value);
         }

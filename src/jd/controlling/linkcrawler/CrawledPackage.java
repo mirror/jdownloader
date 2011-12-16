@@ -14,10 +14,10 @@ import org.jdownloader.settings.GeneralSettings;
 public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledPackage> {
 
     protected static final String                          PACKAGETAG            = "<jd:" + PackagizerController.PACKAGENAME + ">";
-    private boolean                                        allowAutoPackage      = true;
+    // private boolean allowAutoPackage = true;
     private boolean                                        autoAddEnabled;
     private boolean                                        autoExtractionEnabled = true;
-    private String                                         autoPackageName       = null;
+    // private String autoPackageName = null;
     private boolean                                        autoStartEnabled;
     private ArrayList<CrawledLink>                         children;
     private String                                         comment               = null;
@@ -43,12 +43,12 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         view = new CrawledPackageView();
     }
 
-    /**
-     * @return the autoPackageName
-     */
-    public String getAutoPackageName() {
-        return autoPackageName;
-    }
+    // /**
+    // * @return the autoPackageName
+    // */
+    // public String getAutoPackageName() {
+    // return autoPackageName;
+    // }
 
     public List<CrawledLink> getChildren() {
         return children;
@@ -101,8 +101,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     public String getName() {
-        if (customName != null) return customName;
-        return autoPackageName;
+        return customName;
+        // return autoPackageName;
     }
 
     /**
@@ -116,12 +116,12 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         return downloadFolder;
     }
 
-    /**
-     * @return the allowAutoPackage
-     */
-    public boolean isAllowAutoPackage() {
-        return allowAutoPackage;
-    }
+    // /**
+    // * @return the allowAutoPackage
+    // */
+    // public boolean isAllowAutoPackage() {
+    // return allowAutoPackage;
+    // }
 
     public boolean isAutoAddEnabled() {
         return autoAddEnabled;
@@ -147,13 +147,13 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     }
 
-    /**
-     * @param allowAutoPackage
-     *            the allowAutoPackage to set
-     */
-    public void setAllowAutoPackage(boolean allowAutoPackage) {
-        this.allowAutoPackage = allowAutoPackage;
-    }
+    // /**
+    // * @param allowAutoPackage
+    // * the allowAutoPackage to set
+    // */
+    // public void setAllowAutoPackage(boolean allowAutoPackage) {
+    // this.allowAutoPackage = allowAutoPackage;
+    // }
 
     public void setAutoAddEnabled(boolean autoAddEnabled) {
         this.autoAddEnabled = autoAddEnabled;
@@ -163,13 +163,13 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         this.autoExtractionEnabled = autoExtractionEnabled;
     }
 
-    /**
-     * @param autoPackageName
-     *            the autoPackageName to set
-     */
-    public void setAutoPackageName(String autoPackageName) {
-        this.autoPackageName = autoPackageName;
-    }
+    // /**
+    // * @param autoPackageName
+    // * the autoPackageName to set
+    // */
+    // public void setAutoPackageName(String autoPackageName) {
+    // this.autoPackageName = autoPackageName;
+    // }
 
     public void setAutoStartEnabled(boolean autoStartEnabled) {
         this.autoStartEnabled = autoStartEnabled;
@@ -195,7 +195,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         this.created = created;
     }
 
-    public void setCustomName(String name) {
+    public void setName(String name) {
         customName = name;
     }
 
