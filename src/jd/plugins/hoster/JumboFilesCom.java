@@ -124,6 +124,9 @@ public class JumboFilesCom extends PluginForHost {
             if (linkurl == null) {
                 linkurl = br.getRegex("</td></tr></table>[\t\n\r ]+<br>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
             }
+            if (linkurl == null) {
+                linkurl = br.getRegex("\'(http://(www\\d+|[a-z0-9]+)\\.jumbofiles\\.com:\\d+/d/[a-z0-9]+/.*?)'\"").getMatch(0);
+            }
         }
         return linkurl;
     }
@@ -163,6 +166,9 @@ public class JumboFilesCom extends PluginForHost {
         String dllink = new Regex(BRBEFORE, "SRC=\"http://jumbofiles\\.com/images/dd\\.gif\" WIDTH=\"5\" HEIGHT=\"5\"><BR> <form name=\".*?\" action=\"(.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = new Regex(BRBEFORE, "\"(http://(www\\d+|[a-z0-9]+)\\.jumbofiles\\.com:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = new Regex(BRBEFORE, "\'(http://(www\\d+|[a-z0-9]+)\\.jumbofiles\\.com:\\d+/d/[a-z0-9]+/.*?)'\"").getMatch(0);
         }
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
