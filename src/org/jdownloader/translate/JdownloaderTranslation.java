@@ -751,4 +751,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Archive %s1 has %s2 part(s) and is incomplete.\r\n Missing Part(s): %s3" })
     String ValidateArchiveAction_actionPerformed_bad(String name, int size, List<String> missing);
+
+    @Default(lngs = { "en" }, values = { "%s1" })
+    String LinkCollector_archiv(String cleanFileName);
 }

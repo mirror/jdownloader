@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 import jd.controlling.IOEQ;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerHandler;
+import jd.controlling.linkcrawler.ArchiveCrawledPackage;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -59,6 +60,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     private LinkCrawlerFilter                                                crawlerFilter = null;
 
+    private ExtractionExtension                                              archiver;
+
     public static LinkCollector getInstance() {
         return INSTANCE;
     }
@@ -74,8 +77,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             linkChecker.setLinkCheckHandler(this);
             setCrawlerFilter(LinkFilterController.getInstance());
             setPackagizer(PackagizerController.getInstance());
+            setArchiver((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension());
 
         }
+    }
+
+    private void setArchiver(ExtractionExtension archiver) {
+        this.archiver = archiver;
     }
 
     public void abort() {
@@ -340,29 +348,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (dpi != null) {
                     packageID = dpi.createPackageID();
                 }
-                boolean archive = false;
 
-                if (packageID == null && LinkgrabberSettings.ARCHIVE_PACKAGIZER_ENABLED.getValue()) {
-
-                    ExtractionExtension extractor = (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
-                    CrawledLinkFactory clf = new CrawledLinkFactory(link);
-                    if (extractor.isMultiPartArchive(clf)) {
-                        String archiveID = extractor.createArchiveID(clf);
-
-                        packageID = archiveID;
-                        if (packageID != null) {
-                            archive = true;
-                            if (dpi == null) {
-                                dpi = new PackageInfo();
-                                link.setDesiredPackageInfo(dpi);
-                                dpi.setName((LinknameCleaner.cleanFileName(extractor.getArchiveName(clf))));
-                            } else if (dpi.getName() == null) {
-                                dpi.setName((LinknameCleaner.cleanFileName(extractor.getArchiveName(clf))));
-                            }
-                        }
-                    }
-
-                }
                 if (packageID != null) {
                     /*
                      * packageID available, lets reuse an existing package with
@@ -378,7 +364,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                     if (pkgMatch == null) {
 
-                        pkgMatch = PackageInfo.createCrawledPackage(link, archive);
+                        pkgMatch = PackageInfo.createCrawledPackage(link);
 
                         if (pkgMatch != null) {
                             /*
@@ -391,13 +377,43 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
                 }
                 boolean newOnlinePackage = false;
+                boolean isMultiARchive = false;
+                String packageName = null;
+                String archiveID = null;
                 if (pkgMatch == null) {
+                    packageName = LinknameCleaner.cleanFileName(link.getName());
+
                     /* no packageID available, lets work on filename only */
-                    String packageName = LinknameCleaner.cleanFileName(link.getName());
+
+                    if (LinkgrabberSettings.ARCHIVE_PACKAGIZER_ENABLED.getValue() && archiver != null) {
+
+                        CrawledLinkFactory clf = new CrawledLinkFactory(link);
+                        if (archiver.isMultiPartArchive(clf)) {
+                            archiveID = archiver.createArchiveID(clf);
+
+                            if (archiveID != null) {
+                                isMultiARchive = true;
+                                packageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(archiver.getArchiveName(clf)));
+                                // if (packageID != null) {
+                                // archive = true;
+                                // if (dpi == null) {
+                                // dpi = new PackageInfo();
+                                // link.setDesiredPackageInfo(dpi);
+                                // dpi.setName(());
+                                // } else if (dpi.getName() == null) {
+                                // dpi.setName((LinknameCleaner.cleanFileName(extractor.getArchiveName(clf))));
+                                // }
+                                // }
+                            }
+                        }
+
+                    }
+
                     int bestMatch = 0;
                     boolean readL = readLock();
                     try {
                         for (CrawledPackage pkg : packages) {
+                            if (isMultiARchive && !(pkg instanceof ArchiveCrawledPackage)) continue;
                             if (pkg.isAllowAutoPackage() == false) continue;
                             if (dpi != null && dpi.getDestinationFolder() != null) {
                                 boolean eq = pkg.isDownloadFolderSet() && (CrossSystem.isWindows() ? dpi.getDestinationFolder().equalsIgnoreCase(pkg.getRawDownloadFolder()) : dpi.getDestinationFolder().equals(pkg.getRawDownloadFolder()));
@@ -407,7 +423,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 continue;
                             }
 
-                            int sim = LinknameCleaner.comparepackages(pkg.getAutoPackageName(), packageName);
+                            int sim = LinknameCleaner.comparepackages(pkg.getAutoPackageName(), isMultiARchive ? archiveID : packageName);
                             if (sim > bestMatch) {
                                 bestMatch = sim;
                                 pkgMatch = pkg;
@@ -441,7 +457,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                             /* create new Package */
                             newOnlinePackage = true;
-                            pkgMatch = new CrawledPackage();
+                            pkgMatch = isMultiARchive ? new ArchiveCrawledPackage(archiveID, packageName) : new CrawledPackage();
                             pkgMatch.setCreated(link.getCreated());
                             pkgMatch.setAllowAutoPackage(true);
                             if (dpi != null && dpi.getDestinationFolder() != null) {
@@ -484,7 +500,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         if (matches.size() >= LinkgrabberSettings.VARIOUS_PACKAGE_LIMIT.getValue()) {
                             matches.add(l);
                             newOnlinePackage = true;
-                            pkgMatch = new CrawledPackage();
+                            pkgMatch = isMultiARchive ? new ArchiveCrawledPackage(archiveID, packageName) : new CrawledPackage();
                             pkgMatch.setCreated(link.getCreated());
                             pkgMatch.setAllowAutoPackage(true);
                             if (dpi != null && dpi.getDestinationFolder() != null) {

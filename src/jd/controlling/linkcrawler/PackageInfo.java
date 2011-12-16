@@ -104,10 +104,10 @@ public class PackageInfo {
         return sb.length() == 0 ? null : sb.toString();
     }
 
-    public static CrawledPackage createCrawledPackage(CrawledLink link, boolean isArchive) {
+    public static CrawledPackage createCrawledPackage(CrawledLink link) {
         PackageInfo dpi = link.getDesiredPackageInfo();
         if (dpi == null) return null;
-        CrawledPackage ret = isArchive ? new ArchiveCrawledPackage() : new CrawledPackage();
+        CrawledPackage ret = new CrawledPackage();
         /* fetch desired Packagename from info */
         String pkgName = dpi.getName();
         if (StringUtils.isEmpty(pkgName)) {
