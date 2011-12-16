@@ -371,7 +371,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 boolean isMultiArchive = false;
                 if (dpi != null) {
                     packageName = dpi.getName();
-                    packageID = dpi.getUniqueId().toString();
+                    if (dpi.getUniqueId() != null) {
+                        packageID = dpi.getUniqueId().toString();
+                    }
                     downloadFolder = dpi.getDestinationFolder();
                 }
                 CrawledLinkFactory clf = new CrawledLinkFactory(link);
