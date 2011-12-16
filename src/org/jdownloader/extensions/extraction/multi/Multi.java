@@ -143,7 +143,7 @@ public class Multi extends IExtraction {
         String file = link.getFilePath();
         Archive archive = link.createArchive();
         archive.setExtractor(this);
-        archive.setName(getArchiveName(new File(link.getFilePath()).getName()));
+        archive.setName(getArchiveName(link));
         String pattern = "";
 
         if (file.matches(PATTERN_RAR_MULTI)) {
@@ -366,14 +366,14 @@ public class Multi extends IExtraction {
     }
 
     @Override
-    public String createID(String filename) {
+    public String createID(ArchiveFactory f) {
 
         String[] patterns = new String[] { PA_R_T_0_9_RAR$, RAR$, ZIP$, _7Z$, _7Z_D, TAR_GZ$, TAR_BZ2$, R_D2, TAR$ };
 
         for (String p : patterns) {
             Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);
 
-            Matcher matcher = pattern.matcher(filename);
+            Matcher matcher = pattern.matcher(f.getName());
             if (matcher.find()) {
                 //
                 if (p.equals(R_D2)) {
@@ -702,14 +702,14 @@ public class Multi extends IExtraction {
     }
 
     @Override
-    public String getArchiveName(String file) {
+    public String getArchiveName(ArchiveFactory factory) {
 
         String[] patterns = new String[] { PA_R_T_0_9_RAR$, RAR$, ZIP$, _7Z$, _7Z_D, TAR_GZ$, TAR_BZ2$, R_D2, TAR$ };
 
         for (String p : patterns) {
             Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);
 
-            Matcher matcher = pattern.matcher(file);
+            Matcher matcher = pattern.matcher(factory.getName());
             if (matcher.find()) {
                 //
 
@@ -726,33 +726,18 @@ public class Multi extends IExtraction {
     }
 
     @Override
-    public boolean isArchivSupported(String file) {
-        // if (file.matches(PATTERN_RAR_MULTI)) return true;
-        // if (file.matches(PATTERN_RAR)) return true;
-        // if (file.matches(PATTERN_RAR_MULTI2)) return true;
-        // if (file.matches(PATTERN_ZIP)) return true;
-        // if (file.matches(PATTERN_7Z)) return true;
-        // if (file.matches(PATTERN_7Z_PART)) return true;
-        // if (file.matches(PATTERN_TAR)) return true;
-        // if (file.matches(PATTERN_TAR_GZ)) return true;
-        // if (file.matches(PATTERB_TAR_BZ2)) return true;
-        return isArchivSupportedFileFilter(file);
-    }
-
-    @Override
-    public boolean isArchivSupportedFileFilter(String file) {
+    public boolean isArchivSupported(ArchiveFactory factory) {
         String[] patterns = new String[] { PA_R_T_0_9_RAR$, RAR$, ZIP$, _7Z$, _7Z_D, TAR_GZ$, TAR_BZ2$, R_D2, TAR$ };
 
         for (String p : patterns) {
             Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);
 
-            Matcher matcher = pattern.matcher(file);
+            Matcher matcher = pattern.matcher(factory.getName());
             if (matcher.find()) { return true;
 
             }
         }
         return false;
-
     }
 
     private boolean matches(String filePath, String pattern) {
@@ -853,14 +838,14 @@ public class Multi extends IExtraction {
     }
 
     @Override
-    public boolean isMultiPartArchive(String filename) {
+    public boolean isMultiPartArchive(ArchiveFactory factory) {
         // rememver *.rar archives may be the start of a multiarchive, too
         String[] patterns = new String[] { PA_R_T_0_9_RAR$, RAR$, _7Z_D, R_D2 };
 
         for (String p : patterns) {
             Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);
 
-            Matcher matcher = pattern.matcher(filename);
+            Matcher matcher = pattern.matcher(factory.getName());
             if (matcher.find()) { return true;
 
             }

@@ -49,7 +49,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
             }
 
             if (archiv.getName() != null) {
-                path = path.replace("%ARCHIVENAME%", archiv.getExtractor().getArchiveName(archiv.getFirstArchiveFile().getFilePath()));
+                path = path.replace("%ARCHIVENAME%", archiv.getName());
             } else {
                 path = path.replace("%ARCHIVENAME%", "");
                 Log.L.severe("Could not set archivename for " + archiv.getFirstArchiveFile().getFilePath());

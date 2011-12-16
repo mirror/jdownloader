@@ -31,6 +31,7 @@ import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.translate._JDT;
 
@@ -344,9 +345,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (packageID == null && LinkgrabberSettings.ARCHIVE_PACKAGIZER_ENABLED.getValue()) {
 
                     ExtractionExtension extractor = (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
-
-                    if (extractor.isMultiPartArchive(link.getName())) {
-                        String archiveID = extractor.createArchiveID(link.getName());
+                    CrawledLinkFactory clf = new CrawledLinkFactory(link);
+                    if (extractor.isMultiPartArchive(clf)) {
+                        String archiveID = extractor.createArchiveID(clf);
 
                         packageID = archiveID;
                         if (packageID != null) {
@@ -354,9 +355,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             if (dpi == null) {
                                 dpi = new PackageInfo();
                                 link.setDesiredPackageInfo(dpi);
-                                dpi.setName((LinknameCleaner.cleanFileName(extractor.getArchiveNameByFileName(link.getName()))));
+                                dpi.setName((LinknameCleaner.cleanFileName(extractor.getArchiveName(clf))));
                             } else if (dpi.getName() == null) {
-                                dpi.setName((LinknameCleaner.cleanFileName(extractor.getArchiveNameByFileName(link.getName()))));
+                                dpi.setName((LinknameCleaner.cleanFileName(extractor.getArchiveName(clf))));
                             }
                         }
                     }

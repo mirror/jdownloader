@@ -30,7 +30,6 @@ import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
-import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 
 /**
  * Joins HJSplit files.
@@ -44,7 +43,7 @@ public class HJSplit extends IExtraction {
         String pattern = "^" + Regex.escape(link.getFilePath().replaceAll("(?i)\\.[\\d]+$", "")) + "\\.[\\d]+$";
         Archive a = SplitUtil.buildArchive(link, pattern, ".*\\.001$");
         a.setExtractor(this);
-        a.setName(getArchiveName(new File(link.getFilePath()).getName()));
+        a.setName(getArchiveName(link));
         return a;
     }
 
@@ -94,19 +93,22 @@ public class HJSplit extends IExtraction {
     public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
     }
 
-    public String getArchiveName(String filename) {
-        return createID(filename);
+    public String getArchiveName(ArchiveFactory factory) {
+        return createID(factory);
 
     }
 
-    public boolean isArchivSupported(String file) {
+    public boolean isArchivSupported(ArchiveFactory factory) {
+        String file = factory.getFilePath();
         if (file.matches(".*\\.[\\d]+$")) {
             if (file.matches("(?i).*\\.7z\\.\\d+$")) {
                 return false;
+            } else if (file.matches("(?i).*\\..+?\\.\\d+$")) {
+                return true;
             } else {
                 // TODO
 
-                Archive a = buildArchive(new FileArchiveFactory(archive.getFactory().toFile(file)));
+                Archive a = buildArchive(factory);
                 if (a.getFirstArchiveFile() == null || a.getArchiveFiles().size() <= 1) {
                     return false;
                 } else {
@@ -117,17 +119,17 @@ public class HJSplit extends IExtraction {
         return false;
     }
 
-    @Override
-    public boolean isArchivSupportedFileFilter(String file) {
-        if (file.matches(".*\\.001$")) {
-            if (file.matches("(?i).*\\.7z\\.001$")) {
-                return false;
-            } else {
-                return true;
-            }
-        }
-        return false;
-    }
+    // @Override
+    // public boolean isArchivSupportedFileFilter(String file) {
+    // if (file.matches(".*\\.001$")) {
+    // if (file.matches("(?i).*\\.7z\\.001$")) {
+    // return false;
+    // } else {
+    // return true;
+    // }
+    // }
+    // return false;
+    // }
 
     public void close() {
     }
@@ -163,12 +165,12 @@ public class HJSplit extends IExtraction {
     }
 
     @Override
-    public String createID(String filename) {
-        return filename.replaceFirst("\\.[\\d]+$", "");
+    public String createID(ArchiveFactory factory) {
+        return factory.getName().replaceFirst("\\.[\\d]+$", "");
     }
 
     @Override
-    public boolean isMultiPartArchive(String filename) {
+    public boolean isMultiPartArchive(ArchiveFactory factory) {
         return true;
     }
 

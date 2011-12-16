@@ -23,27 +23,31 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
     public ArrayList<ArchiveFile> createPartFileList(String pattern) {
         final Pattern pat = Pattern.compile(pattern, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
         ArrayList<ArchiveFile> ret = new ArrayList<ArchiveFile>();
-
-        for (CrawledLink l : getLink().getParentNode().getView()) {
-            if (pat.matcher(l.getName()).matches()) {
-                CrawledLinkArchiveFile claf = new CrawledLinkArchiveFile(l);
-                // if(claf.isComplete()&&claf.isValid()){
-                boolean contains = false;
-                for (Iterator<ArchiveFile> it = ret.iterator(); it.hasNext();) {
-                    ArchiveFile af = it.next();
-                    if (af.equals(claf)) {
-                        if (!af.isComplete() || !af.isValid()) {
-                            it.remove();
-                        } else {
-                            contains = true;
+        if (getLink().getParentNode() == null) {
+            // not yet packagized
+            ret.add(this);
+        } else {
+            for (CrawledLink l : getLink().getParentNode().getView()) {
+                if (pat.matcher(l.getName()).matches()) {
+                    CrawledLinkArchiveFile claf = new CrawledLinkArchiveFile(l);
+                    // if(claf.isComplete()&&claf.isValid()){
+                    boolean contains = false;
+                    for (Iterator<ArchiveFile> it = ret.iterator(); it.hasNext();) {
+                        ArchiveFile af = it.next();
+                        if (af.equals(claf)) {
+                            if (!af.isComplete() || !af.isValid()) {
+                                it.remove();
+                            } else {
+                                contains = true;
+                            }
                         }
                     }
-                }
 
-                if (!contains) {
-                    ret.add(claf);
+                    if (!contains) {
+                        ret.add(claf);
+                    }
+                    // }
                 }
-                // }
             }
         }
 

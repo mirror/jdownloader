@@ -140,17 +140,17 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      *            Path of the packed file
      * @return True if a extractor was found
      */
-    public final boolean isLinkSupported(String file) {
+    public final boolean isLinkSupported(ArchiveFactory factory) {
         for (IExtraction extractor : extractors) {
-            if (extractor.isArchivSupported(file)) { return true; }
+            if (extractor.isArchivSupported(factory)) { return true; }
         }
 
         return false;
     }
 
-    public boolean isMultiPartArchive(String filename) {
+    public boolean isMultiPartArchive(ArchiveFactory factory) {
         for (IExtraction extractor : extractors) {
-            if (extractor.isArchivSupported(filename)) { return extractor.isMultiPartArchive(filename);
+            if (extractor.isArchivSupported(factory)) { return extractor.isMultiPartArchive(factory);
 
             }
         }
@@ -160,12 +160,14 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     /**
      * CReates and returns an id for the archive filenames belongs to.
      * 
-     * @param filename
+     * @param factory
+     *            TODO
+     * 
      * @return
      */
-    public String createArchiveID(String filename) {
+    public String createArchiveID(ArchiveFactory factory) {
         for (IExtraction extractor : extractors) {
-            if (extractor.isArchivSupported(filename)) { return extractor.createID(filename);
+            if (extractor.isArchivSupported(factory)) { return extractor.createID(factory);
 
             }
         }
@@ -173,10 +175,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         return null;
     }
 
-    public String getArchiveNameByFileName(String filename) {
-        filename = new File(filename).getName();
+    public String getArchiveName(ArchiveFactory factory) {
         for (IExtraction extractor : extractors) {
-            if (extractor.isArchivSupported(filename)) { return extractor.getArchiveName(filename);
+            if (extractor.isArchivSupported(factory)) { return extractor.getArchiveName(factory);
 
             }
         }
@@ -432,10 +433,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      * @param link
      * @return
      */
-    public IExtraction getExtractorByFactory(ArchiveFactory link) {
+    public IExtraction getExtractorByFactory(ArchiveFactory factory) {
         for (IExtraction extractor : extractors) {
             try {
-                if (extractor.isArchivSupported(link.getFilePath())) { return extractor.getClass().newInstance(); }
+                if (extractor.isArchivSupported(factory)) { return extractor.getClass().newInstance(); }
             } catch (InstantiationException e) {
                 e.printStackTrace();
             } catch (IllegalAccessException e) {
@@ -471,7 +472,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         case ControlEvent.CONTROL_DOWNLOAD_FINISHED:
             if (event.getCaller() instanceof SingleDownloadController) {
                 link = ((SingleDownloadController) event.getCaller()).getDownloadLink();
-                if (link.getFilePackage().isPostProcessing() && this.getPluginConfig().getBooleanProperty("ACTIVATED", true) && isLinkSupported(link.getFileOutput())) {
+                if (link.getFilePackage().isPostProcessing() && this.getPluginConfig().getBooleanProperty("ACTIVATED", true) && isLinkSupported(new DownloadLinkArchiveFactory(link))) {
                     Archive archive = buildArchive(new DownloadLinkArchiveFactory(link));
 
                     if (!archive.isActive() && archive.getArchiveFiles().size() > 0 && archive.isComplete()) {
@@ -485,8 +486,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 try {
                     File[] list = (File[]) event.getParameter();
                     for (File archiveStartFile : list) {
-                        if (isLinkSupported(archiveStartFile.getAbsolutePath())) {
-                            Archive ar = buildArchive(new FileArchiveFactory(archiveStartFile));
+                        FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile);
+                        if (isLinkSupported(fac)) {
+                            Archive ar = buildArchive(fac);
                             if (ar.isActive() || ar.getArchiveFiles().size() < 1 || !ar.isComplete()) continue;
                             addToQueue(ar);
                         }
@@ -547,7 +549,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
                 boolean isLocalyAvailable = new File(link.getFileOutput()).exists();
 
-                if (isLocalyAvailable && isLinkSupported(link.getFileOutput())) {
+                if (isLocalyAvailable && isLinkSupported(new DownloadLinkArchiveFactory(link))) {
                     m.setEnabled(true);
                 } else {
                     m.setEnabled(false);
@@ -616,7 +618,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 });
                 m.setActionListener(this);
 
-                if (isLinkSupported(link.getFileOutput())) {
+                if (isLinkSupported(new DownloadLinkArchiveFactory(link))) {
                     m.setEnabled(true);
                 } else {
                     m.setEnabled(false);
@@ -650,7 +652,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 });
                 m.setActionListener(this);
 
-                if (isLinkSupported(link.getFileOutput())) {
+                if (isLinkSupported(new DownloadLinkArchiveFactory(link))) {
                     m.setEnabled(true);
                 } else {
                     m.setEnabled(false);
@@ -797,7 +799,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                         if (pathname.isDirectory()) return true;
 
                         for (IExtraction extractor : extractors) {
-                            if (extractor.isArchivSupportedFileFilter(pathname.getAbsolutePath())) { return true; }
+                            if (extractor.isArchivSupported(new FileArchiveFactory(pathname))) { return true; }
                         }
 
                         return false;
@@ -854,7 +856,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                         if (pathname.isDirectory()) return true;
 
                         for (IExtraction extractor : extractors) {
-                            if (extractor.isArchivSupportedFileFilter(pathname.getAbsolutePath())) { return true; }
+                            if (extractor.isArchivSupported(new FileArchiveFactory(pathname))) { return true; }
                         }
 
                         return false;

@@ -33,8 +33,9 @@ public class ValidateArchiveAction extends AppAction {
 
         nextLink: for (CrawledLink l : this.selection) {
             if (l.getLinkState() != LinkState.OFFLINE) {
-                if (extractor.isLinkSupported(l.getName())) {
-                    CrawledLinkFactory clf = new CrawledLinkFactory(l);
+                CrawledLinkFactory clf = new CrawledLinkFactory(l);
+                if (extractor.isLinkSupported(clf)) {
+
                     for (Archive a : archives) {
                         if (a.contains(clf)) continue nextLink;
                     }

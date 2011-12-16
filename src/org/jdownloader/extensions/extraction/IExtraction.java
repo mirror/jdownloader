@@ -131,25 +131,27 @@ public abstract class IExtraction {
      *            The {@link Archive}.
      * @return The name of the archive.
      */
-    public abstract String getArchiveName(String fileName);
+    public abstract String getArchiveName(ArchiveFactory factory);
 
     /**
      * Checks if the file is supported.
      * 
-     * @param file
-     *            The file which should be checked
-     * @return
-     */
-    public abstract boolean isArchivSupported(String file);
-
-    /**
-     * Checks if the file from the filefilter is supported.
+     * @param factory
+     *            TODO
      * 
-     * @param file
-     *            The file which should be checked.
      * @return
      */
-    public abstract boolean isArchivSupportedFileFilter(String file);
+    public abstract boolean isArchivSupported(ArchiveFactory factory);
+
+    //
+    // /**
+    // * Checks if the file from the filefilter is supported.
+    // *
+    // * @param file
+    // * The file which should be checked.
+    // * @return
+    // */
+    // public abstract boolean isArchivSupportedFileFilter(String file);
 
     /**
      * Ends the extraction.
@@ -168,11 +170,11 @@ public abstract class IExtraction {
     /**
      * tries to create an ID for the archive the given filename belongs to.
      * 
-     * @param filename
+     * @param factory
      * @return
      */
-    public abstract String createID(String filename);
+    public abstract String createID(ArchiveFactory factory);
 
-    public abstract boolean isMultiPartArchive(String filename);
+    public abstract boolean isMultiPartArchive(ArchiveFactory factory);
 
 }

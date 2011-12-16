@@ -49,11 +49,14 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
 
     public ArrayList<ArchiveFile> createPartFileList(String pattern) {
         ArrayList<ArchiveFile> ret = new ArrayList<ArchiveFile>();
-        for (File f : getFile().getParentFile().listFiles()) {
-            if (f.isDirectory()) continue;
-            if (new Regex(f.getAbsolutePath(), pattern, Pattern.CASE_INSENSITIVE).matches()) {
-                ret.add(new FileArchiveFile(f));
 
+        if (getFile().getParentFile() != null) {
+            for (File f : getFile().getParentFile().listFiles()) {
+                if (f.isDirectory()) continue;
+                if (new Regex(f.getAbsolutePath(), pattern, Pattern.CASE_INSENSITIVE).matches()) {
+                    ret.add(new FileArchiveFile(f));
+
+                }
             }
         }
         return ret;

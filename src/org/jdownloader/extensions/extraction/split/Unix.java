@@ -43,7 +43,7 @@ public class Unix extends IExtraction {
         String pattern = "^" + Regex.escape(link.getFilePath().replaceAll("(?i)\\.[a-z][a-z]$", "")) + "\\.[a-z][a-z]$";
         Archive a = SplitUtil.buildArchive(link, pattern, ".*\\.aa$");
         a.setExtractor(this);
-        a.setName(getArchiveName(new File(link.getFilePath()).getName()));
+        a.setName(getArchiveName(link));
         return a;
     }
 
@@ -93,13 +93,13 @@ public class Unix extends IExtraction {
     public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
     }
 
-    public String getArchiveName(String link) {
-        return createID(archive.getFactory().toFile(link).getName());
+    public String getArchiveName(ArchiveFactory factory) {
+        return createID(factory);
 
     }
 
-    public boolean isArchivSupported(String file) {
-        if (file.matches(".*\\.aa$")) return true;
+    public boolean isArchivSupported(ArchiveFactory factory) {
+        if (factory.getName().matches(".*\\.aa$")) return true;
         return false;
     }
 
@@ -166,12 +166,12 @@ public class Unix extends IExtraction {
     }
 
     @Override
-    public String createID(String filename) {
-        return filename.replaceFirst("\\.[a-z][a-z]$", "");
+    public String createID(ArchiveFactory factory) {
+        return factory.getName().replaceFirst("\\.[a-z][a-z]$", "");
     }
 
     @Override
-    public boolean isMultiPartArchive(String filename) {
+    public boolean isMultiPartArchive(ArchiveFactory factory) {
         return true;
     }
 
