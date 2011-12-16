@@ -29,7 +29,6 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.Archiver;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
@@ -59,7 +58,7 @@ import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.settings.GeneralSettings;
 
-public class ExtractionExtension extends AbstractExtension<ExtractionConfig> implements ControlListener, ActionListener, Archiver {
+public class ExtractionExtension extends AbstractExtension<ExtractionConfig> implements ControlListener, ActionListener {
     private static final int             EXTRACT_LINK            = 1000;
 
     private static final int             EXTRACT_PACKAGE         = 1001;
