@@ -153,7 +153,8 @@ public class FourSharedCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String pass = handlePassword(downloadLink);
-        String url = getDllink();
+        String url = null;
+        if (downloadLink.getStringProperty("fastDisabled") == null) url = getDllink();
         // If file isn't available for freeusers we can still try to get the
         // streamlink
         if (br.containsHTML("In order to download files bigger that 500MB you need to login at 4shared") && url == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.foursharedcom.only4premium", "Files over 500MB are only downloadable for premiumusers!"));
@@ -179,7 +180,15 @@ public class FourSharedCom extends PluginForHost {
         }
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
-        if (br.getURL().contains("401waitm")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l); }
+        /**
+         * Maybe download failed because we got a wrong directlink, disable
+         * getting directlinks first, if it then fails again the correct
+         * errormessage is shown
+         */
+        if (br.getURL().contains("401waitm") && downloadLink.getStringProperty("downloadLink") == null) {
+            downloadLink.setProperty("fastDisabled", "true");
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (br.getURL().contains("401waitm") && downloadLink.getStringProperty("fastDisabled") != null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l); }
         final String error = new Regex(dl.getConnection().getURL(), "\\?error(.*)").getMatch(0);
         if (error != null) {
             dl.getConnection().disconnect();
@@ -187,17 +196,23 @@ public class FourSharedCom extends PluginForHost {
         }
         if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            handleFreeErrors();
+            handleFreeErrors(downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (pass != null) downloadLink.setProperty("pass", pass);
         dl.startDownload();
     }
 
-    private void handleFreeErrors() throws PluginException {
-        if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
+    private void handleFreeErrors(DownloadLink downloadLink) throws PluginException {
+        if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)") && downloadLink.getStringProperty("downloadLink") == null) {
+            downloadLink.setProperty("fastDisabled", "true");
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)") && downloadLink.getStringProperty("downloadLink") != null) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
         String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
-        if (ttt != null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l); }
+        if (ttt != null && downloadLink.getStringProperty("downloadLink") == null) {
+            downloadLink.setProperty("fastDisabled", "true");
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (ttt != null && downloadLink.getStringProperty("downloadLink") != null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l); }
     }
 
     private String handlePassword(DownloadLink link) throws Exception {
@@ -277,7 +292,8 @@ public class FourSharedCom extends PluginForHost {
                 size = br.getRegex("<span title=\"Size: (.*?)\">").getMatch(0);
             }
             if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+            /** Server sometimes sends bad filenames */
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             if (size != null) {
                 downloadLink.setDownloadSize(SizeFormatter.getSize(size.replace(",", "")));
             }

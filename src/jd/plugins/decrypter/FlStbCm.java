@@ -43,14 +43,14 @@ public class FlStbCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         FilePackage fp = FilePackage.getInstance();
         br.getPage(parameter.toString());
-        if (br.containsHTML("(Requested file was not found|Error 404 -)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(Requested file was not found|Error 404 \\-)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (parameter.toString().contains("/go.html")) {
             String finallink = br.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
             if (finallink == null) finallink = br.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
             if (finallink == null) return null;
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
-            String fpName = br.getRegex("<title>(.*?)- Download").getMatch(0);
+            String fpName = br.getRegex("<title>(.*?)\\- Download").getMatch(0);
             // Hmm this plugin should always have a name with that mass of
             // alternative ways to get the name
             if (fpName == null) {

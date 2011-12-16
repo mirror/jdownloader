@@ -193,11 +193,9 @@ public class FilePostCom extends PluginForHost {
         // Errorhandling in case their linkchecker lies
         if (br.containsHTML("(<title>FilePost\\.com: Download  \\- fast \\&amp; secure\\!</title>|>File not found<|>It may have been deleted by the uploader or due to the received complaint|<div class=\"file_info file_info_deleted\">)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         /* token and SID used for all requests */
-        String token = br.getRegex("flp_token\\', \\'(.*?)\\'").getMatch(0);
-        final String sid = br.getCookie("http://filepost.com/", "SID");
-        if (token == null) token = br.getRegex("token\\', \\'(.*?)\\'").getMatch(0);
-        if (sid == null || token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final String action = "http://filepost.com/files/get/?SID=" + sid + "&JsHttpRequest=";
+        String token = getToken();
+        final String action = getAction();
+        if (action == null || token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String id = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
         Browser brc = br.cloneBrowser();
         Form form = new Form();
@@ -222,45 +220,48 @@ public class FilePostCom extends PluginForHost {
             if (wait > 300) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1000l);
         }
         sleep(wait * 1001l, downloadLink);
+        String dllink = null;
         /** Password handling */
         if (br.containsHTML("var is_pass_exists = true")) {
             if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
             brc.postPage(action + action + System.currentTimeMillis() + "-xml", "code=" + id + "&file_pass=" + Encoding.urlEncode(passCode) + "&token=" + token);
             if (brc.containsHTML("\"Wrong file password\"")) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+            dllink = getDllink(brc.toString().replace("\\", ""));
         }
-        boolean captchaNeeded = br.containsHTML("show_captcha = 1");
-        if (!captchaNeeded) captchaNeeded = br.containsHTML("show_captcha = true");
-        form = new Form();
-        form.setMethod(MethodType.POST);
-        form.setAction(action + System.currentTimeMillis() + "-xml");
-        form.put("download", token);
-        form.put("file_pass", "undefined");
-        form.put("code", id);
-        form.setEncoding("application/octet-stream; charset=UTF-8");
-        if (captchaNeeded) {
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            String cid = br.getRegex("Captcha\\.init.*?key.*?'(.*?)'").getMatch(0);
-            rc.setId(cid);
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
-            form.put("recaptcha_response_field", Encoding.urlEncode(c));
-            form.put("recaptcha_challenge_field", rc.getChallenge());
+        if (dllink == null) {
+            boolean captchaNeeded = br.containsHTML("show_captcha = 1");
+            if (!captchaNeeded) captchaNeeded = br.containsHTML("show_captcha = true");
+            form = new Form();
+            form.setMethod(MethodType.POST);
+            form.setAction(action + System.currentTimeMillis() + "-xml");
+            form.put("download", token);
+            form.put("file_pass", "undefined");
+            form.put("code", id);
+            form.setEncoding("application/octet-stream; charset=UTF-8");
+            if (captchaNeeded) {
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                String cid = br.getRegex("Captcha\\.init.*?key.*?'(.*?)'").getMatch(0);
+                rc.setId(cid);
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                form.put("recaptcha_response_field", Encoding.urlEncode(c));
+                form.put("recaptcha_challenge_field", rc.getChallenge());
+            }
+            brc = br.cloneBrowser();
+            brc.submitForm(form);
+            if (brc.containsHTML("\"file_too_big_for_user\"")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium2", "Only downloadable for premium"));
+            if (brc.containsHTML("You entered a wrong CAPTCHA code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            String correctedBR = brc.toString().replace("\\", "");
+            if (correctedBR.contains("Your download is not found or has expired")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 10 * 60 * 1000l);
+            if (correctedBR.contains("Your IP address is already")) {
+                if (nextD) throw new PluginException(LinkStatus.ERROR_RETRY);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already Loading", 5 * 60 * 1000l);
+            }
+            dllink = getDllink(correctedBR);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        brc = br.cloneBrowser();
-        brc.submitForm(form);
-        if (brc.containsHTML("\"file_too_big_for_user\"")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium2", "Only downloadable for premium"));
-        if (brc.containsHTML("You entered a wrong CAPTCHA code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String correctedBR = brc.toString().replace("\\", "");
-        if (correctedBR.contains("Your download is not found or has expired")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 10 * 60 * 1000l);
-        if (correctedBR.contains("Your IP address is already")) {
-            if (nextD) throw new PluginException(LinkStatus.ERROR_RETRY);
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already Loading", 5 * 60 * 1000l);
-        }
-        String dllink = new Regex(correctedBR, "\"answer\":\\{\"link\":\"(https?://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = new Regex(correctedBR, "\"(https?://fs\\d+\\.filepost\\.com/get_file/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -271,6 +272,25 @@ public class FilePostCom extends PluginForHost {
         }
         if (passCode != null) downloadLink.setProperty("pass", passCode);
         dl.startDownload();
+    }
+
+    private String getToken() {
+        String token = br.getRegex("flp_token\\', \\'(.*?)\\'").getMatch(0);
+        if (token == null) token = br.getRegex("token\\', \\'(.*?)\\'").getMatch(0);
+        return token;
+    }
+
+    private String getAction() {
+        String action = null;
+        final String SID = br.getCookie("http://filepost.com/", "SID");
+        if (SID != null) action = "http://filepost.com/files/get/?SID=" + SID + "&JsHttpRequest=";
+        return action;
+    }
+
+    private String getDllink(String correctedBR) {
+        String dllink = new Regex(correctedBR, "\"answer\":\\{\"link\":\"(https?://.*?)\"").getMatch(0);
+        if (dllink == null) dllink = new Regex(correctedBR, "\"(https?://fs\\d+\\.filepost\\.com/get_file/.*?)\"").getMatch(0);
+        return dllink;
     }
 
     /**
@@ -284,11 +304,25 @@ public class FilePostCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
-        String dllink = br.getRegex("<button onclick=\"download_file\\(\\'(https?://.*?)\\'\\)").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\\'(https?://fs\\d+\\.filepost\\.com/get_file/.*?)\\'").getMatch(0);
+        String dllink = null;
+        String passCode = link.getStringProperty("pass", null);
+        /** Password handling */
+        if (br.containsHTML("var is_pass_exists = true")) {
+            String action = getAction();
+            String token = getToken();
+            Browser brc = br.cloneBrowser();
+            if (passCode == null) passCode = Plugin.getUserInput("Password?", link);
+            brc.postPage(action + action + System.currentTimeMillis() + "-xml", "code=" + new Regex(link.getDownloadURL(), FILEIDREGEX).getMatch(0) + "&file_pass=" + Encoding.urlEncode(passCode) + "&token=" + token);
+            if (brc.containsHTML("\"Wrong file password\"")) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+            dllink = getDllink(brc.toString().replace("\\", ""));
+        }
         if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = br.getRegex("<button onclick=\"download_file\\(\\'(https?://.*?)\\'\\)").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\\'(https?://fs\\d+\\.filepost\\.com/get_file/.*?)\\'").getMatch(0);
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -297,6 +331,7 @@ public class FilePostCom extends PluginForHost {
             if (br.containsHTML(">403 Forbidden<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (passCode != null) link.setProperty("pass", passCode);
         dl.startDownload();
     }
 

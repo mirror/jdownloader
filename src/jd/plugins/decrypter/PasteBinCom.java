@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -28,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://[\\w\\.]*?pastebin\\.com/(raw.*?=)?[0-9A-Za-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://(www\\.)?pastebin\\.com/(raw.*?=)?[0-9A-Za-z]+" }, flags = { 0 })
 public class PasteBinCom extends PluginForDecrypt {
 
     public PasteBinCom(PluginWrapper wrapper) {
@@ -52,7 +53,7 @@ public class PasteBinCom extends PluginForDecrypt {
         if (links == null || links.length == 0) return null;
         logger.info("Found " + links.length + " links in total.");
         for (String dl : links)
-            if (!dl.contains(parameter)) decryptedLinks.add(createDownloadlink(dl));
+            if (!dl.contains(parameter) && !new Regex(dl, "http://(www\\.)?pastebin\\.com/(raw.*?=)?[0-9A-Za-z]+").matches()) decryptedLinks.add(createDownloadlink(dl));
 
         return decryptedLinks;
     }

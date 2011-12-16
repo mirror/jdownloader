@@ -111,7 +111,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             // Use this because they often change the page
             final String[] lol = HTMLParser.getHttpLinks(br.toString(), "");
             for (final String aLink : lol) {
-                if (!aLink.contains("http://adf.ly/") && !aLink.contains("/javascript/")) {
+                if (!new Regex(aLink, "http://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs)/.+").matches() && !aLink.contains("/javascript/")) {
                     decryptedLinks.add(createDownloadlink(aLink));
                 }
             }

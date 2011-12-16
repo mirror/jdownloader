@@ -97,7 +97,7 @@ public class MotherLessCom extends PluginForHost {
     }
 
     public String getAGBLink() {
-        return "http://motherless.com/terms";
+        return "http://motherless.com/tou";
     }
 
     public int getMaxSimultanFreeDownloadNum() {
