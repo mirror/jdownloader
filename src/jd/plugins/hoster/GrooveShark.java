@@ -88,45 +88,41 @@ public class GrooveShark extends PluginForHost {
     }
 
     private String getPostParameterString(final Browser ajax, final String parameter, final String method, final String country) throws IOException {
-        ajax.getHeaders().put("Content-Type", "application/json");
-        ajax.getHeaders().put("Referer", parameter);
+        // ajax.getHeaders().put("Content-Type", "application/json");
+        // ajax.getHeaders().put("Referer", parameter);
         final String sid = br.getCookie(parameter, "PHPSESSID");
         final String secretKey = getSecretKey(ajax, JDHash.getMD5(sid), sid);
-        final String str = "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"privacy\":0," + country + ",\"uuid\":\"" + USERUID + "\",\"session\":\"" + sid + "\",\"token\":\"" + getToken(method, secretKey) + "\"},\"method\":\"" + method + "\",";
-        return str;
+        return "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"privacy\":0," + country + ",\"uuid\":\"" + USERUID + "\",\"session\":\"" + sid + "\",\"token\":\"" + getToken(method, secretKey) + "\"},\"method\":\"" + method + "\",";
     }
 
     private String getSecretKey(final Browser ajax, final String token, final String sid) throws IOException {
-        ajax.getHeaders().put("Content-Type", "application/json");
-        String secretKey = "{\"parameters\":{\"secretKey\":\"" + token + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"session\":\"" + sid + "\",\"uuid\":\"" + USERUID + "\"},\"method\":\"getCommunicationToken\"}";
-        ajax.postPageRaw(LISTEN + "more.php?getCommunicationToken", secretKey);
-        secretKey = ajax.getRegex("result\":\"(.*?)\"").getMatch(0);
-        return secretKey;
+        ajax.postPageRaw(LISTEN + "more.php?getCommunicationToken", "{\"parameters\":{\"secretKey\":\"" + token + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"session\":\"" + sid + "\",\"uuid\":\"" + USERUID + "\"},\"method\":\"getCommunicationToken\"}");
+        return ajax.getRegex("result\":\"(.*?)\"").getMatch(0);
     }
 
     private String getToken(final String method, final String secretKey) {
-        String topSecretKey = Encoding.Base64Decode("dGhlVGlja2V0c0FyZU5vd0RpYW1vbmRz");
+        String topSecretKey = Encoding.Base64Decode("c2l0QW5kRmFydEluTXlEdWNr");
         if (method.matches("(getSongFromToken|getTokenForSong)")) {
-            topSecretKey = Encoding.Base64Decode("aW1PbkFIb3JzZQ==");
+            topSecretKey = Encoding.Base64Decode("YmV3YXJlT2ZUaGVHaW5nZXJBcG9jYWx5cHNl");
         }
         final String lastRandomizer = makeNewRandomizer();
-        final String z = lastRandomizer + JDHash.getSHA1(method + ":" + secretKey + ":" + topSecretKey + ":" + lastRandomizer);
-        return z;
+        return lastRandomizer + JDHash.getSHA1(method + ":" + secretKey + ":" + topSecretKey + ":" + lastRandomizer);
     }
 
     private void handleDownload(final DownloadLink downloadLink, final String country, final String sid) throws IOException, Exception, PluginException {
         // pro Titel ein secretKey
         // pro Request ein neuer Tokenhash(getToken)
+        br.getHeaders().put("Content-Type", "application/json");
         final String secretKey = getSecretKey(br, JDHash.getMD5(sid), sid);
         // get songID
-        String songID = "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"privacy\":0," + country + ",\"uuid\":\"" + USERUID + "\",\"session\":\"" + sid + "\",\"token\":\"" + getToken("getSongFromToken", secretKey) + "\"},\"method\":\"getSongFromToken\",\"parameters\":{\"token\":\"" + TOKEN + "\"," + country + "}}";
         br.getHeaders().put("Content-Type", "application/json");
+        String songID = "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"privacy\":0," + country + ",\"uuid\":\"" + USERUID + "\",\"session\":\"" + sid + "\",\"token\":\"" + getToken("getSongFromToken", secretKey) + "\"},\"method\":\"getSongFromToken\",\"parameters\":{\"token\":\"" + TOKEN + "\"," + country + "}}";
         br.postPageRaw(LISTEN + "more.php?getSongFromToken", songID);
+
+        if (br.getRegex("\\{\"code\":\\d+,\"message\":\"invalid token\"\\}").matches()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         songID = br.getRegex("SongID\":\"(\\d+)\"").getMatch(0);
         // get streamKey
         br.getHeaders().put("Content-Type", "application/json");
-        br.getHeaders().put("Referer", "http://grooveshark.com/JSQueue.swf?20101203.14");
-        br.getHeaders().put("x-flash-version", "10,1,53,64");
         String streamKey = "{\"parameters\":{" + country + ",\"prefetch\":true,\"songID\":" + songID + ",\"mobile\":false},\"header\":{\"privacy\":0,\"token\":\"" + getToken("getStreamKeyFromSongIDEx", secretKey) + "\",\"session\":\"" + sid + "\"," + country + ",\"uuid\":\"" + USERUID + "\",\"client\":\"jsqueue\",\"clientRevision\":\"" + CLIENTREVISION + "\"},\"method\":\"getStreamKeyFromSongIDEx\"}";
         br.postPageRaw(LISTEN + "more.php?getStreamKeyFromSongIDEx", streamKey);
         streamKey = br.getRegex("streamKey\":\"(\\w+)\"").getMatch(0);
@@ -149,6 +145,7 @@ public class GrooveShark extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        br.getHeaders().put("Content-Type", "application/json");
         br.getPage(LISTEN);
         CLIENTREVISION = downloadLink.getStringProperty("clientrev");
         CLIENTREVISION = CLIENTREVISION == null ? "20110906" : CLIENTREVISION;
@@ -177,12 +174,8 @@ public class GrooveShark extends PluginForHost {
             Name = cleanNameForURL(Name);
             final String dllink = LISTEN + "s/" + Name + "/" + TOKEN;
             downloadLink.setUrlDownload(dllink);
-            br.getHeaders().put("Content-Type", "application/json");
-            br.getHeaders().put("Referer", downloadLink.getDownloadURL());
         } else if (new Regex(url, "grooveshark\\.com/.*?/\\w+").matches()) {
             // direct links..
-            br.getHeaders().put("Content-Type", "application/json");
-            br.getHeaders().put("Referer", downloadLink.getDownloadURL());
             TOKEN = url.substring(url.lastIndexOf("/") + 1);
             if (TOKEN.equals("404")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         } else {

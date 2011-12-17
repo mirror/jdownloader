@@ -33,6 +33,7 @@ public class VideozerCom extends PluginForHost {
 
     public VideozerCom(final PluginWrapper wrapper) {
         super(wrapper);
+        setStartIntervall(2000l + (long) 1000 * (int) Math.round(Math.random() * 3 + Math.random() * 3));
     }
 
     @Override
@@ -45,20 +46,13 @@ public class VideozerCom extends PluginForHost {
         return "http://www.videozer.com/toc.php";
     }
 
-    /* See videobbcom hoster plugin */
-    private String getFinalLink(final DownloadLink downloadLink, final String token) throws IOException {
-        if (!br.containsHTML("(token|sece2|rkts)")) { return null; }
-        String dllink = Encoding.Base64Decode(br.getRegex(token + "\":\"(.*?)\",").getMatch(0));
-        String cipher = br.getRegex("sece2\":\"?(.*?)\"?,").getMatch(0);
-        final String keyTwo = br.getRegex("rkts\":\"?(\\d+)\"?,").getMatch(0);
-        if (dllink == null || cipher == null || keyTwo == null) { return null; }
+    /* See jd.plugin.hoster.VideoBbCom */
+    private String getFinalLink(final DownloadLink downloadLink, final String token) {
         try {
-            cipher = VideoBbCom.getFinallinkValue.decrypt32byte(cipher, Integer.parseInt(keyTwo), Integer.parseInt(Encoding.Base64Decode("MjE1Njc4")));
+            return new VideoBbCom.getFinallinkValue("MjE1Njc4", token, br).DLLINK;
         } catch (final Throwable e) {
+            return null;
         }
-        if (cipher == null) { return null; }
-        dllink = dllink + "&c=" + cipher;
-        return dllink;
     }
 
     @Override
@@ -71,9 +65,11 @@ public class VideozerCom extends PluginForHost {
         requestFileInformation(downloadLink);
         final String dllink = getFinalLink(downloadLink, "token1");
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        sleep(3 * 1000l, downloadLink); // Flasplayer to slow
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("No htmlCode read")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

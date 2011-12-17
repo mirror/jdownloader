@@ -39,15 +39,58 @@ public class VideoBbCom extends PluginForHost {
 
     protected static class getFinallinkValue {
 
-        static BigInteger BI;
+        private BigInteger BI;
+        final String       DLLINK;
 
-        public static String convertBin2Str(final String s) {
+        getFinallinkValue(final String hosterKey, final String token, final Browser br) {
+            /*
+             * TODO: parsing content after 0.9xx through
+             * org.codehaus.jackson.JsonNode class
+             */
+            String dllink = Encoding.Base64Decode(br.getRegex(token + "\":\"(.*?)\",").getMatch(0));
+            dllink = dllink.substring(dllink.length() - 1).equals("&") ? dllink : dllink + "&";
+            String keyString, decryptedString = "";
+
+            final int keyTwo = Integer.parseInt(Encoding.Base64Decode(hosterKey));
+            final int keyOne = Integer.parseInt(br.getRegex("rkts\":(\\d+),").getMatch(0));
+            final String algoCtrl = Encoding.Base64Decode(br.getRegex("spn\":\"(.*?)\",").getMatch(0));
+
+            for (final String eachValue : algoCtrl.split("&")) {
+
+                final String[] parameterTyp = eachValue.split("=");
+
+                switch (Integer.parseInt(parameterTyp[1])) {
+                case 1:
+                    keyString = br.getRegex("sece2\":\"([0-9a-f]+)\",").getMatch(0);
+                    decryptedString = decryptByte(keyString, keyOne, keyTwo);
+                    break;
+                case 2:
+                    keyString = br.getRegex("\\{\"url\":\"([0-9a-f]+)\",").getMatch(0);
+                    decryptedString = decryptBit(keyString, keyOne, keyTwo);
+                    break;
+                case 3:
+                    keyString = br.getRegex("type\":\"([0-9a-f]+)\",").getMatch(0);
+                    decryptedString = decryptBit9300(keyString, keyOne, keyTwo);
+                    break;
+                case 4:
+                    keyString = br.getRegex("time\":\"(.*?)\"").getMatch(0);
+                    decryptedString = decryptBitLion(keyString, keyOne, keyTwo);
+                    break;
+
+                }
+                dllink = dllink + parameterTyp[0] + "=" + decryptedString + "&";
+            }
+
+            DLLINK = dllink + "start=0";
+        };
+
+        public String convertBin2Str(final String s) {
             /* 11111111 -> FF */
             BI = new BigInteger(s, 2);
             return BI.toString(16);
         }
 
-        public static String convertStr2Bin(final String s) {
+        public String convertStr2Bin(final String s) {
             /* FF -> 11111111 */
             BI = new BigInteger(1, JDHexUtils.getByteArray(s));
             String result = BI.toString(2);
@@ -57,34 +100,54 @@ public class VideoBbCom extends PluginForHost {
             return result;
         }
 
-        public static String decrypt32byte(final String cipher, int keyOne, int keyTwo) {
+        private String decryptBit(final String arg1, final int arg2, final int arg3) {
+            return zDecrypt(false, arg1, arg2, arg3, 11, 77213, 81371, 17, 92717, 192811);
+        }
+
+        private String decryptBit9300(final String arg1, final int arg2, final int arg3) {
+            return zDecrypt(false, arg1, arg2, arg3, 26, 25431, 56989, 93, 32589, 784152);
+        }
+
+        private String decryptBitLion(final String arg1, final int arg2, final int arg3) {
+            return zDecrypt(false, arg1, arg2, arg3, 82, 84669, 48779, 32, 65598, 115498);
+        }
+
+        private String decryptByte(final String arg1, final int arg2, final int arg3) {
+            return zDecrypt(true, arg1, arg2, arg3, 11, 77213, 81371, 17, 92717, 192811);
+        }
+
+        private String zDecrypt(final boolean algo, final String cipher, int keyOne, int keyTwo, final int arg0, final int arg1, final int arg2, final int arg3, final int arg4, final int arg5) {
             int x = 0, y = 0, z = 0;
             final char[] C = convertStr2Bin(cipher).toCharArray();
-            final int[] B = new int[384];
+            int len = C.length * 2;
+            if (algo) {
+                len = 256;
+            }
+            final int[] B = new int[(int) (len * 1.5)];
             final int[] A = new int[C.length];
             int i = 0;
             for (final char c : C) {
                 A[i++] = Character.digit(c, 10);
             }
             i = 0;
-            while (i < 384) {
-                keyOne = (keyOne * 11 + 77213) % 81371;
-                keyTwo = (keyTwo * 17 + 92717) % 192811;
-                B[i] = (keyOne + keyTwo) % 128;
+            while (i < len * 1.5) {
+                keyOne = (keyOne * arg0 + arg1) % arg2;
+                keyTwo = (keyTwo * arg3 + arg4) % arg5;
+                B[i] = (keyOne + keyTwo) % (len / 2);
                 i++;
             }
-            i = 256;
+            i = len;
             while (i >= 0) {
                 x = B[i];
-                y = i % 128;
+                y = i % (len / 2);
                 z = A[x];
                 A[x] = A[y];
                 A[y] = z;
                 i--;
             }
             i = 0;
-            while (i < 128) {
-                A[i] = A[i] ^ B[i + 256] & 1;
+            while (i < len / 2) {
+                A[i] = A[i] ^ B[i + len] & 1;
                 i++;
             }
             i = 0;
@@ -95,7 +158,6 @@ public class VideoBbCom extends PluginForHost {
             }
             return convertBin2Str(sb.toString());
         }
-
     }
 
     private static final Object LOCK     = new Object();
@@ -105,7 +167,7 @@ public class VideoBbCom extends PluginForHost {
     public VideoBbCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.videobb.com/premium.php");
-        setStartIntervall(3000l);
+        setStartIntervall(2000l + (long) 1000 * (int) Math.round(Math.random() * 3 + Math.random() * 3));
     }
 
     @Override
@@ -146,27 +208,28 @@ public class VideoBbCom extends PluginForHost {
         return "http://www.videobb.com/terms.php";
     }
 
-    private String getFinalLink(final DownloadLink downloadLink, final String token) throws IOException {
+    private String getFinalLink(final DownloadLink downloadLink, final String token) throws Exception {
         final String link = downloadLink.getDownloadURL();
         br.getPage(link);
+        String referer = br.getRegex("<param value=\"(.*?)\" name=\"movie\">").getMatch(0);
         final String setting = Encoding.Base64Decode(br.getRegex("<param value=\"setting=(.*?)\"").getMatch(0));
-        if (setting == null || !setting.contains("http://")) { return null; }
+        if (setting == null || !setting.startsWith("http://")) { return null; }
         br.getPage(setting);
-        if (!br.containsHTML("(token|sece2|rkts)")) { return null; }
-        String dllink = Encoding.Base64Decode(br.getRegex(token + "\":\"(.*?)\",").getMatch(0));
-        String cipher = br.getRegex("sece2\":\"?(.*?)\"?,").getMatch(0);
-        final String keyTwo = br.getRegex("rkts\":\"?(\\d+)\"?,").getMatch(0);
-        if (dllink == null || cipher == null || keyTwo == null) { return null; }
+
+        referer = referer == null ? "http://videobb.com/player/p.swf?v=1_2_8_0" : referer;
+        referer = referer.startsWith("http") ? referer : "http://videobb.com" + referer;
+        br.getHeaders().put("Referer", referer);
+        br.getHeaders().put("x-flash-version", "10,3,183,7");
+
         try {
-            cipher = getFinallinkValue.decrypt32byte(cipher, Integer.parseInt(keyTwo), Integer.parseInt(Encoding.Base64Decode("MjI2NTkz")));
+            String dllink = new getFinallinkValue("MjI2NTkz", token, br).DLLINK;
+            if (isPremium()) {
+                dllink = dllink + "&d=" + link.replaceFirst(":", Encoding.urlEncode(":"));
+            }
+            return dllink;
         } catch (final Throwable e) {
+            return null;
         }
-        if (cipher == null) { return null; }
-        dllink = dllink + "&c=" + cipher;
-        if (isPremium()) {
-            dllink = dllink + "&d=" + link.replaceFirst(":", Encoding.urlEncode(":"));
-        }
-        return dllink;
     }
 
     @Override
@@ -179,9 +242,11 @@ public class VideoBbCom extends PluginForHost {
         requestFileInformation(downloadLink);
         final String dllink = getFinalLink(downloadLink, "token1");
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        sleep(3 * 1000l, downloadLink); // Flasplayer to slow
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (br.containsHTML("No htmlCode read")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setFilenameFix(true);

@@ -296,7 +296,7 @@ public class GrvShrkCm extends PluginForDecrypt {
     }
 
     private String getToken(final String method, final String secretKey) {
-        final String topSecretKey = Encoding.Base64Decode("aW1PbkFIb3JzZQ==");// static.a.gs-cdn.net/gs/app.js
+        final String topSecretKey = Encoding.Base64Decode("YmV3YXJlT2ZUaGVHaW5nZXJBcG9jYWx5cHNl");// static.a.gs-cdn.net/gs/app.js
         final String lastRandomizer = makeNewRandomizer();
         final String z = lastRandomizer + JDHash.getSHA1(method + ":" + secretKey + ":" + topSecretKey + ":" + lastRandomizer);
         return z;
