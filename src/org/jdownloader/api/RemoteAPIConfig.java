@@ -32,4 +32,12 @@ public interface RemoteAPIConfig extends ConfigInterface {
     boolean getAPIlocalhost();
 
     void setAPIlocalhost(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    @RequiresRestart
+    @Description("ExternInterface(Cnl2,Flashgot) will listen on 9666")
+    boolean getExternInterfaceEnabled();
+
+    void setExternInterfaceEnabled(boolean b);
 }

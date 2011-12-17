@@ -185,6 +185,7 @@ public class TbCm extends PluginForDecrypt {
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("watch#!v", "watch?v");
+        parameter = parameter.replaceFirst("(watch\\?.*?v)", "watch?v");
         parameter = parameter.replaceFirst("https", "http");
         this.br.setFollowRedirects(true);
         this.br.setCookiesExclusive(true);

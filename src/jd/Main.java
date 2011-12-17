@@ -65,6 +65,7 @@ import org.appwork.utils.singleapp.SingleAppInstance;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.api.ExternInterface;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.dynamic.Dynamic;
 import org.jdownloader.extensions.ExtensionController;
@@ -424,6 +425,7 @@ public class Main {
                         DownloadController.getInstance().initDownloadLinks();
                         /* start remote api */
                         RemoteAPIController.getInstance();
+                        ExternInterface.getINSTANCE();
                         // GarbageController.getInstance();
                         /* load extensions */
                         ExtensionController.getInstance().init();
