@@ -3,7 +3,26 @@ package jd.controlling.linkcollector;
 import java.io.File;
 
 public class LinkCollectingJob {
-    private String  text;
+    private String text;
+    private String customSourceUrl;
+    private String customComment;
+
+    public String getCustomComment() {
+        return customComment;
+    }
+
+    public void setCustomComment(String customComment) {
+        this.customComment = customComment;
+    }
+
+    public String getCustomSourceUrl() {
+        return customSourceUrl;
+    }
+
+    public void setCustomSourceUrl(String customSource) {
+        this.customSourceUrl = customSource;
+    }
+
     private boolean autoExtract;
     private boolean deepAnalyse;
 

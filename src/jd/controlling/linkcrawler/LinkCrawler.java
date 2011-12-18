@@ -879,12 +879,16 @@ public class LinkCrawler implements IOPermission {
         synchronized (duplicateFinderFinal) {
             if (!duplicateFinderFinal.add(link.getLinkID()) && !specialHandling) { return; }
         }
-
+        modifyCrawledLink(link);
         if (isCrawledLinkFiltered(link) == false) {
             /* link is not filtered, so we can process it normally */
             crawledLinksCounter.incrementAndGet();
             handler.handleFinalLink(link);
         }
+    }
+
+    protected void modifyCrawledLink(CrawledLink link) {
+
     }
 
     protected boolean isCrawledLinkFiltered(CrawledLink link) {

@@ -8,7 +8,7 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 
 @ApiNamespace("")
-public interface Cnl2APIBasics extends RemoteAPIInterface {
+public interface Cnl2APIBasics extends RemoteAPIInterface, FlashGotAPI {
 
     @ApiMethodName("crossdomain.xml")
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)

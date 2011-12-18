@@ -1,5 +1,6 @@
 package org.jdownloader.api.cnl2;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -9,6 +10,8 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.swing.ImageIcon;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.http.Browser;
 import jd.utils.JDUtilities;
 import net.sf.image4j.codec.ico.ICOEncoder;
@@ -19,6 +22,8 @@ import org.appwork.remoteapi.RemoteAPIException;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.images.IconIO;
@@ -36,7 +41,9 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
-public class Cnl2APIImpl implements Cnl2APIBasics, Cnl2APIFlash {
+public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
+
+    private final static String jdpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + File.separator + "JDownloader.jar";
 
     public void crossdomainxml(RemoteAPIResponse response) {
         StringBuilder sb = new StringBuilder();
@@ -87,9 +94,8 @@ public class Cnl2APIImpl implements Cnl2APIBasics, Cnl2APIFlash {
             String crypted = HttpRequest.getParameterbyKey(request, "crypted");
             String jk = HttpRequest.getParameterbyKey(request, "jk");
             String k = HttpRequest.getParameterbyKey(request, "k");
-            String passwords = HttpRequest.getParameterbyKey(request, "passwords");
-            String source = HttpRequest.getParameterbyKey(request, "source");
             String urls = decrypt(crypted, jk, k);
+            clickAndLoad2Add(urls, request);
             /*
              * we need the \r\n else the website will not handle response
              * correctly
@@ -98,6 +104,16 @@ public class Cnl2APIImpl implements Cnl2APIBasics, Cnl2APIFlash {
         } catch (Throwable e) {
             writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
         }
+    }
+
+    private void clickAndLoad2Add(String urls, RemoteAPIRequest request) throws IOException {
+        String passwords = HttpRequest.getParameterbyKey(request, "passwords");
+        String source = HttpRequest.getParameterbyKey(request, "source");
+        String comment = HttpRequest.getParameterbyKey(request, "comment");
+        LinkCollectingJob job = new LinkCollectingJob(urls);
+        job.setCustomSourceUrl(source);
+        job.setCustomComment(comment);
+        LinkCollector.getInstance().addCrawlerJob(job);
     }
 
     /* decrypt given bytearray with given aes key */
@@ -156,8 +172,7 @@ public class Cnl2APIImpl implements Cnl2APIBasics, Cnl2APIFlash {
         try {
             askPermission(request);
             String urls = HttpRequest.getParameterbyKey(request, "urls");
-            String passwords = HttpRequest.getParameterbyKey(request, "passwords");
-            String source = HttpRequest.getParameterbyKey(request, "source");
+            clickAndLoad2Add(urls, request);
             writeString(response, request, "success\r\n", true);
         } catch (Throwable e) {
             writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
@@ -168,8 +183,13 @@ public class Cnl2APIImpl implements Cnl2APIBasics, Cnl2APIFlash {
         try {
             askPermission(request);
             String dlcContent = HttpRequest.getParameterbyKey(request, "crypted");
-            String passwords = HttpRequest.getParameterbyKey(request, "passwords");
-            String source = HttpRequest.getParameterbyKey(request, "source");
+            if (dlcContent == null) throw new IllegalArgumentException("no DLC Content available");
+            String dlc = dlcContent.trim().replace(" ", "+");
+            File tmp = JDUtilities.getResourceFile("tmp/jd_" + System.currentTimeMillis() + ".dlc", true);
+            tmp.deleteOnExit();
+            IO.writeToFile(tmp, dlc.getBytes("UTF-8"));
+            String url = "file://" + tmp.getAbsolutePath();
+            clickAndLoad2Add(url, request);
             writeString(response, request, "success\r\n", true);
         } catch (Throwable e) {
             writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
@@ -185,6 +205,17 @@ public class Cnl2APIImpl implements Cnl2APIBasics, Cnl2APIFlash {
              */
             return;
         }
+        HTTPHeader referer = request.getRequestHeaders().get(HTTPConstants.HEADER_REQUEST_REFERER);
+        String check = null;
+        if (referer != null && (check = referer.getValue()) != null) {
+            if (check.equalsIgnoreCase("http://localhost:9666/flashgot") || check.equalsIgnoreCase("http://127.0.0.1:9666/flashgot")) {
+                /*
+                 * security check for flashgot referer, skip asking if we find
+                 * valid flashgot referer
+                 */
+                return;
+            }
+        }
         String app = "unknown application";
         HTTPHeader agent = request.getRequestHeaders().get(HTTPConstants.HEADER_REQUEST_USER_AGENT);
         if (agent != null && agent.getValue() != null) {
@@ -192,7 +223,6 @@ public class Cnl2APIImpl implements Cnl2APIBasics, Cnl2APIFlash {
             app = agent.getValue().replaceAll("\\(.*\\)", "");
         }
         String url = null;
-        HTTPHeader referer = request.getRequestHeaders().get(HTTPConstants.HEADER_REQUEST_REFERER);
         if (referer != null) {
             /* lets use the referer as source of the request */
             url = referer.getValue();
@@ -242,6 +272,27 @@ public class Cnl2APIImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 out.close();
             } catch (final Throwable e) {
             }
+        }
+    }
+
+    public void flashgot(RemoteAPIResponse response, RemoteAPIRequest request) {
+        try {
+            StringBuilder sb = new StringBuilder();
+            sb.append(jdpath + "\r\n");
+            sb.append("java -Xmx512m -jar " + jdpath + "\r\n");
+            String urls[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "urls"));
+            String desc[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "descriptions"));
+            String fnames[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "fnames"));
+            String packname = HttpRequest.getParameterbyKey(request, "package");
+            String directory = HttpRequest.getParameterbyKey(request, "dir");
+            String cookies = HttpRequest.getParameterbyKey(request, "cookies");
+            String post = HttpRequest.getParameterbyKey(request, "postData");
+            String referer = HttpRequest.getParameterbyKey(request, "referer");
+            boolean autostart = "1".equalsIgnoreCase(HttpRequest.getParameterbyKey(request, "autostart"));
+
+            writeString(response, request, sb.toString(), true);
+        } catch (final Throwable e) {
+            throw new RemoteAPIException(e);
         }
     }
 }

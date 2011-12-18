@@ -199,6 +199,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 return ret;
             }
 
+            @Override
+            protected void modifyCrawledLink(CrawledLink link) {
+                if (link.getDownloadLink() != null) {
+                    if (job.getCustomSourceUrl() != null) link.getDownloadLink().setBrowserUrl(job.getCustomSourceUrl());
+                    if (job.getCustomComment() != null) link.getDownloadLink().setComment(job.getCustomComment());
+                }
+            }
+
         };
         broadcaster.addListener(lc, true);
         lc.setFilter(crawlerFilter);
@@ -626,7 +634,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public void handleFinalLink(CrawledLink link) {
-        if (LinkCollectorConfig.DOLINKCHECK.getValue()) {
+        if (LinkCollectorConfig.DOLINKCHECK.isEnabled()) {
             linkChecker.check(link);
         } else {
             PackagizerInterface pc;
