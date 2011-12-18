@@ -356,9 +356,9 @@ public class Megauploadcom extends PluginForHost {
                 /* x days left */
                 ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(days) * 24 * 60 * 60 * 1000);
             } else if (days == null || days.equals("0")) {
-                final String hours = this.br.getRegex("<b>Premium</b>.*?\\((\\d+) hours remaining").getMatch(0);
+                final String hours = this.br.getRegex("class=\"account_txt\"> (\\d+) hours remaining").getMatch(0);
                 if (hours == null || "0".equals(hours)) {
-                    final String minutes = this.br.getRegex("<b>Premium</b>.*?\\((\\d+) minutes remaining ").getMatch(0);
+                    final String minutes = this.br.getRegex("class=\"account_txt\"> (\\d+) minutes remaining ").getMatch(0);
                     if (minutes != null) {
                         /* x minutes left */
                         ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(minutes) * 60 * 1000);

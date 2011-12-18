@@ -154,7 +154,29 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public LinkCrawler addCrawlerJob(final ArrayList<CrawledLink> links) {
         if (links == null || links.size() == 0) throw new IllegalArgumentException("no links");
         lazyInit();
-        final LinkCollectorCrawler lc = new LinkCollectorCrawler();
+        final LinkCollectorCrawler lc = new LinkCollectorCrawler() {
+            @Override
+            protected void generalCrawledLinkModifier(CrawledLink link) {
+                LinkCollectingJob job = link.getSourceJob();
+                if (link.getDownloadLink() != null) {
+                    if (job.getCustomSourceUrl() != null) link.getDownloadLink().setBrowserUrl(job.getCustomSourceUrl());
+                    if (job.getCustomComment() != null) link.getDownloadLink().setComment(job.getCustomComment());
+                }
+                if (job.getOutputFolder() != null && (link.getDesiredPackageInfo() == null || link.getDesiredPackageInfo().getDestinationFolder() == null)) {
+                    if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
+                    link.getDesiredPackageInfo().setDestinationFolder(job.getOutputFolder().getAbsolutePath());
+                }
+                if (!StringUtils.isEmpty(job.getPackageName()) && (link.getDesiredPackageInfo() == null || StringUtils.isEmpty(link.getDesiredPackageInfo().getName()))) {
+                    if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
+                    link.getDesiredPackageInfo().setName(job.getPackageName());
+                }
+
+                if (!StringUtils.isEmpty(job.getExtractPassword())) {
+                    if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
+                    link.getDesiredPackageInfo().getExtractionPasswords().add(job.getExtractPassword());
+                }
+            }
+        };
         broadcaster.addListener(lc, true);
         lc.setFilter(crawlerFilter);
         lc.setHandler(this);
@@ -180,30 +202,23 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         final LinkCollectorCrawler lc = new LinkCollectorCrawler() {
 
             @Override
-            protected CrawledLink crawledLinkFactorybyURL(String url) {
-                CrawledLink ret = super.crawledLinkFactorybyURL(url);
-                ret.setSourceJob(job);
-                if (job.getOutputFolder() != null && (ret.getDesiredPackageInfo() == null || ret.getDesiredPackageInfo().getDestinationFolder() == null)) {
-                    if (ret.getDesiredPackageInfo() == null) ret.setDesiredPackageInfo(new PackageInfo());
-                    ret.getDesiredPackageInfo().setDestinationFolder(job.getOutputFolder().getAbsolutePath());
-                }
-                if (!StringUtils.isEmpty(job.getPackageName()) && (ret.getDesiredPackageInfo() == null || StringUtils.isEmpty(ret.getDesiredPackageInfo().getName()))) {
-                    if (ret.getDesiredPackageInfo() == null) ret.setDesiredPackageInfo(new PackageInfo());
-                    ret.getDesiredPackageInfo().setName(job.getPackageName());
-                }
-
-                if (!StringUtils.isEmpty(job.getExtractPassword())) {
-                    if (ret.getDesiredPackageInfo() == null) ret.setDesiredPackageInfo(new PackageInfo());
-                    ret.getDesiredPackageInfo().getExtractionPasswords().add(job.getExtractPassword());
-                }
-                return ret;
-            }
-
-            @Override
-            protected void modifyCrawledLink(CrawledLink link) {
+            protected void generalCrawledLinkModifier(CrawledLink link) {
                 if (link.getDownloadLink() != null) {
                     if (job.getCustomSourceUrl() != null) link.getDownloadLink().setBrowserUrl(job.getCustomSourceUrl());
                     if (job.getCustomComment() != null) link.getDownloadLink().setComment(job.getCustomComment());
+                }
+                if (job.getOutputFolder() != null && (link.getDesiredPackageInfo() == null || link.getDesiredPackageInfo().getDestinationFolder() == null)) {
+                    if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
+                    link.getDesiredPackageInfo().setDestinationFolder(job.getOutputFolder().getAbsolutePath());
+                }
+                if (!StringUtils.isEmpty(job.getPackageName()) && (link.getDesiredPackageInfo() == null || StringUtils.isEmpty(link.getDesiredPackageInfo().getName()))) {
+                    if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
+                    link.getDesiredPackageInfo().setName(job.getPackageName());
+                }
+
+                if (!StringUtils.isEmpty(job.getExtractPassword())) {
+                    if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
+                    link.getDesiredPackageInfo().getExtractionPasswords().add(job.getExtractPassword());
                 }
             }
 
@@ -493,19 +508,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
         });
 
-    }
-
-    private String getSimString(String a, String b) {
-        String aa = a.toLowerCase();
-        String bb = b.toLowerCase();
-        int maxL = Math.min(aa.length(), bb.length());
-        StringBuilder ret = new StringBuilder(maxL);
-        for (int i = 0; i < maxL; i++) {
-            if (aa.charAt(i) == bb.charAt(i)) {
-                ret.append(a.charAt(i));
-            }
-        }
-        return ret.toString();
     }
 
     public void merge(final CrawledPackage dest, final ArrayList<CrawledLink> srcLinks, final ArrayList<CrawledPackage> srcPkgs) {

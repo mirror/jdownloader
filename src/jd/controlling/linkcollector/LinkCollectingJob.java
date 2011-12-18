@@ -3,9 +3,18 @@ package jd.controlling.linkcollector;
 import java.io.File;
 
 public class LinkCollectingJob {
-    private String text;
-    private String customSourceUrl;
-    private String customComment;
+    private String  text;
+    private String  customSourceUrl;
+    private String  customComment;
+    private boolean autoStart = false;
+
+    public boolean isAutoStart() {
+        return autoStart;
+    }
+
+    public void setAutoStart(boolean autoStart) {
+        this.autoStart = autoStart;
+    }
 
     public String getCustomComment() {
         return customComment;

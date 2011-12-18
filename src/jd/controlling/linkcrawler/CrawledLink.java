@@ -28,16 +28,27 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         TEMP_UNKNOWN
     }
 
-    protected static final String PACKAGETAG         = "<jd:" + PackagizerController.PACKAGENAME + ">";
+    protected static final String     PACKAGETAG     = "<jd:" + PackagizerController.PACKAGENAME + ">";
 
-    private CrawledPackage        parent             = null;
-    private PluginForDecrypt      dPlugin            = null;
-    private LinkCollectingJob     sourceJob          = null;
-    private long                  created            = -1;
+    private CrawledPackage            parent         = null;
+    private UnknownCrawledLinkHandler unknownHandler = null;
+    private CrawledLinkModifier       modifyHandler  = null;
 
-    private String                realHost           = null;
-    boolean                       enabledState       = true;
-    private PackageInfo           desiredPackageInfo = null;
+    public UnknownCrawledLinkHandler getUnknownHandler() {
+        return unknownHandler;
+    }
+
+    public void setUnknownHandler(UnknownCrawledLinkHandler unknownHandler) {
+        this.unknownHandler = unknownHandler;
+    }
+
+    private PluginForDecrypt  dPlugin            = null;
+    private LinkCollectingJob sourceJob          = null;
+    private long              created            = -1;
+
+    private String            realHost           = null;
+    boolean                   enabledState       = true;
+    private PackageInfo       desiredPackageInfo = null;
 
     public PackageInfo getDesiredPackageInfo() {
         return desiredPackageInfo;
@@ -151,7 +162,12 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public CrawledLink(DownloadLink dlLink) {
         this.dlLink = dlLink;
         dlLink.setPropertyListener(this);
+    }
 
+    public void setDownloadLink(DownloadLink dlLink) {
+        if (this.dlLink != null) this.dlLink.setPropertyListener(null);
+        this.dlLink = dlLink;
+        if (dlLink != null) dlLink.setPropertyListener(this);
     }
 
     public CrawledLink(CryptedLink cLink) {
@@ -362,6 +378,14 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public void onDownloadLinkUpdated() {
         CrawledPackage lparent = parent;
         if (lparent != null) lparent.onChildEnabledStateChanged(this);
+    }
+
+    public CrawledLinkModifier getCustomCrawledLinkModifier() {
+        return modifyHandler;
+    }
+
+    public void setCustomCrawledLinkModifier(CrawledLinkModifier modifier) {
+        this.modifyHandler = modifier;
     }
 
 }

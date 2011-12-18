@@ -3,6 +3,7 @@ package org.jdownloader.api.cnl2;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URL;
 import java.util.ArrayList;
 
 import javax.crypto.Cipher;
@@ -12,7 +13,13 @@ import javax.swing.ImageIcon;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
 import jd.http.Browser;
+import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import net.sf.image4j.codec.ico.ICOEncoder;
 
@@ -36,6 +43,8 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.RemoteAPIConfig;
 import org.jdownloader.api.cnl2.translate.ExternInterfaceTranslation;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
@@ -113,6 +122,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         LinkCollectingJob job = new LinkCollectingJob(urls);
         job.setCustomSourceUrl(source);
         job.setCustomComment(comment);
+        job.setExtractPassword(passwords);
         LinkCollector.getInstance().addCrawlerJob(job);
     }
 
@@ -281,15 +291,69 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             sb.append(jdpath + "\r\n");
             sb.append("java -Xmx512m -jar " + jdpath + "\r\n");
             String urls[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "urls"));
-            String desc[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "descriptions"));
-            String fnames[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "fnames"));
-            String packname = HttpRequest.getParameterbyKey(request, "package");
-            String directory = HttpRequest.getParameterbyKey(request, "dir");
-            String cookies = HttpRequest.getParameterbyKey(request, "cookies");
-            String post = HttpRequest.getParameterbyKey(request, "postData");
-            String referer = HttpRequest.getParameterbyKey(request, "referer");
-            boolean autostart = "1".equalsIgnoreCase(HttpRequest.getParameterbyKey(request, "autostart"));
 
+            final String desc[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "descriptions"));
+            final String fnames[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "fnames"));
+            final String cookies = HttpRequest.getParameterbyKey(request, "cookies");
+            final String post = HttpRequest.getParameterbyKey(request, "postData");
+            final String referer = HttpRequest.getParameterbyKey(request, "referer");
+            /*
+             * create LinkCollectingJob to forward general Information like
+             * directory, autostart...
+             */
+            LinkCollectingJob job = new LinkCollectingJob(null);
+            job.setPackageName(HttpRequest.getParameterbyKey(request, "package"));
+            job.setOutputFolder(new File(HttpRequest.getParameterbyKey(request, "dir")));
+            job.setAutoStart("1".equalsIgnoreCase(HttpRequest.getParameterbyKey(request, "autostart")));
+
+            LazyHostPlugin lazyp = HostPluginController.getInstance().get("DirectHTTP");
+            final PluginForHost defaultplg = lazyp.getPrototype();
+
+            ArrayList<CrawledLink> links = new ArrayList<CrawledLink>();
+            for (int index = 0; index < urls.length - 1; index++) {
+                CrawledLink link = new CrawledLink(urls[index]);
+                final int index2 = index;
+                link.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
+
+                    public void modifyCrawledLink(CrawledLink link) {
+                        DownloadLink dl = link.getDownloadLink();
+                        if (!dl.gotBrowserUrl()) dl.setBrowserUrl(referer);
+                        if (index2 < desc.length) dl.setComment(desc[index2]);
+                    }
+                });
+                link.setUnknownHandler(new UnknownCrawledLinkHandler() {
+
+                    /*
+                     * this handler transforms unknown links into directhttp
+                     * links with all information given by flashgot
+                     */
+                    public void unhandledCrawledLink(CrawledLink link) {
+                        String url = link.getURL();
+                        String name = null;
+                        try {
+                            name = Plugin.getFileNameFromURL(new URL(url));
+                        } catch (final Throwable e) {
+                            Log.exception(e);
+                        }
+                        DownloadLink direct = new DownloadLink(defaultplg, name, "DirectHTTP", url, true);
+                        if (index2 < desc.length) direct.setComment(desc[index2]);
+                        direct.setProperty("cookies", cookies);
+                        direct.setProperty("post", post);
+                        direct.setProperty("referer", referer);
+                        direct.setProperty("fixName", fnames[index2]);
+                        try {
+                            defaultplg.correctDownloadLink(direct);
+                        } catch (final Throwable e) {
+                            Log.exception(e);
+                        }
+                        link.setDownloadLink(direct);
+                        link.sethPlugin(defaultplg);
+                    }
+                });
+                link.setSourceJob(job);
+                links.add(link);
+            }
+            LinkCollector.getInstance().addCrawlerJob(links);
             writeString(response, request, sb.toString(), true);
         } catch (final Throwable e) {
             throw new RemoteAPIException(e);
