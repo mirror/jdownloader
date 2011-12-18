@@ -2,23 +2,35 @@ package org.jdownloader.api.cnl2;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.LinkedList;
+import java.util.ArrayList;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.swing.ImageIcon;
 
+import jd.http.Browser;
 import jd.utils.JDUtilities;
+import net.sf.image4j.codec.ico.ICOEncoder;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIException;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.httpserver.requests.HttpRequest;
+import org.appwork.utils.net.httpserver.requests.HttpRequestInterface;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.api.RemoteAPIConfig;
+import org.jdownloader.api.cnl2.translate.ExternInterfaceTranslation;
+import org.jdownloader.images.NewTheme;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
@@ -33,7 +45,7 @@ public class Cnl2APIImpl implements Cnl2APIBasics, Cnl2APIFlash {
         sb.append("<cross-domain-policy>\r\n");
         sb.append("<allow-access-from domain=\"*\" />\r\n");
         sb.append("</cross-domain-policy>\r\n");
-        writeString(response, sb.toString());
+        writeString(response, null, sb.toString(), false);
     }
 
     /**
@@ -42,11 +54,15 @@ public class Cnl2APIImpl implements Cnl2APIBasics, Cnl2APIFlash {
      * @param response
      * @param string
      */
-    private void writeString(RemoteAPIResponse response, String string) {
+    private void writeString(RemoteAPIResponse response, RemoteAPIRequest request, String string, boolean wrapCallback) {
         OutputStream out = null;
         try {
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "text/html", false));
-            out = RemoteAPI.getOutputStream(response, null, false, true);
+            out = RemoteAPI.getOutputStream(response, request, false, true);
+            if (wrapCallback && request.getJqueryCallback() != null) {
+                if (string == null) string = "";
+                string = "{\"content\": \"" + string.trim() + "\"}";
+            }
             out.write(string.getBytes("UTF-8"));
         } catch (Throwable e) {
             throw new RemoteAPIException(e);
@@ -62,45 +78,26 @@ public class Cnl2APIImpl implements Cnl2APIBasics, Cnl2APIFlash {
         StringBuilder sb = new StringBuilder();
         sb.append("jdownloader=true;\r\n");
         sb.append("var version='" + JDUtilities.getRevision() + "';\r\n");
-        writeString(response, sb.toString());
+        writeString(response, null, sb.toString(), false);
     }
 
     public void addcrypted2(RemoteAPIResponse response, RemoteAPIRequest request) {
         try {
-            String crypted = getParameterbyKey(request, "crypted");
-            String jk = getParameterbyKey(request, "jk");
-            String k = getParameterbyKey(request, "k");
-            String passwords = getParameterbyKey(request, "passwords");
-            String source = getParameterbyKey(request, "source");
-            String links = decrypt(crypted, jk, k);
-
+            askPermission(request);
+            String crypted = HttpRequest.getParameterbyKey(request, "crypted");
+            String jk = HttpRequest.getParameterbyKey(request, "jk");
+            String k = HttpRequest.getParameterbyKey(request, "k");
+            String passwords = HttpRequest.getParameterbyKey(request, "passwords");
+            String source = HttpRequest.getParameterbyKey(request, "source");
+            String urls = decrypt(crypted, jk, k);
+            /*
+             * we need the \r\n else the website will not handle response
+             * correctly
+             */
+            writeString(response, request, "success\r\n", true);
         } catch (Throwable e) {
-            throw new RemoteAPIException(e);
+            writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
         }
-    }
-
-    /**
-     * returns the value of a given key, if found in the request
-     * 
-     * @param request
-     * @param key
-     * @return
-     * @throws IOException
-     */
-    private static String getParameterbyKey(RemoteAPIRequest request, String key) throws IOException {
-        LinkedList<String[]> params = request.getRequestedURLParameters();
-        if (params != null) {
-            for (String[] param : params) {
-                if (key.equalsIgnoreCase(param[0]) && param.length == 2) return param[1];
-            }
-        }
-        params = request.getPostParameter();
-        if (params != null) {
-            for (String[] param : params) {
-                if (key.equalsIgnoreCase(param[0]) && param.length == 2) return param[1];
-            }
-        }
-        return null;
     }
 
     /* decrypt given bytearray with given aes key */
@@ -153,5 +150,98 @@ public class Cnl2APIImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
         byte[] baseDecoded = Base64.decode(crypted);
         return decrypt(baseDecoded, key).trim();
+    }
+
+    public void add(RemoteAPIResponse response, RemoteAPIRequest request) {
+        try {
+            askPermission(request);
+            String urls = HttpRequest.getParameterbyKey(request, "urls");
+            String passwords = HttpRequest.getParameterbyKey(request, "passwords");
+            String source = HttpRequest.getParameterbyKey(request, "source");
+            writeString(response, request, "success\r\n", true);
+        } catch (Throwable e) {
+            writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
+        }
+    }
+
+    public void addcrypted(RemoteAPIResponse response, RemoteAPIRequest request) {
+        try {
+            askPermission(request);
+            String dlcContent = HttpRequest.getParameterbyKey(request, "crypted");
+            String passwords = HttpRequest.getParameterbyKey(request, "passwords");
+            String source = HttpRequest.getParameterbyKey(request, "source");
+            writeString(response, request, "success\r\n", true);
+        } catch (Throwable e) {
+            writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
+        }
+    }
+
+    private synchronized void askPermission(HttpRequestInterface request) throws IOException, DialogNoAnswerException {
+        HTTPHeader jdrandomNumber = request.getRequestHeaders().get("jd.randomnumber");
+        if (jdrandomNumber != null && jdrandomNumber.getValue() != null && jdrandomNumber.getValue().equalsIgnoreCase(System.getProperty("jd.randomNumber"))) {
+            /*
+             * request knows secret jd.randomnumber, it is okay to handle this
+             * request
+             */
+            return;
+        }
+        String app = "unknown application";
+        HTTPHeader agent = request.getRequestHeaders().get(HTTPConstants.HEADER_REQUEST_USER_AGENT);
+        if (agent != null && agent.getValue() != null) {
+            /* try to parse application name from user agent header */
+            app = agent.getValue().replaceAll("\\(.*\\)", "");
+        }
+        String url = null;
+        HTTPHeader referer = request.getRequestHeaders().get(HTTPConstants.HEADER_REQUEST_REFERER);
+        if (referer != null) {
+            /* lets use the referer as source of the request */
+            url = referer.getValue();
+        }
+        if (url == null) {
+            /* no referer available, maybe a source variable is? */
+            url = HttpRequest.getParameterbyKey(request, "source");
+        }
+        if (url != null) {
+            url = Browser.getHost(url);
+        }
+        ArrayList<String> allowed = JsonConfig.create(RemoteAPIConfig.class).getExternInterfaceAuth();
+        if (allowed != null && url != null && allowed.contains(url)) {
+            /* the url is already allowed to add links */
+            return;
+        }
+        String from = url != null ? url : app;
+        try {
+            Dialog.getInstance().showConfirmDialog(0, ExternInterfaceTranslation._.jd_plugins_optional_interfaces_jdflashgot_security_title(from), ExternInterfaceTranslation._.jd_plugins_optional_interfaces_jdflashgot_security_message(), null, ExternInterfaceTranslation._.jd_plugins_optional_interfaces_jdflashgot_security_btn_allow(), ExternInterfaceTranslation._.jd_plugins_optional_interfaces_jdflashgot_security_btn_deny());
+        } catch (DialogNoAnswerException e) {
+            throw e;
+        }
+        if (url != null) {
+            /* we can only save permission if an url is available */
+            if (allowed == null) allowed = new ArrayList<String>();
+            allowed.add(url);
+            JsonConfig.create(RemoteAPIConfig.class).setExternInterfaceAuth(allowed);
+        }
+
+    }
+
+    public void alive(RemoteAPIResponse response, RemoteAPIRequest request) {
+        writeString(response, request, "JDownloader\r\n", true);
+    }
+
+    public void favicon(RemoteAPIResponse response) {
+        OutputStream out = null;
+        try {
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "image/x-icon", false));
+            out = RemoteAPI.getOutputStream(response, null, false, false);
+            ImageIcon logo = NewTheme.I().getIcon("logo/jd_logo_128_128", 32);
+            ICOEncoder.write(IconIO.toBufferedImage(logo.getImage()), out);
+        } catch (Throwable e) {
+            throw new RemoteAPIException(e);
+        } finally {
+            try {
+                out.close();
+            } catch (final Throwable e) {
+            }
+        }
     }
 }

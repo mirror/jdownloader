@@ -1,5 +1,7 @@
 package org.jdownloader.api;
 
+import java.util.ArrayList;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
@@ -40,4 +42,10 @@ public interface RemoteAPIConfig extends ConfigInterface {
     boolean getExternInterfaceEnabled();
 
     void setExternInterfaceEnabled(boolean b);
+
+    @AboutConfig
+    @Description("ExternInterface(Cnl2,Flashgot) Authorized Websites")
+    ArrayList<String> getExternInterfaceAuth();
+
+    void setExternInterfaceAuth(ArrayList<String> auth);
 }
