@@ -3,7 +3,6 @@ package org.jdownloader.api.cnl2;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URL;
 import java.util.ArrayList;
 
 import javax.crypto.Cipher;
@@ -331,7 +330,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                         String url = link.getURL();
                         String name = null;
                         try {
-                            name = Plugin.getFileNameFromURL(new URL(url));
+                            name = Plugin.extractFileNameFromURL(url);
                         } catch (final Throwable e) {
                             Log.exception(e);
                         }
