@@ -320,7 +320,7 @@ public class GlumboUploadsCom extends PluginForHost {
         ArrayList<String> someStuff = new ArrayList<String>();
         ArrayList<String> regexStuff = new ArrayList<String>();
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: none;\">.*?</div>)");
+        regexStuff.add("(display: none;\">.*?(</span>|</div>))");
         regexStuff.add("(visibility:hidden>.*?<)");
         for (String aRegex : regexStuff) {
             String lolz[] = br.getRegex(aRegex).getColumn(0);
@@ -462,14 +462,18 @@ public class GlumboUploadsCom extends PluginForHost {
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         // Ticket Time
+        int tt = 5;
         String ttt = new Regex(BRBEFORE, "countdown\">.*?(\\d+).*?</span>").getMatch(0);
-        if (ttt == null) ttt = new Regex(BRBEFORE, "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
-        if (ttt != null) {
-            int tt = Integer.parseInt(ttt);
-            tt -= passedTime;
-            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
-            if (tt > 0) sleep(tt * 1001l, downloadLink);
+        if (ttt == null) {
+            ttt = new Regex(BRBEFORE, "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+            if (ttt == null) {
+                ttt = new Regex(BRBEFORE, "<div class=\"countdownnum\"  id=\".*?\">(\\d+)</div>").getMatch(0);
+            }
         }
+        if (ttt != null) tt = Integer.parseInt(ttt);
+        tt -= passedTime;
+        logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
+        if (tt > 0) sleep(tt * 1001l, downloadLink);
     }
 
 }

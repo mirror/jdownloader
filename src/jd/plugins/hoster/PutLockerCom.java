@@ -82,13 +82,13 @@ public class PutLockerCom extends PluginForHost {
             if (dllink == null) dllink = br.getRegex("\"(/get_file\\.php\\?download=[A-Z0-9]+\\&key=[a-z0-9]+&original=1)\"").getMatch(0);
             if (dllink == null) {
                 // Handling for streamlinks
-                dllink = br.getRegex("playlist: \\'(/get_file\\.php\\?stream=[A-Z0-9]+)\\'").getMatch(0);
+                dllink = br.getRegex("playlist: \\'(/get_file\\.php\\?stream=[A-Za-z0-9=]+)\\'").getMatch(0);
                 if (dllink != null) {
                     dllink = MAINPAGE + dllink;
                     downloadLink.setProperty("videolink", dllink);
                     br.getPage(dllink);
                     dllink = br.getRegex("media:content url=\"(http://.*?)\"").getMatch(0);
-                    if (dllink == null) dllink = br.getRegex("\"(http://media-b\\d+\\.putlocker\\.com/download/\\d+/.*?)\"").getMatch(0);
+                    if (dllink == null) dllink = br.getRegex("\"(http://media\\-b\\d+\\.putlocker\\.com/download/\\d+/.*?)\"").getMatch(0);
                 }
             }
         }
@@ -115,7 +115,7 @@ public class PutLockerCom extends PluginForHost {
             wait = Integer.parseInt(waittime);
         }
         sleep(wait * 1001l, downloadLink);
-        br.postPage(br.getURL(), "hash=" + Encoding.urlEncode(hash) + "&confirm=Please+wait+for+0+seconds");
+        br.postPage(br.getURL(), "hash=" + Encoding.urlEncode(hash) + "&confirm=Continue+as+Free+Users");
         String dllink = getDllink(downloadLink);
         if (dllink == null) {
             logger.warning("dllink is null...");

@@ -30,24 +30,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgchili.com", "flickr.com", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "pixhost.info", "picturedumper.com", "imagetwist.com", "sharenxs.com" }, urls = { "http://(www\\.)?imgchili\\.com/show/\\d+/[a-z0-9_\\.]+", "http://(www\\.)?flickr\\.com/photos/[a-z0-9_\\-]+/\\d+", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?img\\d+\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+", "http://[\\w\\.]*?imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}",
-        "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?pixhost\\.info/pictures/\\d+", "http://(www\\.)?picturedumper\\.com/picture/\\d+/[a-z0-9]+/", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgchili.com", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "pixhost.info", "picturedumper.com", "imagetwist.com", "sharenxs.com" }, urls = { "http://(www\\.)?imgchili\\.com/show/\\d+/[a-z0-9_\\.]+", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?img\\d+\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+", "http://[\\w\\.]*?imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+",
+        "http://(www\\.)?pixhost\\.info/pictures/\\d+", "http://(www\\.)?picturedumper\\.com/picture/\\d+/[a-z0-9]+/", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class ImageHosterDecrypter extends PluginForDecrypt {
 
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    private String createGuid() {
-        String a = "";
-        final String b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._";
-        int c = 0;
-        while (c < 22) {
-            final int index = (int) Math.floor(Math.random() * b.length());
-            a = a + b.substring(index, index + 1);
-            c++;
-        }
-        return a;
     }
 
     @Override
@@ -158,53 +146,6 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             finallink = br.getRegex("pointer;\" alt=\"\" id=\"image\" src=\"(http://.*?)\"").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("\"(http://ist\\d+\\-\\d+\\.filesor\\.com/pimpandhost\\.com/.*?)\"").getMatch(0);
-            }
-        } else if (parameter.contains("flickr.com/")) {
-            String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\">").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("class=\"photo\\-title\">(.*?)</h1").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<title>(.*?) \\| Flickr \\- Fotosharing\\!</title>").getMatch(0);
-                }
-            }
-            if (br.containsHTML("(photo\\-div video\\-div|class=\"video\\-wrapper\")")) {
-                final String lq = createGuid();
-                final String secret = br.getRegex("photo_secret=(.*?)\\&").getMatch(0);
-                final String nodeID = br.getRegex("data\\-comment\\-id=\"(\\d+\\-\\d+)\\-").getMatch(0);
-                if (secret == null || nodeID == null || filename == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                br.getPage("http://www.flickr.com/video_playlist.gne?node_id=" + nodeID + "&tech=flash&mode=playlist&lq=" + lq + "&bitrate=700&secret=" + secret + "&rd=video.yahoo.com&noad=1");
-                final Regex parts = br.getRegex("<STREAM APP=\"(http://.*?)\" FULLPATH=\"(/.*?)\"");
-                final String part1 = parts.getMatch(0);
-                final String part2 = parts.getMatch(1);
-                if (part1 == null || part2 == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                finalfilename = filename + ".flv";
-                finallink = part1 + part2.replace("&amp;", "&");
-            } else {
-                br.getPage(parameter + "/sizes/l/in/photostream/");
-                final Regex regex1 = br.getRegex("<div class=\"spaceball\" style=\"height:\\d+px; width: \\d+px;\"></div>[\t\n\r ]+<img src=\"(http://.*?)\"");
-                final Regex regex2 = br.getRegex("\"(http://farm\\d+\\.static\\.flickr\\.com/\\d+/.*?)\"");
-                finallink = regex1.getMatch(0);
-                if (finallink == null) {
-                    finallink = regex2.getMatch(0);
-                    if (finallink == null) {
-                        // Didn't work, try again...
-                        br.getPage(parameter + "/sizes/l/in/photostream/");
-                        finallink = regex1.getMatch(0);
-                        if (finallink == null) {
-                            finallink = regex2.getMatch(0);
-                        }
-                    }
-                }
-                final String ext = finallink.substring(finallink.lastIndexOf("."));
-                if (ext != null && filename != null) {
-                    finalfilename = Encoding.htmlDecode(filename.trim()) + ext;
-                }
             }
         } else if (parameter.contains("imgchili.com/")) {
             finallink = br.getRegex("onload=\"scale\\(this\\);\" onclick=\"scale\\(this\\);\"  src=\"(http://.*?)\"").getMatch(0);
