@@ -115,7 +115,7 @@ public class PutLockerCom extends PluginForHost {
             wait = Integer.parseInt(waittime);
         }
         sleep(wait * 1001l, downloadLink);
-        br.postPage(br.getURL(), "hash=" + Encoding.urlEncode(hash) + "&confirm=Continue+as+Free+Users");
+        br.postPage(br.getURL(), "hash=" + Encoding.urlEncode(hash) + "&confirm=Continue+as+Free+User");
         String dllink = getDllink(downloadLink);
         if (dllink == null) {
             logger.warning("dllink is null...");
