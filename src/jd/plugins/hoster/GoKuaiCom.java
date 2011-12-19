@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gokuai.com" }, urls = { "http://(www\\.)?gokuai\\.com/f/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gokuai.com" }, urls = { "https?://(www\\.)?gokuai\\.com/f/[A-Za-z0-9]+|gokuais?://(www\\.)?gokuai\\.com/a/[a-zA-Z0-9]{16}/[a-z0-9]{40}" }, flags = { 0 })
 public class GoKuaiCom extends PluginForHost {
 
     public GoKuaiCom(PluginWrapper wrapper) {
@@ -41,13 +41,19 @@ public class GoKuaiCom extends PluginForHost {
         return "http://www.gokuai.com/agreement";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("gokuai://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("gokuais://", "https://"));
+
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>该文件不存在或已被取消发布<|<title>够快\\-网盘\\|云存储\\|网络硬盘\\|网络存储\\|我的网盘\\|免费网盘\\|数据备份</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h2><i class=\"icon_[a-z0-9]+\"></i><span>(.*?)</span></h2>").getMatch(0);
+        String filename = br.getRegex("<h2><i class=\"icon\\_[a-z0-9]+\"></i><span>(.*?)</span></h2>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("filename:\"(.*?)\"").getMatch(0);
             if (filename == null) {
@@ -67,7 +73,7 @@ public class GoKuaiCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (br.containsHTML(">发布人关闭了直接下载功能, 请先保存到网盘再下载<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible!");
         String dllink = br.getRegex("class=\"download_now\" href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/d\\d+/[a-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(https?://\\d+\\.\\d+\\.\\d+\\.\\d+/d\\d+/[a-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
