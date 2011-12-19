@@ -367,6 +367,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private CrawledPackage                          offlinePackage;
 
     protected CrawledPackage                        variousPackage;
+
     private HashMap<String, ArrayList<CrawledLink>> offlineMap = new HashMap<String, ArrayList<CrawledLink>>();
     private HashMap<String, ArrayList<CrawledLink>> variousMap = new HashMap<String, ArrayList<CrawledLink>>();
 
@@ -425,7 +426,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (pkg == null) {
                     if (link.getLinkState() == LinkState.OFFLINE && LinkgrabberSettings.OFFLINE_PACKAGE_ENABLED.getValue()) {
                         if (offlinePackage == null || offlinePackage.getChildren().size() == 0) {
-                            offlinePackage = new CrawledPackage();
+                            offlinePackage = new OfflineCrawledPackage();
                             offlinePackage.setCreated(link.getCreated());
                             offlinePackage.setName(_JDT._.LinkCollector_addCrawledLink_offlinepackage());
 
@@ -443,7 +444,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         LinkCollector.this.addmoveChildren(offlinePackage, add, -1);
                     } else if (LinkgrabberSettings.VARIOUS_PACKAGE_LIMIT.getValue() > 0) {
                         if (variousPackage == null || variousPackage.getChildren().size() == 0) {
-                            variousPackage = new CrawledPackage();
+                            variousPackage = new VariousCrawledPackage();
                             variousPackage.setExpanded(true);
                             variousPackage.setCreated(link.getCreated());
 

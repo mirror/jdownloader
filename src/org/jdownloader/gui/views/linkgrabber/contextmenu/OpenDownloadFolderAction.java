@@ -21,9 +21,9 @@ public class OpenDownloadFolderAction extends AppAction {
     private CrawledPackage    pkg;
     private File              path             = null;
 
-    public OpenDownloadFolderAction(ArrayList<CrawledPackage> arrayList) {
+    public OpenDownloadFolderAction(AbstractNode editing) {
 
-        this(arrayList.get(0));
+        this(editing instanceof CrawledPackage ? (CrawledPackage) editing : ((CrawledLink) editing).getParentNode());
 
     }
 

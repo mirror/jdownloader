@@ -33,7 +33,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         return childrenChanged.get();
     }
 
-    protected LinkedList<PackageType>              packages  = new LinkedList<PackageType>();
+    protected LinkedList<PackageType>    packages  = new LinkedList<PackageType>();
 
     private final ReentrantReadWriteLock lock      = new ReentrantReadWriteLock();
     private final ReadLock               readLock  = this.lock.readLock();
@@ -359,6 +359,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     structureChanged.incrementAndGet();
                     if (newChildren) childrenChanged.incrementAndGet();
                     _controllerStructureChanged(this.getQueuePrio());
+
                     return null;
                 }
             });

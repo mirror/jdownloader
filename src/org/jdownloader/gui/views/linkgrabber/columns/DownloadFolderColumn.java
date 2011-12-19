@@ -8,6 +8,11 @@ import java.util.ArrayList;
 
 import javax.swing.JTextField;
 
+import jd.controlling.IOEQ;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcollector.VariousCrawledPackage;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import net.miginfocom.swing.MigLayout;
@@ -16,12 +21,17 @@ import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.OpenDownloadFolderAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.translate._JDT;
 
 public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     /**
@@ -72,7 +82,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
             public void actionPerformed(ActionEvent e) {
                 noset = true;
-                new OpenDownloadFolderAction((ArrayList<CrawledPackage>) editing).actionPerformed(e);
+                new OpenDownloadFolderAction(editing).actionPerformed(e);
                 DownloadFolderColumn.this.stopCellEditing();
             }
         });
@@ -94,6 +104,10 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
         if (CrossSystem.isOpenFileSupported() && value != null && value instanceof CrawledPackage) {
             File file = new File(((CrawledPackage) value).getDownloadFolder());
             if (file.exists() && file.isDirectory()) enabled = true;
+        } else if (CrossSystem.isOpenFileSupported() && value != null && value instanceof CrawledLink) {
+            value = ((CrawledLink) value).getParentNode();
+            File file = new File(((CrawledPackage) value).getDownloadFolder());
+            if (file.exists() && file.isDirectory()) enabled = true;
         }
         open.setEnabled(enabled);
     }
@@ -105,7 +119,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public boolean isEditable(AbstractNode obj) {
-        return obj instanceof CrawledPackage;
+        return true;
     }
 
     @Override
@@ -128,6 +142,46 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
         if (StringUtils.isEmpty(value)) return;
         if (object instanceof CrawledPackage) {
             ((CrawledPackage) object).setDownloadFolder(value);
+        } else if (object instanceof CrawledLink) {
+
+            CrawledPackage p = ((CrawledLink) object).getParentNode();
+
+            if (!(p instanceof VariousCrawledPackage)) {
+                try {
+                    if (p.getDownloadFolder().equals(value)) return;
+                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN,
+
+                    _JDT._.SetDownloadFolderAction_actionPerformed_(p.getName()), _JDT._.SetDownloadFolderAction_msg(p.getName(), 1), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
+                    p.setDownloadFolder(value);
+                    LinkCollector.getInstance().refreshData();
+                    return;
+                } catch (DialogClosedException e) {
+                    return;
+                } catch (DialogCanceledException e) {
+
+                }
+            }
+            final CrawledPackage pkg = new CrawledPackage();
+            pkg.setExpanded(true);
+            pkg.setCreated(System.currentTimeMillis());
+            if (p instanceof VariousCrawledPackage) {
+                pkg.setName(LinknameCleaner.cleanFileName(object.getName()));
+            } else {
+                pkg.setName(p.getName());
+            }
+            pkg.setDownloadFolder(value);
+            final ArrayList<CrawledLink> links = new ArrayList<CrawledLink>();
+            links.add((CrawledLink) object);
+            IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
+
+                @Override
+                protected Object run() {
+                    LinkCollector.getInstance().addmoveChildren(pkg, links, -1);
+                    return null;
+                }
+
+            });
+
         }
     }
 
@@ -151,9 +205,20 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             } else {
                 return new File(GeneralSettings.DEFAULT_DOWNLOAD_FOLDER.getValue(), folder).toString();
             }
-        } else {
-            return null;
+        } else if (value instanceof CrawledLink) {
+            value = ((CrawledLink) value).getParentNode();
+            if (value != null) {
+                String folder = ((CrawledPackage) value).getDownloadFolder();
+                if (isAbsolute(folder)) {
+                    return folder;
+                } else {
+                    return new File(GeneralSettings.DEFAULT_DOWNLOAD_FOLDER.getValue(), folder).toString();
+                }
+            }
         }
+
+        return null;
+
     }
 
     private boolean isAbsolute(String path) {
