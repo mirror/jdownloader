@@ -45,17 +45,17 @@ public class MngTrdCm extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        // set package name and prevent null field from creating plugin errors
+        // Set package name and prevent null field from creating plugin errors
         String fpName = br.getRegex("<title>Manga Traders - (.*?)</title>").getMatch(0);
         if (fpName == null) fpName = "Untitled";
         FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
 
-        // listening regex
+        // First getPage listening regex
         String[] links = br.getRegex("<a href=\"/view/file/(\\d+)\" class=\"link20\">").getColumn(0);
         String[] pages = br.getRegex("<a href=\"(/manga/series/\\d+/page/\\d+/)\">").getColumn(0);
 
-        // catch first page for links
+        // Catch first page for links
         if (links == null || links.length == 0) links = br.getRegex("\"/download/file/(\\d+)?\"").getColumn(0);
         if ((links == null || links.length == 0) && (pages == null || pages.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -66,15 +66,14 @@ public class MngTrdCm extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("http://www.mangatraders.com/download/file/" + dl));
         }
 
-        // catch for pages and links within subsequence pages, instead of
-        // loading back into the plugin as this creates multiple packages of the
-        // same name (==bad|dirty).
+        // Catch for the first page and links within subsequence pages. Instead of loading back into the plugin as this creates multiple packages of the same name (==bad|dirty).
+        // Might need to adjust in the future. As far as I could tell all pages are shown on the first page.
         if (pages != null && pages.length != 0) {
             for (String page : pages) {
                 br.getPage(page);
                 links = br.getRegex("<a href=\"/view/file/(\\d+)\" class=\"link20\">").getColumn(0);
                 if (links == null || links.length == 0) links = br.getRegex("\"/download/file/(\\d+)?\"").getColumn(0);
-                if ((links == null || links.length == 0) && (pages == null || pages.length == 0)) {
+                if ((links == null || links.length == 0)) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
