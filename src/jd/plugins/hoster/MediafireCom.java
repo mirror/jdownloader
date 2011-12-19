@@ -545,6 +545,7 @@ public class MediafireCom extends PluginForHost {
                             b = true;
                         }
                     }
+                    if (form == null && b == false) return true;
                     return form != null && !b;
                 }
 
