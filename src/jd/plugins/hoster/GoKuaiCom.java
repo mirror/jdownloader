@@ -72,7 +72,7 @@ public class GoKuaiCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML(">发布人关闭了直接下载功能, 请先保存到网盘再下载<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible!");
-        String dllink = br.getRegex("class=\"download_now\" href=\"(http://.*?)\"").getMatch(0);
+        String dllink = br.getRegex("class=\"download_now\" href=\"(https?://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(https?://\\d+\\.\\d+\\.\\d+\\.\\d+/d\\d+/[a-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
