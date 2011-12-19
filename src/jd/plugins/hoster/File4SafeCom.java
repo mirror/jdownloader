@@ -43,12 +43,12 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4safe.com" }, urls = { "http://(www\\.)?file4safe\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4safe.com" }, urls = { "http://(www\\.)?file4safe\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class File4SafeCom extends PluginForHost {
 
     private static AtomicInteger CONNECTIONS   = new AtomicInteger();
 
-    private static final String  COOKIE_HOST   = "http://file4safe.com";
+    private static final String  COOKIE_HOST   = "http://www.file4safe.com";
 
     private static final String  PASSWORDTEXT0 = "<br><b>Password:</b> <input";
 
@@ -372,9 +372,6 @@ public class File4SafeCom extends PluginForHost {
     }
 
     // XfileSharingProBasic Version 2.0.1.0
-    // This is only for developers to easily implement hosters using the
-    // "xfileshare(pro)" script (more informations can be found on
-    // xfilesharing.net)!
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -512,9 +509,10 @@ public class File4SafeCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getPage(COOKIE_HOST + "/login.html");
-        Form loginform = br.getFormbyKey("login");
+        br.getPage(COOKIE_HOST + "/?op=login");
+        Form loginform = br.getFormbyProperty("name", "FL");
         if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         loginform.put("login", Encoding.urlEncode(account.getUser()));
         loginform.put("password", Encoding.urlEncode(account.getPass()));
