@@ -22,6 +22,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.crypt.AESencrypt;
 import jd.crypt.Base16Decoder;
 import jd.crypt.BaseDecoder.IllegalAlphabetException;
@@ -29,8 +30,6 @@ import jd.nutils.encoding.Base64;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.ContainerStatus;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 
 import org.appwork.utils.logging.Log;
@@ -73,39 +72,21 @@ public class R extends PluginsC {
         // Log.L.info("Parse file: "+lc.getAbsolutePath());
 
         try {
-
-            cls = new ArrayList<DownloadLink>();
-            DownloadLink newLink;
-            dlU = new ArrayList<String>();
+            cls = new ArrayList<CrawledLink>();
             String fileContent[] = loadFileContent(lc.getAbsolutePath());
-            int c = 0;
             // Log.L.info(fileContent.length+" links found");
             for (String element : fileContent) {
                 // Log.L.info(i+" - "+fileContent[i]);
                 if (element != null && element.length() > 0) {
-                    PluginForHost pHost = findHostPlugin(element);
-                    // Log.L.info("pHost: "+pHost);
-                    if (pHost != null) {
-
-                        newLink = new DownloadLink(pHost, element.substring(element.lastIndexOf("/") + 1), pHost.getHost(), null, true);
-                        newLink.setLoadedPluginForContainer(this);
-                        newLink.setContainerFile(lc.getAbsolutePath());
-                        newLink.setContainerIndex(c);
-                        cls.add(newLink);
-                        dlU.add(element);
-                        c++;
-                    }
+                    cls.add(new CrawledLink(element));
                 }
             }
-            Log.L.info("Links: " + cls);
             if (cls.size() > 0) {
-
                 cs.setStatus(ContainerStatus.STATUS_FINISHED);
             } else {
                 cs.setStatus(ContainerStatus.STATUS_FAILED);
             }
             return cs;
-
         } catch (IllegalArgumentException e) {
             // TODO Auto-generated catch block
             Log.exception(e);

@@ -1,10 +1,9 @@
 package org.jdownloader.extensions.schedule.modules;
 
-import jd.controlling.ClipboardHandler;
-
 import org.jdownloader.extensions.schedule.SchedulerModule;
 import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
 import org.jdownloader.extensions.schedule.translate.T;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 @SchedulerModule
 public class EnableClipboard implements SchedulerModuleInterface {
@@ -16,7 +15,7 @@ public class EnableClipboard implements SchedulerModuleInterface {
     }
 
     public void execute(String parameter) {
-        ClipboardHandler.getClipboard().setEnabled(true);
+        GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.setValue(true);
     }
 
     public String getTranslation() {

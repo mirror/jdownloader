@@ -20,7 +20,6 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.controlling.ClipboardHandler;
 import jd.controlling.IOEQ;
 import jd.controlling.JDController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -418,7 +417,7 @@ public class ActionController {
 
                 @Override
                 public void onAction(final ActionEvent e) {
-                    ClipboardHandler.getClipboard().setEnabled(this.isSelected());
+                    GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.toggle();
                 }
 
                 @Override

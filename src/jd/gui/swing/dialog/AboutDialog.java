@@ -26,7 +26,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.controlling.ClipboardHandler;
+import jd.controlling.ClipboardMonitoring;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -102,7 +102,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
 
             public void actionPerformed(ActionEvent e) {
 
-                ClipboardHandler.getClipboard().copyTextToClipboard(info);
+                ClipboardMonitoring.getINSTANCE().setCurrentContent(info);
             }
 
         });

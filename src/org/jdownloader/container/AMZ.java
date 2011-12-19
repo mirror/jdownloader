@@ -4,13 +4,13 @@ import java.io.File;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDIO;
@@ -26,8 +26,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 public class AMZ extends PluginsC {
 
-    private Pattern pattern;
-
     public AMZ() {
         super("Amazon Mp3", "file://.+\\.amz", "$Revision$");
 
@@ -39,8 +37,7 @@ public class AMZ extends PluginsC {
         String base64AMZ = JDIO.readFileToString(file);
         byte[] byteAMZ = Base64.decode(base64AMZ);
         /* google and you will find these keys public */
-        cls = new ArrayList<DownloadLink>();
-        dlU = new ArrayList<String>();
+        cls = new ArrayList<CrawledLink>();
         byte[] iv = null;
         byte[] seckey = null;
         try {
@@ -78,8 +75,7 @@ public class AMZ extends PluginsC {
                     fps.put(track[1], fp);
                 }
                 links.add(link);
-                cls.add(link);
-                dlU.add(link.getDownloadURL());
+                cls.add(new CrawledLink(link));
             }
             cs.setStatus(ContainerStatus.STATUS_FINISHED);
             return cs;

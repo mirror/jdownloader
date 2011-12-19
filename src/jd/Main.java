@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
-import jd.controlling.ClipboardHandler;
+import jd.controlling.ClipboardMonitoring;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadController;
@@ -53,6 +53,9 @@ import org.appwork.controlling.SingleReachableState;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.utils.Application;
 import org.appwork.utils.event.DefaultEventListener;
@@ -429,8 +432,23 @@ public class Main {
                         // GarbageController.getInstance();
                         /* load extensions */
                         ExtensionController.getInstance().init();
-                        ClipboardHandler.getClipboard().setEnabled(GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.isEnabled());
-                        ClipboardHandler.getClipboard().setTempDisabled(false);
+                        /* init clipboardMonitoring stuff */
+                        if (GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.isEnabled()) {
+                            ClipboardMonitoring.getINSTANCE().startMonitoring();
+                        }
+                        GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+                            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                                if (Boolean.TRUE.equals(newValue) && ClipboardMonitoring.getINSTANCE().isMonitoring() == false) {
+                                    ClipboardMonitoring.getINSTANCE().startMonitoring();
+                                } else {
+                                    ClipboardMonitoring.getINSTANCE().stopMonitoring();
+                                }
+                            }
+
+                            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                            }
+                        });
                         /* check for available updates */
                         // JDInit.checkUpdate();
                         // JDUpdater.getInstance().startChecker();

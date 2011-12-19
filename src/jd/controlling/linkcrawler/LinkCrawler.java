@@ -728,47 +728,20 @@ public class LinkCrawler implements IOPermission {
                 return;
             }
             if (cryptedLink == null || cryptedLink.getcPlugin() == null || cryptedLink.getURL() == null) return;
-            PluginsC plg = cryptedLink.getcPlugin().getClass().newInstance();
+            PluginsC plg = null;
+            try {
+                plg = cryptedLink.getcPlugin().getClass().newInstance();
+            } catch (final Throwable e) {
+                return;
+            }
             /* now we run the plugin and let it find some links */
             LinkCrawlerThread lct = null;
             if (Thread.currentThread() instanceof LinkCrawlerThread) {
                 lct = (LinkCrawlerThread) Thread.currentThread();
             }
             boolean lctb = false;
-            LinkCrawlerDistributer dist = null;
             LinkCrawler previousCrawler = null;
-            ArrayList<DownloadLink> decryptedPossibleLinks = null;
             try {
-                /*
-                 * set LinkCrawlerDistributer in case the plugin wants to add
-                 * links in realtime
-                 */
-                dist = new LinkCrawlerDistributer() {
-
-                    public void distribute(DownloadLink... links) {
-                        if (links == null || links.length == 0) return;
-                        final ArrayList<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(links.length);
-                        for (DownloadLink link : links) {
-                            /*
-                             * we set source url here to hide the original link
-                             * if needed
-                             */
-                            link.setBrowserUrl(cryptedLink.getURL());
-                            CrawledLink ret;
-                            possibleCryptedLinks.add(ret = new CrawledLink(link));
-                            forwardCrawledLinkInfos(cryptedLink, ret);
-                        }
-                        if (!checkStartNotify()) return;
-                        /* enqueue distributing of the links */
-                        threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
-
-                            @Override
-                            void crawling() {
-                                LinkCrawler.this.distribute(possibleCryptedLinks);
-                            }
-                        });
-                    }
-                };
                 if (lct != null) {
                     /* mark thread to be used by decrypter plugin */
                     lctb = lct.isLinkCrawlerThreadUsedbyDecrypter();
@@ -776,7 +749,22 @@ public class LinkCrawler implements IOPermission {
                     previousCrawler = lct.getCurrentLinkCrawler();
                     lct.setCurrentLinkCrawler(this);
                 }
-                decryptedPossibleLinks = plg.decryptContainer(cryptedLink);
+                final ArrayList<CrawledLink> decryptedPossibleLinks = plg.decryptContainer(cryptedLink);
+                if (decryptedPossibleLinks != null && decryptedPossibleLinks.size() > 0) {
+                    /* we found some links, distribute them */
+                    for (CrawledLink decryptedPossibleLink : decryptedPossibleLinks) {
+                        forwardCrawledLinkInfos(cryptedLink, decryptedPossibleLink);
+                    }
+                    if (!checkStartNotify()) return;
+                    /* enqueue distributing of the links */
+                    threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+
+                        @Override
+                        void crawling() {
+                            LinkCrawler.this.distribute(decryptedPossibleLinks);
+                        }
+                    });
+                }
             } finally {
                 if (lct != null) {
                     /* reset thread to last known used state */
@@ -784,13 +772,6 @@ public class LinkCrawler implements IOPermission {
                     lct.setCurrentLinkCrawler(previousCrawler);
                 }
             }
-            if (decryptedPossibleLinks != null) {
-                dist.distribute(decryptedPossibleLinks.toArray(new DownloadLink[decryptedPossibleLinks.size()]));
-            }
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
         } finally {
             checkFinishNotify();
         }
@@ -897,23 +878,40 @@ public class LinkCrawler implements IOPermission {
             /* forward dupeAllow info from DownloadLink to CrawledLinkInfo */
             link.getDownloadLink().setProperty("ALLOW_DUPE", Property.NULL);
         }
-
         try {
+            /* call the general LinkModifier first */
             generalCrawledLinkModifier(link);
         } catch (final Throwable e) {
             Log.exception(e);
         }
-        CrawledLinkModifier customModifier = link.getOriginLink().getCustomCrawledLinkModifier();
         /*
-         * remove reference to ModifyHandler, because we never will call it
-         * again
+         * build history of this crawledlink so we can call each existing
+         * LinkModifier in correct order
          */
-        link.getOriginLink().setCustomCrawledLinkModifier(null);
-        if (customModifier != null) {
-            try {
-                customModifier.modifyCrawledLink(link);
-            } catch (final Throwable e) {
-                Log.exception(e);
+        ArrayList<CrawledLink> history = new ArrayList<CrawledLink>();
+        CrawledLink source = link.getSourceLink();
+        history.add(0, link);
+        /* build history */
+        while (source != null) {
+            history.add(0, source);
+            source = source.getSourceLink();
+        }
+        for (CrawledLink historyLink : history) {
+            /* call each LinkModifier from the beginning to this link */
+            CrawledLinkModifier customModifier = historyLink.getCustomCrawledLinkModifier();
+            if (link == historyLink) {
+                /*
+                 * remove reference to ModifyHandler, because we never will call
+                 * it again
+                 */
+                link.setCustomCrawledLinkModifier(null);
+            }
+            if (customModifier != null) {
+                try {
+                    customModifier.modifyCrawledLink(link);
+                } catch (final Throwable e) {
+                    Log.exception(e);
+                }
             }
         }
         /* check if we already handled this url */

@@ -19,26 +19,21 @@ package jd.plugins;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.gui.UserIO;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.nutils.Formatter;
-import jd.nutils.JDFlags;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
-import org.jdownloader.controlling.filter.LinkFilterController;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können
@@ -65,18 +60,16 @@ public abstract class PluginsC {
         }
     }
 
-    private static final int          STATUS_NOTEXTRACTED     = 0;
+    private static final int         STATUS_NOTEXTRACTED     = 0;
 
-    private static final int          STATUS_ERROR_EXTRACTING = 1;
+    private static final int         STATUS_ERROR_EXTRACTING = 1;
 
-    protected ArrayList<DownloadLink> cls                     = new ArrayList<DownloadLink>();
+    protected ArrayList<CrawledLink> cls                     = new ArrayList<CrawledLink>();
 
-    protected ArrayList<String>       dlU;
+    protected String                 md5;
+    protected byte[]                 k;
 
-    protected String                  md5;
-    protected byte[]                  k;
-
-    private int                       status                  = STATUS_NOTEXTRACTED;
+    private int                      status                  = STATUS_NOTEXTRACTED;
 
     public abstract ContainerStatus callDecryption(File file);
 
@@ -101,83 +94,6 @@ public abstract class PluginsC {
 
     public long getVersion() {
         return version;
-    }
-
-    /**
-     * geht die containedLinks liste durch und decrypted alle links die darin
-     * sind.
-     */
-    private void decryptLinkProtectorLinks() {
-        final ArrayList<DownloadLink> tmpDlink = new ArrayList<DownloadLink>();
-        final ArrayList<String> tmpURL = new ArrayList<String>();
-        int i = 0;
-        int c = 0;
-
-        for (String string : dlU) {
-            LinkCrawler lc = new LinkCrawler();
-            lc.setFilter(LinkFilterController.getInstance());
-            lc.crawlNormal(string);
-            lc.waitForCrawling();
-            final ArrayList<CrawledLink> links = lc.getCrawledLinks();
-
-            final DownloadLink srcLink = cls.get(i);
-            final Iterator<CrawledLink> it = links.iterator();
-
-            while (it.hasNext()) {
-                final CrawledLink nextc = it.next();
-                DownloadLink next = nextc.getDownloadLink();
-                if (next == null) continue;
-                tmpDlink.add(next);
-                tmpURL.add(next.getDownloadURL());
-
-                if (srcLink.getContainerFile() != null) {
-                    next.setContainerFile(srcLink.getContainerFile());
-                    next.setContainerIndex(c++);
-                }
-                if (srcLink.getSourcePluginPasswordList() != null && srcLink.getSourcePluginPasswordList().size() > 0) {
-                    next.addSourcePluginPasswordList(srcLink.getSourcePluginPasswordList());
-                }
-                String comment = "";
-                if (srcLink.getComment() != null) {
-                    comment += srcLink.getComment();
-                }
-                if (next.getComment() != null) {
-                    if (comment.length() == 0) {
-                        comment += "->" + next.getComment();
-                    } else {
-                        comment += next.getComment();
-                    }
-                }
-                next.setSourcePluginComment(comment);
-                next.setLoadedPluginForContainer(this);
-                /* forward custom package */
-                srcLink.getFilePackage().add(next);
-                /* hide links? */
-                if (hideLinks()) {
-                    next.setLinkType(DownloadLink.LINKTYPE_CONTAINER);
-                    next.setUrlDownload(null);
-                } else {
-                    next.setLinkType(DownloadLink.LINKTYPE_NORMAL);
-                }
-                if (links.size() == 1) {
-                    /* only set those variables on 1:1 mapping */
-                    next.setName(srcLink.getName());
-                    if (srcLink.getForcedFileName() != null) next.forceFileName(srcLink.getForcedFileName());
-                    if (srcLink.getDownloadSize() > 0) {
-                        next.setDownloadSize(srcLink.getDownloadSize());
-                    }
-                    if (srcLink.isAvailabilityStatusChecked()) {
-                        next.setAvailableStatus(srcLink.getAvailableStatus());
-                    }
-                }
-                if (srcLink.gotBrowserUrl()) {
-                    next.setBrowserUrl(srcLink.getBrowserUrl());
-                }
-            }
-            i++;
-        }
-        cls = tmpDlink;
-        dlU = tmpURL;
     }
 
     /* hide links by default */
@@ -231,99 +147,7 @@ public abstract class PluginsC {
      * @return Die URL als String
      */
     public synchronized String extractDownloadURL(final DownloadLink downloadLink) {
-        try {
-            if (dlU == null) {
-                initContainer(downloadLink.getContainerFile(), downloadLink.getGenericProperty("k", new byte[] {}));
-            }
-            checkWorkaround(downloadLink);
-            if (dlU == null || dlU.size() <= downloadLink.getContainerIndex()) { return null; }
-            downloadLink.setProperty("k", k);
-            return dlU.get(downloadLink.getContainerIndex());
-        } catch (final Throwable e) {
-            Log.exception(e);
-            return null;
-        }
-    }
-
-    /**
-     * workaround and cortrection of a dlc bug
-     * 
-     * @param downloadLink
-     */
-    private void checkWorkaround(final DownloadLink downloadLink) {
-        final ArrayList<DownloadLink> links = JDUtilities.getDownloadController().getAllDownloadLinks();
-        final ArrayList<DownloadLink> failed = new ArrayList<DownloadLink>();
-        int biggestIndex = 0;
-        final String dlContainerFile = downloadLink.getContainerFile();
-        for (final DownloadLink l : links) {
-            final String containerFile = l.getContainerFile();
-            if (containerFile != null && containerFile.equalsIgnoreCase(dlContainerFile)) {
-                failed.add(l);
-                biggestIndex = Math.max(biggestIndex, l.getContainerIndex());
-            }
-        }
-
-        if (biggestIndex >= dlU.size()) {
-            final ArrayList<DownloadLink> rename = new ArrayList<DownloadLink>();
-            System.err.println("DLC missmatch found");
-            String ren = "";
-            for (final DownloadLink l : failed) {
-                if (new File(l.getFileOutput()).exists() && l.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                    rename.add(l);
-                    ren += l.getFileOutput() + "<br>";
-                }
-            }
-            if (JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_HTML, "DLC Missmatch", "<b>JD discovered an error while downloading DLC links.</b> <br>The following files may have errors:<br>" + ren + "<br><u> Do you want JD to try to correct them?</u>"), UserIO.RETURN_OK)) {
-
-                ren = "";
-                for (final DownloadLink l : rename) {
-                    String name = l.getName();
-                    String filename = new File(l.getFileOutput()).getName();
-                    l.setUrlDownload(dlU.get(l.getContainerIndex() / 2));
-                    if (l.isAvailable()) {
-
-                        String newName = l.getName();
-
-                        if (!name.equals(newName)) {
-                            if (JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_HTML, "Rename file", "<b>Filename missmatch</b> <br>This file seems to have the wrong name:" + filename + "<br><u> Rename it to " + newName + "?</u>"), UserIO.RETURN_OK)) {
-                                File newFile = new File(new File(l.getFileOutput()).getParent() + "/restore/" + newName);
-                                newFile.mkdirs();
-                                if (newFile.exists()) {
-
-                                    ren += l.getFileOutput() + " -> RENAME TO " + newFile + " FAILED<br>";
-                                } else {
-                                    if (new File(l.getFileOutput()).renameTo(newFile)) {
-                                        ren += l.getFileOutput() + " -> " + newFile + "<br>";
-                                    } else {
-                                        ren += l.getFileOutput() + " -> RENAME TO " + newFile + " FAILED<br>";
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    l.setUrlDownload(null);
-                }
-                JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_HTML, "DLC Correction", "<b>Correction result:</b> <br>" + ren + ""), UserIO.RETURN_OK);
-                ren = null;
-            }
-            for (final DownloadLink l : failed) {
-                l.setContainerIndex(l.getContainerIndex() / 2);
-            }
-        }
-    }
-
-    /**
-     * Findet anhand des Hostnamens ein passendes Plugiln
-     * 
-     * @param data
-     *            Hostname
-     * @return Das gefundene Plugin oder null
-     */
-    protected PluginForHost findHostPlugin(final String data) {
-        for (final LazyHostPlugin pHost : HostPluginController.getInstance().list()) {
-            if (pHost.canHandle(data)) return pHost.getPrototype();
-        }
-        return null;
+        throw new WTFException("TODO: this should not happen at the moment");
     }
 
     /**
@@ -334,8 +158,8 @@ public abstract class PluginsC {
      *            Die Containerdatei
      * @return Ein ArrayList mit DownloadLinks
      */
-    public ArrayList<DownloadLink> getContainedDownloadlinks() {
-        return cls == null ? new ArrayList<DownloadLink>() : cls;
+    public ArrayList<CrawledLink> getContainedDownloadlinks() {
+        return cls == null ? new ArrayList<CrawledLink>() : cls;
     }
 
     public synchronized void initContainer(String filename, final byte[] bs) throws IOException {
@@ -356,23 +180,11 @@ public abstract class PluginsC {
 
         if (cls == null || cls.size() == 0) {
             Log.L.info("Init Container");
-
             if (bs != null) k = bs;
             try {
                 doDecryption(filename);
             } catch (Throwable e) {
                 Log.L.severe(e.toString());
-            }
-
-            Log.L.info(filename + " Parse");
-            if (cls != null && dlU != null) {
-
-                decryptLinkProtectorLinks();
-
-                final Iterator<DownloadLink> it = cls.iterator();
-                while (it.hasNext()) {
-                    it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
-                }
             }
         }
     }
@@ -404,25 +216,35 @@ public abstract class PluginsC {
 
                 CrawledLink cli;
                 chits.add(cli = new CrawledLink(file));
+                cli.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
+                    /*
+                     * set new LinkModifier, hides the url if needed
+                     */
+                    public void modifyCrawledLink(CrawledLink link) {
+                        if (hideLinks()) {
+                            /* we hide the links */
+                            DownloadLink dl = link.getDownloadLink();
+                            if (dl != null) dl.setLinkType(DownloadLink.LINKTYPE_CONTAINER);
+                        }
+                    }
+                });
                 cli.setcPlugin(this);
             }
         }
         return chits;
     }
 
-    public ArrayList<DownloadLink> decryptContainer(CrawledLink source) {
-
+    public ArrayList<CrawledLink> decryptContainer(CrawledLink source) {
         if (source.getURL() == null) return null;
-        ArrayList<DownloadLink> tmpLinks = null;
+        ArrayList<CrawledLink> retLinks = null;
         boolean showException = true;
         try {
-
             /* extract filename from url */
             String file = new Regex(source.getURL(), "file://(.+)").getMatch(0);
             file = Encoding.urlDecode(file, false);
             if (file != null && new File(file).exists()) {
                 initContainer(file, null);
-                tmpLinks = getContainedDownloadlinks();
+                retLinks = getContainedDownloadlinks();
             } else {
                 throw new Throwable("Invalid Container: " + source.getURL());
             }
@@ -434,7 +256,7 @@ public abstract class PluginsC {
 
             Log.L.log(Level.SEVERE, "Exception", e);
         }
-        if (tmpLinks == null && showException) {
+        if (retLinks == null && showException) {
             /*
              * null as return value? something must have happened, do not clear
              * log
@@ -442,7 +264,7 @@ public abstract class PluginsC {
             Log.L.severe("ContainerPlugin out of date: " + this + " :" + getVersion());
 
         }
-        return tmpLinks;
+        return retLinks;
     }
 
 }

@@ -28,7 +28,7 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.ClipboardHandler;
+import jd.controlling.ClipboardMonitoring;
 import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.gui.swing.laf.LookAndFeelController;
@@ -353,7 +353,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                         inform();
                         String newText = config.getPresetDebugLinks();
                         if (StringUtils.isEmpty(newText)) {
-                            newText = ClipboardHandler.getClipboard().getCurrentClipboardLinks();
+                            newText = ClipboardMonitoring.getINSTANCE().getCurrentContent();
                         }
                         if (config.isAddLinksPreParserEnabled()) {
                             if (!StringUtils.isEmpty(newText)) {

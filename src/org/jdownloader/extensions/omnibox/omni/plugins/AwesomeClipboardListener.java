@@ -5,7 +5,7 @@ import java.util.List;
 
 import javax.swing.JLabel;
 
-import jd.controlling.ClipboardHandler;
+import jd.controlling.ClipboardMonitoring;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 
@@ -32,7 +32,7 @@ public class AwesomeClipboardListener implements ProposalRequestListener {
             GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.setValue(true);
             break;
         case ADDLINKS:
-            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(ClipboardHandler.getClipboard().getCurrentClipboardLinks()));
+            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(ClipboardMonitoring.getINSTANCE().getCurrentContent()));
             /*
              * if (ClipboardHandler.getClipboard().isEnabled()) {
              * ClipboardHandler.getClipboard().copyTextToClipboard(data) } else

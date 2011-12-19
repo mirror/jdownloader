@@ -4,7 +4,7 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import jd.controlling.ClipboardHandler;
+import jd.controlling.ClipboardMonitoring;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 
@@ -41,7 +41,7 @@ public class CopyPasswordAction extends ContextMenuAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        ClipboardHandler.getClipboard().copyTextToClipboard(password);
+        ClipboardMonitoring.getINSTANCE().setCurrentContent(password);
     }
 
     public static String getPasswordSelectedLinks(ArrayList<DownloadLink> links) {

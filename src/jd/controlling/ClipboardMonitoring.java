@@ -2,28 +2,41 @@ package jd.controlling;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.ClipboardOwner;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
+import java.util.StringTokenizer;
+
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 
 public class ClipboardMonitoring {
 
-    private static DataFlavor urlFlavor        = null;
-    private static DataFlavor uriListFlavor    = null;
-    private volatile Thread   monitoringThread = null;
-    private Clipboard         clipboard        = null;
+    private static ClipboardMonitoring INSTANCE            = new ClipboardMonitoring();
+    private static DataFlavor          urlFlavor           = null;
+    private static DataFlavor          uriListFlavor       = null;
+    private volatile Thread            monitoringThread    = null;
+    private Clipboard                  clipboard           = null;
+    private volatile boolean           skipChangeDetection = false;
 
     public synchronized void startMonitoring() {
+        if (isMonitoring()) return;
         monitoringThread = new Thread() {
             private String oldStringContent = null;
+            private String oldListContent   = null;
 
             @Override
             public void run() {
@@ -32,23 +45,60 @@ public class ClipboardMonitoring {
                         synchronized (this) {
                             this.wait(750);
                         }
+                        if (Thread.currentThread() != monitoringThread) return;
                     } catch (InterruptedException e) {
                         return;
+                    }
+                    if (skipChangeDetection) {
+                        continue;
                     }
                     try {
                         Transferable currentContent = clipboard.getContents(null);
                         if (currentContent == null) continue;
-                        String newStringContent = getStringTransferData(currentContent);
-                        if (changeDetector(oldStringContent, newStringContent)) {
-                            String htmlContent = getHTMLTransferData(currentContent);
-                            if (htmlContent != null) {
-                                System.out.println("NEW(STRING+HTML):" + newStringContent + htmlContent);
+                        String handleThisRound = null;
+                        try {
+                            /* change detection for List/URI content */
+                            String newListContent = getListTransferData(currentContent);
+                            try {
+                                if (changeDetector(oldListContent, newListContent)) {
+                                    handleThisRound = newListContent;
+                                } else if (noChangeDetector(oldListContent, newListContent)) {
+                                    continue;
+                                }
+                            } finally {
+                                oldListContent = newListContent;
                             }
-                            System.out.println("NEW(STRING ONLY):" + newStringContent);
-                        } else {
-                            System.out.println("UNCHANGED");
+                        } catch (final Throwable e) {
                         }
-                        oldStringContent = newStringContent;
+                        if (handleThisRound == null) {
+                            /* change detection for String/HTML content */
+                            String newStringContent = getStringTransferData(currentContent);
+                            try {
+                                if (changeDetector(oldStringContent, newStringContent)) {
+                                    /*
+                                     * we only use normal String Content to
+                                     * detect a change
+                                     */
+                                    handleThisRound = newStringContent;
+                                    try {
+                                        /*
+                                         * lets fetch fresh HTML Content if
+                                         * available
+                                         */
+                                        String htmlContent = getHTMLTransferData(currentContent);
+                                        if (htmlContent != null) {
+                                            handleThisRound = handleThisRound + htmlContent;
+                                        }
+                                    } catch (final Throwable e) {
+                                    }
+                                }
+                            } finally {
+                                oldStringContent = newStringContent;
+                            }
+                        }
+                        if (!StringUtils.isEmpty(handleThisRound)) {
+                            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(handleThisRound));
+                        }
                     } catch (final Throwable e) {
                     }
                 }
@@ -60,9 +110,53 @@ public class ClipboardMonitoring {
         monitoringThread.start();
     }
 
+    public String getCurrentContent() {
+        Transferable currentContent = null;
+        try {
+            currentContent = clipboard.getContents(null);
+        } catch (final Throwable e) {
+            return "";
+        }
+        String stringContent = null;
+        try {
+            stringContent = getStringTransferData(currentContent);
+        } catch (final Throwable e) {
+        }
+        String htmlContent = null;
+        try {
+            /* lets fetch fresh HTML Content if available */
+            htmlContent = getHTMLTransferData(currentContent);
+        } catch (final Throwable e) {
+        }
+        StringBuilder sb = new StringBuilder();
+        if (stringContent != null) sb.append(stringContent);
+        if (sb.length() > 0) sb.append("\r\n");
+        if (htmlContent != null) sb.append(htmlContent);
+        return sb.toString();
+    }
+
+    public synchronized void setCurrentContent(String string) {
+        try {
+            clipboard.setContents(new StringSelection(string), new ClipboardOwner() {
+
+                public void lostOwnership(Clipboard clipboard, Transferable contents) {
+                    skipChangeDetection = false;
+                }
+            });
+            skipChangeDetection = true;
+        } catch (final Throwable e) {
+            skipChangeDetection = false;
+        }
+    }
+
     private boolean changeDetector(String oldS, String newS) {
         if (oldS == null && newS != null) return true;
         if (oldS != null && newS != null && !oldS.equalsIgnoreCase(newS)) return true;
+        return false;
+    }
+
+    private boolean noChangeDetector(String oldS, String newS) {
+        if (oldS != null && newS != null && oldS.equalsIgnoreCase(newS)) return true;
         return false;
     }
 
@@ -77,12 +171,6 @@ public class ClipboardMonitoring {
 
     public ClipboardMonitoring() {
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-    }
-
-    public static void main(String[] args) throws InterruptedException {
-        ClipboardMonitoring cm = new ClipboardMonitoring();
-        cm.startMonitoring();
-        Thread.sleep(90000);
     }
 
     static {
@@ -134,33 +222,18 @@ public class ClipboardMonitoring {
                  * write check to skip broken first bytes and discard 0 bytes if
                  * they are in intervalls
                  */
-                byte[] htmlBytes2 = new byte[htmlBytes.length];
                 int indexOriginal = 0;
-                int maxLength = (htmlBytes.length - 1);
-                for (int i = 6; i < maxLength; i++) {
+                for (int i = 6; i < htmlBytes.length - 1; i++) {
                     if (htmlBytes[i] != 0) {
                         /* copy byte */
-                        htmlBytes2[indexOriginal++] = htmlBytes[i];
-                    } else if (htmlBytes[i] == 0) {
-                        /* byte is zero, lets workaround the bug */
-                        if (i + 2 < maxLength && htmlBytes[i + 2] != 0) {
-                            htmlBytes2[indexOriginal++] = htmlBytes[i];
-                            for (int ii = i + 1; ii < maxLength; ii++) {
-                                i++;
-                                if (htmlBytes[ii] != 0) {
-                                    htmlBytes2[indexOriginal++] = htmlBytes[ii];
-                                } else {
-                                    break;
-                                }
-                            }
-                        }
+                        htmlBytes[indexOriginal++] = htmlBytes[i];
                     }
                 }
                 String ret = null;
                 if (charSet != null) {
-                    ret = new String(htmlBytes2, 0, indexOriginal, charSet);
+                    ret = new String(htmlBytes, 0, indexOriginal, charSet);
                 } else {
-                    ret = new String(htmlBytes2, 0, indexOriginal, "UTF-8");
+                    ret = new String(htmlBytes, 0, indexOriginal, "UTF-8");
                 }
                 return ret;
             } else {
@@ -186,7 +259,7 @@ public class ClipboardMonitoring {
     }
 
     @SuppressWarnings("unchecked")
-    public static String getListTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException {
+    public static String getListTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException, URISyntaxException {
         if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
             final List<File> list = (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
             final StringBuilder sb = new StringBuilder("");
@@ -195,7 +268,33 @@ public class ClipboardMonitoring {
                 sb.append("file://" + f.getPath());
             }
             return sb.toString();
-        } else if (uriListFlavor != null && transferable.isDataFlavorSupported(uriListFlavor)) { return (String) transferable.getTransferData(uriListFlavor); }
+        } else if (uriListFlavor != null && transferable.isDataFlavorSupported(uriListFlavor)) {
+            /* url-lists are defined by rfc 2483 as crlf-delimited */
+            final StringTokenizer izer = new StringTokenizer((String) transferable.getTransferData(uriListFlavor), "\r\n");
+            final StringBuilder sb = new StringBuilder("");
+            while (izer.hasMoreTokens()) {
+                if (sb.length() > 0) sb.append("\r\n");
+                final URI fi = new URI(izer.nextToken());
+                if (fi.getScheme() != null && (fi.getScheme().contains("http") || fi.getScheme().contains("ftp"))) {
+                    sb.append(fi.toString());
+                } else {
+                    sb.append(fi.getPath());
+                }
+            }
+            return sb.toString();
+        }
         return null;
+    }
+
+    /**
+     * @return the iNSTANCE
+     */
+    public static ClipboardMonitoring getINSTANCE() {
+        return INSTANCE;
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        new ClipboardMonitoring().startMonitoring();
+        Thread.sleep(100000);
     }
 }

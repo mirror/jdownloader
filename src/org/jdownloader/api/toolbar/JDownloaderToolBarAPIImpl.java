@@ -2,7 +2,6 @@ package org.jdownloader.api.toolbar;
 
 import java.util.HashMap;
 
-import jd.controlling.ClipboardHandler;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
@@ -44,7 +43,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
 
     public boolean toggleClipboardMonitoring() {
         boolean b = GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.isEnabled();
-        ClipboardHandler.getClipboard().setEnabled(!b);
+        GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.setValue(!b);
         return !b;
     }
 

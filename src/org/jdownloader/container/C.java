@@ -32,6 +32,7 @@ import java.util.Vector;
 import jd.controlling.JDLogger;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
@@ -173,8 +174,8 @@ public class C extends PluginsC {
     }
 
     // @Override
-    public ArrayList<DownloadLink> getContainedDownloadlinks() {
-        return new ArrayList<DownloadLink>();
+    public ArrayList<CrawledLink> getContainedDownloadlinks() {
+        return new ArrayList<CrawledLink>();
     }
 
     /*

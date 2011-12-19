@@ -19,6 +19,7 @@ package org.jdownloader.container;
 import java.io.File;
 import java.util.ArrayList;
 
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.nutils.io.JDIO;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
@@ -45,11 +46,11 @@ public class MetaLink extends PluginsC {
         }
         jd.plugins.decrypter.MtLnk d = (jd.plugins.decrypter.MtLnk) decrypter;
         ArrayList<DownloadLink> links = d.decryptString(linkContent);
-        cls = links;
-        dlU = new ArrayList<String>();
-        for (DownloadLink l : links) {
-            dlU.add(l.getDownloadURL());
+        ArrayList<CrawledLink> retLinks = new ArrayList<CrawledLink>(links.size());
+        for (DownloadLink link : links) {
+            retLinks.add(new CrawledLink(link));
         }
+        cls = retLinks;
         cs.setStatus(ContainerStatus.STATUS_FINISHED);
         return cs;
     }
