@@ -560,7 +560,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             /* reconnect in progress */
             return false;
         }
-        if (GeneralSettings.AUTO_RECONNECT_ENABLED.getValue() && config.isDownloadControllerPrefersReconnectEnabled() && IPController.getInstance().isInvalidated()) {
+        if (GeneralSettings.AUTO_RECONNECT_ENABLED.isEnabled() && config.isDownloadControllerPrefersReconnectEnabled() && IPController.getInstance().isInvalidated()) {
             /*
              * auto reconnect is enabled and downloads are waiting for reconnect
              * and user set to wait for reconnect

@@ -169,9 +169,6 @@ public interface GeneralSettings extends ConfigInterface {
     // = false
     public static final BooleanKeyHandler               AUTO_START_DOWNLOADS_ON_STARTUP_ENABLED       = SH.getKeyHandler("AutoStartDownloadsOnStartupEnabled", BooleanKeyHandler.class);
     // Keyhandler interface
-    // org.jdownloader.settings.GeneralSettings.clicknloadenabled = true
-    public static final BooleanKeyHandler               CLICK_NLOAD_ENABLED                           = SH.getKeyHandler("ClickNLoadEnabled", BooleanKeyHandler.class);
-    // Keyhandler interface
     // org.jdownloader.settings.GeneralSettings.iffileexistsaction =
     // ASK_FOR_EACH_FILE
     public static final EnumKeyHandler                  IF_FILE_EXISTS_ACTION                         = SH.getKeyHandler("IfFileExistsAction", EnumKeyHandler.class);
@@ -329,10 +326,6 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isCleanUpFilenames();
 
     @AboutConfig
-    @DefaultBooleanValue(true)
-    boolean isClickNLoadEnabled();
-
-    @AboutConfig
     @Description("Do not start further downloads if others are waiting for a reconnect/new ip")
     @DefaultBooleanValue(true)
     boolean isDownloadControllerPrefersReconnectEnabled();
@@ -384,8 +377,6 @@ public interface GeneralSettings extends ConfigInterface {
     void setCleanupAfterDownloadAction(CleanAfterDownloadAction action);
 
     void setCleanUpFilenames(boolean b);
-
-    void setClickNLoadEnabled(boolean b);
 
     @AboutConfig
     void setDefaultDownloadFolder(String ddl);

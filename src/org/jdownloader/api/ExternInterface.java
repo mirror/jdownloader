@@ -9,11 +9,6 @@ public class ExternInterface {
 
     private static ExternInterface INSTANCE = new ExternInterface();
 
-    public static void main(String[] args) throws InterruptedException {
-        ExternInterface.INSTANCE.hashCode();
-        Thread.sleep(100000);
-    }
-
     private ExternInterface() {
         if (JsonConfig.create(RemoteAPIConfig.class).getExternInterfaceEnabled()) {
             RemoteAPI remoteAPI = new RemoteAPI();
