@@ -457,7 +457,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         list.add(link);
 
                         if (list.size() > LinkgrabberSettings.VARIOUS_PACKAGE_LIMIT.getValue()) {
-                            newPackage(list, packageName, downloadFolder, identifier);
+                            newPackage(null, packageName, downloadFolder, identifier);
                         } else {
                             List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                             add.add(link);
@@ -481,17 +481,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 return null;
             }
 
-            public void newPackage(final ArrayList<CrawledLink> link, String packageName, String downloadFolder, String identifier) {
+            public void newPackage(final ArrayList<CrawledLink> links, String packageName, String downloadFolder, String identifier) {
                 CrawledPackage pkg;
                 pkg = new CrawledPackage();
-                pkg.setCreated(link.get(0).getCreated());
+                pkg.setCreated(System.currentTimeMillis());
                 pkg.setName(packageName);
                 if (downloadFolder != null) {
                     pkg.setDownloadFolder(downloadFolder);
                 }
                 packageMap.put(identifier, pkg);
 
-                LinkCollector.this.addmoveChildren(pkg, link, -1);
+                LinkCollector.this.addmoveChildren(pkg, links, -1);
 
                 // check of we have matching links in offline maper
                 ArrayList<CrawledLink> list = offlineMap.remove(identifier);
@@ -500,7 +500,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
                 list = variousMap.get(identifier);
 
-                if (list != null && list.size() > LinkgrabberSettings.VARIOUS_PACKAGE_LIMIT.getValue()) {
+                if (list != null && list.size() > 0) {
                     LinkCollector.this.addmoveChildren(pkg, list, -1);
                     variousMap.remove(identifier);
                 }
