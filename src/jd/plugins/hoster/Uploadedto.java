@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
@@ -26,6 +27,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.crypt.Base64;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -48,6 +50,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.-]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/?)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
+
+    private static AtomicInteger maxPrem = new AtomicInteger(1);
 
     static class Sec {
         public static String d(final byte[] b, final byte[] key) {
@@ -203,6 +207,8 @@ public class Uploadedto extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         br.postPage("http://uploaded.to/status", "uid=" + Encoding.urlEncode(account.getUser()) + "&upw=" + Encoding.urlEncode(account.getPass()));
         if (br.containsHTML("blocked")) {
             ai.setStatus("Too many failed logins! Wait 15 mins");
@@ -221,25 +227,31 @@ public class Uploadedto extends PluginForHost {
         }
         String isPremium = br.getMatch("status: (premium)");
         if (isPremium == null) {
-            ai.setStatus("Free account");
-            account.setValid(false);
-            return ai;
-        }
-        String traffic = br.getMatch("traffic: (\\d+)");
-        String expire = br.getMatch("expire: (\\d+)");
-        if (expire != null) {
-            ai.setValidUntil(Long.parseLong(expire) * 1000);
+            ai.setStatus("Registered (free) User");
+            ai.setUnlimitedTraffic();
+            try {
+                maxPrem.set(1);
+                account.setMaxSimultanDownloads(1);
+            } catch (final Throwable e) {
+            }
+            account.setProperty("free", "true");
         } else {
-            ai.setStatus("Free account");
-            account.setValid(false);
-            return ai;
+            String traffic = br.getMatch("traffic: (\\d+)");
+            String expire = br.getMatch("expire: (\\d+)");
+            if (expire != null) ai.setValidUntil(Long.parseLong(expire) * 1000);
+            ai.setStatus("Premium account");
+            account.setValid(true);
+            long max = 100 * 1024 * 1024 * 1024l;
+            long current = Long.parseLong(traffic);
+            ai.setTrafficMax(Math.max(max, current));
+            ai.setTrafficLeft(current);
+            try {
+                maxPrem.set(-1);
+                account.setMaxSimultanDownloads(-1);
+            } catch (final Throwable e) {
+            }
+            account.setProperty("free", Property.NULL);
         }
-        ai.setStatus("Premium account");
-        account.setValid(true);
-        long max = 100 * 1024 * 1024 * 1024l;
-        long current = Long.parseLong(traffic);
-        ai.setTrafficMax(Math.max(max, current));
-        ai.setTrafficLeft(current);
         return ai;
     }
 
@@ -279,7 +291,10 @@ public class Uploadedto extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        this.setBrowserExclusive();
+        doFree(downloadLink);
+    }
+
+    public void doFree(DownloadLink downloadLink) throws Exception {
         workAroundTimeOut(br);
         String id = getID(downloadLink);
         br.setFollowRedirects(false);
@@ -364,73 +379,78 @@ public class Uploadedto extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
-        br.setFollowRedirects(false);
-        String id = getID(downloadLink);
-        br.getPage("http://uploaded.to/file/" + id + "/ddl");
-        String error = new Regex(br.getRedirectLocation(), "http://uploaded.to/\\?view=(.*)").getMatch(0);
-        if (error == null) {
-            error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&i").getMatch(0);
-        }
-        if (error != null) {
-            if (error.contains("error_traffic")) throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (br.getRedirectLocation() == null) {
-            /* ul does not take care of set language.... */
-            if (br.containsHTML(">Traffic exhausted") || br.containsHTML(">Traffickontingent aufgebraucht")) {
-                logger.info("Traffic exhausted, temp disabled account");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-            logger.info("InDirect Downloads active");
-            Form form = br.getForm(0);
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (form.getAction() != null && form.getAction().contains("register")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            if (form.getAction() == null || form.getAction().contains("access")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            logger.info("Download from:" + form.getAction());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 0);
-            dl.setFileSizeVerified(true);
+        if (account.getProperty("free") != null) {
+            br.getPage(downloadLink.getDownloadURL());
+            doFree(downloadLink);
         } else {
-            logger.info("Direct Downloads active");
-            logger.info("Download from:" + br.getRedirectLocation());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
-            dl.setFileSizeVerified(true);
-        }
-        try {
-            /* remove next major update */
-            /* workaround for broken timeout in 0.9xx public */
-            dl.getRequest().setConnectTimeout(30000);
-            dl.getRequest().setReadTimeout(60000);
-        } catch (final Throwable ee) {
-        }
+            br.setFollowRedirects(false);
+            String id = getID(downloadLink);
+            br.getPage("http://uploaded.to/file/" + id + "/ddl");
+            String error = new Regex(br.getRedirectLocation(), "http://uploaded.to/\\?view=(.*)").getMatch(0);
+            if (error == null) {
+                error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&i").getMatch(0);
+            }
+            if (error != null) {
+                if (error.contains("error_traffic")) throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (br.getRedirectLocation() == null) {
+                /* ul does not take care of set language.... */
+                if (br.containsHTML(">Traffic exhausted") || br.containsHTML(">Traffickontingent aufgebraucht")) {
+                    logger.info("Traffic exhausted, temp disabled account");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
+                logger.info("InDirect Downloads active");
+                Form form = br.getForm(0);
+                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (form.getAction() != null && form.getAction().contains("register")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (form.getAction() == null || form.getAction().contains("access")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                logger.info("Download from:" + form.getAction());
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 0);
+                dl.setFileSizeVerified(true);
+            } else {
+                logger.info("Direct Downloads active");
+                logger.info("Download from:" + br.getRedirectLocation());
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
+                dl.setFileSizeVerified(true);
+            }
+            try {
+                /* remove next major update */
+                /* workaround for broken timeout in 0.9xx public */
+                dl.getRequest().setConnectTimeout(30000);
+                dl.getRequest().setReadTimeout(60000);
+            } catch (final Throwable ee) {
+            }
 
-        if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
-            try {
+            if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
+                try {
+                    br.followConnection();
+                } catch (final Throwable e) {
+                    logger.severe(e.getMessage());
+                }
+                if (dl.getConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+                if (dl.getConnection().getResponseCode() == 508) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError(508)", 30 * 60 * 1000l);
+                if (br.containsHTML("File not found!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (br.containsHTML("No connection to database")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+                if (br.containsHTML("Aus technischen Gr") && br.containsHTML("ist ein Download momentan nicht m")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+                if (br.getURL().contains("view=error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+                try {
+                    logger.info(br.toString());
+                } catch (final Throwable e) {
+                }
+                try {
+                    logger.info(dl.getConnection().toString());
+                } catch (final Throwable e) {
+                }
+                if ("No htmlCode read".equalsIgnoreCase(br.toString())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (dl.getConnection().getResponseCode() == 404) {
                 br.followConnection();
-            } catch (final Throwable e) {
-                logger.severe(e.getMessage());
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (dl.getConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            if (dl.getConnection().getResponseCode() == 508) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError(508)", 30 * 60 * 1000l);
-            if (br.containsHTML("File not found!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("No connection to database")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-            if (br.containsHTML("Aus technischen Gr") && br.containsHTML("ist ein Download momentan nicht m")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-            if (br.getURL().contains("view=error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-            try {
-                logger.info(br.toString());
-            } catch (final Throwable e) {
-            }
-            try {
-                logger.info(dl.getConnection().toString());
-            } catch (final Throwable e) {
-            }
-            if ("No htmlCode read".equalsIgnoreCase(br.toString())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl.startDownload();
         }
-        if (dl.getConnection().getResponseCode() == 404) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        dl.startDownload();
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -459,6 +479,12 @@ public class Uploadedto extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         if (br.getCookie("http://uploaded.to", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     @Override
