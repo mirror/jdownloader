@@ -387,6 +387,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             protected Void run() throws RuntimeException {
                 /* update dupeCheck map */
                 if (!dupeCheckMap.add(link.getLinkID())) return null;
+
                 PackageInfo dpi = link.getDesiredPackageInfo();
 
                 String packageName = null;

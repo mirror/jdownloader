@@ -64,6 +64,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     private JButton                                  popupRemove;
     private JToggleButton                            showHideSidebar;
+    private AutoConfirmButton                        autoConfirm;
 
     public LinkGrabberPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
@@ -103,6 +104,8 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 }
             }
         });
+        autoConfirm = new AutoConfirmButton();
+        autoConfirm.setVisible(false);
         setFilteredAvailable(LinkCollector.getInstance().getfilteredStuffSize());
         addLinks = new JButton(new AddLinksAction());
         confirmAll = new JButton(new ConfirmAllAction());
@@ -157,7 +160,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         });
         showHideSidebar.setSelected(GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue());
         leftBar = new MigPanel("ins 0", "[]1[][]1[][grow,fill]0[]", "[]");
-        rightBar = new MigPanel("ins 0", "[grow,fill]1[]0[]0", "[]");
+        rightBar = new MigPanel("ins 0", "[]0[]1[]0[]0", "[]");
 
         leftBar.add(addLinks, "height 24!,aligny top");
 
@@ -216,9 +219,14 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     private void layoutComponents() {
         rightBar.removeAll();
-        rightBar.add(confirmAll, "height 24!");
+        rightBar.add(autoConfirm, "height 24!,width 24!,hidemode 3,gapright 3");
+        autoConfirm.setVisible(true);
+        rightBar.add(confirmAll, "height 24!,pushx,growx");
         rightBar.add(popupConfirm, "height 24!,width 12!");
-        if (GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getValue() && GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue()) rightBar.add(showHideSidebar, "height 24!,width 24!,gapleft 4");
+        if (GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getValue() && GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue()) {
+            //
+            rightBar.add(showHideSidebar, "height 24!,width 24!,gapleft 4");
+        }
 
         if (GraphicalUserInterfaceSettings.CFG.isLinkgrabberSidebarEnabled() && GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_VISIBLE.getValue()) {
 

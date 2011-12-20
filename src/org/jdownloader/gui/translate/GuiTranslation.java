@@ -3391,4 +3391,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Priority" })
     String PriorityAction_PriorityAction_();
 
+    @Default(lngs = { "en" }, values = { "Downloads will start soon. Click here to cancel countdown." })
+    String AutoConfirmButton_AutoConfirmButton_tooltip_();
+
 }

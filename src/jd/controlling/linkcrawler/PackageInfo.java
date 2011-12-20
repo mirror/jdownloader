@@ -19,26 +19,6 @@ public class PackageInfo {
         this.autoExtractionEnabled = autoExtractionEnabled;
     }
 
-    private Boolean autoAddEnabled;
-
-    public Boolean isAutoAddEnabled() {
-        return autoAddEnabled;
-    }
-
-    public void setAutoAddEnabled(Boolean autoAddEnabled) {
-        this.autoAddEnabled = autoAddEnabled;
-    }
-
-    public Boolean isAutoStartEnabled() {
-        return autoStartEnabled;
-    }
-
-    public void setAutoStartEnabled(Boolean autoStartEnabled) {
-        this.autoStartEnabled = autoStartEnabled;
-    }
-
-    private Boolean autoStartEnabled;
-
     public UniqueID getUniqueId() {
         return uniqueId;
     }
@@ -120,8 +100,7 @@ public class PackageInfo {
         ret.setCreated(link.getCreated());
         ret.setComment(dpi.getComment());
         if (dpi.isAutoExtractionEnabled() != null) ret.setAutoExtractionEnabled(dpi.isAutoExtractionEnabled());
-        if (dpi.isAutoAddEnabled() != null) ret.setAutoAddEnabled(dpi.isAutoAddEnabled());
-        if (dpi.isAutoStartEnabled() != null) ret.setAutoStartEnabled(dpi.isAutoStartEnabled());
+
         if (!StringUtils.isEmpty(dpi.getDestinationFolder())) {
             ret.setDownloadFolder(dpi.getDestinationFolder());
         }

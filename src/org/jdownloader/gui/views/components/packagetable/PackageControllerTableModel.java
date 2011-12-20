@@ -287,6 +287,10 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
     public List<ChildrenType> getAllChildrenNodes() {
         ArrayList<AbstractNode> data = this.getTableData();
+        return getAllChildrenNodes(data);
+    }
+
+    public List<ChildrenType> getAllChildrenNodes(ArrayList<AbstractNode> data) {
         ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters = this.tableFilters;
         HashSet<ChildrenType> ret = new HashSet<ChildrenType>(data.size());
         for (AbstractNode node : data) {

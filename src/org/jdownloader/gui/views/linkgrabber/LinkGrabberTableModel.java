@@ -1,9 +1,14 @@
 package org.jdownloader.gui.views.linkgrabber;
 
+import java.util.ArrayList;
+
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
 
+import org.appwork.swing.exttable.ExtColumn;
+import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.gui.views.downloads.columns.CommentColumn;
@@ -23,8 +28,32 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
         return INSTANCE;
     }
 
+    private boolean autoConfirm;
+
     private LinkGrabberTableModel() {
         super(LinkCollector.getInstance(), "LinkGrabberTableModel");
+    }
+
+    public ArrayList<AbstractNode> sort(final ArrayList<AbstractNode> data, ExtColumn<AbstractNode> column) {
+        ArrayList<AbstractNode> ret = super.sort(data, column);
+        boolean autoConfirm = LinkFilterSettings.LINKGRABBER_AUTO_CONFIRM_ENABLED.getValue() && ret.size() > 0;
+        if (!autoConfirm) {
+            for (CrawledLink l : this.getAllChildrenNodes(ret)) {
+                if (l.isAutoConfirmEnabled()) {
+                    autoConfirm = true;
+                    break;
+                }
+            }
+        }
+        // if (autoConfirm) {
+        this.autoConfirm = autoConfirm;
+        // }
+        return ret;
+
+    }
+
+    public boolean isAutoConfirm() {
+        return autoConfirm;
     }
 
     @Override

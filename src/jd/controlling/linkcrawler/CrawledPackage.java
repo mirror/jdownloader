@@ -14,9 +14,9 @@ import org.jdownloader.settings.GeneralSettings;
 public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledPackage> {
 
     protected static final String                          PACKAGETAG            = "<jd:" + PackagizerController.PACKAGENAME + ">";
-    private boolean                                        autoAddEnabled;
+
     private boolean                                        autoExtractionEnabled = true;
-    private boolean                                        autoStartEnabled;
+
     private ArrayList<CrawledLink>                         children;
     private String                                         comment               = null;
     private PackageController<CrawledPackage, CrawledLink> controller            = null;
@@ -91,16 +91,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         return downloadFolder;
     }
 
-    public boolean isAutoAddEnabled() {
-        return autoAddEnabled;
-    }
-
     public boolean isAutoExtractionEnabled() {
         return autoExtractionEnabled;
-    }
-
-    public boolean isAutoStartEnabled() {
-        return autoStartEnabled;
     }
 
     public boolean isDownloadFolderSet() {
@@ -115,16 +107,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     }
 
-    public void setAutoAddEnabled(boolean autoAddEnabled) {
-        this.autoAddEnabled = autoAddEnabled;
-    }
-
     public void setAutoExtractionEnabled(boolean autoExtractionEnabled) {
         this.autoExtractionEnabled = autoExtractionEnabled;
-    }
-
-    public void setAutoStartEnabled(boolean autoStartEnabled) {
-        this.autoStartEnabled = autoStartEnabled;
     }
 
     /**

@@ -28,11 +28,30 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         TEMP_UNKNOWN
     }
 
-    protected static final String     PACKAGETAG     = "<jd:" + PackagizerController.PACKAGENAME + ">";
+    protected static final String     PACKAGETAG         = "<jd:" + PackagizerController.PACKAGENAME + ">";
 
-    private CrawledPackage            parent         = null;
-    private UnknownCrawledLinkHandler unknownHandler = null;
-    private CrawledLinkModifier       modifyHandler  = null;
+    private CrawledPackage            parent             = null;
+    private UnknownCrawledLinkHandler unknownHandler     = null;
+    private CrawledLinkModifier       modifyHandler      = null;
+    private boolean                   autoConfirmEnabled = false;
+
+    public boolean isAutoConfirmEnabled() {
+        return autoConfirmEnabled;
+    }
+
+    public void setAutoConfirmEnabled(boolean autoAddEnabled) {
+        this.autoConfirmEnabled = autoAddEnabled;
+    }
+
+    public boolean isAutoStartEnabled() {
+        return autoStartEnabled;
+    }
+
+    public void setAutoStartEnabled(boolean autoStartEnabled) {
+        this.autoStartEnabled = autoStartEnabled;
+    }
+
+    private boolean autoStartEnabled = false;
 
     public UnknownCrawledLinkHandler getUnknownHandler() {
         return unknownHandler;

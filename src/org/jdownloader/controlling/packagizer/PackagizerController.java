@@ -366,15 +366,13 @@ public class PackagizerController implements PackagizerInterface {
         if ((b = lgr.getRule().isAutoAddEnabled()) != null) {
             /* customize auto add */
             if (b) {
-                dpiSet = true;
-                dpi.setAutoAddEnabled(b);
+                link.setAutoConfirmEnabled(b);
             }
         }
         if ((b = lgr.getRule().isAutoStartEnabled()) != null) {
             /* customize auto start */
             if (b) {
-                dpiSet = true;
-                dpi.setAutoStartEnabled(b);
+                link.setAutoStartEnabled(b);
             }
         }
         if (dpiSet && link.getDesiredPackageInfo() == null) {
