@@ -9,4 +9,9 @@ public class ChildrenView<T> extends ArrayList<T> {
     public void update() {
     }
 
+    public void replace(ArrayList<T> items) {
+        this.clear();
+        this.addAll(items);
+    }
+
 }

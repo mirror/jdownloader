@@ -37,6 +37,19 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     }
 
     @Override
+    public void replace(ArrayList<CrawledLink> items) {
+        CrawledPackageView newl = new CrawledPackageView();
+        newl.addAll(items);
+        this.fileSize = newl.fileSize;
+        this.hostCountMap = newl.hostCountMap;
+        this.domainList = newl.domainList;
+        this.domainInfos = newl.domainInfos;
+        this.enabled = newl.enabled;
+        this.sizes = newl.sizes;
+        this.offline = newl.offline;
+    }
+
+    @Override
     public CrawledLink set(int index, CrawledLink element) {
         CrawledLink old = get(index);
         try {
