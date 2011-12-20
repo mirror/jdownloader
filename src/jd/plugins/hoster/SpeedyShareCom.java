@@ -33,12 +33,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedyshare.com" }, urls = { "http://(www\\.)?speedyshare\\.com/files?/[A-Za-z0-9]+/.+" }, flags = { 0 })
 public class SpeedyShareCom extends PluginForHost {
 
-    private static final String PREMIUMONLY     = ">This paraticular file can only be downloaded after you purchase";
-
+    private static final String PREMIUMONLY     = "(>This paraticular file can only be downloaded after you purchase|this file can only be downloaded with SpeedyShare Premium)";
     private static final String PREMIUMONLYTEXT = "Only downloadable for premium users";
-
     private static final String MAINPAGE        = "http://www.speedyshare.com";
-
     private static final String CAPTCHATEXT     = "/captcha\\.php\\?";
 
     public SpeedyShareCom(PluginWrapper wrapper) {
@@ -75,7 +72,6 @@ public class SpeedyShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
         }
         if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYTEXT);
-        if (br.containsHTML("this file can only be downloaded with SpeedyShare Premium")) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYTEXT);
         if (!br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final long timeBefore = System.currentTimeMillis();
         String postLink = br.getRegex("\"(/files?/[A-Za-z0-9]+/download/.*?)\"").getMatch(0);
@@ -120,7 +116,6 @@ public class SpeedyShareCom extends PluginForHost {
         downloadLink.setName(Encoding.htmlDecode(filename));
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         if (br.containsHTML(PREMIUMONLY)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.speedysharecom.errors.only4premium", PREMIUMONLYTEXT));
-        if (br.containsHTML("this file can only be downloaded with SpeedyShare Premium")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.speedysharecom.errors.only4premium", PREMIUMONLYTEXT));
         return AvailableStatus.TRUE;
 
     }

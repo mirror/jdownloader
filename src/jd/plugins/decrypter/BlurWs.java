@@ -45,7 +45,7 @@ public class BlurWs extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public static final Object LOCK = new Object();
+    public static final Object  LOCK          = new Object();
     private static final String RECAPTCHATEXT = "/recaptcha/api/challenge\\?k=";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -131,25 +131,29 @@ public class BlurWs extends PluginForDecrypt {
         theLink = Encoding.htmlDecode(theLink);
         File file = null;
         brc.getHeaders().put("Referer", theLink);
-        URLConnectionAdapter con = brc.openGetConnection("http://www.blur.ws/out.php?link=dlc");
-        if (con.getResponseCode() == 200) {
-            file = JDUtilities.getResourceFile("tmp/blurws/" + theLink.replaceAll("(:|/|=|\\?)", "") + ".dlc");
-            if (file == null) return null;
-            file.deleteOnExit();
-            brc.downloadConnection(file, con);
-            if (file != null && file.exists() && file.length() > 100) {
-                decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+        final String dlcLink = br.getRegex("\\'(http://(www\\.)?blur\\.ws/out\\.php\\?link=dlc\\&id=[a-z0-9]+)\\'").getMatch(0);
+        if (dlcLink != null) {
+            URLConnectionAdapter con = brc.openGetConnection(dlcLink);
+            if (con.getResponseCode() == 200) {
+                file = JDUtilities.getResourceFile("tmp/blurws/" + theLink.replaceAll("(:|/|=|\\?)", "") + ".dlc");
+                if (file == null) return null;
+                file.deleteOnExit();
+                brc.downloadConnection(file, con);
+                if (file != null && file.exists() && file.length() > 100) {
+                    decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                }
+            } else {
+                con.disconnect();
+                return null;
             }
-        } else {
-            con.disconnect();
-            return null;
-        }
 
-        if (file != null && file.exists() && file.length() > 100) {
-            if (decryptedLinks.size() > 0) return decryptedLinks;
-        } else {
-            return null;
+            if (file != null && file.exists() && file.length() > 100) {
+                if (decryptedLinks.size() > 0) return decryptedLinks;
+            } else {
+                return null;
+            }
         }
         return null;
+
     }
 }
