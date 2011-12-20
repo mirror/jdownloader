@@ -106,60 +106,51 @@ public class SetDownloadFolderAction extends AppAction {
             IOEQ.add(new Runnable() {
 
                 public void run() {
-                    try {
-                        for (CrawledPackage pkg : packages) {
-                            pkg.setDownloadFolder(dest[0].getAbsolutePath());
-                        }
 
-                        for (final Entry<CrawledPackage, ArrayList<CrawledLink>> entry : newPackages.entrySet()) {
-                            if (!(entry.getKey() instanceof VariousCrawledPackage)) {
-                                try {
-                                    if (entry.getKey().getDownloadFolder().equals(dest[0].getAbsolutePath())) continue;
-                                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN,
+                    for (CrawledPackage pkg : packages) {
+                        pkg.setDownloadFolder(dest[0].getAbsolutePath());
+                    }
 
-                                    _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getKey().getName()), _JDT._.SetDownloadFolderAction_msg(entry.getKey().getName(), entry.getValue().size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
-                                    entry.getKey().setDownloadFolder(dest[0].getAbsolutePath());
-                                    continue;
-                                } catch (DialogClosedException e) {
-                                    return;
-                                } catch (DialogCanceledException e) {
+                    for (final Entry<CrawledPackage, ArrayList<CrawledLink>> entry : newPackages.entrySet()) {
+                        if (!(entry.getKey() instanceof VariousCrawledPackage)) {
+                            try {
+                                if (entry.getKey().getDownloadFolder().equals(dest[0].getAbsolutePath())) continue;
+                                Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN,
 
-                                }
+                                _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getKey().getName()), _JDT._.SetDownloadFolderAction_msg(entry.getKey().getName(), entry.getValue().size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
+                                entry.getKey().setDownloadFolder(dest[0].getAbsolutePath());
+                                continue;
+                            } catch (DialogClosedException e) {
+                                return;
+                            } catch (DialogCanceledException e) {
+
                             }
-                            final CrawledPackage pkg = new CrawledPackage();
-                            pkg.setExpanded(true);
-                            pkg.setCreated(System.currentTimeMillis());
-                            if (entry.getKey() instanceof VariousCrawledPackage) {
-                                pkg.setName(LinknameCleaner.cleanFileName(entry.getValue().get(0).getName()));
-                            } else {
-                                pkg.setName(entry.getKey().getName());
-                            }
-                            pkg.setDownloadFolder(dest[0].getAbsolutePath());
-
-                            IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
-
-                                @Override
-                                protected Object run() {
-                                    LinkCollector.getInstance().addmoveChildren(pkg, entry.getValue(), -1);
-                                    return null;
-                                }
-
-                            });
-
-                            // add to set selection later
-                            packages.add(pkg);
                         }
-                    } finally {
+                        final CrawledPackage pkg = new CrawledPackage();
+                        pkg.setExpanded(true);
+                        pkg.setCreated(System.currentTimeMillis());
+                        if (entry.getKey() instanceof VariousCrawledPackage) {
+                            pkg.setName(LinknameCleaner.cleanFileName(entry.getValue().get(0).getName()));
+                        } else {
+                            pkg.setName(entry.getKey().getName());
+                        }
+                        pkg.setDownloadFolder(dest[0].getAbsolutePath());
+                        IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>() {
 
-                        LinkCollector.getInstance().refreshData();
-                        IOEQ.add(new Runnable() {
+                            @Override
+                            protected Object run() {
+                                LinkCollector.getInstance().addmoveChildren(pkg, entry.getValue(), -1);
+                                return null;
+                            }
 
-                            public void run() {
-                                System.out.println(packages);
+                            @Override
+                            protected void postRun() {
+                                // add to set selection later
+                                packages.add(pkg);
                                 LinkGrabberTableModel.getInstance().setSelectedObjects(new ArrayList<AbstractNode>(packages));
                             }
-                        }, true);
 
+                        });
                     }
                 }
 

@@ -50,7 +50,6 @@ public abstract class PluginsC {
     private long    version;
 
     public PluginsC(String name, String pattern, String rev) {
-
         this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
         this.name = name;
         try {

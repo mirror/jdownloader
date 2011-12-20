@@ -75,6 +75,7 @@ public class SpeedyShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
         }
         if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYTEXT);
+        if (br.containsHTML("this file can only be downloaded with SpeedyShare Premium")) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYTEXT);
         if (!br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final long timeBefore = System.currentTimeMillis();
         String postLink = br.getRegex("\"(/files?/[A-Za-z0-9]+/download/.*?)\"").getMatch(0);
@@ -113,11 +114,13 @@ public class SpeedyShareCom extends PluginForHost {
         if (br.containsHTML("(class=sizetagtext>not found<|File not found|It has been deleted<|>or it never existed at all)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("property=\"og:title\" content=\"(.*?) \\- download at SpeedyShare\"").getMatch(0);
         if (filename == null) filename = br.getRegex("itemprop=\"name\" content=\"(.*?) \\- download at SpeedyShare\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("class=downloadfilename>(.*?)</").getMatch(0);
         String filesize = br.getRegex("valign=top><div class=sizetagtext>(.*?)</div>").getMatch(0);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(Encoding.htmlDecode(filename));
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         if (br.containsHTML(PREMIUMONLY)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.speedysharecom.errors.only4premium", PREMIUMONLYTEXT));
+        if (br.containsHTML("this file can only be downloaded with SpeedyShare Premium")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.speedysharecom.errors.only4premium", PREMIUMONLYTEXT));
         return AvailableStatus.TRUE;
 
     }

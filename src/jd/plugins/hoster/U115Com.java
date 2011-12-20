@@ -132,6 +132,7 @@ public class U115Com extends PluginForHost {
             logger.warning("dllink is null, seems like the regexes are defect!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        parseSHA1(link, br);
         /** Don't do html decode, it can make the dllink invalid */
         // dllink = Encoding.htmlDecode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
@@ -141,6 +142,16 @@ public class U115Com extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void parseSHA1(DownloadLink link, Browser br) {
+        String sh1 = br.getRegex("<li>SHA1：(.*?) <a href=\"").getMatch(0);
+        if (sh1 == null) sh1 = br.getRegex("sha1: \"(.*?)\",").getMatch(0);
+        if (sh1 != null && sh1.matches(("^[a-fA-F0-9]+$"))) {
+            link.setSha1Hash(sh1.trim());
+        } else {
+            link.setSha1Hash(null);
+        }
     }
 
     private void prepareBrowser(final Browser br) {
@@ -192,9 +203,7 @@ public class U115Com extends PluginForHost {
         filesize = filesize.replace(",", "");
         link.setFinalFileName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
-        String sh1 = br.getRegex("<li>SHA1：(.*?) <a href=\"").getMatch(0);
-        if (sh1 == null) sh1 = br.getRegex("sha1: \"(.*?)\",").getMatch(0);
-        if (sh1 != null) link.setSha1Hash(sh1.trim());
+        parseSHA1(link, br);
         if (br.containsHTML(ACCOUNTNEEDED)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.u115com.only4registered", ACCOUNTNEEDEDUSERTEXT));
         return AvailableStatus.TRUE;
     }
