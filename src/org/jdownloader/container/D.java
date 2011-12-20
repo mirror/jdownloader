@@ -27,9 +27,11 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import jd.config.SubConfiguration;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.PackageInfo;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.nutils.Formatter;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -174,16 +176,10 @@ public class D extends PluginsC {
                     // Log.L.info("Decr " + decryptedDlcString);
                     pxs(dds1, d);
 
-                    if (dlU == null || dlU.size() == 0) {
-                        Log.L.severe("No Links found: " + s2);
-                        ee += JDL.L("sys.warning.dlcerror_noLinks", "DLC: Keine Links gefunden!") + " ";
-                        k = null;
-                        continue;
-                    } else {
-                        k = p.getBytes();
-                        cs.setStatus(ContainerStatus.STATUS_FINISHED);
-                        return cs;
-                    }
+                    k = p.getBytes();
+                    cs.setStatus(ContainerStatus.STATUS_FINISHED);
+                    return cs;
+
                 } catch (NoSuchAlgorithmException e) {
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_java", "DLC: Outdated Javaversion ") + e.getMessage() + " ";
 
@@ -513,9 +509,9 @@ public class D extends PluginsC {
          * Original Release Version. In der XMl werden plantexte verwendet
          */
 
-        cls = new ArrayList<DownloadLink>();
-        DownloadLink nl;
-        dlU = new ArrayList<String>();
+        cls = new ArrayList<CrawledLink>();
+        CrawledLink nl;
+        PackageInfo dpi = new PackageInfo();
         int c = 0;
         NodeList ps = n.getChildNodes();
 
@@ -557,22 +553,19 @@ public class D extends PluginsC {
                         // // PluginForHost pHost =
                         // findHostPlugin(links.get(linkCounter));
                         // if (pHost != null) {
-                        // newLink = new DownloadLink((PluginForHost)
+                        // newLink = new CrawledLink((PluginForHost)
                         // pHost.getClass().newInstance(),
                         // links.get(linkCounter).substring(links.get(linkCounter
                         // ).lastIndexOf("/")
                         // + 1), pHost.getHost(), null, true);
-                        nl = new DownloadLink(null, ls.get(lcs).substring(ls.get(lcs).lastIndexOf("/") + 1), null, null, true);
-
-                        nl.setLoadedPluginForContainer(this);
-                        nl.setContainerFile("container/" + d.getName());
-                        nl.setContainerIndex(c);
-
-                        nl.addSourcePluginPasswordList(pws);
-                        nl.setSourcePluginComment("from Container: " + d + " : " + pc);
+                        nl = new CrawledLink(ls.get(lcs));
+                        nl.setcPlugin(this);
+                        nl.setDesiredPackageInfo(dpi);
+                        dpi.getExtractionPasswords().addAll(pws);
+                        dpi.setComment("from Container: " + d + " : " + pc);
                         cls.add(nl);
                         // Log.L.info(""+links.get(linkCounter));
-                        dlU.add(ls.get(lcs));
+
                         c++;
                         // }
                     }
@@ -588,11 +581,11 @@ public class D extends PluginsC {
          * Neue Version. Alle user generated inhalte werden jetzt base64
          * verschlüsselt abgelegt. nur generator nicht
          */
-        cls = new ArrayList<DownloadLink>();
-        DownloadLink nl;
-        dlU = new ArrayList<String>();
+        cls = new ArrayList<CrawledLink>();
+        CrawledLink nl;
+        ;
         int c = 0;
-
+        PackageInfo dpi = new PackageInfo();
         NodeList ps = node.getChildNodes();
 
         for (int pc = 0; pc < ps.getLength(); pc++) {
@@ -637,20 +630,19 @@ public class D extends PluginsC {
                         // PluginForHost pHost =
                         // findHostPlugin(links.get(linkCounter));
                         // if (pHost != null) {
-                        // newLink = new DownloadLink((PluginForHost)
+                        // newLink = new CrawledLink((PluginForHost)
                         // pHost.getClass().newInstance(),
                         // links.get(linkCounter).substring(links.get(linkCounter
                         // ).lastIndexOf("/")
                         // + 1), pHost.getHost(), null, true);
-                        nl = new DownloadLink(null, ls.get(lc).substring(ls.get(lc).lastIndexOf("/") + 1), null, null, true);
-                        nl.setLoadedPluginForContainer(this);
-                        nl.setContainerFile("container/" + d.getName());
-                        nl.setContainerIndex(c);
 
-                        nl.addSourcePluginPasswordList(pws);
-                        nl.setSourcePluginComment("from Container: " + d + " : " + pgc);
+                        nl = new CrawledLink(ls.get(lc));
+                        nl.setcPlugin(this);
+                        nl.setDesiredPackageInfo(dpi);
+                        dpi.getExtractionPasswords().addAll(pws);
+                        dpi.setComment("from Container: " + d + " : " + pc);
                         cls.add(nl);
-                        dlU.add(ls.get(lc));
+
                         c++;
                     }
                 }
@@ -679,15 +671,15 @@ public class D extends PluginsC {
          */
 
         Log.L.info("Parse v3");
-        cls = new ArrayList<DownloadLink>();
-        DownloadLink nl;
-        dlU = new ArrayList<String>();
+        cls = new ArrayList<CrawledLink>();
+        CrawledLink nl;
+
         int c = 0;
 
         NodeList ps = node.getChildNodes();
         String pns = "";
         String cs = "";
-
+        PackageInfo dpi = new PackageInfo();
         String cmts = "";
         for (int pgs = 0; pgs < ps.getLength(); pgs++) {
             if (!ps.item(pgs).getNodeName().equals("package")) {
@@ -698,14 +690,12 @@ public class D extends PluginsC {
             String oos = ps.item(pgs).getAttributes().getNamedItem("passwords") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("passwords").getNodeValue());
             String cs2 = ps.item(pgs).getAttributes().getNamedItem("comment") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("comment").getNodeValue());
             String ca3 = ps.item(pgs).getAttributes().getNamedItem("category") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("category").getNodeValue());
+            dpi.setName(LinknameCleaner.cleanFileName(pn));
 
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(pn);
-            fp.setProperty("header", header);
             if (ca3 != null && ca3.trim().length() > 0) {
-                fp.setComment("[" + ca3 + "] " + cs2);
+                dpi.setComment("[" + ca3 + "] " + cs2);
             } else {
-                fp.setComment(cs2);
+                dpi.setComment(cs2);
             }
 
             pns += pn + (pn != null && pn.length() > 0 ? "; " : "");
@@ -768,28 +758,27 @@ public class D extends PluginsC {
                         // PluginForHost pHost =
                         // findHostPlugin(links.get(linkCounter));
                         // if (pHost != null) {
-                        // newLink = new DownloadLink((PluginForHost)
+                        // newLink = new CrawledLink((PluginForHost)
                         // pHost.getClass().newInstance(),
                         // links.get(linkCounter).substring(links.get(linkCounter
                         // ).lastIndexOf("/")
                         // + 1), pHost.getHost(), null, true);
-                        String ll = ls2.get(lcs).substring(ls2.get(lcs).lastIndexOf("/") + 1);
-                        nl = new DownloadLink(null, ll, null, null, true);
-                        nl.setLoadedPluginForContainer(this);
-                        nl.setContainerFile("container/" + dlc.getName());
-                        nl.setContainerIndex(c);
-                        fp.add(nl);
+                        // String ll =
+                        // ls2.get(lcs).substring(ls2.get(lcs).lastIndexOf("/")
+                        // + 1);
+                        nl = new CrawledLink(ls2.get(lcs));
+                        nl.setcPlugin(this);
+                        nl.setDesiredPackageInfo(dpi);
+                        dpi.getExtractionPasswords().addAll(parsePassword(oos));
+                        dpi.setComment("(Containerlinks) " + cs2 == null ? "" : cs2);
                         if (n5.get(lcs) != null) {
                             nl.setName(n5.get(lcs));
                         }
-                        if (s7.get(lcs) != null) {
-                            nl.setDownloadSize(Formatter.filterInt(s7.get(lcs)));
-                        }
+                        // if (s7.get(lcs) != null) {
+                        // nl.(Formatter.filterInt(s7.get(lcs)));
+                        // }
 
-                        nl.addSourcePluginPasswordList(parsePassword(oos));
-                        nl.setSourcePluginComment("(Containerlinks) " + cs2 == null ? "" : cs2);
                         cls.add(nl);
-                        dlU.add(ls2.get(lcs));
 
                         c++;
                         // }
@@ -932,7 +921,7 @@ public class D extends PluginsC {
 
     public ArrayList<DownloadLink> getPackageFiles(FilePackage filePackage, ArrayList<DownloadLink> links) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        // ret.add(downloadLink);
+        // ret.add(DownloadLink);
 
         Iterator<DownloadLink> iterator = links.iterator();
         DownloadLink nextDownloadLink = null;
