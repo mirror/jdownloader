@@ -5,7 +5,6 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
-import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.gui.views.downloads.columns.CommentColumn;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
@@ -39,7 +38,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
         this.addColumn(new SizeColumn());
         this.addColumn(new HosterColumn());
         this.addColumn(new AvailabilityColumn());
-        this.addColumn(new AddedDateColumn());
+        // this.addColumn(new AddedDateColumn());
         this.addColumn(new PriorityColumn());
         this.addColumn(new CommentColumn());
     }

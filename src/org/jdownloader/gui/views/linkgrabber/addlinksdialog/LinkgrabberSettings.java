@@ -198,4 +198,16 @@ public interface LinkgrabberSettings extends ConfigInterface {
     int getVariousPackageLimit();
 
     void setVariousPackageLimit(int b);
+
+    @AboutConfig
+    @DefaultIntValue(-1)
+    void setAddDialogXLocation(int x);
+
+    int getAddDialogXLocation();
+
+    @AboutConfig
+    @DefaultIntValue(-1)
+    void setAddDialogYLocation(int y);
+
+    int getAddDialogYLocation();
 }

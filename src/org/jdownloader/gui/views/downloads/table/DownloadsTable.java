@@ -56,7 +56,7 @@ import org.jdownloader.gui.views.downloads.context.OpenFileAction;
 import org.jdownloader.gui.views.downloads.context.OpenInBrowserAction;
 import org.jdownloader.gui.views.downloads.context.PackageDirectoryAction;
 import org.jdownloader.gui.views.downloads.context.PackageNameAction;
-import org.jdownloader.gui.views.downloads.context.PriorityAction;
+import org.jdownloader.gui.views.downloads.context.PrioritySubMenu;
 import org.jdownloader.gui.views.downloads.context.RatedMenuController;
 import org.jdownloader.gui.views.downloads.context.RatedMenuItem;
 import org.jdownloader.gui.views.downloads.context.ResetAction;
@@ -358,7 +358,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             }
         }
         ret.add(RatedMenuItem.createSeparator());
-        ret.add(new RatedMenuItem("PRIORITY", PriorityAction.createPrioMenu(alllinks), 0));
+        ret.add(new RatedMenuItem("PRIORITY", PrioritySubMenu.createPrioMenu(alllinks), 0));
         return ret;
     }
 

@@ -3,10 +3,16 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkchecker.LinkCheckerHandler;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
+import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 
 public class FileCheckAction extends AppAction {
 
@@ -20,6 +26,20 @@ public class FileCheckAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
+        LinkChecker<CrawledLink> linkChecker = new LinkChecker<CrawledLink>();
+        ArrayList<CrawledLink> links = LinkTreeUtils.getSelectedChildren(selection);
+        for (CrawledLink l : links) {
+            l.getDownloadLink().setAvailableStatus(AvailableStatus.UNCHECKED);
+        }
+        LinkGrabberTableModel.getInstance().refreshModel(false);
+        linkChecker.setLinkCheckHandler(new LinkCheckerHandler<CrawledLink>() {
+
+            public void linkCheckDone(CrawledLink link) {
+                LinkGrabberTableModel.getInstance().refreshModel(true);
+            }
+        });
+
+        linkChecker.check(links);
     }
 
 }

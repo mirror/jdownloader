@@ -12,7 +12,7 @@ import jd.plugins.DownloadLink;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class PriorityAction extends ContextMenuAction {
+public class PrioritySubMenu extends ContextMenuAction {
 
     public static String[]                PRIO_DESCS       = new String[] { _GUI._.gui_treetable_tooltip_priority_1(), _GUI._.gui_treetable_tooltip_priority0(), _GUI._.gui_treetable_tooltip_priority1(), _GUI._.gui_treetable_tooltip_priority2(), _GUI._.gui_treetable_tooltip_priority3() };
     private static final long             serialVersionUID = 4016589318975322111L;
@@ -20,7 +20,7 @@ public class PriorityAction extends ContextMenuAction {
     private final ArrayList<DownloadLink> links;
     private final int                     priority;
 
-    public PriorityAction(ArrayList<DownloadLink> links, int priority) {
+    public PrioritySubMenu(ArrayList<DownloadLink> links, int priority) {
         this.links = links;
         this.priority = priority;
 
@@ -53,11 +53,11 @@ public class PriorityAction extends ContextMenuAction {
         final JMenu prioPopup = new JMenu(_GUI._.gui_table_contextmenu_priority() + " (" + links.size() + ")");
         prioPopup.setIcon(NewTheme.I().getIcon("prio_0", 16));
 
-        prioPopup.add(new PriorityAction(links, 3));
-        prioPopup.add(new PriorityAction(links, 2));
-        prioPopup.add(new PriorityAction(links, 1));
-        prioPopup.add(new PriorityAction(links, 0));
-        prioPopup.add(new PriorityAction(links, -1));
+        prioPopup.add(new PrioritySubMenu(links, 3));
+        prioPopup.add(new PrioritySubMenu(links, 2));
+        prioPopup.add(new PrioritySubMenu(links, 1));
+        prioPopup.add(new PrioritySubMenu(links, 0));
+        prioPopup.add(new PrioritySubMenu(links, -1));
 
         return prioPopup;
     }

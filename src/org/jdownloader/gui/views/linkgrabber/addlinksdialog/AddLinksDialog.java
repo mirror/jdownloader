@@ -2,7 +2,10 @@ package org.jdownloader.gui.views.linkgrabber.addlinksdialog;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
@@ -45,6 +48,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Lists;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
@@ -179,10 +183,17 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             config.setDownloadDestinationHistory(Lists.unique(downloadDestinationHistory));
             config.setLatestDownloadDestinationFolder(ret.getOutputFolder().getAbsolutePath());
         }
-        config.setAddDialogHeight(getDialog().getHeight());
-        config.setAddDialogWidth(getDialog().getWidth());
+
         return ret;
 
+    }
+
+    public void actionPerformed(final ActionEvent e) {
+        config.setAddDialogHeight(getDialog().getHeight());
+        config.setAddDialogWidth(getDialog().getWidth());
+        config.setAddDialogXLocation(getDialog().getLocationOnScreen().x);
+        config.setAddDialogYLocation(getDialog().getLocationOnScreen().y);
+        super.actionPerformed(e);
     }
 
     @Override
@@ -413,7 +424,44 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             public void windowActivated(WindowEvent e) {
             }
         });
+
+        // this.getDialog().setLocation(new Point((int) (screenSize.getWidth() -
+        // this.getDialog().getWidth()) / 2, (int) (screenSize.getHeight() -
+        // this.getDialog().getHeight()) / 2));
+
         return p;
+    }
+
+    protected Point getDesiredLocation() {
+
+        int x = config.getAddDialogXLocation();
+        int y = config.getAddDialogYLocation();
+        int w = config.getAddDialogWidth();
+        int h = config.getAddDialogHeight();
+
+        final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        final GraphicsDevice[] screens = ge.getScreenDevices();
+
+        // for (final GraphicsDevice screen : screens) {
+
+        for (final GraphicsDevice screen : screens) {
+            final Rectangle bounds = screen.getDefaultConfiguration().getBounds();
+            if (x >= bounds.x && x < bounds.x + bounds.width) {
+                if (y >= bounds.y && y < bounds.y + bounds.height) {
+                    // found point on screen
+                    if (x + w <= bounds.x + bounds.width) {
+
+                        if (y + h <= bounds.y + bounds.height) {
+                            // dialog is completly visible on this screen
+                            return new Point(x, y);
+                        }
+                    }
+
+                }
+            }
+        }
+
+        return SwingUtils.getCenter(this.getDialog().getParent(), this.getDialog());
     }
 
     public static String list(String[] links) {

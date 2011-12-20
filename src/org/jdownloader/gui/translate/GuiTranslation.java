@@ -3388,4 +3388,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "%s1/%s2 online" })
     String AvailabilityColumn_getStringValue_object_(int i, int size);
 
+    @Default(lngs = { "en" }, values = { "Priority" })
+    String PriorityAction_PriorityAction_();
+
 }

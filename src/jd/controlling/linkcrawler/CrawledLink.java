@@ -348,7 +348,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public void setPriority(Priority priority) {
-        if (dlLink != null) dlLink.setPriority(priority.ordinal());
+        if (dlLink != null) dlLink.setPriority(priority.getId());
     }
 
     /**
