@@ -134,7 +134,7 @@ public class FlickrCom extends PluginForDecrypt {
         if (filename == null) {
             filename = br.getRegex("class=\"photo\\-title\">(.*?)</h1").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<title>(.*?) \\| Flickr \\- Fotosharing\\!</title>").getMatch(0);
+                filename = br.getRegex("<title>(.*?) \\| Flickr \\- (F|Ph)otosharing\\!</title>").getMatch(0);
             }
         }
         return filename;
