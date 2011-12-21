@@ -22,7 +22,7 @@ public class WebUpdate {
 
     /**
      * @param forceguiCall
-     *            : Updatemeldung soll erscheinen, auch wenn user updates
+     *            Updatemeldung soll erscheinen, auch wenn user updates
      *            deaktiviert hat
      */
     public static synchronized void doUpdateCheck(final boolean forceguiCall) {

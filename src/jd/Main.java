@@ -80,6 +80,7 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
+import org.jdownloader.update.WebupdateSettings;
 
 /**
  * @author JD-Team
@@ -450,8 +451,10 @@ public class Main {
                             }
                         });
                         /* check for available updates */
-                        // JDInit.checkUpdate();
-                        // JDUpdater.getInstance().startChecker();
+
+                        if (JsonConfig.create(WebupdateSettings.class).isAutoUpdateCheckEnabled()) {
+                            JDUpdater.getInstance().startChecker();
+                        }
                         /* start downloadwatchdog */
                         DownloadWatchDog.getInstance();
                         SimpleFTP.setCmanager(DownloadWatchDog.getInstance().getConnectionManager());
