@@ -80,7 +80,7 @@ public class FileFlyerCom extends PluginForHost {
         br.setFollowRedirects(true);
         linkurl = Encoding.htmlDecode(linkurl);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
-        if (dl.getConnection().getContentType() == null || (dl.getConnection().getContentType().contains("html")) && dl.getConnection().getContentLength() < downloadLink.getDownloadSize() - 10) {
+        if (dl.getConnection().getContentType() == null || (dl.getConnection().getContentType().contains("html")) && dl.getConnection().getLongContentLength() < downloadLink.getDownloadSize() - 10) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -118,7 +118,7 @@ public class FileFlyerCom extends PluginForHost {
         if (br.containsHTML("access to the service may be unavailable for a while")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available", 30 * 60 * 1000l);
         linkurl = Encoding.htmlDecode(linkurl);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
-        if (dl.getConnection().getContentType() == null || (dl.getConnection().getContentType().contains("html")) && dl.getConnection().getContentLength() < downloadLink.getDownloadSize() - 10) {
+        if (dl.getConnection().getContentType() == null || (dl.getConnection().getContentType().contains("html")) && dl.getConnection().getLongContentLength() < downloadLink.getDownloadSize() - 10) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

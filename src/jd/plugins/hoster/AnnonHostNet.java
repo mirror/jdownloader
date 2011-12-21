@@ -57,9 +57,9 @@ public class AnnonHostNet extends PluginForHost {
 
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
 
-    private static final String COOKIE_HOST         = "https://annonhost.net";
+    private static final String COOKIE_HOST         = "http://annonhost.net";
 
-    private static final String COOKIE_HOST2        = "https://www.annonhost.net";
+    private static final String COOKIE_HOST2        = "http://www.annonhost.net";
 
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
@@ -200,7 +200,7 @@ public class AnnonHostNet extends PluginForHost {
                 try {
                     Browser br2 = br.cloneBrowser();
                     URLConnectionAdapter con = br2.openGetConnection(dllink);
-                    if (con.getContentType().contains("html") || con.getContentLength() == -1) {
+                    if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                         downloadLink.setProperty("freelink", Property.NULL);
                         dllink = null;
                     }
@@ -454,7 +454,7 @@ public class AnnonHostNet extends PluginForHost {
                 try {
                     Browser br2 = br.cloneBrowser();
                     URLConnectionAdapter con = br2.openGetConnection(dllink);
-                    if (con.getContentType().contains("html") || con.getContentLength() == -1) {
+                    if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                         link.setProperty("premlink", Property.NULL);
                         dllink = null;
                     }
@@ -463,6 +463,7 @@ public class AnnonHostNet extends PluginForHost {
                     dllink = null;
                 }
             }
+            boolean alreadyOpen = false;
             if (dllink == null) {
                 br.getPage(link.getDownloadURL());
                 doSomething();
@@ -472,20 +473,28 @@ public class AnnonHostNet extends PluginForHost {
                     Form DLForm = br.getFormbyProperty("name", "F1");
                     if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     if (new Regex(BRBEFORE, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, DLForm, link);
-                    br.submitForm(DLForm);
-                    doSomething();
-                    dllink = getDllink();
-                    checkErrors(link, true, passCode);
+                    br.setFollowRedirects(true);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLForm, false, 1);
+                    if (dl.getConnection().getContentType().contains("html")) {
+                        br.followConnection();
+                        doSomething();
+                        dllink = getDllink();
+                        checkErrors(link, true, passCode);
+                    } else {
+                        alreadyOpen = true;
+                    }
+
                 }
             }
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            if (dllink == null && alreadyOpen == false) {
+                // logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+            // logger.info("Final downloadlink = " + dllink +
+            // " starting the download...");
+            if (alreadyOpen == false) dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
             if (dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
+                // logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 doSomething();
                 checkServerErrors();
@@ -511,7 +520,7 @@ public class AnnonHostNet extends PluginForHost {
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             // Load cookies
-            br.setCookiesExclusive(false);
+            br.setCookiesExclusive(true);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
             if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -532,6 +541,7 @@ public class AnnonHostNet extends PluginForHost {
             if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             loginform.put("login", Encoding.urlEncode(account.getUser()));
             loginform.put("password", Encoding.urlEncode(account.getPass()));
+            loginform.setAction("http://www.annonhost.net/");
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
             br.submitForm(loginform);
             br.getHeaders().put("Content-Type", null);
@@ -607,6 +617,7 @@ public class AnnonHostNet extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.setProperty("premlink", null);
     }
 
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {

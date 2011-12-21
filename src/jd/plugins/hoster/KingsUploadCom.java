@@ -192,7 +192,7 @@ public class KingsUploadCom extends PluginForHost {
                 try {
                     Browser br2 = br.cloneBrowser();
                     URLConnectionAdapter con = br2.openGetConnection(dllink);
-                    if (con.getContentType().contains("html") || con.getContentLength() == -1) {
+                    if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                         downloadLink.setProperty("freelink", Property.NULL);
                         dllink = null;
                     }

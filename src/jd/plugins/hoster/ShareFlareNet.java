@@ -165,7 +165,7 @@ public class ShareFlareNet extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         URLConnectionAdapter con = dl.getConnection();
-        if (con.getContentType().contains("html") && con.getContentLength() < (downloadLink.getDownloadSize() / 2)) {
+        if (con.getContentType().contains("html") && con.getLongContentLength() < (downloadLink.getDownloadSize() / 2)) {
             logger.warning("the dllink doesn't seem to be a file, following the connection...");
             br.followConnection();
             if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l);
