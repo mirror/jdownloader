@@ -38,19 +38,24 @@ public class FilesMonsterComFolder extends PluginForDecrypt {
         String parameter = param.toString();
         FilePackage fp = FilePackage.getInstance();
         br.getPage(parameter);
-        String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        String fpName = br.getRegex("class=\"xx_big em arial lightblack\">Folder:(.*?)</span>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("class=\"xx_big\">Folder:(.*?)</span>").getMatch(0);
         }
+        if (fpName == null) {
+            fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        }
+        if (fpName != null) fp.setName(fpName);
+        String[] links = br.getRegex("green em\" href=\"(.*?)\"").getColumn(0);
+        if (links.length == 0) links = br.getRegex("green\" href=\"(.*?)\"").getColumn(0);
+        if (links.length == 0) return null;
+        for (String dl : links) {
+            decryptedLinks.add(createDownloadlink(dl));
+        }
         if (fpName != null) {
             fpName = fpName.trim();
+            fp.addLinks(decryptedLinks);
         }
-        fp.setName(fpName);
-        String[] links = br.getRegex("green em\" href=\"(.*?)\"").getColumn(0);
-        if (links.length == 0) return null;
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
-        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 
