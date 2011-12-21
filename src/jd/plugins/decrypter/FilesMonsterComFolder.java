@@ -54,6 +54,7 @@ public class FilesMonsterComFolder extends PluginForDecrypt {
         }
         if (fpName != null) {
             fpName = fpName.trim();
+            fp.setName(fpName);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
