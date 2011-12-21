@@ -22,7 +22,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     protected HashMap<DomainInfo, Integer> hostCountMap;
     protected TreeSet<DomainInfo>          domainList;
     private DomainInfo[]                   domainInfos;
-    protected CrawledPackage               crawledPackage;
     protected HashSet<CrawledLink>         enabled;
     protected HashMap<CrawledLink, Long>   sizes;
     private HashSet<CrawledLink>           offline;
@@ -47,6 +46,8 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         this.enabled = newl.enabled;
         this.sizes = newl.sizes;
         this.offline = newl.offline;
+        super.clear();
+        super.addAll(items);
     }
 
     @Override

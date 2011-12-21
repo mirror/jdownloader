@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jd.config.Property;
 import jd.controlling.IOPermission;
 import jd.controlling.JDPluginLogger;
+import jd.controlling.linkcollector.LinknameCleaner;
 import jd.http.Browser;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
@@ -31,6 +32,7 @@ import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.settings.GeneralSettings;
 
 public class LinkCrawler implements IOPermission {
 
@@ -55,6 +57,8 @@ public class LinkCrawler implements IOPermission {
     private AtomicInteger                 crawlerGeneration        = new AtomicInteger(0);
     private LinkCrawler                   parentCrawler            = null;
     private final long                    created;
+
+    public static final String            ALLOW_MERGE              = "ALLOW_MERGE";
 
     /*
      * customized comparator we use to prefer faster decrypter plugins over
@@ -661,6 +665,32 @@ public class LinkCrawler implements IOPermission {
         dest.setMatchingFilter(source.getMatchingFilter());
         dest.setSourceJob(source.getSourceJob());
         dest.setDesiredPackageInfo(source.getDesiredPackageInfo());
+        convertFilePackageInfos(dest);
+    }
+
+    private PackageInfo convertFilePackageInfos(CrawledLink link) {
+        if (link.getDownloadLink() != null && !link.getDownloadLink().isDefaultFilePackage()) {
+            PackageInfo fpi = link.getDesiredPackageInfo();
+            if (fpi == null) fpi = new PackageInfo();
+            FilePackage dp = link.getDownloadLink().getFilePackage();
+
+            if (dp.getDownloadDirectory() != null && !dp.getDownloadDirectory().equals(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder())) {
+                // do not set downloadfolder if it is the defaultfolder
+                fpi.setDestinationFolder(dp.getDownloadDirectory());
+            }
+
+            fpi.setAutoExtractionEnabled(dp.isPostProcessing());
+            fpi.setName(LinknameCleaner.cleanFileName(dp.getName()));
+            if (Boolean.FALSE.equals(dp.getBooleanProperty(ALLOW_MERGE, false))) {
+                fpi.setUniqueId(dp.getUniqueID());
+            }
+            for (String s : dp.getPasswordList()) {
+                fpi.getExtractionPasswords().add(s);
+            }
+            link.setDesiredPackageInfo(fpi);
+            return fpi;
+        }
+        return null;
     }
 
     @SuppressWarnings("deprecation")
@@ -673,7 +703,7 @@ public class LinkCrawler implements IOPermission {
             dl.setName(source.getName());
             dl.forceFileName(source.getForcedFileName());
             dl.setFinalFileName(source.getFinalFileName());
-            dl.setBrowserUrl(source.getBrowserUrl());
+            if (source.gotBrowserUrl()) dl.setBrowserUrl(source.getBrowserUrl());
             if (source.isAvailabilityStatusChecked()) {
                 dl.setAvailable(source.isAvailable());
             }
@@ -811,17 +841,26 @@ public class LinkCrawler implements IOPermission {
                  */
                 wplg.setDistributer(dist = new LinkCrawlerDistributer() {
 
+                    CrawledLinkModifier lm = new CrawledLinkModifier() {
+                                               /*
+                                                * this modifier sets the
+                                                * BrowserURL if not set yet
+                                                */
+                                               public void modifyCrawledLink(CrawledLink link) {
+                                                   DownloadLink dl = link.getDownloadLink();
+                                                   if (dl != null && !dl.gotBrowserUrl()) {
+                                                       dl.setBrowserUrl(cryptedLink.getURL());
+                                                   }
+                                               }
+                                           };
+
                     public void distribute(DownloadLink... links) {
                         if (links == null || links.length == 0) return;
                         final ArrayList<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(links.length);
                         for (DownloadLink link : links) {
-                            /*
-                             * we set source url here to hide the original link
-                             * if needed
-                             */
-                            link.setBrowserUrl(cryptedLink.getURL());
                             CrawledLink ret;
                             possibleCryptedLinks.add(ret = new CrawledLink(link));
+                            ret.setCustomCrawledLinkModifier(lm);
                             forwardCrawledLinkInfos(cryptedLink, ret);
                         }
                         if (!checkStartNotify()) return;

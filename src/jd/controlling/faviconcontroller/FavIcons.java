@@ -308,7 +308,15 @@ public class FavIcons {
                  * rapidshare.com
                  */
                 url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=.*?//([^>'\"]*?)('|\")").getMatch(3);
-                if (url != null && url.length() > 0) url = "http://" + url;
+                if (url != null && url.length() > 0 && !url.equalsIgnoreCase(host)) url = "http://" + url;
+            }
+            if (url != null && url.equalsIgnoreCase(host)) url = null;
+            if (url == null && "rapidshare.com".equalsIgnoreCase(host)) {
+                /*
+                 * hardcoded workaround for rapidshare, they use js to build the
+                 * favicon path
+                 */
+                url = "http://images3.rapidshare.com/img/favicon.ico";
             }
             if (url != null && url.length() > 0) {
                 /* favicon tag with ico extension */
@@ -354,6 +362,9 @@ public class FavIcons {
      * cause some hosts have fake favicon.ico with 1x1 size
      */
     public static BufferedImage downloadFavIcon(String host) {
+        if (host.contains("rapidshare")) {
+            int i = 1;
+        }
         BufferedImage ret = null;
         try {
             /* first try to get the FavIcon specified in FavIconTag */

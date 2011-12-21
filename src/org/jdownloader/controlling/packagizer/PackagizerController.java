@@ -8,12 +8,10 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.controlling.IOEQ;
-import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.linkcollector.PackagizerInterface;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
@@ -27,7 +25,6 @@ import org.appwork.utils.logging.Log;
 import org.jdownloader.controlling.UniqueID;
 import org.jdownloader.controlling.filter.NoDownloadLinkException;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.settings.GeneralSettings;
 
 public class PackagizerController implements PackagizerInterface {
     private PackagizerSettings                  config;
@@ -41,7 +38,7 @@ public class PackagizerController implements PackagizerInterface {
     public static final String                  SOURCE               = "source";
     public static final String                  PACKAGENAME          = "packagename";
     public static final String                  SIMPLEDATE           = "simpledate";
-    public static final String                  ALLOW_MERGE          = "ALLOW_MERGE";
+
     private static final UniqueID               PERMANENT_OFFLINE_ID = new UniqueID();
 
     private static final PackagizerController   INSTANCE             = new PackagizerController();
@@ -239,7 +236,6 @@ public class PackagizerController implements PackagizerInterface {
     }
 
     public void runByFile(CrawledLink link) {
-        convertFilePackageInfos(link);
         permanentOffline(link);
         ArrayList<PackagizerRuleWrapper> lfileFilter = fileFilter;
         for (PackagizerRuleWrapper lgr : lfileFilter) {
@@ -264,31 +260,6 @@ public class PackagizerController implements PackagizerInterface {
         }
     }
 
-    private PackageInfo convertFilePackageInfos(CrawledLink link) {
-        if (!link.getDownloadLink().isDefaultFilePackage()) {
-            PackageInfo fpi = link.getDesiredPackageInfo();
-            if (fpi == null) fpi = new PackageInfo();
-            FilePackage dp = link.getDownloadLink().getFilePackage();
-
-            if (dp.getDownloadDirectory() != null && !dp.getDownloadDirectory().equals(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder())) {
-                // do not set downloadfolder if it is the defaultfolder
-                fpi.setDestinationFolder(dp.getDownloadDirectory());
-            }
-
-            fpi.setAutoExtractionEnabled(dp.isPostProcessing());
-            fpi.setName(LinknameCleaner.cleanFileName(dp.getName()));
-            if (Boolean.FALSE.equals(dp.getBooleanProperty(ALLOW_MERGE, false))) {
-                fpi.setUniqueId(dp.getUniqueID());
-            }
-            for (String s : dp.getPasswordList()) {
-                fpi.getExtractionPasswords().add(s);
-            }
-            link.setDesiredPackageInfo(fpi);
-            return fpi;
-        }
-        return null;
-    }
-
     private void permanentOffline(CrawledLink link) {
         DownloadLink dl = link.getDownloadLink();
         try {
@@ -307,7 +278,6 @@ public class PackagizerController implements PackagizerInterface {
     }
 
     public void runByUrl(CrawledLink link) {
-        convertFilePackageInfos(link);
         permanentOffline(link);
         ArrayList<PackagizerRuleWrapper> lurlFilter = urlFilter;
         for (PackagizerRuleWrapper lgr : lurlFilter) {
