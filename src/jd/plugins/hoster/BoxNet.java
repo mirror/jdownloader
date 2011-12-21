@@ -30,14 +30,14 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(names = { "box.net" }, urls = { "(http://www\\.box\\.net/(shared/static/|rssdownload/).*)|(http://www\\.box\\.net/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+|http://www\\.box\\.net/s/[a-z0-9]+)" }, flags = { 0 }, revision = "$Revision$", interfaceVersion = 2)
+@HostPlugin(names = { "box.net" }, urls = { "(http://www\\.box\\.(net|com)/(shared/static/|rssdownload/).*)|(http://www\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+|http://www\\.boxdecrypted\\.(net|com)/s/[a-z0-9]+)" }, flags = { 0 }, revision = "$Revision$", interfaceVersion = 2)
 public class BoxNet extends PluginForHost {
     private static final String TOS_LINK               = "https://www.box.net/static/html/terms.html";
 
     private static final String OUT_OF_BANDWITH_MSG    = "out of bandwidth";
-    private static final String REDIRECT_DOWNLOAD_LINK = "http://www\\.box\\.net/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+";
+    private static final String REDIRECT_DOWNLOAD_LINK = "http://www\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+";
     private static final String DLLINKREGEX            = "href=\"(http://www\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=[^<>\"\\']+)\"";
-    private static final String SLINK                  = "http://www\\.box.net/s/[a-z0-9]+";
+    private static final String SLINK                  = "http://www\\.box\\.(net|com)/s/[a-z0-9]+";
     private String              DLLINK                 = null;
 
     public BoxNet(PluginWrapper wrapper) {
@@ -51,7 +51,12 @@ public class BoxNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("boxdecrypted\\.(net|com)/s/", "box.com/s/"));
+        link.setUrlDownload(link.getDownloadURL().replace("box\\.net/", "box.com/"));
     }
 
     @Override
@@ -70,7 +75,7 @@ public class BoxNet extends PluginForHost {
                 }
             }
             if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            DLLINK = "http://www.box.net/download/external/f_" + fid + "/0/" + link.getName() + "?shared_file_page=1&shared_name=" + new Regex(link.getDownloadURL(), "http://www\\.box\\.net/s/(.+)").getMatch(0);
+            DLLINK = "http://www.box.com/download/external/f_" + fid + "/0/" + link.getName() + "?shared_file_page=1&shared_name=" + new Regex(link.getDownloadURL(), "http://www\\.box\\.[^/]+/s/(.+)").getMatch(0);
         } else if (DLLINK == null) {
             DLLINK = link.getDownloadURL();
         }
@@ -86,6 +91,8 @@ public class BoxNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        /** Correct old box.NET links */
+        correctDownloadLink(parameter);
         // setup referer and cookies for single file downloads
         if (parameter.getDownloadURL().matches(REDIRECT_DOWNLOAD_LINK)) {
             br.getPage(parameter.getBrowserUrl());

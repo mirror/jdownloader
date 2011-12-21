@@ -16,8 +16,11 @@
 
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -70,8 +73,9 @@ public class Indowebster extends PluginForHost {
         }
         if (!ad_url.startsWith("http://")) ad_url = "http://www.indowebster.com/" + ad_url;
         br.getPage(ad_url);
-        String dllink = br.getRegex("id=\"link\\-download\" align=\"center\"><a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://cdn\\.(x|\\s+)\\.indowebster\\.com/download\\-vip/\\d+/.*?)\"").getMatch(0);
+        final String realName = br.getRegex("<strong id=\"filename\">(\\[www\\.indowebster\\.com\\])?(.*?)</strong>").getMatch(1);
+        if (realName != null) link.setFinalFileName(Encoding.htmlDecode(realName));
+        String dllink = getDLLink();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /**
          * If we reach this line the password should be correct even if the
@@ -79,8 +83,7 @@ public class Indowebster extends PluginForHost {
          */
         if (passCode != null) link.setProperty("pass", passCode);
         dllink = dllink.trim();
-        String waittime = br.getRegex("var sec = (\\d+);").getMatch(0);
-        if (waittime == null) waittime = br.getRegex("document\\.counter\\.dl2\\.value=\\'(\\d+)\\';").getMatch(0);
+        String waittime = br.getRegex("var s = (\\d+);").getMatch(0);
         int wait = 25;
         if (waittime != null) wait = Integer.parseInt(waittime);
         sleep(wait * 1001l, link);
@@ -93,6 +96,28 @@ public class Indowebster extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getDLLink() throws Exception {
+        ArrayList<String> l = new ArrayList<String>();
+        final String pagePiece = br.getRegex("var l = Array\\((.*?)\\)").getMatch(0);
+        if (pagePiece == null) return null;
+        String[] list = new Regex(pagePiece, "\"(.*?)\"").getColumn(0);
+        if (list == null || list.length == 0) return null;
+        for (String str : list) {
+            l.add(str);
+        }
+        for (int i = 0; i < Math.floor(l.size() / 2); i++) {
+            String m = l.get(i);
+            l.set(i, l.get(l.size() - i - 1));
+            l.set(l.size() - i - 1, m);
+            i++;
+        }
+        String n = "";
+        for (int i = 0; i < l.size(); i++)
+            n += "/" + l.get(i);
+        String dllink = "http:/" + n;
+        return dllink.replace("[", "%5B").replace("]", "%5D");
     }
 
     @Override
@@ -110,9 +135,9 @@ public class Indowebster extends PluginForHost {
             logger.info("New link set...");
             br.getPage(newlink);
         }
-        String filename = br.getRegex("<title>Free Download (.*?) \\| ").getMatch(0);
+        String filename = br.getRegex("<h1 class=\"title\">(.*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("class=\"dl\\-title\" title=\"(.*?)\">").getMatch(0);
+            filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
             if (filename == null) filename = br.getRegex("<title>(.*?) \\- Indowebster\\.com</title>").getMatch(0);
         }
         String filesize = br.getRegex(">Size : <span style=\"float:none;\">(.*?)</span><").getMatch(0);
