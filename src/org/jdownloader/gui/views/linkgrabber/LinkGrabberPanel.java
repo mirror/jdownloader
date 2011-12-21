@@ -220,7 +220,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     private void layoutComponents() {
         rightBar.removeAll();
         rightBar.add(autoConfirm, "height 24!,width 24!,hidemode 3,gapright 3");
-        autoConfirm.setVisible(true);
+
         rightBar.add(confirmAll, "height 24!,pushx,growx");
         rightBar.add(popupConfirm, "height 24!,width 12!");
         if (GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getValue() && GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue()) {

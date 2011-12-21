@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
@@ -39,9 +40,11 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
         boolean autoConfirm = LinkFilterSettings.LINKGRABBER_AUTO_CONFIRM_ENABLED.getValue() && ret.size() > 0;
         if (!autoConfirm) {
             for (CrawledLink l : this.getAllChildrenNodes(ret)) {
-                if (l.isAutoConfirmEnabled()) {
-                    autoConfirm = true;
-                    break;
+                if (l.getLinkState() != LinkState.OFFLINE) {
+                    if (l.isAutoConfirmEnabled()) {
+                        autoConfirm = true;
+                        break;
+                    }
                 }
             }
         }

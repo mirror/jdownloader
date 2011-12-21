@@ -253,7 +253,7 @@ public class StatusBarImpl extends JPanel {
     }
 
     private void updateLinkGrabberIndicator() {
-        final boolean enabled = LinkChecker.isChecking() | LinkCrawler.isCrawling();
+        final boolean enabled = LinkChecker.isChecking() || LinkCrawler.isCrawling();
         new EDTRunner() {
             @Override
             protected void runInEDT() {
