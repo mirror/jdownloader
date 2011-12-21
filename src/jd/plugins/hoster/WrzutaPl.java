@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2011  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuta.pl" }, urls = { "http://[\\w\\._-]*?wrzuta\\.pl/(audio|film|obraz)/\\w+.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuta.pl" }, urls = { "http://[\\w\\.\\-]*?wrzuta\\.pl/(audio|film|obraz)/[a-zA-Z0-9]{11}" }, flags = { 0 })
 public class WrzutaPl extends PluginForHost {
 
     private String filetype = null;
@@ -68,13 +68,13 @@ public class WrzutaPl extends PluginForHost {
             if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             addext = false;
         } else if (filetype.equalsIgnoreCase("film")) {
-            linkurl = br.getRegex("wrzuta_flv=(.*?)&wrzuta_mini").getMatch(0);
-            if (linkurl == null)
-                linkurl = downloadLink.getDownloadURL().replaceFirst("film", "sr/f");
-            else
-                addext = false;
+            String xmlFilmPage = "http://" + br.getHost() + "/xml/kontent/" + fileid + "/wrztua.pl/sa/" + new Random().nextInt(100000);
+            br.getPage(xmlFilmPage);
+            linkurl = br.getRegex("<fileId><\\!\\[CDATA\\[(http://.*?)\\]\\]></fileId>").getMatch(0);
+            if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            addext = false;
         } else if (filetype.equalsIgnoreCase("obraz")) {
-            linkurl = br.getRegex("wrzuta_flv=(.*?)&wrzuta_mini").getMatch(0);
+            linkurl = br.getRegex("<img id=\"image\" src=\"(.*?)\"").getMatch(0);
             if (linkurl == null)
                 linkurl = downloadLink.getDownloadURL().replaceFirst("obraz", "sr/f");
             else
@@ -83,7 +83,10 @@ public class WrzutaPl extends PluginForHost {
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setDebug(true);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl);
+        // set one chunk as film and audio based links will reset soon as second
+        // chunk is connected.
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
+
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType().contains("html")) {
             br.followConnection();
@@ -123,9 +126,9 @@ public class WrzutaPl extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Nie odnaleziono pliku.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filename = (Encoding.htmlDecode(br.getRegex(Pattern.compile("anie</h3>\\s+<h2>(.*?)</h2>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
-        if (filename == null) filename = (Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>WRZUTA - (.*?)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+        if (br.containsHTML(">Nie odnaleziono pliku\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filename = (Encoding.htmlDecode(br.getRegex(Pattern.compile("<h1 class=\"header\">(.*?)</h1>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+        if (filename == null) filename = (Encoding.htmlDecode(br.getRegex(Pattern.compile("<meta name=\"title\" content=\"(.*?)\" />", Pattern.CASE_INSENSITIVE)).getMatch(0)));
         String filesize = br.getRegex(Pattern.compile("Rozmiar: <strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filesize == null) filesize = br.getRegex(Pattern.compile("<span id=\"file_info_size\">[\t\n\r ]+<strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

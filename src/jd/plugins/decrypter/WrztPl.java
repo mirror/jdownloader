@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2011  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -16,56 +16,71 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuta.pl" }, urls = { "http://[\\w\\.]*?wrzuta\\.pl/katalog/\\w+.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuta.pl" }, urls = { "http://[\\w\\.\\-]+?wrzuta\\.pl/katalog/[a-zA-Z0-9]{11}" }, flags = { 0 })
 public class WrztPl extends PluginForDecrypt {
 
     public WrztPl(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // TODO: Links with more than one page do actually not work but i didn't
-    // have any example links so implement that so i guess no one is interested
-    // in this function
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
         br.setCookiesExclusive(true);
-        br.getPage(parameter.getCryptedUrl());
-        if (br.containsHTML("Nie odnaleziono użytkownika")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String user = br.getRegex("<div id=\"user_info_data_login\"><a href=\"http://(.*?)\\.wrzuta\\.pl/\"").getMatch(0);
-        if (user == null) user = br.getRegex("title=\"RSS 2\\.0\" href=\"http://(.*?)\\.wrzuta\\.pl/").getMatch(0);
-        // String id = new Regex(parameter.getCryptedUrl(),
-        // "katalog/(\\w+)/?").getMatch(0);
-        // if (id == null) return null;
-        // id = id.trim();
-        int counter = 0;
-        String links[] = br.getRegex("<div class=\"title\"><a href=\"(.*?)\">.*?</a>").getColumn(0);
-        for (String link : links) {
-            if (new Regex(link, "http://[\\w\\.]*?wrzuta\\.pl/(audio|film|obraz)/\\w+.+").matches()) {
-                DownloadLink dllink = this.createDownloadlink(link);
-                dllink.setProperty("nameextra", counter);
-                counter++;
-                decryptedLinks.add(dllink);
-            }
+        br.getPage(parameter);
+        String id = new Regex(parameter, "wrzuta\\.pl/katalog/([a-zA-Z0-9]{11})").getMatch(0);
+        if (br.containsHTML(">Nie odnaleziono pliku\\.<")) {
+            logger.warning("Invalid URL: " + parameter);
+            return decryptedLinks;
         }
-        if (user != null) {
+
+        // Set package name and prevent null field from creating plugin errors
+        String fpName = br.getRegex("<div class=\"catalogue\\_name\">(.*?)</div>").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("<title>WRZUTA - (.*?) - katalog djszymonx</title>").getMatch(0);
+        if (fpName == null) fpName = "Untitled";
+
+        parsePage(decryptedLinks, id);
+        parseNextPage(decryptedLinks, id);
+
+        if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(user.trim());
+            fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
 
+    private void parsePage(ArrayList<DownloadLink> ret, String id) {
+        String[] links = br.getRegex("<a id=\"file\\_list\\_file\\_thumb\\_href\\_[a-zA-Z0-9]{11}\" href=\"(http://[\\w\\.\\-]+?wrzuta\\.pl/(audio|film|obraz)/[a-zA-Z0-9]{11}/[\\w\\.\\-]+)\"").getColumn(0);
+        if (links == null || links.length == 0) links = br.getRegex("\"(http://[\\w\\.\\-]+?wrzuta\\.pl/(audio|film|obraz)/[a-zA-Z0-9]{11}/[\\w\\.\\-]+)\"").getColumn(0);
+        if (links == null || links.length == 0) return;
+        if (links != null && links.length != 0) {
+            for (String dl : links)
+                ret.add(createDownloadlink(dl));
+        }
+    }
+
+    private boolean parseNextPage(ArrayList<DownloadLink> ret, String id) throws IOException {
+        String nextPage = br.getRegex("<li><a href=\"(http://[\\w\\.\\-]+?wrzuta\\.pl/katalog/" + id + "/[\\w\\.\\-]+/\\d+)\">Następna</a></li>").getMatch(0);
+        nextPage = new Regex(nextPage, "(http://[\\w\\.\\-]+?wrzuta\\.pl/katalog/" + id + "/.*?/\\d+)").getMatch(0);
+        if (nextPage != null) {
+            br.getPage(nextPage);
+            parsePage(ret, id);
+            parseNextPage(ret, id);
+            return true;
+        }
+        return false;
+    }
 }
