@@ -29,7 +29,7 @@ import org.jdownloader.extensions.ExtensionControllerListener;
 import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class SettingsSidebarModel extends DefaultListModel<Object> implements GenericConfigEventListener<Boolean>, ExtensionControllerListener {
+public class SettingsSidebarModel extends DefaultListModel implements GenericConfigEventListener<Boolean>, ExtensionControllerListener {
 
     private static final long      serialVersionUID = -204494527404304349L;
     private Object                 LOCK             = new Object();
