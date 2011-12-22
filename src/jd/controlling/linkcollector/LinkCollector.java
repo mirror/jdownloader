@@ -26,11 +26,13 @@ import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.controlling.UniqueID;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.translate._JDT;
 
@@ -372,6 +374,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private CrawledPackage                          offlinePackage;
 
     protected CrawledPackage                        variousPackage;
+    private CrawledPackage                          permanentofflinePackage;
 
     private HashMap<String, ArrayList<CrawledLink>> offlineMap = new HashMap<String, ArrayList<CrawledLink>>();
     private HashMap<String, ArrayList<CrawledLink>> variousMap = new HashMap<String, ArrayList<CrawledLink>>();
@@ -394,6 +397,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (!dupeCheckMap.add(link.getLinkID())) return null;
 
                 PackageInfo dpi = link.getDesiredPackageInfo();
+                UniqueID uID = null;
 
                 String packageName = null;
                 String packageID = null;
@@ -401,7 +405,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 boolean isMultiArchive = false;
                 if (dpi != null) {
                     packageName = dpi.getName();
-                    if (dpi.getUniqueId() != null) {
+                    if ((uID = dpi.getUniqueId()) != null) {
                         packageID = dpi.getUniqueId().toString();
                     }
                     downloadFolder = dpi.getDestinationFolder();
@@ -430,12 +434,21 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 String identifier = packageID + "_" + packageName + "_" + downloadFolder;
                 CrawledPackage pkg = packageMap.get(identifier);
                 if (pkg == null) {
-                    if (link.getLinkState() == LinkState.OFFLINE && LinkgrabberSettings.OFFLINE_PACKAGE_ENABLED.getValue()) {
+                    if (uID == LinkCrawler.PERMANENT_OFFLINE_ID) {
+                        if (permanentofflinePackage == null || permanentofflinePackage.getChildren().size() == 0) {
+                            permanentofflinePackage = new CrawledPackage();
+                            permanentofflinePackage.setCreated(link.getCreated());
+                            permanentofflinePackage.setName(_GUI._.Permanently_Offline_Package());
+                        }
+                        List<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                        add.add(link);
+                        LinkCollector.this.addmoveChildren(permanentofflinePackage, add, -1);
+                    }
+                    if (packageID == LinkCrawler.PERMANENT_OFFLINE_ID.toString()) if (link.getLinkState() == LinkState.OFFLINE && LinkgrabberSettings.OFFLINE_PACKAGE_ENABLED.getValue()) {
                         if (offlinePackage == null || offlinePackage.getChildren().size() == 0) {
                             offlinePackage = new OfflineCrawledPackage();
                             offlinePackage.setCreated(link.getCreated());
                             offlinePackage.setName(_JDT._.LinkCollector_addCrawledLink_offlinepackage());
-
                         }
 
                         ArrayList<CrawledLink> list = offlineMap.get(identifier);
@@ -451,6 +464,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     } else if (LinkgrabberSettings.VARIOUS_PACKAGE_LIMIT.getValue() > 0) {
                         if (variousPackage == null || variousPackage.getChildren().size() == 0) {
                             variousPackage = new VariousCrawledPackage();
+                            variousPackage.setCreated(link.getCreated());
                             variousPackage.setExpanded(true);
                             variousPackage.setCreated(link.getCreated());
 

@@ -11,7 +11,6 @@ import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.PackagizerInterface;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
-import jd.plugins.DownloadLink;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
@@ -22,9 +21,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
 import org.appwork.utils.logging.Log;
-import org.jdownloader.controlling.UniqueID;
 import org.jdownloader.controlling.filter.NoDownloadLinkException;
-import org.jdownloader.gui.translate._GUI;
 
 public class PackagizerController implements PackagizerInterface {
     private PackagizerSettings                  config;
@@ -33,16 +30,14 @@ public class PackagizerController implements PackagizerInterface {
     private ArrayList<PackagizerRuleWrapper>    fileFilter;
     private ArrayList<PackagizerRuleWrapper>    urlFilter;
 
-    public static final String                  ORGFILENAME          = "orgfilename";
-    public static final String                  HOSTER               = "hoster";
-    public static final String                  SOURCE               = "source";
-    public static final String                  PACKAGENAME          = "packagename";
-    public static final String                  SIMPLEDATE           = "simpledate";
+    public static final String                  ORGFILENAME = "orgfilename";
+    public static final String                  HOSTER      = "hoster";
+    public static final String                  SOURCE      = "source";
+    public static final String                  PACKAGENAME = "packagename";
+    public static final String                  SIMPLEDATE  = "simpledate";
 
-    private static final UniqueID               PERMANENT_OFFLINE_ID = new UniqueID();
-
-    private static final PackagizerController   INSTANCE             = new PackagizerController();
-    private HashMap<String, PackagizerReplacer> replacers            = new HashMap<String, PackagizerReplacer>();
+    private static final PackagizerController   INSTANCE    = new PackagizerController();
+    private HashMap<String, PackagizerReplacer> replacers   = new HashMap<String, PackagizerReplacer>();
 
     public static PackagizerController getInstance() {
         return INSTANCE;
@@ -236,7 +231,6 @@ public class PackagizerController implements PackagizerInterface {
     }
 
     public void runByFile(CrawledLink link) {
-        permanentOffline(link);
         ArrayList<PackagizerRuleWrapper> lfileFilter = fileFilter;
         for (PackagizerRuleWrapper lgr : lfileFilter) {
             try {
@@ -260,25 +254,7 @@ public class PackagizerController implements PackagizerInterface {
         }
     }
 
-    private void permanentOffline(CrawledLink link) {
-        DownloadLink dl = link.getDownloadLink();
-        try {
-            if (dl != null && dl.getDefaultPlugin().getLazyP().getClassname().contains("Offline")) {
-                PackageInfo dpi = link.getDesiredPackageInfo();
-                if (dpi == null) {
-                    dpi = new PackageInfo();
-                    link.setDesiredPackageInfo(dpi);
-                }
-                dpi.setName(_GUI._.Permanently_Offline_Package());
-                dpi.setUniqueId(PERMANENT_OFFLINE_ID);
-            }
-        } catch (final Throwable e) {
-        }
-
-    }
-
     public void runByUrl(CrawledLink link) {
-        permanentOffline(link);
         ArrayList<PackagizerRuleWrapper> lurlFilter = urlFilter;
         for (PackagizerRuleWrapper lgr : lurlFilter) {
             try {

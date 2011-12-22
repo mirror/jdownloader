@@ -27,6 +27,7 @@ import jd.plugins.PluginsC;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.controlling.UniqueID;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
@@ -59,6 +60,7 @@ public class LinkCrawler implements IOPermission {
     private final long                    created;
 
     public static final String            ALLOW_MERGE              = "ALLOW_MERGE";
+    public static final UniqueID          PERMANENT_OFFLINE_ID     = new UniqueID();
 
     /*
      * customized comparator we use to prefer faster decrypter plugins over
@@ -666,6 +668,7 @@ public class LinkCrawler implements IOPermission {
         dest.setSourceJob(source.getSourceJob());
         dest.setDesiredPackageInfo(source.getDesiredPackageInfo());
         convertFilePackageInfos(dest);
+        permanentOffline(dest);
     }
 
     private PackageInfo convertFilePackageInfos(CrawledLink link) {
@@ -691,6 +694,22 @@ public class LinkCrawler implements IOPermission {
             return fpi;
         }
         return null;
+    }
+
+    private void permanentOffline(CrawledLink link) {
+        DownloadLink dl = link.getDownloadLink();
+        try {
+            if (dl != null && dl.getDefaultPlugin().getLazyP().getClassname().contains("Offline")) {
+                PackageInfo dpi = link.getDesiredPackageInfo();
+                if (dpi == null) {
+                    dpi = new PackageInfo();
+                    link.setDesiredPackageInfo(dpi);
+                }
+                dpi.setUniqueId(PERMANENT_OFFLINE_ID);
+            }
+        } catch (final Throwable e) {
+        }
+
     }
 
     @SuppressWarnings("deprecation")
