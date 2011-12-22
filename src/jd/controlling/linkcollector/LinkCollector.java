@@ -90,6 +90,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         if (linkChecker != null) linkChecker.stopChecking();
     }
 
+    public LinkChecker<CrawledLink> getLinkChecker() {
+        lazyInit();
+        return linkChecker;
+    }
+
     public void addListener(final LinkCollectorListener l) {
         broadcaster.addListener(l);
     }

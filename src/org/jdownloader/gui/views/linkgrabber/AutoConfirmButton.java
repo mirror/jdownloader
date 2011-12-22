@@ -16,6 +16,8 @@ import jd.controlling.IOEQ;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerEvent;
 import jd.controlling.linkchecker.LinkCheckerListener;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -35,7 +37,7 @@ import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 
-public class AutoConfirmButton extends ExtButton implements ChangeListener, TableModelListener, ActionListener, LinkCrawlerListener, LinkCheckerListener {
+public class AutoConfirmButton extends ExtButton implements ChangeListener, TableModelListener {
     /**
      * 
      */
@@ -112,7 +114,16 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
         // ScheduledThreadPoolExecutor queue = new
         // ScheduledThreadPoolExecutor(1);
 
-        timer = new Timer(100, this);
+        timer = new Timer(100, new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                if ((System.currentTimeMillis() - startTime) < 1000) {
+                    progress.setValue((int) waittime);
+                } else {
+                    progress.setValue((int) (waittime - (System.currentTimeMillis() - startTime)));
+                }
+            }
+        });
         timer.setRepeats(true);
         setToolTipText(_GUI._.AutoConfirmButton_AutoConfirmButton_tooltip_());
         addActionListener(new ActionListener() {
@@ -124,8 +135,30 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
                 setVisible(false);
             }
         });
-        LinkCrawler.getEventSender().addListener(this);
-        LinkChecker.getEventSender().addListener(this);
+        LinkCrawler.getEventSender().addListener(new LinkCrawlerListener() {
+
+            public void onLinkCrawlerEvent(LinkCrawlerEvent event) {
+                if (event.getCaller() instanceof LinkCollectorCrawler) {
+                    /*
+                     * we only want to react on the LinkCrawler of the
+                     * LinkCollector
+                     */
+                    update();
+                }
+            }
+        });
+        LinkChecker.getEventSender().addListener(new LinkCheckerListener() {
+
+            public void onLinkCheckerEvent(LinkCheckerEvent event) {
+                if (LinkCollector.getInstance().getLinkChecker() == event.getCaller()) {
+                    /*
+                     * we only want to react on the LinkChecker of the
+                     * LinkCollector
+                     */
+                    update();
+                }
+            }
+        });
         delayer = new DelayedRunnable(IOEQ.TIMINGQUEUE, waittime, -1) {
             @Override
             public void delayedrun() {
@@ -168,10 +201,8 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
             delayer.resetAndStart();
             startTime = System.currentTimeMillis();
             if (!timer.isRunning()) {
-
                 timer.start();
                 setTooltipsEnabled(true);
-
             }
         } else {
             setTooltipsEnabled(false);
@@ -181,20 +212,7 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
 
     }
 
-    public void actionPerformed(ActionEvent e) {
-        if ((System.currentTimeMillis() - startTime) < 1000) {
-            progress.setValue((int) waittime);
-        } else {
-            progress.setValue((int) (waittime - (System.currentTimeMillis() - startTime)));
-        }
-
-    }
-
-    public void onLinkCheckerEvent(LinkCheckerEvent event) {
-        update();
-    }
-
-    private void update() {
+    private synchronized void update() {
         final boolean enabled = !LinkChecker.isChecking() && !LinkCrawler.isCrawling();
         if (enabled == active) return;
         if (enabled) {
@@ -207,7 +225,4 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
         }
     }
 
-    public void onLinkCrawlerEvent(LinkCrawlerEvent event) {
-        update();
-    }
 }
