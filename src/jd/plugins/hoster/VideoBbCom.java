@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -42,7 +43,7 @@ public class VideoBbCom extends PluginForHost {
         private BigInteger BI;
         final String       DLLINK;
 
-        getFinallinkValue(final String hosterKey, final String token, final Browser br) {
+        getFinallinkValue(final int[] internalKey, final String token, final Browser br) {
             /*
              * TODO: parsing content after 0.9xx through
              * org.codehaus.jackson.JsonNode class
@@ -50,12 +51,21 @@ public class VideoBbCom extends PluginForHost {
             String dllink = Encoding.Base64Decode(br.getRegex(token + "\":\"(.*?)\",").getMatch(0));
             dllink = dllink.substring(dllink.length() - 1).equals("&") ? dllink : dllink + "&";
             String keyString, decryptedString = "";
+            final HashMap<String, Integer> outputKeys = new HashMap<String, Integer>();
 
-            final int keyTwo = Integer.parseInt(Encoding.Base64Decode(hosterKey));
+            final String outputInfoRaw = br.getRegex("spen\":\"(.*?)\",").getMatch(0);
+            final int outputInfoKey = Integer.parseInt(br.getRegex("salt\":(\\d+),").getMatch(0));
+            final String[] algoCtrl = JDHexUtils.toString(decryptBit(outputInfoRaw, outputInfoKey, 950569)).split(";");
+
+            for (final String eachValue : algoCtrl[1].split("&")) {
+                final String[] parameterTyp = eachValue.split("=");
+                outputKeys.put(parameterTyp[0], Integer.parseInt(parameterTyp[1]));
+            }
+
+            final int keyTwo = internalKey[outputKeys.get("ik") - 1];
             final int keyOne = Integer.parseInt(br.getRegex("rkts\":(\\d+),").getMatch(0));
-            final String algoCtrl = Encoding.Base64Decode(br.getRegex("spn\":\"(.*?)\",").getMatch(0));
 
-            for (final String eachValue : algoCtrl.split("&")) {
+            for (final String eachValue : algoCtrl[0].split("&")) {
 
                 final String[] parameterTyp = eachValue.split("=");
 
@@ -76,7 +86,18 @@ public class VideoBbCom extends PluginForHost {
                     keyString = br.getRegex("time\":\"(.*?)\"").getMatch(0);
                     decryptedString = decryptBitLion(keyString, keyOne, keyTwo);
                     break;
-
+                case 5:
+                    keyString = br.getRegex("euno\":\"(.*?)\"").getMatch(0);
+                    decryptedString = decryptBitHeal(keyString, keyOne, keyTwo);
+                    break;
+                case 6:
+                    keyString = br.getRegex("sugar\":\"(.*?)\"").getMatch(0);
+                    decryptedString = decryptBitBrokeUp(keyString, keyOne, keyTwo);
+                    break;
+                default:
+                    dllink = "";
+                    decryptedString = "";
+                    break;
                 }
                 dllink = dllink + parameterTyp[0] + "=" + decryptedString + "&";
             }
@@ -106,6 +127,14 @@ public class VideoBbCom extends PluginForHost {
 
         private String decryptBit9300(final String arg1, final int arg2, final int arg3) {
             return zDecrypt(false, arg1, arg2, arg3, 26, 25431, 56989, 93, 32589, 784152);
+        }
+
+        private String decryptBitBrokeUp(final String arg1, final int arg2, final int arg3) {
+            return zDecrypt(false, arg1, arg2, arg3, 22, 66595, 17447, 52, 66852, 400595);
+        }
+
+        private String decryptBitHeal(final String arg1, final int arg2, final int arg3) {
+            return zDecrypt(false, arg1, arg2, arg3, 10, 12254, 95369, 39, 21544, 545555);
         }
 
         private String decryptBitLion(final String arg1, final int arg2, final int arg3) {
@@ -160,9 +189,10 @@ public class VideoBbCom extends PluginForHost {
         }
     }
 
-    private static final Object LOCK     = new Object();
-    private static final String MAINPAGE = "http://www.videobb.com/";
-    private final String        ua       = RandomUserAgent.generate();
+    private final String        ua           = RandomUserAgent.generate();
+    private static final Object LOCK         = new Object();
+    private static final String MAINPAGE     = "http://www.videobb.com/";
+    private static int[]        internalKeys = { 226593, 441252, 301517, 596338, 852084 };
 
     public VideoBbCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -222,7 +252,7 @@ public class VideoBbCom extends PluginForHost {
         br.getHeaders().put("x-flash-version", "10,3,183,7");
 
         try {
-            String dllink = new getFinallinkValue("MjI2NTkz", token, br).DLLINK;
+            String dllink = new getFinallinkValue(internalKeys, token, br).DLLINK;
             if (isPremium()) {
                 dllink = dllink + "&d=" + link.replaceFirst(":", Encoding.urlEncode(":"));
             }

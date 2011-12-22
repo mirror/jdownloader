@@ -31,6 +31,8 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videozer.com" }, urls = { "http://(www\\.)?videozer\\.com/(video|embed)/[A-Za-z0-9]+" }, flags = { 0 })
 public class VideozerCom extends PluginForHost {
 
+    private static int[] internalKeys = { 215678, 516929, 962043, 461752, 141994 };
+
     public VideozerCom(final PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(2000l + (long) 1000 * (int) Math.round(Math.random() * 3 + Math.random() * 3));
@@ -49,7 +51,7 @@ public class VideozerCom extends PluginForHost {
     /* See jd.plugin.hoster.VideoBbCom */
     private String getFinalLink(final DownloadLink downloadLink, final String token) {
         try {
-            return new VideoBbCom.getFinallinkValue("MjE1Njc4", token, br).DLLINK;
+            return new VideoBbCom.getFinallinkValue(internalKeys, token, br).DLLINK;
         } catch (final Throwable e) {
             return null;
         }
