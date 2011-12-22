@@ -414,8 +414,8 @@ public class Rapidshare extends PluginForHost {
             }
             if ("RapidPro expired.".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if ("File not found.".equals(error)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, error);
+            } else if ("File not found.".equals(error) || "Folder not found.".equals(error)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if ("All free download slots are full. Please try again later.".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("jd.plugins.hoster.Rapidshare.handleErrors.message.nofreeslots", "Download as freeuser currently not possible"), 5 * 60 * 1000l);
             } else if ("Please stop flooding our download servers.".equals(error)) {
