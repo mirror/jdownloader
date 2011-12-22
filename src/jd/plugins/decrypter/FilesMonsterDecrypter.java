@@ -50,7 +50,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         DownloadLink thebigone = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
         String postThat = br.getRegex("\"(http://filesmonster\\.com/dl/.*?/free/.*?)\"").getMatch(0);
         if (postThat != null) {
-            logger.info("postThat is null, probably limit reached, adding only the premium link...");
+
             br.postPage(postThat, "");
             String findOtherLinks = br.getRegex("reserve_ticket\\('(/dl/rft/.*?)'\\)").getMatch(0);
             if (findOtherLinks != null) {
@@ -79,6 +79,8 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                 }
                 thebigone.setProperty("PREMIUMONLY", "true");
             }
+        } else {
+            logger.info("postThat is null, probably limit reached, adding only the premium link...");
         }
         decryptedLinks.add(thebigone);
         return decryptedLinks;

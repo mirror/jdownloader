@@ -58,6 +58,8 @@ import org.jdownloader.extensions.extraction.IExtraction;
  */
 public class Multi extends IExtraction {
 
+    private static final String Z_D_$ = "(\\.z)(\\d+)$";
+
     /**
      * Helper for the passwordfinding method.
      * 
@@ -167,29 +169,6 @@ public class Multi extends IExtraction {
             archive.setArchiveFiles(link.createPartFileList(pattern));
             archive.getArchiveFiles().add(link);
         }
-
-        // String pattern = file.replaceAll("(?i)\\.pa?r?t?\\.?[0-9]+.*?.rar$",
-        // "");
-        // pattern = pattern.replaceAll("(?i)\\.rar$", "");
-        // pattern = pattern.replaceAll("(?i)\\.r\\d+$", "");
-        // pattern = pattern.replaceAll("(?i)\\.zip$", "");
-        // pattern = pattern.replaceAll("(?i)\\.tar\\.gz$", "");
-        // pattern = pattern.replaceAll("(?i)\\.tar\\.bz2$", "");
-        // pattern = pattern.replaceAll("(?i)\\.7z$", "");
-        // pattern = pattern.replaceAll("(?i)\\.7z\\.\\d+$", "");
-        // pattern = "^" + Regex.escape(pattern) + ".*";
-
-        // if (!pattern.equals("")) {
-        // // if (link instanceof DummyArchiveFile) {
-        // // for (File f : new
-        // File(link.getFilePath()).getParentFile().listFiles()) {
-        // // if (f.isDirectory()) continue;
-        // // if (new Regex(f.getAbsolutePath(), pattern,
-        // Pattern.CASE_INSENSITIVE).matches()) {
-        // // matches.add(buildArchiveFileFromFile(f.getAbsolutePath()));
-        // // }
-        // // }
-        // // } else {
 
         if (archive.getArchiveFiles().size() == 1) {
             archive.setType(Archive.SINGLE_FILE);
@@ -368,7 +347,7 @@ public class Multi extends IExtraction {
     @Override
     public String createID(ArchiveFactory f) {
 
-        String[] patterns = new String[] { PA_R_T_0_9_RAR$, RAR$, ZIP$, _7Z$, _7Z_D, TAR_GZ$, TAR_BZ2$, R_D2, TAR$ };
+        String[] patterns = new String[] { PA_R_T_0_9_RAR$, RAR$, ZIP$, _7Z$, _7Z_D, TAR_GZ$, TAR_BZ2$, R_D2, TAR$, Z_D_$ };
 
         for (String p : patterns) {
             Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);
@@ -376,11 +355,17 @@ public class Multi extends IExtraction {
             Matcher matcher = pattern.matcher(f.getName());
             if (matcher.find()) {
                 //
+
                 if (p.equals(R_D2)) {
                     // we cannot distingish between *.rar and *.rar -> *.r00
                     // archives when looking only at one single filename. that's
                     // why the get the same id
                     return matcher.replaceAll(RAR$.replace("\\", "_").replace("$", "_"));
+                } else if (p.equals(Z_D_$)) {
+                    // we cannot distingish between *.zip and *.zip -> *.z01
+                    // archives when looking only at one single filename. that's
+                    // why the get the same id
+                    return matcher.replaceAll(ZIP$.replace("\\", "_").replace("$", "_"));
                 } else {
                     return matcher.replaceAll(p.replace("\\", "_").replace("$", "_"));
                 }
@@ -704,7 +689,7 @@ public class Multi extends IExtraction {
     @Override
     public String getArchiveName(ArchiveFactory factory) {
 
-        String[] patterns = new String[] { PA_R_T_0_9_RAR$, RAR$, ZIP$, _7Z$, _7Z_D, TAR_GZ$, TAR_BZ2$, R_D2, TAR$ };
+        String[] patterns = new String[] { PA_R_T_0_9_RAR$, RAR$, ZIP$, _7Z$, _7Z_D, TAR_GZ$, TAR_BZ2$, R_D2, TAR$, Z_D_$ };
 
         for (String p : patterns) {
             Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);
@@ -727,7 +712,7 @@ public class Multi extends IExtraction {
 
     @Override
     public boolean isArchivSupported(ArchiveFactory factory) {
-        String[] patterns = new String[] { PA_R_T_0_9_RAR$, RAR$, ZIP$, _7Z$, _7Z_D, TAR_GZ$, TAR_BZ2$, R_D2, TAR$ };
+        String[] patterns = new String[] { PA_R_T_0_9_RAR$, RAR$, ZIP$, _7Z$, _7Z_D, TAR_GZ$, TAR_BZ2$, R_D2, TAR$, Z_D_$ };
 
         for (String p : patterns) {
             Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);
@@ -840,7 +825,7 @@ public class Multi extends IExtraction {
     @Override
     public boolean isMultiPartArchive(ArchiveFactory factory) {
         // rememver *.rar archives may be the start of a multiarchive, too
-        String[] patterns = new String[] { PA_R_T_0_9_RAR$, RAR$, _7Z_D, R_D2 };
+        String[] patterns = new String[] { PA_R_T_0_9_RAR$, RAR$, _7Z_D, R_D2, Z_D_$, ZIP$ };
 
         for (String p : patterns) {
             Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);

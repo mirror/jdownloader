@@ -156,6 +156,7 @@ public class CompiledFiletypeFilter {
         SevenZIP("7ZIP"),
         R_NUM("r\\d+"),
         NUM("\\d+"),
+        MultiZip("z\\d+"),
         ACE,
         TAR,
         GZ,
