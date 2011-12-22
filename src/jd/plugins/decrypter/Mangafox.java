@@ -22,11 +22,17 @@ public class Mangafox extends PluginForDecrypt {
         br.setFollowRedirects(true);
         String url = parameter.toString();
         br.getPage(url + "/1.html");
-        if (br.containsHTML("cannot be found|not available yet")) return null;
+        if (br.containsHTML("cannot be found|not available yet")) {
+            logger.warning("Invalid link or release not yet available, check in your browser: " + parameter);
+            return null;
+        }
 
         // We get the title
-        String title = br.getRegex("<title>(.+?) Page 1, Read").getMatch(0);
-        if (title == null) return null;
+        String title = br.getRegex("<title>(.*?) - Read (.*?) Online - Page 1</title>").getMatch(0);
+        if (title == null) {
+            logger.warning("Decrypter broken for: " + parameter);
+            return null;
+        }
 
         // We get the number of pages in the chapter
         int numberOfPages = Integer.parseInt(br.getRegex("of (\\d+)").getMatch(0));
@@ -38,7 +44,7 @@ public class Mangafox extends PluginForDecrypt {
         fp.setName(title);
         for (int i = 1; i <= numberOfPages; i++) {
             br.getPage(url + "/" + i + ".html");
-            String[][] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);\"><img src=\"(http://.+?(.[a-z]+))\" .+? id=\"image\"").getMatches();
+            String[][] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\"><img src=\"(http://.*?(.[a-z]+))\"").getMatches();
             String source = unformattedSource[0][0];
             String extension = unformattedSource[0][1];
 
