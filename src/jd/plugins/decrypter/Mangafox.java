@@ -19,12 +19,13 @@ public class Mangafox extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String url = parameter.toString();
         br.getPage(url + "/1.html");
         if (br.containsHTML("cannot be found|not available yet")) {
             logger.warning("Invalid link or release not yet available, check in your browser: " + parameter);
-            return null;
+            return decryptedLinks;
         }
 
         // We get the title
@@ -37,8 +38,6 @@ public class Mangafox extends PluginForDecrypt {
         // We get the number of pages in the chapter
         int numberOfPages = Integer.parseInt(br.getRegex("of (\\d+)").getMatch(0));
         progress.setRange(numberOfPages);
-
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // We load each page and retrieve the URL of the picture
         FilePackage fp = FilePackage.getInstance();
         fp.setName(title);

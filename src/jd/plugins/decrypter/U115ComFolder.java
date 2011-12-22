@@ -48,15 +48,15 @@ public class U115ComFolder extends PluginForDecrypt {
         String id = new Regex(parameter, "115\\.com/folder/([a-z0-9]{11})").getMatch(0);
         if (br.containsHTML(">文件夹提取码不存在<")) {
             logger.warning("Invalid URL: " + parameter);
-            return null;
+            return decryptedLinks;
         }
         if (br.containsHTML(">该文件夹下暂时没有分享文件。<")) {
             logger.warning("Empty folder: " + parameter);
-            return null;
+            return decryptedLinks;
         }
         // Set package name and prevent null field from creating plugin errors
         String fpName = br.getRegex("<i class=\"file\\-type tp\\-folder\"></i><span class=\"file\\-name\">(.*?)</span>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("desc:'分享好资源|   (.*?) http://").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("desc:\\'分享好资源\\|   (.*?) http://").getMatch(0);
         if (fpName == null) fpName = "Untitled";
 
         parsePage(decryptedLinks, id);
