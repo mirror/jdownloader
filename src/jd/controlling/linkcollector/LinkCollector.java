@@ -434,7 +434,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 String identifier = packageID + "_" + packageName + "_" + downloadFolder;
                 CrawledPackage pkg = packageMap.get(identifier);
                 if (pkg == null) {
-                    if (uID == LinkCrawler.PERMANENT_OFFLINE_ID) {
+                    if (LinkCrawler.PERMANENT_OFFLINE_ID == uID) {
                         if (permanentofflinePackage == null || permanentofflinePackage.getChildren().size() == 0) {
                             permanentofflinePackage = new CrawledPackage();
                             permanentofflinePackage.setCreated(link.getCreated());
@@ -443,8 +443,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                         add.add(link);
                         LinkCollector.this.addmoveChildren(permanentofflinePackage, add, -1);
-                    }
-                    if (packageID == LinkCrawler.PERMANENT_OFFLINE_ID.toString()) if (link.getLinkState() == LinkState.OFFLINE && LinkgrabberSettings.OFFLINE_PACKAGE_ENABLED.getValue()) {
+                    } else if (link.getLinkState() == LinkState.OFFLINE && LinkgrabberSettings.OFFLINE_PACKAGE_ENABLED.getValue()) {
                         if (offlinePackage == null || offlinePackage.getChildren().size() == 0) {
                             offlinePackage = new OfflineCrawledPackage();
                             offlinePackage.setCreated(link.getCreated());

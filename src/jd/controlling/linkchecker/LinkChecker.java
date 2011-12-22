@@ -109,7 +109,7 @@ public class LinkChecker<E extends CheckableLink> {
     }
 
     @SuppressWarnings("unchecked")
-    protected void linkChecked(CheckableLink link) {
+    protected void linkChecked(InternCheckableLink link) {
         if (link == null) return;
         boolean stopped = linksDone.incrementAndGet() == linksRequested.get();
         if (stopped) {
@@ -119,8 +119,8 @@ public class LinkChecker<E extends CheckableLink> {
             EVENTSENDER.fireEvent(new LinkCheckerEvent(this, LinkCheckerEvent.Type.STOPPED));
         }
         LinkCheckerHandler<E> h = handler;
-        if (h != null) {
-            h.linkCheckDone((E) link);
+        if (h != null && link.linkCheckAllowed()) {
+            h.linkCheckDone((E) link.getCheckableLink());
         }
     }
 
@@ -296,7 +296,7 @@ public class LinkChecker<E extends CheckableLink> {
                                              */
                                             link.getCheckableLink().getDownloadLink().getAvailableStatus(plg);
                                         }
-                                        link.getLinkChecker().linkChecked(link.getCheckableLink());
+                                        link.getLinkChecker().linkChecked(link);
                                     }
                                 }
                             }

@@ -70,7 +70,9 @@ public class LinkCrawler implements IOPermission {
 
                                                                        public int compare(Runnable o1, Runnable o2) {
                                                                            if (o1 == o2) return 0;
-                                                                           return Long.compare(((LinkCrawlerRunnable) o1).getAverageRuntime(), ((LinkCrawlerRunnable) o2).getAverageRuntime());
+                                                                           long l1 = ((LinkCrawlerRunnable) o1).getAverageRuntime();
+                                                                           long l2 = ((LinkCrawlerRunnable) o2).getAverageRuntime();
+                                                                           return (l1 < l2) ? -1 : ((l1 == l2) ? 0 : 1);
                                                                        }
 
                                                                    };
