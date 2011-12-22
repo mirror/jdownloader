@@ -362,9 +362,6 @@ public class FavIcons {
      * cause some hosts have fake favicon.ico with 1x1 size
      */
     public static BufferedImage downloadFavIcon(String host) {
-        if (host.contains("rapidshare")) {
-            int i = 1;
-        }
         BufferedImage ret = null;
         try {
             /* first try to get the FavIcon specified in FavIconTag */
