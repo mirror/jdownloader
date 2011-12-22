@@ -25,6 +25,31 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class LinkChecker<E extends CheckableLink> {
 
+    private static class InternCheckableLink {
+        protected CheckableLink                      link = null;
+        protected final int                          linkCheckerGeneration;
+        private LinkChecker<? extends CheckableLink> checker;
+
+        public InternCheckableLink(CheckableLink link, LinkChecker<? extends CheckableLink> checker) {
+            this.link = link;
+            this.linkCheckerGeneration = checker.checkerGeneration.get();
+            this.checker = checker;
+        }
+
+        public CheckableLink getCheckableLink() {
+            return this.link;
+        }
+
+        public boolean linkCheckAllowed() {
+            return this.linkCheckerGeneration == checker.checkerGeneration.get();
+        }
+
+        public LinkChecker<? extends CheckableLink> getLinkChecker() {
+            return checker;
+        }
+
+    }
+
     /* static variables */
     private static AtomicInteger                                                    CHECKER                = new AtomicInteger(0);
     private static AtomicInteger                                                    LINKCHECKER_THREAD_NUM = new AtomicInteger(0);
@@ -37,11 +62,12 @@ public class LinkChecker<E extends CheckableLink> {
     /* local variables for this LinkChecker */
     private AtomicLong                                                              linksRequested         = new AtomicLong(0);
     private AtomicLong                                                              linksDone              = new AtomicLong(0);
-    private HashMap<String, LinkedList<E>>                                          links2Check            = new HashMap<String, LinkedList<E>>();
+    private HashMap<String, LinkedList<InternCheckableLink>>                        links2Check            = new HashMap<String, LinkedList<InternCheckableLink>>();
     private boolean                                                                 forceRecheck           = false;
     private LinkCheckerHandler<E>                                                   handler                = null;
     private static int                                                              SPLITSIZE              = 80;
     private static LinkCheckerEventSender                                           EVENTSENDER            = new LinkCheckerEventSender();
+    protected AtomicInteger                                                         checkerGeneration      = new AtomicInteger(0);
 
     public static LinkCheckerEventSender getEventSender() {
         return EVENTSENDER;
@@ -73,8 +99,9 @@ public class LinkChecker<E extends CheckableLink> {
     }
 
     public void stopChecking() {
+        checkerGeneration.incrementAndGet();
         synchronized (this) {
-            for (LinkedList<E> values : links2Check.values()) {
+            for (LinkedList<InternCheckableLink> values : links2Check.values()) {
                 linksDone.addAndGet(values.size());
             }
             links2Check.clear();
@@ -117,12 +144,12 @@ public class LinkChecker<E extends CheckableLink> {
         boolean started = false;
         synchronized (this) {
             /* add link to list of link2Check */
-            LinkedList<E> map = links2Check.get(host);
+            LinkedList<InternCheckableLink> map = links2Check.get(host);
             if (map == null) {
-                map = new LinkedList<E>();
+                map = new LinkedList<InternCheckableLink>();
                 links2Check.put(host, map);
             }
-            map.add(link);
+            map.add(new InternCheckableLink(link, this));
             if (linksRequested.get() == linksDone.get()) started = true;
             linksRequested.incrementAndGet();
         }
@@ -196,43 +223,35 @@ public class LinkChecker<E extends CheckableLink> {
                     Browser br = new Browser();
                     while (true) {
                         /*
-                         * map to hold the current checkable links and their
-                         * linkchecker in this round
+                         * arraylist to hold the current checkable links
                          */
-                        HashMap<CheckableLink, ArrayList<LinkChecker<? extends CheckableLink>>> round = new HashMap<CheckableLink, ArrayList<LinkChecker<? extends CheckableLink>>>();
+                        ArrayList<InternCheckableLink> roundComplete = new ArrayList<InternCheckableLink>();
                         try {
                             synchronized (LOCK) {
                                 ArrayList<LinkChecker<? extends CheckableLink>> map = LINKCHECKER.get(threadHost);
                                 if (map != null) {
                                     for (LinkChecker<? extends CheckableLink> lc : map) {
                                         synchronized (lc) {
-                                            LinkedList<? extends CheckableLink> map2 = lc.links2Check.get(threadHost);
+                                            LinkedList<InternCheckableLink> map2 = lc.links2Check.get(threadHost);
                                             if (map2 != null) {
-                                                for (CheckableLink link : map2) {
-                                                    ArrayList<LinkChecker<? extends CheckableLink>> map3 = round.get(link);
-                                                    if (map3 == null) {
-                                                        map3 = new ArrayList<LinkChecker<? extends CheckableLink>>();
-                                                        map3.add(lc);
-                                                        round.put(link, map3);
-                                                    } else {
-                                                        map3.add(lc);
-                                                    }
+                                                roundComplete.addAll(map2);
+                                                for (InternCheckableLink link : map2) {
                                                     if (lc.isForceRecheck()) {
                                                         /*
                                                          * linkChecker instance
                                                          * is set to
                                                          * forceRecheck
                                                          */
-                                                        link.getDownloadLink().setAvailableStatus(AvailableStatus.UNCHECKED);
+                                                        link.getCheckableLink().getDownloadLink().setAvailableStatus(AvailableStatus.UNCHECKED);
                                                     }
+                                                    /*
+                                                     * just clear the map to
+                                                     * allow fast adding of new
+                                                     * links to the given
+                                                     * linkChecker instance
+                                                     */
+                                                    map2.clear();
                                                 }
-                                                /*
-                                                 * just clear the map to allow
-                                                 * fast adding of new links to
-                                                 * the given linkChecker
-                                                 * instance
-                                                 */
-                                                map2.clear();
                                             }
                                         }
                                     }
@@ -243,23 +262,19 @@ public class LinkChecker<E extends CheckableLink> {
                                     LINKCHECKER.remove(threadHost);
                                 }
                             }
-                            /* build map to get CheckableLink from DownloadLink */
-                            HashMap<DownloadLink, CheckableLink> dlLink2checkLink = new HashMap<DownloadLink, CheckableLink>();
-                            ArrayList<DownloadLink> links2Check = new ArrayList<DownloadLink>();
-                            for (CheckableLink check : round.keySet()) {
-                                dlLink2checkLink.put(check.getDownloadLink(), check);
-                                links2Check.add(check.getDownloadLink());
-                            }
-                            int n = links2Check.size();
+                            int n = roundComplete.size();
                             for (int i = 0; i < n; i += SPLITSIZE) {
-                                List<DownloadLink> checks = links2Check.subList(i, Math.min(n, i + SPLITSIZE));
-                                if (checks.size() > 0) {
+                                List<InternCheckableLink> roundSplit = roundComplete.subList(i, Math.min(n, i + SPLITSIZE));
+                                if (roundSplit.size() > 0) {
                                     stopDelay = 1;
-                                    DownloadLink linksList[] = checks.toArray(new DownloadLink[checks.size()]);
+                                    ArrayList<DownloadLink> massLinkCheck = new ArrayList<DownloadLink>(roundSplit.size());
+                                    for (InternCheckableLink link : roundSplit) {
+                                        if (link.linkCheckAllowed()) massLinkCheck.add(link.getCheckableLink().getDownloadLink());
+                                    }
                                     /* now we check the links */
-                                    if (plg == null) {
+                                    if (plg == null && massLinkCheck.size() > 0) {
                                         /* create plugin if not done yet */
-                                        LazyHostPlugin lazyp = HostPluginController.getInstance().get(linksList[0].getDefaultPlugin().getHost());
+                                        LazyHostPlugin lazyp = HostPluginController.getInstance().get(massLinkCheck.get(0).getDefaultPlugin().getHost());
                                         plg = lazyp.newInstance();
                                         plg.setBrowser(br);
                                         plg.setLogger(new JDPluginLogger(lazyp.getDisplayName() + ":LinkCheck"));
@@ -267,25 +282,21 @@ public class LinkChecker<E extends CheckableLink> {
                                     }
                                     try {
                                         /* try mass link check */
-                                        plg.checkLinks(linksList);
+                                        plg.checkLinks(massLinkCheck.toArray(new DownloadLink[massLinkCheck.size()]));
                                     } catch (final Throwable e) {
                                         Log.exception(e);
+                                    } finally {
+                                        massLinkCheck = null;
                                     }
-                                    for (DownloadLink link : linksList) {
-                                        /*
-                                         * this will check the link, if not
-                                         * already checked
-                                         */
-                                        link.getAvailableStatus(plg);
-                                        /*
-                                         * notify all listener of this checkable
-                                         * link
-                                         */
-                                        CheckableLink checkable = dlLink2checkLink.get(link);
-                                        ArrayList<LinkChecker<? extends CheckableLink>> listeners = round.get(checkable);
-                                        for (LinkChecker<? extends CheckableLink> listener : listeners) {
-                                            listener.linkChecked(checkable);
+                                    for (InternCheckableLink link : roundSplit) {
+                                        if (link.linkCheckAllowed() && plg != null) {
+                                            /*
+                                             * this will check the link, if not
+                                             * already checked
+                                             */
+                                            link.getCheckableLink().getDownloadLink().getAvailableStatus(plg);
                                         }
+                                        link.getLinkChecker().linkChecked(link.getCheckableLink());
                                     }
                                 }
                             }
