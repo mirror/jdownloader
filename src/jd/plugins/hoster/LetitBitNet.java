@@ -16,13 +16,15 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -155,65 +157,37 @@ public class LetitBitNet extends PluginForHost {
         }
         if (down == null || down.getAction() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String captchaId = down.getVarsMap().get("uid");
-        String captchaurl = null;
-        URLConnectionAdapter con = null;
-        if (br.containsHTML("cap\\.php")) {
-            if (captchaId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            captchaurl = "http://letitbit.net/cap.php?jpg=" + captchaId + ".jpg";
-            con = br.openGetConnection(captchaurl);
-            File file = this.getLocalCaptchaFile();
-            Browser.download(file, con);
-            con.disconnect();
-            String code = getCaptchaCode(file, downloadLink);
-            down.put("cap", code);
-        } else {
-            captchaId = null;
-        }
         down.setMethod(Form.MethodType.POST);
         if (captchaId != null) down.put("uid2", captchaId);
+        final String serverPart = new Regex(down.getAction(), "(http://s\\d+\\.letitbit\\.net)/.*?").getMatch(0);
+        if (serverPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(down);
-        url = br.getRegex("<frame src=\"http://[a-z0-9A-Z\\.]*?letitbit.net/tmpl/tmpl_frame_top.php\\?link=(.*?)\"").getMatch(0);
-        if (url == null || url.equals("")) {
-            /* check for another waiting page , eg in russia */
-            Form[] allforms2 = br.getForms();
-            boolean skipfirst2 = true;
-            Form down2 = null;
-            for (Form singleform : allforms2) {
-                if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && singleform.getAction().contains("download")) {
-                    if (skipfirst2 == false) {
-                        skipfirst2 = true;
-                        continue;
-                    }
-                    down2 = singleform;
-                    break;
-                }
-            }
-            if (down2 != null) {
-                br.submitForm(down2);
-                down = down2;
-            }
-            // Example: http://s8.letitbit.net/ajax/download3.php
-            String damnAction = down.getAction().replace("/download", "/ajax/download");
-            // Ticket Time
-            int waitThat = 60;
-            String time = br.getRegex("seconds = (\\d+);").getMatch(0);
-            if (time == null) time = br.getRegex("Wait for Your turn: <span id=\"seconds\" style=\"font\\-size:18px\">(\\d+)</span> seconds").getMatch(0);
-            if (time != null) {
-                logger.info("Waittime found, waittime is " + time + " seconds.");
-                waitThat = Integer.parseInt(time);
-            }
-            sleep((waitThat + 5) * 1001, downloadLink);
-            prepareBrowser(br);
-            /*
-             * this causes issues in 09580 stable, no workaround known, please
-             * update to latest jd version
-             */
-            br.postPage(damnAction, "");
-            /* letitbit and vipfile share same hosting server ;) */
-            /* because there can be another link to a downlodmanager first */
-            url = br.toString();
+        int wait = 60;
+        String waittime = br.getRegex("id=\"seconds\" style=\"font\\-size:18px\">(\\d+)</span>").getMatch(0);
+        if (waittime != null) {
+            logger.info("Waittime found, waittime is " + waittime + " seconds.");
+            wait = Integer.parseInt(waittime);
         }
-        if (url == null || url.equals("") || !url.startsWith("http://") || url.length() > 1000) {
+        sleep((wait + 5) * 1001l, downloadLink);
+        prepareBrowser(br);
+        /*
+         * this causes issues in 09580 stable, no workaround known, please
+         * update to latest jd version
+         */
+        br.postPage(serverPart + "/ajax/download3.php", "");
+        if (!br.toString().equals("1")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DecimalFormat df = new DecimalFormat("0000");
+        Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        for (int i = 0; i <= 5; i++) {
+            String code = getCaptchaCode("lol", serverPart + "/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
+            br2.postPage(serverPart + "/ajax/check_captcha.php", "code=" + Encoding.urlEncode(code));
+            url = br2.toString();
+            if (url.length() < 2 || url.contains("No htmlCode read")) continue;
+            break;
+        }
+        if (url.length() < 2 || url.contains("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (!url.startsWith("http://") || url.length() > 1000) {
             logger.warning("url couldn't be found!");
             logger.severe(br.toString());
             debugSwitch = true;
@@ -225,7 +199,7 @@ public class LetitBitNet extends PluginForHost {
         url = url.replaceAll("%0D%0A", "");
         url = url.trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
-        con = dl.getConnection();
+        URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() == 404) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, 5 * 60 * 1001);

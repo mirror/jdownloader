@@ -39,7 +39,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://[\\w\\.]*?4shared(-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio|mp3)/.+?/.*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio|mp3|office)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
     private static String       agent        = RandomUserAgent.generate();
 
@@ -154,7 +154,13 @@ public class FourSharedCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String pass = handlePassword(downloadLink);
         String url = null;
-        if (downloadLink.getStringProperty("fastDisabled") == null) url = getDllink();
+        if (downloadLink.getStringProperty("fastDisabled") == null) {
+            url = getDllink();
+            if (url != null && url.contains("4shared_Desktop_")) {
+                downloadLink.setProperty("fastDisabled", "true");
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
         // If file isn't available for freeusers we can still try to get the
         // streamlink
         if (br.containsHTML("In order to download files bigger that 500MB you need to login at 4shared") && url == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.foursharedcom.only4premium", "Files over 500MB are only downloadable for premiumusers!"));
