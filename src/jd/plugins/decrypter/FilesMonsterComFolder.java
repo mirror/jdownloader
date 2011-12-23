@@ -43,7 +43,7 @@ public class FilesMonsterComFolder extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML(">Folder does not exist<")) {
             logger.warning("Invalid URL: " + parameter);
-            return null;
+            return decryptedLinks;
         }
 
         String fpName = br.getRegex(">Folder: (.*?)</span>").getMatch(0);

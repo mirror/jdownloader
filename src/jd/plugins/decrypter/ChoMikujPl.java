@@ -48,6 +48,12 @@ public class ChoMikujPl extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = Encoding.htmlDecode(param.toString());
+        String problem = null;
+        try {
+            problem = parameter.substring(parameter.lastIndexOf(","));
+        } catch (Exception e) {
+        }
+        if (problem != null && problem.endsWith(".avi")) parameter = parameter.replace(problem, "");
         // The message used on errors in this plugin
         String error = "Error while decrypting link: " + parameter;
         // If a link is password protected we have to save and use those data in
@@ -129,12 +135,6 @@ public class ChoMikujPl extends PluginForDecrypt {
             br.postPage(parameter, postThatData);
             // Every full page has 30 links (pictures)
             boolean filenameIncluded = true;
-            boolean filenameIncludedVideo = true;
-            String[][] videoIDs = null;
-            // Only try to find videolinks if indicator is true, without
-            // checking this we get normal links as video links which will
-            // result in out of date errors
-            if (br.containsHTML(VIDEOTEXT)) videoIDs = br.getRegex("<div style=\"margin:10px\">[\t\n\r ]+<div style=\"padding: 10px;\">[\t\n\r ]+<a href=\".{1,300}/([^/\"\\'<>]+),\\d+([^/\"\\'<>]+)\" onclick=\"return ch\\.Download.dnFile\\((\\d+)\\);\"").getMatches();
             String[][] fileIds = br.getRegex("class=\"FileName\" onclick=\"return ch\\.Download\\.dnFile\\((.*?)\\);\"><b>(.{1,300})</b>(.{1,300})</a>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<table cellpadding=\"0\" cellspacing=\"3\" class=\"fInfoTable\">[\t\n\r ]+<tr>[\t\n\r ]+<td><div class=\"fInfoDiv\">(.{1,20})</div></td>").getMatches();
             if (fileIds == null || fileIds.length == 0) {
                 filenameIncluded = false;
@@ -144,11 +144,11 @@ public class ChoMikujPl extends PluginForDecrypt {
                 }
             }
             String[][] allFolders = br.getRegex("class=\"folders\" cellspacing=\"6\" cellpadding=\"0\" border=\"0\">[\t\n\r ]+<tr>[\t\n\r ]+<td><a href=\"(.*?)\" onclick=\"return Ts\\(\\'\\d+\\'\\)\">(.*?)</span>").getMatches();
-            if (videoIDs == null || videoIDs.length == 0) {
-                filenameIncludedVideo = false;
-                videoIDs = br.getRegex("ShowVideo\\.aspx\\?id=(\\d+)\\'").getMatches();
-            }
-            if ((fileIds == null || fileIds.length == 0) && (allFolders == null || allFolders.length == 0) && (videoIDs == null || videoIDs.length == 0)) {
+            /**
+             * Old regex to get video IDs (IDs only): videoIDs =
+             * br.getRegex("ShowVideo\\.aspx\\?id=(\\d+)\\'").getMatches();
+             */
+            if ((fileIds == null || fileIds.length == 0) && (allFolders == null || allFolders.length == 0)) {
                 // If the last page only contains a file or fileS the regexes
                 // don't work but the decrypter isn't broken so the user should
                 // get the links!
@@ -159,26 +159,6 @@ public class ChoMikujPl extends PluginForDecrypt {
                 logger.warning(error);
                 return null;
             }
-            if (videoIDs != null && videoIDs.length != 0) {
-                for (String videoID[] : videoIDs) {
-                    String vid;
-                    if (filenameIncludedVideo)
-                        vid = videoID[2];
-                    else
-                        vid = videoID[0];
-
-                    String finalLink = String.format("&id=%s&gallerylink=%s&", vid, param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
-                    DownloadLink dl = createDownloadlink(finalLink);
-                    if (filenameIncludedVideo) {
-                        dl.setFinalFileName(Encoding.htmlDecode(videoID[0] + videoID[1]));
-                        dl.setAvailable(true);
-                    } else {
-                        dl.setName(String.valueOf(new Random().nextInt(1000000)));
-                    }
-                    dl.setProperty("video", "true");
-                    decryptedLinks.add(dl);
-                }
-            }
             if (fileIds != null && fileIds.length != 0) {
                 for (String[] id : fileIds) {
                     String finalLink = String.format("&id=%s&gallerylink=%s&", id[0], param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
@@ -187,13 +167,18 @@ public class ChoMikujPl extends PluginForDecrypt {
                         dl.setName(id[1].trim() + id[2].trim());
                         dl.setDownloadSize(SizeFormatter.getSize(id[3].replace(",", ".")));
                         dl.setAvailable(true);
+                        /**
+                         * If the link is a video it needs other
+                         * downloadhandling
+                         */
+                        if (id[2].trim().equals(".avi")) dl.setProperty("video", "true");
                     } else {
                         dl.setName(String.valueOf(new Random().nextInt(1000000)));
                     }
                     if (saveLink != null && savePost != null && password != null) {
                         dl.setProperty("savedlink", saveLink);
                         dl.setProperty("savedpost", savePost);
-                        // Not needed yet but might me useful for the future
+                        // Not needed yet but might me useful in the future
                         dl.setProperty("password", password);
                     }
                     decryptedLinks.add(dl);
