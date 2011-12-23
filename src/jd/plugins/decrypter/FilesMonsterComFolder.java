@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2011  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -16,17 +16,19 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://[\\w\\.]*?filesmonster\\.com/folders\\.php\\?fid=[0-9a-zA-Z_-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://[\\w\\.]*?filesmonster\\.com/folders\\.php\\?fid=([0-9a-zA-Z_-]{22}|\\d+)" }, flags = { 0 })
 public class FilesMonsterComFolder extends PluginForDecrypt {
 
     public FilesMonsterComFolder(PluginWrapper wrapper) {
@@ -36,28 +38,47 @@ public class FilesMonsterComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        FilePackage fp = FilePackage.getInstance();
+        br.setFollowRedirects(false);
+        br.setCookiesExclusive(true);
         br.getPage(parameter);
-        String fpName = br.getRegex("class=\"xx_big em arial lightblack\">Folder:(.*?)</span>").getMatch(0);
-        if (fpName == null) {
-            fpName = br.getRegex("class=\"xx_big\">Folder:(.*?)</span>").getMatch(0);
+        if (br.containsHTML(">Folder does not exist<")) {
+            logger.warning("Invalid URL: " + parameter);
+            return null;
         }
-        if (fpName == null) {
-            fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        }
-        if (fpName != null) fp.setName(fpName);
-        String[] links = br.getRegex("green em\" href=\"(.*?)\"").getColumn(0);
-        if (links.length == 0) links = br.getRegex("green\" href=\"(.*?)\"").getColumn(0);
-        if (links.length == 0) return null;
-        for (String dl : links) {
-            decryptedLinks.add(createDownloadlink(dl));
-        }
+
+        String fpName = br.getRegex(">Folder: (.*?)</span>").getMatch(0);
+
+        parsePage(decryptedLinks);
+        parseNextPage(decryptedLinks, parameter);
+
         if (fpName != null) {
-            fpName = fpName.trim();
+            FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
 
+    private void parsePage(ArrayList<DownloadLink> ret) {
+        String[] links = br.getRegex("<a class=\"green\" href=\"(http://[\\w\\.\\d]*?filesmonster\\.com/.*?)\">").getColumn(0);
+        if (links == null || links.length == 0) return;
+        if (links != null && links.length != 0) {
+            for (String dl : links)
+                ret.add(createDownloadlink(dl));
+        }
+    }
+
+    private boolean parseNextPage(ArrayList<DownloadLink> ret, String parameter) throws IOException {
+        String firstpanel = new Regex(parameter, "</div>(.*?)<table class=\"folder\\_files\"").getMatch(0);
+        String nextPage[] = new Regex(firstpanel, "\\&nbsp\\;<a href=\\'(folders.php\\?fid=.*?)\\'").getColumn(0);
+        if (nextPage == null || nextPage.length == 0) return false;
+        if (nextPage != null && nextPage.length != 0) {
+            for (String page : nextPage) {
+                br.getPage("http://filesmonster.com/" + page);
+                parsePage(ret);
+                return true;
+            }
+        }
+        return false;
+    }
 }
