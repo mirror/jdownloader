@@ -9,7 +9,6 @@ import java.util.zip.ZipException;
 
 import javax.swing.JFrame;
 
-import jd.JDInitFlags;
 import jd.gui.swing.SwingGui;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
@@ -160,7 +159,6 @@ public class JDUpdater extends Updater implements Runnable {
      */
     private JDUpdater() {
         super(new UpdaterHttpClientImpl(), new Options());
-        getOptions().setDebug(JDInitFlags.SWITCH_DEBUG);
 
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
@@ -195,16 +193,15 @@ public class JDUpdater extends Updater implements Runnable {
 
             public void onStateExit(UpdaterState arg0) {
                 if (arg0 == stateFilter) {
-                    if (getOptions().isDebug()) {
-                        Log.L.info("Files to Install:");
-                        Log.L.info(JSonStorage.toString(getFilesToInstall()));
-                        Log.L.info("Files to Download:");
-                        Log.L.info(JSonStorage.toString(getUpdates()));
 
-                        Log.L.info("Files to Remove:");
-                        Log.L.info(JSonStorage.toString(getFilesToRemove()));
+                    Log.L.finer("Files to Install:");
+                    Log.L.finer(JSonStorage.toString(getFilesToInstall()));
+                    Log.L.finer("Files to Download:");
+                    Log.L.finer(JSonStorage.toString(getUpdates()));
 
-                    }
+                    Log.L.finer("Files to Remove:");
+                    Log.L.finer(JSonStorage.toString(getFilesToRemove()));
+
                 } else if (arg0 == stateError) {
                     // Exception exc = getException();
 

@@ -49,6 +49,9 @@ import jd.nutils.SimpleFTP;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.app.launcher.parameterparser.CommandSwitch;
+import org.appwork.app.launcher.parameterparser.CommandSwitchListener;
+import org.appwork.app.launcher.parameterparser.ParameterParser;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
@@ -95,6 +98,7 @@ public class Main {
 
     public static SingleReachableState INIT_COMPLETE              = new SingleReachableState("INIT_COMPLETE");
     public static SingleReachableState GUI_COMPLETE               = new SingleReachableState("GUI_COMPLETE");
+    private static ParameterParser     PARAMETERS;
     public final static long           startup                    = System.currentTimeMillis();
 
     // private static JSonWrapper webConfig;
@@ -134,20 +138,6 @@ public class Main {
             e.printStackTrace();
         }
 
-        /*
-         * TODO: Pfade müssen nicht absolut angegeben werden. Detmud: verstehe
-         * diesen Codezeilen nicht, wenn wer weiß was sie sollen bitte
-         * defenieren
-         */
-        if (System.getProperty("java.version").startsWith("1.5")) {
-            final File info15 = JDUtilities.getResourceFile("../../info_15.plist");
-            final File info = JDUtilities.getResourceFile("../../info.plist");
-            if (info15.exists()) {
-                if (info.delete()) {
-                    info15.renameTo(JDUtilities.getResourceFile("../../info.plist"));
-                }
-            }
-        }
     }
 
     public static void statics() {
@@ -218,28 +208,40 @@ public class Main {
             Main.LOG.finer(key + "=" + pr.get(key));
         }
         Main.LOG.info("Start JDownloader");
+        PARAMETERS = new ParameterParser(args);
+        PARAMETERS.getEventSender().addListener(new CommandSwitchListener() {
 
-        for (final String p : args) {
-            if (p.equalsIgnoreCase("-forcelog")) {
-                JDInitFlags.SWITCH_FORCELOG = true;
-                Main.LOG.info("FORCED LOGGING Modus aktiv");
-            } else if (p.equalsIgnoreCase("-debug")) {
-                JDInitFlags.SWITCH_DEBUG = true;
-                Main.LOG.info("DEBUG Modus aktiv");
-            } else if (p.equalsIgnoreCase("-brdebug")) {
-                JDInitFlags.SWITCH_DEBUG = true;
-                Browser.setGlobalVerbose(true);
-                Main.LOG.info("Browser DEBUG Modus aktiv");
+            @Override
+            public void executeCommandSwitch(CommandSwitch event) {
 
-            } else if (p.equalsIgnoreCase("-scan") || p.equalsIgnoreCase("--scan")) {
-                JDInitFlags.REFRESH_CACHE = true;
-            } else if (p.equalsIgnoreCase("-trdebug")) {
-                JDL.DEBUG = true;
-                Main.LOG.info("Translation DEBUG Modus aktiv");
-            } else if (p.equalsIgnoreCase("-rfu")) {
-                JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
+                if (event.getSwitchCommand().equalsIgnoreCase("forcelog")) {
+                    JDInitFlags.SWITCH_FORCELOG = true;
+                    Main.LOG.info("FORCED LOGGING Modus aktiv");
+                }
+                if (event.getSwitchCommand().equalsIgnoreCase("debug")) {
+                    JDInitFlags.SWITCH_DEBUG = true;
+                    Main.LOG.info("DEBUG Modus aktiv");
+                }
+
+                if (event.getSwitchCommand().equalsIgnoreCase("brdebug")) {
+                    JDInitFlags.SWITCH_DEBUG = true;
+                    Browser.setGlobalVerbose(true);
+                    Main.LOG.info("Browser DEBUG Modus aktiv");
+
+                }
+                if (event.getSwitchCommand().equalsIgnoreCase("scan") || event.getSwitchCommand().equalsIgnoreCase("rfu")) {
+                    JDInitFlags.REFRESH_CACHE = true;
+                }
+                if (event.getSwitchCommand().equalsIgnoreCase("trdebug")) {
+                    JDL.DEBUG = true;
+                    Main.LOG.info("Translation DEBUG Modus aktiv");
+                }
+                if (event.getSwitchCommand().equalsIgnoreCase("rfu")) {
+                    JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
+                }
             }
-        }
+        });
+        PARAMETERS.parse();
         if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
             JDInitFlags.SWITCH_DEBUG = true;
         }
