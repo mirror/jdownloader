@@ -51,17 +51,20 @@ public class RedTubeCom extends PluginForHost {
         if (fileName == null) fileName = br.getRegex("<title>(.*?)- RedTube - Free Porn Videos</title>").getMatch(0);
         if (fileName != null) link.setName(fileName.trim() + ".flv");
         br.setFollowRedirects(true);
-        dlink = br.getRegex("hashlink=(http.*?)\"").getMatch(0);
+        dlink = br.getRegex("html5_vid.*?source src=\"(http.*?)(\"|%3D%22)").getMatch(0);
+        if (dlink == null) dlink = br.getRegex("flv_h264_url=(http.*?)(\"|%3D%22)").getMatch(0);
         if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlink = Encoding.urlDecode(dlink, true);
         try {
             if (!br.openGetConnection(dlink).getContentType().contains("html")) {
                 link.setDownloadSize(br.getHttpConnection().getLongContentLength());
-                br.getHttpConnection().disconnect();
                 return AvailableStatus.TRUE;
             }
         } finally {
-            if (br.getHttpConnection() != null) br.getHttpConnection().disconnect();
+            try {
+                br.getHttpConnection().disconnect();
+            } catch (final Throwable e) {
+            }
         }
 
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
