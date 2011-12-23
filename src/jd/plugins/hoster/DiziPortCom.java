@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -77,7 +78,13 @@ public class DiziPortCom extends PluginForHost {
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".mp4";
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        String id = new Regex(downloadLink.getDownloadURL(), "http://(www\\.)?diziport\\.com/.*?/.*?/(\\d+)?").getMatch(1);
+        if (id == null) {
+            id = "";
+        } else {
+            id = "_" + id;
+        }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + id + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

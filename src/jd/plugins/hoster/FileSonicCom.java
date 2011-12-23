@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.event.ControlEvent;
@@ -261,7 +263,17 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
             br.setFollowRedirects(true);
             br.getPage("http://api.filesonic.com/utility?method=getFilesonicDomainForCurrentIp");
             String domain = br.getRegex("response>.*?filesonic(\\..*?)</resp").getMatch(0);
-            if (domain != null) { return "http://www.filesonic" + domain; }
+            if (domain != null) {
+                String check = "http://www.filesonic" + domain;
+                br.setFollowRedirects(false);
+                br.getPage(check);
+                if (br.getRedirectLocation() != null) {
+                    String ret = new Regex(br.getRedirectLocation(), "(https?://.*?)(/|$)").getMatch(0);
+                    if (ret != null) return ret;
+                    return br.getRedirectLocation();
+                }
+                return check;
+            }
         } catch (final Throwable e) {
             logger.severe(e.getMessage());
         }
@@ -316,6 +328,105 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         return 500;
     }
 
+    public String handleFreeJson(final DownloadLink downloadLink) throws Exception {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (JDF-DEV; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10");
+        String fileID = getPureID(downloadLink);
+        br.setFollowRedirects(true);
+        br.getPage(this.getDomain() + "/file/" + fileID + "?start=1");
+        HashMap<String, String> step = parseJSon(br);
+        if ("ON_PAGE_TIMER".equalsIgnoreCase(step.get("result"))) {
+            /* we have to wait some time */
+            String timer = step.get("timer");
+            long time = 30 * 1000l;
+            if (timer != null) time = Long.parseLong(timer) * 1000l;
+            sleep(time, downloadLink);
+            step.remove("result");
+            step.remove("timer");
+            Form form = new Form();
+            form.setAction(this.getDomain() + "/file/" + fileID + "?start=1");
+            form.setMethod(MethodType.POST);
+            for (String key : step.keySet()) {
+                form.put(key, step.get(key));
+            }
+            br.submitForm(form);
+        }
+        step = parseJSon(br);
+        if ("PASSWORD".equalsIgnoreCase(step.get("result"))) {
+            /* password handling */
+            String passCode = null;
+            int tries = 0;
+            while ("PASSWORD".equalsIgnoreCase(step.get("result"))) {
+                /* password handling */
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput(null, downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                Form form = new Form();
+                form.setAction(this.getDomain() + "/file/" + fileID + "?start=1");
+                form.setMethod(MethodType.POST);
+                form.put("passwd", Encoding.urlEncode(passCode));
+                br.submitForm(form);
+                if (tries++ >= 5) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Password Missing"); }
+                step = parseJSon(br);
+            }
+            if (passCode != null) {
+                downloadLink.setProperty("pass", passCode);
+            }
+        }
+        if ("CAPTCHA".equalsIgnoreCase(step.get("result"))) {
+            /* captcha handling */
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            // TODO: Remove after MAJOR (NIGHTLY) update
+            final String id = step.get("captchapublickey");
+            rc.setId(id);
+            Form rcForm = new Form();
+            rcForm.setMethod(MethodType.POST);
+            rcForm.setAction(this.getDomain() + "/file/" + fileID + "?start=1");
+            rc.setForm(rcForm);
+            rc.load();
+            for (int i = 0; i <= 5; i++) {
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                rc.setCode(c);
+                step = parseJSon(br);
+                if ("CAPTCHA".equalsIgnoreCase(step.get("result"))) {
+                    rc.reload();
+                    continue;
+                }
+                break;
+            }
+        }
+        String url = step.get("link");
+        if (url != null) {
+            if (url.startsWith("http")) return url;
+            return "http://" + url;
+        }
+        if ("Timer".equalsIgnoreCase(step.get("result"))) {
+            String timer = step.get("countdowndelay");
+            long time = 15 * 60 * 1000l;
+            if (timer != null) time = Long.parseLong(timer) * 1000l;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, time);
+        }
+        if ("ERROR_OVER_SIZE".equalsIgnoreCase(step.get("result"))) { throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only file. Buy Premium Account"); }
+        if ("ERROR_PREMIUM_ONLY".equalsIgnoreCase(step.get("result"))) { throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only file. Buy Premium Account"); }
+        if ("ERROR_PARALLEL".equalsIgnoreCase(step.get("result"))) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP already loading!", 15 * 60 * 1000l); }
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    private HashMap<String, String> parseJSon(Browser br) {
+        if (br == null) return null;
+        HashMap<String, String> r = new HashMap<String, String>();
+        String rets[][] = br.getRegex("\"(.*?)\":(\")?(.*?)(\"|,|}|$| )").getMatches();
+        if (rets == null) return null;
+        for (String[] ret : rets) {
+            r.put(ret[0].toLowerCase(Locale.ENGLISH), ret[2].replaceAll("\\\\/", "/"));
+        }
+        return r;
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         String downloadUrl = null;
@@ -334,99 +445,103 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         }
         this.requestFileInformation(downloadLink);
         br.setCookie(getDomain(), "lang", "en");
-        this.br.getPage(downloadLink.getDownloadURL());
-        if (this.br.getRedirectLocation() != null) {
-            this.br.getPage(this.br.getRedirectLocation());
-        }
-        passCode = null;
-
-        final String freeDownloadLink = this.br.getRegex(".*href=\"(.*?start=1.*?)\"").getMatch(0);
-        // this is an ajax call
-        Browser ajax = this.br.cloneBrowser();
-        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        ajax.getPage(freeDownloadLink);
-
-        this.errorHandling(downloadLink, ajax);
-        this.br.setFollowRedirects(true);
-        // download is ready already
-        downloadUrl = getDownloadURL(ajax);
+        downloadUrl = handleFreeJson(downloadLink);
         if (downloadUrl == null) {
-
-            // downloadUrl =
-            // this.br.getRegex("downloadUrl = \"(http://.*?)\"").getMatch(0);
-            // if (downloadUrl == null) { throw new
-            // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            if (ajax.containsHTML("This file is available for premium users only.")) {
-
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only file. Buy Premium Account"); }
-            final String countDownDelay = ajax.getRegex("countDownDelay = (\\d+)").getMatch(0);
-            if (countDownDelay != null) {
-                /*
-                 * we have to wait a little longer than needed cause its not
-                 * exactly the same time
-                 */
-                if (Long.parseLong(countDownDelay) > 300) {
-
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay) * 1001l); }
-                this.sleep(Long.parseLong(countDownDelay) * 1000, downloadLink);
-                final String tm = ajax.getRegex("name='tm' value='(.*?)' />").getMatch(0);
-                final String tm_hash = ajax.getRegex("name='tm_hash' value='(.*?)' />").getMatch(0);
-                final Form form = new Form();
-                form.setMethod(Form.MethodType.POST);
-                form.setAction(downloadLink.getDownloadURL() + "?start=1");
-                form.put("tm", tm);
-                form.put("tm_hash", tm_hash);
-                ajax = this.br.cloneBrowser();
-                ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                ajax.submitForm(form);
-                this.errorHandling(downloadLink, ajax);
+            /* fallback to normal api */
+            this.br.getPage(downloadLink.getDownloadURL());
+            if (this.br.getRedirectLocation() != null) {
+                this.br.getPage(this.br.getRedirectLocation());
             }
-            int tries = 0;
-            while (ajax.containsHTML("Please Enter Password")) {
-                /* password handling */
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput(null, downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                final Form form = ajax.getForm(0);
-                form.put("passwd", Encoding.urlEncode(passCode));
-                ajax = this.br.cloneBrowser();
-                ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                ajax.submitForm(form);
-                if (tries++ >= 5) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Password Missing"); }
+            passCode = null;
 
-            }
-            if (ajax.containsHTML(RECAPTCHATEXT)) {
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ajax);
-                // TODO: Remove after MAJOR (NIGHTLY) update
-                final String id = ajax.getRegex("Recaptcha\\.create\\(\"([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-                rc.setId(id);
-                Form rcForm = new Form();
-                rcForm.setMethod(MethodType.POST);
-                rcForm.setAction(freeDownloadLink);
-                rc.setForm(rcForm);
-                rc.load();
-                for (int i = 0; i <= 5; i++) {
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, downloadLink);
-                    rc.setCode(c);
-                    if (ajax.containsHTML(RECAPTCHATEXT)) {
-                        rc.reload();
-                        continue;
-                    }
-                    break;
-                }
-                if (ajax.containsHTML(RECAPTCHATEXT)) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-            }
+            final String freeDownloadLink = this.br.getRegex(".*href=\"(.*?start=1.*?)\"").getMatch(0);
+            // this is an ajax call
+            Browser ajax = this.br.cloneBrowser();
+            ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            ajax.getPage(freeDownloadLink);
 
+            this.errorHandling(downloadLink, ajax);
+            this.br.setFollowRedirects(true);
+            // download is ready already
             downloadUrl = getDownloadURL(ajax);
-        }
-        if (downloadUrl == null) {
-            logger.severe(ajax.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (downloadUrl == null) {
+
+                // downloadUrl =
+                // this.br.getRegex("downloadUrl = \"(http://.*?)\"").getMatch(0);
+                // if (downloadUrl == null) { throw new
+                // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (ajax.containsHTML("This file is available for premium users only.")) {
+
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only file. Buy Premium Account"); }
+                final String countDownDelay = ajax.getRegex("countDownDelay = (\\d+)").getMatch(0);
+                if (countDownDelay != null) {
+                    /*
+                     * we have to wait a little longer than needed cause its not
+                     * exactly the same time
+                     */
+                    if (Long.parseLong(countDownDelay) > 300) {
+
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay) * 1001l); }
+                    this.sleep(Long.parseLong(countDownDelay) * 1000, downloadLink);
+                    final String tm = ajax.getRegex("name='tm' value='(.*?)' />").getMatch(0);
+                    final String tm_hash = ajax.getRegex("name='tm_hash' value='(.*?)' />").getMatch(0);
+                    final Form form = new Form();
+                    form.setMethod(Form.MethodType.POST);
+                    form.setAction(downloadLink.getDownloadURL() + "?start=1");
+                    form.put("tm", tm);
+                    form.put("tm_hash", tm_hash);
+                    ajax = this.br.cloneBrowser();
+                    ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    ajax.submitForm(form);
+                    this.errorHandling(downloadLink, ajax);
+                }
+                int tries = 0;
+                while (ajax.containsHTML("Please Enter Password")) {
+                    /* password handling */
+                    if (downloadLink.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput(null, downloadLink);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = downloadLink.getStringProperty("pass", null);
+                    }
+                    final Form form = ajax.getForm(0);
+                    form.put("passwd", Encoding.urlEncode(passCode));
+                    ajax = this.br.cloneBrowser();
+                    ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    ajax.submitForm(form);
+                    if (tries++ >= 5) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Password Missing"); }
+
+                }
+                if (ajax.containsHTML(RECAPTCHATEXT)) {
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ajax);
+                    // TODO: Remove after MAJOR (NIGHTLY) update
+                    final String id = ajax.getRegex("Recaptcha\\.create\\(\"([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    rc.setId(id);
+                    Form rcForm = new Form();
+                    rcForm.setMethod(MethodType.POST);
+                    rcForm.setAction(freeDownloadLink);
+                    rc.setForm(rcForm);
+                    rc.load();
+                    for (int i = 0; i <= 5; i++) {
+                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        String c = getCaptchaCode(cf, downloadLink);
+                        rc.setCode(c);
+                        if (ajax.containsHTML(RECAPTCHATEXT)) {
+                            rc.reload();
+                            continue;
+                        }
+                        break;
+                    }
+                    if (ajax.containsHTML(RECAPTCHATEXT)) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+                }
+
+                downloadUrl = getDownloadURL(ajax);
+            }
+            if (downloadUrl == null) {
+                logger.severe(ajax.toString());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         /*
          * limited to 1 chunk at the moment cause don't know if its a server
