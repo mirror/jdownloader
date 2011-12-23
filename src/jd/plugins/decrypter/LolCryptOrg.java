@@ -63,11 +63,14 @@ public class LolCryptOrg extends PluginForDecrypt {
             if (mu) {
                 br.openGetConnection(finallink);
                 finallink = br.getRedirectLocation();
-                try {
-                    finallink = finallink == null ? "http://www.megaupload.com/?d=" + br.getRequest().getHttpConnection().getHeaderField("etag").replace("\"", "") : finallink;
-                } catch (final Throwable e) {
+                finallink = finallink == null ? br.getRequest().getHttpConnection().getHeaderField("etag").replace("\"", "") : finallink;
+                if (finallink == null) {
                     continue;
                 }
+                if (!finallink.startsWith("http")) {
+                    finallink = "http://www.megaupload.com/?d=" + finallink;
+                }
+
             }
             decryptedLinks.add(createDownloadlink(finallink));
         }
