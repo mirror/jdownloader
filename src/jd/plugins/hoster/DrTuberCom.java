@@ -86,7 +86,7 @@ public class DrTuberCom extends PluginForHost {
         // Check if link is an embedded link e.g. from a decrypter
         final String vk = new Regex(downloadLink.getDownloadURL(), "vkey=(.+)").getMatch(0);
         if (vk != null) {
-            br.getPage(downloadLink.getDownloadURL() + "&pkey=" + JDHash.getMD5(vk + Encoding.Base64Decode("dGhlNWE2QVRIYXh1cDY=")));
+            br.getPage(downloadLink.getDownloadURL() + "&pkey=" + JDHash.getMD5(vk + Encoding.Base64Decode("UFQ2bDEzdW1xVjhLODI3")));
             final String finallink = br.getRegex("type=video_click\\&amp;target_url=(http.*?)</url>").getMatch(0);
             if (finallink == null) {
                 logger.warning("Failed to find original link for: " + downloadLink.getDownloadURL());
@@ -96,19 +96,16 @@ public class DrTuberCom extends PluginForHost {
         }
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(This video cannot be found\\.|Are you sure you typed in the correct url\\?<)") || br.getURL().contains("missing=true")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<title>(.*?) - DrTuber\\.com</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?) - Free Porn.*?DrTuber\\.com</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h1 class=\"name\">(.*?)</h1>").getMatch(0);
         }
-        final String vKey = br.getRegex("vkey=([0-9a-z]+)").getMatch(0);
-        if (vKey == null) {
-            logger.warning("vKey is null...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
         String continueLink = getContinueLink(br.getRegex("(var configPath.*?addVariable\\(\\'config\\',.*?;)").getMatch(0));
-        if (continueLink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        continueLink = "http://drtuber.com" + Encoding.htmlDecode(continueLink) + "&pkey=" + JDHash.getMD5(vKey + Encoding.Base64Decode("dHJhRHJ1YkVuMnpha3U="));
+        final String vKey = new Regex(continueLink, "vkey=([0-9a-z]+)").getMatch(0);
+        if (continueLink == null || vKey == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        continueLink = "http://drtuber.com" + Encoding.htmlDecode(continueLink) + "&pkey=" + JDHash.getMD5(vKey + Encoding.Base64Decode("UFQ2bDEzdW1xVjhLODI3"));
         br.getPage(continueLink);
         DLLINK = br.getRegex("<video_file>(http://.*?\\.flv)</video_file>").getMatch(0);
         if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
