@@ -150,7 +150,7 @@ public class FilePostCom extends PluginForHost {
         String filesNum = br.getRegex("<li>Active files: <span.*?>(\\d+)</span>").getMatch(0);
         if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex("<li>Valid until: <span>(.*?)</span>").getMatch(0);
+        String expire = br.getRegex("<li>.*?Valid until: <span>(.*?)</span>").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
             account.setValid(false);
