@@ -255,7 +255,7 @@ public class MediafireCom extends PluginForHost {
             // we enable css evaluation, because we need this to find invisible
             // links
             // internal css is enough.
-            eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*?googleapis.com.+", ".*?connect.facebook.net.+", ".*?encoder.*?", ".*?google.+", ".*facebook.+", ".*pmsrvr.com.+", ".*yahoo.com.+", ".*templates/linkto.+", ".*cdn.mediafire.com/css/.+", ".*/blank.html" }, null) {
+            eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*?googleapis.com.+", ".*?master_.+", ".*?connect.facebook.net.+", ".*?encoder.*?", ".*?google.+", ".*facebook.+", ".*pmsrvr.com.+", ".*yahoo.com.+", ".*templates/linkto.+", ".*cdn.mediafire.com/css/.+", ".*/blank.html" }, null) {
 
                 @Override
                 public boolean doLoadContent(Request request) {
@@ -284,6 +284,17 @@ public class MediafireCom extends PluginForHost {
                     // "";
                     // text = text.replace("function vg()",
                     // "function DoNotCallMe()");
+
+                    // do notexecute these scripts
+                    if (text.contains("</div>")) { return ""; }
+                    if (text.startsWith("$(document)")) { return ""; }
+                    if (text.startsWith("setTimeout(function(){$(")) { return ""; }
+                    if (text.contains("jQuery(")) { return ""; }
+                    if (text.startsWith("try{DoShow(\"notloggedin_wrapper\");")) { return ""; }
+                    if (text.startsWith("var gV=document.getElementById('pagename');")) { return ""; }
+                    if (text.contains("var templates=LoadTemplatesFromSource();")) { return ""; }
+                    if (text.startsWith("(function(p,D){")) { return ""; }
+
                     return super.doScriptFilter(htmlScriptElementImpl, text);
                 }
 
