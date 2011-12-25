@@ -244,14 +244,14 @@ public class LinkChecker<E extends CheckableLink> {
                                                          */
                                                         link.getCheckableLink().getDownloadLink().setAvailableStatus(AvailableStatus.UNCHECKED);
                                                     }
-                                                    /*
-                                                     * just clear the map to
-                                                     * allow fast adding of new
-                                                     * links to the given
-                                                     * linkChecker instance
-                                                     */
-                                                    map2.clear();
                                                 }
+                                                /*
+                                                 * just clear the map to allow
+                                                 * fast adding of new links to
+                                                 * the given linkChecker
+                                                 * instance
+                                                 */
+                                                map2.clear();
                                             }
                                         }
                                     }

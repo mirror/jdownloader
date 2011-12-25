@@ -73,8 +73,10 @@ public class AnitubeCo extends PluginForHost {
             br.getPage(match.getMatch(0) + "/playlist.php?key=" + match.getMatch(1));
             dllink = br.getRegex("<file>\\s*(http://[^<]+\\d+\\.flv)\\s*</file>").getMatch(0);
             String filename = br.getRegex("<title>\\s*([^<]+)\\s*</title>").getMatch(0);
-            if (dllink != null) {
-                URLConnectionAdapter con = br.openGetConnection(dllink);
+            if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(dllink);
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                     filename = filename.trim();
@@ -82,13 +84,14 @@ public class AnitubeCo extends PluginForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
-            if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
         }
         return AvailableStatus.TRUE;
     }

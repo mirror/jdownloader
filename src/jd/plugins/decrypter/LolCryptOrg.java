@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -60,14 +61,22 @@ public class LolCryptOrg extends PluginForDecrypt {
             }
 
             if (mu) {
-                br.openGetConnection(finallink);
-                finallink = br.getRedirectLocation();
-                finallink = finallink == null ? br.getRequest().getHttpConnection().getHeaderField("etag").replace("\"", "") : finallink;
-                if (finallink == null) {
-                    continue;
-                }
-                if (!finallink.startsWith("http")) {
-                    finallink = "http://www.megaupload.com/?d=" + finallink;
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openGetConnection(finallink);
+                    finallink = br.getRedirectLocation();
+                    finallink = finallink == null ? br.getRequest().getHttpConnection().getHeaderField("etag").replace("\"", "") : finallink;
+                    if (finallink == null) {
+                        continue;
+                    }
+                    if (!finallink.startsWith("http")) {
+                        finallink = "http://www.megaupload.com/?d=" + finallink;
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
 
             }
