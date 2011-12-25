@@ -185,7 +185,6 @@ public class GlumboUploadsCom extends PluginForHost {
         return finallink;
     }
 
-    @SuppressWarnings("deprecation")
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean checkFastWay) throws Exception, PluginException {
         String passCode = null;
         String md5hash = new Regex(BRBEFORE, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
@@ -216,7 +215,7 @@ public class GlumboUploadsCom extends PluginForHost {
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (BRBEFORE.contains("\"download1\"")) {
-                br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Free+Download");
+                br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Slow+Download");
                 doSomething();
                 checkErrors(downloadLink, false, passCode);
             }
@@ -306,6 +305,7 @@ public class GlumboUploadsCom extends PluginForHost {
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if ("Unsupported Media Type".equals(dl.getConnection().getResponseMessage())) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             doSomething();
@@ -461,7 +461,7 @@ public class GlumboUploadsCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -564,23 +564,21 @@ public class GlumboUploadsCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(BRBEFORE, "\\.html\\(\\) \\+ \\'<span>(.*?)</span>").getMatch(0);
+        String filename = new Regex(BRBEFORE, "\\.attr\\(\\'value\\'\\, \\'(.*?)\\'\\)").getMatch(0);
         if (filename == null) {
-            filename = new Regex(BRBEFORE, "\\.attr\\(\\'value\\'\\, \\'(.*?)\\'\\)").getMatch(0);
+            filename = new Regex(BRBEFORE, "You have requested.*?http://(www\\.)?" + COOKIE_HOST.replace("http://", "") + "/[a-z0-9]{12}/(.*?)</font>").getMatch(1);
             if (filename == null) {
-                filename = new Regex(BRBEFORE, "You have requested.*?http://(www\\.)?" + COOKIE_HOST.replace("http://", "") + "/[a-z0-9]{12}/(.*?)</font>").getMatch(1);
+                filename = new Regex(BRBEFORE, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (filename == null) {
-                    filename = new Regex(BRBEFORE, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                    filename = new Regex(BRBEFORE, "<h2>Download File(.*?)</h2>").getMatch(0);
                     if (filename == null) {
-                        filename = new Regex(BRBEFORE, "<h2>Download File(.*?)</h2>").getMatch(0);
+                        filename = new Regex(BRBEFORE, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
                         if (filename == null) {
-                            filename = new Regex(BRBEFORE, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
+                            filename = new Regex(BRBEFORE, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                             if (filename == null) {
-                                filename = new Regex(BRBEFORE, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
+                                filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
                                 if (filename == null) {
-                                    filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
-                                    if (filename == null) {
-                                    }
+                                    filename = new Regex(BRBEFORE, "\\.html\\(\\) \\+ \\'<span>(.*?)</span>").getMatch(0);
                                 }
                             }
                         }
@@ -613,6 +611,12 @@ public class GlumboUploadsCom extends PluginForHost {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        /** Max total connections: 10 */
+        return 1;
     }
 
     @Override

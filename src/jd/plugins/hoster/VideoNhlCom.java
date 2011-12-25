@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.nhl.com" }, urls = { "http://(www\\.)?video\\.nhl\\.com/videocenter/console\\?catid=\\d+\\&id=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.nhl.com" }, urls = { "http://(www\\.)?video\\.([a-z0-9]+\\.)?nhl\\.com/videocenter/console\\?([a-z0-9\\&=]+\\&)?id=\\d+" }, flags = { 0 })
 public class VideoNhlCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -47,6 +47,11 @@ public class VideoNhlCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        /** All those linktypes are crap, we always use the same ;) */
+        link.setUrlDownload("http://video.nhl.com/videocenter/console?id=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
     @Override

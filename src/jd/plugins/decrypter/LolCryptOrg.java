@@ -46,13 +46,12 @@ public class LolCryptOrg extends PluginForDecrypt {
         for (final String singleLink : links) {
             br.getPage("http://lolcrypt.org" + singleLink);
             /**
-             * Das ist eine Falle, kann man den originallink überhaupt bekommen?
+             * Schauen, ob es ein megaupload Link ist
              */
             String finallink = br.getRegex("href=\"javascript:clipboardcopy\\(\\'(http://(www\\.)?megaupload\\.com/\\?d=[A-Z0-9]+)\\'\\)").getMatch(0);
             final Boolean mu = finallink != null ? true : false;
             /**
-             * Direktlink kann man holen, ist allerdings erst nach der Wartezeit
-             * gültig
+             * Megaupload Direktlink holen
              */
             finallink = br.getRegex("id=\"dlbuttondisabled\"></a> [\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
             if (finallink == null) {

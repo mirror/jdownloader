@@ -44,7 +44,7 @@ public class FShareVn extends PluginForHost {
 
     private static final String  SERVERERROR = "Tài nguyên bạn yêu cầu không tìm thấy";
 
-    private static final String  IPBLOCKED   = "Vui lòng chờ lượt download kế tiếp";
+    private static final String  IPBLOCKED   = ">Vui lòng chờ lượt download kế tiếp";
 
     private static AtomicInteger maxPrem     = new AtomicInteger(1);
 
@@ -107,11 +107,12 @@ public class FShareVn extends PluginForHost {
             return ai;
         }
         br.getPage("http://www.fshare.vn/index.php");
-        String validUntil = br.getRegex("Hạn dùng:<strong style=\"color:#95330f\">(\\d+\\-\\d+\\-\\d+)</strong>").getMatch(0);
+        // >Hạn dùng:<strong class="color_red">20-12-2012</strong>
+        String validUntil = br.getRegex(">Hạn dùng:<strong class=\"color_red\">(\\d+\\-\\d+\\-\\d+)</strong>").getMatch(0);
         if (validUntil != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "MM-dd-yyyy", Locale.ENGLISH));
             try {
-                maxPrem.set(20);
+                maxPrem.set(-1);
                 account.setMaxSimultanDownloads(-1);
             } catch (final Throwable e) {
             }
@@ -210,7 +211,7 @@ public class FShareVn extends PluginForHost {
         if (br.containsHTML("(<title>Fshare \\– Dịch vụ chia sẻ số 1 Việt Nam \\– Cần là có \\- </title>|b>Liên kết bạn chọn không tồn tại trên hệ thống Fshare</|<li>Liên kết không chính xác, hãy kiểm tra lại|<li>Liên kết bị xóa bởi người sở hữu\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<p><b>Tên file:</b> (.*?)</p>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) \\- Fshare \\- Dịch vụ chia sẻ, lưu trữ dữ liệu miễn phí tốt nhất </title>").getMatch(0);
-        String filesize = br.getRegex("<b>Dung lượng file:</b> (.*?)</p>").getMatch(0);
+        String filesize = br.getRegex("<p><b>Dung lượng: </b>(.*?)</p>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Server sometimes sends bad filenames
         link.setFinalFileName(Encoding.htmlDecode(filename));
