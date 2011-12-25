@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2011  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2011  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -50,41 +50,36 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "k-files.kz" }, urls = { "https?://(www\\.)?k\\-files\\.kz/[a-z0-9]{12}" }, flags = { 2 })
+public class KFilesKz extends PluginForHost {
 
     private String              BRBEFORE            = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://ForDevsToPlayWith.com";
+    private static final String COOKIE_HOST         = "http://k-files.kz";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static final Object LOCK                = new Object();
 
     // XfileSharingProBasic Version 2.5.2.0
-    /**
-     * This is only for developers to easily implement hosters using the
-     * "xfileshare(pro)" script (more informations can be found on
-     * xfilesharing.net)!
-     */
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public KFilesKz(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
-        return true;
+        return false;
     }
 
     @Override
@@ -139,7 +134,7 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, true);
+        doFree(downloadLink, false, 1, true);
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean getLinkWithoutLogin) throws Exception, PluginException {
@@ -434,6 +429,27 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     @Override
+    public void reset() {
+    }
+
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
+    }
+
+    private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
+        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+        /** Ticket Time */
+        String ttt = new Regex(BRBEFORE, "countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        if (ttt == null) ttt = new Regex(BRBEFORE, "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+        if (ttt != null) {
+            int tt = Integer.parseInt(ttt);
+            tt -= passedTime;
+            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
+            if (tt > 0) sleep(tt * 1000l, downloadLink);
+        }
+    }
+
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -585,27 +601,6 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public void reset() {
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
-    }
-
-    private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
-        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-        /** Ticket Time */
-        String ttt = new Regex(BRBEFORE, "countdown\">.*?(\\d+).*?</span>").getMatch(0);
-        if (ttt == null) ttt = new Regex(BRBEFORE, "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
-        if (ttt != null) {
-            int tt = Integer.parseInt(ttt);
-            tt -= passedTime;
-            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
-            if (tt > 0) sleep(tt * 1000l, downloadLink);
-        }
     }
 
 }

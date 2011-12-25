@@ -71,11 +71,11 @@ public class GoKuaiCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(">发布人关闭了直接下载功能, 请先保存到网盘再下载<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible!");
+        if (br.containsHTML(">发布人关闭了直接下载功能, 请先保存到网盘再下载<") || !br.containsHTML("download_now")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible!");
         String dllink = br.getRegex("class=\"download_now\" href=\"(https?://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(https?://\\d+\\.\\d+\\.\\d+\\.\\d+/d\\d+/[a-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
