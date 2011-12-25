@@ -269,8 +269,11 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
                 br.getPage(check);
                 if (br.getRedirectLocation() != null) {
                     String ret = new Regex(br.getRedirectLocation(), "(https?://.*?)(/|$)").getMatch(0);
-                    if (ret != null) return ret;
-                    return br.getRedirectLocation();
+                    if (ret != null) {
+                        logger.info("Filesonic: DomainMisMatch " + domain + " ->" + ret);
+                        // return ret;
+                    }
+                    // return br.getRedirectLocation();
                 }
                 return check;
             }

@@ -10,7 +10,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangafox.com" }, urls = { "http://[\\w\\.]*?mangafox\\.com/manga/.*?/(v\\d+/c\\d+/|c\\d+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangafox.com" }, urls = { "http://[\\w\\.]*?mangafox\\.com/manga/.*?/(v\\d+/c\\d+|c\\d+)" }, flags = { 0 })
 public class Mangafox extends PluginForDecrypt {
 
     public Mangafox(PluginWrapper wrapper) {
@@ -22,6 +22,9 @@ public class Mangafox extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String url = parameter.toString();
+        if (url.endsWith("/")) {
+            url = url.substring(0, url.length() - 1);
+        }
         br.getPage(url + "/1.html");
         if (br.containsHTML("cannot be found|not available yet")) {
             logger.warning("Invalid link or release not yet available, check in your browser: " + parameter);
