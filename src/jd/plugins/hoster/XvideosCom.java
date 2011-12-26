@@ -26,7 +26,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //xvideos.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "http://[\\w\\.]*?xvideos\\.com/video[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xvideos.com" }, urls = { "http://(www\\.)?xvideos\\.com/video[0-9]+" }, flags = { 0 })
 public class XvideosCom extends PluginForHost {
 
     public XvideosCom(PluginWrapper wrapper) {
@@ -40,7 +40,7 @@ public class XvideosCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
@@ -66,13 +66,8 @@ public class XvideosCom extends PluginForHost {
         }
         if (br.containsHTML("This video has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Page not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)\\- XVIDEOS\\.COM</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("description content=\"XVIDEOS  \\-(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("font\\-size: [0-9]+px;\">.*?<strong>(.*?)</strong>").getMatch(0);
-            }
-        }
+        String filename = br.getRegex("Video exist and loaded\\. Video exist OK\\. +\\-\\->[\t\n\r ]+<strong>([^/<>\"]+)</strong>").getMatch(0);
+        if (filename == null) filename = br.getRegex("font\\-size: [0-9]+px;\">.*?<strong>(.*?)</strong>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.trim() + ".flv";
         parameter.setName(filename.trim());

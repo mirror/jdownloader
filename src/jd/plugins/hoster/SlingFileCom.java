@@ -30,10 +30,8 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slingfile.com" }, urls = { "http://[\\w\\.]*?slingfile\\.com/((file|audio|video)/.+|dl/[a-z0-9]+/.*?\\.html)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slingfile.com" }, urls = { "http://(www\\.)?slingfile\\.com/((file|audio|video)/.+|dl/[a-z0-9]+/.*?\\.html)" }, flags = { 0 })
 public class SlingFileCom extends PluginForHost {
-
-    private static String ERRORREGEX = "class=\"errorbox\"><p><strong>(.*?</a>.</strong>";
 
     public SlingFileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,14 +55,9 @@ public class SlingFileCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String waittime = br.getRegex("\\)\\.innerHTML=\\'(\\d+)\\'").getMatch(0);
         if (waittime == null) waittime = br.getRegex("id=\"dltimer\">(\\d+)</span><br>").getMatch(0);
-        if (br.containsHTML("class=\"errorbox\"")) {
-            String waitthat = br.getRegex("Please wait for another (\\d+) minutes to download another file").getMatch(0);
-            if (waitthat != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waitthat) * 60 * 1001l);
-            if (br.containsHTML("Please wait until the download is complete")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
-            String errorMessage = "";
-            if (br.getRegex(ERRORREGEX).getMatch(0) != null) errorMessage = br.getRegex("ERRORREGEX").getMatch(0);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, errorMessage);
-        }
+        String waitthat = br.getRegex("Please wait for another (\\d+) minutes to download another file").getMatch(0);
+        if (waitthat != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waitthat) * 60 * 1001l);
+        if (br.containsHTML("Please wait until the download is complete")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
         br.postPage(downloadLink.getDownloadURL(), "show_captcha=yes");
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
