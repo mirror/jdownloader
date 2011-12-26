@@ -81,7 +81,7 @@ public class ShragleCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.shragle.com/index.php?cat=about&p=faq";
+        return "http://www.shragle.com/about/imprint";
     }
 
     @Override

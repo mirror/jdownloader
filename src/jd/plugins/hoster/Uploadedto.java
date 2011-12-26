@@ -257,7 +257,7 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://uploaded.to/agb";
+        return "http://uploaded.to/legal";
     }
 
     private String getID(DownloadLink downloadLink) {

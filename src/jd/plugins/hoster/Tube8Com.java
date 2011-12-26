@@ -78,7 +78,7 @@ public class Tube8Com extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.tube8.com/info.html#dmca";
+        return "http://www.tube8.com/info.html#terms";
     }
 
     @Override

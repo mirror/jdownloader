@@ -65,7 +65,7 @@ public class UlozTo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://ulozto.net/podminky/";
+        return "http://img.uloz.to/terms.pdf";
     }
 
     @Override

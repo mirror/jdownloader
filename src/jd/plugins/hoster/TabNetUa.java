@@ -37,7 +37,7 @@ public class TabNetUa extends PluginForHost {
 
     public TabNetUa(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://tab.net.ua/registration/");
+        this.enablePremium("http://tab.net.ua/");
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
@@ -84,7 +84,7 @@ public class TabNetUa extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://tab.net.ua/";
+        return "http://tab.net.ua/registration/";
     }
 
     @Override
