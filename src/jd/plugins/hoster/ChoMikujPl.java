@@ -181,9 +181,21 @@ public class ChoMikujPl extends PluginForHost {
             br.getPage("http://chomikuj.pl/ShowVideo.aspx?id=" + new Regex(link.getDownloadURL(), FILEIDREGEX).getMatch(0));
             if (br.getURL().contains("chomikuj.pl/Error404.aspx") || br.containsHTML("(Nie znaleziono|Strona, której szukasz nie została odnaleziona w portalu\\.<|>Sprawdź czy na pewno posługujesz się dobrym adresem)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             br.setFollowRedirects(false);
-            final String realID = br.getRegex("\\$\\(document\\)\\.ready\\( function\\(\\) \\{[\t\n\r ]+return ch\\.ShowVideo\\((\\d+),").getMatch(0);
-            if (realID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getPage("http://chomikuj.pl/Video.ashx?realid=" + realID + "&id=" + new Regex(link.getDownloadURL(), FILEIDREGEX).getMatch(0) + "&type=1&ts=" + new Random().nextInt(1000000000) + "&file=video&start=0");
+            /**
+             * old way: final String realID = br.getRegex(
+             * "\\$\\(document\\)\\.ready\\( function\\(\\) \\{[\t\n\r ]+return ch\\.ShowVideo\\((\\d+),"
+             * ).getMatch(0); if (realID == null) throw new
+             * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+             * //http://chomikuj
+             * .pl/Video.ashx?id=805871464&type=1&ts=1324931630863
+             * &file=video&start=0
+             * br.getPage("http://chomikuj.pl/Video.ashx?realid=" + realID +
+             * "&id=" + new Regex(link.getDownloadURL(),
+             * FILEIDREGEX).getMatch(0) + "&type=1&ts=" + new
+             * Random().nextInt(1000000000) + "&file=video&start=0");
+             * 
+             */
+            br.getPage("http://chomikuj.pl/Video.ashx?id=" + new Regex(link.getDownloadURL(), FILEIDREGEX).getMatch(0) + "&type=1&ts=" + new Random().nextInt(1000000000) + "&file=video&start=0");
             DLLINK = br.getRedirectLocation();
         }
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

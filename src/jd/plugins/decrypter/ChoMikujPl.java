@@ -171,7 +171,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                          * If the link is a video it needs other
                          * downloadhandling
                          */
-                        if (id[2].trim().equals(".avi")) dl.setProperty("video", "true");
+                        if (id[2].trim().matches("\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)")) dl.setProperty("video", "true");
                     } else {
                         dl.setName(String.valueOf(new Random().nextInt(1000000)));
                     }

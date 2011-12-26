@@ -46,8 +46,7 @@ public class DBankCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String filename = Encoding.htmlDecode(new Regex(downloadLink.getDownloadURL(), "dbank\\.com/download/(.*?)\\?f=[a-z0-9]+").getMatch(0));
-        downloadLink.setFinalFileName(filename);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(new Regex(downloadLink.getDownloadURL(), "dbank\\.com/download/(.*?)\\?f=[a-z0-9]+").getMatch(0)));
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
