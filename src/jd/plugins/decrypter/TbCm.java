@@ -255,6 +255,10 @@ public class TbCm extends PluginForDecrypt {
                 }
                 verifyAge = false;
                 final HashMap<Integer, String[]> LinksFound = this.getLinks(parameter, prem, this.br);
+                if ((LinksFound == null || LinksFound.isEmpty()) && br.containsHTML("<div id=\"unavailable\\-message\" class=\"\">[\\s]+Der betreffende Nutzer hat das Video in deinem Land nicht zur Verfügung gestellt\\.[\r\n]</div>")) {
+                    // for action/method -insert here-
+                    throw new DecrypterException("This video is not avaible from your IP address");
+                }
                 if (LinksFound == null || LinksFound.isEmpty()) {
                     if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) { throw new DecrypterException(DecrypterException.ACCOUNT); }
                     throw new DecrypterException("Video no longer available");

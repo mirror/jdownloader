@@ -189,6 +189,7 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         }
         if (br.containsHTML("(<h1>404 Not Found</h1>|<title>404 Not Found</title>|An Error Occurred)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesonic.servererror", "Server error"), 20 * 60 * 1000l); }
         if (br.containsHTML("This file is available for premium users only\\.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only file. Buy Premium Account"); }
+        if (br.containsHTML(">We have detected some suspicious behaviour coming from your IP address \\([\\d\\.]+\\) and have been temporarily blocked")) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesonic.ipabuse", "IP blocked due to client abuse. Please address your problem and then try again")); }
     }
 
     @Override

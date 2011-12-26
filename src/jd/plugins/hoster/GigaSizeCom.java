@@ -96,6 +96,7 @@ public class GigaSizeCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("limit-download-free")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only premium users are entitled to dowload files larger than 1GB from Gigasize"); }
+        if (br.containsHTML("(?i)>You've reached your <strong>DOWNLOAD LIMIT<")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download limit reached", 1 * 60 * 60 * 1000l);  // unknown hoster expire time
         String adsCaptcha = br.getRegex("iframe src='(http://api.adsca.*?)'").getMatch(0);
         if (adsCaptcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser brc = br.cloneBrowser();
