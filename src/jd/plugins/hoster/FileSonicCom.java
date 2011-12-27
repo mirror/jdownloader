@@ -294,8 +294,9 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
 
     public String getID(final DownloadLink link) {
         String id = new Regex(link.getDownloadURL(), "/file/([a-zA-Z0-9]+(/.+)?)").getMatch(0);
-        if (id == null) {
-            id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+(/.+)?)").getMatch(0);
+        if (id == null || id.startsWith("r")) {
+            String id2 = new Regex(link.getDownloadURL(), "/file/r[a-z0-9]+/([0-9]+(/.+)?)").getMatch(0);
+            if (id2 != null) id = id2;
         }
         if (id == null) {
             id = new Regex(link.getDownloadURL(), "/file/([0-9]+(/.+)?)").getMatch(0);
@@ -316,9 +317,10 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
     public String getPureID(final DownloadLink link) {
         /* new format, Hashes */
         String id = new Regex(link.getDownloadURL(), "/file/([a-zA-Z0-9]+)").getMatch(0);
-        if (id == null) {
+        if (id == null || id.startsWith("r")) {
             /* hash + old format, not very common */
-            id = new Regex(link.getDownloadURL(), "/file/[a-z0-9]+/([0-9]+)").getMatch(0);
+            String id2 = new Regex(link.getDownloadURL(), "/file/r[a-z0-9]+/([0-9]+)").getMatch(0);
+            if (id2 != null) id = id2;
         }
         if (id == null) {
             /* fileID */

@@ -271,6 +271,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @Description("http://jdownloader.org/knowledge/wiki/glossary/chunkload")
+    @SpinnerValidator(min = 0, max = 20)
     @DefaultIntValue(2)
     int getMaxChunksPerFile();
 
