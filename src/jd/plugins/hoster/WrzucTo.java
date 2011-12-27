@@ -45,7 +45,7 @@ public class WrzucTo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.wrzuc.to/strona/regulamin";
+        return "http://www.wrzuc.to/regulamin.html";
     }
 
     @Override

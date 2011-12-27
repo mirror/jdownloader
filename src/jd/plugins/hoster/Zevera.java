@@ -69,7 +69,7 @@ public class Zevera extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://zevera.com";
+        return "http://zevera.com/TermsOfUse.aspx";
     }
 
     @Override

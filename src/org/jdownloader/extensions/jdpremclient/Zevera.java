@@ -40,7 +40,7 @@ public class Zevera extends PluginForHost implements JDPremInterface {
 
     @Override
     public String getAGBLink() {
-        if (plugin == null) return "http://zevera.com";
+        if (plugin == null) return "http://zevera.com/TermsOfUse.aspx";
         return plugin.getAGBLink();
     }
 

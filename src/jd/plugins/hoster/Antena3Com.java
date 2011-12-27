@@ -39,7 +39,7 @@ public class Antena3Com extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.antena3.com/a3tv2004/web/html/legal/index.html";
+        return "http://www.antena3.com/a3tv2004/web/html/legal/index.htm";
     }
 
     @Override
