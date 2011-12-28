@@ -79,6 +79,8 @@ public class FrShrdFldr extends PluginForDecrypt {
             }
         }
 
+        if (br.containsHTML("The file link that you requested is not valid\\.") && br.containsHTML("src=\"/images/spacer\\.gif\"")) throw new DecrypterException("The link that you requested isn't valid, or no longer exists.");
+
         final String script = br.getRegex("src=\"(/account/homeScript.*?)\"").getMatch(0);
         final String sId = new Regex(script, "^.+sId=(\\w+)").getMatch(0);
         if (script == null || sId == null) { return null; }
