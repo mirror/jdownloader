@@ -17,9 +17,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.http.Cookie;
+import jd.http.Cookies;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,11 +36,12 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "servifile.com" }, urls = { "http://(www\\.)?servifile.com/files/[^/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "servifile.com" }, urls = { "http://(www\\.)?servifile\\.com/files/[^/]+" }, flags = { 2 })
 public class ServiFileCom extends PluginForHost {
 
     public ServiFileCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium(MAINPAGE + "/get-premium.php");
     }
 
     @Override
@@ -44,6 +52,9 @@ public class ServiFileCom extends PluginForHost {
     private static final String MAINPAGE      = "http://www.servifile.com";
     private static final String GETLINKREGEX  = "disabled=\"disabled\" onclick=\"document\\.location=\\'(.*?)\\';\"";
     private static final String GETLINKREGEX2 = "\\'(" + "http://(www\\.)" + MAINPAGE.replaceAll("(http://|www\\.)", "") + "/get/[A-Za-z0-9]+/\\d+/.*?)\\'";
+    private static final String PREMIUMLIMIT  = "out of 200\\.00 GB</td>";
+    private static final String PREMIUMTEXT   = "Account type:</td>[\n ]+<td><b>Premium</b>";
+    private static final Object LOCK          = new Object();
 
     // Using FreakshareScript 1.2
     @Override
@@ -86,6 +97,86 @@ public class ServiFileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            /** Load cookies */
+            br.setCookiesExclusive(false);
+            final Object ret = account.getProperty("cookies", null);
+            boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (account.isValid()) {
+                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                        final String key = cookieEntry.getKey();
+                        final String value = cookieEntry.getValue();
+                        this.br.setCookie(MAINPAGE, key, value);
+                    }
+                    return;
+                }
+            }
+            br.setFollowRedirects(true);
+            br.postPage(MAINPAGE + "/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login&task=dologin&return=%2F");
+            if (!br.containsHTML(PREMIUMTEXT)) {
+                br.getPage(MAINPAGE + "/members/myfiles.php");
+                if (!br.containsHTML(PREMIUMLIMIT)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            /** Save cookies */
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = this.br.getCookies(MAINPAGE);
+            for (final Cookie c : add.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            account.setProperty("name", Encoding.urlEncode(account.getUser()));
+            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+            account.setProperty("cookies", cookies);
+        }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String hostedFiles = br.getRegex("<td>Files Hosted:</td>[\t\r\n ]+<td>(\\d+)</td>").getMatch(0);
+        if (hostedFiles != null) ai.setFilesNum(Integer.parseInt(hostedFiles));
+        String space = br.getRegex("<td>Spaced Used:</td>[\t\n\r ]+<td>(.*?) " + PREMIUMLIMIT).getMatch(0);
+        if (space != null) ai.setUsedSpace(space.trim());
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.getPage(link.getDownloadURL());
+        String getLink = br.getRegex(GETLINKREGEX).getMatch(0);
+        if (getLink == null) getLink = br.getRegex(GETLINKREGEX2).getMatch(0);
+        if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(getLink);
+        // No multiple connections possible for premiumusers
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, "task=download", true, -2);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
