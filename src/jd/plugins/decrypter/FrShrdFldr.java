@@ -110,11 +110,11 @@ public class FrShrdFldr extends PluginForDecrypt {
     }
 
     private void scan(final ArrayList<DownloadLink> decryptedLinks, final String pass, final String burl, final String[] subDir, final ProgressController progress) throws Exception {
-        LinkedList<String> pagesTodo = new LinkedList<String>();
-        LinkedList<String> pagesDone = new LinkedList<String>();
+        final LinkedList<String> pagesTodo = new LinkedList<String>();
+        final LinkedList<String> pagesDone = new LinkedList<String>();
         String[] pages = br.getRegex("javascript:pagerShowFiles\\((\\d+)\\);").getColumn(0);
         if (pages != null) {
-            for (String page : pages) {
+            for (final String page : pages) {
                 pagesTodo.add(page);
             }
         }
@@ -154,14 +154,14 @@ public class FrShrdFldr extends PluginForDecrypt {
                 if (subDir.length == 1) {
                     progress.increase(1);
                 }
-                String[] links = br.getRegex("ml_file(.*?)File</td>.*?<.*?title").getColumn(0);
+                String[] links = br.getRegex("ml_file(.*?)filelistinfo").getColumn(0);
                 if (links.length == 0) {
                     links = br.getRegex("ml_file(.*?)title=").getColumn(0);
                 }
-                // scan page
 
+                // scan page
                 for (String dl : links) {
-                    String tmp = dl;
+                    final String tmp = dl;
                     String dlName = null;
                     String dlSize = null;
                     dl = new Regex(tmp, "href=\"javascript:openNewWindow\\('(.*?)'").getMatch(0);
@@ -178,6 +178,11 @@ public class FrShrdFldr extends PluginForDecrypt {
                     dlink.setDownloadSize(SizeFormatter.getSize(dlSize.replace(",", "")));
                     dlink.setAvailable(true);
                     fp.add(dlink);
+                    try {
+                        distribute(dlink);
+                    } catch (final Throwable e) {
+                        /* does not exist in 09581 */
+                    }
                     decryptedLinks.add(dlink);
                 }
 
@@ -185,10 +190,16 @@ public class FrShrdFldr extends PluginForDecrypt {
                     url = "http://" + br.getHost() + burl + "&ajax=true&firstFileToShow=" + page + "&sortsMode=NAME&sortsAsc=&random=" + RANDOM;
                     br.getPage(url);
                     pages = br.getRegex("javascript:pagerShowFiles\\((\\d+)\\);").getColumn(0);
-                    for (String tmp : pages) {
-                        if (pagesDone.contains(tmp)) continue;
-                        if (pagesTodo.contains(tmp)) continue;
-                        if ("0".equals(tmp)) continue;
+                    for (final String tmp : pages) {
+                        if (pagesDone.contains(tmp)) {
+                            continue;
+                        }
+                        if (pagesTodo.contains(tmp)) {
+                            continue;
+                        }
+                        if ("0".equals(tmp)) {
+                            continue;
+                        }
                         pagesTodo.add(tmp);
                     }
                 }

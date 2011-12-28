@@ -35,6 +35,7 @@ import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -52,13 +53,6 @@ public class ShrLnksBz extends PluginForDecrypt {
 
     private static String MAINPAGE = "http://share-links.biz/";
 
-    private boolean isExternInterfaceActive() {
-        // DO NOT check for the plugin here. compatzibility reasons to 0.9*
-        // better: check port 9666 for a httpserver
-
-        return true;
-    }
-
     public ShrLnksBz(final PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -75,7 +69,6 @@ public class ShrLnksBz extends PluginForDecrypt {
             parameter = br.getRedirectLocation();
         }
         setBrowserExclusive();
-        // Setup static Header
         br.setFollowRedirects(false);
         br.getHeaders().clear();
         br.getHeaders().put("Cache-Control", null);
@@ -89,14 +82,30 @@ public class ShrLnksBz extends PluginForDecrypt {
         br.getHeaders().put("Connection", "keep-alive");
 
         br.getPage(parameter);
-        // Very important!
+        /* Very important! */
         final String gif[] = br.getRegex("/template/images/(.*?)\\.gif").getColumn(-1);
-        for (final String template : gif) {
-            br.cloneBrowser().openGetConnection(template);
+        if (gif != null) {
+            URLConnectionAdapter con = null;
+            final Browser br2 = br.cloneBrowser();
+            for (final String template : gif) {
+                try {
+                    con = br2.openGetConnection(template);
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+
+            }
         }
-        // Error handling
+        /* Check if a redirect was there before */
+        if (br.getRedirectLocation() != null) {
+            br.getPage(br.getRedirectLocation());
+        }
+
         if (br.containsHTML("Der Inhalt konnte nicht gefunden werden")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
-        // Folderpassword
+        /* Folderpassword */
         if (br.containsHTML("id=\"folderpass\"")) {
             for (int i = 0; i <= 3; i++) {
                 String latestPassword = getPluginConfig().getStringProperty("PASSWORD", null);
@@ -127,7 +136,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-        // Captcha
+        /* Captcha handling */
         if (br.containsHTML("(/captcha/|captcha_container|\"Captcha\"|id=\"captcha\")")) {
             // Captcha Recognition broken - auto = false
             boolean auto = false;
@@ -171,7 +180,7 @@ public class ShrLnksBz extends PluginForDecrypt {
             if (br.containsHTML("Die getroffene Auswahl war falsch")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
         }
         /* use cnl2 button if available */
-        if (br.containsHTML("/cnl2/") && isExternInterfaceActive()) {
+        if (br.containsHTML("/cnl2/")) {
             String flashVars = br.getRegex("swfobject.embedSWF\\(\"(.*?)\"").getMatch(0);
             if (flashVars != null) {
                 final Browser cnlbr = new Browser();
@@ -198,7 +207,7 @@ public class ShrLnksBz extends PluginForDecrypt {
             decryptedLinks = loadcontainer(br, dlclink);
             if (decryptedLinks != null && decryptedLinks.size() > 0) { return decryptedLinks; }
         }
-        // File package handling
+        /* File package handling */
         int pages = 1;
         final String pattern = parameter.substring(parameter.lastIndexOf("/") + 1, parameter.length());
         if (br.containsHTML("folderNav")) {
@@ -212,36 +221,41 @@ public class ShrLnksBz extends PluginForDecrypt {
             links.addAll(Arrays.asList(linki));
         }
         if (links.size() == 0) { return null; }
-        progress.setRange(links.size());
         for (final String tmplink : links) {
-            while (true) {
-                final String link = MAINPAGE + "get/lnk/" + tmplink;
-                br.getPage(link);
-                String clink0 = br.getRegex("unescape\\(\"(.*?)\"").getMatch(0);
-                if (clink0 != null) {
-                    clink0 = Encoding.htmlDecode(clink0);
-                    br.getRequest().setHtmlCode(clink0);
-                    final String frm = br.getRegex("\"(http://share-links\\.biz/get/frm/.*?)\"").getMatch(0);
-                    br.getPage(frm);
-                    final String fun = br.getRegex("eval(.*)\n").getMatch(0);
-                    final String result = unpackJS(fun, 1);
-                    if ((result + "").trim().length() != 0) {
-                        if (result.contains("share-links.biz")) {
-                            br.setFollowRedirects(false);
-                            br.getPage(result + "");
-                            final DownloadLink dl = createDownloadlink(br.getRedirectLocation());
-                            decryptedLinks.add(dl);
-                        } else {
-                            final DownloadLink dl = createDownloadlink(result);
-                            decryptedLinks.add(dl);
+            br.getPage(MAINPAGE + "get/lnk/" + tmplink);
+            final String clink0 = br.getRegex("unescape\\(\"(.*?)\"").getMatch(0);
+            if (clink0 != null) {
+                try {
+                    br.getPage(new Regex(Encoding.htmlDecode(clink0), "\"(http://share-links\\.biz/get/frm/.*?)\"").getMatch(0));
+                } catch (final Throwable e) {
+                    continue;
+                }
+                final String fun = br.getRegex("eval(.*)\n").getMatch(0);
+                String result = fun != null ? unpackJS(fun, 1) : null;
+                if (result != null) {
+                    if (result.contains("share-links.biz")) {
+                        br.setFollowRedirects(false);
+                        br.getPage(result);
+                        result = br.getRedirectLocation() != null ? br.getRedirectLocation() : null;
+                        if (result == null) {
+                            continue;
                         }
-                        break;
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                    final DownloadLink dl = createDownloadlink(result);
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                        /* does not exist in 09581 */
+                    }
+                    decryptedLinks.add(dl);
+                } else {
+                    continue;
                 }
             }
-            progress.increase(1);
+        }
+        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            logger.warning("Decrypter out of date for link: " + parameter);
+            return null;
         }
         return decryptedLinks;
     }

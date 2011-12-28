@@ -78,7 +78,6 @@ public class LolCryptOrg extends PluginForDecrypt {
                     } catch (final Throwable e) {
                     }
                 }
-
             }
             decryptedLinks.add(createDownloadlink(finallink));
         }
