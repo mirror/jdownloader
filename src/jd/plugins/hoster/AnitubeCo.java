@@ -65,7 +65,7 @@ public class AnitubeCo extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         // provider blocks some subnets on http gateway, unknown what ranges.
-        if (br.containsHTML(">403 Forbidden<") && br.containsHTML(">nginx/[\\d+\\.]+<")) throw new PluginException(LinkStatus.ERROR_FATAL);
+        if (br.containsHTML(">403 Forbidden<") && br.containsHTML(">nginx/[\\d+\\.]+<")) throw new PluginException(LinkStatus.ERROR_FATAL, "IP Blocked: Provider prevents access based on IP address.");
 
         if (br.getURL().contains("error.php?type=video_missing")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex match = br.getRegex("(http://(?:www\\.)?anitube\\.co/[^/]+)/config\\.php\\?key=([0-9a-f]+)'");

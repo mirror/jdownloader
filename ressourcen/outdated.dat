@@ -647,3 +647,15 @@ jd/plugins/hoster/CashFileCom.class
 jd/plugins/hoster/FileKeenCom.class
 jd/plugins/hoster/MegaPornVideoCom.class
 jd/plugins/hoster/MegaRapidEu.class
+jd/plugins/hoster/LoadFilesIn.class
+jd/plugins/hoster/GaiaFileCom.class
+jd/plugins/hoster/FilezUpCom.class
+jd/plugins/hoster/FileHookCom.class
+jd/plugins/hoster/FilefrogTo.class
+jd/plugins/hoster/BitLoadCom.class
+jd/plugins/hoster/FileCrownCom.class
+jd/plugins/hoster/BiggeruploadCom.class
+jd/plugins/hoster/UgotFileCom.class
+jd/plugins/hoster/UpFileIn.class
+jd/plugins/hoster/UploadStoreNet.class
+jd/plugins/decrypter/UploadStoreNetFolder.class
