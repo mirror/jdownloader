@@ -678,8 +678,6 @@ public class MediafireCom extends PluginForHost {
                     }
                     URLConnectionAdapter con = null;
                     try {
-                        /* only catch filesize and name once */
-                        if (downloadLink.getDownloadSize() != 0) { return AvailableStatus.TRUE; }
                         con = br.cloneBrowser().openGetConnection(redirectURL);
                         if (con.isContentDisposition()) {
                             downloadLink.setProperty("type", "direct");
