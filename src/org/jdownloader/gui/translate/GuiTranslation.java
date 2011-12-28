@@ -3394,4 +3394,19 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Downloads will start soon. Click here to cancel countdown." })
     String AutoConfirmButton_AutoConfirmButton_tooltip_();
 
+    @Default(lngs = { "en" }, values = { "Reconnect Setup is invalid. Check Settings!" })
+    String ReconnectDialog_run_failed_not_setup_();
+
+    @Default(lngs = { "en" }, values = { "Skip file" })
+    String IfFileExistsDialog_layoutDialogContent_skip_();
+
+    @Default(lngs = { "en" }, values = { "Overwrite existing file" })
+    String IfFileExistsDialog_layoutDialogContent_overwrite_();
+
+    @Default(lngs = { "en" }, values = { "Rename file" })
+    String IfFileExistsDialog_layoutDialogContent_rename_();
+
+    @Default(lngs = { "en" }, values = { "Remember selection for this Package" })
+    String IfFileExistsDialog_getDontShowAgainLabelText_();
+
 }

@@ -11,6 +11,7 @@ import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
 import jd.controlling.reconnect.ReconnectException;
+import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.ipcheck.IPConnectionState;
@@ -21,6 +22,7 @@ import jd.gui.swing.laf.LookAndFeelController;
 import org.appwork.app.gui.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -109,7 +111,9 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
                     }
                 };
                 try {
-                    ReconnectPluginController.getInstance().getActivePlugin().getReconnectInvoker().validate(new ReconnectResult() {
+                    ReconnectInvoker plg = ReconnectPluginController.getInstance().getActivePlugin().getReconnectInvoker();
+                    if (plg == null) throw new ReconnectException(_GUI._.ReconnectDialog_run_failed_not_setup_());
+                    plg.validate(new ReconnectResult() {
 
                         @Override
                         public void setSuccess(boolean success) {
@@ -147,8 +151,12 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
                     dispose();
                 } catch (ReconnectException e) {
 
+                    if (!StringUtils.isEmpty(e.getMessage())) {
+                        Dialog.getInstance().showErrorDialog(e.getMessage());
+                    } else {
+                        Dialog.getInstance().showErrorDialog(_GUI._.ReconnectDialog_layoutDialogContent_error());
+                    }
                     dispose();
-                    Dialog.getInstance().showErrorDialog(_GUI._.ReconnectDialog_layoutDialogContent_error());
 
                 }
 

@@ -31,7 +31,6 @@ import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.proxy.ProxyInfo;
 import jd.event.ControlEvent;
-import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.http.Browser;
 import jd.http.BrowserSettingsThread;
@@ -50,6 +49,8 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
@@ -429,50 +430,63 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     private void onErrorFileExists(DownloadLink downloadLink, PluginForHost plugin) {
         LinkStatus status = downloadLink.getLinkStatus();
         String[] fileExists = new String[] { _JDT._.system_download_triggerfileexists_overwrite(), _JDT._.system_download_triggerfileexists_skip(), _JDT._.system_download_triggerfileexists_rename() };
-        String title = _JDT._.jd_controlling_SingleDownloadController_askexists_title();
-        String msg = _JDT._.jd_controlling_SingleDownloadController_askexists(downloadLink.getFileOutput());
+        // String title =
+        // _JDT._.jd_controlling_SingleDownloadController_askexists_title();
+        // String msg =
+        // _JDT._.jd_controlling_SingleDownloadController_askexists(downloadLink.getFileOutput());
         // int doit =
         // JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS,
         // 1);
         IfFileExistsAction action = JsonConfig.create(GeneralSettings.class).getIfFileExistsAction();
         IfFileExistsAction doAction = action;
+
         switch (doAction) {
         case ASK_FOR_EACH_FILE:
-
-            switch (UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, title, msg, fileExists, 0, null, null, null, null)) {
-            case 0:
-                doAction = IfFileExistsAction.OVERWRITE_FILE;
-                break;
-            case 1:
-                doAction = IfFileExistsAction.SKIP_FILE;
-                break;
-            default:
-                doAction = IfFileExistsAction.AUTO_RENAME;
-
-            }
-            break;
-        case ASK_FOR_EACH_PACKAGE:
-
-            String saved = downloadLink.getFilePackage().getStringProperty("DO_IF_EXISTS", null);
             try {
-                doAction = IfFileExistsAction.valueOf(saved);
-                break;
-            } catch (Throwable e) {
-            }
-
-            switch (UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, title, msg, fileExists, 0, null, null, null, null)) {
-            case 0:
-                doAction = IfFileExistsAction.OVERWRITE_FILE;
-                break;
-            case 1:
+                doAction = NewUIO.I().show(IfFileExistsDialogInterface.class, new IfFileExistsDialog(downloadLink.getFileOutput(), downloadLink.getFilePackage().getName(), downloadLink.getFilePackage().getName() + "_" + downloadLink.getFilePackage().getCreated())).getAction();
+            } catch (DialogNoAnswerException e1) {
                 doAction = IfFileExistsAction.SKIP_FILE;
-                break;
-            default:
-                doAction = IfFileExistsAction.AUTO_RENAME;
-
             }
-            downloadLink.getFilePackage().setProperty("DO_IF_EXISTS", doAction.toString());
+            // switch
+            // (UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN,
+            // title, msg, fileExists, 0, null, null, null, null)) {
+            // case 0:
+            // doAction = IfFileExistsAction.OVERWRITE_FILE;
+            // break;
+            // case 1:
+            // doAction = IfFileExistsAction.SKIP_FILE;
+            // break;
+            // default:
+            // doAction = IfFileExistsAction.AUTO_RENAME;
+            //
+            // }
             break;
+        // case ASK_FOR_EACH_PACKAGE:
+        //
+        // String saved =
+        // downloadLink.getFilePackage().getStringProperty("DO_IF_EXISTS",
+        // null);
+        // try {
+        // doAction = IfFileExistsAction.valueOf(saved);
+        // break;
+        // } catch (Throwable e) {
+        // }
+        //
+        // switch (UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN,
+        // title, msg, fileExists, 0, null, null, null, null)) {
+        // case 0:
+        // doAction = IfFileExistsAction.OVERWRITE_FILE;
+        // break;
+        // case 1:
+        // doAction = IfFileExistsAction.SKIP_FILE;
+        // break;
+        // default:
+        // doAction = IfFileExistsAction.AUTO_RENAME;
+        //
+        // }
+        // downloadLink.getFilePackage().setProperty("DO_IF_EXISTS",
+        // doAction.toString());
+        // break;
 
         }
 

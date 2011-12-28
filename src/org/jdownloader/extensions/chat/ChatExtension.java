@@ -950,10 +950,12 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
             @Override
             public void run() {
                 while (true) {
-                    if (System.currentTimeMillis() - ChatExtension.this.lastAction > ChatExtension.AWAY_TIMEOUT) {
-                        ChatExtension.this.setNickAway(true);
-                    } else {
-                        ChatExtension.this.setNickAway(false);
+                    if (conn != null) {
+                        if (System.currentTimeMillis() - ChatExtension.this.lastAction > ChatExtension.AWAY_TIMEOUT) {
+                            ChatExtension.this.setNickAway(true);
+                        } else {
+                            ChatExtension.this.setNickAway(false);
+                        }
                     }
                     try {
                         Thread.sleep(10000);

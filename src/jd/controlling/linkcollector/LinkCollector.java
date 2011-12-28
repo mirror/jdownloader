@@ -26,7 +26,7 @@ import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
-import org.jdownloader.controlling.UniqueID;
+import org.jdownloader.controlling.UniqueSessionID;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.ExtensionController;
@@ -397,7 +397,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (!dupeCheckMap.add(link.getLinkID())) return null;
 
                 PackageInfo dpi = link.getDesiredPackageInfo();
-                UniqueID uID = null;
+                UniqueSessionID uID = null;
 
                 String packageName = null;
                 String packageID = null;

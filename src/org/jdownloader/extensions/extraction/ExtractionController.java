@@ -28,6 +28,7 @@ import jd.controlling.PasswordListController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging.Log;
 
 /**
  * Responsible for the correct procedure of the extraction process. Contains one
@@ -86,6 +87,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     }
 
     private void fireEvent(ExtractionEvent.Type event) {
+        Log.L.finer(event + "");
         ExtractionExtension.getIntance().fireEvent(new ExtractionEvent(this, event));
     }
 

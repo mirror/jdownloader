@@ -49,7 +49,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.controlling.UniqueID;
+import org.jdownloader.controlling.UniqueSessionID;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -168,7 +168,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private long                               created                 = -1l;
 
-    private transient UniqueID                 uniqueID                = null;
+    private transient UniqueSessionID                 uniqueID                = null;
     private transient String                   iconHost                = null;
     transient private DLinkPropertyListener    propertyListener;
 
@@ -187,7 +187,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      *            Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
-        uniqueID = new UniqueID();
+        uniqueID = new UniqueSessionID();
         this.defaultplugin = plugin;
         setName(name);
         downloadMax = 0;
@@ -230,10 +230,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
         /* deserialize object and then fill other stuff(transient..) */
         stream.defaultReadObject();
-        uniqueID = new UniqueID();
+        uniqueID = new UniqueSessionID();
     }
 
-    public UniqueID getUniqueID() {
+    public UniqueSessionID getUniqueID() {
         return uniqueID;
     }
 
@@ -818,6 +818,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             setAborted(true);
         } else {
             if (host != null && defaultplugin == null) {
+                new Exception().printStackTrace();
                 logger.severe("Es ist kein passendes HostPlugin geladen");
                 return;
             }

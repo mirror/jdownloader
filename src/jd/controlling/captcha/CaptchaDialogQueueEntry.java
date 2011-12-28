@@ -22,18 +22,18 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.controlling.UniqueID;
+import org.jdownloader.controlling.UniqueSessionID;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.translate._JDT;
 
 public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeException> {
 
-    private final UniqueID id = new UniqueID();
+    private final UniqueSessionID id = new UniqueSessionID();
 
     /**
      * @return the iD
      */
-    public UniqueID getID() {
+    public UniqueSessionID getID() {
         return id;
     }
 

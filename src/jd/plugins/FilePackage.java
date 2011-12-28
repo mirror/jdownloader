@@ -33,7 +33,7 @@ import jd.controlling.packagecontroller.PackageController;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.controlling.UniqueID;
+import org.jdownloader.controlling.UniqueSessionID;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
@@ -70,7 +70,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             }
 
             @Override
-            public UniqueID getUniqueID() {
+            public UniqueSessionID getUniqueID() {
                 return null;
             }
         };
@@ -155,7 +155,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     private transient boolean                                      isExpanded          = false;
 
     private transient PackageController<FilePackage, DownloadLink> controlledby        = null;
-    private transient UniqueID                                     uniqueID            = null;
+    private transient UniqueSessionID                                     uniqueID            = null;
     public static final String                                     PROPERTY_EXPANDED   = "EXPANDED";
     private static final String                                    PROPERTY_COMMENT    = "COMMENT";
     private static final String                                    PROPERTY_EXTRACT    = "EXTRACT";
@@ -164,7 +164,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     /**
      * @return the uniqueID
      */
-    public UniqueID getUniqueID() {
+    public UniqueSessionID getUniqueID() {
         return uniqueID;
     }
 
@@ -209,7 +209,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * downloadDirectory
      */
     private FilePackage() {
-        uniqueID = new UniqueID();
+        uniqueID = new UniqueSessionID();
         view = new FilePackageView();
         downloadDirectory = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         created = System.currentTimeMillis();
@@ -230,7 +230,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         /* deserialize object and then fill other stuff(transient..) */
         stream.defaultReadObject();
         isExpanded = getBooleanProperty(PROPERTY_EXPANDED, false);
-        uniqueID = new UniqueID();
+        uniqueID = new UniqueSessionID();
         view = new FilePackageView();
     }
 

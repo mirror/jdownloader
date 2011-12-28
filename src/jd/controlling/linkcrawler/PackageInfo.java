@@ -5,10 +5,10 @@ import java.util.HashSet;
 import jd.controlling.linkcollector.LinknameCleaner;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.UniqueID;
+import org.jdownloader.controlling.UniqueSessionID;
 
 public class PackageInfo {
-    private UniqueID uniqueId              = null;
+    private UniqueSessionID uniqueId              = null;
     private Boolean  autoExtractionEnabled = null;
 
     public Boolean isAutoExtractionEnabled() {
@@ -19,11 +19,11 @@ public class PackageInfo {
         this.autoExtractionEnabled = autoExtractionEnabled;
     }
 
-    public UniqueID getUniqueId() {
+    public UniqueSessionID getUniqueId() {
         return uniqueId;
     }
 
-    public void setUniqueId(UniqueID uniqueId) {
+    public void setUniqueId(UniqueSessionID uniqueId) {
         this.uniqueId = uniqueId;
     }
 

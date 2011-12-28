@@ -27,7 +27,7 @@ import jd.plugins.PluginsC;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
-import org.jdownloader.controlling.UniqueID;
+import org.jdownloader.controlling.UniqueSessionID;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
@@ -60,7 +60,7 @@ public class LinkCrawler implements IOPermission {
     private final long                    created;
 
     public static final String            ALLOW_MERGE              = "ALLOW_MERGE";
-    public static final UniqueID          PERMANENT_OFFLINE_ID     = new UniqueID();
+    public static final UniqueSessionID          PERMANENT_OFFLINE_ID     = new UniqueSessionID();
 
     /*
      * customized comparator we use to prefer faster decrypter plugins over

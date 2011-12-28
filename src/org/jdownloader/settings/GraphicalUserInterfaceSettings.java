@@ -6,6 +6,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractValidator;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.Description;
@@ -306,5 +307,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setThemeID(String themeID);
 
     void setWindowOpaque(boolean b);
+
+    @DefaultEnumValue("SKIP_FILE")
+    IfFileExistsAction getLastIfFileExists();
+
+    void setLastIfFileExists(IfFileExistsAction value);
 
 }

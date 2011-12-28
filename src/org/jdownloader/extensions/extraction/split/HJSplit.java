@@ -138,8 +138,8 @@ public class HJSplit extends IExtraction {
         int last = 1;
         List<String> missing = new ArrayList<String>();
         List<Integer> erg = new ArrayList<Integer>();
-
-        Regex r = new Regex(archive.getFirstArchiveFile().getFilePath(), ".*\\.([\\d]+)$");
+        String path = archive.getFirstArchiveFile() == null ? archive.getArchiveFiles().get(0).getFilePath() : archive.getFirstArchiveFile().getFilePath();
+        Regex r = new Regex(path, ".*\\.([\\d]+)$");
         int length = r.getMatch(0).length();
         String archivename = archive.getName();
 

@@ -2,7 +2,7 @@ package org.jdownloader.controlling;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-public class UniqueID {
+public class UniqueSessionID {
     private static final AtomicLong ID = new AtomicLong(0);
     private final long              id = ID.incrementAndGet();
 
@@ -14,8 +14,8 @@ public class UniqueID {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o instanceof UniqueID) {
-            if (((UniqueID) o).id == id) return true;
+        if (o instanceof UniqueSessionID) {
+            if (((UniqueSessionID) o).id == id) return true;
         }
         return false;
     }
