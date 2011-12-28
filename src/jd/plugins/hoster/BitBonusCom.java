@@ -54,7 +54,7 @@ public class BitBonusCom extends PluginForHost {
     @Override
     public String getAGBLink() {
 
-        return "http://filesmonster.com/rules.php";
+        return "http://bitbonus.com/rules.php";
 
     }
 
@@ -122,7 +122,7 @@ public class BitBonusCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (downloadLink.getStringProperty("PREMIUMONLY") != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
+        if (downloadLink.getStringProperty("PREMIUMONLY") != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.bitbonus.only4premium", PREMIUMONLYUSERTEXT));
         handleErrors();
         br.setFollowRedirects(true);
         downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
