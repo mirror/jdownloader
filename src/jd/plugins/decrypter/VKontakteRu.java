@@ -184,13 +184,20 @@ public class VKontakteRu extends PluginForDecrypt {
                  * http://vk.com/albums46486585
                  */
                 br.getPage(parameter);
-                String[] photoAlbums = br.getRegex("class=\"fl_l thumb\">[\t\n\r ]+<a href=\"(/album.*?)\"").getColumn(0);
+                String[] photoAlbums = br.getRegex("class=\"ge_photos_album\" href=\"(/album\\d+_\\d+)\"").getColumn(0);
                 if (photoAlbums == null || photoAlbums.length == 0) {
                     logger.warning("Couldn't find any photo albums for link: " + parameter);
                     return null;
                 }
                 for (String photoAlbum : photoAlbums) {
                     decryptedLinks.add(createDownloadlink("http://vkontakte.ru" + photoAlbum));
+                }
+                /** Some albums are stored somewhere else, find and add those */
+                String[] missingAlbums = br.getRegex("class=\\\\\"ge_photos_album\\\\\" href=\\\\\"\\\\(/album\\d+_\\d+)\\\\\"").getColumn(0);
+                if (missingAlbums != null && missingAlbums.length != 0) {
+                    for (String photoAlbum : missingAlbums) {
+                        decryptedLinks.add(createDownloadlink("http://vkontakte.ru" + photoAlbum));
+                    }
                 }
             } else {
                 /**
