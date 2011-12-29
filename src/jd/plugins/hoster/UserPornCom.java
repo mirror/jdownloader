@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,28 +27,26 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videozer.com" }, urls = { "http://(www\\.)?videozer\\.com/(video|embed)/[A-Za-z0-9]+" }, flags = { 0 })
-public class VideozerCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "userporn.com" }, urls = { "http://(www\\.)?userporn\\.com/(video/|watch_video\\.php\\?v=|e/)\\w+" }, flags = { 0 })
+public class UserPornCom extends PluginForHost {
 
-    private static int[] internalKeys = { 215678, 516929, 962043, 461752, 141994 };
+    private static int[] internalKeys = { 526729, 269502, 264523, 130622, 575869 };
 
-    public VideozerCom(final PluginWrapper wrapper) {
+    public UserPornCom(final PluginWrapper wrapper) {
         super(wrapper);
-        setStartIntervall(2000l + (long) 1000 * (int) Math.round(Math.random() * 3 + Math.random() * 3));
-    }
-
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/embed/", "/video/"));
+        setStartIntervall(2000l + (long) 1000 * (int) Math.round(Math.random() * 5 + Math.random() * 5));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.videozer.com/toc.php";
+        return "http://www.userporn.com/terms.php";
     }
 
     /* See jd.plugin.hoster.VideoBbCom */
-    private String getFinalLink(final DownloadLink downloadLink, final String token) {
+    private String getFinalLink(final DownloadLink downloadLink, final String token) throws Exception {
+        final String setting = Encoding.Base64Decode(br.getRegex("<param value=\"setting=(.*?)\"").getMatch(0));
+        if (setting == null || !setting.startsWith("http://")) { return null; }
+        br.getPage(setting);
         try {
             return new VideoBbCom.getFinallinkValue(internalKeys, token, br).DLLINK;
         } catch (final Throwable e) {
@@ -69,12 +66,13 @@ public class VideozerCom extends PluginForHost {
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         if (dllink.equals("ALGO_CONTROL_ERROR")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError: CrazyKeys!", 15 * 1000l); }
         sleep(3 * 1000l, downloadLink); // Flasplayer to slow
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 0);
+        if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.containsHTML("No htmlCode read")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 1000l); }
+            if (br.containsHTML("No htmlCode read") || dllink.matches("ALGOCONTROLPROBLEM")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.setFilenameFix(true);
         dl.startDownload();
     }
 
@@ -82,19 +80,21 @@ public class VideozerCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        // br.getPage(downloadLink.getDownloadURL());
-        br.getPage("http://www.videozer.com/player_control/settings.php?v=" + new Regex(downloadLink.getDownloadURL(), "videozer\\.com/video/(.+)").getMatch(0) + "&fv=v1.1.14");
-        if (br.containsHTML("(\"The page you have requested cannot be found|>The web page you were attempting to view may not exist or may have moved|>Please try to check the web address for typos)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("\"video\":\\{\"title\":\"(.*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta content=\"videozer \\- ([^\"\\']+)\"  name=\"\" property=\"og:title\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>VideoZer \\- Fast, Free and Reliable Video Hosting \\- (.*?)</title>").getMatch(0);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Before access to userporn\\.com")) {
+            final String next = br.getRegex("<a href=\"(.*?)\">Enter</a>").getMatch(0);
+            if (next != null) {
+                br.getPage("http://userporn.com" + next);
             }
         }
+        if (br.containsHTML("<title>Userporn \\- Your Best Private Porn Site</title>")) {
+            br.getPage(downloadLink.getDownloadURL());
+        }
+        if (br.containsHTML("(>Video is not available<|>The page or video you are looking for cannot|<title>Userporn \\- Your Best Private Porn Site</title>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = br.getRegex("<title>(.*?) \\- Userporn \\- Your Best Private Porn Site</title>").getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        downloadLink.setName(Encoding.htmlDecode(filename));
         return AvailableStatus.TRUE;
     }
 

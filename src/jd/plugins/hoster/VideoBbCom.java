@@ -41,7 +41,7 @@ public class VideoBbCom extends PluginForHost {
     protected static class getFinallinkValue {
 
         private BigInteger BI;
-        final String       DLLINK;
+        String             DLLINK;
 
         getFinallinkValue(final int[] internalKey, final String token, final Browser br) {
             /*
@@ -57,52 +57,56 @@ public class VideoBbCom extends PluginForHost {
             final int outputInfoKey = Integer.parseInt(br.getRegex("salt\":(\\d+),").getMatch(0));
             final String[] algoCtrl = JDHexUtils.toString(decryptBit(outputInfoRaw, outputInfoKey, 950569)).split(";");
 
-            for (final String eachValue : algoCtrl[1].split("&")) {
-                final String[] parameterTyp = eachValue.split("=");
-                outputKeys.put(parameterTyp[0], Integer.parseInt(parameterTyp[1]));
-            }
-
-            final int keyTwo = internalKey[outputKeys.get("ik") - 1];
-            final int keyOne = Integer.parseInt(br.getRegex("rkts\":(\\d+),").getMatch(0));
-
-            for (final String eachValue : algoCtrl[0].split("&")) {
-
-                final String[] parameterTyp = eachValue.split("=");
-
-                switch (Integer.parseInt(parameterTyp[1])) {
-                case 1:
-                    keyString = br.getRegex("sece2\":\"([0-9a-f]+)\",").getMatch(0);
-                    decryptedString = decryptByte(keyString, keyOne, keyTwo);
-                    break;
-                case 2:
-                    keyString = br.getRegex("\\{\"url\":\"([0-9a-f]+)\",").getMatch(0);
-                    decryptedString = decryptBit(keyString, keyOne, keyTwo);
-                    break;
-                case 3:
-                    keyString = br.getRegex("type\":\"([0-9a-f]+)\",").getMatch(0);
-                    decryptedString = decryptBit9300(keyString, keyOne, keyTwo);
-                    break;
-                case 4:
-                    keyString = br.getRegex("time\":\"(.*?)\"").getMatch(0);
-                    decryptedString = decryptBitLion(keyString, keyOne, keyTwo);
-                    break;
-                case 5:
-                    keyString = br.getRegex("euno\":\"(.*?)\"").getMatch(0);
-                    decryptedString = decryptBitHeal(keyString, keyOne, keyTwo);
-                    break;
-                case 6:
-                    keyString = br.getRegex("sugar\":\"(.*?)\"").getMatch(0);
-                    decryptedString = decryptBitBrokeUp(keyString, keyOne, keyTwo);
-                    break;
-                default:
-                    dllink = "";
-                    decryptedString = "";
-                    break;
+            if (algoCtrl != null && algoCtrl.length >= 0 && algoCtrl[0].indexOf("&") > 0) {
+                for (final String eachValue : algoCtrl[1].split("&")) {
+                    final String[] parameterTyp = eachValue.split("=");
+                    outputKeys.put(parameterTyp[0], Integer.parseInt(parameterTyp[1]));
                 }
-                dllink = dllink + parameterTyp[0] + "=" + decryptedString + "&";
-            }
 
-            DLLINK = dllink + "start=0";
+                final int keyTwo = internalKey[outputKeys.get("ik") - 1];
+                final int keyOne = Integer.parseInt(br.getRegex("rkts\":(\\d+),").getMatch(0));
+
+                for (final String eachValue : algoCtrl[0].split("&")) {
+
+                    final String[] parameterTyp = eachValue.split("=");
+
+                    switch (Integer.parseInt(parameterTyp[1])) {
+                    case 1:
+                        keyString = br.getRegex("sece2\":\"([0-9a-f]+)\",").getMatch(0);
+                        decryptedString = decryptByte(keyString, keyOne, keyTwo);
+                        break;
+                    case 2:
+                        keyString = br.getRegex("\\{\"url\":\"([0-9a-f]+)\",").getMatch(0);
+                        decryptedString = decryptBit(keyString, keyOne, keyTwo);
+                        break;
+                    case 3:
+                        keyString = br.getRegex("type\":\"([0-9a-f]+)\",").getMatch(0);
+                        decryptedString = decryptBit9300(keyString, keyOne, keyTwo);
+                        break;
+                    case 4:
+                        keyString = br.getRegex("time\":\"(.*?)\"").getMatch(0);
+                        decryptedString = decryptBitLion(keyString, keyOne, keyTwo);
+                        break;
+                    case 5:
+                        keyString = br.getRegex("euno\":\"(.*?)\"").getMatch(0);
+                        decryptedString = decryptBitHeal(keyString, keyOne, keyTwo);
+                        break;
+                    case 6:
+                        keyString = br.getRegex("sugar\":\"(.*?)\"").getMatch(0);
+                        decryptedString = decryptBitBrokeUp(keyString, keyOne, keyTwo);
+                        break;
+                    default:
+                        dllink = "";
+                        decryptedString = "";
+                        break;
+                    }
+                    dllink = dllink + parameterTyp[0] + "=" + decryptedString + "&";
+                }
+
+                DLLINK = dllink + "start=0";
+            } else {
+                DLLINK = "ALGO_CONTROL_ERROR";
+            }
         };
 
         public String convertBin2Str(final String s) {
@@ -272,6 +276,7 @@ public class VideoBbCom extends PluginForHost {
         requestFileInformation(downloadLink);
         final String dllink = getFinalLink(downloadLink, "token1");
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dllink.equals("ALGO_CONTROL_ERROR")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError: CrazyKeys!", 15 * 1000l); }
         sleep(3 * 1000l, downloadLink); // Flasplayer to slow
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
