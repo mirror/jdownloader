@@ -58,6 +58,7 @@ public class VideoBbCom extends PluginForHost {
             final String[] algoCtrl = JDHexUtils.toString(decryptBit(outputInfoRaw, outputInfoKey, 950569)).split(";");
 
             if (algoCtrl != null && algoCtrl.length >= 0 && algoCtrl[0].indexOf("&") > 0) {
+
                 for (final String eachValue : algoCtrl[1].split("&")) {
                     final String[] parameterTyp = eachValue.split("=");
                     outputKeys.put(parameterTyp[0], Integer.parseInt(parameterTyp[1]));
@@ -104,8 +105,10 @@ public class VideoBbCom extends PluginForHost {
                 }
 
                 DLLINK = dllink + "start=0";
-            } else {
+            } else if (algoCtrl != null) {
                 DLLINK = "ALGO_CONTROL_ERROR";
+            } else {
+                DLLINK = null;
             }
         };
 
