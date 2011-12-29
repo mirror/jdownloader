@@ -66,7 +66,7 @@ public class UserPornCom extends PluginForHost {
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         if (dllink.equals("ALGO_CONTROL_ERROR")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError: CrazyKeys!", 15 * 1000l); }
         sleep(3 * 1000l, downloadLink); // Flasplayer to slow
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("No htmlCode read") || dllink.matches("ALGOCONTROLPROBLEM")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 1000l); }
@@ -94,7 +94,7 @@ public class UserPornCom extends PluginForHost {
         String filename = br.getRegex("<title>(.*?) \\- Userporn \\- Your Best Private Porn Site</title>").getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         filename = filename.trim();
-        downloadLink.setName(Encoding.htmlDecode(filename));
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
         return AvailableStatus.TRUE;
     }
 

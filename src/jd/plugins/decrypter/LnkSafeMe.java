@@ -40,11 +40,12 @@ public class LnkSafeMe extends PluginForDecrypt {
 
     private static final String PASSWORDFAILED  = ">Incorrect Password, please try again";
     private static final String RECAPTCHAFAILED = "incorrect-captcha-sol";
-    private static final String LINKREGEX       = "(d/[a-z0-9]+)(<|\")";
+    private static final String LINKREGEX       = "(d/[a-z0-9]+)(/|<|\")";
     private static final String MAINPAGE        = "http://linksafe.me/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<String> cryptedLinks = new ArrayList<String>();
         br.setFollowRedirects(false);
         String parameter = param.toString().replace("linksafe.com/", "linksafe.me/");
         br.getPage(parameter);
@@ -93,8 +94,11 @@ public class LnkSafeMe extends PluginForDecrypt {
             if (br.containsHTML(PASSWORDFAILED)) throw new DecrypterException(DecrypterException.PASSWORD);
             String[] links = br.getRegex(LINKREGEX).getColumn(0);
             if (links == null || links.length == 0) return null;
+            /** Remove duplicates */
+            for (String cryptedLink : links)
+                if (!cryptedLinks.contains(cryptedLink)) cryptedLinks.add(cryptedLink);
             progress.setRange(links.length);
-            for (String dl : links) {
+            for (String dl : cryptedLinks) {
                 br.getPage(MAINPAGE + dl);
                 String finallink = br.getRedirectLocation();
                 if (finallink == null) {
