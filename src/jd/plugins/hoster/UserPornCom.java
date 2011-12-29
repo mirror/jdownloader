@@ -72,7 +72,9 @@ public class UserPornCom extends PluginForHost {
             if (br.containsHTML("No htmlCode read") || dllink.matches("ALGOCONTROLPROBLEM")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.setFilenameFix(true);
+        final String tempName = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        downloadLink.setFinalFileName(downloadLink.getName().replace(".flv", tempName.substring(tempName.lastIndexOf("."))));
+        downloadLink.setProperty("nameok", "true");
         dl.startDownload();
     }
 
@@ -94,7 +96,7 @@ public class UserPornCom extends PluginForHost {
         String filename = br.getRegex("<title>(.*?) \\- Userporn \\- Your Best Private Porn Site</title>").getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        if (downloadLink.getStringProperty("nameok") == null) downloadLink.setName(Encoding.htmlDecode(filename) + ".flv");
         return AvailableStatus.TRUE;
     }
 
