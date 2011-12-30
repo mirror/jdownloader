@@ -57,6 +57,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.Screen;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
@@ -194,8 +195,15 @@ public class LnkCrptWs extends PluginForDecrypt {
                 PARAMS.put("src", DLURL);
                 SERVERSTRING = rcBr.getRegex("var _13=\"(.*?)\"").getMatch(0);
             } else {
-                JDLogger.getLogger().severe("Keycaptcha Module fails: " + rcBr.getHttpConnection());
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                try {
+                    JDLogger.getLogger().severe("Keycaptcha Module fails: " + rcBr.getHttpConnection());
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } finally {
+                    try {
+                        rcBr.getHttpConnection().disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
             }
             if (SERVERSTRING != null && SERVERSTRING.startsWith("https")) {
                 SERVERSTRING = SERVERSTRING + Encoding.urlEncode(DLURL) + "&r=" + Math.random();
@@ -213,7 +221,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 // }
 
                 PARAMS.put("s_s_c_web_server_sign4", rcBr.getRegex("s_s_c_web_server_sign4=\"(.*?)\"").getMatch(0));
-                SERVERSTRING = rcBr.getRegex("_5\\.setAttribute\\(\"src\",\"(.*?)\"").getMatch(0);
+                SERVERSTRING = rcBr.getRegex("\\.setAttribute\\(\"src\",\"(.*?)\"").getMatch(0);
             }
             if (SERVERSTRING != null && SERVERSTRING.startsWith("https")) {
                 SERVERSTRING = SERVERSTRING + Encoding.urlEncode(getGjsParameter()) + "&r=" + Math.random();
@@ -230,8 +238,15 @@ public class LnkCrptWs extends PluginForDecrypt {
                 sscStc = rcBr.getRegex("s_s_c_stc=s_s_c_loader\\.s_s_c_getimagest\\(\'(.*?)\',\'(.*?)\',(.*?),(.*?)\\)").getRow(0);
                 SERVERSTRING = rcBr.getRegex("s_s_c_resscript\\.setAttribute\\(\'src\',\'(.*?)\'").getMatch(0) + Encoding.urlEncode(getGjsParameter());
             } else {
-                JDLogger.getLogger().severe("Keycaptcha Module fails: " + rcBr.getHttpConnection());
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                try {
+                    JDLogger.getLogger().severe("Keycaptcha Module fails: " + rcBr.getHttpConnection());
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } finally {
+                    try {
+                        rcBr.getHttpConnection().disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
             }
 
         }
@@ -915,7 +930,6 @@ public class LnkCrptWs extends PluginForDecrypt {
         super(wrapper);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -924,22 +938,19 @@ public class LnkCrptWs extends PluginForDecrypt {
         prepareBrowser(RandomUserAgent.generate());
         final String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
         br.getPage("http://linkcrypt.ws/dir/" + containerId);
-        // set of strings found on 404 pages
-        String OfflineCk1 = br.getRegex("(<h1>Folder not avialable\\!</h1>)").getMatch(0);
-        String OfflineCk2 = br.getRegex("(linkcrypt\\.ws/image/Warning\\.png\")").getMatch(0);
-        String OfflineCk3 = br.getRegex("(<meta name=\"title\" content=\"Linkcrypt.ws // Error 404\" />)").getMatch(0);
-        String OfflineCk4 = br.getRegex("(<title>Linkcrypt\\.ws // Error 404</title>)").getMatch(0);
-        // real html of authorisation (password protected folder links)
-        boolean PasswordCk1 = false;
-        if ((br.containsHTML("<div id=\"title\\_head\">[\r\n\t]+<strong>Authorizing</strong>") && br.containsHTML("<input type=\"image\" src=\"http://linkcrypt\\.ws/image/submit\\_en\\.png\" />"))) PasswordCk1 = true;
-
-        if ((OfflineCk1 != null && OfflineCk2 != null && (OfflineCk3 != null && OfflineCk4 != null)) && (PasswordCk1 != true)) {
-            /** Don't stop here as the text could be fake **/
+        if (br.containsHTML("<h1>Folder not avialable\\!</h1>") && br.containsHTML("linkcrypt\\.ws/image/Warning\\.png")) {
             logger.info("This link might be offline: " + parameter);
-            logger.info("Further processing required...");
+            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         }
-
-        br.cloneBrowser().openGetConnection("http://linkcrypt.ws/js/jquery.js");
+        URLConnectionAdapter con = null;
+        try {
+            con = br.cloneBrowser().openGetConnection("http://linkcrypt.ws/js/jquery.js");
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
         // Different captcha types
         boolean valid = true;
 
@@ -994,170 +1005,148 @@ public class LnkCrptWs extends PluginForDecrypt {
         if (!valid) { throw new DecrypterException(DecrypterException.CAPTCHA); }
         // check for a password. Store latest password in DB
         Form password = br.getForm(0);
-
-        // check to see if site login url is within getForm(0), if present look
-        // for next form and try.
-        String LoginCk = new Regex(password, "Action: (http://linkcrypt\\.ws/h?login\\.html)").getMatch(0);
-        // if login contained within getForm(0) try getForm(1) to check again.
-        // This prevents JD asking users for password entry when page is
-        // actually offline|404 , as they have site login user:pass and this
-        // triggers it!
-        if (LoginCk != null) {
-            password = br.getForm(1);
-            // no addition forms exist, set nulls, and exit plugin
-            if (password == null) {
-                LoginCk = null;
-                if ((password == null && LoginCk == null) && ((OfflineCk1 != null && OfflineCk2 != null && (OfflineCk3 != null && OfflineCk4 != null)) && (PasswordCk1 != true))) {
-                    logger.warning("We have determined it's offline: " + parameter);
-                    return null;
-                }
+        if (password != null && password.hasInputFieldByName("password")) {
+            String latestPassword = getPluginConfig().getStringProperty("PASSWORD");
+            if (latestPassword != null) {
+                password.put("password", latestPassword);
+                br.submitForm(password);
             }
-            // if getForm exist and still contains login url it's a double fake
-            if (password != null) {
-                LoginCk = new Regex(password, "Action: (http://linkcrypt\\.ws/h?login\\.html)").getMatch(0);
-                if ((password != null && LoginCk != null) && ((OfflineCk1 != null && OfflineCk2 != null && (OfflineCk3 != null && OfflineCk4 != null)) && (PasswordCk1 != true))) {
-                    logger.warning("We have determined it's offline: " + parameter);
-                    return null;
+            // no defaultpassword, or defaultpassword is wrong
+            for (int i = 0; i <= 3; i++) {
+                password = br.getForm(0);
+                if (password != null && password.hasInputFieldByName("password")) {
+                    latestPassword = Plugin.getUserInput(null, param);
+                    password.put("password", latestPassword);
+                    br.submitForm(password);
+                    password = br.getForm(0);
+                    if (password != null && password.hasInputFieldByName("password")) {
+                        continue;
+                    }
+                    getPluginConfig().setProperty("PASSWORD", latestPassword);
+                    getPluginConfig().save();
+                    break;
+                }
+                break;
+            }
+        }
+        if (password != null && password.hasInputFieldByName("password")) { throw new DecrypterException(DecrypterException.PASSWORD); }
+        // Look for containers
+        String[] containers = br.getRegex("eval(.*?)\n").getColumn(0);
+        final String tmpc = br.getRegex("<div id=\"containerfiles\"(.*?)</script>").getMatch(0);
+        if (tmpc != null) {
+            containers = new Regex(tmpc, "eval(.*?)\n").getColumn(0);
+        }
+        for (final String c : containers) {
+            Object result = new Object();
+            final ScriptEngineManager manager = new ScriptEngineManager();
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            try {
+                result = engine.eval(c);
+            } catch (final Throwable e) {
+            }
+            final String code = result.toString();
+            String[] row = new Regex(code, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0);
+            if (row == null && br.containsHTML("dlc.png")) {
+                row = new Regex(code, "href=\"(http.*?)\".*?(dlc)").getRow(0);
+            }
+            if (row != null) {
+                map.put(row[1], row[0]);
+            }
+        }
+
+        final Form preRequest = br.getForm(0);
+        if (preRequest != null) {
+            final String url = preRequest.getRegex("http://.*/captcha\\.php\\?id=\\d+").getMatch(-1);
+            if (url != null) {
+                con = null;
+                try {
+                    con = br.cloneBrowser().openGetConnection(url);
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         }
-        // else first form holds data we need !
-        else {
-            if (password != null && password.hasInputFieldByName("password")) {
-                String latestPassword = getPluginConfig().getStringProperty("PASSWORD");
-                if (latestPassword != null) {
-                    password.put("password", latestPassword);
-                    br.submitForm(password);
-                }
-                // no default password, or default password is wrong
-                for (int i = 0; i <= 3; i++) {
-                    password = br.getForm(0);
-                    if (password != null && password.hasInputFieldByName("password")) {
-                        latestPassword = Plugin.getUserInput(null, param);
-                        password.put("password", latestPassword);
-                        br.submitForm(password);
-                        password = br.getForm(0);
-                        if (password != null && password.hasInputFieldByName("password")) {
+
+        File container = null;
+        if (map.containsKey("dlc")) {
+            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc", true);
+            if (!container.exists()) {
+                container.createNewFile();
+            }
+            br.cloneBrowser().getDownload(container, map.get("dlc"));
+        } else if (map.containsKey("ccf")) {
+            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf", true);
+            if (!container.exists()) {
+                container.createNewFile();
+            }
+            br.cloneBrowser().getDownload(container, map.get("ccf"));
+        } else if (map.containsKey("rsdf")) {
+            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf", true);
+            if (!container.exists()) {
+                container.createNewFile();
+            }
+            br.cloneBrowser().getDownload(container, map.get("rsdf"));
+        }
+        if (container != null) {
+            // container available
+            logger.info("Container found: " + container);
+            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+            container.delete();
+            if (decryptedLinks.size() > 0) { return decryptedLinks; }
+        }
+        /* we have to open the normal page for weblinks */
+        if (br.containsHTML("BlueHeadLine.*?>(Weblinks)<")) {
+            br.getPage("http://linkcrypt.ws/dir/" + containerId);
+            logger.info("ContainerID is null, trying webdecryption...");
+            final Form[] forms = br.getForms();
+            progress.setRange(forms.length - 8);
+            for (final Form form : forms) {
+                Browser clone;
+                if (form.getInputField("file") != null && form.getInputField("file").getValue() != null && form.getInputField("file").getValue().length() > 0) {
+                    progress.increase(1);
+                    clone = br.cloneBrowser();
+                    clone.submitForm(form);
+                    final String[] srcs = clone.getRegex("<frame scrolling.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getColumn(0);
+                    for (String col : srcs) {
+                        if (col.contains("out.pl=head")) {
                             continue;
                         }
-                        getPluginConfig().setProperty("PASSWORD", latestPassword);
-                        getPluginConfig().save();
-                        break;
-                    }
-                    break;
-                }
-            }
-            if (password != null && password.hasInputFieldByName("password")) { throw new DecrypterException(DecrypterException.PASSWORD); }
-            // Look for containers
-            String[] containers = br.getRegex("eval(.*?)\n").getColumn(0);
-            final String tmpc = br.getRegex("<div id=\"containerfiles\"(.*?)</script>").getMatch(0);
-            if (tmpc != null) {
-                containers = new Regex(tmpc, "eval(.*?)\n").getColumn(0);
-            }
-            for (final String c : containers) {
-                Object result = new Object();
-                final ScriptEngineManager manager = new ScriptEngineManager();
-                final ScriptEngine engine = manager.getEngineByName("javascript");
-                try {
-                    result = engine.eval(c);
-                } catch (final Throwable e) {
-                }
-                final String code = result.toString();
-                String[] row = new Regex(code, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0);
-                if (row == null && br.containsHTML("dlc.png")) {
-                    row = new Regex(code, "href=\"(http.*?)\".*?(dlc)").getRow(0);
-                }
-                if (row != null) {
-                    map.put(row[1], row[0]);
-                }
-            }
-
-            final Form preRequest = br.getForm(0);
-            if (preRequest != null) {
-                final String url = preRequest.getRegex("http://.*/captcha\\.php\\?id=\\d+").getMatch(-1);
-                if (url != null) {
-                    br.cloneBrowser().openGetConnection(url);
-                }
-            }
-
-            File container = null;
-            if (map.containsKey("dlc")) {
-                container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc", true);
-                if (!container.exists()) {
-                    container.createNewFile();
-                }
-                br.cloneBrowser().getDownload(container, map.get("dlc"));
-            } else if (map.containsKey("ccf")) {
-                container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf", true);
-                if (!container.exists()) {
-                    container.createNewFile();
-                }
-                br.cloneBrowser().getDownload(container, map.get("ccf"));
-            } else if (map.containsKey("rsdf")) {
-                container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf", true);
-                if (!container.exists()) {
-                    container.createNewFile();
-                }
-                br.cloneBrowser().getDownload(container, map.get("rsdf"));
-            }
-            if (container != null) {
-                // container available
-                logger.info("Container found: " + container);
-                decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-                container.delete();
-                if (decryptedLinks.size() > 0) { return decryptedLinks; }
-            }
-            /* we have to open the normal page for weblinks */
-            if (br.containsHTML("BlueHeadLine.*?>(Weblinks)<")) {
-                br.getPage("http://linkcrypt.ws/dir/" + containerId);
-                logger.info("ContainerID is null, trying webdecryption...");
-                final Form[] forms = br.getForms();
-                progress.setRange(forms.length - 8);
-                for (final Form form : forms) {
-                    Browser clone;
-                    if (form.getInputField("file") != null && form.getInputField("file").getValue() != null && form.getInputField("file").getValue().length() > 0) {
-                        progress.increase(1);
-                        clone = br.cloneBrowser();
-                        clone.submitForm(form);
-                        final String[] srcs = clone.getRegex("<frame scrolling.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getColumn(0);
-                        for (String col : srcs) {
-                            if (col.contains("out.pl=head")) {
-                                continue;
-                            }
-                            col = Encoding.htmlDecode(col);
-                            if (col.contains("out.pl")) {
-                                clone.getPage(col);
-                                // Thread.sleep(600);
-                                if (clone.containsHTML("eval")) {
-                                    final String[] evals = clone.getRegex("eval(.*?)\n").getColumn(0);
-                                    for (final String c : evals) {
-                                        Object result = new Object();
-                                        final ScriptEngineManager manager = new ScriptEngineManager();
-                                        final ScriptEngine engine = manager.getEngineByName("javascript");
-                                        try {
-                                            result = engine.eval(c);
-                                        } catch (final Throwable e) {
-                                        }
-                                        final String code = result.toString();
-                                        if (code.contains("ba2se") || code.contains("premfree")) {
-                                            String versch;
-                                            versch = new Regex(code, "ba2se='(.*?)'").getMatch(0);
-                                            if (versch == null) {
-                                                versch = new Regex(code, ".*?='([^']*)'").getMatch(0);
-                                                versch = Encoding.Base64Decode(versch);
-                                                versch = new Regex(versch, "<iframe.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getMatch(0);
-                                            }
+                        col = Encoding.htmlDecode(col);
+                        if (col.contains("out.pl")) {
+                            clone.getPage(col);
+                            // Thread.sleep(600);
+                            if (clone.containsHTML("eval")) {
+                                final String[] evals = clone.getRegex("eval(.*?)\n").getColumn(0);
+                                for (final String c : evals) {
+                                    Object result = new Object();
+                                    final ScriptEngineManager manager = new ScriptEngineManager();
+                                    final ScriptEngine engine = manager.getEngineByName("javascript");
+                                    try {
+                                        result = engine.eval(c);
+                                    } catch (final Throwable e) {
+                                    }
+                                    final String code = result.toString();
+                                    if (code.contains("ba2se") || code.contains("premfree")) {
+                                        String versch;
+                                        versch = new Regex(code, "ba2se='(.*?)'").getMatch(0);
+                                        if (versch == null) {
+                                            versch = new Regex(code, ".*?='([^']*)'").getMatch(0);
                                             versch = Encoding.Base64Decode(versch);
-                                            versch = Encoding.htmlDecode(new Regex(versch, "100.*?src=\"(.*?)\"></iframe>").getMatch(0));
-                                            if (versch != null) {
-                                                final DownloadLink dl = createDownloadlink(versch);
-                                                try {
-                                                    distribute(dl);
-                                                } catch (final Throwable e) {
-                                                    /* does not exist in 09581 */
-                                                }
-                                                decryptedLinks.add(createDownloadlink(versch));
+                                            versch = new Regex(versch, "<iframe.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getMatch(0);
+                                        }
+                                        versch = Encoding.Base64Decode(versch);
+                                        versch = Encoding.htmlDecode(new Regex(versch, "100.*?src=\"(.*?)\"></iframe>").getMatch(0));
+                                        if (versch != null) {
+                                            final DownloadLink dl = createDownloadlink(versch);
+                                            try {
+                                                distribute(dl);
+                                            } catch (final Throwable e) {
+                                                /* does not exist in 09581 */
                                             }
+                                            decryptedLinks.add(createDownloadlink(versch));
                                         }
                                     }
                                 }
@@ -1166,15 +1155,15 @@ public class LnkCrptWs extends PluginForDecrypt {
                     }
                 }
             }
-            if (decryptedLinks == null || decryptedLinks.size() == 0) {
-                logger.info("No links found, let's see if CNL2 is available!");
-                if (map.containsKey("cnl")) {
-                    LocalBrowser.openDefaultURL(new URL(parameter));
-                    throw new DecrypterException(JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
-                }
-                logger.warning("Decrypter out of date for link: " + parameter);
-                return null;
+        }
+        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            logger.info("No links found, let's see if CNL2 is available!");
+            if (map.containsKey("cnl")) {
+                LocalBrowser.openDefaultURL(new URL(parameter));
+                throw new DecrypterException(JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
             }
+            logger.warning("Decrypter out of date for link: " + parameter);
+            return null;
         }
         return decryptedLinks;
     }
@@ -1186,5 +1175,9 @@ public class LnkCrptWs extends PluginForDecrypt {
         br.getHeaders().put("Accept-Language", "en-EN");
         br.getHeaders().put("User-Agent", userAgent);
         br.getHeaders().put("Connection", null);
+        try {
+            br.setCookie("linkcrypt.ws", "language", "en");
+        } catch (final Throwable e) {
+        }
     }
 }

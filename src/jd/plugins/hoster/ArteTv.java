@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.util.regex.Pattern;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -27,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Regex;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "liveweb.arte.tv", "videos.arte.tv" }, urls = { "http://(www\\.)?arte\\.tv/[a-z]{2}/.+", "http://liveweb\\.arte\\.tv/[a-z]{2}/.+", "http://videos\\.arte\\.tv/[a-z]{2}/.+" }, flags = { PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "arte.tv", "liveweb.arte.tv", "videos.arte.tv" }, urls = { "http://(www\\.)?arte\\.tv/[a-z]{2}/videos/.+", "http://liveweb\\.arte\\.tv/[a-z]{2}/videos/.+", "http://videos\\.arte\\.tv/[a-z]{2}/videos/.+" }, flags = { PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY })
 public class ArteTv extends PluginForHost {
 
     private String CLIPURL     = null;
@@ -75,7 +77,7 @@ public class ArteTv extends PluginForHost {
         LANG = LANG == null ? "de" : LANG;
         br.setFollowRedirects(true);
         br.getPage(link);
-        if (!link.matches("liveweb\\.arte\\.tv")) {
+        if (!link.matches("http://liveweb\\.arte\\.tv.+")) {
             requestVideosArte(downloadLink);
         } else {
             requestLivewebArte(downloadLink);
@@ -83,9 +85,9 @@ public class ArteTv extends PluginForHost {
         if (FILENAME == null || CLIPURL == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String ext = CLIPURL.substring(CLIPURL.lastIndexOf("."), CLIPURL.length());
         if (ext.length() > 4) {
-            ext = null;
+            ext = new Regex(ext, Pattern.compile("\\w/(mp4):", Pattern.CASE_INSENSITIVE)).getMatch(0);
         }
-        ext = ext == null ? ".flv" : ext;
+        ext = ext == null ? ".flv" : "." + ext;
         if (FILENAME.endsWith(".")) {
             FILENAME = FILENAME.substring(0, FILENAME.length() - 1);
         }
@@ -117,7 +119,6 @@ public class ArteTv extends PluginForHost {
         if (FLASHPLAYER == null || tmpUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         tmpUrl = Encoding.urlDecode(tmpUrl, true);
         br.getPage(tmpUrl);
-        tmpUrl = null;
         tmpUrl = br.getRegex("<video lang=\"" + LANG + "\" ref=\"(.*?)\"").getMatch(0);
         if (tmpUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         br.getPage(tmpUrl);
