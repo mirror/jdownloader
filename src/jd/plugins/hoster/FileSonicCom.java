@@ -214,6 +214,16 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
                 account.setValid(true);
                 ai.setUnlimitedTraffic();
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate.trim(), "yyyy-MM-dd HH:mm:ss", null));
+                long valid = ai.getValidUntil();
+                if (ai.isExpired()) {
+                    /*
+                     * workaround for recurring payments and delayed payment, we
+                     * add one more day
+                     */
+                    ai.setExpired(false);
+                    valid = System.currentTimeMillis() + 24 * 60 * 60 * 1000l;
+                    ai.setValidUntil(valid);
+                }
                 return ai;
             }
             account.setValid(false);
