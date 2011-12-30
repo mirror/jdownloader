@@ -65,17 +65,20 @@ public class DevArtCm extends PluginForDecrypt {
 
         // only non /art/ requires packagename
         if (parameter.contains("/gallery/") || parameter.contains("/favourites/")) {
-            // find username
+            // find and set username
             String username = br.getRegex("<h1>\\*<a class=\"u\" href=\"" + host + "\">(.*?)</a></h1>").getMatch(0);
-            // set page type
+            // find and set page type
             String pagetype = "";
             if (parameter.contains("/favourites/")) pagetype = "Favourites";
             if (parameter.contains("/gallery/")) pagetype = "Gallery";
+            // find and set pagename
+            String pagename = br.getRegex("<span class=\"folder\\-title\">(.*?)</span>").getMatch(0);
             // set packagename
             String fpName = "";
-            if ((fpName != null) && (username != null) && (pagetype != null)) fpName = username + " - " + pagetype + " - " + br.getRegex("<span class=\"folder\\-title\">(.*?)</span>").getMatch(0);
-            else if ((fpName != null) && (username != null)) fpName = username + " - " + br.getRegex("<span class=\"folder\\-title\">(.*?)</span>").getMatch(0);
-            else if ((fpName != null) && (pagetype != null)) fpName = pagetype + " - " + br.getRegex("<span class=\"folder\\-title\">(.*?)</span>").getMatch(0);
+            if ((username != null) && (pagetype != null) && (pagename != null)) fpName = username + " - " + pagetype + " - " + pagename;
+            else if ((username != null) && (pagename != null)) fpName = username + " - " + pagename;
+            else if ((username != null) && (pagetype != null)) fpName = username + " - " + pagetype;
+            else if ((pagetype != null) && (pagename != null)) fpName = pagetype + " - " + pagename;
             
             // now we find and crawl! 
             parsePage(decryptedLinks, host, parameter);
