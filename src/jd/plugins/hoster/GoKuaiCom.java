@@ -61,6 +61,7 @@ public class GoKuaiCom extends PluginForHost {
             }
         }
         String filesize = br.getRegex("<span class=\"filesize\">文件大小：<strong>(.*?)</strong></span>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<span class=\"filesize\">(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /** Server sends bad filenames */
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
