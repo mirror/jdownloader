@@ -91,6 +91,7 @@ public class FilestoreTo extends PluginForHost {
     public void haveFun() throws Exception {
         final ArrayList<String> someStuff = new ArrayList<String>();
         final ArrayList<String> regexStuff = new ArrayList<String>();
+        regexStuff.add("<table width=\"\\d+%\" border=\"\\d+\" cellspacing=\"\\d+\" cellpadding=\"\\d+\" style=\"[^\"]+display:none;\">(.*?)</table>");
         regexStuff.add("(<.*?>)");
         regexStuff.add("( )");
         regexStuff.add("(\r)");

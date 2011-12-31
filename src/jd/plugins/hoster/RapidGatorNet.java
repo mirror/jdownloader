@@ -16,9 +16,11 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -26,18 +28,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://[\\w\\.]*?rapidgator\\.net/(files/dl/)?\\d+/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://(www\\.)?rapidgator\\.net/file/\\d+/[^/<>]+\\.html" }, flags = { 0 })
 public class RapidGatorNet extends PluginForHost {
 
     public RapidGatorNet(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("files/dl/", ""));
     }
 
     @Override
@@ -53,18 +52,35 @@ public class RapidGatorNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        Regex someImportantStuff = br.getRegex("onclick=\"initCountdown\\(\\&#039;(.*?)\\&#039;, \\&#039;(.*?)\\&#039;, (.*?)\\&#039;, \\&#039;(.*?)\\&#039;, (.*?)\\&#039;/ajax/initdl\\&#\\d+;\\);\"");
-        String fileid = someImportantStuff.getMatch(0);
-        String file_hash = someImportantStuff.getMatch(1);
-        String old_sid = someImportantStuff.getMatch(3);
-        if (fileid == null || file_hash == null || old_sid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        String postData = "file_id=" + fileid + "&file_hash=" + file_hash + "&mode=free&old_sid=" + old_sid;
-        br.postPage("http://rapidgator.net/ajax/initdl", postData);
-        String dllink = br.getRegex("<b>Ссылка для скачивания:</b>[\r\t\n <td><tr></tr></td>]+<a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://dl\\d+\\.rapidgator\\.net/api/index\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
+        int wait = 30;
+        final String waittime = br.getRegex("var secs = (\\d+);").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br2.getPage("http://rapidgator.net/download/AjaxStartTimer?fid=" + new Regex(downloadLink.getDownloadURL(), "rapidgator\\.net/file/(\\d+)/").getMatch(0));
+        final String sid = br2.getRegex("\"sid\":\"(.*?)\"").getMatch(0);
+        if (sid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        sleep(wait * 1001l, downloadLink);
+        br2.getPage("http://rapidgator.net/download/AjaxGetDownloadLink?sid=" + sid);
+        if (!br2.containsHTML("\"state\":\"done\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://rapidgator.net/download/captcha");
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        for (int i = 0; i <= 5; i++) {
+            rc.parse();
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            rc.getForm().put("DownloadCaptchaForm%5Bcaptcha%5D", "");
+            rc.setCode(c);
+            if (br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/)")) continue;
+            break;
+        }
+        if (br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        String dllink = br.getRegex("location\\.href = \\'(http://.*?)\\'").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\\'(http://pr_srv\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -76,12 +92,12 @@ public class RapidGatorNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("UTF-8");
-        br.setCookie("http://rapidgator.net/", "language", "en");
+        br.setCookie("http://rapidgator.net/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<h3>File not found</h3>|<h1>Error 404</h1>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<p><b>(.*?)</b>").getMatch(0);
-        if (filename == null) filename = br.getRegex("onclick=\"initPremiumDl\\(\\&#039;/files/dlpremium/\\d+/(.*?)\\.html\\&#039;\\);\"").getMatch(0);
-        String filesize = br.getRegex("style=\"color:#8E908F;\">(.*?)</font>").getMatch(0);
+        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("Downloading:[\t\n\r ]+</strong>([^<>\"]+)</p>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>Download file ([^<>\"]+)</title>").getMatch(0);
+        String filesize = br.getRegex("File size:[\t\n\r ]+<script type=\"text/javascript\">[^/]+</script>[\t\n\r ]+<strong>(.*?)</strong>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));

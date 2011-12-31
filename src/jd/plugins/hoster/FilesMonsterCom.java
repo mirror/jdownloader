@@ -20,8 +20,6 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -32,98 +30,77 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.FilesMonsterDecrypter;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://[\\w\\.\\d]*?(filesmonsterdecrypted\\.com/download.php\\?id=|filesmonsterdecrypted\\.com/dl/.*?/free/2/).+" }, flags = { 2 })
+/** Is similar to BitBonusCom */
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download.php\\?id=|dl/.*?/free/2/).+" }, flags = { 2 })
 public class FilesMonsterCom extends PluginForHost {
-    private static final String PROPERTY_NO_SLOT_WAIT_TIME = "NO_SLOT_WAIT_TIME";
 
-    private static final String POSTTHATREGEX              = "\"(http://filesmonster\\.com/dl/.*?/free/.*?)\"";
-
-    private static final String POSTTHATREGEX2             = "(http://(www\\.)?filesmonster\\.com/dl/.*?/free/.+)";
-
-    private static final String TEMPORARYUNAVAILABLE       = "Download not available at the moment";
-
-    private static final String REDIRECTFNF                = "DL_FileNotFound";
-    private static final String PREMIUMONLYUSERTEXT        = "Only downloadable via premium";
+    private static final String POSTTHATREGEX         = "\"(http://filesmonster\\.com/dl/.*?/free/.*?)\"";
+    private static final String POSTTHATREGEX2        = "(http://(www\\.)?filesmonster\\.com/dl/.*?/free/.+)";
+    private static final String TEMPORARYUNAVAILABLE  = "Download not available at the moment";
+    private static final String REDIRECTFNF           = "DL_FileNotFound";
+    private static final String PREMIUMONLYUSERTEXT   = "Only downloadable via premium";
+    final PluginForDecrypt      FILESMONSTERDECRYPTER = JDUtilities.getPluginForDecrypt("filesmonster.comDecrypt");
 
     public FilesMonsterCom(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
         this.enablePremium("http://filesmonster.com/service.php");
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("filesmonsterdecrypted.com", "filesmonster.com"));
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        ai.setUnlimitedTraffic();
-        String expires = br.getRegex("\">Valid until: <span class=\\'green\\'>(.*?)</span>").getMatch(0);
-        long ms = 0;
-        if (expires != null) {
-            ms = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy HH:mm", null);
-            if (ms <= 0) {
-                ms = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy", null);
-            }
-            ai.setValidUntil(ms);
-            account.setValid(true);
-            return ai;
-        } else {
-            account.setValid(false);
-            return ai;
-        }
+        link.setUrlDownload(link.getDownloadURL().replace("filesmonsterdecrypted.com/", "filesmonster.com/"));
     }
 
     @Override
     public String getAGBLink() {
-
         return "http://filesmonster.com/rules.php";
-
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        br.setFollowRedirects(false);
+        if (downloadLink.getDownloadURL().contains("/free/2/")) {
+            br.getPage(downloadLink.getStringProperty("mainlink"));
+            if (br.getRedirectLocation() != null) {
+                if (br.getRedirectLocation().contains(REDIRECTFNF)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            downloadLink.setName(downloadLink.getName());
+            downloadLink.setDownloadSize(downloadLink.getDownloadSize());
+        } else {
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.getRedirectLocation() != null) {
+                if (br.getRedirectLocation().contains(REDIRECTFNF)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String filename = br.getRegex(FilesMonsterDecrypter.FILENAMEREGEX).getMatch(0);
+            String filesize = br.getRegex(FilesMonsterDecrypter.FILESIZEREGEX).getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            if (filesize != null) {
+                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+            }
+        }
+        if (br.containsHTML(TEMPORARYUNAVAILABLE)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.temporaryunavailable", "Download not available at the moment"));
+        if (downloadLink.getStringProperty("PREMIUMONLY") != null) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
+        return AvailableStatus.TRUE;
 
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
     }
 
     private String getNewTemporaryLink(String mainlink, String originalfilename) throws IOException, PluginException {
         // Find a new temporary link
         String mainlinkpart = new Regex(mainlink, "filesmonster\\.com/download\\.php\\?id=(.+)").getMatch(0);
-        /*
-         * This property is set in the decrypter plugin, another property which
-         * we don't use here ("origsize") is also set in the decrypterplugin for
-         * this host
-         */
-        // br.getPage(mainlink);
-        String postThat = br.getRegex(POSTTHATREGEX).getMatch(0);
-        if (postThat == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage(postThat, "");
-        // Please leave this part in!
-        String findOtherLinks = br.getRegex("reserve_ticket\\(\\'(/dl/rft/.*?)\\'\\)").getMatch(0);
-        if (findOtherLinks == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://filesmonster.com" + findOtherLinks);
         String temporaryLink = null;
-        String[] allInfo = br.getRegex("\\{(.*?)\\}").getColumn(0);
+        br.getPage(mainlink);
+        String[] allInfo = ((FilesMonsterDecrypter) FILESMONSTERDECRYPTER).getTempLinks(br);
         if (allInfo != null && allInfo.length != 0) {
             for (String singleInfo : allInfo)
                 if (singleInfo.contains("\"name\":\"" + originalfilename + "\"")) temporaryLink = new Regex(singleInfo, "\"dlcode\":\"(.*?)\"").getMatch(0);
@@ -199,7 +176,7 @@ public class FilesMonsterCom extends PluginForHost {
         handleErrors();
         if (br.containsHTML("(Captcha number error or expired|api\\.recaptcha\\.net)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (!downloadLink.getDownloadURL().contains("/free/2/")) {
-            String finalPage = br.getRegex("reserve_ticket\\('(/dl/.*?)'\\)").getMatch(0);
+            String finalPage = br.getRegex("reserve_ticket\\(\\'(/dl/.*?)\\'\\)").getMatch(0);
             if (finalPage == null) {
                 logger.warning("The following string could not be found: finalPage");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -221,7 +198,7 @@ public class FilesMonsterCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         strangeLink = "http://filesmonster.com" + strangeLink;
-        String regexedwaittime = br.getRegex("id='sec'>(\\d+)</span>").getMatch(0);
+        String regexedwaittime = br.getRegex("id=\\'sec\\'>(\\d+)</span>").getMatch(0);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
         int shortWaittime = 45;
@@ -246,11 +223,49 @@ public class FilesMonsterCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The downloadlink doesn't seem to refer to a file, following the connection...");
             br.followConnection();
-            logger.warning("Followed the connection...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setFilenameFix(true);
         dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.postPage("http://filesmonster.com/login.php", "act=login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=Login");
+        if (br.getRegex("Your membership type: <span class=\"[A-Za-z0-9 ]+\">(Premium)</span>").getMatch(0) == null || br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by 'Password reminder'")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setUnlimitedTraffic();
+        String expires = br.getRegex("\">Valid until: <span class=\\'green\\'>(.*?)</span>").getMatch(0);
+        long ms = 0;
+        if (expires != null) {
+            ms = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy HH:mm", null);
+            if (ms <= 0) {
+                ms = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy", null);
+            }
+            ai.setValidUntil(ms);
+            account.setValid(true);
+            return ai;
+        } else {
+            account.setValid(false);
+            return ai;
+        }
     }
 
     @Override
@@ -280,52 +295,19 @@ public class FilesMonsterCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
-    }
-
-    public void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.postPage("http://filesmonster.com/login.php", "act=login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=Login");
-        if (br.getRegex("Your membership type: <span class=\"[A-Za-z0-9 ]+\">(Premium)</span>").getMatch(0) == null || br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by 'Password reminder'")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        br.setFollowRedirects(false);
-        if (downloadLink.getDownloadURL().contains("/free/2/")) {
-            br.getPage(downloadLink.getStringProperty("mainlink"));
-            if (br.getRedirectLocation() != null) {
-                if (br.getRedirectLocation().contains(REDIRECTFNF)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            downloadLink.setName(downloadLink.getName());
-            downloadLink.setDownloadSize(downloadLink.getDownloadSize());
-        } else {
-            br.getPage(downloadLink.getDownloadURL());
-            if (br.getRedirectLocation() != null) {
-                if (br.getRedirectLocation().contains(REDIRECTFNF)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            String filesize = br.getRegex("\">File size:</td>[\t\n\r ]+<td>(.*?)</td>").getMatch(0);
-            String filename = br.getRegex("\">File name:</td>[\t\n\r ]+<td>(.*?)</td>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
-            if (filesize != null) {
-                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-            }
-        }
-        if (br.containsHTML(TEMPORARYUNAVAILABLE)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.temporaryunavailable", "Download not available at the moment"));
-        if (downloadLink.getStringProperty("PREMIUMONLY") != null) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
-        return AvailableStatus.TRUE;
-
     }
 
     @Override
@@ -334,11 +316,6 @@ public class FilesMonsterCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @SuppressWarnings("deprecation")
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_NO_SLOT_WAIT_TIME, JDL.L("plugins.hoster.filesmonstercom.noslotwaittime", "No slot wait time (seconds)"), 30, 86400).setDefaultValue(60).setStep(30));
     }
 
 }
