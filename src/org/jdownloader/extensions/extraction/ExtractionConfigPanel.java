@@ -1,7 +1,9 @@
 package org.jdownloader.extensions.extraction;
 
 import java.io.File;
+import java.util.ArrayList;
 
+import jd.controlling.PasswordListController;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
@@ -30,6 +32,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
     private Pair<TextArea>         blacklist;
     private Pair<Checkbox>         toggleUseOriginalFileDate;
     private Pair<ComboBox<String>> cpupriority;
+    private Pair<TextArea>         passwordlist;
 
     public ExtractionConfigPanel(ExtractionExtension plg) {
         super(plg);
@@ -57,6 +60,9 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         this.addHeader(T._.settings_multi(), NewTheme.I().getIcon("settings", 32));
         toggleUseOriginalFileDate = this.addPair(T._.settings_multi_use_original_file_date(), null, new Checkbox());
         blacklist = this.addPair(T._.settings_blacklist(), null, new TextArea());
+
+        this.addHeader(T._.settings_passwords(), NewTheme.I().getIcon("password", 32));
+        passwordlist = addPair(T._.settings_passwordlist(), null, new TextArea());
     }
 
     @Override
@@ -81,7 +87,12 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                     sb.append(line + System.getProperty("line.separator"));
                 }
                 blacklist.getComponent().setText(sb.toString());
+                sb = new StringBuilder();
+                for (String line : PasswordListController.getInstance().getPasswordList()) {
+                    sb.append(line + System.getProperty("line.separator"));
+                }
 
+                passwordlist.getComponent().setText(sb.toString());
                 if (s.getCPUPriority() == CPUPriority.HIGH) {
                     cpupriority.getComponent().setValue(T._.settings_cpupriority_high());
                 } else if (s.getCPUPriority() == CPUPriority.MIDDLE) {
@@ -111,7 +122,12 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         }
         s.setSubpathEnabledIfAllFilesAreInAFolder(toggleUseSubpathOnlyIfNotFoldered.getComponent().isSelected());
         s.setBlacklistPatterns(blacklist.getComponent().getText().split(System.getProperty("line.separator")));
-
+        String[] list = passwordlist.getComponent().getText().split(System.getProperty("line.separator"));
+        ArrayList<String> passwords = new ArrayList<String>(list.length);
+        for (String ss : list) {
+            passwords.add(ss);
+        }
+        PasswordListController.getInstance().setPasswordList(passwords);
         if (cpupriority.getComponent().getValue().equals(T._.settings_cpupriority_high())) {
             s.setCPUPriority(CPUPriority.HIGH);
         } else if (cpupriority.getComponent().getValue().equals(T._.settings_cpupriority_middle())) {

@@ -125,7 +125,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                             l.getPrototype();
                             ret.add(l);
                             save.add(ap);
-                            Log.L.severe("@CrawlerPlugin ok:" + simpleName + " " + names[i]);
+                            Log.L.finest("@CrawlerPlugin ok:" + simpleName + " " + names[i]);
                         } catch (Throwable e) {
                             Log.L.severe("@CrawlerPlugin failed:" + simpleName + " " + names[i]);
                             Log.exception(e);

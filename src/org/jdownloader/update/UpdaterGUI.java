@@ -331,8 +331,9 @@ public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListene
                 ok.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
-                        RestartController.getInstance().restartViaUpdater();
                         setVisible(false);
+                        RestartController.getInstance().restartViaUpdater();
+
                     }
                 });
 

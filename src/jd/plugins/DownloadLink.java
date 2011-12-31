@@ -168,7 +168,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private long                               created                 = -1l;
 
-    private transient UniqueSessionID                 uniqueID                = null;
+    private transient UniqueSessionID          uniqueID                = null;
     private transient String                   iconHost                = null;
     transient private DLinkPropertyListener    propertyListener;
 
@@ -817,14 +817,16 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         if (!isEnabled) {
             setAborted(true);
         } else {
-            if (host != null && defaultplugin == null) {
-                new Exception().printStackTrace();
-                logger.severe("Es ist kein passendes HostPlugin geladen");
-                return;
-            }
-            if (container != null && pluginForContainer == null) {
-                logger.severe("Es ist kein passendes ContainerPlugin geladen");
-                return;
+            if (!DownloadController.getInstance().isLoadAllowed()) {
+                if (host != null && defaultplugin == null) {
+                    new Exception().printStackTrace();
+                    logger.severe("Es ist kein passendes HostPlugin geladen");
+                    return;
+                }
+                if (container != null && pluginForContainer == null) {
+                    logger.severe("Es ist kein passendes ContainerPlugin geladen");
+                    return;
+                }
             }
         }
 

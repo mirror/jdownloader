@@ -167,4 +167,10 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Use original file date if possible" })
     String settings_multi_use_original_file_date();
+
+    @Default(lngs = { "en" }, values = { "Password List" })
+    String settings_passwords();
+
+    @Default(lngs = { "en" }, values = { "Archive Passwords (one per line)" })
+    String settings_passwordlist();
 }
