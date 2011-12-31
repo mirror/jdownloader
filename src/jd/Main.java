@@ -375,6 +375,7 @@ public class Main {
             Main.LOG.info("DEBUG MODE ACTIVATED");
             // new PerformanceObserver().start();
             Main.LOG.setLevel(Level.ALL);
+            Log.L.setLevel(Level.ALL);
         } else {
             JDLogger.removeConsoleHandler();
         }

@@ -70,7 +70,7 @@ public class ExtractionListenerIcon implements ExtractionListener {
                         }
                     }
                     break;
-                case FINISHED:
+                case CLEANUP:
                     if (con.getExtractionQueue().size() <= 1) {
                         /*
                          * <=1 because current element is still running at this

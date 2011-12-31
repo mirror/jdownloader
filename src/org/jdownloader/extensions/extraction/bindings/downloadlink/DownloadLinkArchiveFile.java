@@ -30,7 +30,8 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     }
 
     public boolean isComplete() {
-        if (!downloadLink.getLinkStatus().isFinished() || !new File(downloadLink.getFileOutput()).exists()) { return false; }
+        if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) && !downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) return false;
+        if (!new File(downloadLink.getFileOutput()).exists()) { return false; }
         return true;
     }
 
@@ -82,7 +83,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
             break;
         case ERROR:
 
-            getDownloadLink().getLinkStatus().setStatus(LinkStatus.ERROR_POST_PROCESS);
+            getDownloadLink().getLinkStatus().addStatus(LinkStatus.ERROR_POST_PROCESS);
             break;
         case IDLE:
             break;
