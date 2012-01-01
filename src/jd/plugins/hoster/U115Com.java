@@ -25,6 +25,7 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -74,29 +75,55 @@ public class U115Com extends PluginForHost {
                 /** First way: For freeusers */
                 String pickLink = br.getRegex("\"(/\\?ct=pickcode\\&.*?)\"").getMatch(0);
                 if (pickLink != null) {
-                    int wait = 30;
                     String waittime = br.getRegex("id=\"js_get_download_second\">(\\d+)</b>").getMatch(0);
                     if (waittime == null) waittime = br.getRegex("var second = (\\d+);").getMatch(0);
-                    if (waittime != null) wait = Integer.parseInt(waittime);
-                    sleep(wait * 1001l, link);
+                    if (waittime != null) sleep(Integer.parseInt(waittime) * 1001l, link);
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getPage("http://115.com" + pickLink);
-                    String correctedBR = br.toString().replace("\\", "");
-                    linkToDownload = new Regex(correctedBR, "\"url\":\"(http:.*?)\"").getMatch(0);
-                    if (linkToDownload == null) linkToDownload = new Regex(correctedBR, EXACTLINKREGEX).getMatch(0);
+                    linkToDownload = findWorkingLink(br.toString().replace("\\", ""));
                 }
                 /** Second way: For logged in freeusers */
                 pickLink = br.getRegex("\\'(/\\?ct=download\\&ac=get\\&h=[^/<>\"\\']+)\\'").getMatch(0);
                 if (pickLink != null) {
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getPage("http://115.com" + pickLink);
-                    String correctedBR = br.toString().replace("\\", "");
-                    linkToDownload = new Regex(correctedBR, "\"url\":\"(http:.*?)\"").getMatch(0);
-                    if (linkToDownload == null) linkToDownload = new Regex(correctedBR, EXACTLINKREGEX).getMatch(0);
+                    linkToDownload = findWorkingLink(br.toString().replace("\\", ""));
                 }
             }
         }
         return linkToDownload;
+    }
+
+    /**
+     * Here we got mirrors, sometimes a mirror does not work so we'll check
+     * until we find a working one here
+     */
+    private String findWorkingLink(String correctedBR) throws IOException {
+        String linksToDownload[] = new Regex(correctedBR, "\"url\":\"(http:.*?)\"").getColumn(0);
+        if (linksToDownload == null || linksToDownload.length == 0) linksToDownload = new Regex(correctedBR, EXACTLINKREGEX).getColumn(0);
+        if (linksToDownload == null || linksToDownload.length == 0) return null;
+        String finallink = null;
+        Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        for (String mirror : linksToDownload) {
+            try {
+                con = br2.openGetConnection(mirror);
+                if (!con.getContentType().contains("html")) {
+                    finallink = mirror;
+                    con.disconnect();
+                    break;
+                } else {
+                    con.disconnect();
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        }
+        return finallink;
     }
 
     @Override

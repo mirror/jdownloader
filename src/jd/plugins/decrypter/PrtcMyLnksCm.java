@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -33,7 +34,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect-my-links.com" }, urls = { "http://(www\\.)?protect-my-links\\.com/\\?id=[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect-my-links.com" }, urls = { "http://(www\\.)?protect\\-my\\-links\\.com/(\\?id=[a-z0-9]+|\\?p=.+)" }, flags = { 0 })
 public class PrtcMyLnksCm extends PluginForDecrypt {
 
     public PrtcMyLnksCm(PluginWrapper wrapper) {
@@ -46,61 +47,76 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-
-        /* Error handling */
-        if (br.containsHTML("This data has been removed by the owner")) {
-            logger.warning("Wrong link");
-            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
-        }
-
-        /* File package handling */
-        for (int i = 0; i <= 5; i++) {
-            Form captchaForm = br.getForm(1);
-            if (captchaForm == null) return null;
-            String passCode = null;
-            String captchalink0 = br.getRegex("src=\"(mUSystem.*?)\"").getMatch(0);
-            String captchalink = "http://protect-my-links.com/" + captchalink0;
-            if (captchalink0.contains("null")) return null;
-            String code = getCaptchaCode(captchalink, param);
-            captchaForm.put("captcha", code);
-
-            if (br.containsHTML("Password :")) {
-                passCode = getUserInput(null, param);
-                captchaForm.put("passwd", passCode);
+        if (new Regex(parameter, "protect\\-my\\-links\\.com/\\?id=[a-z0-9]+").matches()) {
+            /* Error handling */
+            if (br.containsHTML("This data has been removed by the owner")) {
+                logger.warning("Wrong link");
+                logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+                return new ArrayList<DownloadLink>();
             }
-            br.submitForm(captchaForm);
-            if (br.containsHTML("Captcha is not valid") || br.containsHTML("Password is not valid")) continue;
-            break;
-        }
-        if (br.containsHTML("Captcha is not valid")) throw new DecrypterException(DecrypterException.CAPTCHA);
-        final String fpName = br.getRegex("h1 class=\"pmclass\">(.*?)</h1></td>").getMatch(0);
-        String[] links = br.getRegex("><a href=\\'(/\\?p=.*?)\\'").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
-        for (String psp : links) {
-            // Fixed, thx to goodgood.51@gmail.com
-            br.getPage("http://protect-my-links.com" + psp);
-            String c = br.getRegex("javascript>c=\"(.*?)\";").getMatch(0);
-            String x = br.getRegex("x\\(\"(.*?)\"\\)").getMatch(0);
-            if (c == null || x == null) return null;
-            String step1Str = step1(c);
-            if (step1Str == null) return null;
-            ArrayList<Integer> step2Lst = step2(step1Str);
-            if (step2Lst == null || step2Lst.size() == 0) return null;
-            String step3Str = step3(step2Lst, x);
-            if (step3Str == null) return null;
-            String finallink = step4(step3Str);
-            if (finallink == null) return null;
+
+            /* File package handling */
+            for (int i = 0; i <= 5; i++) {
+                Form captchaForm = br.getForm(1);
+                if (captchaForm == null) return null;
+                String passCode = null;
+                String captchalink0 = br.getRegex("src=\"(mUSystem.*?)\"").getMatch(0);
+                String captchalink = "http://protect-my-links.com/" + captchalink0;
+                if (captchalink0.contains("null")) return null;
+                String code = getCaptchaCode(captchalink, param);
+                captchaForm.put("captcha", code);
+                if (br.containsHTML("Password :")) {
+                    passCode = getUserInput(null, param);
+                    captchaForm.put("passwd", passCode);
+                }
+                br.submitForm(captchaForm);
+                if (br.containsHTML("Captcha is not valid") || br.containsHTML("Password is not valid")) continue;
+                break;
+            }
+            if (br.containsHTML("Captcha is not valid")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            final String fpName = br.getRegex("h1 class=\"pmclass\">(.*?)</h1></td>").getMatch(0);
+            String[] links = br.getRegex("><a href=\\'(/\\?p=.*?)\\'").getColumn(0);
+            if (links == null || links.length == 0) return null;
+            progress.setRange(links.length);
+            for (String psp : links) {
+                // Fixed, thx to goodgood.51@gmail.com
+                br.getPage("http://protect-my-links.com" + psp);
+                final String finallink = decryptSingleLink();
+                if (finallink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                decryptedLinks.add(createDownloadlink(finallink));
+                progress.increase(1);
+            }
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName.trim());
+                fp.addLinks(decryptedLinks);
+            }
+        } else {
+            final String finallink = decryptSingleLink();
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             decryptedLinks.add(createDownloadlink(finallink));
-            progress.increase(1);
-        }
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private String decryptSingleLink() {
+        String c = br.getRegex("javascript>c=\"(.*?)\";").getMatch(0);
+        String x = br.getRegex("x\\(\"(.*?)\"\\)").getMatch(0);
+        if (c == null || x == null) return null;
+        String step1Str = step1(c);
+        if (step1Str == null) return null;
+        ArrayList<Integer> step2Lst = step2(step1Str);
+        if (step2Lst == null || step2Lst.size() == 0) return null;
+        String step3Str = step3(step2Lst, x);
+        if (step3Str == null) return null;
+        String finallink = step4(step3Str);
+        return finallink;
     }
 
     public static String step1(String varC) {
