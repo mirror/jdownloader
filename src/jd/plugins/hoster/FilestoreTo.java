@@ -60,7 +60,7 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String gamer = br.getRegex("name=\"downid\" value=\"(.*?)\">").getMatch(0);
+        final String gamer = br.getRegex("type=\"hidden\" name=\"ID\" value=\"(.*?)\"").getMatch(0);
         if (gamer == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         final String waittime = br.getRegex("Bitte warte (\\d+) Sekunden und starte dann").getMatch(0);
         int wait = 10;
@@ -117,8 +117,8 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        // All other browsers seem to be blocked
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2.17) Gecko/20110420 Firefox/3.6.17");
+        // Many other browsers seem to be blocked
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:9.0.1) Gecko/20100101 Firefox/9.0.1");
         br.setCustomCharset("utf-8");
         final String url = downloadLink.getDownloadURL();
         String downloadName = null;

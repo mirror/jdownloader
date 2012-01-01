@@ -30,7 +30,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://(www\\.)?letitbit\\.net//page/folder/\\d+\\|.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://(www\\.)?letitbit\\.net/folder/\\d+/\\d+" }, flags = { 0 })
 public class LetitBitNet extends PluginForDecrypt {
 
     public LetitBitNet(PluginWrapper wrapper) {
@@ -39,9 +39,8 @@ public class LetitBitNet extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.getPage("http://letitbit.net/");
-        br.postPage("http://letitbit.net/", "England.x=10&England.y=9&vote_cr=en");
+        final String parameter = param.toString().replace("www.", "");
+        br.setCookie("http://letitbit.net/", "lang", "en");
         br.getPage(parameter);
         if (!br.containsHTML("<td width=\"700\" colspan=\"2\">") || br.containsHTML("<h2>Owner: </h2>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String[] linkInfo = br.getRegex("<td width=\"700\" colspan=\"2\">(.*?)<hr />").getColumn(0);

@@ -659,3 +659,4 @@ jd/plugins/hoster/UgotFileCom.class
 jd/plugins/hoster/UpFileIn.class
 jd/plugins/hoster/UploadStoreNet.class
 jd/plugins/decrypter/UploadStoreNetFolder.class
+jd/captcha/methods/ugtf
