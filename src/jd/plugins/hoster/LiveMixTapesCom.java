@@ -33,15 +33,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "http://(www\\.)?(indy\\.)?livemixtapes\\.com/(download(/mp3)?|mixtapes)/\\d+/.*?\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "http://(www\\.)?(livemixtap\\.es/[a-z0-9]+|(indy\\.)?livemixtapes\\.com/(download(/mp3)?|mixtapes)/\\d+/.*?\\.html)" }, flags = { 2 })
 public class LiveMixTapesCom extends PluginForHost {
 
     private static final String CAPTCHATEXT            = "/captcha/captcha\\.gif\\?";
-
     private static final String MAINPAGE               = "http://www.livemixtapes.com/";
-
     private static final String MUSTBELOGGEDIN         = ">You must be logged in to access this page";
-
     private static final String ONLYREGISTEREDUSERTEXT = "Download is only available for registered users";
 
     public LiveMixTapesCom(PluginWrapper wrapper) {
@@ -149,6 +146,18 @@ public class LiveMixTapesCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("Accept-Encoding", "gzip,deflate");
+        /** If link is a short link correct it */
+        if (new Regex(link.getDownloadURL(), "http://(www\\.)?livemixtap\\.es/[a-z0-9]+").matches()) {
+            br.setFollowRedirects(false);
+            br.getPage(link.getDownloadURL());
+            String correctLink = br.getRedirectLocation();
+            if (correctLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(correctLink);
+            correctLink = br.getRedirectLocation();
+            if (correctLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setUrlDownload(correctLink);
+            correctDownloadLink(link);
+        }
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>Not Found</|The page you requested could not be found\\.<|>This mixtape is no longer available for download.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -157,7 +166,7 @@ public class LiveMixTapesCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         Regex fileInfo = br.getRegex("<td height=\"35\">\\&nbsp;\\&nbsp;\\&nbsp;(.*?)</td>[\t\n\r ]+<td align=\"center\">(.*?)</td>");
-        String filename = fileInfo.getMatch(0);
+        final String filename = fileInfo.getMatch(0);
         String filesize = fileInfo.getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
