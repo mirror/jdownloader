@@ -198,8 +198,7 @@ public class LetitBitNet extends PluginForHost {
         /* we have to wait little because server too buggy */
         sleep(2000, downloadLink);
         /* remove newline */
-        url = url.replaceAll("%0D%0A", "");
-        url = url.trim();
+        url = url.replaceAll("%0D%0A", "").trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() == 404) {
@@ -281,7 +280,7 @@ public class LetitBitNet extends PluginForHost {
         br.setDebug(true);
         br.setFollowRedirects(true);
         /* remove newline */
-        dlUrl = dlUrl.replaceAll("%0D%0A", "");
+        dlUrl = dlUrl.replaceAll("%0D%0A", "").trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();

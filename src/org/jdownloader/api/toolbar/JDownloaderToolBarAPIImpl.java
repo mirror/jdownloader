@@ -6,6 +6,8 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 
+import org.appwork.remoteapi.RemoteAPIRequest;
+import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
@@ -73,4 +75,45 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
         return GeneralSettings.USE_AVAILABLE_ACCOUNTS.isEnabled();
     }
 
+    public Object addLinksFromDOM(RemoteAPIRequest request) {
+        HashMap<String, Object> ret = new HashMap<String, Object>();
+        try {
+            String index = HttpRequest.getParameterbyKey(request, "index");
+            String data = HttpRequest.getParameterbyKey(request, "data");
+            String sessionID = HttpRequest.getParameterbyKey(request, "sessionid");
+            String url = HttpRequest.getParameterbyKey(request, "url");
+            boolean lastChunk = "true".equalsIgnoreCase(HttpRequest.getParameterbyKey(request, "lastchunk"));
+            StringBuilder sb = new StringBuilder();
+            if (url != null) {
+                sb.append("URL:" + url + "|");
+            } else {
+                sb.append("URL:unknown|");
+            }
+            if (sessionID != null) {
+                sb.append("SESSION:" + sessionID + "|");
+            } else {
+                sb.append("SESSION:unknown|");
+            }
+            if (index != null) {
+                sb.append("CHUNK:" + index + "|");
+            } else {
+                sb.append("CHUNK:unknown|");
+            }
+            if (data != null) {
+                sb.append("DATA:" + data.length() + "|");
+            } else {
+                sb.append("DATA:none|");
+            }
+            if (lastChunk) {
+                sb.append("LASTCHUNK");
+            }
+            System.out.println(sb.toString());
+            ret.put("status", true);
+            ret.put("msg", (Object) null);
+        } catch (final Throwable e) {
+            ret.put("status", false);
+            ret.put("msg", e.getMessage());
+        }
+        return ret;
+    }
 }
