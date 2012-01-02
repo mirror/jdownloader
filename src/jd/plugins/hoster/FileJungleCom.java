@@ -260,10 +260,19 @@ public class FileJungleCom extends PluginForHost {
         // it didn't work when i changed it in the accountsettings
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* no direct download enabled */
+            logger.warning("Indirect");
+            Form form = new Form();
+            form.setMethod(MethodType.POST);
+            form.setAction(link.getDownloadURL());
+            form.put("download", "premium");
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, form, true, 0);
+        } else {
+            logger.warning("Direct");
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             handleErrors();

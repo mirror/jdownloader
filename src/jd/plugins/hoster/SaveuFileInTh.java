@@ -45,7 +45,7 @@ public class SaveuFileInTh extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        return 2;
     }
 
     @Override
