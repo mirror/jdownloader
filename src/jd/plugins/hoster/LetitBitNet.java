@@ -175,7 +175,9 @@ public class LetitBitNet extends PluginForHost {
          * update to latest jd version
          */
         br.postPage(serverPart + "/ajax/download3.php", "");
-        if (!br.toString().equals("1")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /* we need to remove the newline in old browser */
+        String resp = br.toString().replaceAll("%0D%0A", "").trim();
+        if (!"1".equals(resp)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DecimalFormat df = new DecimalFormat("0000");
         Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
