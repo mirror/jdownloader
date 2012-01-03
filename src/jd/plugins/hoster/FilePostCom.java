@@ -304,6 +304,10 @@ public class FilePostCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
+        if (br.containsHTML("(>Sorry, you have reached the daily download limit|>Please contact our support team if you have questions about this limit)")) {
+            logger.info("Premium downloadlimit reached, disabling account...");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
         String dllink = null;
         String passCode = link.getStringProperty("pass", null);
         /** Password handling */
