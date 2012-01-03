@@ -34,19 +34,20 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixturecloud.com" }, urls = { "http://(www\\.)?((image|file|video)\\.mixturecloud\\.com/download|video\\.mixturecloud\\.com/video)=[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixturecloud.com" }, urls = { "http://[\\w\\.]*?mixture(cloud|audio|doc|file|image|video)\\.com/(audio|doc|download|image|video)=[A-Za-z0-9]+" }, flags = { 0 })
 public class MixtureCloudCom extends PluginForHost {
-
+    
+    // They have HTTPS certificate but the site has problems returning valid pages, no HTTPS support possible at this stage. 
+    // Multiple domains all redirect back to 'sub.mixturecloud.com/' uids are transferable between each (sub)?domain & section.
+    // All links have recaptcha with this one size fits all download method.
+    
     public MixtureCloudCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        final String vid = new Regex(link.getDownloadURL(), "video\\.mixturecloud\\.com/video=(.+)").getMatch(0);
-        if (vid != null)
-            link.setUrlDownload("http://file.mixturecloud.com/download=" + vid);
-        else
-            link.setUrlDownload(link.getDownloadURL().replaceAll("/(video|file|image)/", "/file/"));
+        final String uid = new Regex(link.getDownloadURL(), "mixture(cloud|audio|doc|file|image|video)\\.com/(audio|doc|download|image|video)=(.+)").getMatch(2);
+        link.setUrlDownload("http://file.mixturecloud.com/download=" + uid);
     }
 
     @Override
@@ -96,9 +97,9 @@ public class MixtureCloudCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>404 Not Found<|The requested document was not found on this server|<title>MixtureFile\\.com</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?) MixtureCloud\\.com \"").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) - MixtureFile.com</title>").getMatch(0);
+        if (br.containsHTML("(>404 Not Found<|The requested document was not found on this server|<h3>Keine Seite unter dieser Adresse</h3>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("(?i)<meta property=\"og:title\" content=\"(.*?) mixturecloud\\.com \"").getMatch(0);
+        if (filename == null) filename = br.getRegex("(?i)<title>(.*?) - mixturecloud\\.com</title>").getMatch(0);
         else if (filename != null) filename = br.getRegex("<h2>[\r\n\t]+(.*?)[\r\n\t]+</h2>").getMatch(0);
         String filesize = br.getRegex("Originalgröße : <span style=\"font\\-weight:bold\">(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
