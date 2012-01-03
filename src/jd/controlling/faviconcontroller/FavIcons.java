@@ -264,8 +264,20 @@ public class FavIcons {
                 try {
                     /* try first with iconloader */
                     List<BufferedImage> ret = ICODecoder.read(inputStream);
-                    if (ret.size() > 0) {
-                        BufferedImage img = ret.get(0);
+                    if (ret != null && ret.size() > 0) {
+                        BufferedImage img = null;
+                        int size = -1;
+                        for (BufferedImage img2 : ret) {
+                            /*
+                             * loop through all available images to find best
+                             * resolution
+                             */
+                            if (img2 == null) continue;
+                            if (img == null || img2.getHeight() * img2.getWidth() > size) {
+                                img = img2;
+                                size = img.getHeight() * img.getWidth();
+                            }
+                        }
                         if (img != null && img.getHeight() > 1 && img.getWidth() > 1) return img;
                     }
                     throw new Throwable("Try again with other ImageLoader");

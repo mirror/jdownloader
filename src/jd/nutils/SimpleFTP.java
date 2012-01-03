@@ -31,7 +31,6 @@
  */
 package jd.nutils;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -374,35 +373,47 @@ public class SimpleFTP {
      * transfer was successful. The file is sent in passive mode to avoid NAT or
      * firewall problems at the client end.
      */
-    public synchronized boolean stor(InputStream inputStream, String filename) throws IOException {
+    public synchronized boolean stor(InputStream input, String filename) throws IOException {
+        Socket dataSocket = null;
+        BufferedOutputStream output = null;
         try {
-            BufferedInputStream input = new BufferedInputStream(inputStream);
             InetSocketAddress pasv = pasv();
             sendLine("STOR " + filename);
-            Socket dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
-            String response = readLine();
-            if (!response.startsWith("150 ") && !response.startsWith("125 ")) { throw new IOException("SimpleFTP was not allowed to send the file: " + response); }
-            BufferedOutputStream output = new BufferedOutputStream(dataSocket.getOutputStream());
-            byte[] buffer = new byte[4096];
-            int bytesRead = 0;
-            while ((bytesRead = input.read(buffer)) != -1) {
-                output.write(buffer, 0, bytesRead);
+            String response = null;
+            try {
+                dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
+                response = readLine();
+                if (!response.startsWith("150 ") && !response.startsWith("125 ")) { throw new IOException("SimpleFTP was not allowed to send the file: " + response); }
+                output = new BufferedOutputStream(dataSocket.getOutputStream());
+                byte[] buffer = new byte[4096];
+                int bytesRead = 0;
+                while ((bytesRead = input.read(buffer)) != -1) {
+                    output.write(buffer, 0, bytesRead);
+                }
+                input.close();
+            } finally {
+                try {
+                    output.flush();
+                } catch (final Throwable e) {
+                }
+                try {
+                    output.close();
+                } catch (final Throwable e) {
+                }
+                this.shutDownSocket(dataSocket);
             }
-            inputStream.close();
-            output.flush();
-            output.close();
-            input.close();
-            this.shutDownSocket(dataSocket);
             response = readLine();
             return response.startsWith("226 ");
         } catch (ConnectException e) {
             e.printStackTrace();
             cancelTransfer();
-            return stor(inputStream, filename);
+            return stor(input, filename);
         } catch (SocketException e) {
             e.printStackTrace();
             cancelTransfer();
-            return stor(inputStream, filename);
+            return stor(input, filename);
+        } finally {
+            input.close();
         }
 
     }
@@ -743,10 +754,7 @@ public class SimpleFTP {
                 fos.close();
             } catch (Throwable e) {
             }
-            try {
-                dataSocket.close();
-            } catch (Throwable e) {
-            }
+            shutDownSocket(dataSocket);
         }
     }
 
@@ -757,7 +765,6 @@ public class SimpleFTP {
     private void shutDownSocket(Socket dataSocket) {
         try {
             dataSocket.shutdownOutput();
-
         } catch (Throwable e) {
         }
         try {
@@ -788,17 +795,25 @@ public class SimpleFTP {
     public String[][] list() throws IOException {
         InetSocketAddress pasv = pasv();
         sendLine("LIST");
-        Socket dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
-        BufferedReader input = new BufferedReader(new InputStreamReader(dataSocket.getInputStream(), "UTF8"));
+        Socket dataSocket = null;
+        InputStreamReader input = null;
         StringBuilder sb = new StringBuilder();
-        readLines(new int[] { 125, 150 }, null);
-        char[] buffer = new char[4096];
-        int bytesRead = 0;
-        while ((bytesRead = input.read(buffer)) != -1) {
-            sb.append(buffer, 0, bytesRead);
+        try {
+            dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
+            input = new InputStreamReader(dataSocket.getInputStream(), "UTF8");
+            readLines(new int[] { 125, 150 }, null);
+            char[] buffer = new char[4096];
+            int bytesRead = 0;
+            while ((bytesRead = input.read(buffer)) != -1) {
+                if (bytesRead > 0) sb.append(buffer, 0, bytesRead);
+            }
+        } finally {
+            try {
+                input.close();
+            } catch (final Throwable e) {
+            }
+            shutDownSocket(dataSocket);
         }
-        input.close();
-        shutDownSocket(dataSocket);
         readLines(new int[] { 226 }, null);
         /* permission,type,user,group,size,date,filename */
         String[][] matches = new Regex(sb.toString(), "([-dxrw]+)\\s+(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(\\S+\\s+\\S+\\s+\\S+)\\s+(.*?)[$\r\n]+").getMatches();

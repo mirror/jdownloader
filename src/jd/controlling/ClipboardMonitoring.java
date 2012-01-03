@@ -87,7 +87,7 @@ public class ClipboardMonitoring {
                                          */
                                         String htmlContent = getHTMLTransferData(currentContent);
                                         if (htmlContent != null) {
-                                            handleThisRound = handleThisRound + htmlContent;
+                                            handleThisRound = handleThisRound + "\r\n" + htmlContent;
                                         }
                                     } catch (final Throwable e) {
                                     }
@@ -246,6 +246,46 @@ public class ClipboardMonitoring {
             }
         }
         return null;
+    }
+
+    public static boolean hasSupportedTransferData(final Transferable transferable) {
+        if (transferable.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+            /*
+             * string and html always come together, so no need to check for
+             * html
+             */
+            return true;
+        } else if (urlFlavor != null && transferable.isDataFlavorSupported(urlFlavor)) {
+            return true;
+        } else if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+            return true;
+        } else if (uriListFlavor != null && transferable.isDataFlavorSupported(uriListFlavor)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static void processSupportedTransferData(final Transferable transferable) {
+        try {
+            String content = getListTransferData(transferable);
+            if (StringUtils.isEmpty(content)) {
+                /* no List flavor available, lets check for String flavor */
+                content = getStringTransferData(transferable);
+                if (!StringUtils.isEmpty(content)) {
+                    /* String flavor available */
+                    String htmlContent = getHTMLTransferData(transferable);
+                    if (!StringUtils.isEmpty(htmlContent)) {
+                        /* add available HTML flavor to String flavor */
+                        content = content + "\r\n" + htmlContent;
+                    }
+                }
+            }
+            if (!StringUtils.isEmpty(content)) {
+                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(content));
+            }
+        } catch (final Throwable e) {
+        }
     }
 
     public static String getStringTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException {

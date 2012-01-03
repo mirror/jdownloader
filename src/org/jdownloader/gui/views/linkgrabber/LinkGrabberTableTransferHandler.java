@@ -7,6 +7,7 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.TransferHandler;
 
+import jd.controlling.ClipboardMonitoring;
 import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -36,8 +37,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
         return TransferHandler.MOVE;
     }
 
-    @Override
-    public boolean canImport(TransferSupport support) {
+    private boolean canImportLinkCollector(TransferSupport support) {
         if (!table.isOriginalOrder()) { return false; }
         if (support.isDrop()) {
             /* dragdrop */
@@ -161,6 +161,17 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
     }
 
     @Override
+    public boolean canImport(TransferSupport support) {
+        /* check for LinkCollector DragDrop stuff */
+        boolean ret = canImportLinkCollector(support);
+        if (ret == false) {
+            /* check for LinkCrawler stuff */
+            ret = ClipboardMonitoring.hasSupportedTransferData(support.getTransferable());
+        }
+        return ret;
+    }
+
+    @Override
     protected Transferable createTransferable(JComponent c) {
         /*
          * get all selected filepackages and links and create a transferable if
@@ -189,6 +200,12 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
             if (packages.size() > 3) prio = Queue.QueuePriority.NORM;
         } else {
             packages = null;
+        }
+
+        if (packages == null && links == null) {
+            /* lets try LinkCrawling stuff */
+            ClipboardMonitoring.processSupportedTransferData(support.getTransferable());
+            return true;
         }
         if (support.isDrop()) {
             /* dragdrop */
