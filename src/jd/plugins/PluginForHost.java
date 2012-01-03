@@ -615,6 +615,14 @@ public abstract class PluginForHost extends Plugin {
         return max;
     }
 
+    /*
+     * Override this if you want special handling for DownloadLinks to bypass
+     * MaxSimultanDownloadNum
+     */
+    public boolean bypassMaxSimultanDownloadNum(DownloadLink link, Account acc) {
+        return false;
+    }
+
     /* TODO: remove with next major update */
     @Deprecated
     public boolean isPremiumDownload() {

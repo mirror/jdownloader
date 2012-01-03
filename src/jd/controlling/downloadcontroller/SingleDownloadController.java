@@ -55,14 +55,7 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
 
-/**
- * In dieser Klasse wird der Download parallel zum Hauptthread gestartet
- * 
- * @author astaldo/JD-Team
- */
 public class SingleDownloadController extends BrowserSettingsThread implements StateMachineInterface {
-    // public static final String WAIT_TIME_ON_CONNECTION_LOSS =
-    // "WAIT_TIME_ON_CONNECTION_LOSS";
 
     private static final Object             DUPELOCK          = new Object();
 
@@ -76,12 +69,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     private DownloadLink                    downloadLink;
 
     private LinkStatus                      linkStatus;
-
-    /**
-     * Der Logger
-     */
-
-    private long                            startTime;
 
     private Account                         account           = null;
     private SingleDownloadControllerHandler handler           = null;
@@ -145,11 +132,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         downloadLink.setDownloadLinkController(this);
         this.account = account;
         this.proxyInfo = proxy;
-        if (proxyInfo != null) {
-            /* mark this host active in proxyInfo */
-            setCurrentProxy(proxyInfo);
-            proxyInfo.increaseActiveDownloads(dlink.getHost());
-        }
     }
 
     /**
@@ -180,7 +162,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
 
     private void handlePlugin() {
         try {
-            this.startTime = System.currentTimeMillis();
+
             linkStatus.setStatusText(_JDT._.gui_download_create_connection());
             currentPlugin.init();
             if ((downloadLink.getLinkStatus().getRetryCount()) <= currentPlugin.getMaxRetries()) {
@@ -743,15 +725,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     currentPlugin.setBrowser(null);
                     /* clear log history for this download */
                     currentPlugin.getLogger().clear();
+                    currentPlugin = null;
                 }
-                currentPlugin = null;
                 downloadLink.setLivePlugin(null);
-                if (proxyInfo != null) {
-                    proxyInfo.decreaseActiveDownloads(downloadLink.getHost());
-                }
             } finally {
-                stateMachine.setStatus(FINAL_STATE);
                 linkStatus.setActive(false);
+                stateMachine.setStatus(FINAL_STATE);
             }
         }
     }

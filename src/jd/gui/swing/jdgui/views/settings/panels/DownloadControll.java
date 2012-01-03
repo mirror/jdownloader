@@ -62,7 +62,7 @@ public class DownloadControll extends AbstractConfigPanel implements ChangeListe
 
         remove = new ComboBox<CleanAfterDownloadAction>(CleanAfterDownloadAction.values(), removeDownloads);
 
-        String[] fileExists = new String[] { _GUI._.system_download_triggerfileexists_overwrite(), _GUI._.system_download_triggerfileexists_skip(), _GUI._.system_download_triggerfileexists_rename(), _GUI._.system_download_triggerfileexists_askpackage(), _GUI._.system_download_triggerfileexists_ask() };
+        String[] fileExists = new String[] { _GUI._.system_download_triggerfileexists_overwrite(), _GUI._.system_download_triggerfileexists_skip(), _GUI._.system_download_triggerfileexists_rename(), _GUI._.system_download_triggerfileexists_ask(), _GUI._.system_download_triggerfileexists_ask() };
         ifFileExists = new ComboBox<IfFileExistsAction>(IfFileExistsAction.values(), fileExists);
         this.addPair(_GUI._.gui_config_download_simultan_downloads(), null, maxSim);
         this.addPair(_GUI._.gui_config_download_simultan_downloads_per_host(), GeneralSettings.MAX_DOWNLOADS_PER_HOST_ENABLED, maxSimPerHost);

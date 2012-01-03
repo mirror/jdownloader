@@ -13,6 +13,7 @@ import java.util.prefs.Preferences;
 
 import jd.controlling.JSonWrapper;
 import jd.plugins.Account;
+import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
 import org.appwork.shutdown.ShutdownController;
@@ -549,7 +550,8 @@ public class ProxyController {
         if (removed) eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.REMOVED, proxy));
     }
 
-    public ProxyInfo getProxyForDownload(PluginForHost plugin, Account acc) {
+    public ProxyInfo getProxyForDownload(DownloadLink link, Account acc, boolean byPassMaxSimultanDownload) {
+        PluginForHost plugin = link.getDefaultPlugin();
         final String host = plugin.getHost();
         final int maxactive = plugin.getMaxSimultanDownload(acc);
         if (acc != null) {
@@ -560,7 +562,7 @@ public class ProxyController {
              */
             ProxyInfo ldefaultProxy = defaultproxy;
             int active = ldefaultProxy.activeDownloadsbyHosts(host);
-            if (active < maxactive) return ldefaultProxy;
+            if (byPassMaxSimultanDownload || active < maxactive) return ldefaultProxy;
             return null;
         }
         if (none.isProxyRotationEnabled()) {
@@ -568,7 +570,7 @@ public class ProxyController {
             if (none.getRemainingIPBlockWaittime(host) <= 0 && none.getRemainingTempUnavailWaittime(host) <= 0) {
                 /* active downloads must be less than allowed download */
                 int active = none.activeDownloadsbyHosts(host);
-                if (active < maxactive) return none;
+                if (byPassMaxSimultanDownload || active < maxactive) return none;
             }
         }
         ArrayList<ProxyInfo> ldirects = directs;
@@ -578,7 +580,7 @@ public class ProxyController {
                 if (info.getRemainingIPBlockWaittime(host) <= 0 && info.getRemainingTempUnavailWaittime(host) <= 0) {
                     /* active downloads must be less than allowed download */
                     int active = info.activeDownloadsbyHosts(host);
-                    if (active < maxactive) return info;
+                    if (byPassMaxSimultanDownload || active < maxactive) return info;
                 }
             }
         }
@@ -589,7 +591,7 @@ public class ProxyController {
                 if (info.getRemainingIPBlockWaittime(host) <= 0 && info.getRemainingTempUnavailWaittime(host) <= 0) {
                     /* active downloads must be less than allowed download */
                     int active = info.activeDownloadsbyHosts(host);
-                    if (active < maxactive) return info;
+                    if (byPassMaxSimultanDownload || active < maxactive) return info;
                 }
             }
         }

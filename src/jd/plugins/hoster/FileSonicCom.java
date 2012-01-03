@@ -23,8 +23,7 @@ import java.util.HashMap;
 import java.util.Locale;
 
 import jd.PluginWrapper;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
+import jd.config.Property;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -46,36 +45,22 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\..*?/.*?file/([a-zA-Z0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?|[0-9]+(/.+)?)" }, flags = { 2 })
-public class FileSonicCom extends PluginForHost implements ControlListener {
+public class FileSonicCom extends PluginForHost {
 
-    private static final Object  LOCK               = new Object();
-    private static final Object  LOCK2              = new Object();
-    private static volatile long LAST_FREE_DOWNLOAD = 0l;
-    private static boolean       initDone           = false;
-    private static String        geoDomain          = null;
+    private static final Object LOCK          = new Object();
+    private static String       geoDomain     = null;
 
-    private static final String  ua                 = "Mozilla/5.0 (JD; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
-    private static final String  uaf                = "Mozilla/5.0 (JDF; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
-    private static final String  uap                = "Mozilla/5.0 (JDP; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
+    private static final String ua            = "Mozilla/5.0 (JD; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
+    private static final String uaf           = "Mozilla/5.0 (JDF; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
+    private static final String uap           = "Mozilla/5.0 (JDP; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
 
-    private static final String  RECAPTCHATEXT      = "Recaptcha\\.create";
+    private static final String RECAPTCHATEXT = "Recaptcha\\.create";
+
+    private static final String COLLABORATE   = "COLLABORATE";
 
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.filesonic.com/premium");
-        synchronized (LOCK2) {
-            if (!initDone) {
-                initDone = true;
-                new Thread(new Runnable() {
-
-                    @SuppressWarnings("deprecation")
-                    public void run() {
-                        JDUtilities.getController().addControlListener(FileSonicCom.this);
-                    }
-
-                }).start();
-            }
-        }
     }
 
     @Override
@@ -128,6 +113,11 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
                         dllink.setAvailable(true);
                         dllink.setFinalFileName(name);
                         if (size != null) dllink.setDownloadSize(Long.parseLong(size));
+                        if ("1".equals(new Regex(hit, "<is_collaborate>(1)</is_collaborate>").getMatch(0))) {
+                            dllink.setProperty(COLLABORATE, true);
+                        } else {
+                            dllink.setProperty(COLLABORATE, Property.NULL);
+                        }
                     }
                 }
                 if (index == urls.length) {
@@ -138,13 +128,6 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
             return false;
         }
         return true;
-    }
-
-    public void controlEvent(ControlEvent event) {
-        if (event.getID() == 3) {
-            /* workaround for old stable to get notified about a reconnect */
-            LAST_FREE_DOWNLOAD = 0;
-        }
     }
 
     /* converts id and filename */
@@ -298,6 +281,7 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         if (br == null) return null;
         String ret = br.getRegex("<p><a href=\"(http://[^<]*?\\.filesonic\\..*?[^<]*?)\"><span>Start download now!</span></a></p>").getMatch(0);
         if (ret == null) ret = br.getRegex("<p><a id=\"start_download_link\" href=\"(http://[^<]*?\\.filesonic\\..*?[^<]*?)\"><span>Start download now!</span></a></p>").getMatch(0);
+        if (ret == null) ret = br.getRegex(">Your download is ready<.*?href=\"(http://[^<]*?\\.filesonic\\..*?[^<]*?)\"").getMatch(0);
         return ret;
 
     }
@@ -443,6 +427,11 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         return r;
     }
 
+    // @Override, to keep Stable compatibility
+    public boolean bypassMaxSimultanDownloadNum(DownloadLink link, Account acc) {
+        return Boolean.TRUE.equals(link.getProperty(COLLABORATE, Property.NULL));
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         String downloadUrl = null;
@@ -450,18 +439,31 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         passCode = null;
         br.getHeaders().put("User-Agent", uaf);
         this.br.setCookiesExclusive(false);
-
         this.br.forceDebug(true);
+        this.requestFileInformation(downloadLink);
+        boolean collaborate = bypassMaxSimultanDownloadNum(downloadLink, null);
         // we have to enter captcha before we get ip_blocked_state
         // we do this timeing check to avoid this
-        final long waited = System.currentTimeMillis() - FileSonicCom.LAST_FREE_DOWNLOAD;
-        if (FileSonicCom.LAST_FREE_DOWNLOAD > 0 && waited < 300000) {
-            FileSonicCom.LAST_FREE_DOWNLOAD = 0;
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 600000 - waited);
-        }
-        this.requestFileInformation(downloadLink);
         br.setCookie(getDomain(), "lang", "en");
-        downloadUrl = handleFreeJson(downloadLink);
+        if (collaborate) {
+            /* collaborate support, no PW support yet */
+            br.setFollowRedirects(false);
+            String fileID = getPureID(downloadLink);
+            br.getPage(this.getDomain() + "/file/" + fileID);
+            if (this.br.getRedirectLocation() != null) {
+                this.br.getPage(this.br.getRedirectLocation());
+            }
+            downloadUrl = getDownloadURL(br);
+            if (downloadUrl == null) {
+                /* Collaborate seems broken,remove the property */
+                downloadLink.setProperty(COLLABORATE, Property.NULL);
+                logger.severe("Collaborate File and no URL");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* once PW support is added, we should retry here */
+                // throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
+        if (downloadUrl == null) downloadUrl = handleFreeJson(downloadLink);
         if (downloadUrl == null) {
             /* fallback to normal api */
             this.br.getPage(downloadLink.getDownloadURL());
@@ -563,14 +565,14 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
          * limited to 1 chunk at the moment cause don't know if its a server
          * error that more are possible and resume should also not work ;)
          */
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadUrl, true, 1);
+        br.setFollowRedirects(true);
+        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadUrl, true, collaborate ? 0 : 1);
         if (this.dl.getConnection().getResponseCode() == 404) {
             this.dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (this.dl.getConnection() != null && this.dl.getConnection().getContentType() != null && (this.dl.getConnection().getContentType().contains("html") || this.dl.getConnection().getContentType().contains("unknown"))) {
             this.br.followConnection();
-
             this.errorHandling(downloadLink, this.br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -579,7 +581,6 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
         }
         this.dl.setFilenameFix(true);
         this.dl.startDownload();
-        FileSonicCom.LAST_FREE_DOWNLOAD = System.currentTimeMillis();
     }
 
     @Override
@@ -608,6 +609,7 @@ public class FileSonicCom extends PluginForHost implements ControlListener {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        br.setFollowRedirects(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
         if (this.dl.getConnection().getResponseCode() == 404) {
             this.dl.getConnection().disconnect();

@@ -69,6 +69,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * download
      */
     public static class DownloadControlInfo {
+        public boolean      byPassSimultanDownloadNum = false;
         public DownloadLink link;
         public ProxyInfo    proxy;
         public Account      account;
@@ -379,14 +380,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             /* no plugin available or plugin already active */
             return null;
         }
-        final boolean tryAcc = GeneralSettings.USE_AVAILABLE_ACCOUNTS.getDefaultValue();
+        final boolean tryAcc = GeneralSettings.USE_AVAILABLE_ACCOUNTS.isEnabled();
         Account acc = null;
         if (!link.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
             if (tryAcc) {
                 acc = AccountController.getInstance().getValidAccount(link.getDefaultPlugin());
             }
             /* search next possible proxy for this download */
-            ProxyInfo proxy = ProxyController.getInstance().getProxyForDownload(link.getDefaultPlugin(), acc);
+            boolean byPassMaxSimultanDownload = link.getDefaultPlugin().bypassMaxSimultanDownloadNum(link, acc);
+            ProxyInfo proxy = ProxyController.getInstance().getProxyForDownload(link, acc, byPassMaxSimultanDownload);
             if (proxy != null) {
                 if (link.getLinkStatus().isStatus(LinkStatus.TODO)) {
                     if (!link.isEnabled()) {
@@ -396,6 +398,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     ret.link = link;
                     ret.account = acc;
                     ret.proxy = proxy;
+                    ret.byPassSimultanDownloadNum = byPassMaxSimultanDownload;
                     return ret;
                 }
             }
@@ -416,7 +419,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         } else {
             ret = new DownloadControlInfo();
         }
-        final boolean tryAcc = GeneralSettings.USE_AVAILABLE_ACCOUNTS.getDefaultValue();
+        final boolean tryAcc = GeneralSettings.USE_AVAILABLE_ACCOUNTS.isEnabled();
         DownloadLink nextDownloadLink = null;
         Account acc = null;
         String accHost = null;
@@ -455,7 +458,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                     }
                     /* search next possible proxy for this download */
-                    ProxyInfo proxy = ProxyController.getInstance().getProxyForDownload(nextDownloadLink.getDefaultPlugin(), acc);
+                    boolean byPassMaxSimultanDownload = nextDownloadLink.getDefaultPlugin().bypassMaxSimultanDownloadNum(nextDownloadLink, acc);
+                    ProxyInfo proxy = ProxyController.getInstance().getProxyForDownload(nextDownloadLink, acc, byPassMaxSimultanDownload);
                     if (proxy != null) {
                         /* possible proxy found */
                         if (ret.link == null || nextDownloadLink.getPriority() > ret.link.getPriority()) {
@@ -463,6 +467,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                              * next download found or download with higher
                              * priority
                              */
+                            ret.byPassSimultanDownloadNum = byPassMaxSimultanDownload;
                             ret.proxy = proxy;
                             ret.link = nextDownloadLink;
                             ret.account = acc;
@@ -508,7 +513,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      */
     public int getSimultanDownloadNumPerHost() {
         int ret = 0;
-        if (Boolean.FALSE.equals(GeneralSettings.MAX_DOWNLOADS_PER_HOST_ENABLED.getValue()) || (ret = config.getMaxSimultaneDownloadsPerHost()) == 0) { return Integer.MAX_VALUE; }
+        if (!GeneralSettings.MAX_DOWNLOADS_PER_HOST_ENABLED.isEnabled() || (ret = config.getMaxSimultaneDownloadsPerHost()) <= 0) { return Integer.MAX_VALUE; }
         return ret;
     }
 
@@ -902,12 +907,23 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private void activateSingleDownloadController(final DownloadControlInfo dci) {
         DownloadWatchDog.LOG.info("Start new Download: " + dci.link.getHost() + ":" + dci.link.getName() + ":" + dci.proxy);
         final SingleDownloadController download = new SingleDownloadController(dci.link, dci.account, dci.proxy, this.connectionManager);
+        if (dci.byPassSimultanDownloadNum == false && dci.proxy != null) {
+            /*
+             * increase Counter for this Host only in case it is handled by
+             * normal MaxSimultanDownload handling
+             */
+            dci.proxy.increaseActiveDownloads(dci.link.getHost());
+        }
         download.setIOPermission(this);
         registerSingleDownloadController(download);
         download.getStateMonitor().executeOnceOnState(new Runnable() {
 
             public void run() {
+                if (dci.byPassSimultanDownloadNum == false && dci.proxy != null) {
+                    dci.proxy.decreaseActiveDownloads(dci.link.getHost());
+                }
                 unregisterSingleDownloadController(download);
+
             }
 
         }, SingleDownloadController.FINAL_STATE);
