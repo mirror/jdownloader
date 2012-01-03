@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurmasturbations.com" }, urls = { "http://(www\\.)?amateurmasturbations\\.com/\\d+/[a-z0-9\\-]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurmasturbations.com" }, urls = { "http://(www\\.)?amateurmasturbations\\.com/(\\d+/[a-z0-9\\-]+/|video/\\d+/.*?\\.html)" }, flags = { 0 })
 public class AmateurMasturbationsCom extends PluginForDecrypt {
 
     public AmateurMasturbationsCom(PluginWrapper wrapper) {
@@ -38,15 +38,20 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
-        String tempID = br.getRegex("(http://drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
+        String tempID = br.getRedirectLocation();
         if (tempID != null) {
-            DownloadLink dl = createDownloadlink(tempID);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(createDownloadlink(tempID));
+            return decryptedLinks;
+        }
+        tempID = br.getRegex("(http://drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
+        if (tempID != null) {
+            decryptedLinks.add(createDownloadlink(tempID));
             return decryptedLinks;
         }
         String filename = br.getRegex("\" rel=\"bookmark\">(.*?)</a></h2>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?) \\| Amateur Masturbation</title>").getMatch(0);
+            filename = br.getRegex("<title>(.*?) \\| (Amateur Masturbation|Real Masturbate)</title>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<div class=\"hed\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
         }
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -71,6 +76,19 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
         tempID = br.getRegex("emb\\.slutload\\.com/([A-Za-z0-9]+)\"").getMatch(0);
         if (tempID != null) {
             DownloadLink dl = createDownloadlink("http://www.slutload.com/watch/" + tempID + "/" + Integer.toString(new Random().nextInt(1000000)) + ".html");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        tempID = br.getRegex("amateurmasturbations\\.com/player/pikoplayer\\.php\\?video=(http://[^<>\"\\']+)\"").getMatch(0);
+        if (tempID != null) {
+            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+            decryptedLinks.add(dl);
+            dl.setFinalFileName(filename + ".flv");
+            return decryptedLinks;
+        }
+        tempID = br.getRegex("book\\-mark\\.net/playerconfig/(\\d+)/").getMatch(0);
+        if (tempID != null) {
+            DownloadLink dl = createDownloadlink("http://www.book-mark.net/videos/" + tempID + "/x.html");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

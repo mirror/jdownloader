@@ -33,7 +33,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixturecloud.com" }, urls = { "http://(www\\.)?mixture(cloud|audio|doc|file|image|video)\\.com/(audio|doc|download|image|video)=[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixturecloud.com" }, urls = { "http://[\\w\\.]*?mixture(cloud|audio|doc|file|image|video)\\.com/(audio|doc|download|image|video)=[A-Za-z0-9]+" }, flags = { 0 })
 public class MixtureCloudCom extends PluginForHost {
 
     // They have HTTPS certificate but the site has problems returning valid
