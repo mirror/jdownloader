@@ -112,6 +112,12 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        tempID = br.getRegex("\"id_video=(\\d+)\"").getMatch(0);
+        if (tempID != null) {
+            DownloadLink dl = createDownloadlink("http://www.xvideos.com/video" + tempID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         if (tempID == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

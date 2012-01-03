@@ -57,10 +57,15 @@ public class StolenVideosNet extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("\"(http://(www\\.)pornyeah\\.com/videos/.*?)\"").getMatch(0);
+        tempID = br.getRegex("pornyeah\\.com/playerConfig\\.php\\?[a-z0-9]+\\.[a-z0-9]{1,5}\\|(\\d+)\\|\\d+\"").getMatch(0);
         if (tempID != null) {
-            DownloadLink dl = createDownloadlink(tempID);
+            DownloadLink dl = createDownloadlink("http://www.pornyeah.com/videos/x-" + tempID + ".html");
             decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        tempID = br.getRegex("(megaporn|cum)\\.com/e/([A-Z0-9]{8})").getMatch(1);
+        if (tempID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.cum.com/video/?v=" + tempID));
             return decryptedLinks;
         }
         if (tempID == null) {

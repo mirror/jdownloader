@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abload.de" }, urls = { "http://[\\w\\.]*?abload\\.de/(gallery\\.php\\?key=[A-Za-z0-9]+|browseGallery\\.php\\?gal=[A-Za-z0-9]+\\&img=.+|image.php\\?img=[\\w\\.]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abload.de" }, urls = { "http://(www\\.)?abload\\.de/(gallery\\.php\\?key=[A-Za-z0-9]+|browseGallery\\.php\\?gal=[A-Za-z0-9]+\\&img=.+|image.php\\?img=[\\w\\.]+)" }, flags = { 0 })
 public class AbloadDeGallery extends PluginForDecrypt {
 
     public AbloadDeGallery(PluginWrapper wrapper) {
@@ -42,7 +42,7 @@ public class AbloadDeGallery extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML("Ein Bild mit diesem Dateinamen existiert nicht\\.")) {
             logger.warning("Wrong URL or The content been removed from provider. -> " + parameter);
-            return null;
+            return decryptedLinks;
         }
         if (!parameter.contains("browseGallery.php?gal=") && !parameter.contains("image.php")) {
             String[] links = br.getRegex("class=\"image\"><a href=\"(/.*?)\"").getColumn(0);
