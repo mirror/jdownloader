@@ -485,6 +485,7 @@ public class XFileSharingProBasic extends PluginForHost {
         String passCode = null;
         requestFileInformation(link);
         login(account, false);
+        br.setFollowRedirects(false);
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             br.getPage(link.getDownloadURL());

@@ -133,7 +133,7 @@ public class FileFlyerCom extends PluginForHost {
         String name = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_file\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (name == null) name = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_img\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (br.containsHTML(ONLY4PREMIUM)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.FileFlyerCom.errors.Only4Premium", "Only downloadable for premium users"));
-        if (br.containsHTML("(class=\"handlink\">Expired</a>|class=\"handlink\">Removed</a>|>To report a bug ,press this link</a>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(class=\"handlink\">Expired</a>|class=\"handlink\">Removed</a>|>To report a bug ,press this link</a>|>Expired</a>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(name.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));

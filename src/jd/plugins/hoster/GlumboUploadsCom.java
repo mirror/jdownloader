@@ -401,16 +401,20 @@ public class GlumboUploadsCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
         } else {
-            String expire = new Regex(BRBEFORE, Pattern.compile("<td.*?>Premium(\\-| )Account expires?:</td>.*?>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
-            if (expire == null) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
+            if (br.containsHTML(">Premium account expire:</TD><TD class=\"info\"><b>Never\\!</b>")) {
+                ai.setStatus("Lifetime Premium User");
             } else {
-                expire = expire.replaceAll("(<b>|</b>)", "");
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                String expire = new Regex(BRBEFORE, Pattern.compile("<td.*?>Premium(\\-| )Account expires?:</td>.*?>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
+                if (expire == null) {
+                    ai.setExpired(true);
+                    account.setValid(false);
+                    return ai;
+                } else {
+                    expire = expire.replaceAll("(<b>|</b>)", "");
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                }
+                ai.setStatus("Premium User");
             }
-            ai.setStatus("Premium User");
         }
         return ai;
     }
@@ -421,6 +425,7 @@ public class GlumboUploadsCom extends PluginForHost {
         String passCode = null;
         requestFileInformation(link);
         login(account, false);
+        br.setFollowRedirects(false);
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             br.getPage(link.getDownloadURL());
