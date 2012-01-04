@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -99,7 +100,15 @@ public class FsxHu extends PluginForHost {
             final String gif[] = br.getRegex("img/(.*?)\\.gif").getColumn(-1);
             br.getHeaders().put("Referer", br.getURL());
             for (final String template : gif) {
-                br.cloneBrowser().openGetConnection(template);
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.cloneBrowser().openGetConnection(template);
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
             }
             br.getHeaders().put("Referer", null);
             if (br.containsHTML("10 perced van")) {
@@ -186,7 +195,6 @@ public class FsxHu extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        System.err.println("requestfileinfo");
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.clearCookies("www.fsx.hu");
