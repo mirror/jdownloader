@@ -58,13 +58,14 @@ public class SockShareCom extends PluginForHost {
         br.setDebug(true);
         String hash = br.getRegex("<input type=\"hidden\" value=\"([a-z0-9]+)\" name=\"hash\">").getMatch(0);
         if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Can still be skipped
+        /** Can still be skipped */
         // String waittime =
         // br.getRegex("var countdownNum = (\\d+);").getMatch(0);
         // int wait = 5;
         // if (waittime != null) wait = Integer.parseInt(waittime);
         // sleep(wait * 1001l, downloadLink);
         br.postPage(br.getURL(), "hash=" + hash + "&confirm=Continue+as+Free+User");
+        if (br.containsHTML("(>This content server has been temporarily disabled for upgrades|Try again soon\\. You can still download it below\\.<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily disabled!", 2 * 60 * 60 * 1000l);
         String streamID = br.getRegex("\"(/get_file\\.php.*?)\"").getMatch(0);
         if (streamID == null) {
             streamID = br.getRegex("\'(/get_file\\.php.*?)\'").getMatch(0);

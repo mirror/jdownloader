@@ -46,11 +46,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class DownUploadCom extends PluginForHost {
 
     private String              BRBEFORE     = "";
-
     private static final String PASSWORDTEXT = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-
-    private static final String COOKIE_HOST  = "http://downupload.com";
-
+    private static final String COOKIE_HOST  = "http://www.downupload.com";
     public boolean              NOPREMIUM    = false;
 
     public DownUploadCom(PluginWrapper wrapper) {
@@ -167,7 +164,7 @@ public class DownUploadCom extends PluginForHost {
         String dllink = null;
         String passCode = null;
         if (BRBEFORE.contains("\"download1\"")) {
-            br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Free+Download");
+            br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replaceAll("(http://|www\\.)", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Free+Download");
             doSomething();
         }
         checkErrors(downloadLink, false, passCode);
@@ -459,7 +456,7 @@ public class DownUploadCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(COOKIE_HOST + "/login.html");
-        Form loginform = br.getForm(1);
+        Form loginform = br.getForm(0);
         if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         loginform.put("login", Encoding.urlEncode(account.getUser()));
         loginform.put("password", Encoding.urlEncode(account.getPass()));
@@ -503,6 +500,7 @@ public class DownUploadCom extends PluginForHost {
             filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
             if (filesize == null) {
                 filesize = new Regex(BRBEFORE, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+                if (filesize == null) filesize = new Regex(BRBEFORE, "<span><strong>(\\d+)</strong>").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
