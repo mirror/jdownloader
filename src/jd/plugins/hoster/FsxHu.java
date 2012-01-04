@@ -170,7 +170,6 @@ public class FsxHu extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        System.err.println("requestfileinfo");
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
