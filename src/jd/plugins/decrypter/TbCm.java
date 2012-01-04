@@ -109,7 +109,16 @@ public class TbCm extends PluginForDecrypt {
     private static boolean                      pluginloaded        = false;
     private boolean                             verifyAge           = false;
 
-    private boolean                             pluginDisabled      = false;
+    private static boolean                      pluginDisabled      = false;
+
+    static {
+        try {
+            String installerSource = JDIO.readFileToString(JDUtilities.getResourceFile("src.dat"));
+            pluginDisabled = installerSource.contains("\"PS\"");
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
 
     public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
         TbCm.LOG.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
@@ -157,13 +166,6 @@ public class TbCm extends PluginForDecrypt {
     public TbCm(final PluginWrapper wrapper) {
         super(wrapper);
 
-        String installerSource = null;
-        try {
-            installerSource = JDIO.readFileToString(JDUtilities.getResourceFile("src.dat"));
-            pluginDisabled = installerSource.contains("\"PS\"");
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
     }
 
     private void addtopos(final DestinationFormat mode, final String link, final long size, final String desc, final int fmt) {

@@ -28,8 +28,6 @@ public interface JDownloaderToolBarAPI extends RemoteAPIInterface {
 
     public boolean toggleStopAfterCurrentDownload();
 
-    public long[] getSpeedMeter();
-
     @AllowStorage(value = { Object.class })
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     public Object addLinksFromDOM(RemoteAPIRequest request);
