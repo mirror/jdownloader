@@ -54,6 +54,19 @@ import de.savemytube.flv.FLV;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(watch.*?v=|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
+    private static boolean PLUGIN_DISABLED;
+
+    static {
+        String installerSource = null;
+        try {
+
+            installerSource = JDIO.readFileToString(JDUtilities.getResourceFile("src.dat"));
+            PLUGIN_DISABLED = installerSource.contains("\"PS\"");
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
 
     public static enum DestinationFormat {
         AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }),
@@ -108,17 +121,6 @@ public class TbCm extends PluginForDecrypt {
     ArrayList<String>                           done                = new ArrayList<String>();
     private static boolean                      pluginloaded        = false;
     private boolean                             verifyAge           = false;
-
-    private static boolean                      pluginDisabled      = false;
-
-    static {
-        try {
-            String installerSource = JDIO.readFileToString(JDUtilities.getResourceFile("src.dat"));
-            pluginDisabled = installerSource.contains("\"PS\"");
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
 
     public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
         TbCm.LOG.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
@@ -195,7 +197,7 @@ public class TbCm extends PluginForDecrypt {
     }
 
     public boolean canHandle(final String data) {
-        if (pluginDisabled) return false;
+        if (PLUGIN_DISABLED) return false;
         return super.canHandle(data);
     }
 
@@ -203,7 +205,7 @@ public class TbCm extends PluginForDecrypt {
 
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
+        if (PLUGIN_DISABLED) return decryptedLinks;
         String parameter = param.toString().replace("watch#!v", "watch?v");
         parameter = parameter.replaceFirst("(watch\\?.*?v)", "watch?v");
         parameter = parameter.replaceFirst("https", "http");
