@@ -173,4 +173,7 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Archive Passwords (one per line)" })
     String settings_passwordlist();
+
+    @Default(lngs = { "en" }, values = { "No Extraction Job" })
+    String tooltip_empty();
 }

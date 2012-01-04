@@ -70,8 +70,9 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
      * @throws StartException
      * @throws StopException
      */
-    public void setEnabled(boolean enabled) throws StartException, StopException {
+    public synchronized void setEnabled(boolean enabled) throws StartException, StopException {
         if (enabled == this.enabled) return;
+        this.enabled = enabled;
         if (enabled) {
             start();
             store.setEnabled(true);
@@ -83,7 +84,6 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
             }
         }
 
-        this.enabled = enabled;
     }
 
     /**

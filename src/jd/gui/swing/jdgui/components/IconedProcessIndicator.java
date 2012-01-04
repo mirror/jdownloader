@@ -3,6 +3,8 @@ package jd.gui.swing.jdgui.components;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
@@ -18,20 +20,60 @@ import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.components.tooltips.TooltipPanel;
 import org.appwork.utils.swing.SwingUtils;
 
-public class IconedProcessIndicator extends CircledProgressBar {
+public class IconedProcessIndicator extends CircledProgressBar implements MouseListener {
 
-    private boolean      active;
-    private ImagePainter activeValuePainter;
-    private ImagePainter activeNonValuePainter;
-    private ImagePainter valuePainter;
-    private ImagePainter nonValuePainter;
+    private boolean active;
 
-    private IconedProcessIndicator() {
+    protected boolean isActive() {
+        return active;
+    }
 
+    protected ImagePainter activeValuePainter;
+    protected ImagePainter activeNonValuePainter;
+    protected ImagePainter valuePainter;
+    protected ImagePainter nonValuePainter;
+    private int            size;
+
+    @Override
+    public boolean isTooltipWithoutFocusEnabled() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    protected IconedProcessIndicator(int size) {
+
+        this.size = size;
+    }
+
+    public Dimension getSize() {
+        return new Dimension(size, size);
+    }
+
+    public Dimension getSize(Dimension rv) {
+        rv.setSize(size, size);
+
+        return rv;
+    }
+
+    public int getWidth() {
+        return size;
+    }
+
+    /**
+     * Returns the current height of this component. This method is preferable
+     * to writing <code>component.getBounds().height</code>, or
+     * <code>component.getSize().height</code> because it doesn't cause any heap
+     * allocations.
+     * 
+     * @return the current height of this component
+     */
+    public int getHeight() {
+        return size;
     }
 
     public IconedProcessIndicator(ImageIcon icon) {
         super();
+        size = 22;
         valuePainter = getPainer(icon, 1.0f);
 
         valuePainter.setBackground(Color.WHITE);
@@ -46,10 +88,11 @@ public class IconedProcessIndicator extends CircledProgressBar {
         activeNonValuePainter.setForeground(Color.GREEN);
         ToolTipController.getInstance().register(this);
         setActive(false);
+        addMouseListener(this);
     }
 
     public ExtTooltip createExtTooltip(final Point mousePosition) {
-        IconedProcessIndicator comp = new IconedProcessIndicator();
+        IconedProcessIndicator comp = new IconedProcessIndicator(32);
 
         comp.valuePainter = valuePainter;
         comp.nonValuePainter = nonValuePainter;
@@ -59,7 +102,7 @@ public class IconedProcessIndicator extends CircledProgressBar {
         comp.setEnabled(isEnabled());
         comp.setIndeterminate(isIndeterminate());
         comp.setPreferredSize(new Dimension(32, 32));
-        comp.setValue(100);
+        comp.setValue(getValue());
         TooltipPanel panel = new TooltipPanel("ins 0,wrap 2", "[][grow,fill]", "[]0[grow,fill]");
 
         comp.setOpaque(false);
@@ -76,6 +119,7 @@ public class IconedProcessIndicator extends CircledProgressBar {
         panel.add(txt);
         lbl.setText(getTitle());
         txt.setText(getDescription());
+
         return new PanelToolTip(panel);
     }
 
@@ -103,7 +147,7 @@ public class IconedProcessIndicator extends CircledProgressBar {
         setActive(newValue);
     }
 
-    private void setActive(boolean newValue) {
+    protected void setActive(boolean newValue) {
         active = newValue;
 
         if (active) {
@@ -121,6 +165,22 @@ public class IconedProcessIndicator extends CircledProgressBar {
         ret.setBackground(Color.WHITE);
         ret.setForeground(Color.LIGHT_GRAY);
         return ret;
+    }
+
+    public void mouseClicked(MouseEvent e) {
+        ToolTipController.getInstance().show(this);
+    }
+
+    public void mousePressed(MouseEvent e) {
+    }
+
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    public void mouseExited(MouseEvent e) {
     }
 
 }

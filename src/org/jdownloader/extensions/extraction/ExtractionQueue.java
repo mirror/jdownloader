@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.extraction;
 
+import java.util.ArrayList;
 import java.util.ListIterator;
 
 import org.appwork.utils.event.queue.Queue;
@@ -25,6 +26,26 @@ public class ExtractionQueue extends Queue {
         } finally {
             this.currentItem = null;
         }
+    }
+
+    public ArrayList<ExtractionController> getEntries() {
+        ArrayList<ExtractionController> ret = new ArrayList<ExtractionController>();
+        synchronized (this.queueLock) {
+            ExtractionController cur = currentItem;
+            if (cur != null) {
+                ret.add(cur);
+            }
+            for (final QueuePriority prio : this.prios) {
+                ListIterator<QueueAction<?, ? extends Throwable>> li = this.queue.get(prio).listIterator();
+                while (li.hasNext()) {
+                    QueueAction<?, ? extends Throwable> next = li.next();
+                    if (next instanceof ExtractionController) {
+                        ret.add((ExtractionController) next);
+                    }
+                }
+            }
+        }
+        return ret;
     }
 
     public int size() {

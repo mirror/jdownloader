@@ -16,6 +16,7 @@
 
 package jd.gui.swing.jdgui.components;
 
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -48,9 +49,8 @@ import org.jdownloader.images.NewTheme;
 public class StatusBarImpl extends JPanel {
 
     private static final long      serialVersionUID = 3676496738341246846L;
-    private IconedProcessIndicator reconnectIndicator;
+    private ReconnectProgress      reconnectIndicator;
     private IconedProcessIndicator linkGrabberIndicator;
-    private IconedProcessIndicator extractIndicator;
 
     public StatusBarImpl() {
         Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
@@ -123,9 +123,10 @@ public class StatusBarImpl extends JPanel {
         // spMaxChunks.setToolTipText(_GUI._.gui_tooltip_statusbar_max_chunks());
         // spMaxChunks.getSpinner().addChangeListener(this);
 
-        add(PremiumStatus.getInstance());
+        super.add(PremiumStatus.getInstance());
 
-        reconnectIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("reconnect", 16));
+        reconnectIndicator = new ReconnectProgress();
+        // IconedProcessIndicator;
         reconnectIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_reconnect());
         reconnectIndicator.setIndeterminate(false);
         reconnectIndicator.setEnabled(false);
@@ -230,26 +231,50 @@ public class StatusBarImpl extends JPanel {
         // NewTheme.I().getImageUrl("linkgrabber") +
         // "\"></img>Crawling for Downloads</html>");
 
-        extractIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("archive", 16));
-        extractIndicator.setEnabled(false);
-        extractIndicator.setVisible(false);
-        extractIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_extract());
         // extractIndicator.setToolTipText("<html><img src=\"" +
         // NewTheme.I().getImageUrl("archive") +
         // "\"></img>Extracting Archives: 85%</html>");
 
-        add(Box.createHorizontalGlue());
-        add(reconnectIndicator, "height 22!,width 22!");
-        add(linkGrabberIndicator, "height 22!,width 22!");
-        add(extractIndicator, "height 22!,width 22!,hidemode 2");
+        super.add(Box.createHorizontalGlue(), "height 22!,width 22!");
+        super.add(reconnectIndicator, "height 22!,width 22!");
+        super.add(linkGrabberIndicator, "height 22!,width 22!");
+
+        // add(extractIndicator, "height 22!,width 22!,hidemode 2");
     }
 
     public IconedProcessIndicator getLinkGrabberIndicator() {
         return linkGrabberIndicator;
     }
 
-    public IconedProcessIndicator getExtractionIndicator() {
-        return extractIndicator;
+    public Component add(Component comp) {
+        updateLayout(getComponentCount() + 1);
+        try {
+            return super.add(comp);
+        } finally {
+            revalidate();
+        }
+    }
+
+    private void updateLayout(int components) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[fill,grow,left][22!][22!]");
+        for (int i = 4; i < components; i++) {
+            sb.append("[22!]");
+        }
+        sb.append("3");
+        setLayout(new MigLayout("ins 0", sb.toString(), "[22!]"));
+    }
+
+    public void remove(Component comp) {
+        updateLayout(getComponentCount() - 1);
+        super.remove(comp);
+        revalidate();
+    }
+
+    public void add(Component comp, Object constraints) {
+        updateLayout(getComponentCount() + 1);
+        super.add(comp, constraints);
+        revalidate();
     }
 
     private void updateLinkGrabberIndicator() {

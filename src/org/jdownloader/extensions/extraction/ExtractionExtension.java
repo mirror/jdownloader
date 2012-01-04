@@ -32,7 +32,6 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -77,7 +76,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
     private static MenuAction            menuAction              = null;
 
-    private ExtractionQueue              ExtractionQueue         = new ExtractionQueue();
+    private ExtractionQueue              extractionQueue         = new ExtractionQueue();
 
     private ExtractionEventSender        broadcaster             = new ExtractionEventSender();
 
@@ -202,8 +201,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         archive.setActive(true);
         extractor.setConfig(getSettings());
 
+        extractionQueue.addAsynch(controller);
         fireEvent(new ExtractionEvent(controller, ExtractionEvent.Type.QUEUED));
-        ExtractionQueue.addAsynch(controller);
     }
 
     /**
@@ -723,14 +722,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
                     @Override
                     protected void runInEDT() {
-                        new EDTRunner() {
 
-                            @Override
-                            protected void runInEDT() {
-                                JDGui.getInstance().getStatusBar().getExtractionIndicator().setVisible(false);
-                            }
-                        };
-                        if (statusbarListener != null) removeListener(statusbarListener);
+                        if (statusbarListener != null) {
+                            statusbarListener.cleanup();
+                            removeListener(statusbarListener);
+                        }
                     }
                 };
             }
@@ -747,15 +743,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
                     @Override
                     protected void runInEDT() {
-                        new EDTRunner() {
-
-                            @Override
-                            protected void runInEDT() {
-                                JDGui.getInstance().getStatusBar().getExtractionIndicator().setVisible(true);
-                                JDGui.getInstance().getStatusBar().getExtractionIndicator().setDescription("No Job active");
-                            }
-                        };
-                        addListener(statusbarListener = new ExtractionListenerIcon());
+                        if (statusbarListener != null) statusbarListener.cleanup();
+                        addListener(statusbarListener = new ExtractionListenerIcon(ExtractionExtension.this));
                     }
                 };
             }
@@ -936,6 +925,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     @Override
     public ExtensionConfigPanel<ExtractionExtension> getConfigPanel() {
         return configPanel;
+    }
+
+    public ExtractionQueue getJobQueue() {
+        return extractionQueue;
     }
 
 }
