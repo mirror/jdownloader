@@ -35,6 +35,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
@@ -108,6 +109,8 @@ public class TbCm extends PluginForDecrypt {
     private static boolean                      pluginloaded        = false;
     private boolean                             verifyAge           = false;
 
+    private boolean                             pluginDisabled      = false;
+
     public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
         TbCm.LOG.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
         if (InType.equals(OutType)) {
@@ -153,6 +156,14 @@ public class TbCm extends PluginForDecrypt {
 
     public TbCm(final PluginWrapper wrapper) {
         super(wrapper);
+
+        String installerSource = null;
+        try {
+            installerSource = JDIO.readFileToString(JDUtilities.getResourceFile("src.dat"));
+            pluginDisabled = installerSource.contains("\"PS\"");
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     private void addtopos(final DestinationFormat mode, final String link, final long size, final String desc, final int fmt) {
@@ -181,9 +192,16 @@ public class TbCm extends PluginForDecrypt {
         }
     }
 
+    public boolean canHandle(final String data) {
+        if (pluginDisabled) return false;
+        return super.canHandle(data);
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+
         String parameter = param.toString().replace("watch#!v", "watch?v");
         parameter = parameter.replaceFirst("(watch\\?.*?v)", "watch?v");
         parameter = parameter.replaceFirst("https", "http");
