@@ -62,8 +62,7 @@ public class UniBytesComFolder extends PluginForDecrypt {
     }
 
     private void parsePage(ArrayList<DownloadLink> ret, String id) {
-        String GrabPane = br.getRegex("<ol start=\"\\d+\">(.*?)</ol></div>").getMatch(0);
-        String[] links = new Regex(GrabPane, "<li><a href=\"(http://(www\\.)?unibytes\\.com/[a-zA-Z0-9\\-\\.\\_ ]{11}B)\" target").getColumn(0);
+        String[] links = br.getRegex("<li><a href=\"(http://(www\\.)?unibytes\\.com/[a-zA-Z0-9\\-\\.\\_ ]{11}B)\"").getColumn(0);
         if (links == null || links.length == 0) return;
         if (links != null && links.length != 0) {
             for (String dl : links)

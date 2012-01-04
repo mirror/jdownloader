@@ -24,7 +24,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 11612 $", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://[\\w\\.]*?antena3.com/videos/[-/\\dA-Za-c]+.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 11612 $", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://(www\\.)?antena3.com/videos/[-/\\dA-Za-c]+.html" }, flags = { 0 })
 public class Antena3ComSalon extends PluginForDecrypt {
 
     public Antena3ComSalon(PluginWrapper wrapper) {
@@ -36,10 +36,8 @@ public class Antena3ComSalon extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String html = br.getPage(link.toString());
         if (html.contains("<h1>¡Uy\\! No encontramos la página que buscas\\.</h1>")) return decryptedLinks;
-
-        String xmlURL = "http://www.antena3.com" + new Regex(html, "player_capitulo.xml='(.*?)';").getMatch(0);
+        String xmlURL = "http://www.antena3.com" + new Regex(html, "player_capitulo\\.xml=\\'(.*?)\\';").getMatch(0);
         br.getPage(xmlURL);
-
         String[] links = br.getRegex("<archivo>(.*?)</archivo>").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String sdl : links) {

@@ -34,6 +34,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
+/** Works exactly like sockshare.com */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putlocker.com" }, urls = { "http://(www\\.)?putlocker\\.com/(file|embed)/[A-Z0-9]+" }, flags = { 0 })
 public class PutLockerCom extends PluginForHost {
 
@@ -108,14 +109,14 @@ public class PutLockerCom extends PluginForHost {
             logger.warning("hash is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String waittime = br.getRegex("var countdownNum = (\\d+);").getMatch(0);
-        int wait = 10;
-        if (waittime != null) {
-            logger.info("Regexed waittime found, waiting " + waittime + " seconds...");
-            wait = Integer.parseInt(waittime);
-        }
-        sleep(wait * 1001l, downloadLink);
+        /** Can still be skipped */
+        // String waittime =
+        // br.getRegex("var countdownNum = (\\d+);").getMatch(0);
+        // int wait = 5;
+        // if (waittime != null) wait = Integer.parseInt(waittime);
+        // sleep(wait * 1001l, downloadLink);
         br.postPage(br.getURL(), "hash=" + Encoding.urlEncode(hash) + "&confirm=Continue+as+Free+User");
+        if (br.containsHTML("(>This content server has been temporarily disabled for upgrades|Try again soon\\. You can still download it below\\.<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily disabled!", 2 * 60 * 60 * 1000l);
         String dllink = getDllink(downloadLink);
         if (dllink == null) {
             logger.warning("dllink is null...");

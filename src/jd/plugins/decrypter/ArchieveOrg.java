@@ -22,14 +22,12 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "http://(www\\.)?archive\\.org/details/[A-Za-z0-9_-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "http://(www\\.)?archive\\.org/details/[A-Za-z0-9_\\-\\.]+" }, flags = { 0 })
 public class ArchieveOrg extends PluginForDecrypt {
 
     public ArchieveOrg(PluginWrapper wrapper) {
@@ -40,7 +38,7 @@ public class ArchieveOrg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML(">Item cannot be found\\.<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML(">Item cannot be found\\.<")) return decryptedLinks;
         String[] links = br.getRegex("\"(/download/.*?/.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String singleLink : links) {

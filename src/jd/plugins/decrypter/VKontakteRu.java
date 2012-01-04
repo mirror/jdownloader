@@ -184,20 +184,18 @@ public class VKontakteRu extends PluginForDecrypt {
                  * http://vk.com/albums46486585
                  */
                 br.getPage(parameter);
-                String[] photoAlbums = br.getRegex("class=\"ge_photos_album\" href=\"(/album\\d+_\\d+)\"").getColumn(0);
-                if (photoAlbums == null || photoAlbums.length == 0) {
-                    logger.warning("Couldn't find any photo albums for link: " + parameter);
-                    return null;
-                }
-                for (String photoAlbum : photoAlbums) {
-                    decryptedLinks.add(createDownloadlink("http://vkontakte.ru" + photoAlbum));
-                }
-                /** Some albums are stored somewhere else, find and add those */
-                String[] missingAlbums = br.getRegex("class=\\\\\"ge_photos_album\\\\\" href=\\\\\"\\\\(/album\\d+_\\d+)\\\\\"").getColumn(0);
-                if (missingAlbums != null && missingAlbums.length != 0) {
-                    for (String photoAlbum : missingAlbums) {
+                /** Photos are placed in different locations, find them all */
+                final String[] regexes = { "class=\"ge_photos_album\" href=\"(/album\\d+_\\d+)\"", "class=\\\\\"ge_photos_album\\\\\" href=\\\\\"\\\\(/album\\d+_\\d+)\\\\\"" };
+                for (String regex : regexes) {
+                    String[] photoAlbums = br.getRegex(regex).getColumn(0);
+                    if (photoAlbums == null || photoAlbums.length == 0) continue;
+                    for (String photoAlbum : photoAlbums) {
                         decryptedLinks.add(createDownloadlink("http://vkontakte.ru" + photoAlbum));
                     }
+                }
+                if (decryptedLinks == null || decryptedLinks.size() == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
                 }
             } else {
                 /**
