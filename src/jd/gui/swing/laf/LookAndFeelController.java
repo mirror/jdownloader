@@ -248,6 +248,7 @@ public class LookAndFeelController {
      * @param className
      */
     private void postSetup(String className) {
+        // config.setFontScaleFactor(100);
         int fontSize = config.getFontScaleFactor();
         String fontName = config.getFontName();
 
@@ -256,16 +257,18 @@ public class LookAndFeelController {
             ExtPasswordField.MASK = "******";
             try {
                 if ("default".equalsIgnoreCase(fontName)) fontName = de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontName();
-                de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setFont(fontName, (de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontSize() * fontSize) / 100);
+                int newSize = (de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontSize() * fontSize) / 100;
+                de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setFont(fontName, newSize);
+                UIManager.put("ExtTable.SuggestedFontHeight", newSize);
             } catch (final Throwable e) {
                 Log.exception(e);
             }
 
         } else if (isSubstance()) {
             doSubstance(fontName, fontSize);
-
         } else {
             try {
+                boolean sizeSet = false;
                 Font font = Font.getFont(fontName);
                 for (Enumeration<Object> e = UIManager.getDefaults().keys(); e.hasMoreElements();) {
                     Object key = e.nextElement();
@@ -276,6 +279,10 @@ public class LookAndFeelController {
                             f = font;
                         } else {
                             f = (Font) value;
+                        }
+                        if (sizeSet == false) {
+                            UIManager.put("ExtTable.SuggestedFontHeight", (f.getSize() * fontSize) / 100);
+                            sizeSet = true;
                         }
                         UIManager.put(key, new FontUIResource(f.getName(), f.getStyle(), (f.getSize() * fontSize) / 100));
                     }
@@ -318,7 +325,7 @@ public class LookAndFeelController {
          * of synthetica found on javasoft.de
          */
         try {
-            /* we save around 200-400 ms here by not using AES */
+            /* we save around x-400 ms here by not using AES */
             String key = new String(new byte[] { 67, 49, 52, 49, 48, 50, 57, 52, 45, 54, 49, 66, 54, 52, 65, 65, 67, 45, 52, 66, 55, 68, 51, 48, 51, 57, 45, 56, 51, 52, 65, 56, 50, 65, 49, 45, 51, 55, 69, 53, 68, 54, 57, 53 }, "UTF-8");
             if (key != null) {
                 String[] li = { "Licensee=AppWork UG", "LicenseRegistrationNumber=289416475", "Product=Synthetica", "LicenseType=Small Business License", "ExpireDate=--.--.----", "MaxVersion=2.999.999" };
