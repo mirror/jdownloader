@@ -150,7 +150,7 @@ public class U115Com extends PluginForHost {
          * I don't know what this text means (google couldn't help) so i handle
          * it like that
          */
-        if ((!accountActive && br.containsHTML(ACCOUNTNEEDED)) || !br.containsHTML("class=\"download\\-box\" id=\"js_download_")) {
+        if ((!accountActive && br.containsHTML(ACCOUNTNEEDED)) || (!accountActive && !br.containsHTML("class=\"download\\-box\" id=\"js_download_"))) {
             logger.warning("Only downloadable via account: " + link.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_FATAL, ACCOUNTNEEDEDUSERTEXT);
         }

@@ -104,7 +104,11 @@ public class SrBoxCom extends PluginForDecrypt {
                 progress.increase(1);
             }
         }
-
+        for (int i = decryptedLinks.size() - 1; i >= 0; i--) {
+            if (decryptedLinks.get(i) == null) {
+                decryptedLinks.remove(i);
+            }
+        }
         // Add all link in a package
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
@@ -112,6 +116,13 @@ public class SrBoxCom extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    @Override
+    protected DownloadLink createDownloadlink(String link) {
+        if (!link.startsWith("http")) return null;
+        if (link.contains("israbox")) return null;
+        return super.createDownloadlink(link);
     }
 
     /**
