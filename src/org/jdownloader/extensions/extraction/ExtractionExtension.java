@@ -184,9 +184,13 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     }
 
     /**
-     * Startet das abwarbeiten der extractqueue
+     * Adds an archive to the extraction queue.
      */
     public void addToQueue(final Archive archive) {
+        // check if we have this archive already in queue.
+        for (ExtractionController ec : extractionQueue.getEntries()) {
+            if (ec.getArchiv() == archive) return;
+        }
         IExtraction extractor = archive.getExtractor();
 
         if (!archive.getFirstArchiveFile().exists()) return;
@@ -247,7 +251,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      */
     private Archive buildArchive(ArchiveFactory link) {
         for (Archive archive : archives) {
-            if (archive.contains(link)) { return archive; }
+            if (archive.contains(link)) {
+
+            return archive;
+
+            }
         }
 
         Archive archive = getExtractorByFactory(link).buildArchive(link);

@@ -25,7 +25,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof DownloadLinkArchive)) return false;
+        if (obj == null || !(obj instanceof DownloadLinkArchiveFile)) return false;
         return downloadLink.equals(((DownloadLinkArchiveFile) obj).downloadLink);
     }
 

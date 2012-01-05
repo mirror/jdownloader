@@ -766,4 +766,13 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Selection" })
     String SetDownloadFolderAction_no();
+
+    @Default(lngs = { "en" }, values = { "Downloads are in progress!" })
+    String DownloadWatchDog_onShutdownRequest_();
+
+    @Default(lngs = { "en" }, values = { "Do you want to stop running downloads to exit JDownloader?" })
+    String DownloadWatchDog_onShutdownRequest_msg();
+
+    @Default(lngs = { "en" }, values = { "Yes" })
+    String literally_yes();
 }
