@@ -51,7 +51,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/(.*?/|.+)?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "https?://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/(.*?/|.+)?" }, flags = { 2 })
 public class HotFileCom extends PluginForHost {
     private static final String ua              = RandomUserAgent.generate();
     private static final Object LOCK            = new Object();
@@ -177,7 +177,7 @@ public class HotFileCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("pl.hotfile.com", "hotfile.com"));
+        link.setUrlDownload(link.getDownloadURL().replace("pl.hotfile.com", "hotfile.com").replaceFirst("https", "http"));
     }
 
     @Override

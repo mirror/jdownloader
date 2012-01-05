@@ -28,7 +28,17 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         TEMP_UNKNOWN
     }
 
-    protected static final String     PACKAGETAG         = "<jd:" + PackagizerController.PACKAGENAME + ">";
+    protected static final String PACKAGETAG = "<jd:" + PackagizerController.PACKAGENAME + ">";
+
+    private boolean               crawlDeep  = false;
+
+    public boolean isCrawlDeep() {
+        return crawlDeep;
+    }
+
+    public void setCrawlDeep(boolean crawlDeep) {
+        this.crawlDeep = crawlDeep;
+    }
 
     private CrawledPackage            parent             = null;
     private UnknownCrawledLinkHandler unknownHandler     = null;

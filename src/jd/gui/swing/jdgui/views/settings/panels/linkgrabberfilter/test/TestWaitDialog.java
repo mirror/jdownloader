@@ -109,7 +109,7 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
                 delayer.run();
             }
         });
-        lc.crawlNormal(url);
+        lc.crawl(url);
         lc.waitForCrawling();
         lch.waitForChecked();
     }

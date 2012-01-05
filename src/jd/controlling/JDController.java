@@ -383,7 +383,7 @@ public class JDController {
     public ArrayList<DownloadLink> getContainerLinks(final File file) {
         LinkCrawler lc = new LinkCrawler();
         lc.setFilter(LinkFilterController.getInstance());
-        lc.crawlNormal("file://" + file.getAbsolutePath());
+        lc.crawl("file://" + file.getAbsolutePath());
         lc.waitForCrawling();
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         for (CrawledLink link : lc.getCrawledLinks()) {

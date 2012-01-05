@@ -69,7 +69,7 @@ public class DistributeData {
         foundPasswords.addAll(HTMLParser.findPasswords(data));
         LinkCrawler lf = new LinkCrawler();
         lf.setFilter(LinkFilterController.getInstance());
-        lf.crawlNormal(data);
+        lf.crawl(data);
         lf.waitForCrawling();
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>(lf.getCrawledLinks().size());
         for (final CrawledLink link : lf.getCrawledLinks()) {

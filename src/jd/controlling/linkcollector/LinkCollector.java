@@ -187,19 +187,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         broadcaster.addListener(lc, true);
         lc.setFilter(crawlerFilter);
         lc.setHandler(this);
-        ArrayList<CrawledLink> deep = new ArrayList<CrawledLink>();
-        ArrayList<CrawledLink> normal = new ArrayList<CrawledLink>();
-        for (CrawledLink link : links) {
-            if (link.getSourceJob() == null || !link.getSourceJob().isDeepAnalyse()) {
-                normal.add(link);
-            } else {
-                deep.add(link);
-            }
-        }
-        lc.enqueueNormal(normal);
-        normal = null;
-        lc.enqueueDeep(deep);
-        deep = null;
+        lc.crawl(new ArrayList<CrawledLink>(links));
         return lc;
     }
 
@@ -233,16 +221,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         broadcaster.addListener(lc, true);
         lc.setFilter(crawlerFilter);
         lc.setHandler(this);
-        if (job.isDeepAnalyse()) {
-            lc.enqueueDeep(job.getText(), null);
-        } else {
-            lc.enqueueNormal(job.getText(), null);
-        }
+        String jobText = job.getText();
         /*
          * we don't want to keep reference on text during the whole link
          * grabbing/checking/collecting way
          */
         job.setText(null);
+        lc.crawl(jobText, null, job.isDeepAnalyse());
         return lc;
     }
 
@@ -380,7 +365,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private HashMap<String, ArrayList<CrawledLink>> variousMap = new HashMap<String, ArrayList<CrawledLink>>();
 
     private void addCrawledLink(final CrawledLink link) {
-
         /* try to find good matching package or create new one */
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
