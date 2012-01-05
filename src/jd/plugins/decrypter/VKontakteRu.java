@@ -185,7 +185,7 @@ public class VKontakteRu extends PluginForDecrypt {
                  */
                 br.getPage(parameter);
                 /** Photos are placed in different locations, find them all */
-                final String[] regexes = { "class=\"ge_photos_album\" href=\"(/album\\d+_\\d+)\"", "class=\\\\\"ge_photos_album\\\\\" href=\\\\\"\\\\(/album\\d+_\\d+)\\\\\"" };
+                final String[] regexes = { "class=\"ge_photos_album\" href=\"(/album\\d+_\\d+)\"", "class=\\\\\"ge_photos_album\\\\\" href=\\\\\"\\\\(/album\\d+_\\d+)\\\\\"", "<div class=\"fl_l info_wrap\">[\t\n\r ]+<div class=\"name\"><a href=\"(/album\\d+_\\d+)\\?" };
                 for (String regex : regexes) {
                     String[] photoAlbums = br.getRegex(regex).getColumn(0);
                     if (photoAlbums == null || photoAlbums.length == 0) continue;

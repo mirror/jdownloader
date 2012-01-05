@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -31,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bomb-mp3.com" }, urls = { "http://[\\w\\.]*?bomb-mp3\\.com/download\\.php\\?mp3_id=[0-9]+&title=[a-zA-Z+]" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bomb-mp3.com" }, urls = { "http://(www\\.)?bomb\\-mp3\\.com/(download\\.php\\?mp3_id=[0-9]+\\&title=[^/\"<>\\&]+|download/\\d+/[^/<>\"]+\\.html)" }, flags = { 0 })
 public class BMp3Cm extends PluginForDecrypt {
 
     public BMp3Cm(PluginWrapper wrapper) {
@@ -42,25 +43,24 @@ public class BMp3Cm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        /** If link is an old link, convert it */
+        final Regex replacements = new Regex(parameter, "bomb\\-mp3\\.com/download\\.php\\?mp3_id=(\\d+)\\&title=(.+)");
+        if (replacements.getMatch(0) != null && replacements.getMatch(1) != null) parameter = "http://bomb-mp3.com/download/" + replacements.getMatch(0) + "/" + replacements.getMatch(1) + ".html";
         FilePackage fp = FilePackage.getInstance();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-
         /* Error handling */
         if (br.containsHTML("was removed due to broken link or respective copyright owner")) {
             logger.warning("Wrong link");
             logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             return new ArrayList<DownloadLink>();
         }
-
         /* Decrypt part */
         for (int i = 0; i <= 1; i++) {
             Form captchaForm = br.getFormbyKey("captcha");
             if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captchalink = null;
-            if (br.containsHTML("image.php")) {
-                captchalink = "http://www.bomb-mp3.com/image.php";
-            }
+            if (br.containsHTML("image\\.php")) captchalink = "http://www.bomb-mp3.com/image.php";
             if (captchalink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode(captchalink, param);
             captchaForm.put("captcha", code);
