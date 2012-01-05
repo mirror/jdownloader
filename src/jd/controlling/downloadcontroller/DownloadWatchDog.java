@@ -59,6 +59,11 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.uiserio.NewUIO;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
@@ -1267,7 +1272,19 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     public void onShutdownRequest() throws ShutdownVetoException {
-        if (this.stateMachine.isState(RUNNING_STATE, STOPPING_STATE)) { throw new ShutdownVetoException("DownloadWatchDog is still running"); }
+        if (this.stateMachine.isState(RUNNING_STATE, STOPPING_STATE)) {
+
+            try {
+                NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.DownloadWatchDog_onShutdownRequest_(), _JDT._.DownloadWatchDog_onShutdownRequest_msg(), NewTheme.I().getIcon("download", 32), _JDT._.literally_yes(), null);
+                return;
+            } catch (DialogClosedException e) {
+                e.printStackTrace();
+            } catch (DialogCanceledException e) {
+                e.printStackTrace();
+            }
+            throw new ShutdownVetoException("DownloadWatchDog is still running");
+
+        }
     }
 
     public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
