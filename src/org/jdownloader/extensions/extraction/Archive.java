@@ -78,11 +78,6 @@ public class Archive {
     private int                    exitCode         = -1;
 
     /**
-     * Status of the extraction.
-     */
-    private int                    status           = -1;
-
-    /**
      * Extractionprocress got interrupted
      */
     private boolean                gotInterrupted   = false;
@@ -194,14 +189,6 @@ public class Archive {
 
     public void setExitCode(int exitCode) {
         this.exitCode = exitCode;
-    }
-
-    public int getStatus() {
-        return status;
-    }
-
-    public void setStatus(int status) {
-        this.status = status;
     }
 
     public ArrayList<ArchiveFile> getArchiveFiles() {

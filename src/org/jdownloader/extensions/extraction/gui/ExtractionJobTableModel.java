@@ -1,30 +1,105 @@
 package org.jdownloader.extensions.extraction.gui;
 
 import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.awt.geom.Area;
+import java.awt.geom.Ellipse2D;
+import java.io.IOException;
 
-import jd.gui.swing.laf.LookAndFeelController;
+import javax.swing.BorderFactory;
 
+import org.appwork.swing.components.circlebar.CircledProgressBar;
+import org.appwork.swing.components.circlebar.IconPainter;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCircleProgressColumn;
-import org.appwork.swing.exttable.columns.ExtFileSizeColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.ColorUtils;
+import org.appwork.utils.Files;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.extensions.extraction.ExtractionController;
+import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
+import org.jdownloader.extensions.extraction.translate.T;
 
 public class ExtractionJobTableModel extends ExtTableModel<ExtractionController> {
 
     private Color textColor;
+    private Color back;
 
-    public ExtractionJobTableModel() {
-        super("ExtractionJobTableModel");
-        textColor = new Color(LookAndFeelController.getInstance().getLAFOptions().getTooltipForegroundColor());
+    public ExtractionJobTableModel(Color c) {
+        super("ExtractionJobTableModel4");
+        setColor(c);
+    }
+
+    public void setColor(Color c) {
+        textColor = c;
+        back = ColorUtils.getAlphaInstance(c, 50);
     }
 
     @Override
     protected void initColumns() {
-
-        addColumn(new ExtTextColumn<ExtractionController>("Name") {
+        addColumn(new ExtTextColumn<ExtractionController>("number") {
             {
 
+            }
+
+            @Override
+            public boolean isSortable(final ExtractionController obj) {
+                return false;
+            }
+
+            public void resetRenderer() {
+                super.resetRenderer();
+                this.rendererField.setForeground(textColor);
+                SwingUtils.toBold(rendererField);
+
+            }
+
+            @Override
+            public int getDefaultWidth() {
+                return 25;
+            }
+
+            protected int getMaxWidth() {
+                return getDefaultWidth();
+            }
+
+            /**
+             * @return
+             */
+            public int getMinWidth() {
+                return getDefaultWidth();
+            }
+
+            @Override
+            public void configureRendererComponent(final ExtractionController value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
+
+                // this.rendererField.setText((row + 1) + "");
+
+                try {
+                    this.rendererIcon.setIcon(CrossSystem.getMime().getFileIcon(Files.getExtension(value.getArchiv().getFirstArchiveFile().getFilePath()), 16, 16));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+            @Override
+            public String getStringValue(ExtractionController value) {
+                return null;
+            }
+
+        });
+        addColumn(new ExtTextColumn<ExtractionController>(T._.tooltip_NameColumn()) {
+            {
+
+            }
+
+            @Override
+            public boolean isSortable(final ExtractionController obj) {
+                return false;
             }
 
             @Override
@@ -40,7 +115,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
             @Override
             public int getDefaultWidth() {
-                return 80;
+                return 200;
             }
 
             @Override
@@ -49,46 +124,137 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             }
         });
 
-        addColumn(new ExtFileSizeColumn<ExtractionController>("Size") {
+        addColumn(new ExtTextColumn<ExtractionController>("status") {
+            {
+
+            }
+
+            @Override
+            public boolean isSortable(final ExtractionController obj) {
+                return false;
+            }
 
             public void resetRenderer() {
                 super.resetRenderer();
-                this.renderer.setForeground(textColor);
+                this.rendererField.setForeground(textColor);
+
             }
 
             @Override
             public int getDefaultWidth() {
-                return 60;
+                return 150;
+            }
+
+            protected int getMaxWidth() {
+                return getDefaultWidth();
+            }
+
+            /**
+             * @return
+             */
+            public int getMinWidth() {
+                return getDefaultWidth();
             }
 
             @Override
-            protected long getBytes(ExtractionController o2) {
-                return o2.getArchiv().getSize();
+            public String getStringValue(ExtractionController value) {
+                Type event = value.getLatestEvent();
+                if (event == null) return "";
+                switch (event) {
+                case START:
+                    return T._.plugins_optional_extraction_status_openingarchive();
+
+                case START_CRACK_PASSWORD:
+                    return "Start password finding";
+
+                case PASSWORT_CRACKING:
+                    try {
+                        return T._.plugins_optional_extraction_status_crackingpass_progress(((10000 * value.getCrackProgress()) / value.getPasswordListSize()) / 100.00);
+                    } catch (Throwable e) {
+                        return T._.plugins_optional_extraction_status_crackingpass_progress(0.00d);
+
+                    }
+                case PASSWORD_FOUND:
+                    return T._.plugins_optional_extraction_status_passfound();
+                case EXTRACTING:
+                    if (value.getArchiv().getExtractedFiles().size() > 0) {
+                        return T._.plugins_optional_extraction_status_extracting_filename(value.getArchiv().getExtractedFiles().get(value.getArchiv().getExtractedFiles().size() - 1).getName());
+                    } else {
+                        return T._.plugins_optional_extraction_status_extracting2();
+                    }
+                case FINISHED:
+                    return T._.plugins_optional_extraction_status_extractok();
+
+                case NOT_ENOUGH_SPACE:
+                    return T._.plugins_optional_extraction_status_notenoughspace();
+
+                case FILE_NOT_FOUND:
+                    return T._.plugins_optional_extraction_filenotfound();
+
+                }
+                return null;
+
             }
-
         });
-
-        addColumn(new ExtCircleProgressColumn<ExtractionController>("Progress") {
+        ExtCircleProgressColumn<ExtractionController> sorter;
+        addColumn(sorter = new ExtCircleProgressColumn<ExtractionController>("Progress") {
             {
                 determinatedRenderer.setForeground(textColor);
+                determinatedRenderer.setValueClipPainter(new IconPainter() {
+
+                    public void paint(final CircledProgressBar bar, final Graphics2D g2, final Shape shape, final int diameter, final double progress) {
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2.setColor(textColor);
+                        final Area a = new Area(shape);
+                        a.intersect(new Area(new Ellipse2D.Float(0, 0, diameter, diameter)));
+
+                        g2.fill(a);
+
+                    }
+                });
+
+                determinatedRenderer.setNonvalueClipPainter(new IconPainter() {
+
+                    public void paint(final CircledProgressBar bar, final Graphics2D g2, final Shape shape, final int diameter, final double progress) {
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2.setColor(back);
+                        final Area a = new Area(shape);
+                        a.intersect(new Area(new Ellipse2D.Float(0, 0, diameter, diameter)));
+
+                        g2.fill(a);
+                    }
+                });
 
             }
 
             @Override
             protected String getString(ExtractionController value) {
-                return "";
+                return "fdfd";
             }
 
             @Override
             public void resetRenderer() {
                 super.resetRenderer();
+
                 determinatedRenderer.setForeground(textColor);
+                this.determinatedRenderer.setBorder(BorderFactory.createEmptyBorder(1, 6, 1, 1));
 
             }
 
             @Override
             public int getDefaultWidth() {
-                return 50;
+                return 25;
+            }
+
+            protected int getMaxWidth() {
+                return getDefaultWidth();
+            }
+
+            /**
+             * @return
+             */
+            public int getMinWidth() {
+                return getDefaultWidth();
             }
 
             @Override
@@ -101,6 +267,50 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                 return value.getArchiv().getExtracted();
             }
         });
+
+        addColumn(new ExtTextColumn<ExtractionController>("percent") {
+            {
+
+            }
+
+            @Override
+            public boolean isSortable(final ExtractionController obj) {
+                return false;
+            }
+
+            public void resetRenderer() {
+                super.resetRenderer();
+                this.rendererField.setForeground(textColor);
+
+            }
+
+            @Override
+            public int getDefaultWidth() {
+                return 50;
+            }
+
+            protected int getMaxWidth() {
+                return getDefaultWidth();
+            }
+
+            /**
+             * @return
+             */
+            public int getMinWidth() {
+                return getDefaultWidth();
+            }
+
+            @Override
+            public String getStringValue(ExtractionController value) {
+                try {
+                    return (((10000 * value.getArchiv().getExtracted()) / value.getArchiv().getSize()) / 100.00) + " %";
+                } catch (Throwable e) {
+                    return 0.0 + " %";
+                }
+            }
+        });
+
+        setSortColumn(sorter);
     }
 
 }

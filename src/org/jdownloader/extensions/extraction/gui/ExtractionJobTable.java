@@ -10,7 +10,9 @@ public class ExtractionJobTable extends BasicJDTable<ExtractionController> {
         super(extractionJobTableModel);
         this.setBackground(null);
         setOpaque(false);
-
+        this.setShowVerticalLines(false);
+        this.setShowGrid(false);
+        this.setShowHorizontalLines(false);
     }
 
 }

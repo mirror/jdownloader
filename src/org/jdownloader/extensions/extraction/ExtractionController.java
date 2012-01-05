@@ -28,7 +28,7 @@ import jd.controlling.PasswordListController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.logging.Log;
+import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
 
 /**
  * Responsible for the correct procedure of the extraction process. Contains one
@@ -46,6 +46,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private IExtraction        extractor;
     private Logger             logger;
     private ScheduledFuture<?> timer;
+    private Type               latestEvent;
 
     ExtractionController(Archive archiv, Logger logger) {
         this.archive = archiv;
@@ -61,6 +62,12 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     public ExtractionQueue getExtractionQueue() {
         return (ExtractionQueue) super.getQueue();
+    }
+
+    public void kill() {
+        super.kill();
+        extractor.close();
+
     }
 
     @Override
@@ -87,8 +94,12 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     }
 
     private void fireEvent(ExtractionEvent.Type event) {
-        Log.L.finer(event + "");
+        latestEvent = event;
         ExtractionExtension.getIntance().fireEvent(new ExtractionEvent(this, event));
+    }
+
+    public Type getLatestEvent() {
+        return latestEvent;
     }
 
     @Override
@@ -274,7 +285,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      * 
      * @return
      */
-    int getCrackProgress() {
+    public int getCrackProgress() {
         return extractor.getCrackProgress();
     }
 

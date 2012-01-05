@@ -21,8 +21,8 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extract OK" })
     String plugins_optional_extraction_status_extractok();
 
-    @Default(lngs = { "en" }, values = { "Cracking password" })
-    String plugins_optional_extraction_status_crackingpass();
+    @Default(lngs = { "en" }, values = { "Cracking password: %s1 %" })
+    String plugins_optional_extraction_status_crackingpass_progress(double percent);
 
     @Default(lngs = { "en" }, values = { "Ask for unknown passwords?" })
     String gui_config_extraction_ask_path();
@@ -54,8 +54,8 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extract %s1" })
     String plugins_optional_extraction_progress_extractfile(Object s1);
 
-    @Default(lngs = { "en" }, values = { "Extracting" })
-    String plugins_optional_extraction_status_extracting();
+    @Default(lngs = { "en" }, values = { "Extracting %s1" })
+    String plugins_optional_extraction_status_extracting_filename(String string);
 
     @Default(lngs = { "en" }, values = { "Extract failed (password)" })
     String plugins_optional_extraction_status_extractfailedpass();
@@ -176,4 +176,10 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "No Extraction Job" })
     String tooltip_empty();
+
+    @Default(lngs = { "en" }, values = { "Archive's Name" })
+    String tooltip_NameColumn();
+
+    @Default(lngs = { "en" }, values = { "Extracting" })
+    String plugins_optional_extraction_status_extracting2();
 }

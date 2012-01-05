@@ -430,4 +430,16 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setWaittimeOnConnectionLoss(int milliseconds);
 
+    @Description("Is true, if jdownloader got closed with running downloads.")
+    @DefaultBooleanValue(false)
+    void setClosedWithRunningDownloads(boolean b);
+
+    boolean isClosedWithRunningDownloads();
+
+    @Description("If JDownloader got closed with running downloads, Downloads will be autostarted on next start. ")
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    void setAutoRestartDownloadsIfExitWithRunningDownloads(boolean b);
+
+    boolean isAutoRestartDownloadsIfExitWithRunningDownloads();
 }

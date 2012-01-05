@@ -454,16 +454,19 @@ public class Main {
                             }
                         });
                         /* check for available updates */
-
-                        if (JsonConfig.create(WebupdateSettings.class).isAutoUpdateCheckEnabled()) {
+                        // activate auto checker only if we are in jared mode
+                        if (JsonConfig.create(WebupdateSettings.class).isAutoUpdateCheckEnabled() && Application.isJared(Main.class)) {
                             JDUpdater.getInstance().startChecker();
                         }
                         /* start downloadwatchdog */
                         DownloadWatchDog.getInstance();
                         SimpleFTP.setCmanager(DownloadWatchDog.getInstance().getConnectionManager());
-                        if (JsonConfig.create(GeneralSettings.class).isAutoStartDownloadsOnStartupEnabled()) {
+
+                        boolean doRestartRunninfDownloads = JsonConfig.create(GeneralSettings.class).isAutoRestartDownloadsIfExitWithRunningDownloads() && JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads();
+                        if (JsonConfig.create(GeneralSettings.class).isAutoStartDownloadsOnStartupEnabled() || doRestartRunninfDownloads) {
                             /* autostart downloads when no autoupdate is enabled */
                             Log.exception(new WTFException("REIMPLEMENT ME:autostart on startup"));
+                            DownloadWatchDog.getInstance().startDownloads();
                         }
                     }
                 }.start();

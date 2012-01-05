@@ -108,8 +108,12 @@ public class ExtractionListenerList implements ExtractionListener {
             }
             break;
         case START_CRACK_PASSWORD:
-            controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_crackingpass());
-            // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
+            try {
+                controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_crackingpass_progress(((10000 * controller.getCrackProgress()) / controller.getPasswordListSize()) / 100.00));
+            } catch (Throwable e) {
+                controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_crackingpass_progress(0.00d));
+
+            } // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
             break;
         case START:
             controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_openingarchive());
@@ -124,14 +128,19 @@ public class ExtractionListenerList implements ExtractionListener {
             controller.getArchiv().getFirstArchiveFile().setProgress(0, 0, null);
             break;
         case PASSWORT_CRACKING:
-            controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_crackingpass());
+            try {
+                controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_crackingpass_progress(((10000 * controller.getCrackProgress()) / controller.getPasswordListSize()) / 100.00));
+            } catch (Throwable e) {
+                controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_crackingpass_progress(0.00d));
 
+            }
             controller.getArchiv().getFirstArchiveFile().setProgress(controller.getCrackProgress(), controller.getPasswordListSize(), Color.GREEN.darker());
 
             // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
             break;
         case EXTRACTING:
-            controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_extracting());
+
+            controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_extracting2());
 
             controller.getArchiv().getFirstArchiveFile().setProgress(controller.getArchiv().getExtracted(), controller.getArchiv().getSize(), Color.YELLOW.darker());
 

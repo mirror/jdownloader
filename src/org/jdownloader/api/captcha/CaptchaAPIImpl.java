@@ -34,7 +34,7 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
     }
 
     public List<CaptchaJob> list() {
-        List<CaptchaDialogQueueEntry> entries = CaptchaDialogQueue.getInstance().getEntries();
+        List<CaptchaDialogQueueEntry> entries = CaptchaDialogQueue.getInstance().getJobs();
         ArrayList<CaptchaJob> ret = new ArrayList<CaptchaJob>();
         for (CaptchaDialogQueueEntry entry : entries) {
             if (entry.isFinished()) continue;

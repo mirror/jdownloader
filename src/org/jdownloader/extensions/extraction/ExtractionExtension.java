@@ -186,11 +186,14 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     /**
      * Adds an archive to the extraction queue.
      */
-    public void addToQueue(final Archive archive) {
+    public synchronized void addToQueue(final Archive archive) {
         // check if we have this archive already in queue.
-        for (ExtractionController ec : extractionQueue.getEntries()) {
+
+        for (ExtractionController ec : extractionQueue.getJobs()) {
+
             if (ec.getArchiv() == archive) return;
         }
+
         IExtraction extractor = archive.getExtractor();
 
         if (!archive.getFirstArchiveFile().exists()) return;
@@ -249,7 +252,12 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      * @param link
      * @return
      */
-    private Archive buildArchive(ArchiveFactory link) {
+    private synchronized Archive buildArchive(ArchiveFactory link) {
+        IExtraction extrctor = getExtractorByFactory(link);
+        if (extrctor == null) {
+            //
+            return null;
+        }
         for (Archive archive : archives) {
             if (archive.contains(link)) {
 
@@ -258,7 +266,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             }
         }
 
-        Archive archive = getExtractorByFactory(link).buildArchive(link);
+        Archive archive = extrctor.buildArchive(link);
         Log.L.info("Created Archive: " + archive);
         Log.L.info("Files: " + archive.getArchiveFiles());
         archives.add(archive);
@@ -313,12 +321,15 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             if (dlinks == null) return;
             for (DownloadLink link : dlinks) {
                 final Archive archive = buildArchive(new DownloadLinkArchiveFactory(link));
-                new Thread() {
-                    @Override
-                    public void run() {
-                        if (archive.isComplete()) addToQueue(archive);
-                    }
-                }.start();
+                if (archive != null) {
+
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            if (archive.isComplete()) addToQueue(archive);
+                        }
+                    }.start();
+                }
             }
             break;
         case EXTRACT_PACKAGE:
@@ -937,6 +948,16 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
     public ExtractionQueue getJobQueue() {
         return extractionQueue;
+    }
+
+    /**
+     * Cancels a job
+     * 
+     * @param activeValue
+     */
+    public void cancel(ExtractionController activeValue) {
+        getJobQueue().remove(activeValue);
+        fireEvent(new ExtractionEvent(activeValue, ExtractionEvent.Type.CLEANUP));
     }
 
 }

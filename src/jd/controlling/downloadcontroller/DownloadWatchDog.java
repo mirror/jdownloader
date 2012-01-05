@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 
 import jd.controlling.AccountController;
 import jd.controlling.IOEQ;
+import jd.controlling.IOEQAction;
 import jd.controlling.IOPermission;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
@@ -1268,7 +1269,18 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     public void onShutdown() {
-        stopDownloads();
+        IOEQ.getQueue().addWait(new IOEQAction() {
+
+            public void ioeqRun() {
+                stopDownloads();
+            }
+
+            @Override
+            protected boolean allowAsync() {
+                return false;
+            }
+        });
+
     }
 
     public void onShutdownRequest() throws ShutdownVetoException {
@@ -1276,6 +1288,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
             try {
                 NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.DownloadWatchDog_onShutdownRequest_(), _JDT._.DownloadWatchDog_onShutdownRequest_msg(), NewTheme.I().getIcon("download", 32), _JDT._.literally_yes(), null);
+                config.setClosedWithRunningDownloads(true);
                 return;
             } catch (DialogClosedException e) {
                 e.printStackTrace();
@@ -1285,6 +1298,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             throw new ShutdownVetoException("DownloadWatchDog is still running");
 
         }
+        config.setClosedWithRunningDownloads(false);
     }
 
     public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {

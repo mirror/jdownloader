@@ -431,6 +431,7 @@ public class Multi extends IExtraction {
 
                 // MultiCallback call = new MultiCallback(extractTo, controller,
                 // config, item.getCRC() > 0 ? true : false);
+
                 MultiCallback call = new MultiCallback(extractTo, controller, config, false);
                 ExtractOperationResult res;
                 try {
