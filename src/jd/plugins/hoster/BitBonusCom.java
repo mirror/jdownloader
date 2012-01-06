@@ -27,7 +27,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -38,11 +37,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitbonus.com" }, urls = { "http://bitbonusdecrypted\\.com/(download/[A-Za-z0-9\\-_]+/free/2/|download/)[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class BitBonusCom extends PluginForHost {
 
-    private static final String PREMIUMONLYUSERTEXT   = "Only downloadable via premium";
-    private static final String CAPTCHAFAILED         = "(Captcha number error or expired|api\\.recaptcha\\.net)";
-    private static final Object LOCK                  = new Object();
-    private static boolean      loaded                = false;
-    final PluginForDecrypt      FILESMONSTERDECRYPTER = JDUtilities.getPluginForDecrypt("bitbonus.com");
+    private static final String PREMIUMONLYUSERTEXT = "Only downloadable via premium";
+    private static final String CAPTCHAFAILED       = "(Captcha number error or expired|api\\.recaptcha\\.net)";
+    private static final Object LOCK                = new Object();
+    private static boolean      loaded              = false;
 
     public BitBonusCom(PluginWrapper wrapper) {
         super(wrapper);
