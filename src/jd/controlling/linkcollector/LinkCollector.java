@@ -108,10 +108,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     @Override
     protected void _controllerParentlessLinks(List<CrawledLink> links, QueuePriority priority) {
         broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, links, priority));
-        for (CrawledLink link : links) {
-            /* update dupeMap */
-            dupeCheckMap.remove(link.getLinkID());
-        }
+        cleanupMaps(links);
     }
 
     @Override
@@ -137,11 +134,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
         }
         broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, pkg, priority));
+        ArrayList<CrawledLink> children = null;
         synchronized (pkg) {
-            for (CrawledLink link : pkg.getChildren()) {
-                dupeCheckMap.remove(link.getLinkID());
-            }
+            children = new ArrayList<CrawledLink>(pkg.getChildren());
         }
+        cleanupMaps(children);
     }
 
     @Override
@@ -304,7 +301,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             protected ArrayList<FilePackage> run() throws RuntimeException {
                 ArrayList<FilePackage> ret = new ArrayList<FilePackage>();
                 HashMap<CrawledPackage, ArrayList<CrawledLink>> map = new HashMap<CrawledPackage, ArrayList<CrawledLink>>();
-                remove(links);
+                cleanupMaps(links);
                 for (CrawledLink link : links) {
                     CrawledPackage parent = link.getParentNode();
                     if (parent == null || parent.getControlledBy() != LinkCollector.this) {
@@ -330,9 +327,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         });
     }
 
-    // clean up offline and various map
-    private void remove(ArrayList<CrawledLink> links) {
+    // clean up offline/various/dupeCheck maps
+    private void cleanupMaps(List<CrawledLink> links) {
         for (CrawledLink l : links) {
+            dupeCheckMap.remove(l.getLinkID());
             removeFromMap(variousMap, l);
             removeFromMap(offlineMap, l);
         }
@@ -340,26 +338,21 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     // clean up offline and various map
     private void removeFromMap(HashMap<String, ArrayList<CrawledLink>> idListMap, CrawledLink l) {
-        Entry<String, ArrayList<CrawledLink>> list;
-        for (Iterator<Entry<String, ArrayList<CrawledLink>>> it = idListMap.entrySet().iterator(); it.hasNext();) {
-            list = it.next();
-            for (Iterator<CrawledLink> it2 = list.getValue().iterator(); it2.hasNext();) {
-                if (it2.next() == l) {
-                    it2.remove();
-                    if (list.getValue().size() == 0) {
-                        it.remove();
-                    }
-                    return;
-                }
+        Iterator<Entry<String, ArrayList<CrawledLink>>> it = idListMap.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<String, ArrayList<CrawledLink>> elem = it.next();
+            String identifier = elem.getKey();
+            ArrayList<CrawledLink> mapElems = elem.getValue();
+            if (mapElems != null && mapElems.remove(l)) {
+                if (mapElems.size() == 0) idListMap.remove(identifier);
+                break;
             }
-
         }
     }
 
-    private CrawledPackage                          offlinePackage;
-
+    protected CrawledPackage                        offlinePackage;
     protected CrawledPackage                        variousPackage;
-    private CrawledPackage                          permanentofflinePackage;
+    protected CrawledPackage                        permanentofflinePackage;
 
     private HashMap<String, ArrayList<CrawledLink>> offlineMap = new HashMap<String, ArrayList<CrawledLink>>();
     private HashMap<String, ArrayList<CrawledLink>> variousMap = new HashMap<String, ArrayList<CrawledLink>>();
@@ -396,7 +389,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
                 CrawledLinkFactory clf = new CrawledLinkFactory(link);
                 if (archiver != null && LinkgrabberSettings.ARCHIVE_PACKAGIZER_ENABLED.getValue()) {
-
                     if (archiver.isMultiPartArchive(clf)) {
                         isMultiArchive = true;
                     }
@@ -404,21 +396,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (packageName == null) {
                     packageName = LinknameCleaner.cleanFileName(link.getName());
                     if (isMultiArchive) {
-
                         packageID = archiver.createArchiveID(clf);
-
                         if (packageID != null) {
                             packageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(archiver.getArchiveName(clf)));
-
                         }
                     }
-
                 }
-
                 String identifier = packageID + "_" + packageName + "_" + downloadFolder;
                 CrawledPackage pkg = packageMap.get(identifier);
                 if (pkg == null) {
                     if (LinkCrawler.PERMANENT_OFFLINE_ID == uID) {
+                        /* these links will never come back online */
                         if (permanentofflinePackage == null || permanentofflinePackage.getChildren().size() == 0) {
                             permanentofflinePackage = new CrawledPackage();
                             permanentofflinePackage.setCreated(link.getCreated());
@@ -442,7 +430,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         list.add(link);
                         List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                         add.add(link);
-
                         LinkCollector.this.addmoveChildren(offlinePackage, add, -1);
                     } else if (LinkgrabberSettings.VARIOUS_PACKAGE_LIMIT.getValue() > 0) {
                         if (variousPackage == null || variousPackage.getChildren().size() == 0) {
@@ -450,7 +437,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             variousPackage.setCreated(link.getCreated());
                             variousPackage.setExpanded(true);
                             variousPackage.setCreated(link.getCreated());
-
                             variousPackage.setName(_JDT._.LinkCollector_addCrawledLink_variouspackage());
                         }
                         ArrayList<CrawledLink> list = variousMap.get(identifier);
@@ -459,7 +445,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             variousMap.put(identifier, list);
                         }
                         list.add(link);
-
                         if (list.size() > LinkgrabberSettings.VARIOUS_PACKAGE_LIMIT.getValue()) {
                             newPackage(null, packageName, downloadFolder, identifier);
                         } else {
@@ -467,49 +452,40 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             add.add(link);
                             LinkCollector.this.addmoveChildren(variousPackage, add, -1);
                         }
-
                     } else {
                         ArrayList<CrawledLink> add = new ArrayList<CrawledLink>(1);
                         add.add(link);
-
                         newPackage(add, packageName, downloadFolder, identifier);
                     }
-
                 } else {
                     List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                     add.add(link);
-
                     LinkCollector.this.addmoveChildren(pkg, add, -1);
                 }
-
                 return null;
             }
 
             public void newPackage(final ArrayList<CrawledLink> links, String packageName, String downloadFolder, String identifier) {
-                CrawledPackage pkg;
-                pkg = new CrawledPackage();
+                CrawledPackage pkg = new CrawledPackage();
                 pkg.setCreated(System.currentTimeMillis());
                 pkg.setName(packageName);
                 if (downloadFolder != null) {
                     pkg.setDownloadFolder(downloadFolder);
                 }
                 packageMap.put(identifier, pkg);
-
-                LinkCollector.this.addmoveChildren(pkg, links, -1);
-
+                if (links != null && links.size() > 0) {
+                    LinkCollector.this.addmoveChildren(pkg, links, -1);
+                }
                 // check of we have matching links in offline maper
                 ArrayList<CrawledLink> list = offlineMap.remove(identifier);
-                if (list != null) {
-                    LinkCollector.this.addmoveChildren(pkg, list, -1);
-                }
-                list = variousMap.get(identifier);
-
                 if (list != null && list.size() > 0) {
                     LinkCollector.this.addmoveChildren(pkg, list, -1);
-                    variousMap.remove(identifier);
+                }
+                list = variousMap.remove(identifier);
+                if (list != null && list.size() > 0) {
+                    LinkCollector.this.addmoveChildren(pkg, list, -1);
                 }
             }
-
         });
 
     }
@@ -617,7 +593,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         synchronized (filteredStuff) {
             filteredStuff.clear();
         }
-        // TODO: missing map cleanup?
+        dupeCheckMap.clear();
         offlinePackage = null;
         variousPackage = null;
         variousMap.clear();
