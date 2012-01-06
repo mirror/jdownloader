@@ -42,7 +42,7 @@ public class GlumboUploadsComFolder extends PluginForDecrypt {
         br.setCookie("http://" + HOST, "lang", "english");
         br.getPage(parameter);
         if (br.containsHTML("No such user exist")) return decryptedLinks;
-        String[] links = br.getRegex("\"(http://(www\\.)?" + HOST + "/[a-z0-9]{12})").getColumn(0);
+        String[] links = br.getRegex("<div class=\"link\"><a href=\"(http://(www\\.)?" + HOST + "/[a-z0-9]{12})\"").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
