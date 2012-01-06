@@ -96,7 +96,7 @@ public abstract class IExtraction {
     /**
      * Starts the extraction of an {@link Archive}.
      */
-    public abstract void extract();
+    public abstract void extract(ExtractionController controller);
 
     /**
      * Checks if the extraction method can be used on the system. If it's not

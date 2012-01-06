@@ -166,13 +166,15 @@ class SplitUtil {
         }
         Archive archive = controller.getArchiv();
         List<String> files = new ArrayList<String>();
-
+        long size = 0l;
         for (ArchiveFile l : archive.getArchiveFiles()) {
             files.add(l.getFilePath());
+            size += new File(l.getFilePath()).length() - start;
         }
-
+        controller.getArchiv().setSize(size);
+        controller.setProgress(0.0d);
         Collections.sort(files);
-
+        long progressInBytes = 0l;
         BufferedOutputStream bos = null;
         FileOutputStream fos = null;
         ReusableByteArrayOutputStream writeBuffer = null;
@@ -233,7 +235,9 @@ class SplitUtil {
                             continue;
                         }
                         bos.write(readBuffer.getInternalBuffer(), 0, l);
-                        archive.setExtracted(archive.getExtracted() + l);
+                        progressInBytes += l;
+                        controller.setProgress(progressInBytes / size);
+
                         if (priority != null && !CPUPriority.HIGH.equals(priority)) {
                             try {
                                 Thread.sleep(priority.getTime());
@@ -258,6 +262,7 @@ class SplitUtil {
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
             return false;
         } finally {
+            controller.setProgress(100.0d);
             try {
                 bos.flush();
             } catch (Throwable e) {

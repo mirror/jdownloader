@@ -224,11 +224,16 @@ public class Archive {
         return firstArchiveFile;
     }
 
-    public void setExtracted(long extracted) {
-        this.extracted = extracted;
-    }
+    /**
+     * Returns how much bytes got extracted. this is NOT getSize() after
+     * extracting in some cases. Because files may be filtered, or not extracted
+     * due to overwrite rules. user {@link ExtractionController#getProgress()}
+     * to get the extraction progress
+     * 
+     * @return
+     */
 
-    public long getExtracted() {
+    public long getExtractedFilesSize() {
         return extracted;
     }
 
@@ -292,6 +297,7 @@ public class Archive {
 
     public void addExtractedFiles(File file) {
         this.extractedFiles.add(file);
+        extracted += file.length();
     }
 
     public ArrayList<File> getExtractedFiles() {

@@ -64,7 +64,7 @@ class MultiCallback implements ISequentialOutStream {
     public int write(byte[] data) throws SevenZipException {
         try {
             bos.write(data);
-            con.getArchiv().setExtracted(con.getArchiv().getExtracted() + data.length);
+
             if (priority != null && !CPUPriority.HIGH.equals(priority)) {
                 try {
                     Thread.sleep(priority.getTime());

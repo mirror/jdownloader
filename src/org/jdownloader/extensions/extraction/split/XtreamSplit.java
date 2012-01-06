@@ -39,6 +39,7 @@ import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
 
@@ -85,7 +86,7 @@ public class XtreamSplit extends IExtraction {
     }
 
     @Override
-    public void extract() {
+    public void extract(ExtractionController ctrl) {
         byte[] buffer = new byte[BUFFER_SIZE];
         Archive archive = controller.getArchiv();
 
@@ -109,7 +110,14 @@ public class XtreamSplit extends IExtraction {
                 archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
                 return;
             }
+            long size = 0l;
+            for (String l : files) {
 
+                size += new File(l).length() - HEADER_SIZE;
+            }
+            controller.getArchiv().setSize(size);
+            long progressInBytes = 0l;
+            controller.setProgress(0.0d);
             archive.addExtractedFiles(file);
 
             out = new BufferedOutputStream(new FileOutputStream(file));
@@ -164,7 +172,8 @@ public class XtreamSplit extends IExtraction {
                     out.flush();
 
                     // Sum up bytes for control
-                    archive.setExtracted(archive.getExtracted() + l);
+                    progressInBytes += l;
+                    controller.setProgress(progressInBytes / size);
                     read += l;
 
                     // Update MD5
@@ -200,6 +209,7 @@ public class XtreamSplit extends IExtraction {
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
             return;
         } finally {
+            controller.setProgress(100.0d);
             try {
                 if (out != null) out.close();
                 if (in != null) in.close();

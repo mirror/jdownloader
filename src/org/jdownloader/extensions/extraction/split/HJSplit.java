@@ -28,6 +28,7 @@ import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
 
@@ -61,7 +62,7 @@ public class HJSplit extends IExtraction {
     }
 
     @Override
-    public void extract() {
+    public void extract(ExtractionController ctrl) {
         File f = archive.getFactory().toFile(archive.getFirstArchiveFile().getFilePath().replaceFirst("\\.[\\d]+$", ""));
         String extension = SplitUtil.getCutKillerExtension(archive.getFactory().toFile(archive.getFirstArchiveFile().getFilePath()), archive.getArchiveFiles().size());
         boolean ret;

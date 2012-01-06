@@ -28,6 +28,7 @@ import org.appwork.utils.Regex;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
 
@@ -61,7 +62,7 @@ public class Unix extends IExtraction {
     }
 
     @Override
-    public void extract() {
+    public void extract(ExtractionController ctrl) {
         File f = new File(archive.getFirstArchiveFile().getFilePath().replaceFirst("\\.[a-z][a-z]$", ""));
         String extension = SplitUtil.getCutKillerExtension(new File(archive.getFirstArchiveFile().getFilePath()), archive.getArchiveFiles().size());
         boolean ret;

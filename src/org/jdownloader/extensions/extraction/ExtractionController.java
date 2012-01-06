@@ -47,6 +47,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private Logger             logger;
     private ScheduledFuture<?> timer;
     private Type               latestEvent;
+    private double             progress;
 
     ExtractionController(Archive archiv, Logger logger) {
         this.archive = archiv;
@@ -201,8 +202,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
                 }, 1, 2, TimeUnit.SECONDS);
                 try {
-                    extractor.extract();
+                    extractor.extract(this);
                 } finally {
+                    fireEvent(ExtractionEvent.Type.EXTRACTING);
                     timer.cancel(false);
                 }
                 extractor.close();
@@ -330,5 +332,24 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      */
     public void setExeption(Exception e) {
         exception = e;
+    }
+
+    /**
+     * Sets the extraction progress in %
+     * 
+     * @param d
+     */
+    public void setProgress(double d) {
+        this.progress = d;
+
+    }
+
+    /**
+     * Get the extraction progress in %
+     * 
+     * @return
+     */
+    public double getProgress() {
+        return progress;
     }
 }

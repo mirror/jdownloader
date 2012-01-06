@@ -7,6 +7,7 @@ import java.awt.Shape;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.io.IOException;
+import java.text.DecimalFormat;
 
 import javax.swing.BorderFactory;
 
@@ -259,17 +260,20 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
             @Override
             protected long getMax(ExtractionController value) {
-                return value.getArchiv().getSize();
+                return 10000;
             }
 
             @Override
             protected long getValue(ExtractionController value) {
-                return value.getArchiv().getExtracted();
+                return (long) (value.getProgress() * 100);
             }
         });
 
         addColumn(new ExtTextColumn<ExtractionController>("percent") {
+            private DecimalFormat format;
+
             {
+                format = new DecimalFormat("00.00 %");
 
             }
 
@@ -302,15 +306,12 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
             @Override
             public String getStringValue(ExtractionController value) {
-                try {
-                    return (((10000 * value.getArchiv().getExtracted()) / value.getArchiv().getSize()) / 100.00) + " %";
-                } catch (Throwable e) {
-                    return 0.0 + " %";
-                }
+
+                return format.format(value.getProgress() / 100.0);
+
             }
         });
 
         setSortColumn(sorter);
     }
-
 }

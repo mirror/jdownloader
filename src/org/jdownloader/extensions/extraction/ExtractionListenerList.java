@@ -142,7 +142,7 @@ public class ExtractionListenerList implements ExtractionListener {
 
             controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_extracting2());
 
-            controller.getArchiv().getFirstArchiveFile().setProgress(controller.getArchiv().getExtracted(), controller.getArchiv().getSize(), Color.YELLOW.darker());
+            controller.getArchiv().getFirstArchiveFile().setProgress((long) (controller.getProgress() * 100), 10000, Color.YELLOW.darker());
 
             // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
             break;

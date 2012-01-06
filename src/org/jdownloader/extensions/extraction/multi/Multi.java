@@ -47,6 +47,7 @@ import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
 
@@ -134,6 +135,8 @@ public class Multi extends IExtraction {
 
     /** For all single files */
     private RandomAccessFileInStream stream;
+
+    private long                     progressInBytes;
 
     public Multi() {
         crack = 0;
@@ -281,7 +284,7 @@ public class Multi extends IExtraction {
         List<Integer> erg = new ArrayList<Integer>();
         for (ArchiveFile l : archive.getArchiveFiles()) {
             String e = "";
-            String name = l.getName();
+            // String name = l.getName();
             if ((e = new Regex(l.getFilePath(), getpartid).getMatch(0)) != null) {
                 int p = Integer.parseInt(e);
 
@@ -376,9 +379,11 @@ public class Multi extends IExtraction {
     }
 
     @Override
-    public void extract() {
+    public void extract(final ExtractionController ctrl) {
         try {
-
+            ctrl.setProgress(0.0d);
+            final double size = archive.getSize() / 100.0d;
+            progressInBytes = 0l;
             for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
                 // Skip folders
                 if (item == null || item.isFolder()) {
@@ -397,6 +402,8 @@ public class Multi extends IExtraction {
                 }
                 if (filter(item.getPath())) {
                     logger.info("Filtering file " + item.getPath() + " in " + archive.getFirstArchiveFile().getFilePath());
+                    progressInBytes += item.getSize();
+                    ctrl.setProgress(progressInBytes / size);
                     continue;
                 }
 
@@ -422,7 +429,8 @@ public class Multi extends IExtraction {
                             return;
                         }
                     } else {
-                        archive.setExtracted(archive.getExtracted() + item.getSize());
+                        progressInBytes += item.getSize();
+                        ctrl.setProgress(progressInBytes / size);
                         continue;
                     }
                 }
@@ -432,7 +440,19 @@ public class Multi extends IExtraction {
                 // MultiCallback call = new MultiCallback(extractTo, controller,
                 // config, item.getCRC() > 0 ? true : false);
 
-                MultiCallback call = new MultiCallback(extractTo, controller, config, false);
+                MultiCallback call = new MultiCallback(extractTo, controller, config, false) {
+
+                    @Override
+                    public int write(byte[] data) throws SevenZipException {
+                        try {
+                            return super.write(data);
+                        } finally {
+                            progressInBytes += data.length;
+                            ctrl.setProgress(progressInBytes / size);
+                        }
+                    }
+
+                };
                 ExtractOperationResult res;
                 try {
                     if (item.isEncrypted()) {
@@ -492,6 +512,8 @@ public class Multi extends IExtraction {
         } catch (IOException e) {
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
             return;
+        } finally {
+            controller.setProgress(100.0d);
         }
 
         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);

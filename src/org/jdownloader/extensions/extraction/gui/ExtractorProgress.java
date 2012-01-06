@@ -174,19 +174,10 @@ public class ExtractorProgress extends IconedProcessIndicator {
         ArrayList<ExtractionController> entries;
         switch (type) {
         case EXTRACTING:
-            entries = extension.getJobQueue().getJobs();
-            int progress = 0;
-            for (ExtractionController ec : entries) {
-                if (ec.getArchiv().getSize() > 0) {
-                    progress += (int) ((100 * ec.getArchiv().getExtracted()) / ec.getArchiv().getSize());
-                }
-            }
-            progress /= entries.size();
-            setValue(progress);
-
+            setIndeterminate(false);
             break;
         case START:
-            setIndeterminate(false);
+            setIndeterminate(true);
             setValue(10);
 
         case QUEUED:
@@ -197,7 +188,7 @@ public class ExtractorProgress extends IconedProcessIndicator {
                 }
             }
             if (pu.isVisible()) {
-                table.getCellEditor().stopCellEditing();
+                if (table.isEditing()) table.getCellEditor().stopCellEditing();
 
                 tModel.getTableData().clear();
                 tModel.addAllElements(extension.getJobQueue().getJobs());
@@ -205,26 +196,38 @@ public class ExtractorProgress extends IconedProcessIndicator {
             }
             return;
         case CLEANUP:
+            setIndeterminate(false);
             if (pu.isVisible()) {
-                table.getCellEditor().stopCellEditing();
+                if (table.isEditing()) table.getCellEditor().stopCellEditing();
 
                 tModel.getTableData().clear();
                 tModel.addAllElements(extension.getJobQueue().getJobs());
 
             }
-            setIndeterminate(true);
+
             setValue(0);
             if (con.getExtractionQueue().size() <= 1) {
                 /*
                  * <=1 because current element is still running at this point
                  */
                 if (isEnabled()) {
-                    setIndeterminate(false);
+
                     setEnabled(false);
                 }
             }
             return;
         }
+        entries = extension.getJobQueue().getJobs();
+        int progress = 0;
+        for (ExtractionController ec : entries) {
+            if (ec.getArchiv().getSize() > 0) {
+                progress += ec.getProgress();
+            }
+        }
+        if (entries.size() > 0) {
+            progress /= entries.size();
+        }
+        setValue(progress);
 
         if (pu.isVisible()) {
 
