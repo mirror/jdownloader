@@ -329,7 +329,14 @@ abstract public class DownloadInterface {
                                 break;
                             }
                         }
-
+                    } catch (NullPointerException e) {
+                        if (inputStream == null) {
+                            /* connection is closed and steam is null */
+                            if (!isExternalyAborted() && !connectionclosed) throw e;
+                            towrite = -1;
+                            break;
+                        }
+                        throw e;
                     } catch (SocketException e2) {
                         if (!isExternalyAborted()) throw e2;
                         towrite = -1;

@@ -32,8 +32,7 @@ public class GlumboUploadsComFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String HOST  = "glumbouploads.com";
-    private static final String HOSTS = "(glumbouploads|uploads\\.glumbo)\\.com";
+    private static final String HOST = "glumbouploads.com";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

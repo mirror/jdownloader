@@ -240,6 +240,8 @@ public class Ftp extends PluginForHost {
 
     /* old simpleftp does not have size command support */
     private boolean oldStyle() {
+        String style = System.getProperty("ftpStyle", null);
+        if ("new".equalsIgnoreCase(style)) return false;
         String prev = JDUtilities.getRevision();
         if (prev == null || prev.length() < 3) {
             prev = "0";

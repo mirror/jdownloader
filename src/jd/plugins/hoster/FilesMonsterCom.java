@@ -30,9 +30,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.FilesMonsterDecrypter;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -43,12 +41,13 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "http://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download.php\\?id=|dl/.*?/free/2/).+" }, flags = { 2 })
 public class FilesMonsterCom extends PluginForHost {
 
-    private static final String POSTTHATREGEX         = "\"(http://filesmonster\\.com/dl/.*?/free/.*?)\"";
-    private static final String POSTTHATREGEX2        = "(http://(www\\.)?filesmonster\\.com/dl/.*?/free/.+)";
-    private static final String TEMPORARYUNAVAILABLE  = "Download not available at the moment";
-    private static final String REDIRECTFNF           = "DL_FileNotFound";
-    private static final String PREMIUMONLYUSERTEXT   = "Only downloadable via premium";
-    final PluginForDecrypt      FILESMONSTERDECRYPTER = JDUtilities.getPluginForDecrypt("filesmonster.comDecrypt");
+    private static final String POSTTHATREGEX        = "\"(http://filesmonster\\.com/dl/.*?/free/.*?)\"";
+    private static final String POSTTHATREGEX2       = "(http://(www\\.)?filesmonster\\.com/dl/.*?/free/.+)";
+    private static final String TEMPORARYUNAVAILABLE = "Download not available at the moment";
+    private static final String REDIRECTFNF          = "DL_FileNotFound";
+    private static final String PREMIUMONLYUSERTEXT  = "Only downloadable via premium";
+    private static final Object LOCK                 = new Object();
+    private static boolean      loaded               = false;
 
     public FilesMonsterCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -81,8 +80,20 @@ public class FilesMonsterCom extends PluginForHost {
                 if (br.getRedirectLocation().contains(REDIRECTFNF)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String filename = br.getRegex(FilesMonsterDecrypter.FILENAMEREGEX).getMatch(0);
-            String filesize = br.getRegex(FilesMonsterDecrypter.FILESIZEREGEX).getMatch(0);
+            if (loaded == false) {
+                synchronized (LOCK) {
+                    if (loaded == false) {
+                        /*
+                         * we only have to load this once, to make sure its
+                         * loaded
+                         */
+                        JDUtilities.getPluginForDecrypt("filesmonster.comDecrypt");
+                    }
+                    loaded = true;
+                }
+            }
+            String filename = br.getRegex(jd.plugins.decrypter.FilesMonsterDecrypter.FILENAMEREGEX).getMatch(0);
+            String filesize = br.getRegex(jd.plugins.decrypter.FilesMonsterDecrypter.FILESIZEREGEX).getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             if (filesize != null) {
@@ -100,7 +111,7 @@ public class FilesMonsterCom extends PluginForHost {
         String mainlinkpart = new Regex(mainlink, "filesmonster\\.com/download\\.php\\?id=(.+)").getMatch(0);
         String temporaryLink = null;
         br.getPage(mainlink);
-        String[] allInfo = ((FilesMonsterDecrypter) FILESMONSTERDECRYPTER).getTempLinks(br);
+        String[] allInfo = jd.plugins.decrypter.FilesMonsterDecrypter.getTempLinks(br);
         if (allInfo != null && allInfo.length != 0) {
             for (String singleInfo : allInfo)
                 if (singleInfo.contains("\"name\":\"" + originalfilename + "\"")) temporaryLink = new Regex(singleInfo, "\"dlcode\":\"(.*?)\"").getMatch(0);

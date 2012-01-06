@@ -193,6 +193,8 @@ public class Main {
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
             Main.initMACProperties();
         }
+        /* hack for ftp plugin to use new ftp style */
+        System.setProperty("ftpStyle", "new");
         /* random number: eg used for cnl2 without asking dialog */
         System.setProperty("jd.randomNumber", "" + (System.currentTimeMillis() + new Random().nextLong()));
         System.setProperty("file.encoding", "UTF-8");
