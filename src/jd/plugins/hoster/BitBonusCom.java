@@ -29,7 +29,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.BitBonusComDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -39,9 +38,11 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitbonus.com" }, urls = { "http://bitbonusdecrypted\\.com/(download/[A-Za-z0-9\\-_]+/free/2/|download/)[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class BitBonusCom extends PluginForHost {
 
-    private static final String PREMIUMONLYUSERTEXT = "Only downloadable via premium";
-    final PluginForDecrypt      BITBONUSDECRYPTER   = JDUtilities.getPluginForDecrypt("bitbonus.com");
-    private static final String CAPTCHAFAILED       = "(Captcha number error or expired|api\\.recaptcha\\.net)";
+    private static final String PREMIUMONLYUSERTEXT   = "Only downloadable via premium";
+    private static final String CAPTCHAFAILED         = "(Captcha number error or expired|api\\.recaptcha\\.net)";
+    private static final Object LOCK                  = new Object();
+    private static boolean      loaded                = false;
+    final PluginForDecrypt      FILESMONSTERDECRYPTER = JDUtilities.getPluginForDecrypt("bitbonus.com");
 
     public BitBonusCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,8 +70,20 @@ public class BitBonusCom extends PluginForHost {
         } else {
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String filename = br.getRegex(BitBonusComDecrypt.FILENAMEREGEX).getMatch(0);
-            String filesize = ((BitBonusComDecrypt) BITBONUSDECRYPTER).getSize(br);
+            if (loaded == false) {
+                synchronized (LOCK) {
+                    if (loaded == false) {
+                        /*
+                         * we only have to load this once, to make sure its
+                         * loaded
+                         */
+                        JDUtilities.getPluginForDecrypt("bitbonus.com");
+                    }
+                    loaded = true;
+                }
+            }
+            String filename = br.getRegex(jd.plugins.decrypter.BitBonusComDecrypt.FILENAMEREGEX).getMatch(0);
+            String filesize = jd.plugins.decrypter.BitBonusComDecrypt.getSize(br);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             if (filesize != null) {
@@ -86,7 +99,7 @@ public class BitBonusCom extends PluginForHost {
         // Find a new temporary link
         String mainlinkpart = new Regex(mainlink, "bitbonus\\.com/download/(.+)").getMatch(0);
         String temporaryLink = null;
-        String[] allInfo = ((BitBonusComDecrypt) BITBONUSDECRYPTER).getTempLinks(br);
+        String[] allInfo = jd.plugins.decrypter.BitBonusComDecrypt.getTempLinks(br);
         if (allInfo != null && allInfo.length != 0) {
             for (String singleInfo : allInfo)
                 if (singleInfo.contains("\"name\":\"" + originalfilename + "\"")) temporaryLink = new Regex(singleInfo, "\"dlcode\":\"(.*?)\"").getMatch(0);

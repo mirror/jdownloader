@@ -38,7 +38,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://[\\w\\.]*?bitshare\\.com/(files/[a-z0-9]{8}/(.*?\\.html)?|\\?f=[a-z0-9]{8})" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://(www\\.)?bitshare\\.com/(files/[a-z0-9]{8}/[^/<>\"]+(\\.html)?|\\?(f|m)=[a-z0-9]{8})" }, flags = { 2 })
 public class BitShareCom extends PluginForHost {
 
     // private static final String RECAPTCHA = "/recaptcha/";
@@ -243,15 +243,15 @@ public class BitShareCom extends PluginForHost {
         br.getHeaders().put("User-Agent", agent);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>We are sorry, but the requested file was not found in our database|>Error - File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (link.getDownloadURL().contains("?f=")) {
-            String newlink = br.getRegex("\"(http://bitshare\\.com/files/[a-z0-9]+/.*?\\.html)\"").getMatch(0);
+        if (new Regex(link.getDownloadURL(), "http://(www\\.)?bitshare\\.com/\\?(f|m)=[a-z0-9]{8}").matches()) {
+            String newlink = br.getRegex("\"(http://bitshare\\.com/files/[a-z0-9]+/[^/<>\"]+\\.html)\"").getMatch(0);
             if (newlink == null) {
                 logger.warning("Failed to get new link for shortlink: " + link.getDownloadURL());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setUrlDownload(newlink);
         }
-        Regex nameAndSize = br.getRegex("<h1>Downloading (.*?) - ([0-9\\.]+ [A-Za-z]+)</h1>");
+        Regex nameAndSize = br.getRegex("<h1>Downloading (.*?) \\- ([0-9\\.]+ [A-Za-z]+)</h1>");
         String filename = nameAndSize.getMatch(0);
         String filesize = nameAndSize.getMatch(1);
         if (filename == null || filesize == null) {

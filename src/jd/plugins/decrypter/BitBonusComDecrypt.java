@@ -39,7 +39,7 @@ public class BitBonusComDecrypt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private boolean            LIMITREACHED  = false;
+    private static boolean     LIMITREACHED  = false;
     public static final String FILENAMEREGEX = "Name:[\t\n\r ]+<strong>([^<>\"]+)</strong><br";
 
     /** Handling similar to FilesMonsterDecrypter */
@@ -102,7 +102,7 @@ public class BitBonusComDecrypt extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    public String[] getTempLinks(Browser br) throws IOException {
+    public static String[] getTempLinks(Browser br) throws IOException {
         String[] decryptedStuff = null;
         String postThat = br.getRegex("\"(http://bitbonus\\.com/download/[A-Za-z0-9\\-_]+/free/1/[A-Za-z0-9\\-_]+/?)\"").getMatch(0);
         if (postThat == null) postThat = br.getRegex("<form id=\\'slowdownload\\' method=\"post\" action=\"(http://bitbonus\\.com/[^<>\"]+)\"").getMatch(0);
@@ -110,7 +110,6 @@ public class BitBonusComDecrypt extends PluginForDecrypt {
             br.postPage(postThat, "");
             String findOtherLinks = br.getRegex("reserve_ticket\\(\\'(/download/rft/.*?)\\'\\)").getMatch(0);
             if (findOtherLinks != null) {
-                logger.info("Other links found, decrypting...");
                 br.getPage("http://bitbonus.com" + findOtherLinks);
                 decryptedStuff = br.getRegex("\\{(.*?)\\}").getColumn(0);
             }
@@ -120,7 +119,7 @@ public class BitBonusComDecrypt extends PluginForDecrypt {
         return decryptedStuff;
     }
 
-    public String getSize(Browser br) {
+    public static String getSize(Browser br) {
         String fsize = br.getRegex("Size: <strong>([^<>\"]+)</strong>").getMatch(0);
         if (fsize == null) fsize = br.getRegex("<span class=\"small\">([^<>\"]+)</span>").getMatch(0);
         return fsize;
