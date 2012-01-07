@@ -43,7 +43,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixcloud.com" }, urls = { "http://(www\\.)?mixcloud\\.com/.*?/[A-Za-z0-9_\\-]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixcloud.com" }, urls = { "http://(www\\.)?mixcloud\\.com/(?:(?!(?>\\btrack\\b|\\btag\\b|\\bartist\\b))[\\w\\-])+/[\\w\\-]+/" }, flags = { 0 })
 public class MxCloudCom extends PluginForDecrypt {
 
     private static String MAINPAGE = "http://www.mixcloud.com";
@@ -145,7 +145,7 @@ public class MxCloudCom extends PluginForDecrypt {
                     break;
                 }
                 final DownloadLink dlink = createDownloadlink("directhttp://" + dl);
-                dlink.setFinalFileName(theName + new Regex(dl, "(\\..{3}$)").getMatch(0));
+                dlink.setFinalFileName(Encoding.htmlDecode(theName).trim() + new Regex(dl, "(\\..{3}$)").getMatch(0));
                 /* Nicht alle Links im Array sets[] sind verfügbar. */
                 try {
                     con = br.openGetConnection(dl);
