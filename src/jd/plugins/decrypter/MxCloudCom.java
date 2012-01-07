@@ -82,46 +82,52 @@ public class MxCloudCom extends PluginForDecrypt {
 
         playInfoUrl = playInfoUrl + "?key=" + playResource + "&module=" + playModuleSwfUrl + "&page=" + playerUrl;
 
-        /**
-         * FIXME: Hi jiaz, nachfolgender Aufruf liefert eigentl. als Antwort
-         * einen Base64 kodierten String. Der Browser enkodiert das automatisch.
-         * Dolle Sache :-) Scheinbar ist das Ergebnis kaputt bzw. nicht
-         * vollständig. Wenn ich den request nun über die URL-Klasse mache und
-         * den Base64 kodierten Ergebnisstring dann mittels jd.crypt.Base64 in
-         * ein ByteArray packe ist alles i.O.
-         */
-        // byte[] plain = br.getPage(playInfoUrl).getBytes();
-
-        String encryptedContent = "", result = null;
+        byte[] enc = null;
         try {
-            final URL url = new URL(playInfoUrl);
-            final InputStream page = url.openStream();
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(page));
-            try {
-                String line = "";
-                while ((line = reader.readLine()) != null) {
-                    encryptedContent = line;
-                }
-            } finally {
-                try {
-                    reader.close();
-                } catch (final Throwable e) {
-                }
+            br.getPage(playInfoUrl);
+            /* will throw Exception in stable <=9581 */
+            if (br.getRequest().isContentDecoded()) {
+                enc = br.getRequest().getResponseBytes();
+            } else {
+                throw new Exception("use fallback");
             }
         } catch (final Throwable e) {
-            return null;
+            /* fallback */
+            String encryptedContent = "";
+            try {
+                final URL url = new URL(playInfoUrl);
+                final InputStream page = url.openStream();
+                final BufferedReader reader = new BufferedReader(new InputStreamReader(page));
+                try {
+                    String line = "";
+                    while ((line = reader.readLine()) != null) {
+                        encryptedContent = line;
+                    }
+                } finally {
+                    try {
+                        page.close();
+                    } catch (final Throwable e3) {
+                    }
+                    try {
+                        reader.close();
+                    } catch (final Throwable e2) {
+                    }
+                }
+            } catch (final Throwable e3) {
+                return null;
+            }
+            enc = jd.crypt.Base64.decode(encryptedContent);
         }
-
-        final byte[] enc = jd.crypt.Base64.decode(encryptedContent);
         final byte[] key = JDHexUtils.getByteArray(Encoding.Base64Decode("NjE2MTYxNjE2MTYxNjE2MTYxNjE2MTYxNjE2MTYxNjE2MTYxNjE2MTYxNjE2MTYxNjE2MTYxNjE2MTYxNjE2MQ=="));
         final byte[] iv = new byte[16];
         System.arraycopy(enc, 0, iv, 0, 16);
-
+        String result = null;
         try {
             result = new String(AESdecrypt(enc, key, iv)).substring(16);
         } catch (final InvalidKeyException e) {
             if (e.getMessage().contains("Illegal key size")) {
                 getPolicyFiles();
+                return null;
             }
         } catch (final Throwable e) {
         }
