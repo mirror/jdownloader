@@ -43,7 +43,7 @@ public class FlashMirrorsCom extends PluginForDecrypt {
             logger.info("The following link should be offline: " + parameter);
             throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         }
-        String[] links = br.getRegex("/download\\.php\\?url=(http://.*?)\"").getColumn(0);
+        String[] links = br.getRegex("/download\\.php\\?url=(https?://.*?)[ \r\n\t]*?\"").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));

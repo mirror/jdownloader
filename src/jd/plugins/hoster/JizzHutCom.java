@@ -48,7 +48,10 @@ public class JizzHutCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("content_video\",\"(http://.*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(http://media[0-9]+\\.jizzhut\\.com/.*?/.*?\\.flv)\"").getMatch(0);
+            dllink = br.getRegex("\"(http://(media[0-9]+|cdnb.videos)\\.jizzhut\\.com/.*?/.*?\\.flv(\\?.*?))?\"").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = br.getRegex("addVariable\\(\"file\",.*?\"(http://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
         }
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);

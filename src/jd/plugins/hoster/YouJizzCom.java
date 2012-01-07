@@ -67,8 +67,8 @@ public class YouJizzCom extends PluginForHost {
         if (br.containsHTML("<title></title>") || !br.containsHTML("flvPlayer\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        DLLINK = br.getRegex("addVariable\\(\"file\",\"(http://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://mediax\\.youjizz\\.com/[A-Z0-9]+\\.flv(\\?.*?)?\"").getMatch(0);
+        DLLINK = br.getRegex("addVariable\\(\"file\",.*?\"(http://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("\"(http://mediax\\.youjizz\\.com/[A-Z0-9]+\\.flv(\\?.*?))?\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
