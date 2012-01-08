@@ -38,7 +38,7 @@ public class MltpldCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
-        String parameter = param.toString().replaceAll("multiupload\\.com/[A-Z0-9]{2}_", "multiupload.com/");
+        String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML(">Unfortunately, the link you have clicked is not available")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (br.containsHTML(">UNKNOWN ERROR<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unknownerror", "Unknown error caused by multiupload.com."));
