@@ -47,7 +47,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "groovefile.com" }, urls = { "https?://(www\\.)?groovefile\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "groovefile.com" }, urls = { "https?://(www\\.)?groovefile\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class GrooveFileCom extends PluginForHost {
 
     private String              BRBEFORE            = "";
@@ -56,7 +56,6 @@ public class GrooveFileCom extends PluginForHost {
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static final Object LOCK                = new Object();
 
     public GrooveFileCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -87,12 +86,11 @@ public class GrooveFileCom extends PluginForHost {
                 tmpmin = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
             }
             final String tmpsec = new Regex(BRBEFORE, "\\s+(\\d+)\\s+seconds?").getMatch(0);
-            final String tmpdays = new Regex(BRBEFORE, "\\s+(\\d+)\\s+days?").getMatch(0);
-            if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
+            if (tmphrs == null && tmpmin == null && tmpsec == null) {
                 logger.info("Waittime regexes seem to be broken");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
             } else {
-                int minutes = 0, seconds = 0, hours = 0, days = 0;
+                int minutes = 0, seconds = 0, hours = 0;
                 if (tmphrs != null) {
                     hours = Integer.parseInt(tmphrs);
                 }
@@ -102,10 +100,7 @@ public class GrooveFileCom extends PluginForHost {
                 if (tmpsec != null) {
                     seconds = Integer.parseInt(tmpsec);
                 }
-                if (tmpdays != null) {
-                    days = Integer.parseInt(tmpdays);
-                }
-                final int waittime = (days * 24 * 3600 + 3600 * hours + 60 * minutes + seconds + 1) * 1000;
+                final int waittime = (3600 * hours + 60 * minutes + seconds + 1) * 1000;
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                 /** Not enough waittime to reconnect->Wait and try again */
                 if (waittime < 180000) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", ALLWAIT_SHORT), waittime); }
@@ -291,6 +286,7 @@ public class GrooveFileCom extends PluginForHost {
                 /** waittime is often skippable for reCaptcha handling */
                 skipWaittime = getPluginConfig().getBooleanProperty("SKIP_RECAPTCHA_WAITTIME", false);
             } else if (new Regex(BRBEFORE, "api\\.solvemedia\\.com/papi").matches()) {
+                skipWaittime = true;
                 logger.info("Detected captcha method \"solvemedia\" for this host");
                 String captchaurl = br.getRegex("<iframe src=\"(http://api\\.solvemedia\\.com/papi/challenge\\.noscript\\?k=[\\w-]+)\"").getMatch(0);
                 if (captchaurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
@@ -423,13 +419,13 @@ public class GrooveFileCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, true);
+        doFree(downloadLink, true, -2, true);
     }
 
     public String handlePassword(String passCode, final Form pwform, final DownloadLink thelink) throws IOException, PluginException {

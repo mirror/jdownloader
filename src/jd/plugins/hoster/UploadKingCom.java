@@ -44,14 +44,15 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-//Nearly the same code as plugin UploadHereCom
+/**
+ * Hoster belongs to multiupload.com & uploadhere.com, uses similar code for
+ * some parts
+ */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadking.com" }, urls = { "http://(www\\.)?uploadking\\.com/[A-Z0-9]+" }, flags = { 2 })
 public class UploadKingCom extends PluginForHost {
 
     private static final String TEMPORARYUNAVAILABLE         = "(>Unfortunately, this file is temporarily unavailable|> \\- The server the file is residing on is currently down for maintenance)";
-
     private static final String TEMPORARYUNAVAILABLEUSERTEXT = "This file is temporary unavailable!";
-
     private static final Object LOCK                         = new Object();
     private static final String MAINPAGE                     = "http://www.uploadking.com/";
 
@@ -107,8 +108,6 @@ public class UploadKingCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.uploadkingcom.temporaryunavailable", TEMPORARYUNAVAILABLEUSERTEXT), 60 * 60 * 1000l);
-        if (br.containsHTML("(>You are currently downloading|this download, before starting another\\.</font>)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
         String dllink = downloadLink.getStringProperty("freelink");
         if (dllink != null) {
             try {
@@ -124,6 +123,8 @@ public class UploadKingCom extends PluginForHost {
             }
         }
         if (dllink == null) {
+            if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.uploadkingcom.temporaryunavailable", TEMPORARYUNAVAILABLEUSERTEXT), 60 * 60 * 1000l);
+            if (br.containsHTML("(>You are currently downloading|this download, before starting another\\.</font>)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
             final String rcID = br.getRegex("Recaptcha\\.create\\(\"([^/<>\"]+)\"").getMatch(0);
             if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             final Form cForm = new Form();
