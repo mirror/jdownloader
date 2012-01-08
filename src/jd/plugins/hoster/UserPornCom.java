@@ -38,6 +38,11 @@ public class UserPornCom extends PluginForHost {
     }
 
     @Override
+    public void correctDownloadLink(final DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replace("userporn.com/e/", "userporn.com/watch_video.php?v="));
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://www.userporn.com/terms.php";
     }
@@ -52,11 +57,6 @@ public class UserPornCom extends PluginForHost {
         } catch (final Throwable e) {
             return null;
         }
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override
@@ -96,7 +96,9 @@ public class UserPornCom extends PluginForHost {
         String filename = br.getRegex("<title>(.*?) \\- Userporn \\- Your Best Private Porn Site</title>").getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         filename = filename.trim();
-        if (downloadLink.getStringProperty("nameok") == null) downloadLink.setName(Encoding.htmlDecode(filename) + ".flv");
+        if (downloadLink.getStringProperty("nameok") == null) {
+            downloadLink.setName(Encoding.htmlDecode(filename) + ".flv");
+        }
         return AvailableStatus.TRUE;
     }
 

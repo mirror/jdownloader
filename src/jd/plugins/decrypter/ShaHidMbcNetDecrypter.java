@@ -17,7 +17,6 @@
 package jd.plugins.decrypter;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
@@ -111,31 +110,46 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         while (next) {
             // Get -> RC4 encrypted http stream to byte array
             final String req = "http://cache.delvenetworks.com/ps/c/v1/" + getHmacSHA256("RC4\n" + Encoding.Base64Decode(KEY)) + "/" + getHmacSHA256("Channel") + "/" + getHmacSHA256(channelId) + "/" + page++;
-            InputStream input = null;
-            ByteArrayOutputStream result = null;
 
+            byte[] enc = null;
             try {
-                final URL url = new URL(req);
-
-                result = new ByteArrayOutputStream();
-                input = url.openStream();
-                int amount = 0;
-
-                while (amount != -1) {
-                    result.write(buffer, 0, amount);
-                    amount = input.read(buffer);
-                }
-
-            } catch (final Throwable e) {
-                next = false;
-            } finally {
-                if (input != null) {
-                    try {
-                        input.close();
-                    } catch (final IOException e) {
-                    } finally {
-                        input = null;
+                br.getPage(req);
+                if (br.getHttpConnection().getResponseCode() == 403) {
+                    next = false;
+                } else {
+                    /* will throw Exception in stable <=9581 */
+                    if (br.getRequest().isContentDecoded()) {
+                        enc = br.getRequest().getResponseBytes();
+                    } else {
+                        throw new Exception("use fallback");
                     }
+                }
+            } catch (final Throwable e) {
+                /* fallback */
+                ByteArrayOutputStream result = null;
+                try {
+                    final URL url = new URL(req);
+                    final InputStream input = url.openStream();
+                    result = new ByteArrayOutputStream();
+                    try {
+                        int amount = 0;
+                        while (amount != -1) {
+                            result.write(buffer, 0, amount);
+                            amount = input.read(buffer);
+                        }
+                    } finally {
+                        try {
+                            input.close();
+                        } catch (final Throwable e2) {
+                        }
+                        try {
+                            result.close();
+                        } catch (final Throwable e3) {
+                        }
+                        enc = result.toByteArray();
+                    }
+                } catch (final Throwable e4) {
+                    next = false;
                 }
             }
 
@@ -147,7 +161,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                 // Decrypt -> http stream
                 /* TODO: change me after 0.9xx public --> jd.crypt.RC4 */
                 final LnkCrptWs.KeyCaptchaShowDialogTwo arkfour = new LnkCrptWs.KeyCaptchaShowDialogTwo();
-                final byte[] compressedPlainData = arkfour.D(Encoding.Base64Decode(KEY).getBytes(), result.toByteArray());
+                final byte[] compressedPlainData = arkfour.D(Encoding.Base64Decode(KEY).getBytes(), enc);
 
                 // Decompress -> decrypted http stream
                 final Inflater decompressor = new Inflater();
