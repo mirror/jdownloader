@@ -73,13 +73,12 @@ public class AstrSk extends PluginForHost {
         // "the file fell into a black hole and is now in parallel universe" <-
         // I like those guys :D
         if (br.containsHTML("(>file is gone|<p>The requested file was not found|owner deleted the file<|you entered the address incorrectly<br|the file fell into a black hole and is now in parallel universe)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<meta property=\"og:title\" content=\"Stiahni si (.*?) \\- (mojedata|astr)\\.sk\" />").getMatch(0);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"Stiahni si (.*?) \\- mojedata\\.sk\" />").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             if (filename == null) filename = br.getRegex("<title>Stiahni si (.*?) - mojedata\\.sk").getMatch(0);
         }
         String filesize = br.getRegex("<strong>Veľkosť:</strong> (.*?) /[\r\n ]+<strong>Zobrazení").getMatch(0);
-        if (filesize == null) return null;
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
