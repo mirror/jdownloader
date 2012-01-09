@@ -37,13 +37,13 @@ public class AstrSk extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        // Prefer english version of the site
-        link.setUrlDownload(link.getDownloadURL().replace("mojedata.sk", "astr.sk"));
+        // english version (astr) is offline, revert too mojedata
+        link.setUrlDownload(link.getDownloadURL().replace("astr.sk", "mojedata.sk"));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://astr.sk/go/about_us";
+        return "http://mojedata.sk/go/busn_rules";
     }
 
     @Override
@@ -54,7 +54,7 @@ public class AstrSk extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         Form dlform = br.getForm(0);
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
@@ -67,17 +67,19 @@ public class AstrSk extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        br.setCustomCharset("utf-8");
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         // "the file fell into a black hole and is now in parallel universe" <-
         // I like those guys :D
         if (br.containsHTML("(>file is gone|<p>The requested file was not found|owner deleted the file<|you entered the address incorrectly<br|the file fell into a black hole and is now in parallel universe)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("property=\"og:title\" content=\"Download (.*?) - astr\\.sk\" />").getMatch(0);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"Stiahni si (.*?) \\- (mojedata|astr)\\.sk\" />").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<title>Download (.*?) - astr\\.sk - fast, simple, private and unlimited sharing of files</title>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<title>Stiahni si (.*?) - mojedata\\.sk").getMatch(0);
         }
-        String filesize = br.getRegex("<strong>Size:</strong> (.*?) /").getMatch(0);
+        String filesize = br.getRegex("<strong>Veľkosť:</strong> (.*?) /[\r\n ]+<strong>Zobrazení").getMatch(0);
+        if (filesize == null) return null;
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
