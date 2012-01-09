@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -44,6 +45,7 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML("(<TITLE>404 Not Found</TITLE>|<H1>Not Found</H1>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        final String finalFilename = br.getRegex("<div class=\"download_block\">[\t\n\r ]+<h3 class=\"my_h\">(.*?)</h3><br>").getMatch(0);
         String captchaUrl = null;
         boolean failed = true;
         String fileID = new Regex(parameter, "beemp3\\.com/download\\.php\\?file=(\\d+)").getMatch(0);
@@ -64,7 +66,13 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
         if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
         String finallink = br.getRegex("Done#\\|#(http://.*?\\.mp3)").getMatch(0);
         if (finallink == null) return null;
-        decryptedLinks.add(createDownloadlink("directhttp://" + finallink.trim()));
+        /**
+         * Set filename if possible as filenames may be cut or broken if not set
+         * here
+         */
+        DownloadLink dl = createDownloadlink("directhttp://" + finallink.trim());
+        if (finalFilename != null) dl.setFinalFileName(Encoding.htmlDecode(finalFilename));
+        decryptedLinks.add(dl);
 
         return decryptedLinks;
     }

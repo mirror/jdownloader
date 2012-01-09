@@ -47,10 +47,11 @@ public class SflnkgNt extends PluginForDecrypt {
     }
 
     private static final String RECAPTCHATEXT         = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static String       CAPTCHAREGEX1         = "(http://safelinking\\.net/includes/captcha_factory/securimage/securimage_show\\.php\\?hash=[a-z0-9]+)";
-    private static String       CAPTCHAREGEX2         = "\"(http://safelinking\\.net/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"";
-    private static String       CAPTCHATEXT3          = "class=\"captcha_image ajax\\-fc\\-container\"";
-    private static String       PASSWORDPROTECTEDTEXT = "type=\"password\" name=\"link-password\"";
+    private static final String CAPTCHAREGEX1         = "(http://safelinking\\.net/includes/captcha_factory/securimage/securimage_show\\.php\\?hash=[a-z0-9]+)";
+    private static final String CAPTCHAREGEX2         = "\"(http://safelinking\\.net/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"";
+    private static final String CAPTCHATEXT3          = "class=\"captcha_image ajax\\-fc\\-container\"";
+    private static final String CAPTCHATEXT4          = "class=\"protected\\-captcha\"><div id=\"QapTcha\"";
+    private static final String PASSWORDPROTECTEDTEXT = "type=\"password\" name=\"link-password\"";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -83,8 +84,19 @@ public class SflnkgNt extends PluginForDecrypt {
                     capForm.put("3dcaptcha_response_field", getCaptchaCode(br.getRegex(CAPTCHAREGEX2).getMatch(0), param));
                 } else if (br.containsHTML(CAPTCHATEXT3)) {
                     Browser xmlbrowser = br.cloneBrowser();
+                    xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     xmlbrowser.getPage("http://safelinking.net/includes/captcha_factory/fancycaptcha.php?hash=" + new Regex(parameter, "safelinking\\.net/p/(.+)").getMatch(0));
                     capForm.put("fancy-captcha", xmlbrowser.toString().trim());
+                } else if (br.containsHTML(CAPTCHATEXT4)) {
+                    Browser xmlbrowser = br.cloneBrowser();
+                    xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    xmlbrowser.postPage("http://safelinking.net/includes/captcha_factory/Qaptcha.jquery.php?hash=" + new Regex(parameter, "safelinking\\.net/p/(.+)").getMatch(0), "action=qaptcha");
+                    if (!xmlbrowser.containsHTML("\"error\":false")) {
+                        logger.warning("Decrypter broken for link: " + parameter + "\n");
+                        logger.warning("CAPTCHATEXT4 errorhandling broken");
+                        return null;
+                    }
+                    capForm.put("iQapTcha", "");
                 }
                 br.submitForm(capForm);
                 if (br.containsHTML(RECAPTCHATEXT) || br.getRegex(CAPTCHAREGEX1).getMatch(0) != null || br.getRegex(CAPTCHAREGEX2).getMatch(0) != null || br.containsHTML(PASSWORDPROTECTEDTEXT)) continue;
@@ -129,7 +141,10 @@ public class SflnkgNt extends PluginForDecrypt {
                     }
                 }
             }
-            if (links == null || links.length == 0) return null;
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             progress.setRange(links.length);
             for (String link : links) {
                 if (!link.contains("safelinking.net/")) {
