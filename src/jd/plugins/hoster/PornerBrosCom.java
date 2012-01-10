@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -48,7 +49,7 @@ public class PornerBrosCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.pornerbros.com/terms.html";
+        return "http://www.pornerbros.com/terms";
     }
 
     @Override
@@ -73,23 +74,36 @@ public class PornerBrosCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
 
-        if (br.containsHTML("<title>404 - Not Found</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title>404 - Not Found</title>|This Video Was Not Found On Our Servers</div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)(\\.)?</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h1>(.*?)(\\.)?</h1>").getMatch(0);
-        String paramUrl = br.getRegex("name=\"FlashVars\" value=\"xmlfile=(.*?)?(http://.*?)\"").getMatch(1);
-        if (paramUrl == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim().replaceAll("\\.$", "");
-        br.getPage(paramUrl);
-        String urlCipher = br.getRegex("file=\"(.*?)\"").getMatch(0);
-        if (urlCipher == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // new method 10/1/2012
+        String paramJs = br.getRegex("<script type=\"text/javascript\" src=\"(/content/\\d+\\.js)\"></script>").getMatch(0);
+        if (paramJs != null) {
+            br.getPage("http://www.pornerbros.com" + paramJs);
+            DLLINK = br.getRegex("url:escape\\(\\'(.*?)\\'\\)").getMatch(0);
+            if (DLLINK == null) logger.warning("Null download link, reverting to secondary method. Continuing....");
+            String fileExtension = new Regex(DLLINK, "https?://[\\w\\/\\-\\.]+(\\.[a-zA-Z0-9]{0,4})\\?.*").getMatch(0);
+            if (fileExtension == ".")
+                downloadLink.setFinalFileName(Encoding.htmlDecode(filename + ".flv"));
+            else if (fileExtension != "." && fileExtension != null) downloadLink.setFinalFileName(Encoding.htmlDecode(filename + fileExtension));
+        } else {
+            // old method kept just in case it's still in use
+            String paramXml = br.getRegex("name=\"FlashVars\" value=\"xmlfile=(.*?)?(http://.*?)\"").getMatch(1);
+            if (paramXml == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(paramXml);
+            String urlCipher = br.getRegex("file=\"(.*?)\"").getMatch(0);
+            if (urlCipher == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        DLLINK = decryptUrl(urlCipher);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            DLLINK = decryptUrl(urlCipher);
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null) ext = ".flv";
+            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            if (ext == null) ext = ".flv";
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        }
 
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
