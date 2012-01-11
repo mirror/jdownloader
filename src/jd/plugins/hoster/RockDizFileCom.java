@@ -413,7 +413,7 @@ public class RockDizFileCom extends PluginForHost {
                         if (filename == null) {
                             filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
                             if (filename == null) {
-                                filename = new Regex(BRBEFORE, "Filename: <em>(.*?)</em><br").getMatch(0);
+                                filename = new Regex(BRBEFORE, "(Filename:|Download) <em>(.*?)</em>(<br|</h5)").getMatch(1);
                             }
                         }
                     }
@@ -426,7 +426,7 @@ public class RockDizFileCom extends PluginForHost {
             if (filesize == null) {
                 filesize = new Regex(BRBEFORE, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
                 if (filesize == null) {
-                    filesize = new Regex(BRBEFORE, "Size: <em>(.*?)</em><br").getMatch(0);
+                    filesize = new Regex(BRBEFORE, "Size:( <em>|</strong> )(.*?)(</em><br|</td)").getMatch(1);
                 }
             }
         }
