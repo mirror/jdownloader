@@ -277,6 +277,7 @@ public class FilePostCom extends PluginForHost {
     private String getToken() {
         String token = br.getRegex("flp_token\\', \\'(.*?)\\'").getMatch(0);
         if (token == null) token = br.getRegex("token\\', \\'(.*?)\\'").getMatch(0);
+        if (token == null) token = br.getRegex("token: \\'(\\w+)\\'").getMatch(0);
         return token;
     }
 
