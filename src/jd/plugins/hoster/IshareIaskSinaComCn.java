@@ -43,7 +43,7 @@ public class IshareIaskSinaComCn extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 3;
     }
 
     @Override
@@ -53,7 +53,7 @@ public class IshareIaskSinaComCn extends PluginForHost {
         br.getPage("http://ishare.iask.sina.com.cn/download.php?fileid=" + new Regex(downloadLink.getDownloadURL(), "ishare\\.iask\\.sina\\.com\\.cn/f/(\\d+)\\.html").getMatch(0));
         String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
