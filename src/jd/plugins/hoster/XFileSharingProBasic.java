@@ -169,6 +169,10 @@ public class XFileSharingProBasic extends PluginForHost {
                 }
                 con.disconnect();
             } catch (Exception e) {
+                if (getLinkWithoutLogin)
+                    downloadLink.setProperty("freelink", Property.NULL);
+                else
+                    downloadLink.setProperty("freelink2", Property.NULL);
                 dllink = null;
             }
         }
@@ -502,6 +506,7 @@ public class XFileSharingProBasic extends PluginForHost {
                     }
                     con.disconnect();
                 } catch (Exception e) {
+                    link.setProperty("premlink", Property.NULL);
                     dllink = null;
                 }
             }

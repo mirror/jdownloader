@@ -20,9 +20,11 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -37,7 +39,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class RefileNet extends PluginForHost {
 
     // No HTTPS
-    // redirects = www.refile.net > refile.net && /d/ > /f/ if recaptcha isn't solved.
+    // redirects = www.refile.net > refile.net && /d/ > /f/ if recaptcha isn't
+    // solved.
 
     public RefileNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,27 +65,44 @@ public class RefileNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        for (int i = 0; i <= 5; i++) {
-            rc.parse();
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
-            rc.setCode(c);
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) continue;
-            break;
+        String dllink = downloadLink.getStringProperty("freelink");
+        if (dllink != null) {
+            try {
+                Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty("freelink", Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (Exception e) {
+                downloadLink.setProperty("freelink", Property.NULL);
+                dllink = null;
+            }
         }
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new DecrypterException(DecrypterException.CAPTCHA);
-        String dllink = br.getRegex("align=\"center\">[\r\n\t]+<a href=\"(https?://[\\w\\.]+refile\\.net/file/\\?[^\"\\>]+)").getMatch(0);
-        if (dllink == null) br.getRegex("el\\_db\\.innerHTML = \\'<a href=\"(https?://[\\w\\.]+refile\\.net/file/\\?[^\"\\>]+)").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // no resume, no chunks
+        if (dllink == null) {
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            for (int i = 0; i <= 5; i++) {
+                rc.parse();
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                rc.setCode(c);
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) continue;
+                break;
+            }
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            dllink = br.getRegex("align=\"center\">[\r\n\t]+<a href=\"(https?://[\\w\\.]+refile\\.net/file/\\?[^\"\\>]+)").getMatch(0);
+            if (dllink == null) br.getRegex("el\\_db\\.innerHTML = \\'<a href=\"(https?://[\\w\\.]+refile\\.net/file/\\?[^\"\\>]+)").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty("freelink", dllink);
         dl.startDownload();
     }
 

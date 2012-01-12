@@ -119,6 +119,7 @@ public class UploadKingCom extends PluginForHost {
                 }
                 con.disconnect();
             } catch (Exception e) {
+                downloadLink.setProperty("freelink", Property.NULL);
                 dllink = null;
             }
         }
