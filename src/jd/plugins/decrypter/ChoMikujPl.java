@@ -47,13 +47,14 @@ public class ChoMikujPl extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = Encoding.htmlDecode(param.toString());
+        String parameter = param.toString();
         String problem = null;
         try {
             problem = parameter.substring(parameter.lastIndexOf(","));
         } catch (Exception e) {
         }
         if (problem != null && problem.endsWith(".avi")) parameter = parameter.replace(problem, "");
+        parameter = parameter.replace("www.", "");
         // The message used on errors in this plugin
         String error = "Error while decrypting link: " + parameter;
         // If a link is password protected we have to save and use those data in
@@ -127,6 +128,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         }
         logger.info("Found " + pageCount + " pages. Starting to decrypt them now.");
         progress.setRange(pageCount);
+        final String linkPart = new Regex(parameter, "chomikuj\\.pl(/.+)").getMatch(0);
         // Alle Seiten decrypten
         for (int i = 0; i <= pageCount; ++i) {
             logger.info("Decrypting page " + i + " of link: " + parameter);
@@ -143,7 +145,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                     fileIds = br.getRegex("class=\"fileItemProp getFile\" onclick=\"return ch\\.Download\\.dnFile\\((\\d+)\\);\"").getMatches();
                 }
             }
-            String[][] allFolders = br.getRegex("class=\"folders\" cellspacing=\"6\" cellpadding=\"0\" border=\"0\">[\t\n\r ]+<tr>[\t\n\r ]+<td><a href=\"(.*?)\" onclick=\"return Ts\\(\\'\\d+\\'\\)\">(.*?)</span>").getMatches();
+            String[][] allFolders = br.getRegex("<td><a href=\"(/[^<>\"/]+/[^<>\"]+)\" onclick=\"return Ts\\(\\'\\d+\\'\\)\">([^<>\"]+)</span></td></tr>").getMatches();
             /**
              * Old regex to get video IDs (IDs only): videoIDs =
              * br.getRegex("ShowVideo\\.aspx\\?id=(\\d+)\\'").getMatches();
@@ -188,7 +190,9 @@ public class ChoMikujPl extends PluginForDecrypt {
                 for (String[] folder : allFolders) {
                     String folderLink = folder[0];
                     folderLink = "http://chomikuj.pl" + folderLink;
-                    decryptedLinks.add(createDownloadlink(folderLink));
+                    if (folderLink.contains(linkPart) && !folderLink.equals(parameter)) {
+                        decryptedLinks.add(createDownloadlink(folderLink));
+                    }
                 }
             }
             progress.increase(1);
