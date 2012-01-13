@@ -97,7 +97,7 @@ public class GameOneDeA extends PluginForDecrypt {
             if (br.containsHTML("<div class=\'gallery\' id=\'gallery_\\d+\'")) {
                 pictureOrAudio = br.getRegex("<a href=\"(http://.*?/gallery_pictures/.*?/large/.*?)\"").getColumn(0);
             } else if (br.containsHTML("class=\"flash_container_audio\"")) {
-                pictureOrAudio = br.getRegex("<a href=\"(http://asset\\.gameone\\.de.*?)\">Download</a>").getColumn(0);
+                pictureOrAudio = br.getRegex("\n<p><a href=\"(http://.*?\\.mp3)\">Download</a>").getColumn(0);
             }
             if (pictureOrAudio == null || pictureOrAudio.length == 0) {
                 logger.warning("Decrypter out of date for link: " + parameter);
