@@ -58,10 +58,17 @@ public class GameOneDeA extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         setBrowserExclusive();
-        br.setReadTimeout(60 * 1000);
         br.setFollowRedirects(false);
+        br.setReadTimeout(60 * 1000);
         br.getPage(parameter);
-        if (br.getRedirectLocation() != null) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Wrong URL or the folder no longer exists.")); }
+        br.setFollowRedirects(true);
+        if (br.getRedirectLocation() != null) {
+            if (br.getHttpConnection().getResponseCode() == 302) {
+                throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Wrong URL or the folder no longer exists."));
+            } else if (br.getHttpConnection().getResponseCode() == 301) {
+                br.getPage(parameter);
+            }
+        }
 
         String dllink, filename;
         boolean newEpisode = true;
