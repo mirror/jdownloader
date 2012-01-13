@@ -60,7 +60,7 @@ public class FileFactory extends PluginForHost {
     private static final String  NO_SLOT          = ">All free download slots are in use";
     private static final String  NO_SLOT_USERTEXT = "No free slots available";
     private static final String  NOT_AVAILABLE    = "class=\"box error\"";
-    private static final String  SLOTEXPIRED      = "<p>Your download slot has expired\\.";
+    private static final String  SERVERFAIL       = "(<p>Your download slot has expired\\.|>Unfortunately the file you have requested cannot be downloaded at this time)";
     private static final String  LOGIN_ERROR      = "The email or password you have entered is incorrect";
     private static final String  SERVER_DOWN      = "server hosting the file you are requesting is currently down";
     private static final String  CAPTCHALIMIT     = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
@@ -75,7 +75,7 @@ public class FileFactory extends PluginForHost {
 
     public void checkErrors() throws PluginException {
         if (br.containsHTML(CAPTCHALIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-        if (this.br.containsHTML(FileFactory.SLOTEXPIRED)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error"); }
+        if (this.br.containsHTML(FileFactory.SERVERFAIL)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error"); }
         if (this.br.containsHTML(NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NO_SLOT_USERTEXT, 10 * 60 * 1000l); }
         if (this.br.containsHTML(FileFactory.NOT_AVAILABLE)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (this.br.containsHTML(FileFactory.SERVER_DOWN) || this.br.containsHTML(FileFactory.NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }

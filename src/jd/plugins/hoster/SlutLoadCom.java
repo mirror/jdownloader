@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -52,7 +53,16 @@ public class SlutLoadCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("\"(http://v\\-ec\\.slutload\\-media\\.com/.*?\\.flv\\?.*?)\"").getMatch(0);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            /**
+             * Some videos are officially not available but still work when
+             * embedded in other sites, lets try to download those too
+             */
+            br.getPage("http://emb.slutload.com/xplayerconfig/" + new Regex(downloadLink.getDownloadURL(), "slutload\\.com/watch/([A-Za-z0-9]+)").getMatch(0) + ".css");
+
+            dllink = br.getRegex("\\&ec_seek=;URL: (http://[^<>\"]+);type:").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -64,19 +74,10 @@ public class SlutLoadCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://www.slutload.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // Sometimes the site does multiple redirects
-        for (int i = 0; i <= 3; i++) {
-            if (br.getRedirectLocation() != null)
-                br.getPage(br.getRedirectLocation());
-            else {
-                downloadLink.setUrlDownload(br.getURL());
-                break;
-            }
-        }
-        if (br.getRedirectLocation() != null || !br.getURL().contains("slutload.com/")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.getURL().equals("http://www.slutload.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.getURL().contains("slutload.com/")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
         if (filename == null || filename.length() > 50) {
             filename = br.getRegex("<h1>Video: <b>(.*?)</b>").getMatch(0);

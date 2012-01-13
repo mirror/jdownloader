@@ -41,7 +41,7 @@ public class ChipDeGallerie extends PluginForDecrypt {
         br.getPage(parameter);
         String fpName = br.getRegex("<meta property=\"og:title\" content=\"(.*?) \\- Bildergalerie\"/>").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("<title>(.*?) - Bilder -").getMatch(0);
+            fpName = br.getRegex("<title>(.*?) \\- Bilder \\-").getMatch(0);
         }
         if (fpName == null) {
             logger.warning("Decrypter broken for link:" + parameter);

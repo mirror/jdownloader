@@ -81,6 +81,11 @@ public class FourSexFourCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + tempID));
             return decryptedLinks;
         }
+        tempID = br.getRegex("emb\\.slutload\\.com/([A-Za-z0-9]+)\"").getMatch(0);
+        if (tempID != null) {
+            decryptedLinks.add(createDownloadlink("http://slutload.com/watch/" + tempID));
+            return decryptedLinks;
+        }
         if (tempID == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

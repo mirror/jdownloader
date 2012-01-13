@@ -32,7 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiobeats.net" }, urls = { "http://[\\w\\.]*?audiobeats\\.net/(liveset|link|event|artist)\\?id=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiobeats.net" }, urls = { "http://(www\\.)?audiobeats\\.net/(liveset|link|event|artist)\\?id=\\d+" }, flags = { 0 })
 public class DBtsNt extends PluginForDecrypt {
 
     private String                  fpName;
@@ -93,16 +93,13 @@ public class DBtsNt extends PluginForDecrypt {
         int i = 0;
         do {
             br.getPage(parameter);
-
             if (br.containsHTML("Error 403")) {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                 }
             } else {
-
                 String[] allLinks = br.getRegex("\"(/link\\?id=\\d+-.*?)\"").getColumn(0);
-
                 if (allLinks == null || allLinks.length == 0) {
                     if (decryptedLinks.size() > 0) {
                         return true;
@@ -119,16 +116,13 @@ public class DBtsNt extends PluginForDecrypt {
                     } catch (InterruptedException e) {
                     }
                 }
-
-                String fpName = br.getRegex("<title>AudioBeats\\.net - (.*?)</title>").getMatch(0);
+                String fpName = br.getRegex("<title>AudioBeats\\.net \\- (.*?)</title>").getMatch(0);
                 if (fpName == null) fpName = br.getRegex("rel=\"alternate\" type=\".*?\" title=\"(.*?)\"").getMatch(0);
-
                 setPackageName();
                 break;
             }
 
         } while (i < 5);
-
         return true;
     }
 
@@ -158,7 +152,7 @@ public class DBtsNt extends PluginForDecrypt {
             }
         }
         if (finallink == null) {
-            finallink = br.getRegex("link_header\\.php\" noresize=\"noresize\">[\t\n\r ]+<frame src=\"(http.*?)\"").getMatch(0);
+            finallink = br.getRegex("noresize=\"noresize\">[\t\n\r ]+<frame src=\"((?!http://(www\\.)?audiobeats.net)http.*?)\"").getMatch(0);
             if (finallink == null) finallink = br.getRedirectLocation();
         }
         if (!br.containsHTML("3voor12\\.vpro\\.nl")) {
