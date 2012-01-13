@@ -18,25 +18,33 @@ package jd.plugins.decrypter;
 
 import java.io.InputStream;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
+import jd.gui.UserIO;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "http://(www\\.)?gameone\\.de/tv/\\d+(\\?part=\\d+)?" }, flags = { PluginWrapper.DEBUG_ONLY })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "http://(www\\.)?gameone\\.de/(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\w\\-]+/\\d+(/(sd|hd))?" }, flags = { 0 })
 public class GameOneDeA extends PluginForDecrypt {
 
     private Document doc;
@@ -51,61 +59,151 @@ public class GameOneDeA extends PluginForDecrypt {
         final String parameter = param.toString();
         setBrowserExclusive();
         br.setReadTimeout(60 * 1000);
+        br.setFollowRedirects(false);
         br.getPage(parameter);
+        if (br.getRedirectLocation() != null) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Wrong URL or the folder no longer exists.")); }
 
-        // http
-        String dllink = br.getRegex("name=\"href\" value=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\"(http://cdn\\.riptide-mtvn\\.com/production/.*?)\"").getMatch(0);
+        String dllink, filename;
+        boolean newEpisode = true;
+        final String episode = new Regex(parameter, "http://(www\\.)?gameone\\.de/tv/(\\d+)").getMatch(1);
+        if (episode != null && Integer.parseInt(episode) < 102) {
+            newEpisode = false;
         }
-        String filename = br.getRegex("<title>(.*?) \\|").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<div id=\\'show-video\\'>[\t\n\r ]+<h2>(.*?)</h2>").getMatch(0);
-        }
-        if (filename != null && dllink != null) {
-            filename += dllink.substring(dllink.length() - 4, dllink.length());
-            final DownloadLink dlLink = createDownloadlink("directhttp://" + dllink);
-            dlLink.setFinalFileName(filename);
-            decryptedLinks.add(dlLink);
+
+        final String[] swfUrl = br.getRegex("SWFObject\\(\"(.*?)\"").getColumn(0);
+        String fpName = br.getRegex("<title>(.*?)( \\||</title>)").getMatch(0);
+        fpName = fpName == null ? br.getRegex("<h2>\n?(.*?)\n?</h2>").getMatch(0) : fpName;
+
+        if (fpName == null) { return null; }
+
+        fpName = fpName.replaceAll(" (-|~) Teil \\d+", "");
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(fpName.trim());
+
+        /* audio, pictures */
+        if (swfUrl == null || swfUrl.length == 0) {
+            if (br.containsHTML("><img src=\"/images/dummys/dummy_agerated\\.jpg\"")) {
+                UserIO.getInstance().requestMessageDialog(UserIO.STYLE_HTML, "Link momentan inaktiv", "<b><font color=\"red\">" + parameter + "</font></b><br /><br />Vollstängiger Inhalt zu o.g. Link ist zwischen 22:00 und 06:00 Uhr verfügbar!");
+                return null;
+            }
+            String[] pictureOrAudio = null;
+            if (br.containsHTML("<div class=\'gallery\' id=\'gallery_\\d+\'")) {
+                pictureOrAudio = br.getRegex("<a href=\"(http://.*?/gallery_pictures/.*?/large/.*?)\"").getColumn(0);
+            } else if (br.containsHTML("class=\"flash_container_audio\"")) {
+                pictureOrAudio = br.getRegex("<a href=\"(http://asset\\.gameone\\.de.*?)\">Download</a>").getColumn(0);
+            }
+            if (pictureOrAudio == null || pictureOrAudio.length == 0) {
+                logger.warning("Decrypter out of date for link: " + parameter);
+                return null;
+            }
+            if (pictureOrAudio.length <= 10) {
+                newEpisode = false;
+            }
+            for (final String ap : pictureOrAudio) {
+                final DownloadLink dlLink = createDownloadlink(ap);
+                if (newEpisode) {
+                    dlLink.setAvailable(true);
+                }
+                fp.add(dlLink);
+                decryptedLinks.add(dlLink);
+            }
             return decryptedLinks;
         }
 
-        // rtmp
-        final String[] parts = br.getRegex("href='[/a-z0-9=?]+'\\srel='(.*?)'").getColumn(0);
-        String fpName = br.getRegex("<title>(.*?) \\|").getMatch(0);
-        if (parts == null || parts.length == 0 || fpName == null) { return null; }
+        /* video: blog, tv, playtube */
+        for (String startUrl : swfUrl) {
+            startUrl = startUrl.replaceAll("http://(.*?)/", "http://www.gameone.de/api/mrss/");
 
-        fpName = fpName.replaceAll(" - Teil \\d+", "");
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName);
-        final String partInfoUrl = "http://intl.esperanto.mtvi.com/www/xml/video.jhtml?uri=";
-        final String dllinkInfoUrl = "http://intl.esperanto.mtvi.com/www/xml/media/mediaGen.jhtml?uri=";
-        progress.setRange(parts.length);
-
-        for (final String part : parts) {
-            XPath xPath = xmlParser(partInfoUrl + Encoding.urlEncode(part) + "&version=as3&keyValues=brand=mtv;");
-            filename = xPath.evaluate("/rss/channel/item/title", doc);
-            xPath = xmlParser(dllinkInfoUrl + Encoding.urlEncode(part));
-            dllink = xPath.evaluate("/package/video/item/rendition/src", doc);
-            if (filename == null || dllink == null) {
-                continue;
+            XPath xPath = xmlParser(startUrl);
+            NodeList linkList, partList;
+            XPathExpression expr = null;
+            try {
+                filename = xPath.evaluate("/rss/channel/item/title", doc);
+                expr = xPath.compile("/rss/channel/item/group/content[@type='text/xml']/@url");
+                partList = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+                if (partList == null || partList.getLength() == 0) { throw new Exception("PartList empty"); }
+            } catch (final Throwable e) {
+                return null;
             }
-            final DownloadLink dlLink = createDownloadlink(dllink);
-            dlLink.setName(filename + ".flv");
-            fp.add(dlLink);
-            decryptedLinks.add(dlLink);
-            progress.increase(1);
+            final DecimalFormat df = new DecimalFormat("000");
+            for (int i = 0; i < partList.getLength(); ++i) {
+                final Node partNode = partList.item(i);
+                startUrl = partNode.getNodeValue();
+                if (startUrl == null) {
+                    continue;
+                }
+                /* Episode 1 - 101 */
+                startUrl = startUrl.replaceAll("media/mediaGen\\.jhtml\\?uri.*?\\.de:", "flv/flvgen.jhtml?vid=");
+
+                xPath = xmlParser(startUrl);
+                try {
+                    expr = xPath.compile("/package/video/item/src|//rendition/src");
+                    linkList = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+                    if (linkList == null || linkList.getLength() == 0) { throw new Exception("LinkList empty"); }
+                } catch (final Throwable e) {
+                    continue;
+                }
+                progress.setRange(linkList.getLength());
+                for (int j = 0; j < linkList.getLength(); ++j) {
+                    final Node node = linkList.item(j);
+                    dllink = node.getTextContent();
+                    if (dllink == null) {
+                        continue;
+                    }
+                    String q = new Regex(dllink, "(\\d+)k_").getMatch(0);
+                    q = q == null ? "" : quality(Integer.parseInt(q));
+                    String ext = dllink.substring(dllink.lastIndexOf("."));
+                    ext = ext == null || ext.length() > 4 ? ".flv" : ext;
+
+                    /* Episode > 102 */
+                    dllink = dllink.replaceAll("^.*?/r2/", "http://cdn.riptide-mtvn.com/r2/");
+                    /* Fallback */
+                    dllink = dllink.replace("rtmp", "gameonertmp");
+
+                    dllink = dllink.startsWith("http") ? "directhttp://" + dllink : dllink;
+                    final DownloadLink dlLink = createDownloadlink(dllink);
+                    if (!newEpisode) {
+                        dlLink.setFinalFileName(filename + q + "_Part_" + df.format(i + 1) + ext);
+                    } else {
+                        dlLink.setFinalFileName(filename + "_" + q + ext);
+                    }
+                    fp.add(dlLink);
+                    decryptedLinks.add(dlLink);
+                    progress.increase(1);
+                }
+            }
         }
-        if (decryptedLinks == null || decryptedLinks.size() == 0) { return null; }
+        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            logger.warning("Decrypter out of date for link: " + parameter);
+            return null;
+        }
         return decryptedLinks;
     }
 
-    private XPath xmlParser(final String linkurl) throws Exception {
-        final URL url = new URL(linkurl);
-        final InputStream stream = url.openStream();
-        final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        final XPath xPath = XPathFactory.newInstance().newXPath();
-        doc = parser.parse(stream);
-        return xPath;
+    private String quality(final int q) {
+        if (q <= 350) { return "LOW"; }
+        if (q <= 850) { return "MEDIUM"; }
+        return "HIGH";
     }
+
+    private XPath xmlParser(final String linkurl) throws Exception {
+        try {
+            final URL url = new URL(linkurl);
+            final InputStream stream = url.openStream();
+            final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            final XPath xPath = XPathFactory.newInstance().newXPath();
+            try {
+                doc = parser.parse(stream);
+                return xPath;
+            } finally {
+                try {
+                    stream.close();
+                } catch (final Throwable e) {
+                }
+            }
+        } catch (final Throwable e2) {
+            return null;
+        }
+    }
+
 }

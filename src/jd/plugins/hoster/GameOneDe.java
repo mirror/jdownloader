@@ -22,11 +22,16 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "rtmp://.+/game_one/.+" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "gameonertmp.+" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class GameOneDe extends PluginForHost {
 
     public GameOneDe(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replace("gameonertmp", "rtmp"));
     }
 
     @Override
