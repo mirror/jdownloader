@@ -73,7 +73,7 @@ public class MultiUploadCom extends PluginForHost {
                 }
                 con.disconnect();
             } catch (Exception e) {
-                downloadLink.setProperty("freelink", Property.NULL);
+                link.setProperty("freelink", Property.NULL);
                 dllink = null;
             }
         }
