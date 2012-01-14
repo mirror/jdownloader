@@ -32,17 +32,14 @@ import jd.plugins.decrypter.TbCm.DestinationFormat;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "http://(www\\.)?clipfish\\.de/(.*?channel/\\d+/video/\\d+|video/\\d+(/.+)?|special/.*?/video/\\d+|musikvideos/video/\\d+(/.+)?)" }, flags = { 0 })
 public class ClpfshD extends PluginForDecrypt {
 
-    private static final Pattern PATTERN_CAHNNEL_VIDEO  = Pattern.compile("http://(www\\.)?clipfish\\.de/.*?channel/\\d+/video/(\\d+)");
-    private static final Pattern PATTERN_MUSIK_VIDEO    = Pattern.compile("http://(www\\.)?clipfish\\.de/musikvideos/video/(\\d+)(/.+)?");
-    private static final Pattern PATTERN_STANDARD_VIDEO = Pattern.compile("http://(www\\.)?clipfish\\.de/video/(\\d+)(/.+)?");
-    private static final Pattern PATTERN_SPECIAL_VIDEO  = Pattern.compile("http://(www\\.)?clipfish\\.de/special/.*?/video/(\\d+)");
-    private static final Pattern PATTERN_FLV_FILE       = Pattern.compile("&url=(http://.+?\\....)&", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_CAHNNEL_VIDEO  = Pattern.compile("http://[w\\.]+?clipfish\\.de/.*?channel/\\d+/video/(\\d+)");
+    private static final Pattern PATTERN_MUSIK_VIDEO    = Pattern.compile("http://[w\\.]+?clipfish\\.de/musikvideos/video/(\\d+)(/.+)?");
+    private static final Pattern PATTERN_STANDARD_VIDEO = Pattern.compile("http://[w\\.]+?clipfish\\.de/video/(\\d+)(/.+)?");
+    private static final Pattern PATTERN_SPECIAL_VIDEO  = Pattern.compile("http://[w\\.]+?clipfish\\.de/special/.*?/video/(\\d+)");
+    private static final Pattern PATTERN_FLV_FILE       = Pattern.compile("&url=(http://.+?\\....)&|<filename><\\!\\[CDATA\\[(.*?)\\]\\]></filename>", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_TITEL          = Pattern.compile("<meta property=\"og:title\" content=\"(.+?)\"/>", Pattern.CASE_INSENSITIVE);
     private static final String  XML_PATH               = "http://www.clipfish.de/video_n.php?vid=";
-
-    // private final String NEW_XMP_PATH =
-    // "http://www.clipfish.de/devxml/videoinfo/" + vidId + "?ts="+
-    // System.currentTimeMillis();
+    private static final String  NEW_XMP_PATH           = "http://www.clipfish.de/devxml/videoinfo/";
 
     public ClpfshD(final PluginWrapper wrapper) {
         super(wrapper);
@@ -62,8 +59,9 @@ public class ClpfshD extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink cryptedLink, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = cryptedLink.getCryptedUrl();
         br.clearCookies(getHost());
-        final Regex regexInfo = new Regex(br.getPage(cryptedLink.getCryptedUrl()), ClpfshD.PATTERN_TITEL);
+        final Regex regexInfo = new Regex(br.getPage(parameter), PATTERN_TITEL);
         final String tmpStr = regexInfo.getMatch(0);
         if (tmpStr == null) { return null; }
         final String name = tmpStr.substring(0, tmpStr.lastIndexOf("-"));
@@ -71,22 +69,27 @@ public class ClpfshD extends PluginForDecrypt {
         if (name == null || cType == null) { return null; }
 
         int vidId = -1;
-        if (new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_STANDARD_VIDEO).matches()) {
-            vidId = Integer.parseInt(new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_STANDARD_VIDEO).getMatch(0));
-        } else if (new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_CAHNNEL_VIDEO).matches()) {
-            vidId = Integer.parseInt(new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_CAHNNEL_VIDEO).getMatch(0));
-        } else if (new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_SPECIAL_VIDEO).matches()) {
-            vidId = Integer.parseInt(new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_SPECIAL_VIDEO).getMatch(0));
-        } else if (new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_MUSIK_VIDEO).matches()) {
-            vidId = Integer.parseInt(new Regex(cryptedLink.getCryptedUrl(), ClpfshD.PATTERN_MUSIK_VIDEO).getMatch(0));
+        if (new Regex(parameter, PATTERN_STANDARD_VIDEO).matches()) {
+            vidId = Integer.parseInt(new Regex(parameter, PATTERN_STANDARD_VIDEO).getMatch(0));
+        } else if (new Regex(parameter, PATTERN_CAHNNEL_VIDEO).matches()) {
+            vidId = Integer.parseInt(new Regex(parameter, PATTERN_CAHNNEL_VIDEO).getMatch(0));
+        } else if (new Regex(parameter, PATTERN_SPECIAL_VIDEO).matches()) {
+            vidId = Integer.parseInt(new Regex(parameter, PATTERN_SPECIAL_VIDEO).getMatch(0));
+        } else if (new Regex(parameter, PATTERN_MUSIK_VIDEO).matches()) {
+            vidId = Integer.parseInt(new Regex(parameter, PATTERN_MUSIK_VIDEO).getMatch(0));
         } else {
             logger.severe("No VidID found");
             return decryptedLinks;
         }
-        final String page = br.getPage(ClpfshD.XML_PATH + vidId);
-        final String pathToflv = new Regex(page, ClpfshD.PATTERN_FLV_FILE).getMatch(0);
-        if (pathToflv == null) { return null; }
-        final DownloadLink downloadLink = createDownloadlink(pathToflv);
+
+        String page = br.getPage(NEW_XMP_PATH + vidId + "?ts=" + System.currentTimeMillis());
+        String pathToflv = getDllink(page);
+        if (pathToflv == null) {
+            page = br.getPage(XML_PATH + vidId);
+            pathToflv = getDllink(page);
+            if (pathToflv == null) { return null; }
+        }
+        final DownloadLink downloadLink = createDownloadlink("clipfish://" + pathToflv);
         /*
          * scheinbar gibt es auf clipfish keine flv Audiodateien mehr.
          */
@@ -95,12 +98,27 @@ public class ClpfshD extends PluginForDecrypt {
             addLink(cryptedLink, decryptedLinks, name, downloadLink, DestinationFormat.AUDIOMP3);
         } else {
             String ext = pathToflv.substring(pathToflv.lastIndexOf(".") + 1, pathToflv.length());
+            if (pathToflv.startsWith("rtmp")) {
+                ext = new Regex(pathToflv, "(\\w+):media/").getMatch(0);
+                ext = ext.length() > 3 ? null : ext;
+            }
             ext = ext.equals("f4v") || ext.equals("") || ext.equals(null) ? "mp4" : ext;
             downloadLink.setFinalFileName(name + "." + ext);
             decryptedLinks.add(downloadLink);
         }
-
         return decryptedLinks;
+    }
+
+    private String getDllink(final String page) {
+        String out = null;
+        final String[] allContent = new Regex(page, PATTERN_FLV_FILE).getRow(0);
+        for (final String c : allContent) {
+            if (c != null) {
+                out = c;
+                break;
+            }
+        }
+        return out;
     }
 
 }

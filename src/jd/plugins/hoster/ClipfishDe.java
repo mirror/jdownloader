@@ -22,21 +22,26 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.TbCm;
 import jd.plugins.decrypter.TbCm.DestinationFormat;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "http://[\\w\\.]*?pg\\d+\\.clipfish\\.de/media/.+?\\...." }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "clipfish://.+" }, flags = { 0 })
 public class ClipfishDe extends PluginForHost {
-    private static final String AGB_LINK = "http://www.clipfish.de/agb/";
 
     public ClipfishDe(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("clipfish://", ""));
+    }
+
+    @Override
     public String getAGBLink() {
-        return ClipfishDe.AGB_LINK;
+        return "http://www.clipfish.de/agb/";
     }
 
     @Override
@@ -48,24 +53,31 @@ public class ClipfishDe extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         final LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL());
-        final URLConnectionAdapter urlConnection = dl.connect();
-        if (urlConnection.getLongContentLength() == 0) {
-            br.followConnection();
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-            return;
-        }
+        if (downloadLink.getDownloadURL().startsWith("http")) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL());
+            final URLConnectionAdapter urlConnection = dl.connect();
+            if (urlConnection.getLongContentLength() == 0) {
+                br.followConnection();
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
+                return;
+            }
 
-        if (dl.startDownload()) {
-            if (downloadLink.getProperty("convertto") != null) {
-                final DestinationFormat convertTo = DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
-                final DestinationFormat inType = DestinationFormat.VIDEOFLV;
-                /* to load the TbCm plugin */
+            if (dl.startDownload()) {
+                if (downloadLink.getProperty("convertto") != null) {
+                    final DestinationFormat convertTo = DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
+                    final DestinationFormat inType = DestinationFormat.VIDEOFLV;
+                    /* to load the TbCm plugin */
 
-                if (!TbCm.ConvertFile(downloadLink, inType, convertTo)) {
-                    logger.severe("Video-Convert failed!");
+                    if (!TbCm.ConvertFile(downloadLink, inType, convertTo)) {
+                        logger.severe("Video-Convert failed!");
+                    }
                 }
             }
+        } else if (downloadLink.getDownloadURL().startsWith("rtmp")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "\"rtmp://\" is currently not supported!");
+        } else {
+            logger.severe("Plugin out of date for link: " + downloadLink.getDownloadURL());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
