@@ -302,6 +302,7 @@ public class JDGui extends SwingGui {
         boolean isok = false;
         for (final GraphicsDevice screen : screens) {
             final Rectangle bounds = screen.getDefaultConfiguration().getBounds();
+
             int xMin, xMax, yMin, yMax;
             if (CrossSystem.isWindows()) {
                 xMin = Math.max(bounds.x, loc.x);

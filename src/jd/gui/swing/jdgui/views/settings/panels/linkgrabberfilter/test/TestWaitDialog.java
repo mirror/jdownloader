@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.util.ArrayList;
 
+import javax.swing.Box;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
@@ -22,6 +23,7 @@ import org.appwork.app.gui.MigPanel;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
+import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -29,29 +31,35 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
 
-    private CircledProgressBar     progress;
+    private CircledProgressBar         progress;
 
-    private Thread                 recThread;
+    private Thread                     recThread;
 
-    private String                 url;
-    private ArrayList<CrawledLink> found;
+    private String                     url;
+    private ArrayList<CrawledLink>     found;
 
-    private JLabel                 lbl;
+    private JLabel                     lbl;
 
-    private int                    filtered;
+    private int                        filtered;
 
-    private ResultTableModel       model;
+    private ExtTableModel<CrawledLink> model;
 
-    private DelayedRunnable        delayer;
+    private DelayedRunnable            delayer;
 
-    public TestWaitDialog(String string) {
-        super(Dialog.BUTTONS_HIDE_OK, _GUI._.TestWaitDialog_TestWaitDialog_title_(), null, null, _GUI._.literally_close());
+    private LinkFilterController       linkFilterController;
+
+    private PackagizerController       packagizer;
+
+    public TestWaitDialog(String string, String title, LinkFilterController controller) {
+        super(Dialog.BUTTONS_HIDE_OK, title, null, null, _GUI._.literally_close());
         this.url = string;
+        linkFilterController = controller;
         delayer = new DelayedRunnable(IOEQ.TIMINGQUEUE, 200, 1000) {
 
             @Override
@@ -59,6 +67,11 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
                 update();
             }
         };
+
+    }
+
+    public TestWaitDialog(String string, LinkFilterController controller) {
+        this(string, _GUI._.TestWaitDialog_TestWaitDialog_title_(), controller);
     }
 
     @Override
@@ -68,7 +81,7 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
 
     private void runTest(final LinkCrawler lc, final LinkChecker<CrawledLink> lch) {
         System.out.println("TEST");
-        lc.setFilter(LinkFilterController.getInstance());
+        if (linkFilterController != null) lc.setFilter(linkFilterController);
         found = new ArrayList<CrawledLink>();
         filtered = 0;
         lch.setLinkCheckHandler(new LinkCheckerHandler<CrawledLink>() {
@@ -81,8 +94,11 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
 
             public void linkCheckDone(CrawledLink link) {
                 synchronized (found) {
-                    if (LinkFilterController.getInstance().dropByFileProperties(link)) {
+                    if (linkFilterController != null && linkFilterController.dropByFileProperties(link)) {
                         filtered++;
+                    }
+                    if (packagizer != null) {
+                        packagizer.runByFile(link);
                     }
                     found.add(link);
                 }
@@ -157,10 +173,14 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
         p.add(progress, "height 40!,width 40!,spany 2");
         p.add(label(_GUI._.TestWaitDialog_layoutDialogContent_testlink_()), "");
         p.add(new JLabel(url), "");
-        p.add(label(_GUI._.TestWaitDialog_layoutDialogContent_filtered()));
-        lbl = new JLabel();
-        p.add(lbl);
-        p.add(new JScrollPane(new ResultTable(this, model = new ResultTableModel())), "spanx,pushx,growx");
+        if (linkFilterController != null) {
+            p.add(label(_GUI._.TestWaitDialog_layoutDialogContent_filtered()));
+            lbl = new JLabel();
+            p.add(lbl);
+        } else {
+            p.add(Box.createGlue(), "spanx");
+        }
+        p.add(new JScrollPane(new ResultTable(this, model = createTableModel())), "spanx,pushx,growx,newline");
         recThread = new Thread("LinkFilterTesting") {
 
             private LinkCrawler              lc  = new LinkCrawler();
@@ -195,6 +215,10 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
         return p;
     }
 
+    protected ExtTableModel<CrawledLink> createTableModel() {
+        return new ResultTableModel();
+    }
+
     protected int getPreferredWidth() {
         // TODO Auto-generated method stub
         return SwingGui.getInstance().getMainFrame().getWidth();
@@ -220,13 +244,17 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
             } else {
                 Dialog.getInstance().showDialog(new FilterRuleDialog(rule));
             }
-            LinkFilterController.getInstance().update();
+            linkFilterController.update();
             // update?
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
         } catch (DialogCanceledException e1) {
             e1.printStackTrace();
         }
+    }
+
+    public void setPackagizer(PackagizerController packagizer) {
+        this.packagizer = packagizer;
     }
 
 }

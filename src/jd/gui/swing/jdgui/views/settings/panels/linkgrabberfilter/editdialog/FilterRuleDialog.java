@@ -1,13 +1,20 @@
 package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog;
 
+import java.util.ArrayList;
+
 import javax.swing.JComponent;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.SingleFilterResultTableModel;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitDialog;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
 
@@ -20,6 +27,29 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
         this.rule = filterRule;
         setTitle(_GUI._.FilterRuleDialog_FilterRuleDialog_title_());
 
+    }
+
+    protected void runTest(String text) {
+        TestWaitDialog d;
+        try {
+
+            LinkFilterController lfc = LinkFilterController.createEmptyTestInstance();
+            LinkgrabberFilterRule rule = getCurrentCopy();
+            lfc.add(rule);
+
+            ArrayList<CrawledLink> ret = Dialog.getInstance().showDialog(d = new TestWaitDialog(text, _GUI._.FilterRuleDialog_runTest_title_(rule.toString()), lfc) {
+
+                @Override
+                protected ExtTableModel<CrawledLink> createTableModel() {
+                    return new SingleFilterResultTableModel();
+                }
+
+            });
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {
@@ -42,11 +72,23 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
     protected void setReturnmask(boolean b) {
         super.setReturnmask(b);
         if (b) {
-            save();
+            save(this.rule);
         }
     }
 
-    private void save() {
+    /**
+     * Returns a Linkgrabberfilter representing current settings. does NOT save
+     * the original one
+     * 
+     * @return
+     */
+    private LinkgrabberFilterRule getCurrentCopy() {
+        LinkgrabberFilterRule ret = this.rule.duplicate();
+        save(ret);
+        return ret;
+    }
+
+    private void save(LinkgrabberFilterRule rule) {
         rule.setFilenameFilter(getFilenameFilter());
         rule.setHosterURLFilter(getHosterFilter());
         rule.setName(getName());
@@ -56,7 +98,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
         rule.setOnlineStatusFilter(getOnlineStatusFilter());
         rule.setPluginStatusFilter(getPluginStatusFilter());
         rule.setAccept(false);
-
+        rule.setTestUrl(getTxtTestUrl());
         rule.setIconKey(getIconKey());
 
     }
@@ -72,6 +114,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
         setPluginStatusFilter(rule.getPluginStatusFilter());
         setSourceFilter(rule.getSourceURLFilter());
         setFiletypeFilter(rule.getFiletypeFilter());
+        txtTestUrl.setText(rule.getTestUrl());
     }
 
     protected String getIfText() {

@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test;
+package jd.gui.swing.jdgui.views.settings.panels.packagizer.test;
 
 import javax.swing.Icon;
 
@@ -9,38 +9,27 @@ import org.appwork.swing.exttable.columns.ExtFileSizeColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.Files;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
+import org.jdownloader.controlling.packagizer.PackagizerRule;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class ResultTableModel extends ExtTableModel<CrawledLink> {
+public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
-    public ResultTableModel() {
-        super("ResultTableModel5");
+    private PackagizerRule rule;
+
+    public PackagizerSingleTestTableModel(PackagizerRule rule) {
+        super("PackagizerSingleTestTableModel");
+        this.rule = rule;
     }
 
     @Override
     protected void initColumns() {
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_filtered_()) {
-            @Override
-            protected String getTooltipText(final CrawledLink value) {
-
-                try {
-                    if (!((LinkgrabberFilterRule) value.getMatchingFilter()).isAccept()) {
-
-                    return _GUI._.ResultTableModel_getTooltipText_dropped_();
-
-                    }
-                } catch (Exception e) {
-
-                }
-                return _GUI._.ResultTableModel_getTooltipText_accept_();
-            }
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.PackagizerSingleTestTableModel_initColumns_matches_()) {
 
             public int getDefaultWidth() {
 
-                return 100;
+                return 60;
             }
 
             public boolean isPaintWidthLockIcon() {
@@ -66,12 +55,7 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             public String getStringValue(CrawledLink value) {
-                try {
-                    if (!((LinkgrabberFilterRule) value.getMatchingFilter()).isAccept()) { return _GUI._.ResultTableModel_getStringValue_filtered_(); }
-                } catch (Exception e) {
-
-                }
-                return _GUI._.ResultTableModel_getStringValue_accepted_();
+                return null;
             }
         });
 
@@ -146,9 +130,9 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
 
                 switch (value.getLinkState()) {
                 case OFFLINE:
-                    return NewTheme.getInstance().getIcon("checkbox_false", 16);
+                    return NewTheme.getInstance().getIcon("false", 16);
                 case ONLINE:
-                    return NewTheme.getInstance().getIcon("checkbox_true", 16);
+                    return NewTheme.getInstance().getIcon("true", 16);
                 case TEMP_UNKNOWN:
                     return NewTheme.getInstance().getIcon("checkbox_undefined", 16);
 
@@ -159,16 +143,7 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             public String getStringValue(CrawledLink value) {
-                switch (value.getLinkState()) {
-                case OFFLINE:
-                    return _GUI._.ConditionDialog_layoutDialogContent_offline_();
-                case ONLINE:
-                    return _GUI._.ConditionDialog_layoutDialogContent_online_();
-                case TEMP_UNKNOWN:
-                    return _GUI._.ConditionDialog_layoutDialogContent_uncheckable_();
-
-                }
-                return "";
+                return null;
             }
         });
 
@@ -274,57 +249,45 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
                 return sb.toString().trim();
             }
         });
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_rule_()) {
-            {
-                editorField.setEditable(false);
-            }
 
-            public int getDefaultWidth() {
-                return 100;
-            }
-
-            protected boolean isDefaultResizable() {
-
-                return true;
-            }
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.PackagizerSingleTestTableModel_initColumns_downloadfolder_()) {
 
             @Override
-            public boolean isEditable(final CrawledLink obj) {
-
-                return true;
+            public boolean isEnabled(CrawledLink obj) {
+                return rule.getDownloadDestination() != null;
             }
 
-            public boolean isDefaultVisible() {
-                return false;
+            public boolean isVisible(boolean savedValue) {
+                return rule.getDownloadDestination() != null;
             }
 
             @Override
             public String getStringValue(CrawledLink value) {
-                if (value.getMatchingFilter() == null) return null;
-                return value.getMatchingFilter().getName();
+
+                return value.getDesiredPackageInfo().getDestinationFolder();
             }
         });
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_ruledesc_()) {
-            {
-                editorField.setEditable(false);
-            }
 
-            public int getDefaultWidth() {
-                return 300;
-            }
-
-            @Override
-            public boolean isEditable(final CrawledLink obj) {
-                return true;
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.PackagizerSingleTestTableModel_initColumns_packagename_()) {
+            public boolean isVisible(boolean savedValue) {
+                return rule.getPackageName() != null;
             }
 
             @Override
             public String getStringValue(CrawledLink value) {
-                FilterRule filter = value.getMatchingFilter();
-                if (filter == null) return null;
-
-                return value.getMatchingFilter().toString(value);
+                return value.getDesiredPackageInfo().getName();
             }
         });
+        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.PackagizerSingleTestTableModel_initColumns_filename_()) {
+            public boolean isVisible(boolean savedValue) {
+                return rule.getFilename() != null;
+            }
+
+            @Override
+            public String getStringValue(CrawledLink value) {
+                return value.getName();
+            }
+        });
+
     }
 }

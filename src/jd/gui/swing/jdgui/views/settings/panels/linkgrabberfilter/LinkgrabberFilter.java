@@ -82,7 +82,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         this.add(btRemove, "height 26!,sg 1");
 
         add(card, "spanx,pushy,growy");
-        tb = new MigPanel("ins 0", "[grow,fill][]", "[]");
+
         txtTest = new ExtTextField();
         txtTest.addFocusListener(new FocusListener() {
 
@@ -104,6 +104,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
                 startTest();
             }
         });
+        tb = new MigPanel("ins 0", "[grow,fill][]", "[]");
         tb.add(txtTest, "height 24!");
         tb.add(btTest, "height 24!,width 24!");
         add(tb, "spanx, height 24!");
@@ -122,7 +123,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
     protected void startTest() {
         TestWaitDialog d;
         try {
-            ArrayList<CrawledLink> ret = Dialog.getInstance().showDialog(d = new TestWaitDialog(txtTest.getText()));
+            ArrayList<CrawledLink> ret = Dialog.getInstance().showDialog(d = new TestWaitDialog(txtTest.getText(), LinkFilterController.getInstance()));
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {

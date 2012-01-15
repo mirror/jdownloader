@@ -17,6 +17,16 @@ public abstract class FilterRule implements Storable {
     private RegexFilter        sourceURLFilter;
     private OnlineStatusFilter onlineStatusFilter;
     private String             iconKey;
+    private String             testUrl;
+
+    public String getTestUrl() {
+        return testUrl;
+    }
+
+    public void setTestUrl(String testUrl) {
+        this.testUrl = testUrl;
+    }
+
     private PluginStatusFilter pluginStatusFilter;
 
     public String getIconKey() {

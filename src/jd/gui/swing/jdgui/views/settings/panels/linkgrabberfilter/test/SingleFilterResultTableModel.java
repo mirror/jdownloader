@@ -9,15 +9,14 @@ import org.appwork.swing.exttable.columns.ExtFileSizeColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.Files;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class ResultTableModel extends ExtTableModel<CrawledLink> {
+public class SingleFilterResultTableModel extends ExtTableModel<CrawledLink> {
 
-    public ResultTableModel() {
-        super("ResultTableModel5");
+    public SingleFilterResultTableModel() {
+        super("SingleFilterResultTableModel");
     }
 
     @Override
@@ -274,57 +273,6 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
                 return sb.toString().trim();
             }
         });
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_rule_()) {
-            {
-                editorField.setEditable(false);
-            }
 
-            public int getDefaultWidth() {
-                return 100;
-            }
-
-            protected boolean isDefaultResizable() {
-
-                return true;
-            }
-
-            @Override
-            public boolean isEditable(final CrawledLink obj) {
-
-                return true;
-            }
-
-            public boolean isDefaultVisible() {
-                return false;
-            }
-
-            @Override
-            public String getStringValue(CrawledLink value) {
-                if (value.getMatchingFilter() == null) return null;
-                return value.getMatchingFilter().getName();
-            }
-        });
-        addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_ruledesc_()) {
-            {
-                editorField.setEditable(false);
-            }
-
-            public int getDefaultWidth() {
-                return 300;
-            }
-
-            @Override
-            public boolean isEditable(final CrawledLink obj) {
-                return true;
-            }
-
-            @Override
-            public String getStringValue(CrawledLink value) {
-                FilterRule filter = value.getMatchingFilter();
-                if (filter == null) return null;
-
-                return value.getMatchingFilter().toString(value);
-            }
-        });
     }
 }

@@ -3106,7 +3106,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Matching Rule Condition" })
     String ResultTableModel_initColumns_ruledesc_();
 
-    @Default(lngs = { "en" }, values = { "Filename" })
+    @Default(lngs = { "en" }, values = { "Original Filename" })
     String ResultTableModel_initColumns_filename_();
 
     @Default(lngs = { "en" }, values = { "Filesize" })
@@ -3408,5 +3408,38 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Remember selection for this Package" })
     String IfFileExistsDialog_getDontShowAgainLabelText_();
+
+    @Default(lngs = { "en" }, values = { "Test" })
+    String PackagizerFilterRuleDialog_PackagizerFilterRuleDialog_testbutton_();
+
+    @Default(lngs = { "en" }, values = { "Enter Test Url..." })
+    String PackagizerFilterRuleDialog_PackagizerFilterRuleDialog_test_help();
+
+    @Default(lngs = { "en" }, values = { "Test Filter: \"%s1\"" })
+    String FilterRuleDialog_runTest_title_(String string);
+
+    @Default(lngs = { "en" }, values = { "Matches" })
+    String ViewTestResultTableModel_initColumns_matches_();
+
+    @Default(lngs = { "en" }, values = { "Packigizer Rule Test: \"%s1\"" })
+    String PackagizerRuleDialog_runTest_title_(String string);
+
+    @Default(lngs = { "en" }, values = { "Matches" })
+    String PackagizerSingleTestTableModel_initColumns_matches_();
+
+    @Default(lngs = { "en" }, values = { "Download Folder" })
+    String PackagizerSingleTestTableModel_initColumns_downloadfolder_();
+
+    @Default(lngs = { "en" }, values = { "~ not set ~" })
+    String PackagizerSingleTestTableModel_getStringValue_notset_();
+
+    @Default(lngs = { "en" }, values = { "Priority" })
+    String PackagizerSingleTestTableModel_initColumns_priority_();
+
+    @Default(lngs = { "en" }, values = { "Package Name" })
+    String PackagizerSingleTestTableModel_initColumns_packagename_();
+
+    @Default(lngs = { "en" }, values = { "File Name" })
+    String PackagizerSingleTestTableModel_initColumns_filename_();
 
 }

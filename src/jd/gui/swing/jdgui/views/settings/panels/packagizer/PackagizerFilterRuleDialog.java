@@ -4,6 +4,7 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
 import javax.swing.ButtonGroup;
@@ -20,9 +21,12 @@ import javax.swing.ListCellRenderer;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.text.JTextComponent;
 
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ConditionDialog;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterPanel;
+import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitDialog;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.test.PackagizerSingleTestTableModel;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.MigPanel;
@@ -35,6 +39,7 @@ import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtSpinner;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.pathchooser.PathChooser;
+import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -101,10 +106,48 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     private JComboBox      cobAutostart;
     private JComboBox      cobAutoAdd;
 
+    protected void runTest(String text) {
+
+        TestWaitDialog d;
+        try {
+
+            PackagizerController packagizer = PackagizerController.createEmptyTestInstance();
+            final PackagizerRule rule = getCurrentCopy();
+            packagizer.add(rule);
+            d = new TestWaitDialog(text, _GUI._.PackagizerRuleDialog_runTest_title_(rule.toString()), null) {
+
+                @Override
+                protected ExtTableModel<CrawledLink> createTableModel() {
+                    return new PackagizerSingleTestTableModel(rule);
+                }
+
+            };
+            d.setPackagizer(packagizer);
+            ArrayList<CrawledLink> ret = Dialog.getInstance().showDialog(d);
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
+    }
+
     public PackagizerFilterRuleDialog(PackagizerRule filterRule) {
         super();
         this.rule = filterRule;
 
+    }
+
+    /**
+     * Returns a Linkgrabberfilter representing current settings. does NOT save
+     * the original one
+     * 
+     * @return
+     */
+    private PackagizerRule getCurrentCopy() {
+
+        PackagizerRule ret = this.rule.duplicate();
+        save(ret);
+        return ret;
     }
 
     @Override
@@ -129,11 +172,11 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     protected void setReturnmask(boolean b) {
         super.setReturnmask(b);
         if (b) {
-            save();
+            save(rule);
         }
     }
 
-    private void save() {
+    private void save(PackagizerRule rule) {
         rule.setFilenameFilter(getFilenameFilter());
         rule.setHosterURLFilter(getHosterFilter());
         rule.setName(getName());
@@ -150,6 +193,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         rule.setAutoAddEnabled(cbAdd.isSelected() ? cobAutoAdd.getSelectedIndex() == 0 : null);
         rule.setAutoStartEnabled(cbStart.isSelected() ? cobAutostart.getSelectedIndex() == 0 : null);
         rule.setIconKey(getIconKey());
+        rule.setTestUrl(getTxtTestUrl());
         rule.setOnlineStatusFilter(getOnlineStatusFilter());
         rule.setPluginStatusFilter(getPluginStatusFilter());
 
@@ -168,6 +212,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         setPluginStatusFilter(rule.getPluginStatusFilter());
         txtPackagename.setText(rule.getPackageName());
         txtNewFilename.setText(rule.getFilename());
+        txtTestUrl.setText(rule.getTestUrl());
         fpDest.setPath(rule.getDownloadDestination());
         cbExtract.setSelected(rule.isAutoExtractionEnabled() != null);
 

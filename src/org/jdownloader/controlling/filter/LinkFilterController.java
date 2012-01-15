@@ -15,7 +15,7 @@ import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
 
 public class LinkFilterController implements LinkCrawlerFilter {
-    private static final LinkFilterController INSTANCE = new LinkFilterController();
+    private static final LinkFilterController INSTANCE = new LinkFilterController(false);
 
     /**
      * get the only existing instance of LinkFilterController. This is a
@@ -25,6 +25,10 @@ public class LinkFilterController implements LinkCrawlerFilter {
      */
     public static LinkFilterController getInstance() {
         return LinkFilterController.INSTANCE;
+    }
+
+    public static LinkFilterController createEmptyTestInstance() {
+        return new LinkFilterController(true);
     }
 
     private ArrayList<LinkgrabberFilterRule>        filter;
@@ -49,27 +53,32 @@ public class LinkFilterController implements LinkCrawlerFilter {
      * Create a new instance of LinkFilterController. This is a singleton class.
      * Access the only existing instance by using {@link #getInstance()}.
      */
-    private LinkFilterController() {
+    private LinkFilterController(boolean testInstance) {
         config = JsonConfig.create(LinkFilterSettings.class);
-        filter = config.getFilterList();
         eventSender = new ChangeEventSender();
-        if (filter == null) filter = new ArrayList<LinkgrabberFilterRule>();
-        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+        if (!testInstance) {
+            filter = config.getFilterList();
 
-            @Override
-            public void run() {
-                synchronized (LinkFilterController.this) {
-                    config.setFilterList(filter);
+            if (filter == null) filter = new ArrayList<LinkgrabberFilterRule>();
+            ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+                @Override
+                public void run() {
+                    synchronized (LinkFilterController.this) {
+                        config.setFilterList(filter);
+                    }
                 }
-            }
 
-            @Override
-            public String toString() {
-                return "save filters...";
-            }
-        });
+                @Override
+                public String toString() {
+                    return "save filters...";
+                }
+            });
 
-        updateInternal();
+            updateInternal();
+        } else {
+            filter = new ArrayList<LinkgrabberFilterRule>();
+        }
     }
 
     public ChangeEventSender getEventSender() {

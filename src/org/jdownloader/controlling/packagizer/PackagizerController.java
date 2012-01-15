@@ -36,37 +36,47 @@ public class PackagizerController implements PackagizerInterface {
     public static final String                  PACKAGENAME = "packagename";
     public static final String                  SIMPLEDATE  = "simpledate";
 
-    private static final PackagizerController   INSTANCE    = new PackagizerController();
+    private static final PackagizerController   INSTANCE    = new PackagizerController(false);
     private HashMap<String, PackagizerReplacer> replacers   = new HashMap<String, PackagizerReplacer>();
 
     public static PackagizerController getInstance() {
         return INSTANCE;
     }
 
-    private PackagizerController() {
+    public static PackagizerController createEmptyTestInstance() {
+        return new PackagizerController(true);
+    }
+
+    private PackagizerController(boolean testInstance) {
         config = JsonConfig.create(PackagizerSettings.class);
         eventSender = new ChangeEventSender();
-        try {
-            list = config.getRuleList();
-        } catch (Throwable e) {
-            // restoring list may fail.
+
+        if (!testInstance) {
+            try {
+                list = config.getRuleList();
+            } catch (Throwable e) {
+                // restoring list may fail.
+            }
         }
         if (list == null) list = new ArrayList<PackagizerRule>();
         update();
-        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
-            @Override
-            public void run() {
-                synchronized (PackagizerController.this) {
-                    config.setRuleList(list);
+        if (!testInstance) {
+            ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+                @Override
+                public void run() {
+                    synchronized (PackagizerController.this) {
+                        config.setRuleList(list);
+                    }
                 }
-            }
 
-            @Override
-            public String toString() {
-                return "save packagizer...";
-            }
-        });
+                @Override
+                public String toString() {
+                    return "save packagizer...";
+                }
+            });
+        }
         addReplacer(new PackagizerReplacer() {
 
             public String getID() {

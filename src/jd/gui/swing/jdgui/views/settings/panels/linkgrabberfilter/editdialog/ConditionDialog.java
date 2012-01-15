@@ -46,6 +46,7 @@ import org.appwork.app.gui.copycutpaste.CutAction;
 import org.appwork.app.gui.copycutpaste.DeleteAction;
 import org.appwork.app.gui.copycutpaste.PasteAction;
 import org.appwork.app.gui.copycutpaste.SelectAction;
+import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.SizeSpinner;
@@ -82,6 +83,12 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     private JToggleButton  cbRegHoster;
 
+    protected ExtTextField txtTestUrl;
+
+    public String getTxtTestUrl() {
+        return txtTestUrl.getText();
+    }
+
     public String getName() {
         return txtName.getText();
     }
@@ -100,6 +107,34 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     public RegexFilter getFilenameFilter() {
         return new RegexFilter(cbFilename.isSelected(), MatchType.values()[cobFilename.getSelectedIndex()], txtFilename.getText(), cbRegFilename.isSelected());
+    }
+
+    protected void _init() {
+        txtTestUrl = new ExtTextField();
+        txtTestUrl.setHelpText(_GUI._.PackagizerFilterRuleDialog_PackagizerFilterRuleDialog_test_help());
+
+        super._init();
+    }
+
+    protected MigPanel createBottomPanel() {
+        MigPanel ret = new MigPanel("ins 0", "5[][grow,fill][]20[]", "[]");
+
+        ret.add(new ExtButton(new AppAction() {
+            {
+                setIconKey("media-playback-start");
+                setTooltipText(_GUI._.LinkgrabberFilter_LinkgrabberFilter_test_());
+            }
+
+            public void actionPerformed(ActionEvent e) {
+                runTest(txtTestUrl.getText());
+            }
+        }), "height 22!,width 22!");
+        ret.add(txtTestUrl, "pushx,growx");
+
+        return ret;
+    }
+
+    protected void runTest(String text) {
     }
 
     public void setOnlineStatusFilter(OnlineStatusFilter f) {
