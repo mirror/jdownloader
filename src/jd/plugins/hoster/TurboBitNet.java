@@ -198,11 +198,8 @@ public class TurboBitNet extends PluginForHost {
         String maxtime = br.getRegex("maxLimit([ ]+)?:([ ]+)?(\\d+)").getMatch(2);
         if (maxtime == null) {
             maxtime = br.getRegex("var Timeout.*?maxLimit: (\\d+)").getMatch(0);
-            if (maxtime == null) {
-                maxtime = Encoding.Base64Decode("NjA=");
-            }
         }
-
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         final String res = parseImageUrl(br.getRegex(LnkCrptWs.IMAGEREGEX).getMatch(0));
         if (res != null) {
             String fReq = res;
@@ -210,9 +207,18 @@ public class TurboBitNet extends PluginForHost {
                 fReq = MAINPAGE + res;
             }
             sleep(tt * 1001, downloadLink);
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage(fReq);
             downloadUrl = br.getRegex("<a href=\\'(.*?)\\'>").getMatch(0);
+        } else {
+            downloadUrl = br.getRegex("\\$\\(\"#timeoutBox\"\\)\\.load\\(\"(/.*?)\"\\)").getMatch(0);
+            if (downloadUrl != null) {
+                downloadUrl = MAINPAGE + downloadUrl;
+                sleep(tt * 1001, downloadLink);
+                br.getPage(downloadUrl);
+                downloadUrl = br.getRegex("<br/><h1><a href=\\'(/[^<>\"]+)\\'").getMatch(0);
+                if (downloadUrl == null) downloadUrl = br.getRegex("\\'(/download/redirect/[A-Z0-9]+/[a-z0-9]+/[^<>\"/]+)\\'").getMatch(0);
+                if (downloadUrl != null) downloadUrl = MAINPAGE + downloadUrl;
+            }
         }
         if (downloadUrl == null) {
             if (br.containsHTML("Error: ") || res == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!", 10 * 60 * 60 * 1000l); }

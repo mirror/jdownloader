@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "min.us", "minus.com" }, urls = { "http://(www\\.)?min\\.us/[A-Za-z0-9]+", "http://(www\\.)?minus\\.com/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "min.us", "minus.com" }, urls = { "cvj84ezu45gj0wojgHZiF238ß3üpj5uUNUSED_REGEX", "http://(www\\.)?(minus\\.com|min\\.us)/[A-Za-z0-9]+" }, flags = { 0 })
 public class MinUs extends PluginForHost {
 
     public MinUs(final PluginWrapper wrapper) {
