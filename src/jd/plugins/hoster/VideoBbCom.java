@@ -57,7 +57,7 @@ public class VideoBbCom extends PluginForHost {
             final int outputInfoKey = Integer.parseInt(br.getRegex("salt\":(\\d+),").getMatch(0));
             final String[] algoCtrl = JDHexUtils.toString(decryptBit(outputInfoRaw, outputInfoKey, 950569)).split(";");
 
-            if (algoCtrl != null && algoCtrl.length >= 0 && algoCtrl[0].indexOf("&") > 0) {
+            if (algoCtrl != null && algoCtrl.length > 1) {
 
                 for (final String eachValue : algoCtrl[1].split("&")) {
                     final String[] parameterTyp = eachValue.split("=");
@@ -196,10 +196,11 @@ public class VideoBbCom extends PluginForHost {
         }
     }
 
-    private final String        ua           = RandomUserAgent.generate();
-    private static final Object LOCK         = new Object();
-    private static final String MAINPAGE     = "http://www.videobb.com/";
-    private static int[]        internalKeys = { 226593, 441252, 301517, 596338, 852084 };
+    private final String        UA               = RandomUserAgent.generate();
+    private static final Object LOCK             = new Object();
+    private static final String MAINPAGE         = "http://www.videobb.com/";
+    public static final String  ALGOCONTROLERROR = "Server: answer is not correct";
+    private static int[]        internalKeys     = { 226593, 441252, 301517, 596338, 852084 };
 
     public VideoBbCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -247,16 +248,16 @@ public class VideoBbCom extends PluginForHost {
 
     private String getFinalLink(final DownloadLink downloadLink, final String token) throws Exception {
         final String link = downloadLink.getDownloadURL();
-        br.getPage(link);
         String referer = br.getRegex("<param value=\"(.*?)\" name=\"movie\">").getMatch(0);
-        final String setting = Encoding.Base64Decode(br.getRegex("<param value=\"setting=(.*?)\"").getMatch(0));
+        String setting = Encoding.Base64Decode(br.getRegex("<param value=\"setting=(.*?)\"").getMatch(0));
         if (setting == null || !setting.startsWith("http://")) { return null; }
-        br.getPage(setting);
+        setting += "&fv=v1.2.72"; // variable fv aus player.swf
 
-        referer = referer == null ? "http://videobb.com/player/p.swf?v=1_2_8_0" : referer;
+        referer = referer == null ? "http://videobb.com/player/p.swf?v=1_2_8_5" : referer;
         referer = referer.startsWith("http") ? referer : "http://videobb.com" + referer;
         br.getHeaders().put("Referer", referer);
         br.getHeaders().put("x-flash-version", "10,3,183,7");
+        br.getPage(setting);
 
         try {
             String dllink = new getFinallinkValue(internalKeys, token, br).DLLINK;
@@ -277,14 +278,15 @@ public class VideoBbCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        br.setDebug(true);
         final String dllink = getFinalLink(downloadLink, "token1");
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        if (dllink.equals("ALGO_CONTROL_ERROR")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError: CrazyKeys!", 15 * 1000l); }
+        if (dllink.equals("ALGO_CONTROL_ERROR")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ALGOCONTROLERROR, 15 * 1000l); }
         sleep(3 * 1000l, downloadLink); // Flasplayer to slow
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.containsHTML("No htmlCode read")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 1000l); }
+            if (br.containsHTML("No htmlCode read")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError: ", 30 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setFilenameFix(true);
@@ -338,7 +340,7 @@ public class VideoBbCom extends PluginForHost {
         try {
             if (br == null) { return; }
             this.br.getHeaders().put("Accept-Encoding", "");
-            br.getHeaders().put("User-Agent", ua);
+            br.getHeaders().put("User-Agent", UA);
             br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
             br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
             br.getHeaders().put("Pragma", null);
