@@ -1,5 +1,6 @@
 package org.jdownloader.controlling.packagizer;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -8,6 +9,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.controlling.IOEQ;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.PackagizerInterface;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
@@ -21,9 +23,15 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeEventSender;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.controlling.FileCreationEvent;
+import org.jdownloader.controlling.FileCreationListener;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.filter.NoDownloadLinkException;
+import org.jdownloader.extensions.extraction.ExtractionController;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchive;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 
-public class PackagizerController implements PackagizerInterface {
+public class PackagizerController implements PackagizerInterface, FileCreationListener {
     private PackagizerSettings                  config;
     private ArrayList<PackagizerRule>           list;
     private ChangeEventSender                   eventSender;
@@ -76,6 +84,8 @@ public class PackagizerController implements PackagizerInterface {
                     return "save packagizer...";
                 }
             });
+
+            FileCreationManager.getInstance().getEventSender().addListener(this);
         }
         addReplacer(new PackagizerReplacer() {
 
@@ -350,6 +360,81 @@ public class PackagizerController implements PackagizerInterface {
             }
         }
         return txt;
+    }
+
+    public void onNewFile(Object caller, File[] fileList) {
+        if (caller instanceof SingleDownloadController) {
+            // do nothing
+            return;
+        } else if (caller == this) {
+            // do nothing - avoid rename loops here
+            return;
+        } else if (caller instanceof ExtractionController) {
+            if (((ExtractionController) caller).getArchiv() instanceof DownloadLinkArchive) {
+                DownloadLinkArchiveFile af = (DownloadLinkArchiveFile) ((ExtractionController) caller).getArchiv().getFirstArchiveFile();
+                CrawledLink cl = new CrawledLink(af.getDownloadLink());
+
+                for (File f : fileList) {
+                    if (f.exists()) {
+                        cl.setName(f.getName());
+                        runAfterExtraction(f, cl);
+                    }
+                }
+            }
+
+        }
+    }
+
+    private void runAfterExtraction(File f, CrawledLink link) {
+
+        ArrayList<PackagizerRuleWrapper> lfileFilter = fileFilter;
+        for (PackagizerRuleWrapper lgr : lfileFilter) {
+            if (!StringUtils.isEmpty(lgr.getRule().getFilename()) || !StringUtils.isEmpty(lgr.getRule().getDownloadDestination())) {
+
+                try {
+                    if (!lgr.checkHoster(link)) continue;
+                } catch (NoDownloadLinkException e) {
+                    throw new WTFException();
+                }
+                try {
+                    if (!lgr.checkPluginStatus(link)) continue;
+                } catch (NoDownloadLinkException e) {
+                    throw new WTFException();
+                }
+                if (!lgr.checkSource(link)) continue;
+                if (lgr.isRequiresLinkcheck()) {
+                    if (!lgr.checkOnlineStatus(link)) continue;
+                    if (!lgr.checkFileName(link)) continue;
+                    if (!lgr.checkFileSize(link)) continue;
+                    if (!lgr.checkFileType(link)) continue;
+                }
+                String downloadPath = f.getParent();
+                String filename = f.getName();
+                if (!StringUtils.isEmpty(lgr.getRule().getDownloadDestination())) {
+                    /* customize download destination folder */
+                    String path = replaceVariables(lgr.getRule().getDownloadDestination(), link, lgr);
+                    if (new File(path).isAbsolute()) {
+                        downloadPath = path;
+                    } else {
+                        downloadPath = new File(downloadPath, path).getAbsolutePath();
+                    }
+
+                }
+                if (!StringUtils.isEmpty(lgr.getRule().getFilename())) {
+                    /* customize filename */
+                    filename = replaceVariables(lgr.getRule().getFilename(), link, lgr);
+                }
+
+                File newFile = new File(downloadPath, filename);
+                newFile.getParentFile().mkdirs();
+                if (!f.equals(newFile) && f.renameTo(newFile)) {
+                    Log.L.info("Packagizer Renamed " + f + " to " + newFile);
+                    FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.NEW_FILES, new File[] { newFile }));
+                } else {
+                    Log.L.warning("Packagizer could not rename " + f + " to " + newFile + " already exists?:" + newFile.exists());
+                }
+            }
+        }
     }
 
 }

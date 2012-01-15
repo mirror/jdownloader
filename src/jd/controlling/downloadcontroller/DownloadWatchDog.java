@@ -38,7 +38,6 @@ import jd.controlling.proxy.ProxyInfo;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.Account;
@@ -58,17 +57,18 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.controlling.FileCreationListener;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
-public class DownloadWatchDog implements DownloadControllerListener, StateMachineInterface, ShutdownVetoListener, IOPermission, ControlListener {
+public class DownloadWatchDog implements DownloadControllerListener, StateMachineInterface, ShutdownVetoListener, IOPermission, FileCreationListener {
 
     /*
      * inner class to provide everything thats needed in order to start a
@@ -164,7 +164,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         this.dlc = DownloadController.getInstance();
         this.dlc.addListener(this);
         ShutdownController.getInstance().addShutdownVetoListener(this);
-        JDController.getInstance().addControlListener(this);
+
+        FileCreationManager.getInstance().getEventSender().addListener(this);
     }
 
     /**
@@ -1311,36 +1312,20 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     public void setCaptchaAllowed(String hoster, CAPTCHA mode) {
     }
 
-    public void controlEvent(ControlEvent event) {
-        if (event == null) {
-            Log.exception(new Throwable("WTF"));
-            return;
-        }
-        switch (event.getEventID()) {
-        case ControlEvent.CONTROL_DOWNLOAD_FINISHED:
-            if (event.getCaller() instanceof SingleDownloadController) {
-                if (JsonConfig.create(GeneralSettings.class).isAutoOpenContainerAfterDownload()) {
-                    /* check if the downloaded file is a container file */
-                    DownloadLink link = (DownloadLink) event.getParameter();
-                    LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob("file://" + link.getFileOutput()));
+    public void onNewFile(Object obj, File[] list) {
+
+        if (JsonConfig.create(GeneralSettings.class).isAutoOpenContainerAfterDownload()) {
+            /* check if extracted files are container files */
+
+            StringBuilder sb = new StringBuilder();
+            for (final File file : list) {
+                if (sb.length() > 0) {
+                    sb.append("\r\n");
                 }
+                sb.append("file://");
+                sb.append(file.getPath());
             }
-            break;
-        case ControlEvent.CONTROL_ON_FILEOUTPUT:
-            if (JsonConfig.create(GeneralSettings.class).isAutoOpenContainerAfterDownload()) {
-                /* check if extracted files are container files */
-                final File[] list = (File[]) event.getParameter();
-                StringBuilder sb = new StringBuilder();
-                for (final File file : list) {
-                    if (sb.length() > 0) {
-                        sb.append("\r\n");
-                    }
-                    sb.append("file://");
-                    sb.append(file.getPath());
-                }
-                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()));
-            }
-            break;
+            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()));
         }
     }
 }

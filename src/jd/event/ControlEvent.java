@@ -61,7 +61,7 @@ public class ControlEvent extends DefaultIntEvent {
      * entscheiden wie die files weiterverareitet werden sollen. Die files
      * werden als File[] parameter übergeben
      */
-    public static final int   CONTROL_ON_FILEOUTPUT            = 33;
+    // public static final int CONTROL_ON_FILEOUTPUT = 33;
 
     /**
      * prepareShutDown is complete

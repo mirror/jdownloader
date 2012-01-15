@@ -26,7 +26,6 @@ import javax.swing.filechooser.FileFilter;
 
 import jd.Main;
 import jd.controlling.JDController;
-import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.event.ControlEvent;
@@ -42,6 +41,8 @@ import jd.plugins.FilePackage;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.controlling.FileCreationListener;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -57,7 +58,7 @@ import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.settings.GeneralSettings;
 
-public class ExtractionExtension extends AbstractExtension<ExtractionConfig> implements ControlListener, ActionListener {
+public class ExtractionExtension extends AbstractExtension<ExtractionConfig> implements ControlListener, ActionListener, FileCreationListener {
     private static final int             EXTRACT_LINK            = 1000;
 
     private static final int             EXTRACT_PACKAGE         = 1001;
@@ -487,35 +488,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     public void controlEvent(ControlEvent event) {
         DownloadLink link;
         switch (event.getEventID()) {
-        case ControlEvent.CONTROL_DOWNLOAD_FINISHED:
-            if (event.getCaller() instanceof SingleDownloadController) {
-                link = ((SingleDownloadController) event.getCaller()).getDownloadLink();
-                if (link.getFilePackage().isPostProcessing() && this.getPluginConfig().getBooleanProperty("ACTIVATED", true) && isLinkSupported(new DownloadLinkArchiveFactory(link))) {
-                    Archive archive = buildArchive(new DownloadLinkArchiveFactory(link));
 
-                    if (!archive.isActive() && archive.getArchiveFiles().size() > 0 && archive.isComplete()) {
-                        this.addToQueue(archive);
-                    }
-                }
-            }
-            break;
-        case ControlEvent.CONTROL_ON_FILEOUTPUT:
-            if (getSettings().isDeepExtractionEnabled()) {
-                try {
-                    File[] list = (File[]) event.getParameter();
-                    for (File archiveStartFile : list) {
-                        FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile);
-                        if (isLinkSupported(fac)) {
-                            Archive ar = buildArchive(fac);
-                            if (ar.isActive() || ar.getArchiveFiles().size() < 1 || !ar.isComplete()) continue;
-                            addToQueue(ar);
-                        }
-                    }
-                } catch (Exception e) {
-                    JDLogger.exception(e);
-                }
-            }
-            break;
         case ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU:
             Object source = event.getParameter2();
             if (source == null || !(source instanceof DownloadsTable)) break;
@@ -733,7 +706,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     @Override
     protected void stop() throws StopException {
         JDController.getInstance().removeControlListener(this);
-
+        FileCreationManager.getInstance().getEventSender().removeListener(this);
         Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
@@ -756,6 +729,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     @Override
     protected void start() throws StartException {
         JDController.getInstance().addControlListener(this);
+        FileCreationManager.getInstance().getEventSender().addListener(this);
         Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
             public void run() {
                 new EDTRunner() {
@@ -960,6 +934,48 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     public void cancel(ExtractionController activeValue) {
         getJobQueue().remove(activeValue);
         fireEvent(new ExtractionEvent(activeValue, ExtractionEvent.Type.CLEANUP));
+    }
+
+    public void onNewFile(Object caller, File[] fileList) {
+
+        if (caller instanceof SingleDownloadController) {
+            DownloadLink link = ((SingleDownloadController) caller).getDownloadLink();
+            if (link.getFilePackage().isPostProcessing() && this.getPluginConfig().getBooleanProperty("ACTIVATED", true) && isLinkSupported(new DownloadLinkArchiveFactory(link))) {
+                Archive archive = buildArchive(new DownloadLinkArchiveFactory(link));
+
+                if (!archive.isActive() && archive.getArchiveFiles().size() > 0 && archive.isComplete()) {
+                    this.addToQueue(archive);
+                }
+            }
+        } else if (caller instanceof ExtractionController && getSettings().isDeepExtractionEnabled()) {
+            try {
+
+                for (File archiveStartFile : fileList) {
+                    FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile);
+                    if (isLinkSupported(fac)) {
+                        Archive ar = buildArchive(fac);
+                        if (ar.isActive() || ar.getArchiveFiles().size() < 1 || !ar.isComplete()) continue;
+                        addToQueue(ar);
+                    }
+                }
+            } catch (Exception e) {
+                Log.exception(e);
+            }
+        } else {
+            try {
+
+                for (File archiveStartFile : fileList) {
+                    FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile);
+                    if (isLinkSupported(fac)) {
+                        Archive ar = buildArchive(fac);
+                        if (ar.isActive() || ar.getArchiveFiles().size() < 1 || !ar.isComplete()) continue;
+                        addToQueue(ar);
+                    }
+                }
+            } catch (Exception e) {
+                Log.exception(e);
+            }
+        }
     }
 
 }

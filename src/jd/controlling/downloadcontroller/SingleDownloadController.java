@@ -50,6 +50,8 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.controlling.FileCreationEvent;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
@@ -709,6 +711,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     llogger.finest("\r\nFinished- " + downloadLink.getLinkStatus());
                     llogger.info("\r\nFinished- " + downloadLink.getName() + "->" + downloadLink.getFileOutput());
                     fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_FINISHED, downloadLink));
+                    FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.NEW_FILES, new File[] { new File(downloadLink.getFileOutput()) }));
                 }
                 /* move download log into global log */
                 llogger.logInto(JDLogger.getLogger());

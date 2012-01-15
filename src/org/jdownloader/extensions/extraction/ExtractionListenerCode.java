@@ -19,10 +19,10 @@ package org.jdownloader.extensions.extraction;
 import java.io.File;
 import java.util.logging.Logger;
 
-import jd.controlling.JDController;
-import jd.event.ControlEvent;
 import jd.gui.UserIO;
 
+import org.jdownloader.controlling.FileCreationEvent;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.translate.T;
 
 /**
@@ -89,7 +89,7 @@ public class ExtractionListenerCode implements ExtractionListener {
             for (File f : controller.getArchiv().getExtractedFiles()) {
                 files[i++] = f;
             }
-            JDController.getInstance().fireControlEvent(new ControlEvent(controller, ControlEvent.CONTROL_ON_FILEOUTPUT, files));
+            FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.NEW_FILES, files));
 
             if (ex.getSettings().isDeleteInfoFilesAfterExtraction()) {
                 File fileOutput = new File(controller.getArchiv().getFirstArchiveFile().getFilePath());
