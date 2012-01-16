@@ -541,7 +541,7 @@ public abstract class PluginForHost extends Plugin {
                      * use this REGEX to cut of following http links,
                      * (?=https?:|$|\r|\n|)
                      */
-                    final DownloadLink link = new DownloadLink(this, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
+                    final DownloadLink link = new DownloadLink(this, null, getHost(), file, true);
                     links.add(link);
                 } catch (Throwable e) {
                     JDLogger.exception(e);

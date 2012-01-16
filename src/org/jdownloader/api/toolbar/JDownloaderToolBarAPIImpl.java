@@ -1,6 +1,7 @@
 package org.jdownloader.api.toolbar;
 
 import java.util.HashMap;
+import java.util.Random;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.jdgui.actions.ActionController;
@@ -27,6 +28,9 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
         ret.put("stopafter", DownloadWatchDog.getInstance().isStopMarkSet());
         ret.put("premium", GeneralSettings.USE_AVAILABLE_ACCOUNTS.isEnabled());
         ret.put("speed", DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage());
+        ret.put("pause", DownloadWatchDog.getInstance().isPaused());
+        ret.put("download_current", new Random().nextInt(100));
+        ret.put("download_complete", 100);
         return ret;
     }
 
@@ -113,5 +117,11 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
             ret.put("msg", e.getMessage());
         }
         return ret;
+    }
+
+    public boolean togglePauseDownloads() {
+        boolean b = DownloadWatchDog.getInstance().isPaused();
+        DownloadWatchDog.getInstance().pauseDownloadWatchDog(!b);
+        return !b;
     }
 }

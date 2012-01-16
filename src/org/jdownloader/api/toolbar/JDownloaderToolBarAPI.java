@@ -20,6 +20,8 @@ public interface JDownloaderToolBarAPI extends RemoteAPIInterface {
 
     public boolean toggleDownloadSpeedLimit();
 
+    public boolean togglePauseDownloads();
+
     public boolean togglePremium();
 
     public boolean toggleClipboardMonitoring();
