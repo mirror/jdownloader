@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2011  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ public class PlunderCom extends PluginForHost {
         String dllink = br.getRegex("<h2>Download</h2>.*?a href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://pearl\\.plunder\\.com/x/.*?/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if ((dl.getConnection().getContentType().contains("html"))) {
             br.followConnection();
             String checklink = br.getURL();
@@ -79,8 +79,8 @@ public class PlunderCom extends PluginForHost {
                 br.getPage(objectMoved);
                 objectMoved = br.getRegex("<h2>Object moved to <a href=\"(.*?)\">here</a>").getMatch(0);
                 if (objectMoved == null) objectMoved = br.getRegex("This document may be found <a HREF=\"(.*?)\"").getMatch(0);
-                if (objectMoved == null) continue;
-                downloadLink.setUrlDownload(objectMoved);
+                if (objectMoved != null) continue;
+                downloadLink.setUrlDownload(br.getURL());
                 break;
             }
         }
