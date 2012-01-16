@@ -78,9 +78,14 @@ public class DupCoIl extends PluginForHost {
         String extension = br.getRegex("סוג הקובץ <br> <b>(.*?)</b>").getMatch(0);
         if (filename == null || extension == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String filesize = br.getRegex("גודל קובץ <br> <b>(.*?)</b>").getMatch(0);
+        // seems like the ; is missing to be a valid unicode html expression
+        // (&#NUMBER;)
+        filename = filename.replaceAll("\\&\\#(\\d+)", "&#$1;");
+
         filename = filename + "." + extension;
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
+
         return AvailableStatus.TRUE;
     }
 
