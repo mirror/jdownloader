@@ -69,8 +69,9 @@ public class ExtremeTubeCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().equals("http://www.extremetube.com/") || !br.containsHTML("\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1 class=\"title-video-box float-left\" title=\"(.*?)\"").getMatch(0);
+        String filename = br.getRegex("<h1 class=\"title\\-video\\-box float\\-left\" title=\"(.*?)\"").getMatch(0);
         DLLINK = br.getRegex("flashvars\\.video_url = \\'(http.*?)\\'").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("flashvars\" .+video\\_url=(.*?)\\&amp\\;").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
