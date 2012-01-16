@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2011  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -124,8 +124,7 @@ public class UploadKingCom extends PluginForHost {
             }
         }
         if (dllink == null) {
-            if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.uploadkingcom.temporaryunavailable", TEMPORARYUNAVAILABLEUSERTEXT), 60 * 60 * 1000l);
-            if (br.containsHTML("(>You are currently downloading|this download, before starting another\\.</font>)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
+            handleErrors(br);
             final String rcID = br.getRegex("Recaptcha\\.create\\(\"([^/<>\"]+)\"").getMatch(0);
             if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             final Form cForm = new Form();
@@ -155,6 +154,7 @@ public class UploadKingCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            handleErrors(br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("freelink", dllink);
@@ -236,6 +236,13 @@ public class UploadKingCom extends PluginForHost {
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
+    }
+
+    private void handleErrors(Browser br) throws Exception {
+        logger.info("Handling errors...");
+        if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.uploadkingcom.temporaryunavailable", TEMPORARYUNAVAILABLEUSERTEXT), 60 * 60 * 1000l);
+        if (br.containsHTML("(>You are currently downloading|this download, before starting another\\.</font>)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
+        if (br.containsHTML(">Download limit exceeded\\. You have downloaded \\d+ GB during the last \\d+ hours\\, please wait \\d+ minutes\\.<")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download limit reached", 342 * 60 * 1000l);
     }
 
     @Override
