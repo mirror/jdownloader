@@ -121,6 +121,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         LinkCollectingJob job = new LinkCollectingJob(urls);
         job.setCustomSourceUrl(source);
         job.setCustomComment(comment);
+        job.setPackageName(HttpRequest.getParameterbyKey(request, "package"));
         job.setExtractPassword(passwords);
         LinkCollector.getInstance().addCrawlerJob(job);
     }

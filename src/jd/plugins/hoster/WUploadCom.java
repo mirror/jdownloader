@@ -361,7 +361,7 @@ public class WUploadCom extends PluginForHost implements ControlListener {
                 if (Long.parseLong(countDownDelay) > 300) {
 
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay) * 1001l); }
-                this.sleep(Long.parseLong(countDownDelay) * 1000, downloadLink);
+                this.sleep(Long.parseLong(countDownDelay + 5) * 1000, downloadLink);
                 final String tm = ajax.getRegex("name=\\'tm\\' value=\\'(.*?)\\' />").getMatch(0);
                 final String tm_hash = ajax.getRegex("name=\\'tm_hash\\' value='(.*?)' />").getMatch(0);
                 final Form form = new Form();

@@ -334,6 +334,7 @@ public class Megauploadcom extends PluginForHost {
             try {
                 this.login(account, false);
             } catch (final PluginException e) {
+                logger.info("Account got disabled(AccountCheck)");
                 account.setValid(false);
                 return ai;
             }
@@ -960,8 +961,8 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public void login(final Account account, final boolean cookielogin) throws IOException, PluginException {
-        String user = account.getStringProperty("user", null);
         synchronized (LOGINLOCK) {
+            String user = account.getStringProperty("user", null);
             this.antiJDBlock(this.br);
             if (cookielogin && user != null) {
                 this.br.setCookie("http://" + Megauploadcom.wwwWorkaround + "megaupload.com", "l", "en");
@@ -985,6 +986,7 @@ public class Megauploadcom extends PluginForHost {
                 if (user == null) {
                     account.setProperty("ispremium", false);
                     account.setProperty("typeknown", false);
+                    logger.info("Account got disabled");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }

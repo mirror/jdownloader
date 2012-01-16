@@ -83,7 +83,7 @@ public class DupCoIl extends PluginForHost {
         filename = filename.replaceAll("\\&\\#(\\d+)", "&#$1;");
 
         filename = filename + "." + extension;
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
 
         return AvailableStatus.TRUE;
