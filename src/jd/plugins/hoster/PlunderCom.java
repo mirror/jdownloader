@@ -79,7 +79,7 @@ public class PlunderCom extends PluginForHost {
                 br.getPage(objectMoved);
                 objectMoved = br.getRegex("<h2>Object moved to <a href=\"(.*?)\">here</a>").getMatch(0);
                 if (objectMoved == null) objectMoved = br.getRegex("This document may be found <a HREF=\"(.*?)\"").getMatch(0);
-                if (objectMoved != null) continue;
+                if (objectMoved == null) continue;
                 downloadLink.setUrlDownload(objectMoved);
                 break;
             }
@@ -87,8 +87,8 @@ public class PlunderCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (br.getURL().contains("/search/?f=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)download \\- Plunder").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h2>Download</h2>(.*?)\\(").getMatch(0);
+        String filename = br.getRegex("<title>[\r\n\t]+(.*?) download \\- Plunder").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h2>Download</h2>(.*?) \\(").getMatch(0);
         String filesize = br.getRegex("<h2>Download</h2>.*?\\((.*?)\\)<BR").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
