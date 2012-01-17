@@ -85,10 +85,12 @@ public class EsnipsCom extends PluginForHost {
         /** Server sends us internal filenames, we want nice filenames */
         final String tempFname = getFileNameFromHeader(dl.getConnection());
         String ext = tempFname.substring(tempFname.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            downloadLink.setFinalFileName(tempFname);
-        } else {
-            downloadLink.setFinalFileName(downloadLink.getName() + ext);
+        if (downloadLink.getFinalFileName() == null) {
+            if (ext == null || ext.length() > 5) {
+                downloadLink.setFinalFileName(tempFname);
+            } else {
+                downloadLink.setFinalFileName(downloadLink.getName() + ext);
+            }
         }
         dl.startDownload();
     }

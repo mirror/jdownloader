@@ -244,6 +244,7 @@ public class UploadStationCom extends PluginForHost {
         br.getHeaders().put("User-Agent", agent);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(FILEOFFLINE)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("maintenance.html")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server maintenance", 30 * 60 * 1000l);
         handleErrors(br, downloadLink);
         final String fileId = br.getRegex("uploadstation\\.com/file/([a-zA-Z0-9]+)").getMatch(0);
         br.setFollowRedirects(false);
@@ -337,6 +338,7 @@ public class UploadStationCom extends PluginForHost {
             logger.warning("dllink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getResponseCode() == 404) {
             logger.info("got a 404 error...");
@@ -363,11 +365,13 @@ public class UploadStationCom extends PluginForHost {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
             final String dllink = br.getRedirectLocation();
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("maintenance.html")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server maintenance", 30 * 60 * 1000l);
             if (dllink == null) {
                 if (br.containsHTML(FILEOFFLINE)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
