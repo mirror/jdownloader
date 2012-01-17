@@ -66,7 +66,7 @@ public class PornBananaCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(The page you are looking for is not available|Return to the <a href=\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("VideoTitleSpan\">(.*?)</h1>").getMatch(0);
-        if (filename == null) br.getRegex("<title>[\r\n\t ]+(.*?)[\r\n\t ]+</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>[\r\n\t ]+(.*?)[\r\n\t ]+</title>").getMatch(0);
         DLLINK = br.getRegex("var _regularVideoUrl = \\'(http://.*?)\\';").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("\\'(http://media\\.pornbanana\\.com/s/\\d+/\\d+/.*?)\\'").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
