@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2011  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "esnips.com" }, urls = { "http://(www\\.)?esnips\\.com/((ns)?doc/[a-z0-9\\-]+|displayimage\\.php\\?pid=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "esnips.com" }, urls = { "http://(www\\.)?esnips\\.com/((ns)?doc/[a-z0-9\\-]+|displayimage\\.php\\?[\\w\\&\\=]+)" }, flags = { 0 })
 public class EsnipsCom extends PluginForHost {
 
     public EsnipsCom(PluginWrapper wrapper) {
@@ -46,12 +46,14 @@ public class EsnipsCom extends PluginForHost {
         Browser br2 = new Browser();
         br2.setFollowRedirects(false);
         link.setUrlDownload(link.getDownloadURL().replace("esnips.com/nsdoc", "esnips.com/doc"));
-        if (!new Regex(link.getDownloadURL(), "esnips\\.com/displayimage\\.php\\?pid=\\d+").matches()) {
+        if (!new Regex(link.getDownloadURL(), "esnips\\.com/displayimage\\.php").matches()) {
             br2.getPage(link.getDownloadURL());
             final String newUrl = br2.getRedirectLocation();
             if (newUrl != null) link.setUrlDownload(newUrl);
         }
-        link.setUrlDownload(link.getDownloadURL() + "&lang=english");
+        if (!link.getDownloadURL().contains("&lang=english")) {
+            link.setUrlDownload(link.getDownloadURL() + "&lang=english");
+        }
     }
 
     @Override

@@ -54,8 +54,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FileVelocityCom extends PluginForHost {
 
     /*
-     * DEV NOTES: - no https. - allows total number of 10 connections (1 dl) for
-     * premium. - free resumes though they say it doesn't.
+     * DEV NOTES: 
+     * - no https. 
+     * - allows total number of 200 connections for premium. 
+     * - free resumes though they say it doesn't.
      */
 
     private String              correctedBR         = "";
@@ -533,7 +535,7 @@ public class FileVelocityCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -20);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -592,7 +594,7 @@ public class FileVelocityCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return 10;
     }
 
     @Override
