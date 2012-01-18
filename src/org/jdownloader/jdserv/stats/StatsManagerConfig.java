@@ -19,7 +19,7 @@ public interface StatsManagerConfig extends ConfigInterface {
     @DefaultFactory(AnonymIDCreater.class)
     String getAnonymID();
 
-    public void setAnonymID();
+    public void setAnonymID(String id);
 
     @DefaultBooleanValue(false)
     boolean isFreshInstall();

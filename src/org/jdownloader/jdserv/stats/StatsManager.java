@@ -31,7 +31,6 @@ public class StatsManager {
         config.setFreshInstall(false);
         id = config.getAnonymID();
 
-        System.out.println(id);
         queue = new Queue("StatsManager Queue") {
         };
 
