@@ -38,45 +38,51 @@ import org.jdownloader.settings.GeneralSettings;
 
 public class LinkCrawler implements IOPermission {
 
-    private PluginForHost                 directHTTP               = null;
-    private ArrayList<CrawledLink>        crawledLinks             = new ArrayList<CrawledLink>();
-    private AtomicInteger                 crawledLinksCounter      = new AtomicInteger(0);
-    private ArrayList<CrawledLink>        filteredLinks            = new ArrayList<CrawledLink>();
-    private AtomicInteger                 filteredLinksCounter     = new AtomicInteger(0);
-    private AtomicInteger                 crawler                  = new AtomicInteger(0);
-    private static AtomicInteger          CRAWLER                  = new AtomicInteger(0);
-    private HashSet<String>               duplicateFinderContainer = new HashSet<String>();
-    private HashSet<String>               duplicateFinderCrawler   = new HashSet<String>();
-    private HashSet<String>               duplicateFinderFinal     = new HashSet<String>();
-    private HashSet<String>               duplicateFinderDeep      = new HashSet<String>();
-    private LinkCrawlerHandler            handler                  = null;
-    private static ThreadPoolExecutor     threadPool               = null;
+    private PluginForHost               directHTTP                  = null;
+    private ArrayList<CrawledLink>      crawledLinks                = new ArrayList<CrawledLink>();
+    private AtomicInteger               crawledLinksCounter         = new AtomicInteger(0);
+    private ArrayList<CrawledLink>      filteredLinks               = new ArrayList<CrawledLink>();
+    private AtomicInteger               filteredLinksCounter        = new AtomicInteger(0);
+    private AtomicInteger               crawler                     = new AtomicInteger(0);
+    private static AtomicInteger        CRAWLER                     = new AtomicInteger(0);
+    private HashSet<String>             duplicateFinderContainer    = new HashSet<String>();
+    private HashSet<String>             duplicateFinderCrawler      = new HashSet<String>();
+    private HashSet<String>             duplicateFinderFinal        = new HashSet<String>();
+    private HashSet<String>             duplicateFinderDeep         = new HashSet<String>();
+    private LinkCrawlerHandler          handler                     = null;
+    private static ThreadPoolExecutor   threadPool                  = null;
 
-    private HashSet<String>               captchaBlockedHoster     = new HashSet<String>();
-    private boolean                       captchaBlockedAll        = false;
-    private LinkCrawlerFilter             filter                   = null;
-    private volatile boolean              allowCrawling            = true;
-    private AtomicInteger                 crawlerGeneration        = new AtomicInteger(0);
-    private LinkCrawler                   parentCrawler            = null;
-    private final long                    created;
+    private HashSet<String>             captchaBlockedHoster        = new HashSet<String>();
+    private boolean                     captchaBlockedAll           = false;
+    private LinkCrawlerFilter           filter                      = null;
+    private volatile boolean            allowCrawling               = true;
+    private AtomicInteger               crawlerGeneration           = new AtomicInteger(0);
+    private LinkCrawler                 parentCrawler               = null;
+    private final long                  created;
 
-    public static final String            ALLOW_MERGE              = "ALLOW_MERGE";
-    public static final UniqueSessionID   PERMANENT_OFFLINE_ID     = new UniqueSessionID();
+    public static final String          ALLOW_MERGE                 = "ALLOW_MERGE";
+    public static final UniqueSessionID PERMANENT_OFFLINE_ID        = new UniqueSessionID();
+    private boolean                     doDuplicateFinderFinalCheck = true;
+
+    public boolean isDoDuplicateFinderFinalCheck() {
+        if (parentCrawler != null) parentCrawler.isDoDuplicateFinderFinalCheck();
+        return doDuplicateFinderFinalCheck;
+    }
 
     /*
      * customized comparator we use to prefer faster decrypter plugins over
      * slower ones
      */
-    private static Comparator<Runnable>   comparator               = new Comparator<Runnable>() {
+    private static Comparator<Runnable>   comparator  = new Comparator<Runnable>() {
 
-                                                                       public int compare(Runnable o1, Runnable o2) {
-                                                                           if (o1 == o2) return 0;
-                                                                           long l1 = ((LinkCrawlerRunnable) o1).getAverageRuntime();
-                                                                           long l2 = ((LinkCrawlerRunnable) o2).getAverageRuntime();
-                                                                           return (l1 < l2) ? -1 : ((l1 == l2) ? 0 : 1);
-                                                                       }
+                                                          public int compare(Runnable o1, Runnable o2) {
+                                                              if (o1 == o2) return 0;
+                                                              long l1 = ((LinkCrawlerRunnable) o1).getAverageRuntime();
+                                                              long l2 = ((LinkCrawlerRunnable) o2).getAverageRuntime();
+                                                              return (l1 < l2) ? -1 : ((l1 == l2) ? 0 : 1);
+                                                          }
 
-                                                                   };
+                                                      };
 
     static {
         int maxThreads = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getMaxThreads(), 1);
@@ -119,17 +125,17 @@ public class LinkCrawler implements IOPermission {
         threadPool.allowCoreThreadTimeOut(true);
     }
 
-    private static LinkCrawlerEventSender EVENTSENDER              = new LinkCrawlerEventSender();
+    private static LinkCrawlerEventSender EVENTSENDER = new LinkCrawlerEventSender();
 
     public static LinkCrawlerEventSender getEventSender() {
         return EVENTSENDER;
     }
 
     public LinkCrawler() {
-        this(true);
+        this(true, true);
     }
 
-    public LinkCrawler(boolean connectParentCrawler) {
+    public LinkCrawler(boolean connectParentCrawler, boolean avoidDuplicates) {
         setHandler(defaulHandlerFactory());
         setFilter(defaultFilterFactory());
         if (connectParentCrawler && Thread.currentThread() instanceof LinkCrawlerThread) {
@@ -145,6 +151,11 @@ public class LinkCrawler implements IOPermission {
             }
         }
         this.created = System.currentTimeMillis();
+        this.doDuplicateFinderFinalCheck = avoidDuplicates;
+    }
+
+    public LinkCrawler(boolean connectParentCrawler) {
+        this(true, true);
     }
 
     public long getCreated() {
@@ -935,8 +946,10 @@ public class LinkCrawler implements IOPermission {
         CrawledLink origin = link.getOriginLink();
         /* specialHandling: Crypted A - > B - > Final C , and A equals C */
         boolean specialHandling = (origin != link) && (origin.getLinkID().equals(link.getLinkID()));
-        synchronized (duplicateFinderFinal) {
-            if (!duplicateFinderFinal.add(link.getLinkID()) && !specialHandling) { return; }
+        if (isDoDuplicateFinderFinalCheck()) {
+            synchronized (duplicateFinderFinal) {
+                if (!duplicateFinderFinal.add(link.getLinkID()) && !specialHandling) { return; }
+            }
         }
         if (isCrawledLinkFiltered(link) == false) {
             /* link is not filtered, so we can process it normally */
