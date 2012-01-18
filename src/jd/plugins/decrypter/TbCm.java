@@ -572,7 +572,7 @@ public class TbCm extends PluginForDecrypt {
         final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
         try {
             if (plugin != null) {
-                ((jd.plugins.hoster.Youtube) plugin).login(account, this.br, false);
+                ((jd.plugins.hoster.Youtube) plugin).login(account, this.br, false, false);
             } else {
                 return false;
             }

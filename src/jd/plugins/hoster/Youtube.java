@@ -22,6 +22,7 @@ import java.util.Map;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -121,7 +122,7 @@ public class Youtube extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            this.login(account, this.br, true);
+            this.login(account, this.br, true, true);
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
@@ -168,7 +169,7 @@ public class Youtube extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        this.login(account, this.br, false);
+        this.login(account, this.br, false, false);
         this.prem = true;
         /* we now have to get fresh links */
         this.requestFileInformation(downloadLink);
@@ -184,7 +185,7 @@ public class Youtube extends PluginForHost {
         }
     }
 
-    public void login(final Account account, Browser br, boolean refresh) throws Exception {
+    public void login(final Account account, Browser br, boolean refresh, boolean showDialog) throws Exception {
         synchronized (Youtube.lock) {
             if (br == null) {
                 br = this.br;
@@ -244,9 +245,14 @@ public class Youtube extends PluginForHost {
                 }
                 /* second call to google */
                 br.getPage(br.getRedirectLocation());
+                if (br.containsHTML("Google will check if this")) {
+                    if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Youtube Login Error", "Please logout and login again at youtube.com, account check needed!");
+                    account.setValid(false);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 String setCookies[] = br.getRegex("DOMAIN_SETTINGS.*?uri: '(https.*?)'").getColumn(0);
                 String signIn = br.getRegex("CONTINUE_URL = '(http.*?)'").getMatch(0);
-                if (setCookies == null || signIn == null || br.getCookie("http://www.youtube.com", "GEO") == null) {
+                if (setCookies == null || signIn == null) {
                     account.setValid(false);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -254,8 +260,10 @@ public class Youtube extends PluginForHost {
                     br.cloneBrowser().getPage(unescape(page));
                 }
                 br.getPage(unescape(signIn));
+                if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
                 br.getPage("http://www.youtube.com/index?hl=en");
-                if (br.getCookie("http://www.youtube.com", "LOGIN_INFO") == null || br.getCookie("http://www.youtube.com", "GEO") == null) {
+                if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+                if (br.getCookie("http://www.youtube.com", "LOGIN_INFO") == null) {
                     account.setValid(false);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }

@@ -270,6 +270,10 @@ public class FileServeCom extends PluginForHost {
         }
         if (this.dl.getConnection().getContentType().contains("html")) {
             logger.info("The finallink doesn't seem to be a file...");
+            try {
+                logger.info(dl.getRequest().printHeaders());
+            } catch (final Throwable e) {
+            }
             this.br.followConnection();
             this.handleErrors(br);
             logger.warning("Unexpected error at the last step...");

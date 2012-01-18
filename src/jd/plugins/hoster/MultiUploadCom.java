@@ -27,6 +27,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiupload.com" }, urls = { "http://(www\\.)?multiuploaddecrypted\\.com/([A-Z0-9]{2}_[A-Z0-9]+|[0-9A-Z]+)" }, flags = { 0 })
 public class MultiUploadCom extends PluginForHost {
 
+    private String domain = null;
+
     public MultiUploadCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,6 +48,15 @@ public class MultiUploadCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            /* domain redirection */
+            domain = new Regex(br.getRedirectLocation(), "http.*?//.*?(multiupload\\..*?)/").getMatch(0);
+            if (domain == null) {
+                domain = "multiupload.com";
+            }
+            br.getPage(br.getRedirectLocation());
+        }
+        if (domain == null) domain = "multiupload.com";
         if (br.containsHTML(">Unfortunately, the link you have clicked is not available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex match = br.getRegex("font\\-size:19px; color:#FFFFFF;\">([^/<>\"]+)<font style=\"color:#002B55;\">\\(([^/<>\"]+)\\)</font></div>");
         if (match.count() == 0) match = br.getRegex("width:788px; text\\-align:center; font\\-size:19px; color:#000000;\">([^/<>\"]+)<font style=\"color:#666666;\">\\(([^/<>\"]+)\\)</font></div>");
@@ -82,8 +93,8 @@ public class MultiUploadCom extends PluginForHost {
             if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             final Form cForm = new Form();
             cForm.setMethod(MethodType.POST);
-            final String fid = new Regex(link.getDownloadURL(), "multiupload\\.com/(.+)").getMatch(0);
-            final String action = "http://www.multiupload.com/" + fid + "?c=" + fid;
+            final String fid = new Regex(link.getDownloadURL(), "multiupload\\.[a-z]{2,3}/(.+)").getMatch(0);
+            final String action = "http://www." + domain + "/" + fid + "?c=" + fid;
             cForm.setAction(action);
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
