@@ -135,6 +135,7 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
 
             @Override
             protected void runInEDT() {
+                if (lbl == null) return;
                 if (found.size() == 0) {
                     lbl.setText(_GUI._.TestWaitDialog_runInEDTnothing_found());
                 } else {

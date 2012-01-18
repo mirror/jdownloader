@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.logging.Level;
 
 import jd.controlling.IOEQ;
 import jd.controlling.linkchecker.LinkChecker;
@@ -78,8 +79,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             linkChecker.setLinkCheckHandler(this);
             setCrawlerFilter(LinkFilterController.getInstance());
             setPackagizer(PackagizerController.getInstance());
-            setArchiver((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension());
-
+            try {
+                setArchiver((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension());
+            } catch (Throwable e) {
+                Log.exception(Level.SEVERE, e);
+            }
         }
     }
 
@@ -365,15 +369,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             @Override
             public boolean handleException(Throwable e) {
-                /* remove dupeCheck map item in case something went wrong */
-                dupeCheckMap.remove(link.getLinkID());
+
                 return super.handleException(e);
             }
 
             @Override
             protected Void run() throws RuntimeException {
-                /* update dupeCheck map */
-                if (!dupeCheckMap.add(link.getLinkID())) return null;
 
                 PackageInfo dpi = link.getDesiredPackageInfo();
                 UniqueSessionID uID = null;
@@ -405,66 +406,79 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
                 }
                 String identifier = packageID + "_" + packageName + "_" + downloadFolder;
-                CrawledPackage pkg = packageMap.get(identifier);
-                if (pkg == null) {
-                    if (LinkCrawler.PERMANENT_OFFLINE_ID == uID) {
-                        /* these links will never come back online */
-                        if (permanentofflinePackage == null || permanentofflinePackage.getChildren().size() == 0) {
-                            permanentofflinePackage = new CrawledPackage();
-                            permanentofflinePackage.setCreated(link.getCreated());
-                            permanentofflinePackage.setName(_GUI._.Permanently_Offline_Package());
-                        }
-                        List<CrawledLink> add = new ArrayList<CrawledLink>(1);
-                        add.add(link);
-                        LinkCollector.this.addmoveChildren(permanentofflinePackage, add, -1);
-                    } else if (link.getLinkState() == LinkState.OFFLINE && LinkgrabberSettings.OFFLINE_PACKAGE_ENABLED.getValue()) {
-                        if (offlinePackage == null || offlinePackage.getChildren().size() == 0) {
-                            offlinePackage = new OfflineCrawledPackage();
-                            offlinePackage.setCreated(link.getCreated());
-                            offlinePackage.setName(_JDT._.LinkCollector_addCrawledLink_offlinepackage());
-                        }
 
-                        ArrayList<CrawledLink> list = offlineMap.get(identifier);
-                        if (list == null) {
-                            list = new ArrayList<CrawledLink>();
-                            offlineMap.put(identifier, list);
-                        }
-                        list.add(link);
-                        List<CrawledLink> add = new ArrayList<CrawledLink>(1);
-                        add.add(link);
-                        LinkCollector.this.addmoveChildren(offlinePackage, add, -1);
-                    } else if (LinkgrabberSettings.VARIOUS_PACKAGE_LIMIT.getValue() > 0) {
-                        if (variousPackage == null || variousPackage.getChildren().size() == 0) {
-                            variousPackage = new VariousCrawledPackage();
-                            variousPackage.setCreated(link.getCreated());
-                            variousPackage.setExpanded(true);
-                            variousPackage.setCreated(link.getCreated());
-                            variousPackage.setName(_JDT._.LinkCollector_addCrawledLink_variouspackage());
-                        }
-                        ArrayList<CrawledLink> list = variousMap.get(identifier);
-                        if (list == null) {
-                            list = new ArrayList<CrawledLink>();
-                            variousMap.put(identifier, list);
-                        }
-                        list.add(link);
-                        if (list.size() > LinkgrabberSettings.VARIOUS_PACKAGE_LIMIT.getValue()) {
-                            newPackage(null, packageName, downloadFolder, identifier);
-                        } else {
+                try {
+
+                    /* update dupeCheck map */
+                    if (!dupeCheckMap.add(link.getLinkID())) {
+                        //
+                        return null;
+                    }
+                    CrawledPackage pkg = packageMap.get(identifier);
+                    if (pkg == null) {
+                        if (LinkCrawler.PERMANENT_OFFLINE_ID == uID) {
+                            /* these links will never come back online */
+                            if (permanentofflinePackage == null || permanentofflinePackage.getChildren().size() == 0) {
+                                permanentofflinePackage = new CrawledPackage();
+                                permanentofflinePackage.setCreated(link.getCreated());
+                                permanentofflinePackage.setName(_GUI._.Permanently_Offline_Package());
+                            }
                             List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                             add.add(link);
-                            LinkCollector.this.addmoveChildren(variousPackage, add, -1);
+                            LinkCollector.this.addmoveChildren(permanentofflinePackage, add, -1);
+                        } else if (link.getLinkState() == LinkState.OFFLINE && LinkgrabberSettings.OFFLINE_PACKAGE_ENABLED.getValue()) {
+                            if (offlinePackage == null || offlinePackage.getChildren().size() == 0) {
+                                offlinePackage = new OfflineCrawledPackage();
+                                offlinePackage.setCreated(link.getCreated());
+                                offlinePackage.setName(_JDT._.LinkCollector_addCrawledLink_offlinepackage());
+                            }
+
+                            ArrayList<CrawledLink> list = offlineMap.get(identifier);
+                            if (list == null) {
+                                list = new ArrayList<CrawledLink>();
+                                offlineMap.put(identifier, list);
+                            }
+                            list.add(link);
+                            List<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                            add.add(link);
+                            LinkCollector.this.addmoveChildren(offlinePackage, add, -1);
+                        } else if (LinkgrabberSettings.VARIOUS_PACKAGE_LIMIT.getValue() > 0) {
+                            if (variousPackage == null || variousPackage.getChildren().size() == 0) {
+                                variousPackage = new VariousCrawledPackage();
+                                variousPackage.setCreated(link.getCreated());
+                                variousPackage.setExpanded(true);
+                                variousPackage.setCreated(link.getCreated());
+                                variousPackage.setName(_JDT._.LinkCollector_addCrawledLink_variouspackage());
+                            }
+                            ArrayList<CrawledLink> list = variousMap.get(identifier);
+                            if (list == null) {
+                                list = new ArrayList<CrawledLink>();
+                                variousMap.put(identifier, list);
+                            }
+                            list.add(link);
+                            if (list.size() > LinkgrabberSettings.VARIOUS_PACKAGE_LIMIT.getValue()) {
+                                newPackage(null, packageName, downloadFolder, identifier);
+                            } else {
+                                List<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                                add.add(link);
+                                LinkCollector.this.addmoveChildren(variousPackage, add, -1);
+                            }
+                        } else {
+                            ArrayList<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                            add.add(link);
+                            newPackage(add, packageName, downloadFolder, identifier);
                         }
                     } else {
-                        ArrayList<CrawledLink> add = new ArrayList<CrawledLink>(1);
+                        List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                         add.add(link);
-                        newPackage(add, packageName, downloadFolder, identifier);
+                        LinkCollector.this.addmoveChildren(pkg, add, -1);
                     }
-                } else {
-                    List<CrawledLink> add = new ArrayList<CrawledLink>(1);
-                    add.add(link);
-                    LinkCollector.this.addmoveChildren(pkg, add, -1);
+
+                    return null;
+                } catch (RuntimeException e) {
+                    dupeCheckMap.remove(link.getLinkID());
+                    throw e;
                 }
-                return null;
             }
 
             public void newPackage(final ArrayList<CrawledLink> links, String packageName, String downloadFolder, String identifier) {

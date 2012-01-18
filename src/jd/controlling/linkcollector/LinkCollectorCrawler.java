@@ -5,7 +5,7 @@ import jd.controlling.linkcrawler.LinkCrawler;
 public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorListener {
 
     public LinkCollectorCrawler() {
-        super(true, false);
+        super(true, true);
     }
 
     public void onLinkCollectorEvent(LinkCollectorEvent event) {

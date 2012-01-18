@@ -72,8 +72,8 @@ public class AddLinksProgress extends AbstractDialog<Object> {
         p.add(progress, "height 40!,width 40!,spany 2");
         p.add(header = new JLabel(), "spanx");
         SwingUtils.toBold(header);
-
-        header.setText(_GUI._.AddLinksProgress_layoutDialogContent_header_(job.getText().substring(0, Math.min(45, job.getText().length()))));
+        String stz = getSearchInText();
+        header.setText(_GUI._.AddLinksProgress_layoutDialogContent_header_(stz.substring(0, Math.min(45, stz.length()))));
         p.add(label(_GUI._.AddLinksProgress_layoutDialogContent_duration()));
 
         p.add(duration = new JLabel(), "width 50!");
@@ -119,6 +119,10 @@ public class AddLinksProgress extends AbstractDialog<Object> {
         updateTimer.start();
 
         return p;
+    }
+
+    protected String getSearchInText() {
+        return job.getText();
     }
 
     @Override

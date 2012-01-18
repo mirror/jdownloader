@@ -1,9 +1,13 @@
 package org.jdownloader.api.toolbar;
 
+import java.awt.MouseInfo;
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
+
+import javax.swing.JFrame;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollectingJob;
@@ -12,6 +16,9 @@ import jd.controlling.linkcrawler.BrokenCrawlerHandler;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
+import jd.gui.UIConstants;
+import jd.gui.UserIF;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 
@@ -19,6 +26,11 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.views.linkgrabber.actions.AddLinksProgress;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
@@ -100,7 +112,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
             String index = HttpRequest.getParameterbyKey(request, "index");
             String data = HttpRequest.getParameterbyKey(request, "data");
             String sessionID = HttpRequest.getParameterbyKey(request, "sessionid");
-            String url = HttpRequest.getParameterbyKey(request, "url");
+            final String url = HttpRequest.getParameterbyKey(request, "url");
             boolean lastChunk = "true".equalsIgnoreCase(HttpRequest.getParameterbyKey(request, "lastchunk"));
             if (url == null) { throw new WTFException("No url?!"); }
             if (sessionID == null) { throw new WTFException("No sessionID?!"); }
@@ -157,10 +169,9 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
                              * if the url cannot be handled by a plugin, we
                              * check the dom
                              */
-                            LinkCollectingJob job = new LinkCollectingJob(dom);
-                            job.setCustomSourceUrl(link.getURL());
-                            LinkCollector.getInstance().addCrawlerJob(job);
+                            addCompleteDom(url, dom, link);
                         }
+
                     });
 
                     link.setBrokenCrawlerHandler(new BrokenCrawlerHandler() {
@@ -170,16 +181,31 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
                              * if the url cannot be handled because a plugin is
                              * broken, we check the dom
                              */
-                            LinkCollectingJob job = new LinkCollectingJob(dom);
-                            job.setCustomSourceUrl(link.getURL());
-                            LinkCollector.getInstance().addCrawlerJob(job);
+                            addCompleteDom(url, dom, link);
+
                         }
                     });
                     ArrayList<CrawledLink> links = new ArrayList<CrawledLink>();
                     links.add(link);
                     LinkCollector.getInstance().addCrawlerJob(links);
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            try {
+                                JDGui.getInstance().requestPanel(UserIF.Panels.LINKGRABBER, null);
+                                if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) {
+                                    JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
+                                }
+                            } catch (Throwable e) {
+
+                            }
+                        }
+                    };
                 }
+
             }
+
             ret.put("status", true);
             ret.put("msg", (Object) null);
         } catch (final Throwable e) {
@@ -188,6 +214,49 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
             ret.put("msg", e.getMessage());
         }
         return ret;
+    }
+
+    public void addCompleteDom(final String url, final String dom, CrawledLink link) {
+
+        final LinkCollectingJob job = new LinkCollectingJob(dom);
+        job.setCustomSourceUrl(url);
+        AddLinksProgress d = new AddLinksProgress(job) {
+            protected String getSearchInText() {
+
+                return url;
+            }
+
+            protected Point getForcedLocation() {
+                Point loc = MouseInfo.getPointerInfo().getLocation();
+                loc.x -= getPreferredSize().width / 2;
+                loc.y += 30;
+                return loc;
+
+            }
+
+        };
+
+        if (d.isHiddenByDontShowAgain()) {
+            Thread thread = new Thread("AddLinksDialog") {
+                public void run() {
+                    LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(job);
+
+                    lc.waitForCrawling();
+                    System.out.println("JOB DONE: " + lc.crawledLinksFound());
+
+                }
+            };
+
+            thread.start();
+        } else {
+            try {
+                Dialog.getInstance().showDialog(d);
+            } catch (DialogClosedException e) {
+                e.printStackTrace();
+            } catch (DialogCanceledException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public boolean togglePauseDownloads() {

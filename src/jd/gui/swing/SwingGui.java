@@ -18,6 +18,8 @@ package jd.gui.swing;
 
 import java.awt.Toolkit;
 import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.awt.event.WindowListener;
@@ -26,6 +28,7 @@ import java.awt.event.WindowStateListener;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 
 import jd.JDInitFlags;
 import jd.controlling.JDLogger;
@@ -111,7 +114,23 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
 
     public SwingGui(final String string) {
         mainFrame = new JFrame(string) {
+
+            public void toFront() {
+                super.toFront();
+                setAlwaysOnTop(true);
+                Timer disableAlwaysonTop = new Timer(1000, new ActionListener() {
+
+                    public void actionPerformed(ActionEvent e) {
+                        setAlwaysOnTop(false);
+                    }
+                });
+                disableAlwaysonTop.setInitialDelay(1000);
+                disableAlwaysonTop.setRepeats(false);
+                disableAlwaysonTop.start();
+            }
+
             public void setVisible(boolean b) {
+
                 // if we hide a frame which is locked by an active modal dialog,
                 // we get in problems. avoid this!
                 if (!b) {
