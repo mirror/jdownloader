@@ -162,22 +162,24 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             @Override
             protected void generalCrawledLinkModifier(CrawledLink link) {
                 LinkCollectingJob job = link.getSourceJob();
-                if (link.getDownloadLink() != null) {
-                    if (job.getCustomSourceUrl() != null) link.getDownloadLink().setBrowserUrl(job.getCustomSourceUrl());
-                    if (job.getCustomComment() != null) link.getDownloadLink().setComment(job.getCustomComment());
-                }
-                if (job.getOutputFolder() != null && (link.getDesiredPackageInfo() == null || link.getDesiredPackageInfo().getDestinationFolder() == null)) {
-                    if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
-                    link.getDesiredPackageInfo().setDestinationFolder(job.getOutputFolder().getAbsolutePath());
-                }
-                if (!StringUtils.isEmpty(job.getPackageName()) && (link.getDesiredPackageInfo() == null || StringUtils.isEmpty(link.getDesiredPackageInfo().getName()))) {
-                    if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
-                    link.getDesiredPackageInfo().setName(job.getPackageName());
-                }
+                if (job != null) {
+                    if (link.getDownloadLink() != null) {
+                        if (job.getCustomSourceUrl() != null) link.getDownloadLink().setBrowserUrl(job.getCustomSourceUrl());
+                        if (job.getCustomComment() != null) link.getDownloadLink().setComment(job.getCustomComment());
+                    }
+                    if (job.getOutputFolder() != null && (link.getDesiredPackageInfo() == null || link.getDesiredPackageInfo().getDestinationFolder() == null)) {
+                        if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
+                        link.getDesiredPackageInfo().setDestinationFolder(job.getOutputFolder().getAbsolutePath());
+                    }
+                    if (!StringUtils.isEmpty(job.getPackageName()) && (link.getDesiredPackageInfo() == null || StringUtils.isEmpty(link.getDesiredPackageInfo().getName()))) {
+                        if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
+                        link.getDesiredPackageInfo().setName(job.getPackageName());
+                    }
 
-                if (!StringUtils.isEmpty(job.getExtractPassword())) {
-                    if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
-                    link.getDesiredPackageInfo().getExtractionPasswords().add(job.getExtractPassword());
+                    if (!StringUtils.isEmpty(job.getExtractPassword())) {
+                        if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
+                        link.getDesiredPackageInfo().getExtractionPasswords().add(job.getExtractPassword());
+                    }
                 }
             }
         };
