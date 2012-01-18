@@ -40,10 +40,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         this.crawlDeep = crawlDeep;
     }
 
-    private CrawledPackage            parent             = null;
-    private UnknownCrawledLinkHandler unknownHandler     = null;
-    private CrawledLinkModifier       modifyHandler      = null;
-    private boolean                   autoConfirmEnabled = false;
+    private CrawledPackage            parent               = null;
+    private UnknownCrawledLinkHandler unknownHandler       = null;
+    private CrawledLinkModifier       modifyHandler        = null;
+    private BrokenCrawlerHandler      brokenCrawlerHandler = null;
+    private boolean                   autoConfirmEnabled   = false;
 
     public boolean isAutoConfirmEnabled() {
         return autoConfirmEnabled;
@@ -415,6 +416,20 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public void setCustomCrawledLinkModifier(CrawledLinkModifier modifier) {
         this.modifyHandler = modifier;
+    }
+
+    /**
+     * @param brokenCrawlerHandler the brokenCrawlerHandler to set
+     */
+    public void setBrokenCrawlerHandler(BrokenCrawlerHandler brokenCrawlerHandler) {
+        this.brokenCrawlerHandler = brokenCrawlerHandler;
+    }
+
+    /**
+     * @return the brokenCrawlerHandler
+     */
+    public BrokenCrawlerHandler getBrokenCrawlerHandler() {
+        return brokenCrawlerHandler;
     }
 
 }

@@ -14,6 +14,7 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
@@ -327,7 +328,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                      * this handler transforms unknown links into directhttp
                      * links with all information given by flashgot
                      */
-                    public void unhandledCrawledLink(CrawledLink link) {
+                    public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
                         String url = link.getURL();
                         String name = null;
                         try {

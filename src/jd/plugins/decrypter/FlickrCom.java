@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickr\\.com/photos/[a-z0-9_\\-]+(/(\\d+|page\\d+|sets/\\d+))?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickr\\.com/photos/[a-z0-9_\\-]+((/galleries)?/(\\d+|page\\d+|sets/\\d+))?" }, flags = { 0 })
 public class FlickrCom extends PluginForDecrypt {
 
     public FlickrCom(PluginWrapper wrapper) {
@@ -78,11 +78,11 @@ public class FlickrCom extends PluginForDecrypt {
             }
             for (String singleLink : links) {
                 DownloadLink finalDownloadlink = decryptSingleLink("http://www.flickr.com" + singleLink);
-                if (finalDownloadlink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
                 decryptedLinks.add(finalDownloadlink);
+            }
+            if (links.length != decryptedLinks.size()) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
         }
 
@@ -104,25 +104,15 @@ public class FlickrCom extends PluginForDecrypt {
     /** Get single links and set nice filenames */
     private DownloadLink decryptSingleLink(String parameter) throws IOException {
         br.getPage(parameter + "/sizes/l/in/photostream/");
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         String filename = getFilename();
-        final Regex regex1 = br.getRegex("<div class=\"spaceball\" style=\"height:\\d+px; width: \\d+px;\"></div>[\t\n\r ]+<img src=\"(http://.*?)\"");
-        final Regex regex2 = br.getRegex("\"(http://farm\\d+\\.static\\.flickr\\.com/\\d+/.*?)\"");
-        String finallink = regex1.getMatch(0);
-        if (finallink == null) {
-            finallink = regex2.getMatch(0);
-            if (finallink == null) {
-                // Didn't work, try again...
-                br.getPage(parameter + "/sizes/l/in/photostream/");
-                finallink = regex1.getMatch(0);
-                if (finallink == null) {
-                    finallink = regex2.getMatch(0);
-                }
-            }
-        }
+        String link = br.getRegex("<div class=\"spaceball\" style=\"height:\\d+px; width: \\d+px;\"></div>[\t\n\r ]+<img src=\"(http://.*?)\"").getMatch(0);
+        if (link == null) link = br.getRegex("\"(http://farm\\d+\\.static\\.flickr\\.com/\\d+/.*?)\"").getMatch(0);
+        if (link == null) link = br.getRegex("\"(http://farm\\d+\\.staticflickr\\.com/\\d+/.*?)\"").getMatch(0);
         DownloadLink fina = null;
-        if (finallink != null) {
-            fina = createDownloadlink(finallink);
-            final String ext = finallink.substring(finallink.lastIndexOf("."));
+        if (link != null) {
+            fina = createDownloadlink(link);
+            final String ext = link.substring(link.lastIndexOf("."));
             if (ext != null && filename != null) filename = Encoding.htmlDecode(filename.trim()) + ext;
             fina.setFinalFileName(filename);
         }

@@ -554,11 +554,9 @@ public class LinkCrawler implements IOPermission {
                          * Link handable by a Plugin
                          */
                         try {
-                            unnknownHandler.unhandledCrawledLink(possibleCryptedLink);
+                            unnknownHandler.unhandledCrawledLink(possibleCryptedLink, this);
                         } catch (final Throwable e) {
                             Log.exception(e);
-                        } finally {
-                            possibleCryptedLink.setUnknownHandler(null);
                         }
                         /* lets retry this crawledLink */
                         continue mainloopretry;
@@ -866,8 +864,16 @@ public class LinkCrawler implements IOPermission {
                 /* remove distributer from plugin */
                 wplg.setDistributer(null);
             }
+            BrokenCrawlerHandler brokenCrawler = cryptedLink.getBrokenCrawlerHandler();
+            cryptedLink.setBrokenCrawlerHandler(null);
             if (decryptedPossibleLinks != null) {
                 dist.distribute(decryptedPossibleLinks.toArray(new DownloadLink[decryptedPossibleLinks.size()]));
+            } else if (brokenCrawler != null) {
+                try {
+                    brokenCrawler.brokenCrawler(cryptedLink, this);
+                } catch (final Throwable e) {
+                    Log.exception(e);
+                }
             }
         } finally {
             checkFinishNotify();

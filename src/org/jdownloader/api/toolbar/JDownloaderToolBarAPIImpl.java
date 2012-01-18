@@ -8,7 +8,9 @@ import java.util.Random;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.BrokenCrawlerHandler;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
@@ -150,10 +152,23 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
                     CrawledLink link = new CrawledLink(chunkedDom.URL);
                     link.setUnknownHandler(new UnknownCrawledLinkHandler() {
 
-                        public void unhandledCrawledLink(CrawledLink link) {
+                        public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
                             /*
                              * if the url cannot be handled by a plugin, we
                              * check the dom
+                             */
+                            LinkCollectingJob job = new LinkCollectingJob(dom);
+                            job.setCustomSourceUrl(link.getURL());
+                            LinkCollector.getInstance().addCrawlerJob(job);
+                        }
+                    });
+
+                    link.setBrokenCrawlerHandler(new BrokenCrawlerHandler() {
+
+                        public void brokenCrawler(CrawledLink link, LinkCrawler lc) {
+                            /*
+                             * if the url cannot be handled because a plugin is
+                             * broken, we check the dom
                              */
                             LinkCollectingJob job = new LinkCollectingJob(dom);
                             job.setCustomSourceUrl(link.getURL());
