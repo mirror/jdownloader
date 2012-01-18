@@ -78,6 +78,7 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.gui.uiserio.JDSwingUserIO;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.jdserv.stats.StatsManager;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -499,5 +500,6 @@ public class Main {
         Main.LOG.info("Revision: " + JDUtilities.getRevision());
         Main.LOG.info("Runtype: " + JDUtilities.getRunType());
         Main.INIT_COMPLETE.setReached();
+        StatsManager.I();
     }
 }
