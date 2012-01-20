@@ -67,6 +67,10 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
         }
     }
 
+    public int size() {
+        return storage.size();
+    }
+
     /**
      * converts from old subconfig to new JSOnstorage
      * 

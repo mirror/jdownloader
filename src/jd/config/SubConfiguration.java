@@ -22,43 +22,48 @@ import java.util.HashMap;
 import jd.controlling.JDLogger;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.JsonKeyValueStorage;
+import org.appwork.storage.Storage;
+
 public class SubConfiguration extends Property implements Serializable {
 
     private static final long                                  serialVersionUID = 7803718581558607222L;
     transient private static boolean                           SUBCONFIG_LOCK   = false;
     protected String                                           name;
     transient boolean                                          valid            = false;
+    private Storage                                            json             = null;
     transient private static HashMap<String, SubConfiguration> SUB_CONFIGS      = new HashMap<String, SubConfiguration>();
 
     public SubConfiguration() {
     }
 
     @SuppressWarnings("unchecked")
-    public SubConfiguration(final String name) {
+    private SubConfiguration(final String name) {
         valid = true;
         this.name = name;
-        final Object props = JDUtilities.getDatabaseConnector().getData(name);
-        if (props != null && props instanceof HashMap) {
-            HashMap<String, Object> tmp = (HashMap<String, Object>) props;
-            /* we save memory by NOT using an empty hashmap */
-            if (tmp.isEmpty()) tmp = null;
-            this.setProperties(tmp);
-        } else {
-            if (props != null) {
-                valid = false;
-                JDLogger.getLogger().severe("Invalid Config Entry for " + name);
+        json = JSonStorage.getStorage("subconf_" + name);
+        this.setProperties(((JsonKeyValueStorage) json).getInternalStorageMap());
+        if (json.size() == 0) {
+            final Object props = JDUtilities.getDatabaseConnector().getData(name);
+            if (props != null && props instanceof HashMap) {
+                HashMap<String, Object> tmp = (HashMap<String, Object>) props;
+                /* we save memory by NOT using an empty hashmap */
+                if (tmp.isEmpty()) tmp = new HashMap<String, Object>();
+                ((JsonKeyValueStorage) json).getInternalStorageMap().putAll(tmp);
+            } else {
+                if (props != null) {
+                    valid = false;
+                    JDLogger.getLogger().severe("Invalid Config Entry for " + name);
+                }
             }
         }
+        json.put("saveWorkaround", System.currentTimeMillis());
     }
 
     public void save() {
         if (valid) {
-            HashMap<String, Object> props = this.getProperties();
-            if (props == null) {
-                /* saving null might cause issues */
-                props = new HashMap<String, Object>();
-            }
-            JDUtilities.getDatabaseConnector().saveConfiguration(name, props);
+            json.save();
             changes = false;
         }
     }

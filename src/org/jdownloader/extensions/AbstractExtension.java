@@ -170,7 +170,7 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
     public synchronized JSonWrapper getPluginConfig() {
         if (classicConfig != null) return classicConfig;
         classicConfig = JSonWrapper.get(this.getConfigID());
-        if (SubConfiguration.hasConfig(getName())) {
+        if (classicConfig.size() == 0 && SubConfiguration.hasConfig(getName())) {
             /* convert old to new */
             SubConfiguration oldConfig = SubConfiguration.getConfig(getName());
             if (oldConfig != null) {

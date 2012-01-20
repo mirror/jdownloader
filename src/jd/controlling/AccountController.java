@@ -323,7 +323,7 @@ public class AccountController implements AccountControllerListener {
      * @return
      */
     private HashMap<String, ArrayList<AccountData>> restore() {
-        SubConfiguration sub = new SubConfiguration("AccountController");
+        SubConfiguration sub = SubConfiguration.getConfig("AccountController");
         TreeMap<String, ArrayList<Account>> tree = sub.getGenericProperty("accountlist", new TreeMap<String, ArrayList<Account>>());
         HashMap<String, ArrayList<AccountData>> ret = new HashMap<String, ArrayList<AccountData>>();
 
