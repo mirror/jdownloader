@@ -122,6 +122,12 @@ public class Megauploadcom extends PluginForHost {
     public boolean checkLinks(final DownloadLink urls[]) {
         /* linkcheck seesm to be broken or blocked */
         if (urls == null || urls.length == 0) { return false; }
+        if (true) {
+            for (DownloadLink link : urls) {
+                link.setAvailable(false);
+            }
+            return true;
+        }
         this.checkWWWWorkaround();
         final Browser br = new Browser();
         antiJDBlock(br);
@@ -327,8 +333,13 @@ public class Megauploadcom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        this.checkWWWWorkaround();
         final AccountInfo ai = new AccountInfo();
+        if (true) {
+            account.setValid(false);
+            ai.setStatus("Host is offline!");
+            return ai;
+        }
+        this.checkWWWWorkaround();
         this.setBrowserExclusive();
         synchronized (LOGINLOCK) {
             try {
@@ -398,6 +409,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     private STATUS getFileStatus(final DownloadLink link) throws MalformedURLException, PluginException {
+        if (true) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.onlyapi = false;
         this.directDL = false;
         this.checkWWWWorkaround();
@@ -1005,7 +1017,6 @@ public class Megauploadcom extends PluginForHost {
             return AvailableStatus.TRUE;
         case OFFLINE:
             /* file offline */
-            logger.info("DebugInfo for maybe Wrong FileNotFound: " + this.br.toString());
             return AvailableStatus.FALSE;
         case BLOCKED:
             /* ip blocked by megauploaded */

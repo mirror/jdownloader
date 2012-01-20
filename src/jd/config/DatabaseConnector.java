@@ -478,36 +478,6 @@ public class DatabaseConnector implements Serializable {
         }
     }
 
-    /**
-     * Saves the linklist into the database
-     */
-    public void saveLinks(final Object obj) {
-        synchronized (LOCK) {
-            if (!isDatabaseShutdown()) {
-                PreparedStatement pst = null;
-                try {
-                    if (getLinks() == null) {
-                        pst = con.prepareStatement("INSERT INTO links VALUES (?,?)");
-                        pst.setString(1, "links");
-                        pst.setObject(2, obj);
-                        pst.execute();
-                    } else {
-                        pst = con.prepareStatement("UPDATE links SET obj=? WHERE name='links'");
-                        pst.setObject(1, obj);
-                        pst.execute();
-                    }
-                } catch (final Exception e) {
-                    JDLogger.exception(e);
-                } finally {
-                    try {
-                        pst.close();
-                    } catch (final Throwable e) {
-                    }
-                }
-            }
-        }
-    }
-
     public void save() {
         synchronized (LOCK) {
             if (!isDatabaseShutdown()) {

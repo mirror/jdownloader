@@ -264,6 +264,11 @@ public class CumCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        if (true) {
+            account.setValid(false);
+            ai.setStatus("Host is offline!");
+            return ai;
+        }
         this.setBrowserExclusive();
         synchronized (LOGINLOCK) {
             try {
@@ -479,6 +484,7 @@ public class CumCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        if (true) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
         correctDownloadLink(parameter);
         antiJDBlock(br);

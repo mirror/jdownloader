@@ -107,6 +107,12 @@ public class MegaPornCom extends PluginForHost {
     @Override
     public boolean checkLinks(final DownloadLink urls[]) {
         if (urls == null || urls.length == 0) { return false; }
+        if (true) {
+            for (DownloadLink link : urls) {
+                link.setAvailable(false);
+            }
+            return true;
+        }
         this.checkWWWWorkaround();
         final Browser br = new Browser();
         br.getHeaders().put("Cache-Control", null);
@@ -304,8 +310,13 @@ public class MegaPornCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        this.checkWWWWorkaround();
         final AccountInfo ai = new AccountInfo();
+        if (true) {
+            account.setValid(false);
+            ai.setStatus("Host is offline!");
+            return ai;
+        }
+        this.checkWWWWorkaround();
         this.setBrowserExclusive();
         synchronized (LOGINLOCK) {
             try {
@@ -361,6 +372,7 @@ public class MegaPornCom extends PluginForHost {
 
     private STATUS getFileStatus(final DownloadLink link) throws MalformedURLException, PluginException {
         this.onlyapi = false;
+        if (true) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.checkWWWWorkaround();
         this.setBrowserExclusive();
         this.br.setCookie("http://" + wwwWorkaround + "megaporn.com", "l", "en");

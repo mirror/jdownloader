@@ -150,14 +150,16 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             /* loading is not allowed */
             return;
         }
-        LinkedList<FilePackage> lpackages;
-        load(getDownloadListFile());
+        /* load from new json zip */
+        LinkedList<FilePackage> lpackages = load(getDownloadListFile());
         try {
-            lpackages = loadDownloadLinks();
+            /* fallback to old hsqldb */
+            if (lpackages == null) lpackages = loadDownloadLinks();
         } catch (final Throwable e) {
             JDLogger.getLogger().severe(Exceptions.getStackTrace(e));
             lpackages = new LinkedList<FilePackage>();
         }
+        postInit(lpackages);
         final LinkedList<FilePackage> lpackages2 = lpackages;
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
@@ -169,10 +171,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     try {
                         for (final FilePackage filePackage : lpackages2) {
                             for (DownloadLink dl : filePackage.getChildren()) {
+                                /* make sure children-parent is correct */
                                 dl.setParentNode(filePackage);
                             }
                             filePackage.setControlledBy(DownloadController.this);
-
                         }
                         packages.addAll(0, lpackages2);
                     } finally {
@@ -210,10 +212,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             packages = new ArrayList<FilePackage>(this.packages);
         } finally {
             readUnlock(readL);
-        }
-        if (packages != null) {
-            JDUtilities.getDatabaseConnector().saveLinks(packages);
-            JDUtilities.getDatabaseConnector().save();
         }
         /* save as new Json ZipFile */
         save(packages, getDownloadListFile());
@@ -286,9 +284,9 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         }
     }
 
-    private ArrayList<FilePackage> load(File file) {
+    private LinkedList<FilePackage> load(File file) {
         synchronized (SAVELOADLOCK) {
-            ArrayList<FilePackage> ret = null;
+            LinkedList<FilePackage> ret = null;
             if (file != null) {
                 ZipIOReader zip = null;
                 try {
@@ -354,7 +352,9 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                 FilePackageStorable storable = JSonStorage.restoreFromString(json, new TypeRef<FilePackageStorable>() {
                                 }, null);
                                 json = null;
-                                if (storable != null) map.put(packageIndex, storable._getFilePackage());
+                                if (storable != null) {
+                                    map.put(packageIndex, storable._getFilePackage());
+                                }
                             } finally {
                                 try {
                                     is.close();
@@ -373,7 +373,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     }
                     map = null;
                     positions = null;
-                    ret = ret2;
+                    ret = new LinkedList<FilePackage>(ret2);
                 } catch (final Throwable e) {
                     Log.exception(e);
                 } finally {
@@ -387,77 +387,73 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         }
     }
 
+    private void postInit(LinkedList<FilePackage> fps) {
+        if (fps == null || fps.size() == 0) return;
+        final Iterator<FilePackage> iterator = fps.iterator();
+        DownloadLink localLink;
+        PluginForHost pluginForHost = null;
+        Iterator<DownloadLink> it;
+        FilePackage fp;
+        while (iterator.hasNext()) {
+            fp = iterator.next();
+            if (fp.getChildren().size() == 0) {
+                /* remove empty packages */
+                iterator.remove();
+                continue;
+            }
+            it = fp.getChildren().iterator();
+            while (it.hasNext()) {
+                localLink = it.next();
+                /*
+                 * reset not if already exist, offline or finished. plugin
+                 * errors will be reset here because plugin can be fixed again
+                 */
+                localLink.getLinkStatus().resetStatus(LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED, LinkStatus.ERROR_FATAL);
+
+                /* assign defaultPlugin matching the hostname */
+                try {
+                    pluginForHost = null;
+                    LazyHostPlugin hPlugin = HostPluginController.getInstance().get(localLink.getHost());
+                    if (hPlugin != null) {
+                        pluginForHost = hPlugin.getPrototype();
+                    }
+                } catch (final Throwable e) {
+                    JDLogger.exception(e);
+                }
+                if (pluginForHost == null) {
+                    try {
+                        for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
+                            if (p.getPrototype().rewriteHost(localLink)) {
+                                pluginForHost = p.getPrototype();
+                                break;
+                            }
+                        }
+                        if (pluginForHost != null) {
+                            Log.L.info("Plugin " + pluginForHost.getHost() + " now handles " + localLink.getName());
+                        }
+                    } catch (final Throwable e) {
+                        Log.exception(e);
+                    }
+                }
+                if (pluginForHost != null) {
+                    localLink.setDefaultPlugin(pluginForHost);
+                } else {
+                    Log.L.severe("Could not find plugin " + localLink.getHost() + " for " + localLink.getName());
+                }
+            }
+        }
+    }
+
     /**
      * load FilePackages and DownloadLinks from database
      * 
      * @return
      * @throws Exception
      */
-    @SuppressWarnings("unchecked")
     private LinkedList<FilePackage> loadDownloadLinks() throws Exception {
         final Object obj = JDUtilities.getDatabaseConnector().getLinks();
-        if (obj != null && obj instanceof ArrayList && (((ArrayList<?>) obj).size() == 0 || ((ArrayList<?>) obj).size() > 0 && ((ArrayList<?>) obj).get(0) instanceof FilePackage)) {
-            final ArrayList<FilePackage> packages = (ArrayList<FilePackage>) obj;
-            final Iterator<FilePackage> iterator = packages.iterator();
-            DownloadLink localLink;
-            PluginForHost pluginForHost = null;
-            Iterator<DownloadLink> it;
-            FilePackage fp;
-            while (iterator.hasNext()) {
-                fp = iterator.next();
-                if (fp.getChildren().size() == 0) {
-                    iterator.remove();
-                    continue;
-                }
-                it = fp.getChildren().iterator();
-                while (it.hasNext()) {
-                    localLink = it.next();
-                    /*
-                     * reset not if already exist, offline or finished. plugin
-                     * errors will be reset here because plugin can be fixed
-                     * again
-                     */
-                    localLink.getLinkStatus().resetStatus(LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED, LinkStatus.ERROR_FATAL);
-
-                    // Anhand des Hostnamens aus dem DownloadLink
-                    // wird ein passendes Plugin gesucht
-                    try {
-                        pluginForHost = null;
-                        pluginForHost = JDUtilities.getPluginForHost(localLink.getHost());
-                    } catch (final Throwable e) {
-                        JDLogger.exception(e);
-                    }
-                    if (pluginForHost == null) {
-                        try {
-                            pluginForHost = replacePluginForHost(localLink);
-                        } catch (final Throwable e) {
-                            Log.exception(e);
-                        }
-                        if (pluginForHost != null) {
-                            Log.L.info("plugin " + pluginForHost.getHost() + " now handles " + localLink.getName());
-                        } else {
-                            Log.L.severe("could not find plugin " + localLink.getHost() + " for " + localLink.getName());
-                        }
-                    }
-                    if (pluginForHost != null) {
-                        /*
-                         * we set default plugin here, this plugin MUST NOT be
-                         * used for downloading
-                         */
-                        localLink.setDefaultPlugin(pluginForHost);
-                    }
-                }
-            }
-            return new LinkedList<FilePackage>(packages);
-        }
+        if (obj != null && obj instanceof ArrayList && (((ArrayList<?>) obj).size() == 0 || ((ArrayList<?>) obj).size() > 0 && ((ArrayList<?>) obj).get(0) instanceof FilePackage)) { return new LinkedList<FilePackage>(packages); }
         throw new Exception("Linklist incompatible");
-    }
-
-    private PluginForHost replacePluginForHost(DownloadLink localLink) {
-        for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
-            if (p.getPrototype().rewriteHost(localLink)) return p.getPrototype();
-        }
-        return null;
     }
 
     public LinkedList<FilePackage> getPackages() {

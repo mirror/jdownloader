@@ -3,9 +3,8 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
@@ -53,12 +52,7 @@ public class BuyAction extends AbstractAction {
     public void actionPerformed(ActionEvent e) {
         IOEQ.add(new Runnable() {
             public void run() {
-                final ArrayList<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>(HostPluginController.getInstance().list());
-                Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
-                    public int compare(final LazyHostPlugin a, final LazyHostPlugin b) {
-                        return a.getDisplayName().compareToIgnoreCase(b.getDisplayName());
-                    }
-                });
+                final List<LazyHostPlugin> plugins = HostPluginController.getInstance().list();
                 final LazyHostPlugin[] options = plugins.toArray(new LazyHostPlugin[plugins.size()]);
                 LazyHostPlugin plg = preSelection;
                 if (table != null && plg == null) {

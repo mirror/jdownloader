@@ -183,8 +183,13 @@ public class UploadingCom extends PluginForHost {
         if (validUntil != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil.trim(), "MMM dd, yyyy", null));
         } else {
-            /* fallback */
-            ai.setValidUntil(br.getCookies(MAINPAGE).get("remembered_user").getExpireDate());
+            if (br.containsHTML("<dd>Lifetime membership</")) {
+                /* lifetime accounts */
+                ai.setValidUntil(-1);
+            } else {
+                /* fallback */
+                ai.setValidUntil(br.getCookies(MAINPAGE).get("remembered_user").getExpireDate());
+            }
         }
         String balance = br.getRegex("Balance: <b>\\$([0-9\\.]+)+<").getMatch(0);
         if (balance != null) {

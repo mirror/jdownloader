@@ -58,8 +58,9 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
             JSonWrapper ret = MAP.get(json);
             if (ret == null) {
                 ret = new JSonWrapper(json);
-                convert(string, ret);
-
+                if (json.size() == 0) {
+                    convert(string, ret);
+                }
                 MAP.put(json, ret);
             }
             return ret;

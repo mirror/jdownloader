@@ -10,6 +10,7 @@ public class CrawledLinkStorable implements Storable {
 
     private CrawledLink link;
 
+    @SuppressWarnings("unused")
     private CrawledLinkStorable(/* Storable */) {
     }
 

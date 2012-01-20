@@ -23,14 +23,12 @@ import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 
 import jd.config.ConfigContainer;
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.JSonWrapper;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.plugins.AddonPanel;
 import jd.plugins.ExtensionConfigInterface;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.storage.config.JsonConfig;
@@ -201,15 +199,6 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
         store = buildStore();
         AdvancedConfigManager.getInstance().register(store);
         logger.info("Loaded");
-
-        if (JDUtilities.getConfiguration().hasProperty("OPTIONAL_PLUGIN2_" + getConfigID())) {
-            Boolean ret = JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN2_" + getConfigID(), isDefaultEnabled());
-            store.setEnabled(ret);
-            JDUtilities.getConfiguration().setProperty("OPTIONAL_PLUGIN2_" + getConfigID(), Property.NULL);
-            JDUtilities.getConfiguration().save();
-            logger.finer("Convert old storage sys to new one");
-        }
-
     }
 
     /**
