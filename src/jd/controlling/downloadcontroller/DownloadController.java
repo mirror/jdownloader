@@ -45,7 +45,6 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
-import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
@@ -156,7 +155,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             /* fallback to old hsqldb */
             if (lpackages == null) lpackages = loadDownloadLinks();
         } catch (final Throwable e) {
-            JDLogger.getLogger().severe(Exceptions.getStackTrace(e));
+            Log.exception(e);
             lpackages = new LinkedList<FilePackage>();
         }
         postInit(lpackages);
