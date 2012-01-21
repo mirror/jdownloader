@@ -50,25 +50,30 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 15651 $", interfaceVersion = 2, names = { "filevelocity.com" }, urls = { "http://(www\\.)?filevelocity\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 15651 $", interfaceVersion = 2, names = { "filevelocity.com" }, urls = { "http://(www\\.)?filevelocity\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class FileVelocityCom extends PluginForHost {
 
     /*
      * DEV NOTES: 
-     * - no https. 
-     * - allows total number of 200 connections for premium. 
+     * - no https.
+     * - allows total number of 200 connections for premium.
      * - free resumes though they say it doesn't.
      */
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://filevelocity.com";
+    private static final String COOKIE_HOST         = "http://www.filevelocity.com";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static final Object LOCK                = new Object();
 
     // XfileSharingProBasic Version 2.5.2.0
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replace("http://filevelocity", "http://www.filevelocity"));
+    }
 
     @Override
     public String getAGBLink() {
