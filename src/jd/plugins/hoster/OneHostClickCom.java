@@ -47,9 +47,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class OneHostClickCom extends PluginForHost {
 
     /*
-     * DEV NOTES:
-     *  - has https.
-     *  - allows total number of 20 connections for free. == win
+     * DEV NOTES: - has https. - allows total number of 20 connections for free.
+     * == win
      */
 
     private String              correctedBR         = "";
@@ -73,7 +72,7 @@ public class OneHostClickCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -133,7 +132,7 @@ public class OneHostClickCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -10, true);
+        doFree(downloadLink, true, -2, true);
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean getLinkWithoutLogin) throws Exception, PluginException {
@@ -283,7 +282,7 @@ public class OneHostClickCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 1;
     }
 
     /** This removes fake messages which can kill the plugin */
