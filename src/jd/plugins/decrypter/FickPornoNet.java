@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2011  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -53,9 +53,13 @@ public class FickPornoNet extends PluginForDecrypt {
             br.getPage(externID);
             String finallink = br.getRegex("<flv_url>(http://.*?)</flv_url>").getMatch(0);
             if (finallink == null) {
-                logger.warning("fickporno decrypter broken for link: " + parameter);
-                return null;
+                finallink = br.getRegex("<video_url>(<\\!\\[CDATA\\[)?(.*?)(\\]\\])?></video_url>").getMatch(1);
+                if (finallink == null) {
+                    logger.warning("fickporno decrypter broken for link: " + parameter);
+                    return null;
+                }
             }
+
             DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
@@ -64,6 +68,10 @@ public class FickPornoNet extends PluginForDecrypt {
         externID = br.getRegex("flashvars=\"file=(http.*?)http://static\\.youporn\\.com/r/").getMatch(0);
         if (externID != null) {
             br.getPage(Encoding.htmlDecode(externID));
+            if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+                logger.warning("fickporno -> youporn link invalid, please check browser to confirm: " + parameter);
+                return null;
+            }
             String finallink = br.getRegex("<location>(http://.*?)</location>").getMatch(0);
             if (finallink == null) {
                 logger.warning("fickporno decrypter broken for link: " + parameter);
