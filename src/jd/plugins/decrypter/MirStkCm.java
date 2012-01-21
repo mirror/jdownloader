@@ -54,9 +54,7 @@ public class MirStkCm extends PluginForDecrypt {
         if (parameter.matches("http://(www\\.)?mirrorstack\\.com/[a-z0-9]{2}_[a-z0-9]{12}")) {
             String finallink = br.getRedirectLocation();
             decryptedLinks.add(createDownloadlink(finallink));
-        }
-
-        if (parameter.matches("http://(www\\.)?mirrorstack\\.com/[a-z0-9]{12}")) {
+        } else if (parameter.matches("http://(www\\.)?mirrorstack\\.com/[a-z0-9]{12}")) {
             String[] redirectLinks = br.getRegex(Pattern.compile("<a href=\\'(http://mirrorstack.com/[a-z0-9]{2}_[a-z0-9]{12})\\'")).getColumn(0);
             if (redirectLinks == null || redirectLinks.length == 0) {
                 logger.warning("Couldn't find any link... :" + parameter);

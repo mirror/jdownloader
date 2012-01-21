@@ -72,7 +72,7 @@ public class DupCoIl extends PluginForHost {
         br.setCookiesExclusive(true);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">שגיאה : הדף המבוקש אינו קיים במערכת זו \\! <|שגיאה : הדף המבוקש אינו קיים במערכת זו \\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">שגיאה : הדף המבוקש אינו קיים במערכת זו \\!\\ <|שגיאה : הדף המבוקש אינו קיים במערכת זו \\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("name=\"description\" content=\"(.*?) ישירה\">").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>דאפ \\| (.*?)</title>").getMatch(0);
         String extension = br.getRegex("סוג הקובץ <br> <b>(.*?)</b>").getMatch(0);

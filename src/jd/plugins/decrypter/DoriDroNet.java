@@ -36,18 +36,11 @@ public class DoriDroNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.getPage(parameter);
         if (parameter.substring(parameter.length() - 5, parameter.length()).equals(".html")) {
-            String finallink = getFinallink();
-            if (finallink == null) {
-                logger.warning("Single-Link failed: " + parameter);
-                return null;
-            }
-            String filename = getFilename();
-            DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-            if (filename != null) dl.setFinalFileName(filename + finallink.substring(finallink.length() - 4, finallink.length()));
+            DownloadLink dl = createDownloadlink(parameter.replace("doridro.net/", "doridrodecrypted.net/"));
             decryptedLinks.add(dl);
         } else {
+            br.getPage(parameter);
             String fpName = br.getRegex("<title>(.*?) Album Download</title>").getMatch(0);
             String[] links = br.getRegex("<td bgcolor=\"#666666\"><a href=\"(http://.*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
@@ -60,17 +53,7 @@ public class DoriDroNet extends PluginForDecrypt {
                 if (!singleLink.substring(singleLink.length() - 5, singleLink.length()).equals(".html")) {
                     decryptedLinks.add(createDownloadlink(singleLink));
                 } else {
-                    br.getPage(singleLink);
-                    String finallink = getFinallink();
-                    if (finallink == null) {
-                        logger.warning("Single-Link failed: " + parameter);
-                        logger.warning("Mainlink: " + parameter);
-                        return null;
-                    }
-                    String filename = getFilename();
-                    DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-                    if (filename != null) dl.setFinalFileName(filename + finallink.substring(finallink.length() - 4, finallink.length()));
-                    decryptedLinks.add(dl);
+                    decryptedLinks.add(createDownloadlink(singleLink.replace("doridro.net/", "doridrodecrypted.net/")));
                 }
                 progress.increase(1);
             }
@@ -81,17 +64,5 @@ public class DoriDroNet extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
-    }
-
-    private String getFinallink() {
-        String finallink = br.getRegex("Download Link</div><a href=\"(http://.*?)\"").getMatch(0);
-        if (finallink == null) finallink = br.getRegex("\"(http://dl\\.doridro\\.net/get/.*?)\"").getMatch(0);
-        return finallink;
-    }
-
-    private String getFilename() {
-        String filename = br.getRegex("<div align=\"center\"> <a href=\"\" class=\"bfnt\">(.*?)</a> </div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("\">Click Here To Download (.*?)</a></div></div>").getMatch(0);
-        return filename;
     }
 }
