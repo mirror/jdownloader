@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -246,6 +247,9 @@ public class MediafireCom extends PluginForHost {
         if (fileID == null) {
             fileID = new Regex(downloadLink.getDownloadURL(), "file/([^/]+)").getMatch(0);
         }
+        if (fileID != null) {
+            fileID = fileID.toLowerCase(Locale.ENGLISH);
+        }
         final ExtBrowser eb = new ExtBrowser();
         try {
 
@@ -346,8 +350,9 @@ public class MediafireCom extends PluginForHost {
                             // "Server error", 2 * 60000l); }
                             System.out.println("contains mf");
                             String url = l.getAbsoluteHref();
+                            String tmpurl = url.toLowerCase(Locale.ENGLISH);
                             if (fileID != null) {
-                                if (url.contains(fileID + "/")) { return url; }
+                                if (tmpurl.contains(fileID + "/")) { return url; }
                             } else {
                                 return url;
                             }

@@ -196,7 +196,11 @@ public class FileSonicCom extends PluginForHost {
                 ai.setStatus("Premium User");
                 account.setValid(true);
                 ai.setUnlimitedTraffic();
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate.trim(), "yyyy-MM-dd HH:mm:ss", null));
+                long exp = TimeFormatter.getMilliSeconds(expiredate.trim(), "yyyy-MM-dd HH:mm:ss", null);
+                if (exp - System.currentTimeMillis() > 365 * 24 * 60 * 60 * 1000l) {
+                    exp = -1;
+                }
+                ai.setValidUntil(exp);
                 long valid = ai.getValidUntil();
                 if (ai.isExpired()) {
                     /*

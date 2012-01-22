@@ -247,6 +247,11 @@ public class SendspaceCom extends PluginForHost {
         String url = downloadLink.getDownloadURL();
         if (!url.contains("/pro/dl/")) {
             br.getPage(url);
+            if (br.containsHTML("The page you are looking for is  not available. It has either been moved") && url.contains("X")) {
+                url = url.replaceAll("X", "x");
+                downloadLink.setUrlDownload(url);
+                return requestFileInformation(downloadLink);
+            }
             if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) { return AvailableStatus.UNCHECKABLE; }
             if (!br.containsHTML("the file you requested is not available")) {
                 String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);/* old */
