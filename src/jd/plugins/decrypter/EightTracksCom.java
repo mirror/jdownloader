@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2011  JD-Team support@jdownloader.org
+//    Copyright (C) 2008  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -72,10 +72,13 @@ public class EightTracksCom extends PluginForDecrypt {
         }
 
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage(MAINPAGE + "sets/new?format=jsonh");
+        if (br.getRegex("name=\"csrf-token\" content=\"(.*?)\"").matches()) {
+            br.getHeaders().put("X-CSRF-Token", br.getRegex("name=\"csrf-token\" content=\"(.*?)\"").getMatch(0));
+        }
+        br.getPage(MAINPAGE + "sets/new.xml");
 
-        final String playToken = br.getRegex("\"play_token\":\"(\\d+)\"").getMatch(0);
-        if (playToken == null) { return null; }
+        final String playToken = br.getRegex("<play\\-token>(\\d+)</play\\-token>").getMatch(0);
+        if (playToken == null || mixId == null) { return null; }
 
         long count = 8;
         progress.setRange(count);

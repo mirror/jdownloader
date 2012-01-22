@@ -26,6 +26,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.JDHash;
@@ -37,7 +38,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://(listen\\.)?grooveshark\\.com/(#/)?((album|artist|playlist|s|user)/.*?/([a-zA-z0-9]+|\\d+)(/music/favorites|/similar)?|popular)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://(listen\\.)?grooveshark\\.com/(#\\!?/)?((album|artist|playlist|s|user)/.*?/([a-zA-z0-9]+|\\d+)(/music/favorites|/similar)?|popular)" }, flags = { 0 })
 public class GrvShrkCm extends PluginForDecrypt {
 
     private String                  CLIENTREVISION = null;
@@ -70,13 +71,11 @@ public class GrvShrkCm extends PluginForDecrypt {
             logger.warning("Link format is not supported: " + parameter);
             return null;
         }
-        if (parameter.contains("http://listen.")) {
-            parameter = parameter.replace("listen.", "");
-        }
+        parameter = parameter.replace("http://listen.", "http://").replace("http://grooveshark.com/", LISTEN).replace("/#!/", "/#/");
         getClientRevision();
         /* single */
         if (parameter.contains("/s/")) {
-            parameter = parameter.replaceFirst("grooveshark\\.com", "grooveshark.viajd");
+            parameter = parameter.replaceFirst(LISTEN, "http://grooveshark.viajd/");
             parameter = parameter.replace("#/", "");
             final DownloadLink dlLink = createDownloadlink(parameter);
             dlLink.setProperty("clientrev", CLIENTREVISION);
@@ -87,20 +86,34 @@ public class GrvShrkCm extends PluginForDecrypt {
             parameter = parameter.replaceFirst(LISTEN, LISTEN + "#/");
         }
 
+        // processing plugin configuration
+        final SubConfiguration cfg = SubConfiguration.getConfig("grooveshark.com");
+        try {
+            final org.appwork.utils.net.httpconnection.HTTPProxy proxy = new org.appwork.utils.net.httpconnection.HTTPProxy(org.appwork.utils.net.httpconnection.HTTPProxy.TYPE.HTTP, cfg.getStringProperty("PROXYSERVER"), cfg.getIntegerProperty("PROXYPORT"));
+            if (proxy.getHost() != null || proxy.getHost() != "" || proxy.getPort() > -1) {
+                br.setProxy(proxy);
+            }
+        } catch (final Throwable e) {
+            /* does not exist in 09581 */
+        }
         br.getPage(parameter);
+        if (br.containsHTML("Grooveshark den Zugriff aus Deutschland ein")) {
+            logger.info("Der Zugriff auf \"grooveshark.com\" von Deutschland aus, ist nicht mehr möglich.");
+            return null;
+        }
 
         /* favourites */
-        if (new Regex(parameter, LISTEN + "#/user/.*?/\\d+/music/favorites").matches()) {
+        if (parameter.matches(LISTEN + "#/user/.*?/\\d+/music/favorites")) {
             getFavourites(parameter, progress);
         }
 
         /* playlists */
-        if (new Regex(parameter, LISTEN + "#/playlist/.*?/\\d+").matches()) {
+        if (parameter.matches(LISTEN + "#/playlist/.*?/\\d+")) {
             getPlaylists(parameter, progress);
         }
 
         /* album/artist/popular */
-        if (new Regex(parameter, LISTEN + "#/((album|artist)/.*?/\\d+|popular)").matches()) {
+        if (parameter.matches(LISTEN + "#/((album|artist)/.*?/\\d+|popular)")) {
             getAlbum(parameter, progress);
         }
 
@@ -194,17 +207,17 @@ public class GrvShrkCm extends PluginForDecrypt {
         br2.getPage(LISTEN);
         final String cr = br2.getRegex("app\\.src = \'(.*?)\'").getMatch(0);
         if (cr == null) {
-            CLIENTREVISION = "20110906";
+            CLIENTREVISION = "20111117";
         } else {
             br2.getPage(cr);
             CLIENTREVISION = br2.getRegex("clientRevision:\"(\\d+)\"").getMatch(0);
-            CLIENTREVISION = CLIENTREVISION == null ? "20110906" : CLIENTREVISION;
+            CLIENTREVISION = CLIENTREVISION == null ? "20111117" : CLIENTREVISION;
         }
     }
 
     private void getFavourites(final String parameter, final ProgressController progress) throws IOException {
-        USERID = new Regex(parameter, "grooveshark.com/#/user/.*?/(\\d+)/").getMatch(0);
-        USERNAME = new Regex(parameter, "grooveshark.com/#/user/(.*?)/(\\d+)/").getMatch(0);
+        USERID = new Regex(parameter, "/#/user/.*?/(\\d+)/").getMatch(0);
+        USERNAME = new Regex(parameter, "/#/user/(.*?)/(\\d+)/").getMatch(0);
         final String country = br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
         final String method = "getFavorites";
         final String paramString = getPostParameterString(LISTEN, method, country) + "\"parameters\":{\"userID\":" + USERID + ",\"ofWhat\":\"Songs\"}}";

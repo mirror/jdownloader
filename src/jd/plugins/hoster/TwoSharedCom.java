@@ -41,7 +41,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2shared.com" }, urls = { "http://(www\\.)?2shared\\.com/(audio|file|video|photo|document)/.*?/[a-zA-Z0-9._]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2shared.com" }, urls = { "http://(www\\.)?2shared\\.com/(audio|file|video|photo|document)/.*?/[\\w\\-\\.]+" }, flags = { 0 })
 public class TwoSharedCom extends PluginForHost {
 
     private static final String MAINPAGE = "http://www.2shared.com";
@@ -147,7 +147,10 @@ public class TwoSharedCom extends PluginForHost {
         } else {
             if (dl.getConnection().getURL().getQuery().contains("ip-lim")) {
                 dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.2sharedcom.errors.sessionlimit", "Session limit reached"), 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.2sharedcom.errors.sessionlimit", "Session limit reached! "), 10 * 60 * 1000l);
+            } else if (dl.getConnection().getURL().getQuery().contains("MAX_SESSION")) {
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.2sharedcom.errors.maxsession", "User downloading session limit is reached! "), 10 * 60 * 1000l);
             }
         }
         dl.startDownload();
@@ -192,4 +195,5 @@ public class TwoSharedCom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }

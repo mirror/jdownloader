@@ -35,6 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.LnkCrptWs;
+import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -200,7 +201,7 @@ public class TurboBitNet extends PluginForHost {
             maxtime = br.getRegex("var Timeout.*?maxLimit: (\\d+)").getMatch(0);
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final String res = parseImageUrl(br.getRegex(LnkCrptWs.IMAGEREGEX).getMatch(0));
+        final String res = parseImageUrl(br.getRegex(LnkCrptWs.IMAGEREGEX(null)).getMatch(0));
         if (res != null) {
             String fReq = res;
             if (!res.startsWith("http")) {
@@ -209,20 +210,16 @@ public class TurboBitNet extends PluginForHost {
             sleep(tt * 1001, downloadLink);
             br.getPage(fReq);
             downloadUrl = br.getRegex("<a href=\\'(.*?)\\'>").getMatch(0);
-        } else {
-            downloadUrl = br.getRegex("\\$\\(\"#timeoutBox\"\\)\\.load\\(\"(/.*?)\"\\)").getMatch(0);
-            if (downloadUrl != null) {
-                downloadUrl = MAINPAGE + downloadUrl;
-                sleep(tt * 1001, downloadLink);
-                br.getPage(downloadUrl);
-                downloadUrl = br.getRegex("<br/><h1><a href=\\'(/[^<>\"]+)\\'").getMatch(0);
-                if (downloadUrl == null) downloadUrl = br.getRegex("\\'(/download/redirect/[A-Z0-9]+/[a-z0-9]+/[^<>\"/]+)\\'").getMatch(0);
-                if (downloadUrl != null) downloadUrl = MAINPAGE + downloadUrl;
+            if (downloadUrl == null) {
+                downloadUrl = br.getRegex("\"href\",\\s?\"(.*?)\"").getMatch(0);
             }
         }
         if (downloadUrl == null) {
             if (br.containsHTML("Error: ") || res == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!", 10 * 60 * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!downloadUrl.startsWith("http")) {
+            downloadUrl = MAINPAGE + downloadUrl;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -289,18 +286,21 @@ public class TurboBitNet extends PluginForHost {
 
     private String parseImageUrl(final String fun) {
         if (fun == null) { return null; }
-        final String[] next = new Regex(fun, "\"?\\$\\(\"#\\w+\"\\)\\." + new String(new byte[] { 0x6c, 0x6f, 0x61, 0x64 }) + "\\(\"?(.*?)\"?\\s?\\+\\s?(.*?)\\)").getRow(0);
-        if (next == null || next.length != 2) { return null; }
-        Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        try {
-            engine.eval(fun);
-            result = ((Double) engine.eval(next[1])).longValue();
-        } catch (final Throwable e) {
-            return null;
+        final String[] next = new Regex(fun, JDHexUtils.toString(LnkCrptWs.IMAGEREGEX(Encoding.Base64Decode("Rjk4QUZFQTVGOTUwQzlFMjE4QzdCMjk1REE1NzQ2RkIyQUM2NzJFQzA5NUNEQjlEMUU0RTVDNkYxMTNFODI4NjVBRDhGODMzOEI1QUU2NjkyMTQwNTBFQUVGNzQxOTIyRTcyNDI5OTFDMUNDNjM2N0E4MjlENkIzNkI1RDMzNkE1RUZFQzk3ODU5NzlGODlFMjVGOTJGRUY1NTNCQzhCMzQyRkM4RjhFNkJBRTk4QTE5Q0RGMkI5NTI5NjU3ODRFQzQyMDNBNUI=")))).getRow(0);
+        if (next == null || next.length != 2) {
+            return new Regex(fun, JDHexUtils.toString(LnkCrptWs.IMAGEREGEX("F98AFEA5F950C9E218C7B295DA5746FB2AC672EC095CDB9D1E4E5C6F113E82865AD8F8338B5AE669214050EAEF741922E7242991C1CC6367A829D6B36B5D336A5EFEC9785979F89E20F3"))).getMatch(0);
+        } else {
+            Object result = new Object();
+            final ScriptEngineManager manager = new ScriptEngineManager();
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            try {
+                engine.eval(fun);
+                result = ((Double) engine.eval(next[1])).longValue();
+            } catch (final Throwable e) {
+                return null;
+            }
+            return next[0] + result.toString();
         }
-        return next[0] + result.toString();
     }
 
     // Also check HitFileNet plugin if this one is broken

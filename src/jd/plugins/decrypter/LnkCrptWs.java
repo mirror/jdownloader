@@ -917,11 +917,11 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     }
 
-    public static String IMAGEREGEX = KeyCaptchaShowDialogOne();
-
-    public static String KeyCaptchaShowDialogOne() {
+    public static String IMAGEREGEX(final String b) {
         final KeyCaptchaShowDialogTwo v = new KeyCaptchaShowDialogTwo();
-        return new String(v.D(org.appwork.utils.Hash.getMD5(Encoding.Base64Decode("Yzg0MDdhMDhiM2M3MWVhNDE4ZWM5ZGM2NjJmMmE1NmU0MGNiZDZkNWExMTRhYTUwZmIxZTEwNzllMTdmMmI4Mw==") + org.appwork.utils.Hash.getMD5("V2UgZG8gbm90IGVuZG9yc2UgdGhlIHVzZSBvZiBKRG93bmxvYWRlci4=")).getBytes(), JDHexUtils.getByteArray("E3CEACB19040D08244C9E5C29D115AE220F83AB417")));
+        final byte[] o = org.appwork.utils.Hash.getMD5(Encoding.Base64Decode("Yzg0MDdhMDhiM2M3MWVhNDE4ZWM5ZGM2NjJmMmE1NmU0MGNiZDZkNWExMTRhYTUwZmIxZTEwNzllMTdmMmI4Mw==") + org.appwork.utils.Hash.getMD5("V2UgZG8gbm90IGVuZG9yc2UgdGhlIHVzZSBvZiBKRG93bmxvYWRlci4=")).getBytes();
+        if (b != null) { return new String(v.D(o, JDHexUtils.getByteArray(b))); }
+        return new String(v.D(o, JDHexUtils.getByteArray("E3CEACB19040D08244C9E5C29D115AE220F83AB417")));
     }
 
     private final HashMap<String, String> map = new HashMap<String, String>();
