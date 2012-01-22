@@ -59,6 +59,7 @@ public class GigaUpFr extends PluginForHost {
         captchaForm.remove("dl_file_SSL");
         captchaForm.put("bot_sucker", code);
         br.submitForm(captchaForm);
+        if (br.containsHTML(">Serveurs surchargés")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded (no free slots?)", 10 * 60 * 1000l);
         if (br.containsHTML("Le code de vérification entré est incorrecte")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         String dllink = br.getRegex("padding:0px;\"><a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(ftp://gigaup.*?:.*?)\"").getMatch(0);
@@ -86,6 +87,8 @@ public class GigaUpFr extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("UTF-8");
+        /** Servers are sometimes very slow */
+        br.setReadTimeout(3 * 60 * 1000);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(Le fichier que vous tentez.*?harger.*?existe pas|Le code de vérification entré est incorrecte|Fichier supprimé car non utilisé sur une période trop longue|Le fichier a.*?sign.*?ill.*?gal|Vous ne pouvez télécharger ce fichier car il est \"Supprimé automatiquement\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) \\| GigaUP\\.fr</title>").getMatch(0);
