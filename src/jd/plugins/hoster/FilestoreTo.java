@@ -28,6 +28,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.LnkCrptWs;
+import jd.utils.JDHexUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -60,7 +62,8 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String gamer = br.getRegex("type=\"hidden\" name=\"ID\" value=\"(.*?)\"").getMatch(0);
+        String gamer = br.getRegex("type=\"hidden\" name=\"DDL\" value=\"(.*?)\"").getMatch(0);
+        gamer = gamer == null ? br.getRegex("<input type=\"hidden\" name=\"[0-9A-Z]+\" value=\"(.*?)\">").getMatch(0) : gamer;
         if (gamer == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         final String waittime = br.getRegex("Bitte warte (\\d+) Sekunden und starte dann").getMatch(0);
         int wait = 10;
@@ -91,10 +94,9 @@ public class FilestoreTo extends PluginForHost {
     public void haveFun() throws Exception {
         final ArrayList<String> someStuff = new ArrayList<String>();
         final ArrayList<String> regexStuff = new ArrayList<String>();
-        regexStuff.add("<table width=\"\\d+%\" border=\"\\d+\" cellspacing=\"\\d+\" cellpadding=\"\\d+\" style=\"[^\"]+display:none;\">(.*?)</table>");
-        regexStuff.add("(<.*?>)");
-        regexStuff.add("( )");
-        regexStuff.add("(\r)");
+        regexStuff.add(zStatistic("Rjk4MEZFQTBGQjA3Q0RFNzFCOTZCNkNFREU1MDQ2QUQyREM1NzRFOTA4NThEODlEMUExQjVFMzgxNDZGODNEMDVEODlGQzMyODgwMEUyMzgyMTE2NTRCRUVCMjAxRDc3RTEyMTI4Q0FDMTk4NjczNUFDMjBEMkU0NkY1RjM2Mzk1RkEyQzk3Mw=="));
+        regexStuff.add(zStatistic("Rjk4MEZFQTBGRTU2QzlCNzFFQzJCM0M4REE1Qw=="));
+        regexStuff.add(zStatistic("Rjk4MEZEQTJGQzUyQzlFRg=="));
         for (final String aRegex : regexStuff) {
             aBrowser = br.toString();
             final String replaces[] = br.getRegex(aRegex).getColumn(0);
@@ -135,9 +137,9 @@ public class FilestoreTo extends PluginForHost {
             downloadName = new Regex(aBrowser, "(Datei|Dateiname|FileName|Filename):\n(.*?)\n").getMatch(1);
             downloadSize = new Regex(aBrowser, "(Dateigröße|Filesize):\n(.*?)\n").getMatch(1);
             if (downloadName != null) {
-                downloadLink.setName(Encoding.htmlDecode(downloadName));
+                downloadLink.setName(Encoding.htmlDecode(downloadName.trim()));
                 if (downloadSize != null) {
-                    downloadLink.setDownloadSize(SizeFormatter.getSize(downloadSize.replaceAll(",", "\\.")));
+                    downloadLink.setDownloadSize(SizeFormatter.getSize(downloadSize.replaceAll(",", "\\.").trim()));
                 }
                 return AvailableStatus.TRUE;
             }
@@ -157,6 +159,11 @@ public class FilestoreTo extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    private String zStatistic(String s) {
+        s = Encoding.Base64Decode(s);
+        return JDHexUtils.toString(LnkCrptWs.IMAGEREGEX(s));
     }
 
 }
