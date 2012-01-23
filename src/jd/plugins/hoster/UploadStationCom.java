@@ -18,14 +18,12 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -37,7 +35,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadstation.com" }, urls = { "http://(www\\.)?uploadstation\\.com/file/[A-Za-z0-9]+" }, flags = { 2 })
@@ -54,89 +51,95 @@ public class UploadStationCom extends PluginForHost {
         this.enablePremium("http://uploadstation.com/premium.php");
     }
 
-    @Override
-    public boolean checkLinks(final DownloadLink[] urls) {
-        // Works nearly 100% like the fileserve.com & filejungle.com linkcheck
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            final Browser checkbr = new Browser();
-            checkbr.getHeaders().put("Accept-Encoding", "");
-            checkbr.getHeaders().put("User-Agent", agent);
-            checkbr.setCustomCharset("utf-8");
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            final StringBuilder sb = new StringBuilder();
-            while (true) {
-                sb.delete(0, sb.capacity());
-                sb.append("urls=");
-                links.clear();
-                while (true) {
-                    /*
-                     * we test 100 links at once - its tested with 500 links,
-                     * probably we could test even more at the same time...
-                     */
-                    if (index == urls.length || links.size() > 100) {
-                        break;
-                    }
-                    links.add(urls[index]);
-                    index++;
-                }
-                int c = 0;
-                for (final DownloadLink dl : links) {
-                    /*
-                     * append fake filename, because api will not report
-                     * anything else
-                     */
-                    if (c > 0) {
-                        sb.append("%0D%0A");
-                    }
-                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
-                    c++;
-                }
-                checkbr.postPage("http://www.uploadstation.com/check-links.php", sb.toString());
-                for (final DownloadLink dl : links) {
-                    final String linkpart = new Regex(dl.getDownloadURL(), "(uploadstation\\.com/file/.+)").getMatch(0);
-                    if (linkpart == null) {
-                        logger.warning("Uploadstation availablecheck is broken!");
-                        return false;
-                    }
-                    final String regexForThisLink = "(<td>http://(www\\.)" + linkpart + "([\r\n\t]+)?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>))";
-                    final String theData = checkbr.getRegex(regexForThisLink).getMatch(0);
-                    if (theData == null) {
-                        logger.warning("Uploadstation availablecheck is broken!");
-                        return false;
-                    }
-                    final Regex linkinformation = new Regex(theData, "<td>http://(www\\.)?" + linkpart + "([\r\n\t]+)?</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>)");
-                    final String status = linkinformation.getMatch(4);
-                    String filename = linkinformation.getMatch(2);
-                    String filesize = linkinformation.getMatch(3);
-                    if (filename == null || filesize == null) {
-                        logger.warning("Uploadstation availablecheck is broken!");
-                        dl.setAvailable(false);
-                    } else if (!status.equals("Available") || filename.equals("--") || filesize.equals("--")) {
-                        filename = linkpart;
-                        dl.setAvailable(false);
-                    } else {
-                        dl.setAvailable(true);
-                    }
-                    dl.setName(filename);
-                    if (filesize != null) {
-                        if (filesize.contains(",") && filesize.contains(".")) {
-                            /* workaround for 1.000,00 MB bug */
-                            filesize = filesize.replaceFirst("\\.", "");
-                        }
-                        dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                    }
-                }
-                if (index == urls.length) {
-                    break;
-                }
-            }
-        } catch (final Exception e) {
-            return false;
-        }
-        return true;
-    }
+    // @Override
+    // public boolean checkLinks(final DownloadLink[] urls) {
+    // // Works nearly 100% like the fileserve.com & filejungle.com linkcheck
+    // if (urls == null || urls.length == 0) { return false; }
+    // try {
+    // final Browser checkbr = new Browser();
+    // checkbr.getHeaders().put("Accept-Encoding", "");
+    // checkbr.getHeaders().put("User-Agent", agent);
+    // checkbr.setCustomCharset("utf-8");
+    // final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+    // int index = 0;
+    // final StringBuilder sb = new StringBuilder();
+    // while (true) {
+    // sb.delete(0, sb.capacity());
+    // sb.append("urls=");
+    // links.clear();
+    // while (true) {
+    // /*
+    // * we test 100 links at once - its tested with 500 links,
+    // * probably we could test even more at the same time...
+    // */
+    // if (index == urls.length || links.size() > 100) {
+    // break;
+    // }
+    // links.add(urls[index]);
+    // index++;
+    // }
+    // int c = 0;
+    // for (final DownloadLink dl : links) {
+    // /*
+    // * append fake filename, because api will not report
+    // * anything else
+    // */
+    // if (c > 0) {
+    // sb.append("%0D%0A");
+    // }
+    // sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+    // c++;
+    // }
+    // checkbr.postPage("http://www.uploadstation.com/check-links.php",
+    // sb.toString());
+    // for (final DownloadLink dl : links) {
+    // final String linkpart = new Regex(dl.getDownloadURL(),
+    // "(uploadstation\\.com/file/.+)").getMatch(0);
+    // if (linkpart == null) {
+    // logger.warning("Uploadstation availablecheck is broken!");
+    // return false;
+    // }
+    // final String regexForThisLink = "(<td>http://(www\\.)" + linkpart +
+    // "([\r\n\t]+)?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>))";
+    // final String theData = checkbr.getRegex(regexForThisLink).getMatch(0);
+    // if (theData == null) {
+    // logger.warning("Uploadstation availablecheck is broken!");
+    // return false;
+    // }
+    // final Regex linkinformation = new Regex(theData, "<td>http://(www\\.)?" +
+    // linkpart +
+    // "([\r\n\t]+)?</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>)");
+    // final String status = linkinformation.getMatch(4);
+    // String filename = linkinformation.getMatch(2);
+    // String filesize = linkinformation.getMatch(3);
+    // if (filename == null || filesize == null) {
+    // logger.warning("Uploadstation availablecheck is broken!");
+    // dl.setAvailable(false);
+    // } else if (!status.equals("Available") || filename.equals("--") ||
+    // filesize.equals("--")) {
+    // filename = linkpart;
+    // dl.setAvailable(false);
+    // } else {
+    // dl.setAvailable(true);
+    // }
+    // dl.setName(filename);
+    // if (filesize != null) {
+    // if (filesize.contains(",") && filesize.contains(".")) {
+    // /* workaround for 1.000,00 MB bug */
+    // filesize = filesize.replaceFirst("\\.", "");
+    // }
+    // dl.setDownloadSize(SizeFormatter.getSize(filesize));
+    // }
+    // }
+    // if (index == urls.length) {
+    // break;
+    // }
+    // }
+    // } catch (final Exception e) {
+    // return false;
+    // }
+    // return true;
+    // }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -423,6 +426,7 @@ public class UploadStationCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (true) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         checkLinks(new DownloadLink[] { link });
         if (!link.isAvailabilityStatusChecked()) {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
