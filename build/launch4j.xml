@@ -1,8 +1,8 @@
 <launch4jConfig>
   <dontWrapJar>true</dontWrapJar>
-  <headerType>console</headerType>
+  <headerType>gui</headerType>
   <jar>JDownloader.jar</jar>
-  <outfile>G:\Users\coalado\Desktop\JDownloader 0.8.9\JDownloader2.exe</outfile>
+  <outfile>C:\workspace\JDownloader\ressourcen\JDownloader.exe</outfile>
   <errTitle></errTitle>
   <cmdLine></cmdLine>
   <chdir></chdir>
@@ -12,24 +12,25 @@
   <customProcName>false</customProcName>
   <stayAlive>false</stayAlive>
   <manifest></manifest>
-  <icon>G:\Users\coalado\workspace\JDownloader\artwork\icons\by TRazo\jdicon.ico</icon>
+  <icon>C:\workspace\JDownloader\artwork\icons\by TRazo\jdicon.ico</icon>
   <jre>
-    <path></path>
-    <minVersion>1.5.0</minVersion>
+    <path>jre/</path>
+    <minVersion>1.6.0</minVersion>
     <maxVersion></maxVersion>
     <jdkPreference>preferJre</jdkPreference>
     <maxHeapSize>512</maxHeapSize>
+    <opt>-Dsun.java2d.d3d=false</opt>
   </jre>
   <versionInfo>
-    <fileVersion>4.0.0.0</fileVersion>
-    <txtFileVersion>4.0.0.0</txtFileVersion>
-    <fileDescription>JDownloader Launcher v4</fileDescription>
-    <copyright>AppWork UG (haftungsbeschränkt)</copyright>
-    <productVersion>4.0.0.0</productVersion>
-    <txtProductVersion>4.0.0.0</txtProductVersion>
-    <productName>JDownloader Launcher v4</productName>
-    <companyName>AppWork UG (haftungsbeschränkt)</companyName>
-    <internalName>Jdownloader Launcher Trazo</internalName>
+    <fileVersion>5.0.0.0</fileVersion>
+    <txtFileVersion>5.0.0.0</txtFileVersion>
+    <fileDescription>JDownloader 0.9</fileDescription>
+    <copyright>AppWork GmbH</copyright>
+    <productVersion>5.0.0.0</productVersion>
+    <txtProductVersion>5.0.0.0</txtProductVersion>
+    <productName>JDownloader 0.9</productName>
+    <companyName>AppWork GmbH</companyName>
+    <internalName>Jdownloader Launcher v5</internalName>
     <originalFilename>JDownloader.exe</originalFilename>
   </versionInfo>
 </launch4jConfig>
