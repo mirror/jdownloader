@@ -17,8 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -50,64 +48,67 @@ public class XSevenTo extends PluginForHost {
         this.enablePremium("http://x7.to/foyer");
     }
 
-    @Override
-    public boolean checkLinks(DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            Browser br = new Browser();
-            br.setDebug(true);
-            br.setCookiesExclusive(true);
-            StringBuilder sb = new StringBuilder();
-            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            while (true) {
-                links.clear();
-                while (true) {
-                    /* we test 80 links at once */
-                    if (index == urls.length || links.size() > 80) break;
-                    DownloadLink dl = urls[index];
-                    index++;
-                    String id = new Regex(dl.getDownloadURL(), "to/(?!list)([a-zA-Z0-9]+/[^/]+)").getMatch(0);
-                    /*
-                     * we need id/filename format for api else fallback to
-                     * website checking
-                     */
-                    /* � cause issues for api, so we do fallback check here */
-                    if (id == null || id.contains("�") || id.contains("%")) {
-                        dl.isAvailable();
-                        continue;
-                    }
-                    links.add(dl);
-                }
-                if (links.size() == 0) break;
-                sb.delete(0, sb.capacity());
-                int c = 0;
-                for (DownloadLink dl : links) {
-                    if (c > 0) sb.append("&");
-                    String id = new Regex(dl.getDownloadURL(), "to/(?!list)([a-zA-Z0-9]+/[^/]+)").getMatch(0);
-                    sb.append("id_" + c + "=" + Encoding.urlEncode(id));
-                    c++;
-                }
-                br.postPage("http://x7.to/api?fnc=onlinecheck", sb.toString());
-                String infos[][] = br.getRegex(Pattern.compile("id_(\\d+): ((.+), (\\d+)|file removed)")).getMatches();
-                for (String info[] : infos) {
-                    int number = Integer.parseInt(info[0]);
-                    DownloadLink dl = links.get(number);
-                    if ("file removed".equalsIgnoreCase(info[1])) {
-                        dl.setAvailable(false);
-                    } else {
-                        dl.setAvailable(true);
-                        dl.setName(info[2]);
-                        dl.setDownloadSize(SizeFormatter.getSize(info[3]));
-                    }
-                }
-                if (index == urls.length) break;
-            }
-        } catch (Throwable e) {
-            return false;
-        }
-        return true;
-    }
+    // @Override
+    // public boolean checkLinks(DownloadLink[] urls) {
+    // if (urls == null || urls.length == 0) { return false; }
+    // try {
+    // Browser br = new Browser();
+    // br.setDebug(true);
+    // br.setCookiesExclusive(true);
+    // StringBuilder sb = new StringBuilder();
+    // ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+    // int index = 0;
+    // while (true) {
+    // links.clear();
+    // while (true) {
+    // /* we test 80 links at once */
+    // if (index == urls.length || links.size() > 80) break;
+    // DownloadLink dl = urls[index];
+    // index++;
+    // String id = new Regex(dl.getDownloadURL(),
+    // "to/(?!list)([a-zA-Z0-9]+/[^/]+)").getMatch(0);
+    // /*
+    // * we need id/filename format for api else fallback to
+    // * website checking
+    // */
+    // /* � cause issues for api, so we do fallback check here */
+    // if (id == null || id.contains("�") || id.contains("%")) {
+    // dl.isAvailable();
+    // continue;
+    // }
+    // links.add(dl);
+    // }
+    // if (links.size() == 0) break;
+    // sb.delete(0, sb.capacity());
+    // int c = 0;
+    // for (DownloadLink dl : links) {
+    // if (c > 0) sb.append("&");
+    // String id = new Regex(dl.getDownloadURL(),
+    // "to/(?!list)([a-zA-Z0-9]+/[^/]+)").getMatch(0);
+    // sb.append("id_" + c + "=" + Encoding.urlEncode(id));
+    // c++;
+    // }
+    // br.postPage("http://x7.to/api?fnc=onlinecheck", sb.toString());
+    // String infos[][] =
+    // br.getRegex(Pattern.compile("id_(\\d+): ((.+), (\\d+)|file removed)")).getMatches();
+    // for (String info[] : infos) {
+    // int number = Integer.parseInt(info[0]);
+    // DownloadLink dl = links.get(number);
+    // if ("file removed".equalsIgnoreCase(info[1])) {
+    // dl.setAvailable(false);
+    // } else {
+    // dl.setAvailable(true);
+    // dl.setName(info[2]);
+    // dl.setDownloadSize(SizeFormatter.getSize(info[3]));
+    // }
+    // }
+    // if (index == urls.length) break;
+    // }
+    // } catch (Throwable e) {
+    // return false;
+    // }
+    // return true;
+    // }
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("/player", ""));
@@ -291,6 +292,7 @@ public class XSevenTo extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        if (true) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
         /* have to call this in order so set language */
         br.getPage("http://x7.to/lang/en");

@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -47,7 +46,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://(www\\.)?fileserve\\.com/file/[a-zA-Z0-9]+" }, flags = { 2 })
@@ -65,89 +63,96 @@ public class FileServeCom extends PluginForHost {
         this.enablePremium("http://www.fileserve.com/premium.php");
     }
 
-    /**
-     * To get back the linkchecker API, revert to revision 15263, it was removed
-     * because it was broken (error 500)
-     */
-    public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            br.setCustomCharset("utf-8");
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            final StringBuilder sb = new StringBuilder();
-            while (true) {
-                sb.delete(0, sb.capacity());
-                sb.append("submit=Check+Urls&urls=");
-                links.clear();
-                while (true) {
-                    /*
-                     * we test 100 links at once - its tested with 500 links,
-                     * probably we could test even more at the same time...
-                     */
-                    if (index == urls.length || links.size() > 100) {
-                        break;
-                    }
-                    links.add(urls[index]);
-                    index++;
-                }
-                this.br.getPage("http://fileserve.com/link-checker.php");
-                int c = 0;
-                for (final DownloadLink dl : links) {
-                    /*
-                     * append fake filename, because api will not report
-                     * anything else
-                     */
-                    if (c > 0) {
-                        sb.append("%0D%0A");
-                    }
-                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
-                    c++;
-                }
-                this.br.postPage("http://fileserve.com/link-checker.php", sb.toString());
-                for (final DownloadLink dl : links) {
-                    final String fileid = new Regex(dl.getDownloadURL(), this.FILEIDREGEX).getMatch(0);
-                    if (fileid == null) {
-                        logger.warning("Fileserve availablecheck is broken!");
-                        return false;
-                    }
-                    final String regexForThisLink = "(<td>http://fileserve\\.com/file/" + fileid + "([\r\n\t]+)?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>))";
-                    final String theData = this.br.getRegex(regexForThisLink).getMatch(0);
-                    if (theData == null) {
-                        logger.warning("Fileserve availablecheck is broken!");
-                        return false;
-                    }
-                    final Regex linkinformation = new Regex(theData, "<td>http://fileserve\\.com/file/" + fileid + "([\r\n\t]+)?</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>)");
-                    final String status = linkinformation.getMatch(3);
-                    String filename = linkinformation.getMatch(1);
-                    String filesize = linkinformation.getMatch(2);
-                    if (filename == null || filesize == null) {
-                        logger.warning("Fileserve availablecheck is broken!");
-                        dl.setAvailable(false);
-                    } else if (!status.equals("Available") || filename.equals("--") || filesize.equals("--")) {
-                        filename = fileid;
-                        dl.setAvailable(false);
-                    } else {
-                        dl.setAvailable(true);
-                    }
-                    dl.setName(filename);
-                    if (filesize != null) {
-                        if (filesize.contains(",") && filesize.contains(".")) {
-                            /* workaround for 1.000,00 MB bug */
-                            filesize = filesize.replaceFirst("\\.", "");
-                        }
-                        dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                    }
-                }
-                if (index == urls.length) {
-                    break;
-                }
-            }
-        } catch (final Exception e) {
-            return false;
-        }
-        return true;
-    }
+    // /**
+    // * To get back the linkchecker API, revert to revision 15263, it was
+    // removed
+    // * because it was broken (error 500)
+    // */
+    // public boolean checkLinks(final DownloadLink[] urls) {
+    // if (urls == null || urls.length == 0) { return false; }
+    // try {
+    // br.setCustomCharset("utf-8");
+    // final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+    // int index = 0;
+    // final StringBuilder sb = new StringBuilder();
+    // while (true) {
+    // sb.delete(0, sb.capacity());
+    // sb.append("submit=Check+Urls&urls=");
+    // links.clear();
+    // while (true) {
+    // /*
+    // * we test 100 links at once - its tested with 500 links,
+    // * probably we could test even more at the same time...
+    // */
+    // if (index == urls.length || links.size() > 100) {
+    // break;
+    // }
+    // links.add(urls[index]);
+    // index++;
+    // }
+    // this.br.getPage("http://fileserve.com/link-checker.php");
+    // int c = 0;
+    // for (final DownloadLink dl : links) {
+    // /*
+    // * append fake filename, because api will not report
+    // * anything else
+    // */
+    // if (c > 0) {
+    // sb.append("%0D%0A");
+    // }
+    // sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+    // c++;
+    // }
+    // this.br.postPage("http://fileserve.com/link-checker.php", sb.toString());
+    // for (final DownloadLink dl : links) {
+    // final String fileid = new Regex(dl.getDownloadURL(),
+    // this.FILEIDREGEX).getMatch(0);
+    // if (fileid == null) {
+    // logger.warning("Fileserve availablecheck is broken!");
+    // return false;
+    // }
+    // final String regexForThisLink = "(<td>http://fileserve\\.com/file/" +
+    // fileid +
+    // "([\r\n\t]+)?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>))";
+    // final String theData = this.br.getRegex(regexForThisLink).getMatch(0);
+    // if (theData == null) {
+    // logger.warning("Fileserve availablecheck is broken!");
+    // return false;
+    // }
+    // final Regex linkinformation = new Regex(theData,
+    // "<td>http://fileserve\\.com/file/" + fileid +
+    // "([\r\n\t]+)?</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>)");
+    // final String status = linkinformation.getMatch(3);
+    // String filename = linkinformation.getMatch(1);
+    // String filesize = linkinformation.getMatch(2);
+    // if (filename == null || filesize == null) {
+    // logger.warning("Fileserve availablecheck is broken!");
+    // dl.setAvailable(false);
+    // } else if (!status.equals("Available") || filename.equals("--") ||
+    // filesize.equals("--")) {
+    // filename = fileid;
+    // dl.setAvailable(false);
+    // } else {
+    // dl.setAvailable(true);
+    // }
+    // dl.setName(filename);
+    // if (filesize != null) {
+    // if (filesize.contains(",") && filesize.contains(".")) {
+    // /* workaround for 1.000,00 MB bug */
+    // filesize = filesize.replaceFirst("\\.", "");
+    // }
+    // dl.setDownloadSize(SizeFormatter.getSize(filesize));
+    // }
+    // }
+    // if (index == urls.length) {
+    // break;
+    // }
+    // }
+    // } catch (final Exception e) {
+    // return false;
+    // }
+    // return true;
+    // }
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -582,6 +587,7 @@ public class FileServeCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (true) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         correctHeaders(this.br);
         if (this.checkLinks(new DownloadLink[] { link }) == false) {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);

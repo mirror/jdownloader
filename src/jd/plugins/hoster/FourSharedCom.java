@@ -122,23 +122,26 @@ public class FourSharedCom extends PluginForHost {
         String url = br.getRegex("<meta property=\"og:audio\" content=\"(http://.*?)\"").getMatch(0);
         if (url == null) {
             url = br.getRegex("var (flvLink|mp4Link|oggLink|mp3Link|streamerLink) = \\'(http://[^<>\"\\']{5,500})\\'").getMatch(1);
-            if (url == null) {
-                /* maybe picture download */
-                url = br.getRegex("\"(http://dc\\d+\\.4shared(\\-china)?\\.com/download/[A-Za-z0-9]+/(?!desktop4shared|4shared_Desktop_).*?)\"").getMatch(0);
-                if (url == null) {
-                    url = br.getRegex("\\'(http://dc\\d+\\.4shared(\\-china)?\\.com/.*?)\\'").getMatch(0);
-                    if (url == null) {
-                        url = br.getRegex("<div class=\"dl\">[\t\n\r ]+<a href=(\\'|\")(http://.*?)(\\'|\")").getMatch(1);
-                        if (url == null) {
-                            url = br.getRegex("(\\'|\")(http://dc\\d+\\.4shared(\\-china)?\\.com/download/[a-zA-Z0-9_\\-]+/(?!desktop4shared|4shared_Desktop_).*?\\?tsid=\\d+\\-\\d+[a-z0-9\\-]+)(\\'|\")").getMatch(1);
-                            if (url == null) {
-                                /* maybe directdownload */
-                                url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
-                            }
-                        }
-                    }
-                }
-            }
+        }
+        if (url == null) {
+            /* maybe picture download */
+            url = br.getRegex("\"(http://dc\\d+\\.4shared(\\-china)?\\.com/download/[A-Za-z0-9]+/(?!desktop4shared|4shared_Desktop_).*?)\"").getMatch(0);
+        }
+        if (url == null) {
+            url = br.getRegex("linkShow.*?\\'(http://dc\\d+\\.4shared(\\-china)?\\.com/.*?)\\'").getMatch(0);
+        }
+        if (url == null) {
+            url = br.getRegex("\\'(http://dc\\d+\\.4shared(\\-china)?\\.com/.*?)\\'").getMatch(0);
+        }
+        if (url == null) {
+            url = br.getRegex("<div class=\"dl\">[\t\n\r ]+<a href=(\\'|\")(http://.*?)(\\'|\")").getMatch(1);
+        }
+        if (url == null) {
+            url = br.getRegex("(\\'|\")(http://dc\\d+\\.4shared(\\-china)?\\.com/download/[a-zA-Z0-9_\\-]+/(?!desktop4shared|4shared_Desktop_).*?\\?tsid=\\d+\\-\\d+[a-z0-9\\-]+)(\\'|\")").getMatch(1);
+        }
+        if (url == null) {
+            /* maybe directdownload */
+            url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
         }
         return url;
     }

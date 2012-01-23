@@ -53,7 +53,7 @@ public class MltpldCm extends PluginForDecrypt {
             if (domain == null) {
                 domain = "multiupload.com";
             }
-            decryptedLinks.add(createDownloadlink(parameter.replace(domain, "multiuploaddecrypted.com/")));
+            decryptedLinks.add(createDownloadlink(parameter.replace(domain, "multiuploaddecrypted.com")));
         }
         if (!parameter.contains("_")) {
             String[] redirectLinks = br.getRegex(Pattern.compile("id=\"url_\\d+\"><a href=\"(http://(www\\.)?multiupload\\.[a-z]{2,3}/.*?)\"")).getColumn(0);

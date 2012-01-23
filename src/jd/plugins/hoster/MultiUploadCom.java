@@ -24,7 +24,8 @@ import org.appwork.utils.formatter.SizeFormatter;
  * Hoster belongs to uploadking.com & uploadhere.com, uses similar code for some
  * parts
  */
-@HostPlugin(revision = "$Revision: 15712 $", interfaceVersion = 2, names = { "multiupload.com" }, urls = { "http://(www\\.)?multiuploaddecrypted\\.com/([A-Z0-9]{2}_[A-Z0-9]+|[0-9A-Z]+)" }, flags = { 0 })
+
+@HostPlugin(revision = "$Revision: 15618$", interfaceVersion = 2, names = { "multiupload.com" }, urls = { "http://(www\\.)?multiuploaddecrypted\\.com/([A-Z0-9]{2}_[A-Z0-9]+|[0-9A-Z]+)" }, flags = { 0 })
 public class MultiUploadCom extends PluginForHost {
 
     private String domain = null;
