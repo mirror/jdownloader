@@ -47,7 +47,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class AmonShareCom extends PluginForHost {
 
     // DEV NOTES:
-    // - Tested with 80 connections with free ** psp please confirm
+    // - Tested with 80 connections with free
     // - Doesn't have https
     // - Doesn't use captcha
 

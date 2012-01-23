@@ -113,14 +113,8 @@ public class VKontakteRu extends PluginForDecrypt {
                     logger.info("Link offline: " + parameter);
                     return decryptedLinks;
                 }
-                String numberOfPictures = br.getRegex("\\| (\\d+) zdj&#281").getMatch(0);
-                if (numberOfPictures == null) {
-                    numberOfPictures = br.getRegex("count: (\\d+),").getMatch(0);
-                    if (numberOfPictures == null) {
-                        numberOfPictures = br.getRegex("</a>(\\d+) zdj\\&#281;\\&#263;<span").getMatch(0);
-                    }
-                }
-                if (numberOfPictures == null) {
+                String numberOfEntrys = getNumberOfEntrys();
+                if (numberOfEntrys == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
@@ -129,7 +123,7 @@ public class VKontakteRu extends PluginForDecrypt {
                  * number of pictures - 80 (because without any request we
                  * already got 80) and divide it by 40 (every reload we get 40)
                  */
-                int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfPictures) - 80) / 40);
+                int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntrys) - 80) / 40);
                 if (maxLoops < 0) maxLoops = 0;
                 int offset = 80;
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -184,13 +178,44 @@ public class VKontakteRu extends PluginForDecrypt {
                  * http://vk.com/albums46486585
                  */
                 br.getPage(parameter);
-                /** Photos are placed in different locations, find them all */
-                final String[] regexes = { "class=\"ge_photos_album\" href=\"(/album\\d+_\\d+)\"", "class=\\\\\"ge_photos_album\\\\\" href=\\\\\"\\\\(/album\\d+_\\d+)\\\\\"", "<div class=\"fl_l info_wrap\">[\t\n\r ]+<div class=\"name\"><a href=\"(/album\\d+_\\d+)\\?" };
+                final String[] regexes = { "class=\\\\\"ge_photos_album\\\\\" href=\\\\\"\\\\(/album\\d+_\\d+)\\\\\"", "<div class=\"fl_l info_wrap\">[\t\n\r ]+<div class=\"name\"><a href=\"(/album\\d+_\\d+)\\?" };
                 for (String regex : regexes) {
                     String[] photoAlbums = br.getRegex(regex).getColumn(0);
                     if (photoAlbums == null || photoAlbums.length == 0) continue;
                     for (String photoAlbum : photoAlbums) {
                         decryptedLinks.add(createDownloadlink("http://vkontakte.ru" + photoAlbum));
+                    }
+                }
+                String numberOfEntrys = getNumberOfEntrys();
+                if (numberOfEntrys == null && (decryptedLinks == null || decryptedLinks.size() == 0)) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                if (numberOfEntrys != null) {
+                    /**
+                     * Find out how many times we have to reload images. Take
+                     * the number of albums - 40 (because without any request we
+                     * already got 20) and divide it by 20 (every reload we get
+                     * 20)
+                     */
+                    int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntrys) - 40) / 20);
+                    if (maxLoops < 0) maxLoops = 0;
+                    int offset = 20;
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    progress.setRange(maxLoops);
+                    /** Photos are placed in different locations, find them all */
+                    // Dev note: similar process as above with the offset:
+                    // http://vkontakte.ru/albums3793387, al=1&offset=40&part=1
+                    for (int i = 0; i <= maxLoops; i++) {
+                        if (i > 0) {
+                            offset += 20;
+                            br.postPage(parameter, "al=1&offset=" + offset + "&part=1");
+                        }
+                        String[] photoAlbums = br.getRegex("class=\"ge_photos_album\" href=\"(/album\\d+_\\d+)\"").getColumn(0);
+                        if (photoAlbums == null || photoAlbums.length == 0) continue;
+                        for (String photoAlbum : photoAlbums) {
+                            decryptedLinks.add(createDownloadlink("http://vkontakte.ru" + photoAlbum));
+                        }
                     }
                 }
                 if (decryptedLinks == null || decryptedLinks.size() == 0) {
@@ -237,6 +262,17 @@ public class VKontakteRu extends PluginForDecrypt {
             return decryptedLinks;
         }
 
+    }
+
+    private String getNumberOfEntrys() {
+        String numberOfEntrys = br.getRegex("\\| (\\d+) zdj&#281").getMatch(0);
+        if (numberOfEntrys == null) {
+            numberOfEntrys = br.getRegex("count: (\\d+),").getMatch(0);
+            if (numberOfEntrys == null) {
+                numberOfEntrys = br.getRegex("</a>(\\d+) zdj\\&#281;\\&#263;<span").getMatch(0);
+            }
+        }
+        return numberOfEntrys;
     }
 
     private DownloadLink findVideolink(String parameter) throws IOException {

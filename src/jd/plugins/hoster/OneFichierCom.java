@@ -40,13 +40,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
 
-    private static AtomicInteger maxPrem      = new AtomicInteger(1);
-
-    private static final String  PASSWORDTEXT = "(Accessing this file is protected by password|Please put it on the box bellow)";
-
-    private static final String  PREMIUMPAGE  = "https://www.1fichier.com/en/login.pl";
-
-    private static final String  MAINPAGE     = "www.1fichier.com";
+    private static AtomicInteger maxPrem        = new AtomicInteger(1);
+    private static final String  PASSWORDTEXT   = "(Accessing this file is protected by password|Please put it on the box bellow)";
+    private static final String  PREMIUMPAGE    = "https://www.1fichier.com/en/login.pl";
+    private static final String  MAINPAGE       = "www.1fichier.com";
+    private static final String  IPBLOCKEDTEXTS = "(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading some files|>Please wait a few seconds before downloading new ones|>You must wait for another download)";
 
     public OneFichierCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -68,7 +66,7 @@ public class OneFichierCom extends PluginForHost {
         String passCode = null;
         // Their limit is just very short so a 30 second waittime for all
         // downloads will remove the limit
-        if (br.containsHTML("(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading some files|>Please wait a few seconds before downloading new ones)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
+        if (br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
         String dllink = br.getRedirectLocation();
         if (br.containsHTML(PASSWORDTEXT)) {
             passCode = handlePassword(downloadLink, passCode);
@@ -180,7 +178,7 @@ public class OneFichierCom extends PluginForHost {
         } else {
             if (br.containsHTML(PASSWORDTEXT)) passCode = handlePassword(link, passCode);
             String dllink = br.getRedirectLocation();
-            if (dllink != null && br.containsHTML("(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading some files|>Please wait a few seconds before downloading new ones)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
+            if (dllink != null && br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -225,6 +223,7 @@ public class OneFichierCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
+        System.out.print(br.toString());
         if (br.containsHTML("(The requested file could not be found|The file may has been deleted by its owner|Le fichier demandé n\\'existe pas\\.|Il a pu être supprimé par son propriétaire\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>Téléchargement du fichier : (.*?)</title>").getMatch(0);
         if (filename == null) {
@@ -233,7 +232,12 @@ public class OneFichierCom extends PluginForHost {
                 filename = br.getRegex("(>Cliquez ici pour télécharger|>Click here to download) (.*?)</a>").getMatch(1);
                 if (filename == null) {
                     filename = br.getRegex("\">(Nom du fichier :|File name :)</th>[\t\r\n ]+<td>(.*?)</td>").getMatch(1);
-                    if (filename == null) filename = br.getRegex("<title>Download of (.*?)</title>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("<title>Download of (.*?)</title>").getMatch(0);
+                        if (filename == null) {
+                            filename = br.getRegex("<div style=\"width:450px;margin:auto;text\\-align:center\">[\t\n\r ]+Download of ([^<>\"]+)<br/>").getMatch(0);
+                        }
+                    }
                 }
             }
         }
