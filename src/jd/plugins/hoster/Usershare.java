@@ -51,17 +51,13 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision 15297 $", interfaceVersion = 2, names = { "usershare.net" }, urls = { "https?://(www\\.)?usershare\\.net/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usershare.net" }, urls = { "https?://(www\\.)?usershare\\.net/[a-z0-9]{12}" }, flags = { 0 })
 public class Usershare extends PluginForHost {
 
     private String              BRBEFORE            = "";
-
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-
     private static final String COOKIE_HOST         = "http://usershare.net";
-
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
-
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static String       AGENT               = RandomUserAgent.generate();

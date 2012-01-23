@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ public class FileCondoComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = br.getRegex("href=\"/download_vip_check\\.php\\?f=[A-Za-z0-9]+\" target=\"_blank\">(.*?)</a></td").getMatch(0);
-        String[][] links = br.getRegex("<a href=\\'(http://(www\\.)?filecondo\\.com/download_regular_active\\.php\\?file=[A-Za-z0-9]+\\&part=\\d+)\\'>DOWNLOAD ([^<>/\"]+)</a>").getMatches();
+        String[][] links = br.getRegex("<a href=\\'(http://(\\w+\\.)?filecondo\\.com/download_regular_active\\.php\\?file=[A-Za-z0-9]+\\&part=\\d+)\\'>DOWNLOAD ([^<>/\"]+)</a>").getMatches();
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

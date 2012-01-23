@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecondo.com" }, urls = { "http://(www\\.)?filecondodecrypted\\.com/download_regular_active\\.php\\?file=[A-Za-z0-9]+\\&part=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecondo.com" }, urls = { "http://(\\w+\\.)?filecondodecrypted\\.com/download_regular_active\\.php\\?file=[A-Za-z0-9]+\\&part=\\d+" }, flags = { 0 })
 public class FileCondoCom extends PluginForHost {
 
     public FileCondoCom(PluginWrapper wrapper) {
