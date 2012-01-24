@@ -53,7 +53,7 @@ public class UfliqCom extends PluginForHost {
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
 
-    // XfileSharingProBasic Version 2.5.2.0, added 1 filename regex and one FNF
+    // XfileSharingProBasic Version 2.5.2.0, added several modifications
     // text
     @Override
     public String getAGBLink() {
@@ -79,6 +79,7 @@ public class UfliqCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        br.setCustomCharset("utf-8");
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
@@ -98,7 +99,12 @@ public class UfliqCom extends PluginForHost {
                         filename = new Regex(correctedBR, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                         if (filename == null) {
                             filename = new Regex(correctedBR, "File Name.*?nowrap>(.*?)</td").getMatch(0);
-                            if (filename == null) filename = new Regex(correctedBR, "color:#656f66; font\\-size:15px; font\\-weight:bold;\">([^<>\"]+)</div>").getMatch(0);
+                            if (filename == null) {
+                                filename = new Regex(correctedBR, "color:#656f66; font\\-size:15px; font\\-weight:bold;\">([^<>\"]+)</div>").getMatch(0);
+                                if (filename == null) {
+                                    filename = new Regex(correctedBR, "<META NAME=\"description\" CONTENT=\"Download file ([^<>\"]+)\">").getMatch(0);
+                                }
+                            }
                         }
                     }
                 }
@@ -120,7 +126,7 @@ public class UfliqCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setFinalFileName(filename.trim());
+        link.setName(filename.trim());
         if (filesize != null && !filesize.equals("")) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -308,11 +314,17 @@ public class UfliqCom extends PluginForHost {
                 if (dllink == null) {
                     dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                        if (cryptedScripts != null && cryptedScripts.length != 0) {
-                            for (String crypted : cryptedScripts) {
-                                dllink = decodeDownloadLink(crypted);
-                                if (dllink != null) break;
+                        dllink = new Regex(correctedBR, "document\\.location=\\'(http://cache\\d+[^<>\"\\']+)\\'").getMatch(0);
+                        if (dllink == null) {
+                            dllink = new Regex(correctedBR, "(\\'|\")(http://cache\\d+\\.ufliq.com:\\d+/d/[a-z0-9]+/[^<>\"\\']+)(\\'|\")").getMatch(1);
+                            if (dllink == null) {
+                                String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                                    for (String crypted : cryptedScripts) {
+                                        dllink = decodeDownloadLink(crypted);
+                                        if (dllink != null) break;
+                                    }
+                                }
                             }
                         }
                     }
@@ -433,7 +445,7 @@ public class UfliqCom extends PluginForHost {
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\">[\n ]+(\\d+)[\n ]+</span>").getMatch(0);
+        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;

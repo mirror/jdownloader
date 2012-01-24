@@ -333,12 +333,9 @@ public class VKontakteRu extends PluginForDecrypt {
                 videoID = "";
             }
         }
-        String videoName = new Regex(correctedBR, "class=\"video_name\" />(.*?)</a>").getMatch(0);
+        String videoName = new Regex(correctedBR, "\"md_title\":\"(.*?)\"").getMatch(0);
         if (videoName == null) {
-            videoName = new Regex(correctedBR, "\"md_title\":\"(.*?)\"").getMatch(0);
-            if (videoName == null) {
-                videoName = new Regex(correctedBR, "\\{\"title\":\"(.*?)\"").getMatch(0);
-            }
+            videoName = new Regex(correctedBR, "\\{\"title\":\"(.*?)\"").getMatch(0);
         }
         String completeLink = "directhttp://http://" + urlPart.replace("http://", "") + "/" + additionalStuff + vtag + videoID + quality;
         DownloadLink dl = createDownloadlink(completeLink);

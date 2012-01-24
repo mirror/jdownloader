@@ -131,7 +131,7 @@ public class SflnkgNt extends PluginForDecrypt {
                 String allLinks = br.getRegex("class=\"link-box\" id=\"direct-links\".*?>(.*?<a href=\".*?)</div>").getMatch(0);
                 if (allLinks != null) links = new Regex(allLinks, "<a href=\"(.*?)\"").getColumn(0);
                 if (links == null || links.length == 0) {
-                    links = br.getRegex("\"(http://safelinking\\.net/d/[a-z0-9]+)\"").getColumn(0);
+                    links = br.getRegex("\"(http://safelinking\\.net/d/[a-z0-9]+(/[^<>\"]+(?!\\.\\.\\.)[^<>\"]+)?)\"").getColumn(0);
                     if (links == null || links.length == 0) {
                         links = br.getRegex("class=\"linked\">(http://.*?)</a>").getColumn(0);
                         if (links == null || links.length == 0) {
