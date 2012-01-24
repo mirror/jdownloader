@@ -368,6 +368,8 @@ public class TbCm extends PluginForDecrypt {
                         } else if (this.br.openGetConnection(dlLink).getResponseCode() == 200) {
                             this.addtopos(cMode, dlLink, this.br.getHttpConnection().getLongContentLength(), vQuality, format);
                         }
+                    } catch (final Throwable e) {
+                        e.printStackTrace();
                     } finally {
                         try {
                             this.br.getHttpConnection().disconnect();
@@ -381,6 +383,8 @@ public class TbCm extends PluginForDecrypt {
                             } else if (this.br.openGetConnection(dlLink).getResponseCode() == 200) {
                                 this.addtopos(DestinationFormat.AUDIOMP3, dlLink, this.br.getHttpConnection().getLongContentLength(), "", format);
                             }
+                        } catch (final Throwable e) {
+                            e.printStackTrace();
                         } finally {
                             try {
                                 this.br.getHttpConnection().disconnect();

@@ -388,7 +388,7 @@ public class FilePostCom extends PluginForHost {
                         rc.setId(id);
                         rc.load();
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        DownloadLink dummyLink = new DownloadLink(null, "Account", "filepost.com", "http://filepost.com", true);
+                        DownloadLink dummyLink = new DownloadLink(this, "Account", "filepost.com", "http://filepost.com", true);
                         String c = getCaptchaCode(cf, dummyLink);
                         br.postPage("https://filepost.com/general/logn_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
                     }
