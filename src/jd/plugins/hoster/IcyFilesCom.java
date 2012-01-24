@@ -64,6 +64,7 @@ public class IcyFilesCom extends PluginForHost {
             if (br.containsHTML("Dont skip the countdown")) {
                 logger.warning("Waittime isn't correct...");
             }
+            if (downloadLink.getDownloadURL().equals(dl.getConnection().getURL().toString())) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -25,6 +26,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iload.to" }, urls = { "http://((beta|de)\\.)?iload\\.to/(de/)?((go/\\d+([-\\w/\\.]+)?(/merged|go/\\d+)?)(streaming/.+)?|(view|title|release)/.*?/)" }, flags = { 0 })
 public class LdT extends PluginForDecrypt {
@@ -78,7 +82,28 @@ public class LdT extends PluginForDecrypt {
             }
         } else {
             br.getPage(parameter);
-            if (br.getRedirectLocation() == null) { return null; }
+            if (br.getRedirectLocation() == null) {
+                if (br.containsHTML("Deine Anfragen sehen aus als ob sie von einem Bot kommen")) {
+                    for (int i = 0; i < 5; i++) {
+                        if (br.containsHTML("recaptcha/api/")) {
+                            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                            rc.parse();
+                            rc.load();
+                            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                            final String c = getCaptchaCode(cf, param);
+                            rc.setCode(c);
+                        }
+                        if (br.containsHTML("recaptcha/api/")) {
+                            continue;
+                        } else {
+                            break;
+                        }
+                    }
+                } else {
+                    return null;
+                }
+            }
             if (br.getRedirectLocation().equalsIgnoreCase(parameter) || br.getRedirectLocation().equalsIgnoreCase(parameter + "/")) {
                 br.getPage(parameter);
             }

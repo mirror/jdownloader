@@ -63,7 +63,8 @@ public class FilestoreTo extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String gamer = br.getRegex("type=\"hidden\" name=\"DDL\" value=\"(.*?)\"").getMatch(0);
-        gamer = gamer == null ? br.getRegex("<input type=\"hidden\" name=\"[0-9A-Z]+\" value=\"(.*?)\">").getMatch(0) : gamer;
+        gamer = gamer == null ? br.getRegex("<input type=\"hidden\" name=\"[A-Z]+\" value=\"(.*?)\">").getMatch(0) : gamer;
+        gamer = gamer == null ? br.getRegex("<input type=\"hidden\" name=\".*?\" value=\"([0-9A-Z]+)\">").getMatch(0) : gamer;
         if (gamer == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         final String waittime = br.getRegex("Bitte warte (\\d+) Sekunden und starte dann").getMatch(0);
         int wait = 10;

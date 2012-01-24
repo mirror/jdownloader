@@ -123,7 +123,6 @@ public class Rlnks extends PluginForDecrypt {
     private void decryptLinks(final ArrayList<DownloadLink> decryptedLinks, final CryptedLink param) throws Exception {
         br.setFollowRedirects(false);
         final String[] matches = br.getRegex("getFile\\('(cid=\\w*?&lid=\\d*?)'\\)").getColumn(0);
-        int i = 0;
         try {
             Browser brc = null;
             PROGRESS.addToMax(matches.length);
@@ -139,12 +138,24 @@ public class Rlnks extends PluginForDecrypt {
                     brc.getPage(brc.getRedirectLocation());
                 }
                 if (brc.getRedirectLocation() != null) {
-                    decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(brc.getRedirectLocation())));
+                    final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(brc.getRedirectLocation()));
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                        /* does not exist in 09581 */
+                    }
+                    decryptedLinks.add(dl);
                     break;
                 } else {
                     final String url = brc.getRegex("iframe.*?src=\"(.*?)\"").getMatch(0);
+                    final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(url));
                     if (url != null) {
-                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(url)));
+                        try {
+                            distribute(dl);
+                        } catch (final Throwable e) {
+                            /* does not exist in 09581 */
+                        }
+                        decryptedLinks.add(dl);
                     } else {
                         /* as bot detected */
                         return;

@@ -43,7 +43,7 @@ public class LdTTemp extends PluginForDecrypt {
 
     public static final Object   LOCK                = new Object();
     private static final Pattern PATTERN_WAITTIME    = Pattern.compile("<p>Du musst noch (\\d+) Sekunden warten bis du", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_CAPTCHA     = Pattern.compile("(api\\.recaptcha\\.net|Das war leider Falsch|das Falsche Captcha eingegeben)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_CAPTCHA     = Pattern.compile("(api\\.recaptcha\\.net|Das war leider Falsch|das Falsche Captcha eingegeben|Bitte das Captcha eingeben um zu den Links zu kommen)", Pattern.CASE_INSENSITIVE);
     private static long          LATEST_BLOCK_DETECT = 0;
     private static long          LATEST_RECONNECT    = 0;
 
@@ -116,7 +116,6 @@ public class LdTTemp extends PluginForDecrypt {
                 if (br.getRegex(PATTERN_WAITTIME).matches()) {
                     final int waittime = Integer.valueOf(br.getRegex(PATTERN_WAITTIME).getMatch(0));
                     if (waittime > 50 && limitsReached(br, waittime)) {
-
                         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
                         br.clearCookies(br.getHost());
                     } else {
