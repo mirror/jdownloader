@@ -136,6 +136,12 @@ public class FrShrdFldr extends PluginForDecrypt {
             if (name == null) {
                 name = "4shared - Folder";
             }
+            String[] pages2 = br.getRegex("javascript:pagerShowFiles\\((\\d+)\\);").getColumn(0);
+            if (pages2 != null) {
+                for (final String page : pages2) {
+                    pagesTodo.add(page);
+                }
+            }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(name));
             // change to listview
@@ -158,7 +164,6 @@ public class FrShrdFldr extends PluginForDecrypt {
                 if (links.length == 0) {
                     links = br.getRegex("ml_file(.*?)title=").getColumn(0);
                 }
-
                 // scan page
                 for (String dl : links) {
                     final String tmp = dl;

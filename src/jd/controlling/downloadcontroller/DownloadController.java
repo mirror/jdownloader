@@ -149,15 +149,26 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             /* loading is not allowed */
             return;
         }
-        /* load from new json zip */
-        LinkedList<FilePackage> lpackages = load(getDownloadListFile());
+        LinkedList<FilePackage> lpackages = null;
+        try {
+            /* load from new json zip */
+            lpackages = load(getDownloadListFile());
+        } catch (final Throwable e) {
+            Log.exception(e);
+        }
+        try {
+            /* try fallback to load tmp file */
+            if (lpackages == null) lpackages = load(new File(getDownloadListFile().getAbsolutePath() + ".tmp"));
+        } catch (final Throwable e) {
+            Log.exception(e);
+        }
         try {
             /* fallback to old hsqldb */
             if (lpackages == null) lpackages = loadDownloadLinks();
         } catch (final Throwable e) {
             Log.exception(e);
-            lpackages = new LinkedList<FilePackage>();
         }
+        if (lpackages == null) lpackages = new LinkedList<FilePackage>();
         postInit(lpackages);
         final LinkedList<FilePackage> lpackages2 = lpackages;
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
@@ -256,6 +267,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     try {
                         zip.close();
                     } catch (final Throwable e) {
+                        return false;
                     }
                     /* try to delete destination file if it already exists */
                     if (file.exists()) {
