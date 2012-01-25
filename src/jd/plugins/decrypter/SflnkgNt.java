@@ -127,9 +127,10 @@ public class SflnkgNt extends PluginForDecrypt {
             decryptedLinks = new ArrayList<DownloadLink>();
             // Webprotection decryption
             String[] links = br.getRegex("class=\"linked\">(http://safelinking\\.net/d/.*?)</a>").getColumn(0);
+            if (links == null) links = br.getRegex("\"(http://safelinking\\.net/d/.*?)\" class=\"result-a\">").getColumn(0);
             if (links == null || links.length == 0) {
-                String allLinks = br.getRegex("class=\"link-box\" id=\"direct-links\".*?>(.*?<a href=\".*?)</div>").getMatch(0);
-                if (allLinks != null) links = new Regex(allLinks, "<a href=\"(.*?)\"").getColumn(0);
+                String allLinks = br.getRegex("<div class=\"links\\-container result\\-form\">(<a href=\"http://safelinking.net/d/.*?)<br/></div></fieldset>").getMatch(0);
+                if (allLinks == null) allLinks = br.getRegex("class=\"link-box\" id=\"direct-links\".*?>(.*?<a href=\".*?)</div>").getMatch(0);
                 if (links == null || links.length == 0) {
                     links = br.getRegex("\"(http://safelinking\\.net/d/[a-z0-9]+(/[^<>\"]+((?!\\.\\.\\.)[^<>\"]+)?)?)\"").getColumn(0);
                     if (links == null || links.length == 0) {
