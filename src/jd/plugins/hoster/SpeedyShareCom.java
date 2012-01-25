@@ -71,21 +71,27 @@ public class SpeedyShareCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
         }
+        String finallink = null;
         if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYTEXT);
-        if (!br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final long timeBefore = System.currentTimeMillis();
-        String postLink = br.getRegex("\"(/files?/[A-Za-z0-9]+/download/.*?)\"").getMatch(0);
-        String captchaLink = br.getRegex("(/captcha\\.php\\?uid=file\\d+)").getMatch(0);
-        if (postLink == null || captchaLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String code = getCaptchaCode(MAINPAGE + captchaLink, downloadLink);
-        final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-        final String waittime = br.getRegex("</div>\\';[\t\n\r ]+secondscounter\\((\\d+)\\);").getMatch(0);
-        int wait = 15;
-        if (waittime != null) wait = Integer.parseInt(waittime) / 10;
-        wait -= passedTime;
-        if (wait > 0) sleep(wait * 1001l, downloadLink);
-        br.postPage(MAINPAGE + postLink, "captcha=" + Encoding.urlEncode(code));
-        final String finallink = br.getRedirectLocation();
+        if (!br.containsHTML(CAPTCHATEXT)) {
+            finallink = br.getRegex("class=downloadfilename href='(.*?)'").getMatch(0);
+            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (finallink == null) {
+            final long timeBefore = System.currentTimeMillis();
+            String postLink = br.getRegex("\"(/files?/[A-Za-z0-9]+/download/.*?)\"").getMatch(0);
+            String captchaLink = br.getRegex("(/captcha\\.php\\?uid=file\\d+)").getMatch(0);
+            if (postLink == null || captchaLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String code = getCaptchaCode(MAINPAGE + captchaLink, downloadLink);
+            final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+            final String waittime = br.getRegex("</div>\\';[\t\n\r ]+secondscounter\\((\\d+)\\);").getMatch(0);
+            int wait = 15;
+            if (waittime != null) wait = Integer.parseInt(waittime) / 10;
+            wait -= passedTime;
+            if (wait > 0) sleep(wait * 1001l, downloadLink);
+            br.postPage(MAINPAGE + postLink, "captcha=" + Encoding.urlEncode(code));
+            finallink = br.getRedirectLocation();
+        }
         if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -111,6 +117,7 @@ public class SpeedyShareCom extends PluginForHost {
         String filename = br.getRegex("property=\"og:title\" content=\"(.*?) \\- download at SpeedyShare\"").getMatch(0);
         if (filename == null) filename = br.getRegex("itemprop=\"name\" content=\"(.*?) \\- download at SpeedyShare\"").getMatch(0);
         if (filename == null) filename = br.getRegex("class=downloadfilename>(.*?)</").getMatch(0);
+        if (filename == null) filename = br.getRegex("class=downloadfilename href.*?>(.*?)</").getMatch(0);
         String filesize = br.getRegex("valign=top><div class=sizetagtext>(.*?)</div>").getMatch(0);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(Encoding.htmlDecode(filename));

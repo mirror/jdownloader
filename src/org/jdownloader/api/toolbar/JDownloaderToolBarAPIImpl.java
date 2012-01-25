@@ -2,6 +2,7 @@ package org.jdownloader.api.toolbar;
 
 import java.awt.MouseInfo;
 import java.awt.Point;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -23,8 +24,13 @@ import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.remoteapi.RemoteAPI;
+import org.appwork.remoteapi.RemoteAPIException;
 import org.appwork.remoteapi.RemoteAPIRequest;
+import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.storage.config.MinTimeWeakReference;
+import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -41,7 +47,12 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
         protected String                   URL       = null;
     }
 
-    private HashMap<String, MinTimeWeakReference<ChunkedDom>> domSessions = new HashMap<String, MinTimeWeakReference<ChunkedDom>>();
+    private class CheckedDom extends ChunkedDom {
+        protected int status = 0;
+    }
+
+    private HashMap<String, MinTimeWeakReference<ChunkedDom>> domSessions   = new HashMap<String, MinTimeWeakReference<ChunkedDom>>();
+    private HashMap<String, CheckedDom>                       checkSessions = new HashMap<String, CheckedDom>();
 
     public Object getStatus() {
         HashMap<String, Object> ret = new HashMap<String, Object>();
@@ -263,5 +274,70 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
         boolean b = DownloadWatchDog.getInstance().isPaused();
         DownloadWatchDog.getInstance().pauseDownloadWatchDog(!b);
         return !b;
+    }
+
+    public Object checkLinksFromDOM(RemoteAPIRequest request) {
+        HashMap<String, Object> ret = new HashMap<String, Object>();
+        CheckedDom checkSession = new CheckedDom();
+        String checkID = "check" + System.nanoTime();
+        synchronized (checkSessions) {
+            checkSessions.put(checkID, checkSession);
+        }
+        ret.put("checkid", checkID);
+        ret.put("status", true);
+        ret.put("msg", (Object) null);
+        return ret;
+    }
+
+    private void writeString(RemoteAPIResponse response, RemoteAPIRequest request, String string, boolean wrapCallback) {
+        OutputStream out = null;
+        try {
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "text/html", false));
+            out = RemoteAPI.getOutputStream(response, request, false, true);
+            if (wrapCallback && request.getJqueryCallback() != null) {
+                if (string == null) string = "";
+                string = "{\"content\": \"" + string.trim() + "\"}";
+            }
+            out.write(string.getBytes("UTF-8"));
+        } catch (Throwable e) {
+            throw new RemoteAPIException(e);
+        } finally {
+            try {
+                out.close();
+            } catch (final Throwable e) {
+            }
+        }
+    }
+
+    public void pollCheckedLinksFromDOM(RemoteAPIResponse response, RemoteAPIRequest request, String checkID) {
+        CheckedDom session = null;
+        synchronized (checkSessions) {
+            session = checkSessions.get(checkID);
+            if (session != null && session.status == 2) {
+                checkSessions.remove(checkID);
+            }
+        }
+        String ret = null;
+        if (session != null) {
+            synchronized (session) {
+                switch (session.status) {
+                case 0:
+                    session.status = 1;
+                    ret = "0";
+                    break;
+                case 1:
+                    session.status = 2;
+                    ret = "var jDownloaderObj = {function statusCheck(){alert(\"jDObj: script injected to page successfully\");}};jDownloaderObj.statusCheck();";
+                    break;
+                default:
+                    ret = "-1";
+                    break;
+                }
+            }
+        }
+        if (ret == null) {
+            ret = "-1";
+        }
+        writeString(response, request, ret, false);
     }
 }
