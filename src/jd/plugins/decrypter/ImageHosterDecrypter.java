@@ -30,8 +30,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgchili.com", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "pixhost.info", "picturedumper.com", "imagetwist.com", "sharenxs.com", "9gag.com" }, urls = { "http://(www\\.)?imgchili\\.com/show/\\d+/[a-z0-9_\\.]+", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?img\\d+\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+", "http://[\\w\\.]*?imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+",
-        "http://(www\\.)?pixhost\\.info/pictures/\\d+", "http://(www\\.)?picturedumper\\.com/picture/\\d+/[a-z0-9]+/", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+", "https?://(www\\.)?9gag\\.com/gag/\\d+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgur.com", "imgchili.com", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "pixhost.info", "picturedumper.com", "imagetwist.com", "sharenxs.com", "9gag.com" }, urls = { "http://(www\\.)?imgur\\.com(/gallery)?/[A-Za-z0-9]+", "http://(www\\.)?imgchili\\.com/show/\\d+/[a-z0-9_\\.]+", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?img\\d+\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+", "http://[\\w\\.]*?imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}",
+        "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?pixhost\\.info/pictures/\\d+", "http://(www\\.)?picturedumper\\.com/picture/\\d+/[a-z0-9]+/", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+", "https?://(www\\.)?9gag\\.com/gag/\\d+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class ImageHosterDecrypter extends PluginForDecrypt {
 
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
@@ -43,7 +43,6 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(false);
-        br.getPage(parameter);
         String finallink = null;
         String finalfilename = null;
         if (parameter.contains("imagebam.com")) {
@@ -51,6 +50,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             if (br.containsHTML("The gallery you are looking for")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
             if (br.containsHTML("Image not found")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
             if (parameter.contains("/gallery/")) {
+                br.getPage(parameter);
                 String name = new Regex(parameter, "/gallery/(.+)").getMatch(0);
                 if (name == null) {
                     name = "ImageBamGallery";
@@ -91,12 +91,15 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                 finallink = br.getRegex("onclick=\"scale\\(this\\);\" src=\"(http://.*?)\"").getMatch(0);
             }
         } else if (parameter.contains("media.photobucket.com")) {
+            br.getPage(parameter);
             finallink = br.getRegex("mediaUrl\\':\\'(http.*?)\\'").getMatch(0);
         } else if (parameter.contains("freeimagehosting.net")) {
+            br.getPage(parameter);
             /* Error handling */
             if (!br.containsHTML("uploads/")) return decryptedLinks;
             finallink = parameter.replace("image.php?", "uploads/");
         } else if (parameter.contains("pixhost.org")) {
+            br.getPage(parameter);
             /* Error handling */
             if (!br.containsHTML("images/")) return decryptedLinks;
             finallink = br.getRegex("show_image\" src=\"(http.*?)\"").getMatch(0);
@@ -104,21 +107,25 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                 finallink = br.getRegex("\"(http://img[0-9]+\\.pixhost\\.org/images/[0-9]+/.*?)\"").getMatch(0);
             }
         } else if (parameter.contains("pixhost.info/")) {
+            br.getPage(parameter);
             finallink = br.getRegex("border=\\'0\\' src=\\'(http://.*?)\\'>").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("\\'(http://pixhost\\.info/avaxhome/[0-9/]+\\.jpeg)\\'").getMatch(0);
             }
         } else if (parameter.contains("picturedumper.com")) {
+            br.getPage(parameter);
             finallink = br.getRegex("<img id=\"image\" src=\"(http://.*?)\"").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("\"(http://picturedumper\\.com/data/.*?)\"").getMatch(0);
             }
         } else if (parameter.contains("imagetwist.com/")) {
+            br.getPage(parameter);
             finallink = br.getRegex("\"(http://img\\d+\\.imagetwist\\.com/i/\\d+/.*?)\"").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("<p><img src=\"(http://.*?)\"").getMatch(0);
             }
         } else if (parameter.contains("sharenxs.com/")) {
+            br.getPage(parameter);
             finallink = br.getRegex("cache\\.sharenxs\\.com/thumbnails/(tn|nxs)-(.*?)\"").getMatch(1);
             if (finallink != null) {
                 finallink = "http://cache.sharenxs.com/images/images2/" + finallink;
@@ -128,11 +135,13 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                 finallink = br.getRegex("view/\\?.*?src=\"(http://cache\\.sharenxs\\.com/images/.*?)\"").getMatch(0);
             }
         } else if (parameter.contains("imagehyper.com/img")) {
+            br.getPage(parameter);
             finallink = br.getRegex("imagehyper: dudoso \\- DO NOT MODIFY \\-\\-></td><td>[\t\n\r ]+<img src=\"(http://.*?)\"").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("\"(http://img\\d+\\.imagehyper\\.com/img/.*?)\"").getMatch(0);
             }
         } else if (parameter.contains("turboimagehost.com/")) {
+            br.getPage(parameter);
             finallink = br.getRegex("<a href=\"http://www\\.turboimagehost\\.com\"><img src=\"(http://.*?)\"").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("\"(http://s\\d+d\\d+\\.turboimagehost\\.com/sp/[a-z0-9]+/.*?)\"").getMatch(0);
@@ -148,13 +157,24 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                 finallink = br.getRegex("\"(http://ist\\d+\\-\\d+\\.filesor\\.com/pimpandhost\\.com/.*?)\"").getMatch(0);
             }
         } else if (parameter.contains("imgchili.com/")) {
+            br.getPage(parameter);
             finallink = br.getRegex("onload=\"scale\\(this\\);\" onclick=\"scale\\(this\\);\"  src=\"(http://.*?)\"").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("\"(http://i\\d+\\.imgchili\\.com/\\d+/[a-z0-9_]+\\.jpg)\"").getMatch(0);
             }
             finalfilename = new Regex(parameter, "imgchili\\.com/show/\\d+/(.+)").getMatch(0);
         } else if (parameter.contains("9gag.com/")) {
+            br.getPage(parameter);
             finallink = br.getRegex("<a href=\"/random\">[\r\n\t]+<img src=\"(.*?)\"").getMatch(0);
+        } else if (parameter.contains("imgur.com/")) {
+            br.getPage(parameter.replace("gallery/", ""));
+            finallink = br.getRegex("<link rel=image_src href=(http://[^<>\"\\']+) />").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("<input type=\"text\" id=\"direct\" value=\"(http://[^<>\"\\']+)\"").getMatch(0);
+                if (finallink == null) {
+                    finallink = br.getRegex("\"(http://i\\.imgur\\.com/[A-Za-z0-9]+\\..{1,5})\"").getMatch(0);
+                }
+            }
         }
         if (finallink == null) {
             logger.warning("Imagehoster-Decrypter broken for link: " + parameter);

@@ -70,6 +70,7 @@ public class TubeWolfCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        /** No limits but we limit it so hoster won't be overloaded */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
