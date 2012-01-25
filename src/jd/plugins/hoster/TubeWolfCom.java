@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2012  JD-Team support@jdownloader.org
+//Copyright (C) 2012 JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -33,13 +33,13 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Hash;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "h2porn.com" }, urls = { "http://(www\\.)?h2porn\\.com/videos/[\\w\\-]+" }, flags = { 0 })
-public class H2PornCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubewolf.com" }, urls = { "http://(www\\.)?tubewolf\\.com/movies/[\\w\\-]+" }, flags = { 0 })
+public class TubeWolfCom extends PluginForHost {
 
     private String        DLLINK = null;
-    private static String AHV    = "MDcyOWE3MDFmNmJjMTI2NzcwNzYyZTAwODZmZTUxNGY=";
+    private static String AHV    = "MTEyYjA4ZTBiOGU0MWIxNmU2ZjFiZjMxYzZjZTEyNWQ=";
 
-    public H2PornCom(final PluginWrapper wrapper) {
+    public TubeWolfCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -59,12 +59,12 @@ public class H2PornCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://h2porn.com/legal.php";
+        return "http://www.tubewolf.com/terms.php";
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 3;
+        return -1;
     }
 
     @Override
@@ -84,9 +84,9 @@ public class H2PornCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(<title>Page Not Found|>Channels</h1>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<div class=\"video_view\">[\t\n\r ]+<h1 class=\"block_header\">(.*?)\\&nbsp;<g:plusone").getMatch(0);
+        String filename = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?) @ H2Porn</title>").getMatch(0);
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
         DLLINK = br.getRegex("video_url=(http://.*?)\\&amp;preview_url").getMatch(0);
         if (DLLINK == null) {

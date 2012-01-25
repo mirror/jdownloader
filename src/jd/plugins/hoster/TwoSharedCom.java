@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -177,7 +177,7 @@ public class TwoSharedCom extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex("class=\"bodytitle\">Loading image \\((.*?)\\)\\.\\.\\. Please wait").getMatch(0);
         }
-        final String filename = br.getRegex("<title>2shared - download(.*?)</title>").getMatch(0);
+        final String filename = br.getRegex("<title>(2shared - download)?(.*?)(2shared - download)?</title>").getMatch(1);
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",|\\.", "")));

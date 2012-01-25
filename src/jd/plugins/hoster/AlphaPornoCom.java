@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Hash;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alphaporno.com" }, urls = { "http://(www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alphaporno.com" }, urls = { "http://(www\\.)?alphaporno\\.com/videos/[\\w\\-]+" }, flags = { 0 })
 public class AlphaPornoCom extends PluginForHost {
 
     private String        DLLINK = null;
@@ -59,7 +59,7 @@ public class AlphaPornoCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.alphaporno.com/";
+        return "http://www.alphaporno.com/terms.php";
     }
 
     @Override
@@ -70,7 +70,7 @@ public class AlphaPornoCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -85,13 +85,18 @@ public class AlphaPornoCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(<h2>Sorry, this video is no longer available|<title></title>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        DLLINK = br.getRegex("video_url=(http://.*?)/\\&amp;preview_url").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("video_url:.*?\\('(http://.*?)'\\)").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<meta name=\"description\" content=\"(.*?) \\- video on Alpha Porno \\- Porn Tube\"/>").getMatch(0);
         }
+        DLLINK = br.getRegex("video_url:.*?\\('(http://.*?)'\\)").getMatch(0);
         if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        String ext = DLLINK.substring(DLLINK.lastIndexOf(".")).replaceAll("\\W", "");
+        if (ext == null || ext.length() > 5) {
+            ext = "flv";
+        }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + "." + ext);
 
         final String time = checkTM();
         final String ahv = checkMD(DLLINK, time);
@@ -128,4 +133,5 @@ public class AlphaPornoCom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }
