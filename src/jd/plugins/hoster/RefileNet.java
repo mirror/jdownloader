@@ -93,8 +93,8 @@ public class RefileNet extends PluginForHost {
                 break;
             }
             if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            dllink = br.getRegex("align=\"center\">[\r\n\t]+<a href=\"(https?://[\\w\\.]+refile\\.net/file/\\?[^\"\\>]+)").getMatch(0);
-            if (dllink == null) br.getRegex("el\\_db\\.innerHTML = \\'<a href=\"(https?://[\\w\\.]+refile\\.net/file/\\?[^\"\\>]+)").getMatch(0);
+            dllink = br.getRegex("<a href=\"(https?://[\\w\\.]+refile\\.net/file/\\?[^\"\\>]+)\">").getMatch(0);
+            if (dllink == null) br.getRegex("\"(https?://[\\w\\.]+refile\\.net/file/\\?[^\"\\>]+)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);

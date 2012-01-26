@@ -179,8 +179,8 @@ public class FsxHu extends PluginForHost {
         if (br.containsHTML("(>A kiválasztott fájl nem található|>vagy eltávolításra került)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         br.getPage("http://www.fsx.hu/download.php?i=1");
         final String filename = br.getRegex("<h1 style=\"padding\\-bottom:0;font\\-size:16px;\">(.+?)</h1>").getMatch(0);
-        final String filesize = br.getRegex("Méret: (\\d+) Bájt<br").getMatch(0);
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        final String filesize = br.getRegex("(?i)Méret: (\\d+) Bájt ?<br").getMatch(0);
+        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
