@@ -81,7 +81,7 @@ public class Youtube extends PluginForHost {
                         }
                     }
                     i--;
-                    sb.append((char) Short.parseShort(sb2.toString(), 16));
+                    sb.append((char) Long.parseLong(sb2.toString(), 16));
                     continue;
                 case 'x':
                     /* normal hex coding */
@@ -93,7 +93,7 @@ public class Youtube extends PluginForHost {
                         sb2.append(ch);
                     }
                     i--;
-                    sb.append((char) Short.parseShort(sb2.toString(), 16));
+                    sb.append((char) Long.parseLong(sb2.toString(), 16));
                     continue;
                 default:
                     sb.append(ch);
