@@ -97,6 +97,7 @@ public class FilestoreTo extends PluginForHost {
         final ArrayList<String> regexStuff = new ArrayList<String>();
         regexStuff.add(zStatistic("Rjk4MEZFQTBGQjA3Q0RFNzFCOTZCNkNFREU1MDQ2QUQyREM1NzRFOTA4NThEODlEMUExQjVFMzgxNDZGODNEMDVEODlGQzMyODgwMEUyMzgyMTE2NTRCRUVCMjAxRDc3RTEyMTI4Q0FDMTk4NjczNUFDMjBEMkU0NkY1RjM2Mzk1RkEyQzk3Mw=="));
         regexStuff.add(zStatistic("Rjk4MEZFQTBGRTU2QzlCNzFFQzJCM0M4REE1Qw=="));
+        regexStuff.add(zStatistic("Rjk4MEZEQTdGRTBB"));
         regexStuff.add(zStatistic("Rjk4MEZEQTJGQzUyQzlFRg=="));
         for (final String aRegex : regexStuff) {
             aBrowser = br.toString();
