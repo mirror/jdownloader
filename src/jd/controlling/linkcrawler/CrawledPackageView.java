@@ -25,6 +25,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     protected HashSet<CrawledLink>         enabled;
     protected HashMap<CrawledLink, Long>   sizes;
     private HashSet<CrawledLink>           offline;
+    private HashSet<CrawledLink>           online;
 
     public CrawledPackageView() {
         this.fileSize = 0l;
@@ -32,6 +33,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         domainList = new TreeSet<DomainInfo>();
         enabled = new HashSet<CrawledLink>();
         offline = new HashSet<CrawledLink>();
+        online = new HashSet<CrawledLink>();
         sizes = new HashMap<CrawledLink, Long>();
     }
 
@@ -46,6 +48,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         this.enabled = newl.enabled;
         this.sizes = newl.sizes;
         this.offline = newl.offline;
+        this.online = newl.online;
         super.clear();
         super.addAll(items);
     }
@@ -66,22 +69,17 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     @Override
     public boolean add(CrawledLink e) {
         try {
-
             return super.add(e);
         } finally {
-
             addInfo(e);
         }
     }
 
     @Override
     public void add(int index, CrawledLink element) {
-
         try {
-
             super.add(index, element);
         } finally {
-
             addInfo(element);
         }
     }
@@ -96,11 +94,16 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         domainInfos = domainList.toArray(new DomainInfo[] {});
         // enabled
         if (element.isEnabled()) enabled.add(element);
-        // online
-        if (element.getLinkState() == LinkState.OFFLINE) offline.add(element);
+        if (element.getLinkState() == LinkState.OFFLINE) {
+            // offline
+            offline.add(element);
+        } else if (element.getLinkState() == LinkState.ONLINE) {
+            // online
+            online.add(element);
+        }
         // size
         sizes.put(element, element.getSize());
-        fileSize += element.getSize();
+        fileSize += sizes.get(element);
         // System.out.println(element + " add: " + crawledPackage.getName()
         // + " : " + hostCountMap + " " + domainList);
     }
@@ -120,6 +123,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         domainInfos = domainList.toArray(new DomainInfo[] {}); // enabled
         enabled.remove(element);
         offline.remove(element);
+        online.remove(element);
         // size
         fileSize -= sizes.get(element);
         if (fileSize < 0) throw new WTFException("Filesize cannot be less than 0");
@@ -148,13 +152,13 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     @Override
     public void clear() {
         try {
-
             super.clear();
         } finally {
             this.fileSize = 0l;
             hostCountMap.clear();
             domainList.clear();
             offline.clear();
+            online.clear();
             enabled.clear();
             sizes.clear();
 
@@ -173,7 +177,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     }
 
     public void update() {
-
     }
 
     @Override
@@ -204,7 +207,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     public boolean removeAll(Collection<?> old) {
         try {
             return super.removeAll(old);
-
         } finally {
             for (Object c : old) {
                 if (c != null && c instanceof CrawledLink) removeInfo((CrawledLink) c);
@@ -234,6 +236,10 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
     public int getOfflineCount() {
         return offline.size();
+    }
+
+    public int getOnlineCount() {
+        return online.size();
     }
 
     public long getFileSize() {

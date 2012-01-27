@@ -745,6 +745,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public void setAvailable(boolean available) {
         this.availableStatus = available ? AvailableStatus.TRUE : AvailableStatus.FALSE;
+        DLinkPropertyListener pl;
+        if ((pl = propertyListener) != null) pl.onDownloadLinkUpdated();
     }
 
     /**
@@ -816,18 +818,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.isEnabled = isEnabled;
         if (!isEnabled) {
             setAborted(true);
-        } else {
-            if (!DownloadController.getInstance().isLoadAllowed()) {
-                if (host != null && defaultplugin == null) {
-                    new Exception().printStackTrace();
-                    logger.severe("Es ist kein passendes HostPlugin geladen");
-                    return;
-                }
-                if (container != null && pluginForContainer == null) {
-                    logger.severe("Es ist kein passendes ContainerPlugin geladen");
-                    return;
-                }
-            }
         }
 
         if (isEnabled == true) {
@@ -835,6 +825,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         } else {
             setProperty(PROPERTY_ENABLED, isEnabled);
         }
+        DLinkPropertyListener pl;
+        if ((pl = propertyListener) != null) pl.onDownloadLinkUpdated();
     }
 
     /**

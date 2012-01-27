@@ -23,11 +23,13 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
     private ImageIcon         unknown;
     private ImageIcon         online;
     private ImageIcon         offline;
+    private ImageIcon         mixed;
 
     public AvailabilityColumn() {
         super(_GUI._.AvailabilityColumn_AvailabilityColumn());
         unknown = NewTheme.I().getIcon("help", 16);
-        online = NewTheme.I().getIcon("ok", 16);
+        online = NewTheme.I().getIcon("true", 16);
+        mixed = NewTheme.I().getIcon("true-orange", 16);
         offline = NewTheme.I().getIcon("error", 16);
     }
 
@@ -72,11 +74,13 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
                 }
             }
         } else if (value instanceof CrawledPackage) {
-            if (((CrawledPackage) value).getView().getOfflineCount() > 0) {
-                return offline;
-            } else {
-                return online;
-            }
+            int size = ((CrawledPackage) value).getView().size();
+            int off = ((CrawledPackage) value).getView().getOfflineCount();
+            int on = ((CrawledPackage) value).getView().getOnlineCount();
+            if (on == size) return online;
+            if (off == size) return offline;
+            if ((off == 0 && on == 0) || (on == 0 && off > 0)) { return unknown; }
+            return mixed;
         }
 
         return null;
@@ -138,7 +142,7 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public String getStringValue(AbstractNode value) {
-        if (value instanceof CrawledPackage) { return _GUI._.AvailabilityColumn_getStringValue_object_((((CrawledPackage) value).getView().size() - ((CrawledPackage) value).getView().getOfflineCount()), ((CrawledPackage) value).getView().size()); }
+        if (value instanceof CrawledPackage) { return _GUI._.AvailabilityColumn_getStringValue_object_(((CrawledPackage) value).getView().getOnlineCount(), ((CrawledPackage) value).getView().size()); }
         return nothing;
     }
 

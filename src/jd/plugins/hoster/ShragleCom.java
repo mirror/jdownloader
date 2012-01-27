@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
@@ -34,6 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shragle.com" }, urls = { "http://[\\w\\.]*?shragle\\.(com|de)/files/[\\w]+/.*" }, flags = { 2 })
 public class ShragleCom extends PluginForHost {
@@ -109,18 +111,33 @@ public class ShragleCom extends PluginForHost {
         String wait = this.br.getRegex(Pattern.compile("Bitte warten Sie(.*?)Minuten", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l); }
         wait = this.br.getRegex("var downloadWait =(.*?);").getMatch(0);
-        final Form form = this.br.getFormbyProperty("name", "download");
+        Form form = this.br.getFormbyProperty("name", "download");
         if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         if (wait == null) {
             wait = "10";
         }
-        this.sleep(Long.parseLong(wait.trim()) * 1000l, downloadLink);
+        String id = this.br.getRegex("challenge\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+        long waitT = Long.parseLong(wait.trim()) * 1000l;
+        if (id != null) {
+            /* captcha available */
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setForm(form);
+            rc.setId(id);
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            rc.prepareForm(c);
+            form = rc.getForm();
+        }
+        this.sleep(waitT, downloadLink);
         form.setAction(form.getAction());
         form.remove("submit");
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, form, true, 1);
         final URLConnectionAdapter con = this.dl.getConnection();
         if ((con.getContentType() != null) && con.getContentType().contains("html")) {
             this.br.followConnection();
+            if (this.br.containsHTML("Sicherheitscode falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             if (this.br.containsHTML("Ihre Session-ID ist")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "SESSION-ID Invalid", 10 * 60 * 1000l);
             if (this.br.containsHTML("bereits eine Datei herunter")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP is already loading, please wait!", 10 * 60 * 1000l); }
             if (this.br.containsHTML("The selected file was not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }

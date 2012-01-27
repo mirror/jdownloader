@@ -34,6 +34,7 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyEvent;
 import jd.controlling.proxy.ProxyInfo;
@@ -433,6 +434,7 @@ public class Main {
                         HostPluginController.getInstance().ensureLoaded();
                         /* load links */
                         DownloadController.getInstance().initDownloadLinks();
+                        LinkCollector.getInstance().initLinkCollector();
                         /* start remote api */
                         RemoteAPIController.getInstance();
                         ExternInterface.getINSTANCE();

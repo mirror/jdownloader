@@ -191,7 +191,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public CrawledLink(DownloadLink dlLink) {
         this.dlLink = dlLink;
-        dlLink.setPropertyListener(this);
+        if (dlLink != null) dlLink.setPropertyListener(this);
     }
 
     public void setDownloadLink(DownloadLink dlLink) {
@@ -232,10 +232,15 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public void setName(String name) {
         if (StringUtils.isEmpty(name)) {
-            name = null;
+            this.name = null;
         } else {
             this.name = name;
         }
+    }
+
+    /* returns unmodified name variable */
+    public String _getName() {
+        return name;
     }
 
     public boolean isNameSet() {
@@ -314,7 +319,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return created;
     }
 
-    protected void setCreated(long created) {
+    public void setCreated(long created) {
         this.created = created;
     }
 
@@ -419,7 +424,8 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * @param brokenCrawlerHandler the brokenCrawlerHandler to set
+     * @param brokenCrawlerHandler
+     *            the brokenCrawlerHandler to set
      */
     public void setBrokenCrawlerHandler(BrokenCrawlerHandler brokenCrawlerHandler) {
         this.brokenCrawlerHandler = brokenCrawlerHandler;

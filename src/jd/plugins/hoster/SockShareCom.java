@@ -100,7 +100,10 @@ public class SockShareCom extends PluginForHost {
         String filename = fileInfo.getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) \\| SockShare</title>").getMatch(0);
         String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            if (br.containsHTML("(>You have exceeded the daily stream limit for your country|You can wait until tomorrow, or get a <a href=\\'/gopro\\.php\\')")) return AvailableStatus.UNCHECKABLE;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;

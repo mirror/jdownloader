@@ -8,6 +8,7 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -23,7 +24,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     private long                                           created               = -1;
 
-    private String                                         customName            = null;
+    private String                                         name                  = null;
 
     private String                                         downloadFolder        = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
 
@@ -58,10 +59,6 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         return created;
     }
 
-    public String getCustomName() {
-        return customName;
-    }
-
     public String getDownloadFolder() {
 
         // replace variables in downloadfolder
@@ -77,7 +74,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     public String getName() {
-        return customName;
+        return name;
     }
 
     /**
@@ -132,13 +129,16 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     public void setName(String name) {
-        customName = name;
+        this.name = name;
     }
 
     public void setDownloadFolder(String downloadFolder) {
-        if (downloadFolder != null) {
+        if (!StringUtils.isEmpty(downloadFolder)) {
             downloadFolderSet = true;
             this.downloadFolder = downloadFolder;
+        } else {
+            this.downloadFolder = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+            this.downloadFolderSet = false;
         }
     }
 

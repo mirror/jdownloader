@@ -467,7 +467,8 @@ public class OronCom extends PluginForHost {
         if (brbefore.contains("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (brbefore.contains("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (brbefore.contains("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // Not using brbefore as filename can be <!--commented out & cleanup removes comments.
+        // Not using brbefore as filename can be <!--commented out & cleanup
+        // removes comments.
         String filename = br.getRegex("Filename: ?(<[\\w\"\\= ]+>)?([^\"<]+)").getMatch(1);
         if (filename == null) filename = new Regex(brbefore, "div.*?Filename:.*?<.*?>(.*?)<").getMatch(0);
         String filesize = new Regex(brbefore, "Size: (.*?)<").getMatch(0);
@@ -476,21 +477,20 @@ public class OronCom extends PluginForHost {
             // return AvailableStatus.UNCHECKABLE;
             link.getLinkStatus().setStatusText(JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
         }
-        // Prevention measures against hoster change ups. 
+        // Prevention measures against hoster change ups.
         // Allow null filesize, allows plugins to 'work longer'.
         if (filesize == null) {
             logger.warning("Oron: Filesize could not be found, continuing...");
             logger.warning("Oron: Please report bug to developement team.");
         }
-        // Set fail over filename when null. 
+        // Set fail over filename when null.
         if (filename == null) {
             logger.warning("Oron: Filename could not be found, continuing with UID as temp filename.");
             logger.warning("Oron: Please report bug to developement team.");
-            filename = new Regex(br.getURL(), "oron.com/(.+)").getMatch(0);
+            filename = new Regex(link.getDownloadURL(), "oron.com/(.+)").getMatch(0);
         }
-
-        link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filename != null) link.setName(filename);
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
