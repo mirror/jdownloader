@@ -22,11 +22,9 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://[\\w\\.]*?multiup\\.org/(\\?lien=.+|fichiers/download.+)" }, flags = { 0 })
 public class MultiupOrg extends PluginForDecrypt {
@@ -40,21 +38,41 @@ public class MultiupOrg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("(Sorry but your file does not exist or no longer exists|The file does not exist any more|It was deleted either further to a complaint or further to a not access for several weeks|<h2>Not Found</h2>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        final String quest = br.getRegex("name=\"data\\[Fichier\\]\\[indiceQuestion\\]\" value=\"(.*?)\"").getMatch(0);
+        final Regex additionValues = br.getRegex("What is the result of (\\d+) \\+ (\\d+) :");
+        if (quest == null || additionValues.getMatch(0) == null || additionValues.getMatch(1) == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        if (br.containsHTML("(Sorry but your file does not exist or no longer exists|The file does not exist any more|It was deleted either further to a complaint or further to a not access for several weeks|<h2>Not Found</h2>)")) return decryptedLinks;
         Thread.sleep(1000l);
-        br.postPage(br.getURL(), "_method=POST&data%5BFichier%5D%5Bsecurity_code%5D=");
-        String[] links = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+        final int result = (Integer.parseInt(additionValues.getMatch(0)) + Integer.parseInt(additionValues.getMatch(1)));
+        br.postPage(br.getURL(), "_method=POST&data%5BFichier%5D%5Bsecurity_code%5D=" + result + "&data%5BFichier%5D%5BindiceQuestion%5D=" + quest);
+        boolean decrypt = false;
+        String[] links = br.getRegex("<a target=\"_blank\" onMouseDown=\"\" href=\"([^<>\"\\']+)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            links = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+            decrypt = true;
+        }
         if (links == null || links.length == 0) return null;
         int failCounter = 0;
-        for (String aingleLink : links) {
-            String finallink = decodeLink(aingleLink);
-            if (finallink == null) {
-                failCounter++;
-                continue;
+        for (String singleLink : links) {
+            String finallink = null;
+            if (decrypt) {
+                finallink = decodeLink(singleLink);
+                if (finallink == null) {
+                    failCounter++;
+                    continue;
+                }
+            } else {
+                finallink = singleLink;
             }
             if (!finallink.contains("multiup.org/")) decryptedLinks.add(createDownloadlink(finallink));
         }
-        if (failCounter == links.length) return null;
+        if (failCounter == links.length) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         return decryptedLinks;
     }
 

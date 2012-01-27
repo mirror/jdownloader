@@ -665,3 +665,4 @@ jd/captcha/methods/ggsz
 jd/plugins/hoster/MafiaUploadCom.class
 jd/captcha/methods/xmn
 jd/plugins/decrypter/XeemIn.class
+jd/plugins/decrypter/Fldck.class
