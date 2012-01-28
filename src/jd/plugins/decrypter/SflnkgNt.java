@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2011  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -61,7 +61,18 @@ public class SflnkgNt extends PluginForDecrypt {
         if (br.containsHTML("(\"This link does not exist\\.\"|ERROR \\- this link does not exist)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (br.containsHTML(">Not yet checked</span>")) throw new DecrypterException("Not yet checked");
         if (br.containsHTML("To use reCAPTCHA you must get an API key from")) throw new DecrypterException("Server error, please contact the safelinking.net support!");
-        if (!parameter.contains("/d/")) {
+        if (parameter.matches("http://[\\w\\.]*?safelinking\\.net/d/[a-z0-9]+")) {
+            br.getPage(parameter);
+            String finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                logger.warning("SafeLinking: Sever issues? continuing...");
+                logger.warning("SafeLinking: Please confirm via browser, and report any bugs to developement team. :" + parameter);
+            }
+            // prevent loop
+            if (!parameter.equals(finallink)) {
+                decryptedLinks.add(createDownloadlink(finallink));
+            }
+        } else {
             Form capForm = new Form();
             capForm.put("post-protect", "1");
             capForm.setMethod(MethodType.POST);
@@ -108,7 +119,7 @@ public class SflnkgNt extends PluginForDecrypt {
             }
             if (br.containsHTML(RECAPTCHATEXT) || br.getRegex(CAPTCHAREGEX1).getMatch(0) != null || br.getRegex(CAPTCHAREGEX2).getMatch(0) != null) throw new DecrypterException(DecrypterException.CAPTCHA);
             if (br.containsHTML(PASSWORDPROTECTEDTEXT)) throw new DecrypterException(DecrypterException.PASSWORD);
-            if (br.containsHTML(">All links are dead\\.<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            if (br.containsHTML(">All links are dead\\.<|>Links dead<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             // container handling (if no containers found, use webprotection
             if (br.containsHTML("\\.dlc")) {
                 decryptedLinks = loadcontainer(".dlc", param);
@@ -124,50 +135,40 @@ public class SflnkgNt extends PluginForDecrypt {
                 decryptedLinks = loadcontainer(".ccf", param);
                 if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
             }
-            decryptedLinks = new ArrayList<DownloadLink>();
+
             // Webprotection decryption
-            String[] links = br.getRegex("class=\"linked\">(http://safelinking\\.net/d/.*?)</a>").getColumn(0);
-            if (links == null) links = br.getRegex("\"(http://safelinking\\.net/d/.*?)\" class=\"result-a\">").getColumn(0);
+            decryptedLinks = new ArrayList<DownloadLink>();
+            // look for safelink redirection links
+            String[] links = br.getRegex("(http://safelinking\\.net/d/[a-z0-9]+)").getColumn(0);
             if (links == null || links.length == 0) {
-                String allLinks = br.getRegex("<div class=\"links\\-container result\\-form\">(<a href=\"http://safelinking.net/d/.*?)<br/></div></fieldset>").getMatch(0);
-                if (allLinks == null) allLinks = br.getRegex("class=\"link-box\" id=\"direct-links\".*?>(.*?<a href=\".*?)</div>").getMatch(0);
+                // final fail over, look for all external links.
+                // Regex (lazy), due to the constant changes.
+                links = br.getRegex("href=[\"\\']{1}?(https?://[^<>]+)[\"\\']{1}?").getColumn(0);
+                // links = removeDupes(links);
                 if (links == null || links.length == 0) {
-                    links = br.getRegex("\"(http://safelinking\\.net/d/[a-z0-9]+(/[^<>\"]+((?!\\.\\.\\.)[^<>\"]+)?)?)\"").getColumn(0);
-                    if (links == null || links.length == 0) {
-                        links = br.getRegex("class=\"linked\">(http://.*?)</a>").getColumn(0);
-                        if (links == null || links.length == 0) {
-                            String lnks = br.getRegex("class=\"result\\-form\">(.*?)</fieldset></div></div></div></div><div id=\"footer\"").getMatch(0);
-                            if (lnks != null) links = br.getRegex("href=\"(.*?)\"").getColumn(0);
-                        }
-                    }
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
                 }
-            }
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
             }
             progress.setRange(links.length);
             for (String link : links) {
-                if (!link.contains("safelinking.net/")) {
-                    decryptedLinks.add(createDownloadlink(link));
-                } else {
-                    if (!link.matches(".*?safelinking\\.net/d/.+")) continue;
+                if (link.matches(".*safelinking\\.net/d/.+")) {
                     br.getPage(link);
                     String finallink = br.getRedirectLocation();
                     if (finallink == null) {
-                        logger.warning("Decrypter broken, decryption stopped at link: " + link);
-                    } else {
-                        if (!parameter.equals(finallink)) decryptedLinks.add(createDownloadlink(finallink));
+                        logger.warning("SafeLinking: Sever issues? continuing...");
+                        logger.warning("SafeLinking: Please confirm via browser, and report any bugs to developement team. :" + parameter);
                     }
+                    // prevent loop
+                    if (!parameter.equals(finallink)) {
+                        decryptedLinks.add(createDownloadlink(finallink));
+                    }
+                } else if (!link.contains("safelinking.net")) {
+                    // might need a better filter
+                    decryptedLinks.add(createDownloadlink(link));
                 }
                 progress.increase(1);
             }
-        } else {
-            if (br.getRedirectLocation() == null) {
-                logger.warning("Error in single-link handling for link: " + parameter);
-                return null;
-            }
-            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
         }
         return decryptedLinks;
     }

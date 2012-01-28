@@ -135,9 +135,9 @@ public class Tube8Com extends PluginForHost {
         if (verifyAge != null) {
             br.postPage(downloadLink.getDownloadURL(), "processdisclaimer=");
         }
-        String filename = br.getRegex("<div class=\"title-wrapper relative\">.*?<h1 class=\"main-title main-sprite-img\">(.*?)</h1>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?) \\- ").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?) - ").getMatch(0);
+            filename = br.getRegex("var videotitle=\"(.*?)\"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("Tube8 bring you(.*?)for all").getMatch(0);
             }
