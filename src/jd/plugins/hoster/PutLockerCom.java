@@ -104,6 +104,7 @@ public class PutLockerCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(">You have exceeded the daily stream limit for your country\\. You can wait until tomorrow")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         String hash = br.getRegex("<input type=\"hidden\" value=\"([a-z0-9]+)\" name=\"hash\">").getMatch(0);
         if (hash == null) {
             logger.warning("hash is null...");

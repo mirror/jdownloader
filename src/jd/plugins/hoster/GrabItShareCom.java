@@ -30,6 +30,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -80,6 +81,7 @@ public class GrabItShareCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
+        if (br.containsHTML(">Pristup ovom sadržaju imaju samo")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.grabitsharecom.only4premium", "Download only possible for premium users"));
         if (br.containsHTML("value=\"Free Users\""))
             br.postPage(link.getDownloadURL(), "Free=Free+Users");
         else if (br.getFormbyProperty("name", "entryform1") != null) br.submitForm(br.getFormbyProperty("name", "entryform1"));

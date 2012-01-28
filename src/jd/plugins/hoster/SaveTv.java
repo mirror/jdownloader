@@ -42,7 +42,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class SaveTv extends PluginForHost {
 
     private static final String NORANDOMNUMBERS         = "NORANDOMNUMBERS";
-
     private static final String USEORIGINALFILENAME     = "USEORIGINALFILENAME";
     private static final String PREFERADSFREE           = "PREFERADSFREE";
     private static final String ADSFREEAVAILABLE        = "for=\"archive-layer-adfree\">Schnittliste vor dem Download / Streaming anwenden<";
