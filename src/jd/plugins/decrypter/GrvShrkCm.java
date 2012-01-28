@@ -26,6 +26,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.JDHash;
@@ -86,24 +87,16 @@ public class GrvShrkCm extends PluginForDecrypt {
         }
 
         // processing plugin configuration
-        /* we will have to wait for next major update for this to work */
-        // final SubConfiguration cfg =
-        // SubConfiguration.getConfig("grooveshark.com");
-        // try {
-        // final org.appwork.utils.net.httpconnection.HTTPProxy proxy = new
-        // org.appwork.utils.net.httpconnection.HTTPProxy(org.appwork.utils.net.httpconnection.HTTPProxy.TYPE.HTTP,
-        // cfg.getStringProperty("PROXYSERVER"),
-        // cfg.getIntegerProperty("PROXYPORT"));
-        // if (proxy.getHost() != null || proxy.getHost() != "" ||
-        // proxy.getPort() > -1) {
-        // br.setProxy(proxy);
-        // }
-        // } catch (final Throwable e) {
-        // /* does not exist in 09581 */
-        // }
+        if (System.getProperty("user.language").equals("de")) {
+            try {
+                gsProxy(true);
+            } catch (final Throwable e) {
+                /* does not exist in 09581 */
+            }
+        }
         br.getPage(parameter);
         if (br.containsHTML("Grooveshark den Zugriff aus Deutschland ein")) {
-            logger.info("Der Zugriff auf \"grooveshark.com\" von Deutschland aus, ist nicht mehr möglich.");
+            logger.warning("Der Zugriff auf \"grooveshark.com\" von Deutschland aus, ist nicht mehr möglich.");
             return null;
         }
 
@@ -313,6 +306,18 @@ public class GrvShrkCm extends PluginForDecrypt {
         final String topSecretKey = Encoding.Base64Decode("YmV3YXJlT2ZUaGVHaW5nZXJBcG9jYWx5cHNl");// static.a.gs-cdn.net/gs/app.js
         final String lastRandomizer = makeNewRandomizer();
         return lastRandomizer + JDHash.getSHA1(method + ":" + secretKey + ":" + topSecretKey + ":" + lastRandomizer);
+    }
+
+    private void gsProxy(final boolean b) {
+        final SubConfiguration cfg = SubConfiguration.getConfig("grooveshark.com");
+        final org.appwork.utils.net.httpconnection.HTTPProxy proxy = new org.appwork.utils.net.httpconnection.HTTPProxy(org.appwork.utils.net.httpconnection.HTTPProxy.TYPE.HTTP, cfg.getStringProperty("PROXYSERVER"), cfg.getIntegerProperty("PROXYPORT"));
+        if (b) {
+            if (proxy.getHost() != null || proxy.getHost() != "" || proxy.getPort() > -1) {
+                br.setProxy(proxy);
+            }
+        } else {
+            br.setProxy(org.appwork.utils.net.httpconnection.HTTPProxy.NONE);
+        }
     }
 
     private String makeNewRandomizer() {

@@ -53,7 +53,9 @@ public class GrooveShark extends PluginForHost {
     public GrooveShark(final PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(2000l + (long) 1000 * (int) Math.round(Math.random() * 3 + Math.random() * 3));
-        setConfigElements();
+        if (System.getProperty("user.language").equals("de")) {
+            setConfigElements();
+        }
     }
 
     private String cleanNameForURL(String name) {
@@ -120,29 +122,24 @@ public class GrooveShark extends PluginForHost {
     }
 
     private void gsProxy(final boolean b) {
-        /* we will have to wait for next major update for this to work */
-        // try {
-        // final org.appwork.utils.net.httpconnection.HTTPProxy proxy = new
-        // org.appwork.utils.net.httpconnection.HTTPProxy(org.appwork.utils.net.httpconnection.HTTPProxy.TYPE.HTTP,
-        // getPluginConfig().getStringProperty("PROXYSERVER"),
-        // getPluginConfig().getIntegerProperty("PROXYPORT"));
-        // if (b) {
-        // if (proxy.getHost() != null || proxy.getHost() != "" ||
-        // proxy.getPort() > -1) {
-        // br.setProxy(proxy);
-        // }
-        // } else {
-        // br.setProxy(org.appwork.utils.net.httpconnection.HTTPProxy.NONE);
-        // }
-        // } catch (final Throwable e) {
-        // /* does not exist in 09581 */
-        // }
+        final org.appwork.utils.net.httpconnection.HTTPProxy proxy = new org.appwork.utils.net.httpconnection.HTTPProxy(org.appwork.utils.net.httpconnection.HTTPProxy.TYPE.HTTP, getPluginConfig().getStringProperty("PROXYSERVER"), getPluginConfig().getIntegerProperty("PROXYPORT"));
+        if (b) {
+            if (proxy.getHost() != null || proxy.getHost() != "" || proxy.getPort() > -1) {
+                br.setProxy(proxy);
+            }
+        } else {
+            br.setProxy(org.appwork.utils.net.httpconnection.HTTPProxy.NONE);
+        }
     }
 
     private void handleDownload(final DownloadLink downloadLink, final String country, final String sid) throws IOException, Exception, PluginException {
         // pro Titel ein secretKey
         // pro Request ein neuer Tokenhash(getToken)
-        gsProxy(false);
+        try {
+            gsProxy(false);
+        } catch (final Throwable e) {
+            /* does not exist in 09581 */
+        }
         if (STREAMKEY == null && DLLINK == null) {
             br.getHeaders().put("Content-Type", "application/json");
             final String secretKey = getSecretKey(br, JDHash.getMD5(sid), sid);
@@ -179,16 +176,23 @@ public class GrooveShark extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         br.getHeaders().put("User-Agent", UA);
         br.getHeaders().put("Content-Type", "application/json");
-        gsProxy(true);
+        try {
+            gsProxy(true);
+        } catch (final Throwable e) {
+            /* does not exist in 09581 */
+        }
         br.getPage(LISTEN);
-        gsProxy(false);
+        try {
+            gsProxy(false);
+        } catch (final Throwable e) {
+            /* does not exist in 09581 */
+        }
         if (isGermanyBlocked()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Grooveshark: Zugriff aus Deutschland blockiert!"); }
         CLIENTREVISION = downloadLink.getStringProperty("clientrev");
         CLIENTREVISION = CLIENTREVISION == null ? "20111117" : CLIENTREVISION;
         final String url = downloadLink.getDownloadURL();
         final String sid = br.getCookie(LISTEN, "PHPSESSID");
-        String country = br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
-        country = "\"country\":{\"ID\":106,\"CC1\":0,\"CC2\":2199023255552,\"CC3\":0,\"CC4\":0,\"DMA\":0,\"IPR\":0}";
+        final String country = br.getRegex(Pattern.compile("\"country(.*?)}", Pattern.UNICODE_CASE)).getMatch(-1);
         if (url.matches(LISTEN + "song/\\d+") && sid != null) {
             // converts from a virtual link to a real link
             // we pass virtual links from decrypter, because we do not want
@@ -228,7 +232,7 @@ public class GrooveShark extends PluginForHost {
 
     private boolean isGermanyBlocked() {
         if (br.containsHTML("Grooveshark den Zugriff aus Deutschland ein")) {
-            logger.info("Der Zugriff auf \"grooveshark.com\" von Deutschland aus, ist nicht mehr möglich.");
+            logger.warning("Der Zugriff auf \"grooveshark.com\" von Deutschland aus, ist nicht mehr möglich.");
             return true;
         }
         return false;
@@ -249,7 +253,11 @@ public class GrooveShark extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
-        gsProxy(true);
+        try {
+            gsProxy(true);
+        } catch (final Throwable e) {
+            /* does not exist in 09581 */
+        }
         String url = downloadLink.getDownloadURL();
         if (url.matches(LISTEN + "song\\/\\d+") || new Regex(url, "stream\\.php\\?streamKey=\\w+").matches()) {
             return AvailableStatus.TRUE;
