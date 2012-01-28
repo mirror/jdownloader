@@ -53,7 +53,7 @@ public class GrooveShark extends PluginForHost {
     public GrooveShark(final PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(2000l + (long) 1000 * (int) Math.round(Math.random() * 3 + Math.random() * 3));
-        if (System.getProperty("user.language").equals("de")) {
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
             setConfigElements();
         }
     }
@@ -128,7 +128,11 @@ public class GrooveShark extends PluginForHost {
                 br.setProxy(proxy);
             }
         } else {
-            br.setProxy(org.appwork.utils.net.httpconnection.HTTPProxy.NONE);
+            /*
+             * use null, so the plugin uses global set proxy again, setting it
+             * to none will disable global proxy if set
+             */
+            br.setProxy(null);
         }
     }
 

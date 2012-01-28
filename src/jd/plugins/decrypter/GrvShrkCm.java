@@ -87,7 +87,7 @@ public class GrvShrkCm extends PluginForDecrypt {
         }
 
         // processing plugin configuration
-        if (System.getProperty("user.language").equals("de")) {
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
             try {
                 gsProxy(true);
             } catch (final Throwable e) {
@@ -316,7 +316,11 @@ public class GrvShrkCm extends PluginForDecrypt {
                 br.setProxy(proxy);
             }
         } else {
-            br.setProxy(org.appwork.utils.net.httpconnection.HTTPProxy.NONE);
+            /*
+             * use null, so the plugin uses global set proxy again, setting it
+             * to none will disable global proxy if set
+             */
+            br.setProxy(null);
         }
     }
 
