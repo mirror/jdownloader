@@ -26,7 +26,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.JDHash;
@@ -87,15 +86,21 @@ public class GrvShrkCm extends PluginForDecrypt {
         }
 
         // processing plugin configuration
-        final SubConfiguration cfg = SubConfiguration.getConfig("grooveshark.com");
-        try {
-            final org.appwork.utils.net.httpconnection.HTTPProxy proxy = new org.appwork.utils.net.httpconnection.HTTPProxy(org.appwork.utils.net.httpconnection.HTTPProxy.TYPE.HTTP, cfg.getStringProperty("PROXYSERVER"), cfg.getIntegerProperty("PROXYPORT"));
-            if (proxy.getHost() != null || proxy.getHost() != "" || proxy.getPort() > -1) {
-                br.setProxy(proxy);
-            }
-        } catch (final Throwable e) {
-            /* does not exist in 09581 */
-        }
+        /* we will have to wait for next major update for this to work */
+        // final SubConfiguration cfg =
+        // SubConfiguration.getConfig("grooveshark.com");
+        // try {
+        // final org.appwork.utils.net.httpconnection.HTTPProxy proxy = new
+        // org.appwork.utils.net.httpconnection.HTTPProxy(org.appwork.utils.net.httpconnection.HTTPProxy.TYPE.HTTP,
+        // cfg.getStringProperty("PROXYSERVER"),
+        // cfg.getIntegerProperty("PROXYPORT"));
+        // if (proxy.getHost() != null || proxy.getHost() != "" ||
+        // proxy.getPort() > -1) {
+        // br.setProxy(proxy);
+        // }
+        // } catch (final Throwable e) {
+        // /* does not exist in 09581 */
+        // }
         br.getPage(parameter);
         if (br.containsHTML("Grooveshark den Zugriff aus Deutschland ein")) {
             logger.info("Der Zugriff auf \"grooveshark.com\" von Deutschland aus, ist nicht mehr möglich.");
