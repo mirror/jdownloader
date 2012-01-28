@@ -46,6 +46,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         String finallink = null;
         String finalfilename = null;
         if (parameter.contains("imagebam.com")) {
+            br.getPage(parameter);
             /* Error handling */
             if (br.containsHTML("The gallery you are looking for")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
             if (br.containsHTML("Image not found")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }

@@ -120,18 +120,23 @@ public class GrooveShark extends PluginForHost {
     }
 
     private void gsProxy(final boolean b) {
-        try {
-            final org.appwork.utils.net.httpconnection.HTTPProxy proxy = new org.appwork.utils.net.httpconnection.HTTPProxy(org.appwork.utils.net.httpconnection.HTTPProxy.TYPE.HTTP, getPluginConfig().getStringProperty("PROXYSERVER"), getPluginConfig().getIntegerProperty("PROXYPORT"));
-            if (b) {
-                if (proxy.getHost() != null || proxy.getHost() != "" || proxy.getPort() > -1) {
-                    br.setProxy(proxy);
-                }
-            } else {
-                br.setProxy(org.appwork.utils.net.httpconnection.HTTPProxy.NONE);
-            }
-        } catch (final Throwable e) {
-            /* does not exist in 09581 */
-        }
+        /* we will have to wait for next major update for this to work */
+        // try {
+        // final org.appwork.utils.net.httpconnection.HTTPProxy proxy = new
+        // org.appwork.utils.net.httpconnection.HTTPProxy(org.appwork.utils.net.httpconnection.HTTPProxy.TYPE.HTTP,
+        // getPluginConfig().getStringProperty("PROXYSERVER"),
+        // getPluginConfig().getIntegerProperty("PROXYPORT"));
+        // if (b) {
+        // if (proxy.getHost() != null || proxy.getHost() != "" ||
+        // proxy.getPort() > -1) {
+        // br.setProxy(proxy);
+        // }
+        // } else {
+        // br.setProxy(org.appwork.utils.net.httpconnection.HTTPProxy.NONE);
+        // }
+        // } catch (final Throwable e) {
+        // /* does not exist in 09581 */
+        // }
     }
 
     private void handleDownload(final DownloadLink downloadLink, final String country, final String sid) throws IOException, Exception, PluginException {

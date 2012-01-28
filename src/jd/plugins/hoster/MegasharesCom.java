@@ -170,7 +170,10 @@ public class MegasharesCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
         }
-        if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.megasharescom.errors.allslotsfilled", "Cannot check, because all slots filled"), 10 * 60 * 1000l);
+        if (br.containsHTML("All download slots for this link are currently filled")) {
+            link.getLinkStatus().setRetryCount(0);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.megasharescom.errors.allslotsfilled", "Cannot check, because all slots filled"), 10 * 60 * 1000l);
+        }
 
     }
 
