@@ -37,6 +37,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.GrooveShark;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://(listen\\.)?grooveshark\\.com/(#\\!?/)?((album|artist|playlist|s|user)/.*?/([a-zA-z0-9]+|\\d+)(/music/favorites|/similar)?|popular)" }, flags = { 0 })
 public class GrvShrkCm extends PluginForDecrypt {
@@ -96,7 +97,7 @@ public class GrvShrkCm extends PluginForDecrypt {
         }
         br.getPage(parameter);
         if (br.containsHTML("Grooveshark den Zugriff aus Deutschland ein")) {
-            logger.warning("Der Zugriff auf \"grooveshark.com\" von Deutschland aus, ist nicht mehr möglich.");
+            logger.warning(GrooveShark.BLOCKEDGERMANY);
             return null;
         }
 
@@ -310,17 +311,19 @@ public class GrvShrkCm extends PluginForDecrypt {
 
     private void gsProxy(final boolean b) {
         final SubConfiguration cfg = SubConfiguration.getConfig("grooveshark.com");
-        final org.appwork.utils.net.httpconnection.HTTPProxy proxy = new org.appwork.utils.net.httpconnection.HTTPProxy(org.appwork.utils.net.httpconnection.HTTPProxy.TYPE.HTTP, cfg.getStringProperty("PROXYSERVER"), cfg.getIntegerProperty("PROXYPORT"));
-        if (b) {
-            if (proxy.getHost() != null || proxy.getHost() != "" && proxy.getPort() > 0) {
-                br.setProxy(proxy);
+        if (cfg.getBooleanProperty("STATUS")) {
+            final org.appwork.utils.net.httpconnection.HTTPProxy proxy = new org.appwork.utils.net.httpconnection.HTTPProxy(org.appwork.utils.net.httpconnection.HTTPProxy.TYPE.HTTP, cfg.getStringProperty("PROXYSERVER"), cfg.getIntegerProperty("PROXYPORT"));
+            if (b) {
+                if (proxy.getHost() != null || proxy.getHost() != "" && proxy.getPort() > 0) {
+                    br.setProxy(proxy);
+                }
+            } else {
+                /*
+                 * use null, so the plugin uses global set proxy again, setting
+                 * it to none will disable global proxy if set
+                 */
+                br.setProxy(null);
             }
-        } else {
-            /*
-             * use null, so the plugin uses global set proxy again, setting it
-             * to none will disable global proxy if set
-             */
-            br.setProxy(null);
         }
     }
 

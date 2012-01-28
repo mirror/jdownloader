@@ -43,12 +43,13 @@ import jd.utils.locale.JDL;
 public class GrooveShark extends PluginForHost {
 
     private String              CLIENTREVISION = null;
-    private static final String LISTEN         = "http://grooveshark.com/";
-    private static final String USERUID        = UUID.randomUUID().toString().toUpperCase();
-    private final String        UA             = RandomUserAgent.generate();
-    private String              TOKEN          = "";
-    private String              STREAMKEY      = null;
     private String              DLLINK         = null;
+    public static String        BLOCKEDGERMANY = "Der Zugriff auf \"grooveshark.com\" von Deutschland aus ist nicht mehr möglich!";
+    private static final String LISTEN         = "http://grooveshark.com/";
+    private String              STREAMKEY      = null;
+    private String              TOKEN          = "";
+    private final String        UA             = RandomUserAgent.generate();
+    private static final String USERUID        = UUID.randomUUID().toString().toUpperCase();
 
     public GrooveShark(final PluginWrapper wrapper) {
         super(wrapper);
@@ -122,17 +123,19 @@ public class GrooveShark extends PluginForHost {
     }
 
     private void gsProxy(final boolean b) {
-        final org.appwork.utils.net.httpconnection.HTTPProxy proxy = new org.appwork.utils.net.httpconnection.HTTPProxy(org.appwork.utils.net.httpconnection.HTTPProxy.TYPE.HTTP, getPluginConfig().getStringProperty("PROXYSERVER"), getPluginConfig().getIntegerProperty("PROXYPORT"));
-        if (b) {
-            if (proxy.getHost() != null || proxy.getHost() != "" && proxy.getPort() > 0) {
-                br.setProxy(proxy);
+        if (getPluginConfig().getBooleanProperty("STATUS") && "de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            final org.appwork.utils.net.httpconnection.HTTPProxy proxy = new org.appwork.utils.net.httpconnection.HTTPProxy(org.appwork.utils.net.httpconnection.HTTPProxy.TYPE.HTTP, getPluginConfig().getStringProperty("PROXYSERVER"), getPluginConfig().getIntegerProperty("PROXYPORT"));
+            if (b) {
+                if (proxy.getHost() != null || proxy.getHost() != "" && proxy.getPort() > 0) {
+                    br.setProxy(proxy);
+                }
+            } else {
+                /*
+                 * use null, so the plugin uses global set proxy again, setting
+                 * it to none will disable global proxy if set
+                 */
+                br.setProxy(null);
             }
-        } else {
-            /*
-             * use null, so the plugin uses global set proxy again, setting it
-             * to none will disable global proxy if set
-             */
-            br.setProxy(null);
         }
     }
 
@@ -191,7 +194,7 @@ public class GrooveShark extends PluginForHost {
         } catch (final Throwable e) {
             /* does not exist in 09581 */
         }
-        if (isGermanyBlocked()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Grooveshark: Zugriff aus Deutschland blockiert!"); }
+        if (isGermanyBlocked()) { throw new PluginException(LinkStatus.ERROR_FATAL, BLOCKEDGERMANY); }
         CLIENTREVISION = downloadLink.getStringProperty("clientrev");
         CLIENTREVISION = CLIENTREVISION == null ? "20111117" : CLIENTREVISION;
         final String url = downloadLink.getDownloadURL();
@@ -236,7 +239,7 @@ public class GrooveShark extends PluginForHost {
 
     private boolean isGermanyBlocked() {
         if (br.containsHTML("Grooveshark den Zugriff aus Deutschland ein")) {
-            logger.warning("Der Zugriff auf \"grooveshark.com\" von Deutschland aus, ist nicht mehr möglich.");
+            logger.warning(BLOCKEDGERMANY);
             return true;
         }
         return false;
@@ -301,7 +304,11 @@ public class GrooveShark extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "PROXYSERVER", JDL.L("plugins.hoster.grooveshark.proxyserver", "Proxy Server:")));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDL.L("plugins.hoster.grooveshark.configlabel", "Proxy Configuration")));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "STATUS", JDL.L("plugins.hoster.grooveshark.status", "Use Proxy-Server?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "PROXYSERVER", JDL.L("plugins.hoster.grooveshark.proxyhost", "Host:")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "PROXYPORT", JDL.L("plugins.hoster.grooveshark.proxyport", "Port:")));
     }
 
