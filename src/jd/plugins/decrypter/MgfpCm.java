@@ -16,12 +16,12 @@
 
 package jd.plugins.decrypter;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -59,19 +59,8 @@ public class MgfpCm extends PluginForDecrypt {
             galleryName = br.getRegex("<font face=\"verdana\" color=\"white\" size=\"4\"><b>(.*?)</b></font>").getMatch(0);
             if (galleryName == null) galleryName = br.getRegex("<meta name=\"description\" content=\"Airplanes porn pics - Imagefap\\.com\\. The ultimate social porn pics site\" />").getMatch(0);
         }
-        String authorsName = br.getRegex("<b><font size=\"4\" color=\"#CC0000\">(.*?)\\'s gallery</font></b>").getMatch(0);
-        if (authorsName == null) {
-            authorsName = br.getRegex("<td class=\"mnu0\"><a href=\"/profile\\.php\\?user=(.*?)\"").getMatch(0);
-            if (authorsName == null) {
-                authorsName = br.getRegex("jQuery\\.BlockWidget\\(\\d+,\"(.*?)\",\"left\"\\);").getMatch(0);
-                if (authorsName == null) {
-                    authorsName = br.getRegex("<title>Porn pics of (.*?) (\\(Page 1\\))?</title>").getMatch(0);
-                    if (authorsName == null) {
-                        authorsName = br.getRegex("<a class=\"title\" href=\"/gallery/\\d+\">(.*?)</a>").getMatch(0);
-                    }
-                }
-            }
-        }
+        String authorsName = br.getRegex("<b><font size=\"3\" color=\"#CC0000\">Uploaded by ([^<>\"]+)</font></b>").getMatch(0);
+        if (authorsName == null) authorsName = br.getRegex("<td class=\"mnu0\"><a href=\"http://(www\\.)?imagefap\\.com/profile\\.php\\?user=([^<>\"]+)\"").getMatch(0);
         if (galleryName == null) {
             logger.warning("Gallery name could not be found!");
             return null;
@@ -82,18 +71,19 @@ public class MgfpCm extends PluginForDecrypt {
         }
         galleryName = Encoding.htmlDecode(galleryName);
         authorsName = Encoding.htmlDecode(authorsName);
-        double counter = 0.0001;
+        int counter = 1;
+        DecimalFormat df = new DecimalFormat("0000");
         String links[] = br.getRegex("<a name=\"\\d+\" href=\"/image\\.php\\?id=(\\d+)\\&").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String element : links) {
-            String orderID = new Regex(String.format("&orderid=%.4f&", counter), "\\&orderid=0\\.(\\d+)").getMatch(0);
-            DownloadLink link = createDownloadlink("http://imagefap.com/image.php?id=" + element);
+            final String orderID = df.format(counter);
+            final DownloadLink link = createDownloadlink("http://imagefap.com/image.php?id=" + element);
             link.setProperty("orderid", orderID);
             link.setProperty("galleryname", galleryName);
             link.setProperty("authorsname", authorsName);
             link.setName(orderID);
             decryptedLinks.add(link);
-            counter += 0.0001;
+            counter++;
         }
         // Finally set the packagename even if its set again in the linkgrabber
         // available check of the imagefap hosterplugin

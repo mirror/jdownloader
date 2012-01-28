@@ -39,7 +39,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "de.groups.yahoo.com" }, urls = { "http://(www\\.)?de\\.groups\\.yahoo\\.com/group/[a-z0-9]+/(files/([A-Za-z0-9/]+)?|photos/album/\\d+(/pic)?/list)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "de.groups.yahoo.com" }, urls = { "http://(www\\.)?((de|tv)\\.)?groups\\.yahoo\\.com/group/[a-z0-9]+/(files/([A-Za-z0-9/]+)?|photos/album/\\d+(/pic)?/list)" }, flags = { 0 })
 public class DeGroopsYahooCom extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -62,6 +62,7 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
         br.getPage("https://login.yahoo.com/config/login?");
         synchronized (LOCK) {
             if (!getUserLogin()) return null;
+            br.setFollowRedirects(true);
             br.getPage(parameter);
             if (br.containsHTML("login\\.yahoo\\.com/login")) {
                 this.getPluginConfig().setProperty("cookies", Property.NULL);

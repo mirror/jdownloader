@@ -31,6 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -122,6 +123,16 @@ public class FsxHu extends PluginForHost {
         }
         if (br.containsHTML("/kep\\.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (br.containsHTML("(>Az FSX szerverekről 24 óra alatt maximum|>Ingyenesen ekkor tölthetsz le legközelebb)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        for (int i = 0; i <= 50; i++) {
+            String place = br.getRegex("<span style=\"color:#dd0000;font\\-weight:bold;\">(\\d+)</span>").getMatch(0);
+            if (place != null) {
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.fsxhu.waiting", "Waiting for link, current place: " + place));
+                sleep(16 * 1000l, downloadLink);
+                br.getPage("http://www.fsx.hu/download.php");
+            } else {
+                break;
+            }
+        }
         String url = br.getRegex("<div class=\"gombbefoglalo\" style=\"text\\-align:center;float:left;\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
         if (url == null) url = br.getRegex("\"(http://s\\d+\\.fsx\\.hu/[a-z0-9]+/\\d+/[^\"<>]+)\"").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -113,7 +113,11 @@ public class YahooCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // We HAVE to do this, server doesn't send filename correctly!
-        link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        final String getExt = dl.getConnection().getContentType();
+        if (getExt.contains("jpeg"))
+            link.setFinalFileName(link.getName() + ".jpeg");
+        else
+            link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
         dl.startDownload();
     }
 
