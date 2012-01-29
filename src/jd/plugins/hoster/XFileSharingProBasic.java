@@ -433,7 +433,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
                 if (finallink == null) {
                     finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
-                    if (finallink == null) finallink = new Regex(decoded, "href=\\'(.*?)\'").getMatch(0);
+                    if (finallink == null) finallink = new Regex(decoded, "href=\\'(.*?)\\'").getMatch(0);
                 }
             }
         }

@@ -426,7 +426,7 @@ public class ZalaaCom extends PluginForHost {
 
         String finallink = null;
         if (decoded != null) {
-            finallink = new Regex(decoded, "href=\\'(.*?)\'").getMatch(0);
+            finallink = new Regex(decoded, "href=\\'(.*?)\\'").getMatch(0);
             if (finallink == null) {
                 new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
                 if (finallink == null) {
