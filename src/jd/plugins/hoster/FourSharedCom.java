@@ -53,7 +53,8 @@ public class FourSharedCom extends PluginForHost {
         setConfigElements();
     }
 
-    private static final String DOWNLOADSTREAMS = "DOWNLOADSTREAMS";
+    private static final String DOWNLOADSTREAMS              = "DOWNLOADSTREAMS";
+    private static final String DOWNLOADSTREAMSERRORHANDLING = "DOWNLOADSTREAMSERRORHANDLING";
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -123,31 +124,16 @@ public class FourSharedCom extends PluginForHost {
         return "http://www.4shared.com/terms.jsp";
     }
 
-    private String getDllink() {
+    private String getStreamLinks() {
         String url = br.getRegex("<meta property=\"og:audio\" content=\"(http://.*?)\"").getMatch(0);
         if (url == null) {
             url = br.getRegex("var (flvLink|mp4Link|oggLink|mp3Link|streamerLink) = \\'(http://[^<>\"\\']{5,500})\\'").getMatch(1);
         }
-        if (url == null) {
-            /* maybe picture download */
-            url = br.getRegex("\"(http://dc\\d+\\.4shared(\\-china)?\\.com/download/[A-Za-z0-9]+/(?!desktop4shared|4shared_Desktop_).*?)\"").getMatch(0);
-        }
-        if (url == null) {
-            url = br.getRegex("linkShow.*?\\'(http://dc\\d+\\.4shared(\\-china)?\\.com/.*?)\\'").getMatch(0);
-        }
-        if (url == null) {
-            url = br.getRegex("\\'(http://dc\\d+\\.4shared(\\-china)?\\.com/.*?)\\'").getMatch(0);
-        }
-        if (url == null) {
-            url = br.getRegex("<div class=\"dl\">[\t\n\r ]+<a href=(\\'|\")(http://.*?)(\\'|\")").getMatch(1);
-        }
-        if (url == null) {
-            url = br.getRegex("(\\'|\")(http://dc\\d+\\.4shared(\\-china)?\\.com/download/[a-zA-Z0-9_\\-]+/(?!desktop4shared|4shared_Desktop_).*?\\?tsid=\\d+\\-\\d+[a-z0-9\\-]+)(\\'|\")").getMatch(1);
-        }
-        if (url == null) {
-            /* maybe directdownload */
-            url = br.getRegex("startDownload.*?window\\.location.*?(http://.*?)\"").getMatch(0);
-        }
+        return url;
+    }
+
+    private String getLinksAfterWait() {
+        String url = br.getRegex("<div class=\"xxlarge bold\">[\t\n\r ]+<a class=\"linkShowD3\" href=\\'(http://[^<>\"\\']+)\\'").getMatch(0);
         return url;
     }
 
@@ -161,10 +147,10 @@ public class FourSharedCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String pass = handlePassword(downloadLink);
-        boolean downloadStream = getPluginConfig().getBooleanProperty(DOWNLOADSTREAMS);
+        boolean downloadStreams = getPluginConfig().getBooleanProperty(DOWNLOADSTREAMS);
         String url = null;
-        if (downloadLink.getStringProperty("streamDownloadDisabled") == null && downloadStream) {
-            url = getDllink();
+        if (downloadLink.getStringProperty("streamDownloadDisabled") == null && downloadStreams) {
+            url = getStreamLinks();
             /** Shouldn't happen */
             if (url != null && url.contains("4shared_Desktop_")) {
                 downloadLink.setProperty("streamDownloadDisabled", "true");
@@ -181,17 +167,30 @@ public class FourSharedCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 br.getPage(url);
-                url = getDllink();
-                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                // Ticket Time
-                final String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
-                int tt = 40;
-                if (ttt != null) {
-                    logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
-                    tt = Integer.parseInt(ttt);
+                url = getLinksAfterWait();
+                /** Will be disabled if we use stream links */
+                boolean wait = true;
+                boolean downloadStreamsErrorhandling = getPluginConfig().getBooleanProperty(DOWNLOADSTREAMSERRORHANDLING);
+                if (url == null && downloadStreamsErrorhandling) {
+                    url = getStreamLinks();
+                    wait = false;
                 }
-                sleep(tt * 1000l, downloadLink);
+                if (url == null) {
+                    if (br.containsHTML("onclick=\"return authenticate\\(event, \\{returnTo:") && !downloadStreamsErrorhandling) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.foursharedcom.only4premium1", "Original file only downloadable for premium users [Or activate stream downloading and try again]"));
+                    if (br.containsHTML("onclick=\"return authenticate\\(event, \\{returnTo:") && downloadStreamsErrorhandling) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.foursharedcom.only4premium2", "Original file only downloadable for premium users"));
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (wait) {
+                    // Ticket Time
+                    final String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
+                    int tt = 40;
+                    if (ttt != null) {
+                        logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
+                        tt = Integer.parseInt(ttt);
+                    }
+                    sleep(tt * 1000l, downloadLink);
+                }
             }
         }
         br.setDebug(true);
@@ -254,7 +253,7 @@ public class FourSharedCom extends PluginForHost {
         String pass = handlePassword(downloadLink);
         // direct download or not?
         String link = br.getRedirectLocation();
-        if (link == null) link = getDllink();
+        if (link == null) link = getLinksAfterWait();
         if (link == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
         final String error = new Regex(dl.getConnection().getURL(), "\\?error(.*)").getMatch(0);
@@ -318,7 +317,8 @@ public class FourSharedCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FourSharedCom.DOWNLOADSTREAMS, JDL.L("plugins.hoster.foursharedcom.downloadstreams", "Download video/audio streams (faster download but this can decrease audio/video quality)")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FourSharedCom.DOWNLOADSTREAMS, JDL.L("plugins.hoster.foursharedcom.downloadstreams", "Download video/audio streams if available (faster download but this can decrease audio/video quality)")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FourSharedCom.DOWNLOADSTREAMSERRORHANDLING, JDL.L("plugins.hoster.foursharedcom.activateerrorhandling", "Only download video/audio streams if normal file is not available (faster download but this can decrease audio/video quality)")).setDefaultValue(false));
     }
 
     @Override

@@ -37,7 +37,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserving.com" }, urls = { "http://(www\\.)?fileserving\\.com/files/[a-zA-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserving.com" }, urls = { "http://(www\\.)?fileserving\\.com/files/[a-zA-Z0-9_\\-]+" }, flags = { 0 })
 public class FileServingCom extends PluginForHost {
 
     public FileServingCom(PluginWrapper wrapper) {
@@ -46,10 +46,10 @@ public class FileServingCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "";
+        return "http://www.fileserving.com/Public/term";
     }
 
-    public String FILEIDREGEX = "fileserving\\.com/files/([a-zA-Z0-9]+)(http:.*)?";
+    public String FILEIDREGEX = "fileserving\\.com/files/([a-zA-Z0-9_\\-]+)(http:.*)?";
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -82,7 +82,7 @@ public class FileServingCom extends PluginForHost {
         }
         if (dllink == null) {
             br.getPage(downloadLink.getDownloadURL());
-            final String fid = new Regex(downloadLink.getDownloadURL(), "fileserving\\.com/files/([a-zA-Z0-9]+)").getMatch(0);
+            final String fid = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
             final String sid = br.getRegex("sid:\\'(\\d+)\\'").getMatch(0);
             final String server = br.getRegex("server:\\'([^<>\"\\']+)\\'").getMatch(0);
             final String rcID = br.getRegex("k=([^\\'<>\"]+)\"").getMatch(0);

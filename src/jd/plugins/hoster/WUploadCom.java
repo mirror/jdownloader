@@ -327,15 +327,12 @@ public class WUploadCom extends PluginForHost implements ControlListener {
         }
         passCode = null;
 
-        String freeDownloadLink = br.getRegex(".*href=\"(.*?start=1.*?)\"").getMatch(0);
-        if (!freeDownloadLink.startsWith("http://")) {
-            String domain = new Regex(br.getURL(), "(http.*?\\..*?/)").getMatch(0);
-            freeDownloadLink = domain + "file/" + freeDownloadLink;
-        }
+        String domain = new Regex(br.getURL(), "(http.*?\\..*?/)").getMatch(0);
+        String freeDownloadLink = domain + "file/" + new Regex(downloadLink.getDownloadURL(), "/file/([^<>\"/]+)/").getMatch(0) + "?start=1";
         // this is an ajax call
         Browser ajax = br.cloneBrowser();
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        ajax.getPage(freeDownloadLink);
+        ajax.postPage(freeDownloadLink, "");
 
         errorHandling(downloadLink, ajax);
         br.setFollowRedirects(true);

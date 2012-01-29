@@ -54,13 +54,9 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class EasyBytezCom extends PluginForHost {
 
     private String              BRBEFORE            = "";
-
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-
     private static final String COOKIE_HOST         = "http://easybytez.com";
-
     public boolean              NOPREMIUM           = false;
-
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final Object LOCK                = new Object();
@@ -344,10 +340,12 @@ public class EasyBytezCom extends PluginForHost {
         }
         String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
-        String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>(.*?)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
-            // Who needs half points ? If we have a dot in the points, just
-            // remove it
+            /**
+             * Who needs half points ? If we have a dot in the points, just
+             * remove it
+             */
             if (points.contains(".")) {
                 String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
                 points = points.replace(dot, "");
@@ -355,14 +353,16 @@ public class EasyBytezCom extends PluginForHost {
             ai.setPremiumPoints(Long.parseLong(points.trim()));
         }
         account.setValid(true);
-        String availabletraffic = new Regex(BRBEFORE, "Traffic available.*?:</TD><TD><b>(.*?)</b>").getMatch(0);
-        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equals(" Mb")) {
+        String availabletraffic = new Regex(BRBEFORE, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
             ai.setUnlimitedTraffic();
         }
-        if (!NOPREMIUM) {
-            String expire = new Regex(BRBEFORE, Pattern.compile("<td>Premium(\\-| )Account expire:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
+        if (account.getBooleanProperty("nopremium")) {
+            ai.setStatus("Registered (free) User");
+        } else {
+            String expire = new Regex(BRBEFORE, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
@@ -372,8 +372,6 @@ public class EasyBytezCom extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
             }
             ai.setStatus("Premium User");
-        } else {
-            ai.setStatus("Registered (free) User");
         }
         return ai;
     }
@@ -436,61 +434,60 @@ public class EasyBytezCom extends PluginForHost {
         String passCode = null;
         requestFileInformation(link);
         login(account, false);
-        String dllink = link.getStringProperty("premlink");
-        try {
+        br.setFollowRedirects(false);
+        String dllink = null;
+        if (account.getBooleanProperty("nopremium")) {
+            br.getPage(link.getDownloadURL());
+            doSomething();
+            doFree(link, false, 1, false);
+        } else {
+            dllink = link.getStringProperty("premlink");
             if (dllink != null) {
-                Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html")) {
+                try {
+                    Browser br2 = br.cloneBrowser();
+                    URLConnectionAdapter con = br2.openGetConnection(dllink);
+                    if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                        link.setProperty("premlink", Property.NULL);
+                        dllink = null;
+                    }
+                    con.disconnect();
+                } catch (Exception e) {
                     link.setProperty("premlink", Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             }
-        } catch (Exception e) {
-            dllink = null;
-        }
-        if (dllink == null) {
-            br.getPage(link.getDownloadURL());
-            doSomething();
-            if (NOPREMIUM) {
-                doFree(link, true, 0, false);
-            } else {
-                dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                br.getPage(link.getDownloadURL());
+                doSomething();
+                dllink = getDllink();
                 if (dllink == null) {
+                    checkErrors(link, true, passCode);
+                    Form DLForm = br.getFormbyProperty("name", "F1");
+                    if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (new Regex(BRBEFORE, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, DLForm, link);
+                    br.submitForm(DLForm);
                     doSomething();
                     dllink = getDllink();
-                    if (dllink == null) {
-                        Form DLForm = br.getFormbyProperty("name", "F1");
-                        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        if (new Regex(BRBEFORE, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, DLForm, link);
-                        br.submitForm(DLForm);
-                        doSomething();
-                        dllink = br.getRedirectLocation();
-                        if (dllink == null) {
-                            checkErrors(link, true, passCode);
-                            dllink = getDllink();
-                        }
-                    }
-                }
-                if (dllink == null) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    checkErrors(link, true, passCode);
                 }
             }
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                doSomething();
+                checkServerErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (passCode != null) link.setProperty("pass", passCode);
+            link.setProperty("premlink", dllink);
+            dl.startDownload();
         }
-        logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (passCode != null) link.setProperty("pass", passCode);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            doSomething();
-            checkServerErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setProperty("premlink", dllink);
-        dl.startDownload();
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -506,14 +503,14 @@ public class EasyBytezCom extends PluginForHost {
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
-            // Load cookies
+            /** Load cookies */
             br.setCookiesExclusive(false);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
             if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (cookies.containsKey("login") && cookies.containsKey("xfss") && account.isValid()) {
+                if (account.isValid()) {
                     for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                         final String key = cookieEntry.getKey();
                         final String value = cookieEntry.getValue();
@@ -532,9 +529,9 @@ public class EasyBytezCom extends PluginForHost {
             if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             br.getPage(COOKIE_HOST + "/?op=my_account");
             doSomething();
-            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) NOPREMIUM = true;
-            // Save cookies
+            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|/\\?op=payments\">Get Premium<|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) account.setProperty("nopremium", "true");
+            /** Save cookies */
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(COOKIE_HOST);
             for (final Cookie c : add.getCookies()) {

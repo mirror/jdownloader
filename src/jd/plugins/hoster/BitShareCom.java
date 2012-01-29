@@ -103,7 +103,8 @@ public class BitShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML("Sorry, you cant download more then 1 files at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
-        if (br.containsHTML("(You reached your hourly traffic limit|Your Traffic is used up for today)")) {
+        if (br.containsHTML("> Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+        if (br.containsHTML("You reached your hourly traffic limit")) {
             String wait = br.getRegex("id=\"blocktimecounter\">(\\d+) Seconds</span>").getMatch(0);
             if (wait != null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1001l);
@@ -119,13 +120,21 @@ public class BitShareCom extends PluginForHost {
             logger.warning("fileID or tempID is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /** Try to find stream links */
+        String dllink = br.getRegex("scaling: \\'fit\\',[\t\n\r ]+url: \\'(http://[^<>\"\\']+)\\'").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\\'(http://s\\d+\\.bitshare\\.com/stream/[^<>\"\\']+)\\'").getMatch(0);
         Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br2.postPage(JSONHOST + fileID + "/request.html", "request=generateID&ajaxid=" + tempID);
-        String rgexedWait = br2.getRegex("file:(\\d+):").getMatch(0);
+        String regexedWait = null;
+        /** Difference between file links and streams */
+        if (dllink != null)
+            regexedWait = br2.getRegex("mp4:(\\d+):").getMatch(0);
+        else
+            regexedWait = br2.getRegex("file:(\\d+):").getMatch(0);
         int wait = 45;
-        if (rgexedWait != null) {
-            wait = Integer.parseInt(rgexedWait);
+        if (regexedWait != null) {
+            wait = Integer.parseInt(regexedWait);
             logger.info("Waittime-Regex worked, regexed waittime = " + wait);
         }
         wait += 3;
@@ -164,12 +173,15 @@ public class BitShareCom extends PluginForHost {
             }
             if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        br2.postPage(JSONHOST + fileID + "/request.html", "request=getDownloadURL&ajaxid=" + tempID);
-        if (br.containsHTML("Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-        String dllink = br2.getRegex(DLLINKREGEX).getMatch(0);
+        /** For files */
         if (dllink == null) {
-            logger.warning("The dllink couldn't be found!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br2.postPage(JSONHOST + fileID + "/request.html", "request=getDownloadURL&ajaxid=" + tempID);
+            if (br.containsHTML("Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            dllink = br2.getRegex(DLLINKREGEX).getMatch(0);
+            if (dllink == null) {
+                logger.warning("The dllink couldn't be found!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         // Remove new line
         dllink = dllink.trim();
@@ -251,9 +263,9 @@ public class BitShareCom extends PluginForHost {
             }
             link.setUrlDownload(newlink);
         }
-        Regex nameAndSize = br.getRegex("<h1>Downloading (.*?) \\- ([0-9\\.]+ [A-Za-z]+)</h1>");
-        String filename = nameAndSize.getMatch(0);
-        String filesize = nameAndSize.getMatch(1);
+        Regex nameAndSize = br.getRegex("<h1>(Downloading|Streaming) (.*?) \\- ([0-9\\.]+ [A-Za-z]+)</h1>");
+        String filename = nameAndSize.getMatch(1);
+        String filesize = nameAndSize.getMatch(2);
         if (filename == null || filesize == null) {
             logger.warning("Filename or filesize is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

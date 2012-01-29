@@ -36,7 +36,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class UploadEe extends PluginForHost {
 
     // DEV NOTES:
-    // - urls can work with or without *.html, but it has to be at least domain/files/\d+/validfilename
+    // - urls can work with or without *.html, but it has to be at least
+    // domain/files/\d+/validfilename
     // - no https
 
     public UploadEe(PluginWrapper wrapper) {
@@ -55,9 +56,7 @@ public class UploadEe extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        // tested with 20c*20d=400 == possible.
-        // Set 10 to prevent abuse ~20c*10d=200
-        return 10;
+        return -1;
     }
 
     @Override
@@ -98,7 +97,7 @@ public class UploadEe extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie("http://www.upload.ee/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(?i)(>[\r\n\t]+There is no such file\\.[\r\n\t]+<|<title>UPLOAD.EE - File does not exist</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(?i)(>[\r\n\t]+There is no such file\\.[\r\n\t]+<|<title>UPLOAD\\.EE \\- File does not exist</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("(?i)File: <b>(.*?)</b>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("(?i)<title>UPLOAD.EE \\- Download (.*?)</title>").getMatch(0);

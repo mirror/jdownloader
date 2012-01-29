@@ -61,7 +61,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static final Object LOCK                = new Object();
 
-    // XfileSharingProBasic Version 2.5.3.0
+    // XfileSharingProBasic Version 2.5.2.0
     /**
      * This is only for developers to easily implement hosters using the
      * "xfileshare(pro)" script (more informations can be found on
@@ -120,9 +120,6 @@ public class XFileSharingProBasic extends PluginForHost {
             filesize = new Regex(correctedBR, "<small>\\((.*?)\\)</small>").getMatch(0);
             if (filesize == null) {
                 filesize = new Regex(correctedBR, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
-                if (filesize == null) {
-                    filesize = new Regex(correctedBR, "(?i)File Size.*(\\d+ ?(GB|MB))").getMatch(0);
-                }
             }
         }
         if (filename == null || filename.equals("")) {
@@ -188,12 +185,6 @@ public class XFileSharingProBasic extends PluginForHost {
             checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
                 br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replaceAll("https?://", "") + "/" + "([A-Za-z0-9]{12})").getMatch(0) + "&fname=" + downloadLink.getName() + "&referer=&method_free=Free+Download");
-                doSomething();
-                checkErrors(downloadLink, false, passCode);
-            }
-            String getNextPage = br.getRegex("(" + COOKIE_HOST + "/download\\-" + new Regex(downloadLink.getDownloadURL(), ".+/([A-Za-z0-9]{12})").getMatch(0) + "[^\">]+)").getMatch(0);
-            if (getNextPage != null) {
-                br.getPage(getNextPage);
                 doSomething();
                 checkErrors(downloadLink, false, passCode);
             }
@@ -433,7 +424,6 @@ public class XFileSharingProBasic extends PluginForHost {
                 finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
                 if (finallink == null) {
                     finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
-                    if (finallink == null) finallink = new Regex(decoded, "href=\\'(.*?)\\'").getMatch(0);
                 }
             }
         }

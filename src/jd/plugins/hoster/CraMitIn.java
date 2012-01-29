@@ -47,11 +47,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class CraMitIn extends PluginForHost {
 
     private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-
     public String               brbefore     = "";
-
     private static final String COOKIE_HOST  = "http://cramit.in";
-
     public boolean              nopremium    = false;
 
     public CraMitIn(PluginWrapper wrapper) {

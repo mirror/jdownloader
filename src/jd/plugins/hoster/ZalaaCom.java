@@ -118,7 +118,7 @@ public class ZalaaCom extends PluginForHost {
             if (filesize == null) {
                 filesize = new Regex(correctedBR, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
                 if (filesize == null) {
-                    filesize = new Regex(correctedBR, "(?i)File Size.*(\\d+ ?(GB|MB))").getMatch(0);
+                    filesize = new Regex(correctedBR, ">File Size :</strong> </span><span class=\"file_code\">([^<>\"\\']+)</span></td>").getMatch(0);
                 }
             }
         }
