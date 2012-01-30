@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net" }, urls = { "http://[\\w\\.]*?mov-world\\.net/(\\?id=\\d+|.*?/.*?.html)", "http://[\\w\\.]*?xxx-4-free\\.net/.*?/.*?.html" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net" }, urls = { "http://(www\\.)?mov-world\\.net/(\\?id=\\d+|.*?/.*?.html)", "http://(www\\.)?xxx-4-free\\.net/.*?/.*?.html" }, flags = { 0, 0 })
 public class MvWrldNt extends PluginForDecrypt {
 
     public MvWrldNt(final PluginWrapper wrapper) {
@@ -89,26 +89,43 @@ public class MvWrldNt extends PluginForDecrypt {
         }
         /* lzw Decompress */
         final String result = lzwDecompress(sb.toString());
-        final String[] links = new Regex(result, "href=\"(/.*?)\" target.*?>\\d+</a>").getColumn(0);
+        final String[] links = new Regex(result, "<td class=\"link\"><p><a href=\"([^<>]+)\" target=\"_blank\" title=\"[^<>]+\" class=\"online\"[^<>]+>\\d+</a>").getColumn(0);
         if (links == null || links.length == 0) { return null; }
+        boolean toManyLinks = false;
+        if (links.length > 100) {
+            toManyLinks = true;
+        }
         progress.setRange(links.length);
         for (String dl : links) {
+            if (!dl.startsWith("http")) {
+                dl = MAINPAGE + dl;
+            }
             brc = br.cloneBrowser();
             brc.setFollowRedirects(false);
-            brc.getPage(MAINPAGE + dl);
-            if (brc.getRequest().getHttpConnection().getResponseCode() == 302) {
-                dl = brc.getRequest().getHttpConnection().getHeaderField("Location");
-            } else {
-                dl = brc.getRegex("iframe src=\"(.*?)\"").getMatch(0);
+            if (dl.startsWith(MAINPAGE)) {
+                brc.getPage(dl);
+                if (brc.getRequest().getHttpConnection().getResponseCode() == 302) {
+                    dl = brc.getRedirectLocation();
+                } else {
+                    dl = brc.getRegex("iframe src=\"(.*?)\"").getMatch(0);
+                }
             }
             progress.increase(1);
             if (dl == null) {
                 continue;
             }
             final DownloadLink downLink = createDownloadlink(dl);
+            if (toManyLinks) {
+                downLink.setAvailable(true);
+            }
             downLink.addSourcePluginPassword(Browser.getHost(parameter));
             if (password != null && !password.equals("")) {
                 downLink.addSourcePluginPassword(password.trim());
+            }
+            try {
+                distribute(downLink);
+            } catch (final Throwable e) {
+                /* does not exist in 09581 */
             }
             decryptedLinks.add(downLink);
         }
@@ -155,4 +172,5 @@ public class MvWrldNt extends PluginForDecrypt {
         }
         return sb.toString();
     }
+
 }
