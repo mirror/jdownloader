@@ -940,6 +940,10 @@ public class LnkCrptWs extends PluginForDecrypt {
         br.getPage("http://linkcrypt.ws/dir/" + containerId);
         if (br.containsHTML("<h1>Folder not avialable\\!</h1>") && br.containsHTML("linkcrypt\\.ws/image/Warning\\.png")) {
             logger.info("This link might be offline: " + parameter);
+            final String additional = br.getRegex("<h2>\r?\n?(.*?)<").getMatch(0);
+            if (additional != null) {
+                logger.info(additional);
+            }
             throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         }
         URLConnectionAdapter con = null;

@@ -206,9 +206,9 @@ public class ShrLnksBz extends PluginForDecrypt {
             }
         }
         /* Load Contents. Container handling (DLC) */
-        final String dlclink = MAINPAGE + "get/dlc/" + br.getRegex("get as dlc container\".*?\"javascript:_get\\('(.*?)', 0, 'dlc'\\);\"").getMatch(0);
+        final String dlclink = br.getRegex("get as dlc container\".*?\"javascript:_get\\('(.*?)', 0, 'dlc'\\);\"").getMatch(0);
         if (dlclink != null) {
-            decryptedLinks = loadcontainer(br, dlclink);
+            decryptedLinks = loadcontainer(br, MAINPAGE + "get/dlc/" + dlclink);
             if (decryptedLinks != null && decryptedLinks.size() > 0) { return decryptedLinks; }
         }
         /* File package handling */

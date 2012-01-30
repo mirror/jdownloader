@@ -29,21 +29,25 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myref.de" }, urls = { "http://[\\w\\.]*?myref\\.de(/){0,1}\\?\\d{0,10}" }, flags = { 0 })
 public class MRf extends PluginForDecrypt {
 
-    public MRf(PluginWrapper wrapper) {
+    public MRf(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        String downloadid = new Regex(parameter, "\\?([\\d].*)").getMatch(0);
-        br.getPage("http://www.myref.de/go_counter.php?id=" + downloadid);
-        decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
-
+    @Override
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        br.setFollowRedirects(true);
+        br.getPage(parameter);
+        String dllink = br.getRegex("<a class=\"text\" href=\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) {
+            br.setFollowRedirects(false);
+            final String downloadid = new Regex(parameter, "\\?([\\d].*)").getMatch(0);
+            br.getPage("http://www.myref.de/go_counter.php?id=" + downloadid);
+            dllink = br.getRedirectLocation();
+        }
+        decryptedLinks.add(createDownloadlink(dllink));
         return decryptedLinks;
     }
-
-    // @Override
 
 }
