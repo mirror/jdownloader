@@ -411,8 +411,15 @@ public class WUploadCom extends PluginForHost implements ControlListener {
                 }
                 if (ajax.containsHTML(RECAPTCHATEXT)) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
             }
-
             downloadUrl = ajax.getRegex(re).getMatch(0);
+            if (downloadUrl == null && ajax.containsHTML("countDownDelay =")) {
+                /*
+                 * because of a server error, after captcha there is another
+                 * countdowndelay
+                 */
+
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerIssue", 1 * 60 * 1000l);
+            }
         }
         if (downloadUrl == null) {
             errorHandling(downloadLink, ajax);

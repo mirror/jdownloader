@@ -245,6 +245,7 @@ public class UploadStationCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(FILEOFFLINE)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("maintenance.html")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server maintenance", 30 * 60 * 1000l);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("blocked-region")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "This service is currently not available in your region", 2 * 24 * 60 * 60 * 1000l);
         handleErrors(br, downloadLink);
         final String fileId = br.getRegex("uploadstation\\.com/file/([a-zA-Z0-9]+)").getMatch(0);
         br.setFollowRedirects(false);
@@ -365,6 +366,7 @@ public class UploadStationCom extends PluginForHost {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
             final String dllink = br.getRedirectLocation();
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("blocked-region")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "This service is currently not available in your region", 2 * 24 * 60 * 60 * 1000l);
             if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("maintenance.html")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server maintenance", 30 * 60 * 1000l);
             if (dllink == null) {
                 if (br.containsHTML(FILEOFFLINE)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
