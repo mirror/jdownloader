@@ -49,29 +49,28 @@ public class MkiOg extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = Encoding.htmlDecode(br.getRegex("(?i)</a> \\&raquo\\; ([^\"<>]+)").getMatch(0));
-        if (fpName == null) Encoding.htmlDecode(fpName = br.getRegex("(?i)\"></span>(.*?)</h1>").getMatch(0));
+        if (fpName == null) fpName = Encoding.htmlDecode(br.getRegex("(?i)\"></span>(.*?)</h1>").getMatch(0));
         String SitePost = Encoding.Base64Decode(br.getRegex("(?i)\\(showmeass\\.decode\\(\"([a-zA-Z0-9\\+\\/]+[=]{0,2})\"\\)\\)").getMatch(0));
         String[] links = new Regex(SitePost, "(?i)href=\\'(.*?)\\'").getColumn(0);
-        if (links == null) links = new Regex(SitePost, "(?i)>(.*?)</a>").getColumn(0);
-        if (SitePost != null || links != null) {
-            fpName = fpName + " - Mukki Site Links";
+        if (links == null || links.length == 0) links = new Regex(SitePost, "(?i)>(.*?)</a>").getColumn(0);
+        if (links != null && links.length > 0) {
             for (String link : links) {
                 decryptedLinks.add(createDownloadlink(link));
             }
             if (fpName != null) {
+                fpName = fpName + " - Mukki Site Links";
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());
                 fp.addLinks(decryptedLinks);
             }
-        } else if (SitePost == null || links == null) {
+        } else {
             // user comments
             String UserComments = br.getRegex("(?i)<div id=\"comments\">(.*?)</ol></div>").getMatch(0);
             String[] UserLinks = null;
-            fpName = fpName + " - Mukki User Links";
 
             if (UserComments != null) {
                 UserLinks = new Regex(UserComments, "(?i)>(https?://.*?)</a>").getColumn(0);
-                if ((UserComments != null) && (UserLinks.length == 0)) {
+                if (UserLinks == null || UserLinks.length == 0) {
                     UserLinks = new Regex(UserComments, "(?i)href=\"(.*?)\"").getColumn(0);
                 }
             }
@@ -82,6 +81,7 @@ public class MkiOg extends PluginForDecrypt {
                     }
                 }
                 if (fpName != null) {
+                    fpName = fpName + " - Mukki User Links";
                     FilePackage fp = FilePackage.getInstance();
                     fp.setName(fpName.trim());
                     fp.addLinks(decryptedLinks);

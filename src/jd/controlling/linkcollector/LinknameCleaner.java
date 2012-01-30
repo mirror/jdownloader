@@ -46,6 +46,10 @@ public class LinknameCleaner {
     public static final Pattern[] iszPats  = new Pattern[] { pat18, pat19 };                                                         ;
 
     public static String cleanFileName(String name) {
+        return cleanFileName(name, false);
+    }
+
+    public static String cleanFileName(String name, boolean splitUpperLowerCase) {
         /** remove rar extensions */
         String before = name;
         for (Pattern Pat : rarPats) {
@@ -112,25 +116,26 @@ public class LinknameCleaner {
 
             StringBuilder sb = new StringBuilder();
             char[] cs = name.toCharArray();
+            char lastChar = 'a';
             for (int i = 0; i < cs.length; i++) {
                 // splitFileNamesLikeThis to "split File Names Like This"
-                if (i > 0 && Character.isUpperCase(cs[i]) && Character.isLowerCase(cs[i - 1])) {
-                    sb.append(' ');
+                if (splitUpperLowerCase && i > 0 && Character.isUpperCase(cs[i]) && Character.isLowerCase(cs[i - 1])) {
+                    if (lastChar != ' ') sb.append(' ');
+                    lastChar = ' ';
                 }
                 switch (cs[i]) {
                 case '_':
                 case '.':
-                    sb.append(' ');
+                    if (lastChar != ' ') sb.append(' ');
+                    lastChar = ' ';
                     break;
-
                 default:
+                    lastChar = cs[i];
                     sb.append(cs[i]);
-
                 }
             }
             name = sb.toString();
         }
-
         return name.trim();
     }
 
