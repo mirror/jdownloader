@@ -29,7 +29,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -74,6 +73,7 @@ public class FileFactory extends PluginForHost {
     }
 
     public void checkErrors() throws PluginException {
+        if (this.br.containsHTML("This file is only available to Premium Members")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to Premium Members"); }
         if (br.containsHTML(CAPTCHALIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
         if (this.br.containsHTML(FileFactory.SERVERFAIL)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error"); }
         if (this.br.containsHTML(NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NO_SLOT_USERTEXT, 10 * 60 * 1000l); }
@@ -181,11 +181,14 @@ public class FileFactory extends PluginForHost {
                 max = this.br.getRegex("You can now download up to(.*?)in").getMatch(0);
                 if (max != null) ai.setTrafficLeft(SizeFormatter.getSize(max));
             }
-            this.br.getPage("http://www.filefactory.com/reward/summary.php");
-            final String points = this.br.getMatch("Available reward points.*?class=\"amount\">(.*?) points");
-            if (points != null) {
-                /* not always enough info available to calculate points */
-                ai.setPremiumPoints(Long.parseLong(points.replaceAll("\\,", "").trim()));
+            try {
+                this.br.getPage("http://www.filefactory.com/reward/summary.php");
+                final String points = this.br.getMatch("Available reward points.*?class=\"amount\">(.*?) points");
+                if (points != null) {
+                    /* not always enough info available to calculate points */
+                    ai.setPremiumPoints(Long.parseLong(points.replaceAll("\\,", "").trim()));
+                }
+            } catch (final Throwable e) {
             }
             ai.setStatus("Premium User");
             try {
@@ -446,6 +449,7 @@ public class FileFactory extends PluginForHost {
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
                 account.setProperty("cookies", null);
+                throw e;
             }
         }
     }
@@ -453,8 +457,12 @@ public class FileFactory extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
-        this.br.getHeaders().put("Accept-Encoding", "");
-        this.br.getHeaders().put("User-Agent", RandomUserAgent.generateFF());
+        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.24) Gecko/20111107 Ubuntu/10.10 (maverick) Firefox/3.6.24");
+        this.br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        this.br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+        this.br.getHeaders().put("Accept-Language", "de,de-de;q=0.7,en;q=0.3");
+        this.br.getHeaders().put("Cache-Control", null);
+        this.br.getHeaders().put("Pragma", null);
         this.br.setFollowRedirects(true);
         for (int i = 0; i < 4; i++) {
             try {
@@ -478,6 +486,11 @@ public class FileFactory extends PluginForHost {
                 break;
             } catch (final Exception e) {
                 if (i == 3) { throw e; }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         if (this.br.containsHTML("This file has been deleted\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -486,7 +499,10 @@ public class FileFactory extends PluginForHost {
         } else if (this.br.containsHTML(FileFactory.SERVER_DOWN)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            if (this.br.containsHTML(NO_SLOT)) {
+            if (this.br.containsHTML("This file is only available to Premium Members")) {
+                downloadLink.getLinkStatus().setErrorMessage("This file is only available to Premium Members");
+                downloadLink.getLinkStatus().setStatusText("This file is only available to Premium Members");
+            } else if (this.br.containsHTML(NO_SLOT)) {
                 downloadLink.getLinkStatus().setErrorMessage(JDL.L("plugins.hoster.filefactorycom.errors.nofreeslots", NO_SLOT_USERTEXT));
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filefactorycom.errors.nofreeslots", NO_SLOT_USERTEXT));
             } else {
