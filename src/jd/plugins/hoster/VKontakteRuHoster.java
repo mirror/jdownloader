@@ -38,7 +38,7 @@ import jd.utils.JDUtilities;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/picturelink/\\d+_\\d+" }, flags = { 0 })
 public class VKontakteRuHoster extends PluginForHost {
 
-    private static final String DOMAIN    = "vkontakte.ru";
+    private static final String DOMAIN    = "vk.com";
 
     private String              FINALLINK = null;
 
@@ -48,7 +48,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://vkontakte.ru/help.php?page=terms";
+        return "http://vk.com/help.php?page=terms";
     }
 
     private boolean linkOk(DownloadLink downloadLink) throws IOException {
@@ -117,8 +117,9 @@ public class VKontakteRuHoster extends PluginForHost {
         for (Map.Entry<String, String> entry : cookies.entrySet()) {
             this.br.setCookie(DOMAIN, entry.getKey(), entry.getValue());
         }
-        br.postPage("http://vkontakte.ru/al_photos.php", "act=show&al=1&list=" + albumID + "&photo=" + photoID);
-        String correctedBR = br.toString().replace("\\", "");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage("http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
+        final String correctedBR = br.toString().replace("\\", "");
         /**
          * Try to get best quality and test links till a working link is found
          * as it can happen that the found link is offline but others are online
