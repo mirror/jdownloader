@@ -1,29 +1,19 @@
 package org.jdownloader.jdserv.stats;
 
 import org.appwork.storage.config.ConfigInterface;
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultFactory;
-import org.appwork.storage.config.defaults.AbstractDefaultFactory;
-import org.appwork.utils.Hash;
 
 public interface StatsManagerConfig extends ConfigInterface {
-    class AnonymIDCreater extends AbstractDefaultFactory<String> {
 
-        @Override
-        public String getDefaultValue() {
-            return Hash.getSHA256(System.currentTimeMillis() + "_" + System.nanoTime() + "_" + Math.random());
-        }
-
-    }
-
-    @DefaultFactory(AnonymIDCreater.class)
     String getAnonymID();
 
     public void setAnonymID(String id);
 
     @DefaultBooleanValue(false)
-    boolean isFreshInstall();
+    @AboutConfig
+    boolean isEnabled();
 
-    void setFreshInstall(boolean value);
+    boolean setEnabled(boolean b);
 
 }

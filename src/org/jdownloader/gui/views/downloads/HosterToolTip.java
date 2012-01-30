@@ -54,4 +54,9 @@ public class HosterToolTip extends ExtTooltip {
         return null;
     }
 
+    @Override
+    public String toText() {
+        return null;
+    }
+
 }

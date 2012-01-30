@@ -17,8 +17,8 @@ import org.appwork.utils.logging.Log;
 
 public class RemoteClient extends RemoteCallClient {
 
-    private String  host;
-    private Browser br;
+    private String    host;
+    protected Browser br;
 
     public RemoteClient(String host) {
         this.host = host;
@@ -26,6 +26,10 @@ public class RemoteClient extends RemoteCallClient {
         br.setConnectTimeout(25000);
         br.setReadTimeout(25000);
         br.setAllowedResponseCodes(new int[] { 500 });
+    }
+
+    public String getHost() {
+        return host;
     }
 
     @Override
