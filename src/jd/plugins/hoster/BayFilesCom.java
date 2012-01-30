@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -67,45 +68,54 @@ public class BayFilesCom extends PluginForHost {
         final String vFid = br.getRegex("var vfid = (\\d+);").getMatch(0);
         if (vFid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Can be skipped at the moment
-        // String waittime =
-        // br.getRegex("id=\"countDown\">(\\d+)</").getMatch(0);
-        // int wait = 10;
-        // if (waittime != null) wait = Integer.parseInt(waittime);
+        String waittime = br.getRegex("id=\"countDown\">(\\d+)</").getMatch(0);
+        int wait = 10;
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        Browser brc = br.cloneBrowser();
+        brc.getPage("http://bayfiles.com/js/bayfiles.js");
         br.getPage("http://bayfiles.com/ajax_download?_=" + System.currentTimeMillis() + "&action=startTimer&vfid=" + vFid);
         String token = br.getRegex("\"token\":\"(.*?)\"").getMatch(0);
         if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // sleep(wait * 1001l, downloadLink);
-        br.postPage("http://bayfiles.com/ajax_captcha", "action=getCaptcha");
-        final String reCaptchaID = br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
-        if (reCaptchaID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        Form dlForm = new Form();
-        dlForm.setMethod(MethodType.POST);
-        dlForm.setAction("http://bayfiles.com/ajax_captcha");
-        dlForm.put("action", "verifyCaptcha");
-        dlForm.put("token", token);
-        rc.setForm(dlForm);
-        rc.setId(reCaptchaID);
-        rc.load();
-        for (int i = 0; i <= 5; i++) {
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
-            // Standard handling does not work here because submit fields are
-            // changed
-            dlForm = rc.getForm();
-            dlForm.put("challenge", rc.getChallenge());
-            dlForm.put("response", c);
-            br.submitForm(dlForm);
-            if (br.containsHTML(CAPTCHAFAILED)) {
-                rc.reload();
-                continue;
+
+        String captcha = brc.getRegex("(/\\*[ \t\r\n]*?captcha.create)").getMatch(0);
+        if (captcha == null) {
+            /* captchas currently disabled, see bayfiles.js */
+            br.postPage("http://bayfiles.com/ajax_captcha", "action=getCaptcha");
+            final String reCaptchaID = br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
+            if (reCaptchaID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            Form dlForm = new Form();
+            dlForm.setMethod(MethodType.POST);
+            dlForm.setAction("http://bayfiles.com/ajax_captcha");
+            dlForm.put("action", "verifyCaptcha");
+            dlForm.put("token", token);
+            rc.setForm(dlForm);
+            rc.setId(reCaptchaID);
+            rc.load();
+            for (int i = 0; i <= 5; i++) {
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                // Standard handling does not work here because submit fields
+                // are
+                // changed
+                dlForm = rc.getForm();
+                dlForm.put("challenge", rc.getChallenge());
+                dlForm.put("response", c);
+                br.submitForm(dlForm);
+                if (br.containsHTML(CAPTCHAFAILED)) {
+                    rc.reload();
+                    continue;
+                }
+                break;
             }
-            break;
+            if (br.containsHTML(CAPTCHAFAILED)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            token = br.getRegex("\"token\":\"(.*?)\"").getMatch(0);
+            if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            sleep(wait * 1001l, downloadLink);
         }
-        if (br.containsHTML(CAPTCHAFAILED)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        token = br.getRegex("\"token\":\"(.*?)\"").getMatch(0);
-        if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         br.postPage("http://bayfiles.com/ajax_download", "action=getLink&vfid=" + vFid + "&token=" + token);
         String dllink = br.getRegex("onclick=\"javascript:window\\.location\\.href = \\'(http://.*?)\\'").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\\'(http://s\\d+\\.baycdn\\.com/dl/.*?)\\'").getMatch(0);

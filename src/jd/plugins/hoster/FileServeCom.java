@@ -192,47 +192,51 @@ public class FileServeCom extends PluginForHost {
             br2.getPage("http://www.fileserve.com/script/recaptcha_ajax.js");
             setAjaxHeaders(br2);
             br2.postPage(downloadLink.getDownloadURL(), "checkDownload=check");
+            boolean nocaptcha = false;
             if (!br2.containsHTML("success\":\"showCaptcha\"")) {
+                nocaptcha = true;
                 logger.info("There seems to be an error, no captcha is shown!");
                 handleCaptchaErrors(br2, downloadLink);
                 handleErrors(br2);
             }
             Boolean failed = true;
-            for (int i = 0; i <= 10; i++) {
-                final String id = this.br.getRegex("var reCAPTCHA_publickey=\\'(.*?)\\';").getMatch(0);
-                if (!this.br.containsHTML("api\\.recaptcha\\.net") || id == null || fileId == null) {
-                    handleCaptchaErrors(br2, downloadLink);
-                    logger.warning("id or fileId is null or the browser doesn't contain the reCaptcha text...");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (nocaptcha == false) {
+                for (int i = 0; i <= 10; i++) {
+                    final String id = this.br.getRegex("var reCAPTCHA_publickey=\\'(.*?)\\';").getMatch(0);
+                    if (!this.br.containsHTML("api\\.recaptcha\\.net") || id == null || fileId == null) {
+                        handleCaptchaErrors(br2, downloadLink);
+                        logger.warning("id or fileId is null or the browser doesn't contain the reCaptcha text...");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final Form reCaptchaForm = new Form();
+                    reCaptchaForm.setMethod(Form.MethodType.POST);
+                    reCaptchaForm.setAction("http://www.fileserve.com/checkReCaptcha.php");
+                    reCaptchaForm.put("recaptcha_shortencode_field", fileId);
+                    reCaptchaForm.put("ppp", Encoding.urlEncode(secret));
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
+                    rc.setForm(reCaptchaForm);
+                    rc.setId(id);
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
+                    final String c = this.getCaptchaCode(cf, downloadLink);
+                    if (c == null || c.length() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Recaptcha failed");
+                    rc.getForm().put("recaptcha_response_field", Encoding.urlEncode(c));
+                    rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
+                    br2.submitForm(rc.getForm());
+                    if (br2.containsHTML("incorrect\\-captcha\\-sol")) {
+                        handleCaptchaErrors(br2, downloadLink);
+                        this.br.getPage(downloadLink.getDownloadURL());
+                        continue;
+                    }
+                    failed = false;
+                    break;
                 }
-                final Form reCaptchaForm = new Form();
-                reCaptchaForm.setMethod(Form.MethodType.POST);
-                reCaptchaForm.setAction("http://www.fileserve.com/checkReCaptcha.php");
-                reCaptchaForm.put("recaptcha_shortencode_field", fileId);
-                reCaptchaForm.put("ppp", Encoding.urlEncode(secret));
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
-                rc.setForm(reCaptchaForm);
-                rc.setId(id);
-                rc.load();
-                final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
-                final String c = this.getCaptchaCode(cf, downloadLink);
-                if (c == null || c.length() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Recaptcha failed");
-                rc.getForm().put("recaptcha_response_field", Encoding.urlEncode(c));
-                rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
-                br2.submitForm(rc.getForm());
-                if (br2.containsHTML("incorrect\\-captcha\\-sol")) {
-                    handleCaptchaErrors(br2, downloadLink);
-                    this.br.getPage(downloadLink.getDownloadURL());
-                    continue;
-                }
-                failed = false;
-                break;
+                if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                handleCaptchaErrors(br2, downloadLink);
+                handleErrors(br2);
+                // }
             }
-            if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            handleCaptchaErrors(br2, downloadLink);
-            handleErrors(br2);
-            // }
             this.br.postPage(downloadLink.getDownloadURL(), "downloadLink=wait");
             // Ticket Time
             if (!this.br.getHttpConnection().isOK()) {
