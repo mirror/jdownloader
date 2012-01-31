@@ -315,9 +315,9 @@ public class Ftp extends PluginForHost {
             }
             if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } catch (IOException e) {
-            if (e.getMessage().contains("530 Login incorrect")) {
+            if (e.getMessage().contains("530")) {
                 downloadLink.getLinkStatus().setErrorMessage("Login incorrect");
-                return AvailableStatus.FALSE;
+                return AvailableStatus.UNCHECKABLE;
             } else
                 throw e;
         } catch (PluginException e) {

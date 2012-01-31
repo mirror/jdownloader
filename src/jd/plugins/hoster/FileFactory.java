@@ -73,6 +73,7 @@ public class FileFactory extends PluginForHost {
     }
 
     public void checkErrors() throws PluginException {
+        if (br.containsHTML("We are currently experiencing heavy traffic volume")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded!", 15 * 60 * 1000l);
         if (this.br.containsHTML("This file is only available to Premium Members")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to Premium Members"); }
         if (br.containsHTML(CAPTCHALIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
         if (this.br.containsHTML(FileFactory.SERVERFAIL)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error"); }
@@ -359,7 +360,9 @@ public class FileFactory extends PluginForHost {
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, this.br.getRedirectLocation(), true, 0);
             if (!this.dl.getConnection().isContentDisposition()) {
                 this.br.followConnection();
-                if (this.br.containsHTML(FileFactory.NOT_AVAILABLE)) {
+                if (br.containsHTML("We are currently experiencing heavy traffic volume")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded!", 15 * 60 * 1000l);
+                } else if (this.br.containsHTML(FileFactory.NOT_AVAILABLE)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (this.br.containsHTML(FileFactory.SERVER_DOWN)) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
@@ -368,9 +371,11 @@ public class FileFactory extends PluginForHost {
                     if (red == null) red = this.br.getRegex("subPremium.*?ready.*?<a href=\"(.*?)\"").getMatch(0);
                     logger.finer("Indirect download");
                     this.br.setFollowRedirects(true);
+                    if (red == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                     this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, red, true, 0);
                     if (!this.dl.getConnection().isContentDisposition()) {
                         this.br.followConnection();
+                        if (br.containsHTML("We are currently experiencing heavy traffic volume")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded!", 15 * 60 * 1000l);
                         if (br.containsHTML("Unfortunately we have encountered a problem locating your file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
