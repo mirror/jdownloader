@@ -48,6 +48,7 @@ public class UploadStationCom extends PluginForHost {
     public static String         agent              = RandomUserAgent.generate();
     private boolean              isRegistered       = false;
     private static long          LAST_FREE_DOWNLOAD = 0l;
+    private static boolean       accDebugShown      = false;
 
     public UploadStationCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -406,7 +407,12 @@ public class UploadStationCom extends PluginForHost {
         br.postPage("http://uploadstation.com/login.php", "loginUserName=" + Encoding.urlEncode(account.getUser()) + "&loginUserPassword=" + Encoding.urlEncode(account.getPass()) + "&autoLogin=on&recaptcha_response_field=&recaptcha_challenge_field=&recaptcha_shortencode_field=&loginFormSubmit=Login");
         if (br.getCookie("http://uploadstation.com/", "cookie") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
         br.getPage("http://uploadstation.com/dashboard.php");
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (!br.containsHTML("Expiry date: ")) {
+            if (account.getBooleanProperty("premium", false) == true && accDebugShown) {
+                logger.info("DEBUG: " + br.toString());
+                accDebugShown = true;
+            }
             // ai.setExpired(true);
             isRegistered = true;
             try {
@@ -415,6 +421,7 @@ public class UploadStationCom extends PluginForHost {
             } catch (final Throwable noin09581Stable) {
             }
         } else {
+            account.setProperty("premium", true);
             try {
                 maxDls.set(-1);
                 account.setMaxSimultanDownloads(-1);
