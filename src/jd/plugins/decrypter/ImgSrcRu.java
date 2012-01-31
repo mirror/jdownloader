@@ -21,73 +21,62 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.ru/.*?/[a-z0-9]+\\.html" }, flags = { 2 })
 public class ImgSrcRu extends PluginForDecrypt {
-	private static final String MAINPAGE = "http://imgsrc.ru/";
+    private static final String MAINPAGE = "http://imgsrc.ru/";
 
-	public ImgSrcRu(PluginWrapper wrapper) {
-		super(wrapper);
-	}
+    public ImgSrcRu(PluginWrapper wrapper) {
+        super(wrapper);
+    }
 
-	public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-		ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-		String parameter = param.toString();
-		br.setFollowRedirects(true);
-		br.setCookie(MAINPAGE, "lang", "en");
-		br.getPage(parameter);
-		if (br.containsHTML(">Search for better photos") || br.getURL().contains("imgsrc.ru/main/user.php"))
-			throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable",
-					"Perhaps wrong URL or the download is not available anymore."));
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+        br.setFollowRedirects(true);
+        br.setCookie(MAINPAGE, "lang", "en");
+        br.getPage(parameter);
+        if (br.containsHTML(">Search for better photos") || br.getURL().contains("imgsrc.ru/main/user.php")) return decryptedLinks;
+        DownloadLink dlink = getDownloadLink();
+        if (dlink != null) {
+            decryptedLinks.add(dlink);
+        }
+        return decryptedLinks;
+    }
 
-		DownloadLink dlink = getDownloadLink();
-		if (dlink != null) {
-	        decryptedLinks.add(dlink);
-		}
-				
-		if (decryptedLinks.isEmpty())
-			throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable",
-					"No images found: Perhaps wrong URL or the download is not available anymore."));
-		
-		return decryptedLinks;
-	}
-	
-	private DownloadLink getDownloadLink() {
-		// Main pic in the page has class=big (no quotes for now), but the class can be near the beggining or end of the tag
-		String[] picLinks = br.getRegex("class=big src=\\'?(http://[^\"\\']+)\\'? alt=\\'(.*?)\\'.*?><br></a>").getRow(0);
-		if (picLinks == null || picLinks.length == 0)
-			picLinks = br.getRegex("src=\\'?(http://[^\"\\']+)\\'? alt=\\'(.*?)\\'.*? class=big><br></a>").getRow(0);
-		if (picLinks == null || picLinks.length == 0)
-			return null;
+    private DownloadLink getDownloadLink() {
+        // Main pic in the page has class=big (no quotes for now), but the class
+        // can be near the beggining or end of the tag
+        String[] picLinks = br.getRegex("class=big src=\\'?(http://[^\"\\']+)\\'? alt=\\'(.*?)\\'.*?><br></a>").getRow(0);
+        if (picLinks == null || picLinks.length == 0) picLinks = br.getRegex("src=\\'?(http://[^\"\\']+)\\'? alt=\\'(.*?)\\'.*? class=big><br></a>").getRow(0);
+        if (picLinks == null || picLinks.length == 0) return null;
 
-		// Gets suffix put in URL by Javascript
-		String suf = br.getRegex("var r='([A-Za-z]+)';").getMatch(0);
-		if (suf == null)
-			return null;
+        // Gets suffix put in URL by Javascript
+        String suf = br.getRegex("var r='([A-Za-z]+)';").getMatch(0);
+        if (suf == null) return null;
 
-		// Reverse suffix, as done in javascript
-		StringBuilder sb = new StringBuilder();
-		for (int i = suf.length() - 1; i >= 0; i--)
-			sb.append(suf.charAt(i));
-		suf = sb.toString();
+        // Reverse suffix, as done in javascript
+        StringBuilder sb = new StringBuilder();
+        for (int i = suf.length() - 1; i >= 0; i--)
+            sb.append(suf.charAt(i));
+        suf = sb.toString();
 
-		// Choose original pic if available, else big pic
-		String newUrl;
-		if (br.getRegex("oripic").matches())
-			newUrl = "o$1" + suf + ".$2";
-		else
-			newUrl = "b$1" + suf + ".$2";
+        // Choose original pic if available, else big pic
+        String newUrl;
+        if (br.getRegex("oripic").matches())
+            newUrl = "o$1" + suf + ".$2";
+        else
+            newUrl = "b$1" + suf + ".$2";
 
-		// Replace small image server s\d.eu.imgsrc.ru, by original size image o\d.eu.imgsrc.ru
-		// and replace suffix (3 last chars before extension) with new one
-		picLinks[0] = picLinks[0].replaceFirst("s(\\d+\\.eu\\.imgsrc\\.ru/\\w/\\w+/\\d+/\\d+)[A-Za-z]+.(\\w+)", newUrl);
-		DownloadLink dlink = createDownloadlink(picLinks[0]);
-		dlink.setFinalFileName(picLinks[1]);
-		return dlink;
-	}
+        // Replace small image server s\d.eu.imgsrc.ru, by original size image
+        // o\d.eu.imgsrc.ru
+        // and replace suffix (3 last chars before extension) with new one
+        picLinks[0] = picLinks[0].replaceFirst("s(\\d+\\.eu\\.imgsrc\\.ru/\\w/\\w+/\\d+/\\d+)[A-Za-z]+.(\\w+)", newUrl);
+        DownloadLink dlink = createDownloadlink(picLinks[0]);
+        dlink.setFinalFileName(picLinks[1]);
+        return dlink;
+    }
 }

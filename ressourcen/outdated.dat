@@ -668,3 +668,4 @@ jd/plugins/decrypter/XeemIn.class
 jd/plugins/decrypter/Fldck.class
 jd/plugins/hoster/EmbedLoadCom.class
 jd/plugins/hoster/FileVoCom.class
+jd/plugins/decrypter/SixMirrorsCom.class
