@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -32,14 +33,15 @@ public class EightTracksCom extends PluginForDecrypt {
 
     private static final String MAINPAGE = "http://8tracks.com/";
     private boolean             ATEND    = false;
+    private String              clipData;
 
     public EightTracksCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private String createFilename() {
-        String album = br.getRegex("<release\\-name>(.*?)</release\\-name>").getMatch(0);
-        final String title = br.getRegex("name>(.*?)</name>").getMatch(0);
+        String album = getClipData("release\\-name");
+        final String title = getClipData("name");
         if (album == null || title == null) { return null; }
         if (album.contains(":")) {
             album = album.substring(0, album.indexOf(":"));
@@ -53,6 +55,7 @@ public class EightTracksCom extends PluginForDecrypt {
         final String parameter = param.toString();
         setBrowserExclusive();
 
+        br.setFollowRedirects(true);
         br.setReadTimeout(90 * 1000);
         /* nachfolgender UA sorgt für bessere Audioqualität */
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (webOS/2.1.0; U; en-US) AppleWebKit/532.2 (KHTML, like Gecko) Version/1.0 Safari/532.2 Pre/1.2 ");
@@ -83,8 +86,9 @@ public class EightTracksCom extends PluginForDecrypt {
         long count = 8;
         progress.setRange(count);
         /* Start playlist */
-        br.getPage(MAINPAGE + "sets/" + playToken + "/play.xml?mix_id=" + mixId);
-        String dllink = br.getRegex("<url>(.*?)</url>").getMatch(0);
+        br.setFollowRedirects(false);
+        clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/play.xml?mix_id=" + mixId);
+        String dllink = getClipData("url");
         String filename = createFilename();
         String ext = "", sameLink = "";
 
@@ -92,11 +96,14 @@ public class EightTracksCom extends PluginForDecrypt {
         fp.setName(name.trim());
         while (!ATEND) {
             /* ATEND=true --> end of playlist */
-            ATEND = Boolean.parseBoolean(br.getRegex("<at\\-end>(True|False)</at\\-end>").getMatch(0));
+            ATEND = Boolean.parseBoolean(getClipData("<at\\-end>"));
             if (dllink != null && filename != null) {
                 sameLink = dllink;
                 ext = dllink.substring(dllink.lastIndexOf(".") + 1);
                 ext = ext.equals("m4a") || ext.length() > 5 ? "mp4" : ext;
+                if (!dllink.startsWith("http://8tracks")){
+                    dllink = "directhttp://"+dllink;
+                }
                 final DownloadLink dl = createDownloadlink(dllink);
                 dl.setFinalFileName(filename + "." + ext);
                 fp.add(dl);
@@ -110,8 +117,8 @@ public class EightTracksCom extends PluginForDecrypt {
                 /* Anzahl der Titel unbestimmt. Siehe ATEND! */
                 progress.setRange(count++);
             }
-            br.getPage(MAINPAGE + "sets/" + playToken + "/next.xml?mix_id=" + mixId);
-            dllink = br.getRegex("<url>(.*?)</url>").getMatch(0);
+            clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/next.xml?mix_id=" + mixId);
+            dllink = getClipData("url");
             filename = createFilename();
 
             if (!ATEND && dllink == null || !ATEND && dllink != null && dllink.equals(sameLink)) {
@@ -125,6 +132,10 @@ public class EightTracksCom extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
+    }
+
+    private String getClipData(final String tag) {
+        return new Regex(clipData, "<" + tag + ">(.*?)</" + tag + ">").getMatch(0);
     }
 
 }
