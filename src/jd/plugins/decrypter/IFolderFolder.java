@@ -43,6 +43,7 @@ public class IFolderFolder extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML("Запрашиваемая вами папка не существует или у вас нет прав для просмотра данной папки")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("Название: <b>(.*?)</b>").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("<h1>Просмотр папки(.*?)</h").getMatch(0);
         // Get the links of the first page
         String collectedlinks1[] = getLinks();
         if (collectedlinks1 == null || collectedlinks1.length == 0) return null;
@@ -73,7 +74,7 @@ public class IFolderFolder extends PluginForDecrypt {
     }
 
     public String[] getLinks() throws NumberFormatException, DecrypterException, IOException {
-        String[] links = br.getRegex("\\&#8470;(\\d+) <a href=").getColumn(0);
+        String[] links = br.getRegex("\\&#8470;[ \t]*?(\\d+)(</span>.*?)? <a href=").getColumn(0);
         return links;
     }
 }

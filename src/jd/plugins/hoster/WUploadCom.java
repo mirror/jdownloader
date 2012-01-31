@@ -326,7 +326,7 @@ public class WUploadCom extends PluginForHost implements ControlListener {
             br.getPage(br.getRedirectLocation());
         }
         passCode = null;
-
+        if (br.containsHTML("deletedFile\">Sorry, this file has been removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String domain = new Regex(br.getURL(), "(http.*?\\..*?/)").getMatch(0);
         String freeDownloadLink = domain + "file/" + new Regex(downloadLink.getDownloadURL(), "/file/([^<>\"/]+)/?").getMatch(0) + "?start=1";
         // this is an ajax call
