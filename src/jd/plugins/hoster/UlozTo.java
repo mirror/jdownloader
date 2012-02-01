@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -13,6 +13,7 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -97,12 +98,11 @@ public class UlozTo extends PluginForHost {
         br2.setFollowRedirects(true);
         boolean failed = true;
         for (int i = 0; i <= 5; i++) {
-            String captchaUrl = br.getRegex(Pattern.compile("style=\"width:175px; height:70px;\" width=\"175\" height=\"70\" src=\"(http://.*?)\"")).getMatch(0);
-            if (captchaUrl == null) captchaUrl = br.getRegex(Pattern.compile("\"(http://img\\.uloz\\.to/captcha/\\d+\\.png)\"")).getMatch(0);
-            Form captchaForm = br.getFormbyProperty("name", "dwn");
+            String captchaUrl = br.getRegex(Pattern.compile("\"(http://img\\.uloz\\.to/captcha/\\d+\\.png)\"")).getMatch(0);
+            Form captchaForm = br.getFormbyProperty("id", "frm-downloadDialog-freeDownloadForm");
             if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String code = getCaptchaCode(captchaUrl, downloadLink);
-            captchaForm.put("captcha_user", code);
+            captchaForm.put("captcha[text]", code);
             captchaForm.remove(null);
             br.submitForm(captchaForm);
             dllink = br.getRedirectLocation();
@@ -180,6 +180,7 @@ public class UlozTo extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(false);
         handleDownloadUrl(downloadLink);
+        // not sure if this is still needed with 2012/02/01 changes
         String continuePage = br.getRegex("<p><a href=\"(http://.*?)\">Please click here to continue</a>").getMatch(0);
         if (continuePage != null) {
             downloadLink.setUrlDownload(continuePage);
@@ -188,16 +189,10 @@ public class UlozTo extends PluginForHost {
         // Wrong links show the mainpage so here we check if we got the mainpage
         // or not
         if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(Pattern.compile("\\&t=(.*?)\"")).getMatch(0);
-        if (filename == null) filename = br.getRegex(Pattern.compile("cptm=;Pe/\\d+/(.*?)\\?b")).getMatch(0);
-        String filesize = br.getRegex(Pattern.compile("style=\"top:\\-55px;\"><div>\\d+:\\d+ \\| (.*?)</div></div>")).getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("class=\"info_velikost\" style=\"top:\\-55px;\">[\t\n\r ]+<div>[\t\n\r ]+\\d{2}:\\d{2}(:\\d{2})? \\| (.*?)</div>").getMatch(1);
-            if (filesize == null) {
-                filesize = br.getRegex("<span>Velikost:</span> <span class=\"green\">(.*?)</span>").getMatch(0);
-            }
-
-        }
+        String filename = br.getRegex("<title>(.*?) \\| Ulož\\.to</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<a href=\"#download\" class=\"jsShowDownload\">(.*?)</a>").getMatch(0);
+        String filesize = br.getRegex("<span id=\"fileSize\">(.*?)</span>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("(?i)([\\d\\.]+ ?(MB|GB))").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
