@@ -44,47 +44,55 @@ public class MkiOg extends PluginForDecrypt {
         br.setCookie("http://mukki.org", "lang", "english");
         br.getHeaders().put("User-Agent", ua);
         br.getPage(parameter);
+        // error clauses
         if (br.containsHTML("(?i)(>Not Found</h1>|>Apologies\\, but the page you requested could not be found\\.)")) {
             logger.warning("Invalid URL: " + parameter);
-            return decryptedLinks;
+            return null;
         }
-        String fpName = Encoding.htmlDecode(br.getRegex("(?i)</a> \\&raquo\\; ([^\"<>]+)").getMatch(0));
-        if (fpName == null) fpName = Encoding.htmlDecode(br.getRegex("(?i)\"></span>(.*?)</h1>").getMatch(0));
+        // find a respectable package name
+        String fp = Encoding.htmlDecode(br.getRegex("(?i)</a> \\&raquo\\; ([^\"<>]+)").getMatch(0));
+        if (fp == null) {
+            fp = Encoding.htmlDecode(br.getRegex("(?i)\"></span>(.*?)</h1>").getMatch(0));
+        }
+        String fpName = null;
+        if (fp != null)
+            fpName = (fp + " - Mukki Site Links").trim();
+        else
+            fpName = "Mukki Site Links";
+        FilePackage FP1 = FilePackage.getInstance();
+        FP1.setName(fpName);
+        // find and decode base64
         String SitePost = Encoding.Base64Decode(br.getRegex("(?i)\\(showmeass\\.decode\\(\"([a-zA-Z0-9\\+\\/]+[=]{0,2})\"\\)\\)").getMatch(0));
         String[] links = new Regex(SitePost, "(?i)href=\\'(.*?)\\'").getColumn(0);
         if (links == null || links.length == 0) links = new Regex(SitePost, "(?i)>(.*?)</a>").getColumn(0);
         if (links != null && links.length > 0) {
             for (String link : links) {
-                decryptedLinks.add(createDownloadlink(link));
+                DownloadLink thislink = this.createDownloadlink(link);
+                FP1.add(thislink);
+                decryptedLinks.add(thislink);
             }
-            if (fpName != null) {
-                fpName = fpName + " - Mukki Site Links";
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName.trim());
-                fp.addLinks(decryptedLinks);
+        }
+        // user comments
+        if (fp != null)
+            fpName = (fp + " - Mukki User Links").trim();
+        else
+            fpName = "Mukki User Links";
+        FilePackage FP2 = FilePackage.getInstance();
+        FP2.setName(fpName);
+        String UserComments = br.getRegex("(?i)<div id=\"comments\">(.*?)</ol></div>").getMatch(0);
+        String[] UserLinks = null;
+        if (UserComments != null) {
+            UserLinks = new Regex(UserComments, "(?i)>(https?://.*?)</a>").getColumn(0);
+            if (UserLinks == null || UserLinks.length == 0) {
+                UserLinks = new Regex(UserComments, "(?i)href=\"(.*?)\"").getColumn(0);
             }
-        } else {
-            // user comments
-            String UserComments = br.getRegex("(?i)<div id=\"comments\">(.*?)</ol></div>").getMatch(0);
-            String[] UserLinks = null;
-
-            if (UserComments != null) {
-                UserLinks = new Regex(UserComments, "(?i)>(https?://.*?)</a>").getColumn(0);
-                if (UserLinks == null || UserLinks.length == 0) {
-                    UserLinks = new Regex(UserComments, "(?i)href=\"(.*?)\"").getColumn(0);
-                }
-            }
-            if (UserLinks != null) {
-                for (String link : UserLinks) {
-                    if (!link.contains("mukki.org")) {
-                        decryptedLinks.add(createDownloadlink(link));
-                    }
-                }
-                if (fpName != null) {
-                    fpName = fpName + " - Mukki User Links";
-                    FilePackage fp = FilePackage.getInstance();
-                    fp.setName(fpName.trim());
-                    fp.addLinks(decryptedLinks);
+        }
+        if (UserLinks != null) {
+            for (String link : UserLinks) {
+                if (!link.contains("mukki.org")) {
+                    DownloadLink thislink = this.createDownloadlink(link);
+                    FP2.add(thislink);
+                    decryptedLinks.add(thislink);
                 }
             }
         }
