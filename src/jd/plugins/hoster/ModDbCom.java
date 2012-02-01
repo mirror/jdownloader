@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,8 +32,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moddb.com" }, urls = { "http://[\\w\\.]*?moddb\\.com/(games|mods|engines|groups)/.*?/(addons|downloads)/[0-9a-z-]+" }, flags = { 0 })
+//Links come from a decrypter plugin
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moddb.com" }, urls = { "http://(www\\.)?moddbdecrypted\\.com/(games|mods|engines|groups)/.*?/(addons|downloads)/[0-9a-z-]+" }, flags = { 0 })
 public class ModDbCom extends PluginForHost {
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("moddbdecrypted.com/", "moddb.com/"));
+    }
 
     private static final String   moddbservers  = "moddbservers";
 
@@ -44,13 +49,9 @@ public class ModDbCom extends PluginForHost {
     }
 
     private String                FDCCDNREGEX1  = "Mirror provided by FDCCDN.*?<a href=\"(.*?)\"";
-
     private String                FDCCDNREGEX2  = "http://www\\.fdcservers\\.net.*?<a href=\"(.*?)\"";
-
     private String                SERVER4REGEX  = "Mirror provided by Mod DB #4.*?<a href=\"(.*?)\"";
-
     private String                SERVER5REGEX  = "Mirror provided by Mod DB #5.*?<a href=\"(.*?)\"";
-
     private String                SERVER6REGEX  = "Mirror provided by Mod DB #6.*?<a href=\"(.*?)\"";
     private String                SERVER8REGEX  = "Mirror provided by Mod DB #8.*?<a href=\"(.*?)\"";
     private String                SERVER10REGEX = "Mirror provided by Mod DB #10.*?<a href=\"(.*?)\"";
@@ -193,21 +194,8 @@ public class ModDbCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         int configuredServer = getConfiguredServer();
-        // Get pages with the mirror
-        String singlemirrorpage = br.getRegex("window\\.open\\('(.*?)'").getMatch(0);
-        String mirrorid = br.getRegex("id=\"downloads(\\d+)report\"").getMatch(0);
-        if (mirrorid == null) {
-            mirrorid = br.getRegex("siteareaid=(\\d+)\"").getMatch(0);
-            if (mirrorid == null) {
-                mirrorid = br.getRegex("start/(\\d+)").getMatch(0);
-            }
-        }
-        if (mirrorid != null) {
-            br.getPage("http://www.moddb.com/downloads/start/" + mirrorid + "/all");
-        } else {
-            String standardmirrorpage = br.getRegex("attr\\(\"href\", \"(.*?)\\&amp;").getMatch(0);
-            if (standardmirrorpage != null) br.getPage("http://www.moddb.com" + standardmirrorpage);
-        }
+        // Get pages with the mirrors
+        String singlemirrorpage = getSinglemirrorpage(br);
         String dllink = findLink(configuredServer, singlemirrorpage);
         if (dllink == null) {
             logger.info("no final downloadlink (dllink) has been found, the plugin must be defect!");
@@ -237,6 +225,26 @@ public class ModDbCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    // Also used by the decrypter
+    public static String getSinglemirrorpage(final Browser br) throws IOException {
+        // Get pages with the mirror
+        String singlemirrorpage = br.getRegex("window\\.open\\(\\'(.*?)\\'").getMatch(0);
+        String mirrorid = br.getRegex("id=\"downloads(\\d+)report\"").getMatch(0);
+        if (mirrorid == null) {
+            mirrorid = br.getRegex("siteareaid=(\\d+)\"").getMatch(0);
+            if (mirrorid == null) {
+                mirrorid = br.getRegex("start/(\\d+)").getMatch(0);
+            }
+        }
+        if (mirrorid != null) {
+            br.getPage("http://www.moddb.com/downloads/start/" + mirrorid + "/all");
+        } else {
+            String standardmirrorpage = br.getRegex("attr\\(\"href\", \"(.*?)\\&amp;").getMatch(0);
+            if (standardmirrorpage != null) br.getPage("http://www.moddb.com" + standardmirrorpage);
+        }
+        return singlemirrorpage;
     }
 
     @Override

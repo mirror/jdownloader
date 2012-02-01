@@ -17,9 +17,16 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,17 +36,26 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slingfile.com" }, urls = { "http://(www\\.)?slingfile\\.com/((file|audio|video)/.+|dl/[a-z0-9]+/.*?\\.html)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slingfile.com" }, urls = { "http://(www\\.)?slingfile\\.com/((file|audio|video)/.+|dl/[a-z0-9]+/.*?\\.html)" }, flags = { 2 })
 public class SlingFileCom extends PluginForHost {
 
     public SlingFileCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://www.slingfile.com/premium");
     }
+
+    /**
+     * Important: Do NOT implement their linkchecker as it's buggy and shows
+     * wrong information: http://www.slingfile.com/check-files
+     * */
+    private static final Object LOCK     = new Object();
+    private static final String MAINPAGE = "http://slingfile.com/";
 
     public void correctDownloadLink(DownloadLink link) {
         String theLink = link.getDownloadURL();
-        theLink = theLink.replaceAll("(audio|video)", "file");
+        theLink = theLink.replaceAll("/(audio|video|dl)/", "file");
         link.setUrlDownload(theLink);
     }
 
@@ -49,6 +65,26 @@ public class SlingFileCom extends PluginForHost {
 
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getPage(downloadLink.getDownloadURL());
+        // Prevents errors, i don't know why the page sometimes shows this
+        // error!
+        if (br.containsHTML(">Please enable cookies to use this website")) br.getPage(downloadLink.getDownloadURL());
+        if ("http://www.slingfile.com/".equals(br.getRedirectLocation())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h3>Downloading <span>(.*?)</span></h3>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?) \\- SlingFile \\- Free File Hosting \\& Online Storage</title>").getMatch(0);
+        }
+        String filesize = br.getRegex("<td>(.{2,20}) \\| Uploaded").getMatch(0);
+        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -89,40 +125,107 @@ public class SlingFileCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("unchecked")
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            // Load cookies
+            br.setCookiesExclusive(false);
+            final Object ret = account.getProperty("cookies", null);
+            boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (account.isValid()) {
+                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                        final String key = cookieEntry.getKey();
+                        final String value = cookieEntry.getValue();
+                        this.br.setCookie(MAINPAGE, key, value);
+                    }
+                    return;
+                }
+            }
+            br.setFollowRedirects(false);
+            br.postPage("http://www.slingfile.com/login", "f_user=" + Encoding.urlEncode(account.getUser()) + "&f_password=" + Encoding.urlEncode(account.getPass()) + "&f_keepMeLoggedIn=1&submit=Login+%C2%BB");
+            if (br.getCookie(MAINPAGE, "cookielogin") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // Save cookies
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = this.br.getCookies(MAINPAGE);
+            for (final Cookie c : add.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            account.setProperty("name", Encoding.urlEncode(account.getUser()));
+            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+            account.setProperty("cookies", cookies);
+        }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://www.slingfile.com/dashboard");
+        if (!br.containsHTML("<li class=\"status premium\"><b>")) {
+            ai.setStatus("Not a premium account!");
+            account.setValid(false);
+            return ai;
+        }
+        String space = br.getRegex("<h4>Storage</h4>[\t\n\r ]+<p><span>([0-9\\.]+ [A-Za-z]{1,5}) /").getMatch(0);
+        if (space != null) ai.setUsedSpace(space.trim());
+        String uploadedFiles = br.getRegex("<h4>Files Uploaded</h4>[\t\n\r ]+<p><span>(\\d+) files</span>").getMatch(0);
+        if (uploadedFiles != null) ai.setFilesNum(Integer.parseInt(uploadedFiles));
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex(">Premium Account valid until (\\d{1,2} [A-Za-z]+ \\d{4} \\d{2}:\\d{2})").getMatch(0);
+        if (expire == null) {
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy hh:mm", null));
+        }
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        String dllink = br.getRegex("<td valign=\\'middle\\' align=\\'center\\' colspan=\\'2\\'>[\t\n\r ]+<a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://sf\\d+\\-\\d+\\.slingfile\\.com/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.setReadTimeout(2 * 60 * 1000);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
-    }
-
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getPage(downloadLink.getDownloadURL());
-        // Prevents errors, i don't know why the page sometimes shows this
-        // error!
-        if (br.containsHTML(">Please enable cookies to use this website")) br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().equals("http://www.slingfile.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (!br.getRedirectLocation().contains("/dl/")) throw new PluginException(LinkStatus.ERROR_FATAL, "Link redirects to a wrong link!");
-            downloadLink.setUrlDownload(br.getRedirectLocation());
-            logger.info("New link was set in the availableCheck, opening page...");
-            br.getPage(downloadLink.getDownloadURL());
-        }
-        String filename = br.getRegex("<h3>Downloading <span>(.*?)</span></h3>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?) \\- SlingFile \\- Free File Hosting \\& Online Storage</title>").getMatch(0);
-        }
-        String filesize = br.getRegex("<td>(.{2,20}) \\| Uploaded").getMatch(0);
-        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     public void reset() {

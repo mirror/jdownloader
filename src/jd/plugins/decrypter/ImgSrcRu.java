@@ -20,9 +20,11 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.ru/.*?/[a-z0-9]+\\.html" }, flags = { 2 })
@@ -40,9 +42,15 @@ public class ImgSrcRu extends PluginForDecrypt {
         br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(parameter);
         if (br.containsHTML(">Search for better photos") || br.getURL().contains("imgsrc.ru/main/user.php")) return decryptedLinks;
+        final String fpName = br.getRegex("from \\'<strong>([^<>\"']+)</strong>").getMatch(0);
         DownloadLink dlink = getDownloadLink();
         if (dlink != null) {
             decryptedLinks.add(dlink);
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
     }
@@ -75,7 +83,7 @@ public class ImgSrcRu extends PluginForDecrypt {
         // o\d.eu.imgsrc.ru
         // and replace suffix (3 last chars before extension) with new one
         picLinks[0] = picLinks[0].replaceFirst("s(\\d+\\.eu\\.imgsrc\\.ru/\\w/\\w+/\\d+/\\d+)[A-Za-z]+.(\\w+)", newUrl);
-        DownloadLink dlink = createDownloadlink(picLinks[0]);
+        DownloadLink dlink = createDownloadlink("directhttp://" + picLinks[0]);
         dlink.setFinalFileName(picLinks[1]);
         return dlink;
     }

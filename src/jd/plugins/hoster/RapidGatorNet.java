@@ -136,7 +136,6 @@ public class RapidGatorNet extends PluginForHost {
                 }
             }
             br.setFollowRedirects(true);
-            // br.getPage("http://rapidgator.net/auth/login");
             br.postPage("http://rapidgator.net/auth/login", "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=1");
             if (br.getCookie(MAINPAGE, "user__") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             // Save cookies
