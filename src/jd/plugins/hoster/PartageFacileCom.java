@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -49,14 +48,12 @@ public class PartageFacileCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        Form dlform0 = br.getForm(1);
-        if (dlform0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.submitForm(dlform0);
-        Form dlform1 = br.getForm(0);
-        if (dlform1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dlform1.remove("u");
+        br.postPage(downloadLink.getDownloadURL(), "freedl=T%C3%A9l%C3%A9chargement+gratuit+%28Vitesse+NORMAL%29");
+        Form dlform = br.getForm(0);
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dlform.remove("u");
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform1, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Taille maximum du fichier")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
@@ -75,11 +72,16 @@ public class PartageFacileCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("title\">Envoyez vos fichiers maintenant</td>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex reg = br.getRegex("<br>Fichier : <b>(.*?)</b> \\((.*?)\\)<br>");
-        String filesize = reg.getMatch(1);
-        if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = reg.getMatch(0);
+        if (br.containsHTML("(>Envoyez vos fichiers maintenant<|Partage\\-Facile : H\\&eacute;bergement de fichiers, Facile, Rapide et Securis\\&eacute;\\!)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex("<th>Taille :</th>[\t\n\r ]+<td>([^<>\"\\']+)</td>").getMatch(0);
+        String filename = br.getRegex("<th class=\"span4\">Nom :</th>[\t\n\r ]+<td>([^<>\"\\']+)</td>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<input type=\"hidden\" name=\"nom\" value=\"([^<>\"\\']+)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("Partage-Facile : Fichier ([^<>\"\\']+)\\.html").getMatch(0);
+            }
+        }
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (filesize.contains("Mo")) {
             filesize = filesize.replaceAll("Mo", "MB");
         } else if (filesize.contains("Go")) {
@@ -91,7 +93,6 @@ public class PartageFacileCom extends PluginForHost {
         } else {
             filesize = null;
         }
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
