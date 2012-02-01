@@ -39,6 +39,7 @@ import org.jdownloader.settings.GeneralSettings;
 public class LinkCrawler implements IOPermission {
 
     private PluginForHost               directHTTP                  = null;
+    private PluginForHost               ftp                         = null;
     private ArrayList<CrawledLink>      crawledLinks                = new ArrayList<CrawledLink>();
     private AtomicInteger               crawledLinksCounter         = new AtomicInteger(0);
     private ArrayList<CrawledLink>      filteredLinks               = new ArrayList<CrawledLink>();
@@ -144,10 +145,13 @@ public class LinkCrawler implements IOPermission {
             parentCrawler = thread.getCurrentLinkCrawler();
         }
         for (LazyHostPlugin pHost : HostPluginController.getInstance().list()) {
-            if ("http links".equals(pHost.getDisplayName())) {
+            if (directHTTP == null && "http links".equals(pHost.getDisplayName())) {
                 /* for direct access to the directhttp plugin */
                 directHTTP = pHost.getPrototype();
-                break;
+            }
+            if (ftp == null && "ftp".equals(pHost.getDisplayName())) {
+                /* for generic ftp sites */
+                ftp = pHost.getPrototype();
             }
         }
         this.created = System.currentTimeMillis();
@@ -534,6 +538,13 @@ public class LinkCrawler implements IOPermission {
                             try {
                                 PluginForHost plg = pHost.getPrototype();
                                 if (plg != null) {
+                                    if (ftp != null && ftp == plg) {
+                                        /*
+                                         * generic ftp handling is done at the
+                                         * end
+                                         */
+                                        continue;
+                                    }
                                     FilePackage sourcePackage = null;
                                     if (possibleCryptedLink.getDownloadLink() != null) {
                                         sourcePackage = possibleCryptedLink.getDownloadLink().getFilePackage();
@@ -583,6 +594,30 @@ public class LinkCrawler implements IOPermission {
                                     sourcePackage = possibleCryptedLink.getDownloadLink().getFilePackage();
                                 }
                                 ArrayList<DownloadLink> httpLinks = directHTTP.getDownloadLinks(url, sourcePackage);
+                                if (httpLinks != null) {
+                                    forwardDownloadLinkInfos(possibleCryptedLink.getDownloadLink(), httpLinks);
+                                    for (DownloadLink hosterLink : httpLinks) {
+                                        CrawledLink link = new CrawledLink(hosterLink);
+                                        /* forward important data to new ones */
+                                        forwardCrawledLinkInfos(possibleCryptedLink, link);
+                                        handleCrawledLink(link);
+                                    }
+                                }
+                            } catch (Throwable e) {
+                                Log.exception(e);
+                            }
+                            continue mainloop;
+                        }
+                    }
+                    /* now we will check for generic ftp links */
+                    if (ftp != null) {
+                        if (ftp.canHandle(url)) {
+                            try {
+                                FilePackage sourcePackage = null;
+                                if (possibleCryptedLink.getDownloadLink() != null) {
+                                    sourcePackage = possibleCryptedLink.getDownloadLink().getFilePackage();
+                                }
+                                ArrayList<DownloadLink> httpLinks = ftp.getDownloadLinks(url, sourcePackage);
                                 if (httpLinks != null) {
                                     forwardDownloadLinkInfos(possibleCryptedLink.getDownloadLink(), httpLinks);
                                     for (DownloadLink hosterLink : httpLinks) {

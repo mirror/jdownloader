@@ -65,7 +65,7 @@ public class GigaUpFr extends PluginForHost {
         if (dllink == null) dllink = br.getRegex("\"(ftp://gigaup.*?:.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         try {
-            ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(Encoding.urlDecode(dllink, true), downloadLink);
+            ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(Encoding.urlDecode(dllink, true), downloadLink, false);
         } catch (InterruptedIOException e) {
             if (downloadLink.isAborted()) return;
             throw e;

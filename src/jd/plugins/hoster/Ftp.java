@@ -38,7 +38,7 @@ import jd.plugins.download.DownloadInterface.Chunk;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.+/[^& \"]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?(?<!(hdmekani))\\.[a-zA-Z]{2,3}(:\\d+)?/[^& \"\r\n]+" }, flags = { 0 })
 public class Ftp extends PluginForHost {
 
     Long speed = 0L;
@@ -47,7 +47,7 @@ public class Ftp extends PluginForHost {
         super(wrapper);
     }
 
-    public void download(String ftpurl, final DownloadLink downloadLink) throws IOException, PluginException {
+    public void download(String ftpurl, final DownloadLink downloadLink, boolean throwException) throws IOException, PluginException {
         SimpleFTP ftp = new SimpleFTP();
         try {
             if (new File(downloadLink.getFileOutput()).exists()) throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
@@ -210,7 +210,7 @@ public class Ftp extends PluginForHost {
             if (!tmp.renameTo(new File(downloadLink.getFileOutput()))) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, " Rename failed. file exists?"); }
             downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
         } catch (IOException e) {
-            if (e.getMessage() != null && e.getMessage().contains("530 Login incorrect")) {
+            if (throwException && e.getMessage() != null && e.getMessage().contains("530")) {
                 downloadLink.getLinkStatus().setErrorMessage("Login incorrect");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else
@@ -235,7 +235,7 @@ public class Ftp extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        download(downloadLink.getDownloadURL(), downloadLink);
+        download(downloadLink.getDownloadURL(), downloadLink, false);
     }
 
     /* old simpleftp does not have size command support */

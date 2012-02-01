@@ -14,6 +14,6 @@ public interface StatsManagerConfig extends ConfigInterface {
     @AboutConfig
     boolean isEnabled();
 
-    boolean setEnabled(boolean b);
+    void setEnabled(boolean b);
 
 }

@@ -16,10 +16,12 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -69,15 +71,15 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                         }
                         final String links[] = br.getRegex("\\'(http://[\\w\\.]*?imagebam\\.com/image/[a-z0-9]+)\\'").getColumn(0);
                         for (final String link : links) {
-                            final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(link));
-                            decryptedLinks.add(dl);
+                            final DownloadLink dl = handleImageBam(br, Encoding.htmlDecode(link), true);
+                            if (dl != null) decryptedLinks.add(dl);
                         }
                     }
                 } else {
                     final String links[] = br.getRegex("\\'(http://[\\w\\.]*?imagebam\\.com/image/[a-z0-9]+)\\'").getColumn(0);
                     for (final String link : links) {
-                        final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(link));
-                        decryptedLinks.add(dl);
+                        final DownloadLink dl = handleImageBam(br, Encoding.htmlDecode(link), true);
+                        if (dl != null) decryptedLinks.add(dl);
                     }
                 }
                 if (decryptedLinks.size() > 0) {
@@ -87,9 +89,10 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                     return null;
                 }
             }
-            finallink = br.getRegex("(\\'|\")(http://\\d+\\.imagebam\\.com/download/.*?)(\\'|\")").getMatch(1);
-            if (finallink == null) {
-                finallink = br.getRegex("onclick=\"scale\\(this\\);\" src=\"(http://.*?)\"").getMatch(0);
+            DownloadLink dl = handleImageBam(br, null, false);
+            if (dl != null) {
+                decryptedLinks.add(dl);
+                return decryptedLinks;
             }
         } else if (parameter.contains("media.photobucket.com")) {
             br.getPage(parameter);
@@ -191,6 +194,21 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         }
         decryptedLinks.add(dl);
         return decryptedLinks;
+    }
+
+    private DownloadLink handleImageBam(Browser br, String url, boolean refresh) throws IOException {
+        Browser brc = br;
+        if (refresh == true) {
+            brc = br.cloneBrowser();
+            brc.getPage(url);
+        }
+        String finallink = brc.getRegex("(\\'|\")(http://\\d+\\.imagebam\\.com/download/.*?)(\\'|\")").getMatch(1);
+        if (finallink == null) {
+            finallink = brc.getRegex("onclick=\"scale\\(this\\);\" src=\"(http://.*?)\"").getMatch(0);
+        }
+        if (finallink == null) return null;
+        DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+        return dl;
     }
 
 }

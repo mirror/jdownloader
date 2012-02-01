@@ -81,7 +81,7 @@ public class FuFoxCom extends PluginForHost {
             // Waittime can be skipped here
             String dllink = "ftp://" + name + ":" + password + "@" + ip + "/" + filename;
             try {
-                ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(dllink, downloadLink);
+                ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(dllink, downloadLink, false);
             } catch (InterruptedIOException e) {
                 if (downloadLink.isAborted()) return;
                 throw e;
