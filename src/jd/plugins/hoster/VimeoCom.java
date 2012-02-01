@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -37,18 +37,19 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "http://(www\\.)?vimeo\\.com/\\d+" }, flags = { 2 })
 public class VimeoCom extends PluginForHost {
+
     private static final String MAINPAGE = "http://vimeo.com";
     static private final String AGB      = "http://www.vimeo.com/terms";
     private String              clipData;
     private String              finalURL;
     private static final Object LOCK     = new Object();
 
-    public VimeoCom(PluginWrapper wrapper) {
+    public VimeoCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://vimeo.com/join");
     }
 
-    public void doFree(DownloadLink downloadLink) throws Exception {
+    public void doFree(final DownloadLink downloadLink) throws Exception {
         if (!"FREE".equals(downloadLink.getStringProperty("LASTTYPE", "FREE"))) {
             downloadLink.setProperty("LASTTYPE", "FREE");
             downloadLink.setChunksProgress(null);
@@ -68,9 +69,9 @@ public class VimeoCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (LOCK) {
-            AccountInfo ai = new AccountInfo();
+            final AccountInfo ai = new AccountInfo();
             if (!new Regex(account.getUser(), ".*?@.*?\\..+").matches()) {
                 account.setProperty("cookies", null);
                 account.setValid(false);
@@ -80,13 +81,13 @@ public class VimeoCom extends PluginForHost {
             }
             try {
                 login(account, true);
-            } catch (PluginException e) {
+            } catch (final PluginException e) {
                 account.setProperty("cookies", null);
                 account.setValid(false);
                 return ai;
             }
             br.getPage("http://vimeo.com/settings");
-            String type = br.getRegex("acct_status\">.*?>(.*?)<").getMatch(0);
+            final String type = br.getRegex("acct_status\">.*?>(.*?)<").getMatch(0);
             if (type != null) {
                 ai.setStatus(type);
             } else {
@@ -98,14 +99,16 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
+    @Override
     public String getAGBLink() {
         return AGB;
     }
 
-    private String getClipData(String tag) {
-        return new Regex(this.clipData, "<" + tag + ">(.*?)</" + tag + ">").getMatch(0);
+    private String getClipData(final String tag) {
+        return new Regex(clipData, "<" + tag + ">(.*?)</" + tag + ">").getMatch(0);
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
@@ -115,7 +118,8 @@ public class VimeoCom extends PluginForHost {
         return -1;
     }
 
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         if (!"FREE".equals(downloadLink.getStringProperty("LASTTYPE", "FREE"))) {
             downloadLink.setProperty("LASTTYPE", "FREE");
             downloadLink.setChunksProgress(null);
@@ -126,7 +130,7 @@ public class VimeoCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (!"PREMIUM".equals(link.getStringProperty("LASTTYPE", "FREE"))) {
             link.setProperty("LASTTYPE", "PREMIUM");
             link.setChunksProgress(null);
@@ -142,24 +146,27 @@ public class VimeoCom extends PluginForHost {
             return;
         }
         String dllink = br.getRegex("class=\"download\">[\t\n\r ]+<a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(/?download/video:\\d+\\?v=\\d+\\&e=\\d+\\&h=[a-z0-9]+\\&uh=[a-z0-9]+)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(/?download/video:\\d+\\?v=\\d+\\&e=\\d+\\&h=[a-z0-9]+\\&uh=[a-z0-9]+)\"").getMatch(0);
+        }
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!dllink.startsWith("/"))
+        if (!dllink.startsWith("/")) {
             dllink = MAINPAGE + "/" + dllink;
-        else
+        } else {
             dllink = MAINPAGE + dllink;
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String oldName = link.getName();
-        String newName = getFileNameFromHeader(dl.getConnection());
-        String name = oldName.substring(0, oldName.lastIndexOf(".")) + newName.substring(newName.lastIndexOf("."));
+        final String oldName = link.getName();
+        final String newName = getFileNameFromHeader(dl.getConnection());
+        final String name = oldName.substring(0, oldName.lastIndexOf(".")) + newName.substring(newName.lastIndexOf("."));
         link.setName(name);
         link.setProperty("LASTTYPE", "ACCOUNT");
         dl.startDownload();
@@ -169,19 +176,21 @@ public class VimeoCom extends PluginForHost {
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                this.setBrowserExclusive();
+                setBrowserExclusive();
                 br.setFollowRedirects(true);
                 br.setDebug(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = account.getUser().matches(account.getStringProperty("name", account.getUser()));
-                if (acmatch) acmatch = account.getPass().matches(account.getStringProperty("pass", account.getPass()));
+                if (acmatch) {
+                    acmatch = account.getPass().matches(account.getStringProperty("pass", account.getPass()));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (cookies.containsKey("vimeo") && account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
+                            br.setCookie(MAINPAGE, key, value);
                         }
                         return;
                     }
@@ -206,7 +215,7 @@ public class VimeoCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
+                final Cookies add = br.getCookies(MAINPAGE);
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -220,21 +229,25 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        this.setBrowserExclusive();
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL() + "?hd=1");
-        if (br.containsHTML(">Page not found on Vimeo<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String clipID = br.getRegex("targ_clip_id:   (\\d+)").getMatch(0);
-        this.clipData = br.getPage("/moogaloop/load/clip:" + clipID + "/local?param_force_embed=0&param_clip_id=" + clipID + "&param_show_portrait=0&param_multimoog=&param_server=vimeo.com&param_show_title=0&param_autoplay=0&param_show_byline=0&param_color=00ADEF&param_fullscreen=1&param_md5=0&param_context_id=&context_id=null");
+        if (br.containsHTML(">Page not found on Vimeo<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML(">This is a private video<") && br.containsHTML("Do you have permission to watch this video\\?")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This is a private video. Do you have no permission to watch this video!"); }
+        final String clipID = br.getRegex("targ_clip_id:   (\\d+)").getMatch(0);
+        clipData = br.getPage("/moogaloop/load/clip:" + clipID + "/local?param_force_embed=0&param_clip_id=" + clipID + "&param_show_portrait=0&param_multimoog=&param_server=vimeo.com&param_show_title=0&param_autoplay=0&param_show_byline=0&param_color=00ADEF&param_fullscreen=1&param_md5=0&param_context_id=&context_id=null");
         String title = getClipData("caption");
         String clipId = getClipData("clip_id");
-        if (clipId == null) clipId = getClipData("nodeId");
-        String dlURL = "/moogaloop/play/clip:" + clipId + "/" + getClipData("request_signature") + "/" + getClipData("request_signature_expires") + "/?q=" + (getClipData("isHD").equals("1") ? "hd" : "sd");
+        if (clipId == null) {
+            clipId = getClipData("nodeId");
+        }
+        final String dlURL = "/moogaloop/play/clip:" + clipId + "/" + getClipData("request_signature") + "/" + getClipData("request_signature_expires") + "/?q=" + (getClipData("isHD").equals("1") ? "hd" : "sd");
         br.setFollowRedirects(false);
         br.getPage(dlURL);
-        this.finalURL = br.getRedirectLocation();
-        if (finalURL == null || title == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        finalURL = br.getRedirectLocation();
+        if (finalURL == null || title == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         title = Encoding.htmlDecode(title);
         URLConnectionAdapter con = null;
         try {
@@ -251,19 +264,22 @@ public class VimeoCom extends PluginForHost {
         } finally {
             try {
                 con.disconnect();
-            } catch (Throwable e) {
+            } catch (final Throwable e) {
             }
         }
     }
 
+    @Override
     public void reset() {
     }
 
-    public void resetDownloadlink(DownloadLink link) {
+    @Override
+    public void resetDownloadlink(final DownloadLink link) {
         /* reset downloadtype back to free */
         link.setProperty("LASTTYPE", "FREE");
     }
 
+    @Override
     public void resetPluginGlobals() {
     }
 

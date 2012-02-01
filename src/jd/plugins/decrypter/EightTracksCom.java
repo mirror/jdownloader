@@ -101,8 +101,8 @@ public class EightTracksCom extends PluginForDecrypt {
                 sameLink = dllink;
                 ext = dllink.substring(dllink.lastIndexOf(".") + 1);
                 ext = ext.equals("m4a") || ext.length() > 5 ? "mp4" : ext;
-                if (!dllink.startsWith("http://8tracks")){
-                    dllink = "directhttp://"+dllink;
+                if (!dllink.startsWith("http://8tracks")) {
+                    dllink = "directhttp://" + dllink;
                 }
                 final DownloadLink dl = createDownloadlink(dllink);
                 dl.setFinalFileName(filename + "." + ext);
