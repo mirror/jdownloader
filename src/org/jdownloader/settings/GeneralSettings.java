@@ -293,7 +293,8 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @Description("Pause Speed. in Pause Mode we limit speed to this value to keep connections open, but use hardly bandwidth")
-    @DefaultIntValue(10)
+    @DefaultIntValue(10240)
+    @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
     int getPauseSpeed();
 
     @AboutConfig

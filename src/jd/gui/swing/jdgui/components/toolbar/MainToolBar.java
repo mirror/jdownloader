@@ -22,12 +22,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import jd.Main;
-import jd.controlling.JDController;
-import jd.event.ControlEvent;
-import jd.event.ControlIDListener;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 
-import org.appwork.utils.swing.EDTHelper;
+import org.appwork.controlling.StateEvent;
+import org.appwork.controlling.StateEventListener;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 
@@ -69,25 +68,17 @@ public class MainToolBar extends ToolBar {
                         updateToolbar();
                     }
                 };
+                DownloadWatchDog.getInstance().getStateMachine().addListener(new StateEventListener() {
 
-                JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOADWATCHDOG_START, ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP) {
-                    @Override
-                    public void controlIDEvent(final ControlEvent event) {
-                        new EDTHelper<Object>() {
+                    public void onStateUpdate(StateEvent event) {
+                    }
 
-                            @Override
-                            public Object edtRun() {
-                                switch (event.getEventID()) {
-                                case ControlEvent.CONTROL_DOWNLOADWATCHDOG_START:
-                                    if (speedmeter != null) speedmeter.start();
-                                    break;
-                                case ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP:
-                                    if (speedmeter != null) speedmeter.stop();
-                                    break;
-                                }
-                                return null;
-                            }
-                        }.start();
+                    public void onStateChange(StateEvent event) {
+                        if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
+                            if (speedmeter != null) speedmeter.stop();
+                        } else if (DownloadWatchDog.RUNNING_STATE == event.getNewState()) {
+                            if (speedmeter != null) speedmeter.start();
+                        }
                     }
                 });
             }

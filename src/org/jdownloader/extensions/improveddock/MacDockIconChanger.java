@@ -48,7 +48,7 @@ public class MacDockIconChanger extends Thread implements Runnable {
 
     @Override
     public void run() {
-        while (DownloadWatchDog.getInstance().getStateMonitor().isState(DownloadWatchDog.RUNNING_STATE)) {
+        while (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE)) {
             if (interrupt) break;
 
             updateDockIcon();

@@ -35,6 +35,8 @@ import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 
+import org.appwork.controlling.StateEvent;
+import org.appwork.controlling.StateEventListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
@@ -44,13 +46,14 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.growl.translate.T;
 
-public class GrowlExtension extends AbstractExtension<GrowlConfig> implements ControlListener {
+public class GrowlExtension extends AbstractExtension<GrowlConfig> implements ControlListener, StateEventListener {
 
     private static final String TMP_GROWL_NOTIFICATION_SCPT = "tmp/growlNotification.scpt";
 
     @Override
     protected void stop() throws StopException {
         JDController.getInstance().removeControlListener(this);
+        DownloadWatchDog.getInstance().getStateMachine().removeListener(this);
     }
 
     @Override
@@ -73,6 +76,7 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig> implements Co
 
         });
         JDController.getInstance().addControlListener(this);
+        DownloadWatchDog.getInstance().getStateMachine().addListener(this);
     }
 
     @Override
@@ -124,9 +128,6 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig> implements Co
 
     public void controlEvent(ControlEvent event) {
         switch (event.getEventID()) {
-        case ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP:
-            if (DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) growlNotification(T._.jd_plugins_optional_JDGrowlNotification_allfinished(), "", "All downloads finished");
-            break;
         case ControlEvent.CONTROL_DOWNLOAD_FINISHED:
             if (event.getCaller() instanceof SingleDownloadController) {
                 DownloadLink lastLink = (DownloadLink) event.getParameter();
@@ -155,6 +156,15 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig> implements Co
 
     @Override
     protected void initExtension() throws StartException {
+    }
+
+    public void onStateChange(StateEvent event) {
+        if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
+            if (DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) growlNotification(T._.jd_plugins_optional_JDGrowlNotification_allfinished(), "", "All downloads finished");
+        }
+    }
+
+    public void onStateUpdate(StateEvent event) {
     }
 
 }

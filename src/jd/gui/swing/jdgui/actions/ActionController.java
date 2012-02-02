@@ -21,11 +21,8 @@ import java.io.File;
 import java.util.ArrayList;
 
 import jd.controlling.IOEQ;
-import jd.controlling.JDController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.reconnect.Reconnecter;
-import jd.event.ControlEvent;
-import jd.event.ControlIDListener;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
@@ -33,6 +30,8 @@ import jd.gui.swing.jdgui.views.settings.panels.addons.ExtensionManager;
 import jd.nutils.JDFlags;
 import jd.utils.WebUpdate;
 
+import org.appwork.controlling.StateEvent;
+import org.appwork.controlling.StateEventListener;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -126,16 +125,16 @@ public class ActionController {
 
                 @Override
                 public void initAction() {
-                    JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOADWATCHDOG_START, ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP) {
-                        @Override
-                        public void controlIDEvent(final ControlEvent event) {
-                            switch (event.getEventID()) {
-                            case ControlEvent.CONTROL_DOWNLOADWATCHDOG_START:
-                                setEnabled(false);
-                                break;
-                            case ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP:
+                    DownloadWatchDog.getInstance().getStateMachine().addListener(new StateEventListener() {
+
+                        public void onStateUpdate(StateEvent event) {
+                        }
+
+                        public void onStateChange(StateEvent event) {
+                            if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
                                 setEnabled(true);
-                                break;
+                            } else if (DownloadWatchDog.RUNNING_STATE == event.getNewState()) {
+                                setEnabled(false);
                             }
                         }
                     });
@@ -171,18 +170,18 @@ public class ActionController {
 
                 @Override
                 public void initAction() {
-                    JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOADWATCHDOG_START, ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP) {
-                        @Override
-                        public void controlIDEvent(final ControlEvent event) {
-                            switch (event.getEventID()) {
-                            case ControlEvent.CONTROL_DOWNLOADWATCHDOG_START:
-                                setEnabled(true);
-                                setSelected(false);
-                                break;
-                            case ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP:
+                    DownloadWatchDog.getInstance().getStateMachine().addListener(new StateEventListener() {
+
+                        public void onStateUpdate(StateEvent event) {
+                        }
+
+                        public void onStateChange(StateEvent event) {
+                            if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
                                 setEnabled(false);
                                 setSelected(false);
-                                break;
+                            } else if (DownloadWatchDog.RUNNING_STATE == event.getNewState()) {
+                                setEnabled(true);
+                                setSelected(false);
                             }
                         }
                     });
@@ -243,19 +242,20 @@ public class ActionController {
 
                 @Override
                 public void initAction() {
-                    JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOADWATCHDOG_START, ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP) {
-                        @Override
-                        public void controlIDEvent(final ControlEvent event) {
-                            switch (event.getEventID()) {
-                            case ControlEvent.CONTROL_DOWNLOADWATCHDOG_START:
-                                setEnabled(true);
-                                break;
-                            case ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP:
+                    DownloadWatchDog.getInstance().getStateMachine().addListener(new StateEventListener() {
+
+                        public void onStateUpdate(StateEvent event) {
+                        }
+
+                        public void onStateChange(StateEvent event) {
+                            if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
                                 setEnabled(false);
-                                break;
+                            } else if (DownloadWatchDog.RUNNING_STATE == event.getNewState()) {
+                                setEnabled(true);
                             }
                         }
                     });
+
                 }
 
                 @Override
@@ -268,7 +268,7 @@ public class ActionController {
                     IOEQ.add(new Runnable() {
 
                         public void run() {
-                            if (DownloadWatchDog.getInstance().getStateMonitor().hasPassed(DownloadWatchDog.STOPPING_STATE)) return;
+                            if (DownloadWatchDog.getInstance().getStateMachine().hasPassed(DownloadWatchDog.STOPPING_STATE)) return;
                             DownloadWatchDog.getInstance().stopDownloads();
                         }
 
@@ -522,19 +522,20 @@ public class ActionController {
 
                 @Override
                 protected void initAction() {
-                    JDController.getInstance().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOADWATCHDOG_START, ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP) {
-                        @Override
-                        public void controlIDEvent(final ControlEvent event) {
-                            switch (event.getEventID()) {
-                            case ControlEvent.CONTROL_DOWNLOADWATCHDOG_START:
-                                setEnabled(true);
-                                break;
-                            case ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP:
+                    DownloadWatchDog.getInstance().getStateMachine().addListener(new StateEventListener() {
+
+                        public void onStateUpdate(StateEvent event) {
+                        }
+
+                        public void onStateChange(StateEvent event) {
+                            if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
                                 setEnabled(false);
-                                break;
+                            } else if (DownloadWatchDog.RUNNING_STATE == event.getNewState()) {
+                                setEnabled(true);
                             }
                         }
                     });
+
                 }
 
                 @Override

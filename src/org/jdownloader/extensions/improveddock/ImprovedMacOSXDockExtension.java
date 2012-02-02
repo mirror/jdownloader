@@ -18,18 +18,18 @@ package org.jdownloader.extensions.improveddock;
 
 import java.util.ArrayList;
 
-import jd.controlling.JDController;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 
+import org.appwork.controlling.StateEvent;
+import org.appwork.controlling.StateEventListener;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOSXDockConfig> implements ControlListener {
+public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOSXDockConfig> implements StateEventListener {
 
     @Override
     public boolean isLinuxRunnable() {
@@ -60,26 +60,9 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOS
         super(null);
     }
 
-    public void controlEvent(ControlEvent event) {
-        switch (event.getEventID()) {
-        case ControlEvent.CONTROL_DOWNLOADWATCHDOG_START:
-            if (updateThread == null) {
-                updateThread = new MacDockIconChanger();
-                updateThread.start();
-            }
-            break;
-        case ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP:
-            if (updateThread != null) {
-                updateThread.stopUpdating();
-                updateThread = null;
-            }
-            break;
-        }
-    }
-
     @Override
     protected void stop() throws StopException {
-        JDController.getInstance().removeControlListener(this);
+        DownloadWatchDog.getInstance().getStateMachine().removeListener(this);
         if (updateThread != null) {
             updateThread.stopUpdating();
             updateThread = null;
@@ -88,7 +71,7 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOS
 
     @Override
     protected void start() throws StartException {
-        JDController.getInstance().addControlListener(this);
+        DownloadWatchDog.getInstance().getStateMachine().addListener(this);
     }
 
     @Override
@@ -118,6 +101,23 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOS
 
     @Override
     protected void initExtension() throws StartException {
+    }
+
+    public void onStateChange(StateEvent event) {
+        if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
+            if (updateThread != null) {
+                updateThread.stopUpdating();
+                updateThread = null;
+            }
+        } else if (DownloadWatchDog.RUNNING_STATE == event.getNewState()) {
+            if (updateThread == null) {
+                updateThread = new MacDockIconChanger();
+                updateThread.start();
+            }
+        }
+    }
+
+    public void onStateUpdate(StateEvent event) {
     }
 
 }

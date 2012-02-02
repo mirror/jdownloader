@@ -46,7 +46,7 @@ public class JDAntiStandbyThread extends Thread implements Runnable {
                 if (jdAntiStandby.isStatus()) {
                     switch (jdAntiStandby.getMode()) {
                     case 0:
-                        if (DownloadWatchDog.getInstance().getStateMonitor().hasPassed(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
+                        if (DownloadWatchDog.getInstance().getStateMachine().hasPassed(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
                             if (!run) {
                                 run = true;
                                 logger.fine("JDAntiStandby: Start");

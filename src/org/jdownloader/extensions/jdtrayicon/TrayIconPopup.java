@@ -165,10 +165,10 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
 
     private void initEntryPanel() {
         entryPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]0[]0[]0[]0[]"));
-        if (DownloadWatchDog.getInstance().getStateMonitor().isState(DownloadWatchDog.RUNNING_STATE)) {
+        if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE)) {
             addMenuEntry(entryPanel, "toolbar.control.stop");
             addMenuEntry(entryPanel, "toolbar.control.pause");
-        } else if (DownloadWatchDog.getInstance().getStateMonitor().isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.STOPPED_STATE)) {
+        } else if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.STOPPED_STATE)) {
             addMenuEntry(entryPanel, "toolbar.control.start");
             addMenuEntry(entryPanel, "toolbar.control.pause");
         }

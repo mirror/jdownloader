@@ -32,7 +32,7 @@ public class ForceDownloadAction extends ContextMenuAction {
 
     @Override
     public boolean isEnabled() {
-        return !links.isEmpty() && DownloadWatchDog.getInstance().getStateMonitor().isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPED_STATE);
+        return !links.isEmpty() && DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPED_STATE);
     }
 
     public void actionPerformed(ActionEvent e) {

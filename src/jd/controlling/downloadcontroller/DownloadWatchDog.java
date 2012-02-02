@@ -29,7 +29,6 @@ import jd.controlling.AccountController;
 import jd.controlling.IOEQ;
 import jd.controlling.IOEQAction;
 import jd.controlling.IOPermission;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
@@ -37,7 +36,6 @@ import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyInfo;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ipcheck.IPController;
-import jd.event.ControlEvent;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.Account;
@@ -48,7 +46,6 @@ import jd.plugins.LinkStatus;
 import org.appwork.controlling.State;
 import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
-import org.appwork.controlling.StateMonitor;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
@@ -121,7 +118,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     private StateMachine                                               stateMachine          = null;
     private final ThrottledConnectionManager                           connectionManager;
-    private StateMonitor                                               stateMonitor          = null;
     private int                                                        lastReconnectCounter  = 0;
     private GeneralSettings                                            config;
 
@@ -143,10 +139,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         GeneralSettings.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
 
             public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
+                connectionManager.setIncommingBandwidthLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
             }
 
             public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
-                connectionManager.setIncommingBandwidthLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
             }
         }, false);
         GeneralSettings.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
@@ -160,7 +156,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }, false);
 
         stateMachine = new StateMachine(this, IDLE_STATE, STOPPED_STATE);
-        stateMonitor = new StateMonitor(stateMachine);
         this.dlc = DownloadController.getInstance();
         this.dlc.addListener(this);
         ShutdownController.getInstance().addShutdownVetoListener(this);
@@ -609,7 +604,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * 
      * @param value
      */
-    private int speedBeforePause = 0;
+    private int     speedLimitBeforePause   = 0;
+    private boolean speedLimitedBeforePause = false;
 
     public void pauseDownloadWatchDog(final boolean value) {
         IOEQ.add(new Runnable() {
@@ -619,19 +615,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 DownloadWatchDog.this.paused = value;
                 if (value) {
                     ActionController.getToolBarAction("toolbar.control.pause").setSelected(true);
-                    speedBeforePause = config.getDownloadSpeedLimit();
-
+                    speedLimitBeforePause = config.getDownloadSpeedLimit();
+                    speedLimitedBeforePause = config.isDownloadSpeedLimitEnabled();
                     config.setDownloadSpeedLimit(config.getPauseSpeed());
-                    // JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
-                    // JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED,
-                    // 10));
+                    config.setDownloadSpeedLimitEnabled(true);
                     DownloadWatchDog.LOG.info("Pause enabled: Reducing downloadspeed to " + config.getPauseSpeed() + " KiB/s");
                 } else {
-                    config.setDownloadSpeedLimit(speedBeforePause);
-                    // JSonWrapper.get("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
-                    // JSonWrapper.get("DOWNLOAD").getIntegerProperty("MAXSPEEDBEFOREPAUSE",
-                    // 0));
-                    speedBeforePause = 0;
+                    config.setDownloadSpeedLimit(speedLimitBeforePause);
+                    config.setDownloadSpeedLimitEnabled(speedLimitedBeforePause);
+                    speedLimitBeforePause = 0;
                     DownloadWatchDog.LOG.info("Pause disabled: Switch back to old downloadspeed");
                     ActionController.getToolBarAction("toolbar.control.pause").setSelected(false);
                 }
@@ -898,7 +890,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 /* throw start event */
                 DownloadWatchDog.LOG.info("DownloadWatchDog: start");
-                JDController.getInstance().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADWATCHDOG_START, this));
                 /* start watchdogthread */
                 startWatchDogThread();
             }
@@ -1176,7 +1167,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         /* full stop reached */
                         DownloadWatchDog.LOG.info("DownloadWatchDog: stopped");
                         stateMachine.setStatus(STOPPED_STATE);
-                        JDController.getInstance().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP, this));
                     }
                 }
             };
@@ -1251,22 +1241,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         return ProxyController.getInstance().getRemainingTempUnavailWaittime(host);
     }
 
-    /**
-     * returns StateMonitor for this DownloadWatchDog
-     * 
-     * @return
-     */
-    public StateMonitor getStateMonitor() {
-        return stateMonitor;
-    }
-
-    /**
-     * throws an UnsupportedOperationException, only needed for the internal
-     * StateMachine, use getStateMonitor() instead
-     */
-    @Deprecated
     public StateMachine getStateMachine() {
-        throw new UnsupportedOperationException("statemachine not accessible");
+        return this.stateMachine;
     }
 
     public void onShutdown() {

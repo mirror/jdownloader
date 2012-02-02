@@ -30,8 +30,6 @@ import jd.config.ConfigGroup;
 import jd.controlling.JDController;
 import jd.controlling.JSonWrapper;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
@@ -40,6 +38,8 @@ import jd.nutils.JDFlags;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 
+import org.appwork.controlling.StateEvent;
+import org.appwork.controlling.StateEventListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
@@ -49,7 +49,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.shutdown.translate.T;
 
-public class ShutdownExtension extends AbstractExtension<ShutdownConfig> implements ControlListener {
+public class ShutdownExtension extends AbstractExtension<ShutdownConfig> implements StateEventListener {
 
     private final int                               count                 = 60;
     private static final String                     CONFIG_ENABLEDONSTART = "ENABLEDONSTART";
@@ -73,23 +73,6 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
         super(T._.jd_plugins_optional_jdshutdown());
         MODES_AVAIL = new String[] { T._.gui_config_jdshutdown_shutdown(), T._.gui_config_jdshutdown_standby(), T._.gui_config_jdshutdown_hibernate(), T._.gui_config_jdshutdown_close() };
         shutdownEnabled = getPluginConfig().getBooleanProperty(CONFIG_ENABLEDONSTART, false);
-    }
-
-    public void controlEvent(ControlEvent event) {
-
-        if (shutdownEnabled) {
-            if (event.getEventID() == ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP && DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) {
-                if (shutdown != null) {
-                    if (!shutdown.isAlive()) {
-                        shutdown = new ShutDown();
-                        shutdown.start();
-                    }
-                } else {
-                    shutdown = new ShutDown();
-                    shutdown.start();
-                }
-            }
-        }
     }
 
     private void closejd() {
@@ -312,6 +295,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
     private class ShutDown extends Thread {
         @Override
         public void run() {
+            if (shutdownEnabled == false) return;
             /* check for running jdunrar and wait */
             // OptionalPluginWrapper addon =
             // JDUtilities.getOptionalPlugin("unrar");
@@ -422,7 +406,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
 
     @Override
     protected void stop() throws StopException {
-        JDController.getInstance().removeControlListener(this);
+        DownloadWatchDog.getInstance().getStateMachine().removeListener(this);
     }
 
     @Override
@@ -469,7 +453,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
             }
         };
         menuAction.setSelected(shutdownEnabled);
-        JDController.getInstance().addControlListener(this);
+        DownloadWatchDog.getInstance().getStateMachine().addListener(this);
         logger.info("Shutdown OK");
     }
 
@@ -539,5 +523,25 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
         ConfigContainer cc = new ConfigContainer(getName());
         initSettings(cc);
         configPanel = createPanelFromContainer(cc);
+    }
+
+    public void onStateChange(StateEvent event) {
+        if (shutdownEnabled == false) return;
+        if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
+            if (DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) {
+                if (shutdown != null) {
+                    if (!shutdown.isAlive()) {
+                        shutdown = new ShutDown();
+                        shutdown.start();
+                    }
+                } else {
+                    shutdown = new ShutDown();
+                    shutdown.start();
+                }
+            }
+        }
+    }
+
+    public void onStateUpdate(StateEvent event) {
     }
 }

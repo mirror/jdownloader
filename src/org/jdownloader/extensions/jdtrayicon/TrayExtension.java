@@ -44,7 +44,6 @@ import jd.config.ConfigGroup;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
@@ -54,14 +53,14 @@ import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.nutils.Formatter;
 import jd.plugins.AddonPanel;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.images.IconIO;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -79,6 +78,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
             guiFrame.removeWindowStateListener(this);
             if (!shutdown) miniIt(false);
             guiFrame.setAlwaysOnTop(false);
+            guiFrame = null;
         }
         LinkCollector.getInstance().removeListener(this);
         JDController.getInstance().removeControlListener(this);
@@ -90,37 +90,39 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
             logger.severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: " + Application.getJavaVersion());
             throw new StartException("Tray is supported since Java 1.6. your Version: " + Application.getJavaVersion());
         }
-        new EDTHelper<Boolean>() {
-            @Override
-            public Boolean edtRun() {
+        if (!SystemTray.isSupported()) {
+            logger.severe("Error initializing SystemTray: Tray isn't supported jet");
+            throw new StartException("Tray isn't supported!");
+        }
+        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
-                if (!SystemTray.isSupported()) {
-                    logger.severe("Error initializing SystemTray: Tray isn't supported jet");
-                    return false;
-                }
-                try {
-                    if (SwingGui.getInstance() != null) {
-                        guiFrame = SwingGui.getInstance().getMainFrame();
-                        if (guiFrame != null) {
-                            guiFrame.removeWindowListener(TrayExtension.this);
-                            guiFrame.addWindowListener(TrayExtension.this);
-                            guiFrame.removeWindowStateListener(TrayExtension.this);
-                            guiFrame.addWindowStateListener(TrayExtension.this);
-                            logger.info("Systemtray OK");
-                            initGUI();
-                            JDController.getInstance().addControlListener(TrayExtension.this);
-                            LinkCollector.getInstance().addListener(TrayExtension.this);
+            public void run() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        try {
+                            if (SwingGui.getInstance() != null) {
+                                guiFrame = SwingGui.getInstance().getMainFrame();
+                                if (guiFrame != null) {
+                                    guiFrame.removeWindowListener(TrayExtension.this);
+                                    guiFrame.addWindowListener(TrayExtension.this);
+                                    guiFrame.removeWindowStateListener(TrayExtension.this);
+                                    guiFrame.addWindowStateListener(TrayExtension.this);
+                                    logger.info("Systemtray OK");
+                                    initGUI();
+                                    JDController.getInstance().addControlListener(TrayExtension.this);
+                                    LinkCollector.getInstance().addListener(TrayExtension.this);
+                                }
+                            }
+
+                        } catch (Exception e) {
+                            Log.exception(e);
                         }
                     }
-
-                } catch (Exception e) {
-                    return false;
-                }
-                return true;
+                };
             }
-
-        }.getReturnValue();
-
+        });
     }
 
     protected void initSettings(ConfigContainer config) {
@@ -134,7 +136,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_TOOLTIP, T._.plugins_optional_JDLightTray_tooltip()).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_ON_LINKGRAB, T._.plugins_optional_JDLightTray_linkgrabber_intray()).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_ON_LINKGRAB2, T._.plugins_optional_JDLightTray_linkgrabber_always()).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_INFO_IN_TITLE, T._.plugins_optional_JDLightTray_titleinfo()).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_PASSWORD_REQUIRED, T._.plugins_optional_JDLightTray_passwordRequired()).setDefaultValue(false));
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_PASSWORD, T._.plugins_optional_JDLightTray_password()));
@@ -176,25 +177,23 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         return null;
     }
 
-    private JSonWrapper                         subConfig                   = null;
+    private JSonWrapper                         subConfig                  = null;
 
-    private static final String                 PROPERTY_START_MINIMIZED    = "PROPERTY_START_MINIMIZED";
+    private static final String                 PROPERTY_START_MINIMIZED   = "PROPERTY_START_MINIMIZED";
 
-    private static final String                 PROPERTY_CLOSE_TO_TRAY      = "PROPERTY_CLOSE_TO_TRAY";
+    private static final String                 PROPERTY_CLOSE_TO_TRAY     = "PROPERTY_CLOSE_TO_TRAY";
 
-    private static final String                 PROPERTY_SINGLE_CLICK       = "PROPERTY_SINGLE_CLICK";
+    private static final String                 PROPERTY_SINGLE_CLICK      = "PROPERTY_SINGLE_CLICK";
 
-    private static final String                 PROPERTY_TOOLTIP            = "PROPERTY_TOOLTIP";
+    private static final String                 PROPERTY_TOOLTIP           = "PROPERTY_TOOLTIP";
 
-    private static final String                 PROPERTY_SHOW_ON_LINKGRAB   = "PROPERTY_SHOW_ON_LINKGRAB";
+    private static final String                 PROPERTY_SHOW_ON_LINKGRAB  = "PROPERTY_SHOW_ON_LINKGRAB";
 
-    private static final String                 PROPERTY_SHOW_ON_LINKGRAB2  = "PROPERTY_SHOW_ON_LINKGRAB2";
+    private static final String                 PROPERTY_SHOW_ON_LINKGRAB2 = "PROPERTY_SHOW_ON_LINKGRAB2";
 
-    private static final String                 PROPERTY_SHOW_INFO_IN_TITLE = "PROPERTY_SHOW_INFO_IN_TITLE";
+    private static final String                 PROPERTY_PASSWORD_REQUIRED = "PROPERTY_PASSWORD_REQUIRED";
 
-    private static final String                 PROPERTY_PASSWORD_REQUIRED  = "PROPERTY_PASSWORD_REQUIRED";
-
-    private static final String                 PROPERTY_PASSWORD           = "PROPERTY_PASSWORD";
+    private static final String                 PROPERTY_PASSWORD          = "PROPERTY_PASSWORD";
 
     private TrayIconPopup                       trayIconPopup;
 
@@ -208,9 +207,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
 
     private Thread                              updateThread;
 
-    private boolean                             shutdown                    = false;
+    private boolean                             shutdown                   = false;
 
-    private boolean                             iconified                   = false;
+    private boolean                             iconified                  = false;
 
     private Timer                               disableAlwaysonTop;
 
@@ -243,33 +242,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     public void controlEvent(ControlEvent event) {
         if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
             shutdown = true;
-        } else if (event.getEventID() == ControlEvent.CONTROL_DOWNLOADWATCHDOG_START) {
-            updateThread = new Thread("Tray Icon Updater") {
-                @Override
-                public void run() {
-                    boolean needupdate = false;
-                    while (DownloadWatchDog.getInstance().getStateMonitor().isState(DownloadWatchDog.RUNNING_STATE)) {
-                        if (iconified && subConfig.getBooleanProperty(PROPERTY_SHOW_INFO_IN_TITLE, true)) {
-                            needupdate = true;
-                            JDGui.getInstance().setWindowTitle("JD AC: " + DownloadWatchDog.getInstance().getActiveDownloads() + " DL: " + Formatter.formatReadable(DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage()));
-                        } else {
-                            if (needupdate) {
-                                JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle(0));
-                                needupdate = false;
-                            }
-                        }
-                        try {
-                            Thread.sleep(1000);
-                        } catch (Exception e) {
-                        }
-                    }
-                    JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle(0));
-                }
-            };
-            updateThread.start();
-        } else if (event.getEventID() == ControlEvent.CONTROL_DOWNLOADWATCHDOG_STOP) {
-            if (updateThread != null) updateThread.interrupt();
-            JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle(0));
         }
     }
 
@@ -575,4 +547,5 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
             }
         }
     }
+
 }

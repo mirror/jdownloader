@@ -29,12 +29,6 @@ public class ControlEvent extends DefaultIntEvent {
 
     public static final int   CONTROL_DOWNLOAD_FINISHED        = 4;
 
-    /* DownloadWatchDog stopped */
-    public static final int   CONTROL_DOWNLOADWATCHDOG_STOP    = 6;
-
-    /* DownloadWatchDog started */
-    public static final int   CONTROL_DOWNLOADWATCHDOG_START   = 13;
-
     /**
      * wird verschickt wenn das Kontextmenü der Downloadlinks geöffnet wird
      * (oder package); soiu7rce: link/packlage parameter:menuitem arraylist

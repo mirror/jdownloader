@@ -62,9 +62,6 @@ public class SpeedMeterPanel extends Graph {
         GeneralSettings.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
 
             public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
-            }
-
-            public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
                 new EDTRunner() {
 
                     @Override
@@ -72,6 +69,10 @@ public class SpeedMeterPanel extends Graph {
                         speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
                     }
                 };
+            }
+
+            public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
+
             }
         }, false);
         GeneralSettings.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
