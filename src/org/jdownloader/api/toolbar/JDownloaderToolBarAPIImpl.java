@@ -7,10 +7,11 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Random;
+import java.util.List;
 
 import javax.swing.JFrame;
 
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
@@ -18,12 +19,17 @@ import jd.controlling.linkcrawler.BrokenCrawlerHandler;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.gui.UIConstants;
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 
+import org.appwork.controlling.StateEvent;
+import org.appwork.controlling.StateEventListener;
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.RemoteAPI;
@@ -41,7 +47,7 @@ import org.jdownloader.gui.views.linkgrabber.actions.AddLinksProgress;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
+public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEventListener {
 
     private class ChunkedDom {
         protected HashMap<Integer, String> domChunks   = new HashMap<Integer, String>();
@@ -59,13 +65,17 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
         protected int status = 0;
     }
 
-    private HashMap<String, MinTimeWeakReference<ChunkedDom>> domSessions             = new HashMap<String, MinTimeWeakReference<ChunkedDom>>();
-    private HashMap<String, CheckedDom>                       checkSessions           = new HashMap<String, CheckedDom>();
-    private long                                              lastTransferedIncomming = -1;
+    private HashMap<String, MinTimeWeakReference<ChunkedDom>> domSessions   = new HashMap<String, MinTimeWeakReference<ChunkedDom>>();
+    private HashMap<String, CheckedDom>                       checkSessions = new HashMap<String, CheckedDom>();
+
+    public JDownloaderToolBarAPIImpl() {
+        DownloadWatchDog.getInstance().getStateMachine().addListener(this);
+    }
 
     public synchronized Object getStatus() {
         HashMap<String, Object> ret = new HashMap<String, Object>();
-        ret.put("running", DownloadWatchDog.getInstance().getActiveDownloads() > 0);
+        int running = DownloadWatchDog.getInstance().getActiveDownloads();
+        ret.put("running", running > 0);
         ret.put("limit", GeneralSettings.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
         if (GeneralSettings.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled()) {
             ret.put("limitspeed", GeneralSettings.DOWNLOAD_SPEED_LIMIT.getValue());
@@ -76,20 +86,35 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
         ret.put("clipboard", GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.isEnabled());
         ret.put("stopafter", DownloadWatchDog.getInstance().isStopMarkSet());
         ret.put("premium", GeneralSettings.USE_AVAILABLE_ACCOUNTS.isEnabled());
-        long transferedSinceLastCall = 0;
-        if (lastTransferedIncomming < 0) {
-            /* our first call so we just save the totalIncomeTraffic */
-            lastTransferedIncomming = DownloadWatchDog.getInstance().getConnectionManager().getIncommingTraffic();
+        if (running == 0) {
+            ret.put("speed", 0);
         } else {
-            /* now we can calc the difference since last call */
-            final long tmp = DownloadWatchDog.getInstance().getConnectionManager().getIncommingTraffic();
-            transferedSinceLastCall = Math.max(0, tmp - lastTransferedIncomming);
-            lastTransferedIncomming = tmp;
+            ret.put("speed", DownloadWatchDog.getInstance().getConnectionManager().getIncommingSpeedMeter().getSpeedMeter());
         }
-        ret.put("speed", transferedSinceLastCall);
         ret.put("pause", DownloadWatchDog.getInstance().isPaused());
-        ret.put("download_current", new Random().nextInt(100));
-        ret.put("download_complete", 100);
+
+        List<DownloadLink> calc_progress = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+
+            public int returnMaxResults() {
+                return 0;
+            }
+
+            public boolean isChildrenNodeFiltered(DownloadLink node) {
+                if (!node.isEnabled()) return false;
+                if (node.getLinkStatus().isFailed()) return false;
+                if (AvailableStatus.FALSE == node.getAvailableStatusInfo()) return false;
+                return true;
+            }
+        });
+
+        long todo = 0;
+        long done = 0;
+        for (DownloadLink link : calc_progress) {
+            done += Math.max(0, link.getDownloadCurrent());
+            todo += Math.max(0, link.getDownloadSize());
+        }
+        ret.put("download_current", done);
+        ret.put("download_complete", todo);
         return ret;
     }
 
@@ -372,5 +397,11 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
             }
         }
         writeString(response, request, ret, false);
+    }
+
+    public void onStateChange(StateEvent event) {
+    }
+
+    public void onStateUpdate(StateEvent event) {
     }
 }

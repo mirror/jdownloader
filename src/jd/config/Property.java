@@ -74,6 +74,7 @@ public class Property implements Serializable {
      * @return the saved object casted to its correct type
      */
     @SuppressWarnings("unchecked")
+    @Deprecated
     public <E> E getGenericProperty(final String key, final E def) {
         final Object r = getProperty(key, def);
         try {

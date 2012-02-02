@@ -891,6 +891,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 /* throw start event */
                 DownloadWatchDog.LOG.info("DownloadWatchDog: start");
                 /* start watchdogthread */
+                connectionManager.getIncommingSpeedMeter().resetSpeedMeter();
+                connectionManager.getOutgoingSpeedMeter().resetSpeedMeter();
                 startWatchDogThread();
             }
         }, true);
