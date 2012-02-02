@@ -151,8 +151,13 @@ public class ShareRapidCz extends PluginForHost {
         if (br.containsHTML("Soubor byl chybně nahrán na server")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file isn't uploaded correctly", 60 * 60 * 1000); }
         if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Not enough traffic left to download this file!"); }
         String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
-
-        if (dllink == null && account.getStringProperty("freeaccount") != null) {
+        boolean nonTrafficPremium = false;
+        if (dllink == null) {
+            if (br.containsHTML(">Stahování zdarma je možné jen přes náš")) {
+                nonTrafficPremium = true;
+            }
+        }
+        if (nonTrafficPremium == true || (dllink == null && account.getStringProperty("freeaccount") != null)) {
             final Browser br2 = new Browser();
             br2.getHeaders().put("User-Agent", "share-rapid downloader");
             br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
