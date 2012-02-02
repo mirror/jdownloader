@@ -33,13 +33,13 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mach2upload.com" }, urls = { "http://[\\w\\.]*?mach2upload\\.com/files/[A-Za-z0-9]+\\.html" }, flags = { 2 })
-public class Mach2UploadCom extends PluginForHost {
+public class Makh2UploadCom extends PluginForHost {
 
     private static final String GETLINKREGEX  = "disabled=\"disabled\" onclick=\"document\\.location=\\'(.*?)\\';\"";
 
     private static final String GETLINKREGEX2 = "\\'(http://mach2upload\\.com/get/[A-Za-z0-9]+/\\d+/.*?)\\'";
 
-    public Mach2UploadCom(PluginWrapper wrapper) {
+    public Makh2UploadCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://mach2upload.com/get-premium.php");
     }

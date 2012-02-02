@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filemac.com" }, urls = { "https?://(www\\.)?filemac\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class FileMacCom extends PluginForHost {
+public class FileMakCom extends PluginForHost {
 
     private String              BRBEFORE            = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
@@ -59,7 +59,7 @@ public class FileMacCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public FileMacCom(PluginWrapper wrapper) {
+    public FileMakCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
