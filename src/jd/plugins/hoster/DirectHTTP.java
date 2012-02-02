@@ -616,8 +616,17 @@ public class DirectHTTP extends PluginForHost {
         /* allow customized headers, eg useragent */
         final ArrayList<String[]> custom = downloadLink.getGenericProperty("customHeader", new ArrayList<String[]>());
         if (custom != null && custom.size() > 0) {
-            for (final String[] header : custom) {
-                br.getHeaders().put(header[0], header[1]);
+            for (final Object header : custom) {
+                /*
+                 * this is needed becaues we no longer serialize the stuff, we
+                 * use json as storage and it does not differ between String[]
+                 * and ArrayList<String>
+                 */
+                if (header instanceof ArrayList) {
+                    br.getHeaders().put((String) ((ArrayList) header).get(0), (String) ((ArrayList) header).get(1));
+                } else if (header.getClass().isArray()) {
+                    br.getHeaders().put(((String[]) header)[0], ((String[]) header)[1]);
+                }
             }
         }
         /*
