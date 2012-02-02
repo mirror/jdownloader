@@ -34,7 +34,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellshare.com" }, urls = { "http://[\\w\\.]*?(download\\.)?(sk|cz|en)?hellshare\\.(com|sk|hu|de|cz)/((.+/[0-9]+)|(/[0-9]+/.+/.+))" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellshare.com" }, urls = { "http://[\\w\\.]*?(download\\.)?(sk|cz|en)?hellshare\\.(com|sk|hu|de|cz|pl)/((.+/[0-9]+)|(/[0-9]+/.+/.+))" }, flags = { 2 })
 public class HellShareCom extends PluginForHost {
 
     private static final String LIMITREACHED = "(You have exceeded today´s free download limit|You exceeded your today\\'s limit for free download|<strong>Dnešní limit free downloadů jsi vyčerpal\\.</strong>)";

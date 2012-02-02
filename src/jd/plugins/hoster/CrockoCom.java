@@ -77,13 +77,19 @@ public class CrockoCom extends PluginForHost {
         /* there are 2 different versions of account info pages */
         if (ends == null) ends = br.getRegex("End time:(.*?)<").getMatch(0);
         if (ends == null) ends = br.getRegex("Starts:.*?Ends: (.*?)<").getMatch(0);
+        if (ends == null) ends = br.getRegex("Duration:(.*?)<").getMatch(0);
         if (isPremium == null) isPremium = br.getRegex("Premium account: <.*?>(active)<").getMatch(0);
         if (isPremium == null) isPremium = br.getRegex("Premium: <.*?>(active)<").getMatch(0);
+        if (ends != null) ends = ends.trim();
         if (ends == null || isPremium == null) {
             account.setValid(false);
             return ai;
         }
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(ends.replaceAll(", in", "").trim(), "dd MMM yyyy HH:mm:ss", null));
+        if ("unlimited".equalsIgnoreCase(ends)) {
+            ai.setValidUntil(-1);
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(ends.replaceAll(", in", "").trim(), "dd MMM yyyy HH:mm:ss", null));
+        }
         String trafficLeft = br.getRegex("Traffic left:(.*?)<").getMatch(0);
         if (trafficLeft != null) {
             /* it seems they have unlimited traffic */

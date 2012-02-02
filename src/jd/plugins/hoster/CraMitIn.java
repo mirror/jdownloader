@@ -19,11 +19,15 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -50,6 +54,8 @@ public class CraMitIn extends PluginForHost {
     public String               brbefore     = "";
     private static final String COOKIE_HOST  = "http://cramit.in";
     public boolean              nopremium    = false;
+    private static final Object LOCK         = new Object();
+    private static final String UA           = RandomUserAgent.generate();
 
     public CraMitIn(PluginWrapper wrapper) {
         super(wrapper);
@@ -341,7 +347,7 @@ public class CraMitIn extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account);
+            login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
@@ -469,7 +475,7 @@ public class CraMitIn extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         String passCode = null;
-        login(account);
+        login(account, false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
@@ -531,28 +537,63 @@ public class CraMitIn extends PluginForHost {
         return true;
     }
 
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.setDebug(true);
-        br.getPage(COOKIE_HOST + "/login.html");
-        Form loginform = br.getForm(0);
-        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        loginform.put("login", Encoding.urlEncode(account.getUser()));
-        loginform.put("password", Encoding.urlEncode(account.getPass()));
-        br.submitForm(loginform);
-        br.getPage(COOKIE_HOST + "/?op=my_account");
-        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("(value=\"Extend Premium Account\"|alt=\"EXTEND PREMIUM ACCOUNT\">|>Premium Account expires on)")) {
-            logger.info("Entered account is valid and it's a registered account.");
-            nopremium = true;
+    @SuppressWarnings("unchecked")
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            // Load cookies
+            try {
+                br.setCookiesExclusive(false);
+                final Object ret = account.getProperty("cookies", null);
+                nopremium = account.getBooleanProperty("nopremium", false);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(COOKIE_HOST, key, value);
+                        }
+                        return;
+                    }
+                }
+                nopremium = false;
+                br.setCookie(COOKIE_HOST, "lang", "english");
+                br.setDebug(true);
+                br.getPage(COOKIE_HOST + "/login.html");
+                Form loginform = br.getForm(0);
+                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                loginform.put("login", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginform);
+                br.getPage(COOKIE_HOST + "/?op=my_account");
+                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!br.containsHTML("(value=\"Extend Premium Account\"|alt=\"EXTEND PREMIUM ACCOUNT\">|>Premium Account expires on)")) {
+                    logger.info("Entered account is valid and it's a registered account.");
+                    nopremium = true;
+                }
+                // Save cookies
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+                account.setProperty("nopremium", nopremium);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", null);
+                throw e;
+            }
         }
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("User-Agent", UA);
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
