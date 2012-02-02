@@ -27,6 +27,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
 
 //q=&t= parameter comes from jd.plugins.decrypter.RDMdthk
 @HostPlugin(revision = "$Revision: 10857 $", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "hrtmp://[\\w\\.]*?ardmediathek\\.de/ard/servlet/content/\\d+\\?documentId=\\d+\\&q=\\w\\&t=\\w" }, flags = { PluginWrapper.DEBUG_ONLY })
@@ -53,6 +54,19 @@ public class ARDMediathek extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        download(downloadLink);
+    }
+
+    private void setupRTMPConnection(String[] stream, DownloadInterface dl) {
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        rtmp.setPlayPath(stream[3]);
+        rtmp.setUrl(stream[2]);
+        rtmp.setResume(true);
+        rtmp.setTimeOut(10);
+    }
+
+    private void download(final DownloadLink downloadLink) throws Exception {
+
         final String[][] streams = br.getRegex("mediaCollection\\.addMediaStream\\((\\d+), (\\d+), \"(.*?)\", \"(.*?)\"\\);").getMatches();
 
         String[] stream = null;
@@ -65,13 +79,7 @@ public class ARDMediathek extends PluginForHost {
         if (stream == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         if (stream[2].startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, stream[2] + stream[3]);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
-            rtmp.setPlayPath(stream[3]);
-            rtmp.setUrl(stream[2]);
-            rtmp.setResume(true);
-            rtmp.setTimeOut(10);
-
+            setupRTMPConnection(stream, dl);
             ((RTMPDownload) dl).startDownload();
 
         } else {
