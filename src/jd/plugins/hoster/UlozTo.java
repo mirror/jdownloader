@@ -17,9 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -32,14 +35,20 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://(www\\.)?((uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[0-9]+/.+|bagruj\\.cz/[a-z0-9]{12}/.*?\\.html)" }, flags = { 2 })
 public class UlozTo extends PluginForHost {
 
+    private static final String REPEAT_CAPTCHA = "REPEAT_CAPTCHA";
+    private static final String CAPTCHA_TEXT   = "CAPTCHA_TEXT";
+    private static final String CAPTCHA_ID     = "CAPTCHA_ID";
+
     public UlozTo(PluginWrapper wrapper) {
         super(wrapper);
+        this.setConfigElements();
         this.enablePremium("http://uloz.to/kredit/");
     }
 
@@ -101,8 +110,30 @@ public class UlozTo extends PluginForHost {
             String captchaUrl = br.getRegex(Pattern.compile("\"(http://img\\.uloz\\.to/captcha/\\d+\\.png)\"")).getMatch(0);
             Form captchaForm = br.getFormbyProperty("id", "frm-downloadDialog-freeDownloadForm");
             if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String code = getCaptchaCode(captchaUrl, downloadLink);
-            captchaForm.put("captcha[text]", code);
+
+            String key = null, code = null;
+            // Tries to read if property selected
+            if (getPluginConfig().getBooleanProperty(REPEAT_CAPTCHA)) {
+                key = getPluginConfig().getStringProperty(CAPTCHA_ID);
+                code = getPluginConfig().getStringProperty(CAPTCHA_TEXT);
+            }
+
+            // If property not selected or read failed (no data), asks to solve
+            if (key == null || code == null) {
+                code = getCaptchaCode(captchaUrl, downloadLink);
+                captchaForm.put("captcha[text]", code);
+
+                Matcher m = Pattern.compile("http://img\\.uloz\\.to/captcha/(\\d+)\\.png").matcher(captchaUrl);
+                if (m.find()) {
+                    key = m.group(1);
+                    getPluginConfig().setProperty(CAPTCHA_ID, key);
+                    getPluginConfig().setProperty(CAPTCHA_TEXT, code);
+                }
+            } else {
+                captchaForm.put("captcha[id]", key);
+                captchaForm.put("captcha[text]", code);
+            }
+
             captchaForm.remove(null);
             br.submitForm(captchaForm);
             dllink = br.getRedirectLocation();
@@ -209,5 +240,9 @@ public class UlozTo extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), UlozTo.REPEAT_CAPTCHA, JDL.L("plugins.hoster.uloz.to.captchas", "Solve captcha by replaying previous (disable to solve manually)")).setDefaultValue(true));
     }
 }

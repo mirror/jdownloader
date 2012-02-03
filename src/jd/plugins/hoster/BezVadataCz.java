@@ -51,13 +51,22 @@ public class BezVadataCz extends PluginForHost {
         br.setFollowRedirects(false);
         br.postPage(br.getURL() + "?do=stahnoutForm-submit", "stahnoutSoubor=St%C3%A1hnout");
         String dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        
+        try {
+	        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+	        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+	        if (dl.getConnection().getContentType().contains("html")) {
+	            br.followConnection();
+	            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+	        }
+	        dl.startDownload();
         }
-        dl.startDownload();
+        catch (PluginException e) {
+        	if (br.getRegex("soubor nen. v tuto chv.li dostupn.").matches())
+            	throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            else
+            	throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
     }
 
     @Override
