@@ -588,20 +588,17 @@ public class HulkShareCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0);
+                filename = br.getRegex("Filename:</b></td><td >(.*?)</td>").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("Filename:</b></td><td >(.*?)</td>").getMatch(0);
+                    filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                     if (filename == null) {
-                        filename = br.getRegex("Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
+                        filename = br.getRegex("File Name.*?nowrap>(.*?)</td").getMatch(0);
                         if (filename == null) {
-                            filename = br.getRegex("File Name.*?nowrap>(.*?)</td").getMatch(0);
+                            filename = br.getRegex("class=\"jp\\-file\\-string\">(.*?)</div>").getMatch(0);
                             if (filename == null) {
-                                filename = br.getRegex("class=\"jp\\-file\\-string\">(.*?)</div>").getMatch(0);
+                                filename = br.getRegex("<title>(.*?) - Hulk Share -  Music Distribution Platform</title>").getMatch(0);
                                 if (filename == null) {
-                                    filename = br.getRegex("<div style=\"width: 500px; float: left; text\\-align:left; padding\\-top: 5px;\">[\t\n\r ]+<h3>(.*?)</h3>").getMatch(0);
-                                    if (filename == null) {
-                                        filename = br.getRegex("<title>(.*?) \\- Hulk Share \\- Easy way to share your files</title>").getMatch(0);
-                                    }
+                                    filename = br.getRegex("<h2>(.*?)</h2>[\r\n\t ]+by").getMatch(0);
                                 }
                             }
                         }
