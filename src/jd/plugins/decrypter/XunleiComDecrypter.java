@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -36,7 +37,6 @@ public class XunleiComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> removeDouble = new ArrayList<String>();
         String parameter = param.toString();
         br.setCustomCharset("utf-8");
         br.getPage(parameter);
@@ -46,10 +46,13 @@ public class XunleiComDecrypter extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String aLink : links)
-            if (!removeDouble.contains(aLink)) removeDouble.add(aLink);
-        for (String singleLink : removeDouble)
-            decryptedLinks.add(createDownloadlink(singleLink));
+        HashSet<String> fLinks = new HashSet<String>();
+        for (String aLink : links) {
+            if (fLinks.add(aLink) == false) continue;
+            DownloadLink dl;
+            decryptedLinks.add(dl = createDownloadlink(aLink));
+            dl.setProperty("origin", parameter);
+        }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));

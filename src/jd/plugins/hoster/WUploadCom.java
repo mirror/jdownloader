@@ -171,7 +171,7 @@ public class WUploadCom extends PluginForHost implements ControlListener {
     private void errorHandling(final DownloadLink downloadLink, final Browser br) throws PluginException {
         if (br.containsHTML("The server is temporarily offline for maintenance")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server Maintenance", 60 * 60 * 1000l); }
         if (br.containsHTML("The file that you're trying to download is larger than")) {
-            final String size = br.getRegex("trying to download is larger than (.*?)\\. <a href=\"").getMatch(0);
+            final String size = br.getRegex("trying to download is larger than (.*?)\\.<").getMatch(0);
             if (size != null) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, JDL.LF("plugins.hoster.wupload.onlypremiumsize", "Only premium users can download files larger than %s.", size.trim()));
             } else {
@@ -358,7 +358,7 @@ public class WUploadCom extends PluginForHost implements ControlListener {
                 if (Long.parseLong(countDownDelay) > 300) {
 
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(countDownDelay) * 1001l); }
-                this.sleep(Long.parseLong(countDownDelay + 3) * 1000, downloadLink);
+                this.sleep(Long.parseLong(countDownDelay) + 3 * 1000, downloadLink);
                 final String tm = ajax.getRegex("name=\\'tm\\' value=\\'(.*?)\\' />").getMatch(0);
                 final String tm_hash = ajax.getRegex("name=\\'tm_hash\\' value='(.*?)' />").getMatch(0);
                 final Form form = new Form();
