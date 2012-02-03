@@ -63,6 +63,7 @@ public class UploadingCom extends PluginForHost {
 
     public void checkErrors() throws PluginException {
         logger.info("Checking errors");
+        if (br.containsHTML("Sorry, but file you are trying to download is larger then allowed for free download")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via account");
         if (br.containsHTML("YOU REACHED YOUR COUNTRY DAY LIMIT")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.uploadingcom.errors.countrylimitreached", "You reached your country daily limit"), 60 * 60 * 1000l);
         if (br.containsHTML("you have reached your daily download limi")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
         if (br.containsHTML("Your IP address is currently downloading a file")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);

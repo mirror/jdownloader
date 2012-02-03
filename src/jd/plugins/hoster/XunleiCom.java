@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,6 +32,8 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xunlei.com" }, urls = { "http://dl\\d+\\.[a-z]\\d+\\.sendfile\\.vip\\.xunlei\\.com:\\d+/[^<>\"]+\\&get_uid=\\d+" }, flags = { 0 })
 public class XunleiCom extends PluginForHost {
+
+    private boolean download = false;
 
     public XunleiCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,6 +54,18 @@ public class XunleiCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(downloadLink.getDownloadURL());
+            if (con.getResponseCode() == 403) {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+                if (download == false) return AvailableStatus.UNCHECKABLE;
+                /* we are trying to download the file, fetch new link and retry */
+                String url = updateDownloadLink(downloadLink);
+                if (url == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                downloadLink.setUrlDownload(url);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 downloadLink.setDownloadSize(con.getLongContentLength());
@@ -68,6 +83,7 @@ public class XunleiCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        download = true;
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, -5);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -75,6 +91,26 @@ public class XunleiCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String updateDownloadLink(DownloadLink downloadLink) throws IOException {
+        Browser br = new Browser();
+        try {
+            String origin = downloadLink.getStringProperty("origin", null);
+            if (origin == null) return null;
+            br.setCustomCharset("utf-8");
+            br.getPage(origin);
+            String originLink = new Regex(downloadLink.getDownloadURL(), "https?://.*?/(.*?)\\?").getMatch(0);
+            final String[] links = br.getRegex("\"(http://dl\\d+\\.[a-z]\\d+\\.sendfile\\.vip\\.xunlei\\.com:\\d+/[^/<>\"]+\\?key=[a-z0-9]+\\&file_url=[^/<>\"]+\\&file_type=\\d+\\&authkey=[A-Z0-9]+\\&exp_time=\\d+&from_uid=\\d+\\&task_id=\\d+\\&get_uid=\\d+)").getColumn(0);
+            if (links == null || links.length == 0) { return null; }
+            for (String aLink : links) {
+                if (aLink.contains(originLink)) return aLink;
+            }
+        } catch (final IOException e) {
+            logger.severe(br.toString());
+            throw e;
+        }
+        return null;
     }
 
     @Override
