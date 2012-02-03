@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -464,9 +465,7 @@ public class OronCom extends PluginForHost {
         br.setCookie("http://www.oron.com", "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
-        if (brbefore.contains("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (brbefore.contains("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (brbefore.contains("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(brbefore, Pattern.compile("(No such file with this filename|No such user exist|File Not Found|>This file has been blocked for TOS violation)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Not using brbefore as filename can be <!--commented out & cleanup
         // removes comments.
         String filename = br.getRegex("Filename: ?(<[\\w\"\\= ]+>)?([^\"<]+)").getMatch(1);
