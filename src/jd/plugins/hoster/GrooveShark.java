@@ -53,19 +53,23 @@ public class GrooveShark extends PluginForHost {
             super();
         }
 
-        public byte[] decompress(final String s) {
-            final byte[] buffer = new byte[1024];
+        public byte[] decompress(final String s) { // ~2000ms
+            final byte[] buffer = new byte[512];
+            InputStream input = null;
+            ByteArrayOutputStream result = null;
             byte[] enc = null;
+            long a;
 
             try {
                 final URL url = new URL(s);
-                final InputStream input = url.openStream();
-                final ByteArrayOutputStream result = new ByteArrayOutputStream();
+                input = url.openStream(); // ~500ms
+                result = new ByteArrayOutputStream(512);
+                a = System.currentTimeMillis();
+
                 try {
-                    int amount = 0;
-                    while (amount != -1) {
+                    int amount;
+                    while ((amount = input.read(buffer)) != -1) { // ~1500ms
                         result.write(buffer, 0, amount);
-                        amount = input.read(buffer);
                     }
                 } finally {
                     try {
@@ -81,6 +85,7 @@ public class GrooveShark extends PluginForHost {
             } catch (final Throwable e3) {
                 return null;
             }
+            System.out.println("Buffer: " + buffer.length + " @ " + (System.currentTimeMillis() - a) + " ms");
             return uncompress(enc);
         }
 
@@ -130,7 +135,7 @@ public class GrooveShark extends PluginForHost {
 
     public static boolean fetchingKeys(final Browser br, final String jurl, final String furl) throws Exception {
         final Browser br2 = br.cloneBrowser();
-        br2.getPage(jurl);
+        br2.getPage(jurl); // ~2000ms
         final String jsKey = br2.getRegex("revToken:\"(.*?)\"").getMatch(0);
         final SWFDecompressor swfd = new SWFDecompressor();
         final byte[] swfdec = swfd.decompress(furl);
@@ -275,20 +280,20 @@ public class GrooveShark extends PluginForHost {
             final String secretKey = getSecretKey(br, JDHash.getMD5(sid), sid);
             String songID;
 
-            int i = 0;
-            while (i < 2) {
+            for (int i = 0; i < 2; i++) {
                 br.getHeaders().put("Content-Type", "application/json");
                 songID = "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"privacy\":0," + country + ",\"uuid\":\"" + USERUID + "\",\"session\":\"" + sid + "\",\"token\":\"" + getToken("getSongFromToken", secretKey) + "\"},\"method\":\"getSongFromToken\",\"parameters\":{\"token\":\"" + TOKEN + "\"," + country + "}}";
                 br.postPageRaw(LISTEN + "more.php?getSongFromToken", songID);
 
                 if (i == 0 && br.getRegex(INVALIDTOKEN).matches()) {
                     logger.warning("Existing keys are old, looking for new keys.");
-                    if (!fetchingKeys(br, APPJSURL, FLASHURL)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                    if (!fetchingKeys(br, APPJSURL, FLASHURL)) {
+                        break;
+                    }
                     logger.info("Found new keys. Retrying...");
                 } else {
-                    i = 1;
+                    break;
                 }
-                i++;
             }
             if (br.getRegex(INVALIDTOKEN).matches()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
@@ -345,22 +350,21 @@ public class GrooveShark extends PluginForHost {
             // much requests.
             final Browser ajax = br.cloneBrowser();
 
-            int i = 0;
-            while (i < 2) {
-                String rawPost = getPostParameterString(ajax, "getTokenForSong", country, sid);
-                rawPost = rawPost + "\"parameters\":{\"songID\":\"" + downloadLink.getStringProperty("SongID") + "\"," + country + "}}";
+            for (int i = 0; i < 2; i++) {
+                final String rawPost = getPostParameterString(ajax, "getTokenForSong", country, sid) + "\"parameters\":{\"songID\":\"" + downloadLink.getStringProperty("SongID") + "\"," + country + "}}";
                 ajax.getHeaders().put("Content-Type", "application/json");
                 ajax.postPageRaw(LISTEN + "more.php?getTokenForSong", rawPost);
                 TOKEN = ajax.getRegex("Token\":\"(\\w+)\"").getMatch(0);
                 // valid secret key?
                 if (i == 0 && ajax.containsHTML(INVALIDTOKEN)) {
                     logger.warning("Existing keys are old, looking for new keys.");
-                    if (!fetchingKeys(ajax, APPJSURL, FLASHURL)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                    if (!fetchingKeys(ajax, APPJSURL, FLASHURL)) {
+                        break;
+                    }
                     logger.info("Found new keys. Retrying...");
                 } else {
-                    i = 1;
+                    break;
                 }
-                i++;
             }
             if (ajax.containsHTML(INVALIDTOKEN)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 

@@ -46,6 +46,7 @@ public class EightTracksCom extends PluginForDecrypt {
         if (album.contains(":")) {
             album = album.substring(0, album.indexOf(":"));
         }
+        if (album.equals(title)) { return Encoding.htmlDecode(title).trim(); }
         return Encoding.htmlDecode(album + "__" + title).trim();
     }
 
