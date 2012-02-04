@@ -58,13 +58,11 @@ public class GrooveShark extends PluginForHost {
             InputStream input = null;
             ByteArrayOutputStream result = null;
             byte[] enc = null;
-            long a;
 
             try {
                 final URL url = new URL(s);
                 input = url.openStream(); // ~500ms
-                result = new ByteArrayOutputStream(512);
-                a = System.currentTimeMillis();
+                result = new ByteArrayOutputStream();
 
                 try {
                     int amount;
@@ -85,7 +83,6 @@ public class GrooveShark extends PluginForHost {
             } catch (final Throwable e3) {
                 return null;
             }
-            System.out.println("Buffer: " + buffer.length + " @ " + (System.currentTimeMillis() - a) + " ms");
             return uncompress(enc);
         }
 
