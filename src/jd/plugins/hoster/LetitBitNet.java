@@ -183,6 +183,7 @@ public class LetitBitNet extends PluginForHost {
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         for (int i = 0; i <= 5; i++) {
             String code = getCaptchaCode("letitbitnew", serverPart + "/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
+            sleep(2000, downloadLink);
             br2.postPage(serverPart + "/ajax/check_captcha.php", "code=" + Encoding.urlEncode(code));
             url = br2.toString();
             if (url.length() < 2 || url.contains("No htmlCode read")) continue;

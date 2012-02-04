@@ -51,21 +51,19 @@ public class BezVadataCz extends PluginForHost {
         br.setFollowRedirects(false);
         br.postPage(br.getURL() + "?do=stahnoutForm-submit", "stahnoutSoubor=St%C3%A1hnout");
         String dllink = br.getRedirectLocation();
-        
         try {
-	        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-	        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-	        if (dl.getConnection().getContentType().contains("html")) {
-	            br.followConnection();
-	            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-	        }
-	        dl.startDownload();
-        }
-        catch (PluginException e) {
-        	if (br.getRegex("soubor nen. v tuto chv.li dostupn.").matches())
-            	throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        } catch (PluginException e) {
+            if (br.getRegex("soubor nen. v tuto chv.li dostupn.").matches())
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             else
-            	throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw e;
         }
     }
 
@@ -76,14 +74,12 @@ public class BezVadataCz extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>Soubor nenalezen<|<title>BezvaData \\| Soubor nenalezen</title>|Omlouváme se, soubor byl již odstraněn na žádost autora nebo z důvodů porušování autorských práv\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        
+
         String filename = br.getRegex("<title>BezvaData\\.cz \\| St.hnout soubor (.*?)</title>").getMatch(0);
-        if (filename == null) 
-        	filename = br.getRegex("<h1 title=\"St.hnout soubor (.*?)\">").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h1 title=\"St.hnout soubor (.*?)\">").getMatch(0);
         String filesize = br.getRegex("strong>Velikost:</strong> (.*?)</li>").getMatch(0);
-        if (filename == null || filesize == null) 
-        	throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;

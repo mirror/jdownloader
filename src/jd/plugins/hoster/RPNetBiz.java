@@ -52,10 +52,13 @@ public class RPNetBiz extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String dllink = downloadLink.getDownloadURL();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        // requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
+        URLConnectionAdapter con = dl.getConnection();
+        if (con.getResponseCode() != 200 || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) {
+            con.disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         dl.startDownload();
     }
 
@@ -63,10 +66,18 @@ public class RPNetBiz extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
-        if (con.getResponseCode() != 200 || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(getFileNameFromHeader(con));
-        link.setDownloadSize(con.getLongContentLength());
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(link.getDownloadURL());
+            if (con.getResponseCode() != 200 || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            link.setName(getFileNameFromHeader(con));
+            link.setDownloadSize(con.getLongContentLength());
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
