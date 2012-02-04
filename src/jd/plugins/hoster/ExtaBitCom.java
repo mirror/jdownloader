@@ -22,6 +22,7 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -160,8 +161,14 @@ public class ExtaBitCom extends PluginForHost {
                     br.getPage(br.getURL());
                     continue;
                 }
-                br.getPage(link.getDownloadURL());
-                break;
+                String xmlhref = new Regex(xmlbrowser, "href\":\"(\\?.*?)\"").getMatch(0);
+                if (xmlhref != null) {
+                    br.getPage(link.getDownloadURL() + xmlhref);
+                    break;
+                } else {
+                    br.getPage(link.getDownloadURL());
+                    break;
+                }
             }
         }
         if (br.containsHTML("api.recaptcha.net") || !xmlbrowser.containsHTML("\"ok\":true")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);

@@ -152,6 +152,9 @@ public class Indowebster extends PluginForHost {
         String filesize = br.getRegex(">Size : <span style=\"float:none;\">(.*?)</span><").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("Date upload: .{1,20} Size: (.*?)\"").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("(?i)<strong>Size:</strong> ([\\d+\\.]+ ?(MB|GB))").getMatch(0);
+            }
         }
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         if (downloadLink.getDownloadURL().contains("/audio/")) {
