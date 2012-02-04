@@ -56,8 +56,8 @@ public class DatPiffCom extends PluginForHost {
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         String fileID = new Regex(downloadLink.getDownloadURL(), "download\\.php\\?id=(.+)").getMatch(0);
-        if (fileID == null || !br.containsHTML("download-mixtape\\.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage("http://www.datpiff.com/download-mixtape.php", "id=" + fileID + "&x=84&y=11");
+        if (fileID == null || !br.containsHTML("download\\-mixtape")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.postPage("http://www.datpiff.com/download-mixtape", "id=" + fileID + "&x=84&y=11");
         String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);

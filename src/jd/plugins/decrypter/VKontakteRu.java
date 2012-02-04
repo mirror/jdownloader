@@ -113,7 +113,7 @@ public class VKontakteRu extends PluginForDecrypt {
         br.getPage(parameter);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("http://vk.com/audio", "act=load_audios_silent&al=1&edit=0&gid=0&id=" + new Regex(parameter, "id=(\\d+)$").getMatch(0));
-        String[][] audioLinks = br.getRegex("\\'(http://cs\\d+\\.vkontakte\\.ru/u\\d+/audio/[a-z0-9]+\\.mp3)\\',\\'\\d+\\',\\'\\d+:\\d+\\',\\'(.*?)\\',\\'(.*?)\\'").getMatches();
+        String[][] audioLinks = br.getRegex("\\'(http://cs\\d+\\.vk\\.com/u\\d+/audio/[a-z0-9]+\\.mp3)\\',\\'\\d+\\',\\'\\d+:\\d+\\',\\'(.*?)\\',\\'(.*?)\\'").getMatches();
         if (audioLinks == null || audioLinks.length == 0) return null;
         for (String audioInfo[] : audioLinks) {
             String finallink = audioInfo[0];

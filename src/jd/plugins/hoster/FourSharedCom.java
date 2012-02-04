@@ -132,8 +132,14 @@ public class FourSharedCom extends PluginForHost {
         return url;
     }
 
-    private String getLinksAfterWait() {
+    private String getNormalDownloadlink() {
         String url = br.getRegex("<div class=\"xxlarge bold\">[\t\n\r ]+<a class=\"linkShowD3\" href=\\'(http://[^<>\"\\']+)\\'").getMatch(0);
+        return url;
+    }
+
+    private String getDirectDownloadlink() {
+        String url = br.getRegex("size=\"tall\" annotation=\"inline\" width=\"200\" count=\"false\"[\t\n\r ]+href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+        if (url == null) url = br.getRegex("<a href=\"(http://[^<>\"\\']+)\"  class=\"dbtn nt gaClick\" data\\-element").getMatch(0);
         return url;
     }
 
@@ -162,12 +168,16 @@ public class FourSharedCom extends PluginForHost {
         if (br.containsHTML("In order to download files bigger that 500MB you need to login at 4shared") && url == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.foursharedcom.only4premium", "Files over 500MB are only downloadable for premiumusers!"));
         if (url == null) {
             url = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]*).*?\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
-            if (url == null) url = br.getRegex("\"(http://(www\\.)?4shared(\\-china)?\\.com/get/[A-Za-z0-9\\-_]+/.*?)\"").getMatch(0);
             if (url == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                url = br.getRegex("\"(http://(www\\.)?4shared(\\-china)?\\.com/get/[A-Za-z0-9\\-_]+/.*?)\"").getMatch(0);
+            }
+            if (url == null) {
+                // Maybe directdownload
+                url = getDirectDownloadlink();
+                if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 br.getPage(url);
-                url = getLinksAfterWait();
+                url = getNormalDownloadlink();
                 /** Will be disabled if we use stream links */
                 boolean wait = true;
                 boolean downloadStreamsErrorhandling = getPluginConfig().getBooleanProperty(DOWNLOADSTREAMSERRORHANDLING);
@@ -253,7 +263,7 @@ public class FourSharedCom extends PluginForHost {
         String pass = handlePassword(downloadLink);
         // direct download or not?
         String link = br.getRedirectLocation();
-        if (link == null) link = getLinksAfterWait();
+        if (link == null) link = getNormalDownloadlink();
         if (link == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
         final String error = new Regex(dl.getConnection().getURL(), "\\?error(.*)").getMatch(0);

@@ -41,9 +41,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class ExtaBitCom extends PluginForHost {
 
     private static final String NOTAVAILABLETEXT = "(>File is temporary unavailable<|temporary unavailable<br/>)";
-
     private static final String NOMIRROR         = ">No download mirror<";
-
     private static final String PREMIUMONLY      = ">Only premium users can download this file";
 
     public ExtaBitCom(PluginWrapper wrapper) {
