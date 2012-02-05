@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -17,8 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import jd.PluginWrapper;
+import jd.nutils.JDHash;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +33,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videos.sapo.pt" }, urls = { "http://(\\w+\\.)?videos\\.sapo\\.(pt|cv|ao|mz|tl)/\\w{20}" }, flags = { 0 })
 public class VideosSapo extends PluginForHost {
 
-    public VideosSapo(PluginWrapper wrapper) {
+    private String DLLINK = null;
+
+    public VideosSapo(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -38,15 +44,36 @@ public class VideosSapo extends PluginForHost {
         return "http://seguranca.sapo.pt/termosdeutilizacao/videos.html";
     }
 
+    private void getDownloadlink(final String dlurl) throws IOException {
+        String playLink = br.getRegex("\\'(http://rd\\d+\\.videos\\.sapo\\.(pt|cv|ao|mz|tl)/[A-Za-z0-9]+/mov/\\d+)\\'").getMatch(0);
+        if (playLink == null) {
+            playLink = br.getRegex("videoVerifyMrec\\(\"(http://[^<>\"]+)").getMatch(0);
+        }
+        br.getPage(dlurl + "/rss2?hide_comments=true");
+        String time = br.getRegex("<lastBuildDate>(.*?)</lastBuildDate>").getMatch(0);
+        if (playLink == null || time == null) { return; }
+
+        final SimpleDateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z");
+        int serverTimeDif;
+        try {
+            final Date date = df.parse(time);
+            serverTimeDif = (int) (Math.floor(date.getTime() / 1000) - Math.floor(System.currentTimeMillis() / 1000));
+        } catch (final Throwable e) {
+            return;
+        }
+        time = Integer.toString((int) Math.floor(System.currentTimeMillis() / 1000) + serverTimeDif);
+        DLLINK = playLink + "?player=INTERNO&time=" + time + "&token=" + JDHash.getMD5(Encoding.Base64Decode("c3ZlOWYjNzNz") + dlurl.substring(dlurl.lastIndexOf("/") + 1) + time);
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL().concat("/mov/1?player=INTERNO&time=".concat(Long.toString(System.currentTimeMillis() / 1000))), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -55,22 +82,31 @@ public class VideosSapo extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL().concat("/rss"));
-        String filename = br.getRegex("<item>.*?<title><!\\[CDATA\\[(.*?)\\]\\]></title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String dlurl = downloadLink.getDownloadURL();
+        br.getPage(dlurl);
+        String filename = br.getRegex("<div class=\"tit\">([^<>\"\\']+)</div>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"\\']+) \\- SAPO V\\&iacute;deos\"").getMatch(0);
+        }
+
+        getDownloadlink(dlurl);
+
+        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         downloadLink.setFinalFileName(filename.trim() + ".mp4");
         try {
-            if (!br.openGetConnection(downloadLink.getDownloadURL().concat("/mov/1?player=INTERNO&time=").concat(Long.toString(System.currentTimeMillis() / 1000))).getContentType().contains("html")) {
+            if (!br.openGetConnection(DLLINK).getContentType().contains("html")) {
                 downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
                 return AvailableStatus.TRUE;
             }
         } finally {
             try {
-                if (br.getHttpConnection() != null) br.getHttpConnection().disconnect();
-            } catch (Throwable e) {
+                if (br.getHttpConnection() != null) {
+                    br.getHttpConnection().disconnect();
+                }
+            } catch (final Throwable e) {
             }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -81,7 +117,7 @@ public class VideosSapo extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     @Override
