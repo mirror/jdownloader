@@ -671,3 +671,10 @@ jd/plugins/hoster/FileVoCom.class
 jd/plugins/hoster/FileMacCom.class
 jd/plugins/hoster/MachUploadCom.class
 jd/plugins/decrypter/SixMirrorsCom.class
+jd/plugins/hoster/YouShareEu.class
+jd/plugins/hoster/YourUploadDe.class
+jd/plugins/hoster/Xun6Com.class
+jd/captcha/methods/xn6cm
+jd/plugins/hoster/XsharewareCom.class
+jd/plugins/hoster/EnteruploadCom.class
+jd/plugins/hoster/GrooveFileCom.class
