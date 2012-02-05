@@ -84,6 +84,7 @@ public class OneHostClickCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        br.setReadTimeout(2 * 60 * 1000);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
@@ -177,6 +178,8 @@ public class OneHostClickCom extends PluginForHost {
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
+                /** Wait some time or we ll get a server error */
+                sleep(3 * 1000l, downloadLink);
                 br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replaceAll("https?://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + downloadLink.getName() + "&referer=&method_free=Free+Download");
                 doSomething();
                 checkErrors(downloadLink, false, passCode);
@@ -253,6 +256,7 @@ public class OneHostClickCom extends PluginForHost {
             /* Captcha END */
             if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
             if (!skipWaittime) waitTime(timeBefore, downloadLink);
+            dlForm.setAction(downloadLink.getDownloadURL().replace("www.", "") + "/" + downloadLink.getName() + ".html");
             br.submitForm(dlForm);
             logger.info("Submitted DLForm");
             doSomething();

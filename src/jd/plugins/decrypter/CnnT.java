@@ -43,28 +43,27 @@ public class CnnT extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         synchronized (LOCK) {
-            Thread.sleep(3000);
-        }
-        for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-            Form captchaForm = br.getFormbyProperty("name", "download_form");
-            String captchaUrl = br.getRegex("<img\\s+src=\"(captcha/captcha\\.php\\?id=[\\d]+)\"").getMatch(0);
-            String captchaCode = getCaptchaCode(captchaUrl, param);
-            captchaForm.put("sicherheitscode", captchaCode);
-            br.submitForm(captchaForm);
-            if (br.containsHTML("Der Sicherheitscode ist falsch!")) {
-                /* Falscher Captcha, Seite neu laden */
-                br.getPage(parameter);
-            } else {
-                valid = true;
-                String finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
-                if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
-                String links[] = br.getRegex("<a target=\"_blank\" href=\"(.*?)\">").getColumn(0);
-                if (links != null && links.length != 0) {
-                    for (String link : links) {
-                        decryptedLinks.add(createDownloadlink(link));
+            for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+                Form captchaForm = br.getFormbyProperty("name", "download_form");
+                String captchaUrl = br.getRegex("<img\\s+src=\"(captcha/captcha\\.php\\?id=[\\d]+)\"").getMatch(0);
+                String captchaCode = getCaptchaCode(captchaUrl, param);
+                captchaForm.put("sicherheitscode", captchaCode);
+                br.submitForm(captchaForm);
+                if (br.containsHTML("Der Sicherheitscode ist falsch!")) {
+                    /* Falscher Captcha, Seite neu laden */
+                    br.getPage(parameter);
+                } else {
+                    valid = true;
+                    String finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
+                    if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
+                    String links[] = br.getRegex("<a target=\"_blank\" href=\"(.*?)\">").getColumn(0);
+                    if (links != null && links.length != 0) {
+                        for (String link : links) {
+                            decryptedLinks.add(createDownloadlink(link));
+                        }
                     }
+                    break;
                 }
-                break;
             }
         }
         if (valid == false) {

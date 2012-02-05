@@ -21,15 +21,17 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.ru/.*?/[a-z0-9]+\\.html" }, flags = { 2 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html" }, flags = { 2 })
 public class ImgSrcRu extends PluginForDecrypt {
-    private static final String MAINPAGE = "http://imgsrc.ru/";
+
+    private static final String MAINPAGE = "http://imgsrc.ru";
 
     public ImgSrcRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,17 +42,35 @@ public class ImgSrcRu extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.setCookie(MAINPAGE, "lang", "en");
-        br.getPage(parameter);
-        if (br.containsHTML(">Search for better photos") || br.getURL().contains("imgsrc.ru/main/user.php")) return decryptedLinks;
+        br.getPage(parameter + "?per_page=48");
+        if (br.containsHTML("(>Search for better photos|No htmlCode read)") || br.getURL().contains("imgsrc.ru/main/user.php")) return decryptedLinks;
         final String fpName = br.getRegex("from \\'<strong>([^<>\"']+)</strong>").getMatch(0);
-        DownloadLink dlink = getDownloadLink();
-        if (dlink != null) {
-            decryptedLinks.add(dlink);
-            if (fpName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
+        final String username = new Regex(parameter, "imgsrc\\.ru/([^<>\"\\'/]+)/").getMatch(0);
+        final String[] allPics = br.getRegex("\\'(/" + username + "/\\d+\\.html)").getColumn(0);
+        if (allPics == null || allPics.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        int counter = 0;
+        for (String pic : allPics) {
+            if (counter > 10 && decryptedLinks.size() == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
+            br.getPage(MAINPAGE + pic);
+            DownloadLink dlink = getDownloadLink();
+            if (dlink != null) decryptedLinks.add(dlink);
+            counter++;
+        }
+
+        if (decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }

@@ -35,9 +35,7 @@ import jd.utils.locale.JDL;
 public class OnlineNoLifeTvCom extends PluginForHost {
 
     private String              DLLINK              = null;
-
     private static final String ONLYPREMIUMUSERTEXT = "Only downloadable for premium members";
-
     private boolean             notDownloadable     = false;
 
     public OnlineNoLifeTvCom(PluginWrapper wrapper) {

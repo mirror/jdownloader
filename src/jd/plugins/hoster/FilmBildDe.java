@@ -56,11 +56,9 @@ public class FilmBildDe extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         final String swfUrl = "http://film.bild.de/swf/BildTvMain.swf";
-
         if (clipUrl.startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, clipUrl);
             final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
             final String[][] uripart = new Regex(clipUrl, "(rtmp.*/ondemand)/(.*?)\\?(auth.*$)").getMatches();
             if (uripart == null || uripart.length != 1 || uripart.length == 1 && uripart[0].length != 3) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
@@ -68,7 +66,6 @@ public class FilmBildDe extends PluginForHost {
             rtmp.setPlayPath(uripart[0][1] + "?" + uripart[0][2]);
             rtmp.setSwfVfy(swfUrl);
             rtmp.setResume(true);
-
             ((RTMPDownload) dl).startDownload();
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -79,15 +76,12 @@ public class FilmBildDe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-
         br.getHeaders().put("Referer", downloadLink.getDownloadURL());
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-
         br.getPage("http://film.bild.de/nav.aspx?s=movie&r=" + String.valueOf(Math.random()) + "&_=" + String.valueOf(System.currentTimeMillis()));
         String filename = br.getRegex("<div class=\"promoTitle\">(.*?)</div>").getMatch(0);
         final String next = br.getRegex("playMovie_URL_film\\(\'(.*)\',").getMatch(0);
-
         if (next != null && next.matches("http://film\\.bild\\.de:80/movie\' \\+ \\(new Date\\(\\)\\.getMilliseconds\\( ?\\)\\) \\+ Math\\.random\\(\\) \\+ \'\\.xml\\?s=xml\\d+")) {
             final Calendar cal = Calendar.getInstance();
             final String id = new Regex(next, "s=xml(\\d+)").getMatch(0);
