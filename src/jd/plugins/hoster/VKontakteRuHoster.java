@@ -97,6 +97,7 @@ public class VKontakteRuHoster extends PluginForHost {
     @SuppressWarnings("unchecked")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        FINALLINK = null;
         this.setBrowserExclusive();
 
         br.setFollowRedirects(false);
@@ -130,21 +131,14 @@ public class VKontakteRuHoster extends PluginForHost {
          * Try to get best quality and test links till a working link is found
          * as it can happen that the found link is offline but others are online
          */
-        FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"w_src\":\"(http://.*?)\"").getMatch(0);
-        if (FINALLINK == null || (FINALLINK != null && !linkOk(link))) {
-            FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"http://[^\"\\']+\",\"z_src\":\"http://[^\"\\']+\",\"w_src\":\"(http://.*?)\"").getMatch(0);
+        String[] qs = { "w_", "z_", "y_", "x_", "m_" };
+        for (String q : qs) {
+            /* large image */
             if (FINALLINK == null || (FINALLINK != null && !linkOk(link))) {
-                FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"http://[^\"\\']+\",\"z_src\":\"(http://.*?)\"").getMatch(0);
-                if (FINALLINK == null || (FINALLINK != null && !linkOk(link))) {
-                    FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"(http://.*?)\"").getMatch(0);
-                    if (FINALLINK == null || (FINALLINK != null && !linkOk(link))) {
-                        FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"(http://.*?)\"").getMatch(0);
-                        if (FINALLINK == null || (FINALLINK != null && !linkOk(link))) {
-                            String base = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"(http://.*?)\"").getMatch(0);
-                            if (base != null) FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"" + base + "\".*?\"x_src\":\"(" + base + ".*?)\"").getMatch(0);
-                        }
-                    }
-                }
+                String base = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"(http://.*?)\"").getMatch(0);
+                if (base != null) FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"" + base + "\".*?\"" + q + "src\":\"(" + base + ".*?)\"").getMatch(0);
+            } else {
+                break;
             }
         }
         if (FINALLINK == null) {

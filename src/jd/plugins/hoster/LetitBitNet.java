@@ -264,10 +264,9 @@ public class LetitBitNet extends PluginForHost {
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
             dlUrl = getUrl(account);
+            if (dlUrl == null && br.containsHTML("callback_file_unavailable")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
             if (dlUrl == null) {
-                logger.info("Premium with indirectDL, enabling directDL first");
-                br.postPage("http://premium.letitbit.net/ajax.php?action=setddlstate", "state=2");
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 logger.info("Premium with directDL");
             }
