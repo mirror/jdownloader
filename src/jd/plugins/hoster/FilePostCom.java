@@ -181,7 +181,7 @@ public class FilePostCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", ua);
         br.getPage(downloadLink.getDownloadURL());
         String premiumlimit = br.getRegex("Files over (.*?) can be downloaded by premium").getMatch(0);

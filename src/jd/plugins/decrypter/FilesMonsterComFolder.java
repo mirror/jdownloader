@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2011  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ public class FilesMonsterComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(false);
         br.setCookiesExclusive(true);
         br.getPage(parameter);
@@ -53,7 +54,7 @@ public class FilesMonsterComFolder extends PluginForDecrypt {
 
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName);
+            fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;

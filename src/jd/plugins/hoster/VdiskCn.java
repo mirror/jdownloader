@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
@@ -24,42 +23,39 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15600 $", interfaceVersion = 2, names = { "refile.net" }, urls = { "http://(www\\.)?refile\\.net/(d|f)/\\?[\\w]+" }, flags = { 0 })
-public class RefileNet extends PluginForHost {
+@HostPlugin(revision = "$Revision: 15600 $", interfaceVersion = 2, names = { "vdisk.cn" }, urls = { "http://((www|yun|temp(\\d+))\\.)?vdisk\\.cn/down/index/[A-Z0-9]+" }, flags = { 0 })
+public class VdiskCn extends PluginForHost {
 
     // No HTTPS
-    // redirects = www.refile.net > refile.net && /d/ > /f/ if recaptcha isn't
-    // solved.
+    // Found hard to test this hoster, has many server issues.
+    // locked it to 2(dl) * -4(chunk) = 8 total connection
 
-    public RefileNet(PluginWrapper wrapper) {
+    public VdiskCn(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replace("http://www.", "http://").replace(".net/d/", ".net/f/"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("(yun|www)\\.", "temp.").replace("://vdisk", "://temp."));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://refile.net/terms/";
+        return "http://vdisk.cn/terms/";
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        // tested with 20 seems fine.
-        return -1;
+        return 2;
     }
 
     @Override
@@ -81,52 +77,36 @@ public class RefileNet extends PluginForHost {
             }
         }
         if (dllink == null) {
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            for (int i = 0; i <= 5; i++) {
-                rc.parse();
-                rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
-                rc.setCode(c);
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) continue;
-                break;
-            }
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            dllink = br.getRegex("<a href=\"(https?://[\\w\\.]+refile\\.net/file/\\?[^\"\\>]+)\">").getMatch(0);
-            if (dllink == null) br.getRegex("\"(https?://[\\w\\.]+refile\\.net/file/\\?[^\"\\>]+)\"").getMatch(0);
+            dllink = br.getRegex("<div class=\"btn\"><a href=\"(http://[\\w\\.]+?vdisk\\.cn/down/[0-9A-Z]{2}/" + downloadLink.getMD5Hash() + "\\?key=[a-z0-9]{32}&tt=\\d+&filename=" + downloadLink.getName() + ")\">").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("(http://[\\w\\.]+?vdisk\\.cn/down/[0-9A-Z]{2}/[A-Z0-9]{32}\\?key=[a-z0-9]{32}&tt=\\d+&filename=[^\">]+)").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("freelink", dllink);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
-        br.setCookie("http://refile.net/", "lang", "en");
+        br.setCookie("http://vdisk.cn/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        String uid = new Regex(br.getURL(), "refile\\.net/(d|f)/\\?([\\w]+)").getMatch(1);
-        if (br.containsHTML("(?i)<title>\r\n\tDownload File Not Found|<h1>Download File Not Found</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("(?i)<title>\r\n\tDownload (.*?) \\| refile\\.net").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("(?i)<h1>Download (.*?)</h1>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<span style=\"font\\-size:14px\\;\"><a href=\"http://refile.net/f/\\?[a-zA-Z0-9]+\">(.*?)</a></span>").getMatch(0);
-                if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        String filesize = br.getRegex("([\\d\\.]+\\&nbsp\\;[a-zA-Z]+)<br />[\r\n\t]+<span id=\"fd_" + uid + "\">Description").getMatch(0);
-        if (filesize == null) filesize = br.getRegex(" \\(([\\d\\.]+\\&nbsp\\;[a-zA-Z]+)\\)\\[/b\\]").getMatch(0);
-        filesize = filesize.replace("&nbsp;", "");
+        if (br.containsHTML("文件已删除,无法下载\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("(?i)文件名称: <b>(.*?)</b><br>").getMatch(0);
+        if (filename == null) filename = br.getRegex("(?i)<META content=\"(.*?)\" name=\"description\">").getMatch(0);
+        String filesize = br.getRegex("(?i)文件大小: ([\\d\\.]+ ?(MB|GB))").getMatch(0);
+        String MD5sum = br.getRegex("(?i)文件校验: ([A-Z0-9]{32})").getMatch(0);
+        if (filename == null || (filesize == null && MD5sum == null)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (MD5sum != null) link.setMD5Hash(MD5sum);
         return AvailableStatus.TRUE;
     }
 

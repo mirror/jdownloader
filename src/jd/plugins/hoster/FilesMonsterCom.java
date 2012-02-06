@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -65,6 +65,7 @@ public class FilesMonsterCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(false);
         if (downloadLink.getDownloadURL().contains("/free/2/")) {
             br.getPage(downloadLink.getStringProperty("mainlink"));
@@ -248,6 +249,7 @@ public class FilesMonsterCom extends PluginForHost {
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setReadTimeout(3 * 60 * 1000);
         br.postPage("http://filesmonster.com/login.php", "act=login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=Login");
         if (br.getRegex("Your membership type: <span class=\"[A-Za-z0-9 ]+\">(Premium)</span>").getMatch(0) == null || br.containsHTML("Username/Password can not be found in our database") || br.containsHTML("Try to recover your password by 'Password reminder'")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
     }

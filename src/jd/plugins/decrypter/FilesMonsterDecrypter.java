@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
     /** Handling similar to BitBonusComDecrypt */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(false);
         String parameter = param.toString();
         String fid = new Regex(parameter, "filesmonster\\.com/dl/(.*?)/free/").getMatch(0);
