@@ -359,9 +359,7 @@ public class FileFactory extends PluginForHost {
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, this.br.getRedirectLocation(), true, 0);
             if (!this.dl.getConnection().isContentDisposition()) {
                 this.br.followConnection();
-                if (br.containsHTML("We are currently experiencing heavy traffic volume")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded!", 15 * 60 * 1000l);
-                } else if (this.br.containsHTML(FileFactory.NOT_AVAILABLE)) {
+                if (this.br.containsHTML(FileFactory.NOT_AVAILABLE)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (this.br.containsHTML(FileFactory.SERVER_DOWN)) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
@@ -374,7 +372,6 @@ public class FileFactory extends PluginForHost {
                     this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, red, true, 0);
                     if (!this.dl.getConnection().isContentDisposition()) {
                         this.br.followConnection();
-                        if (br.containsHTML("We are currently experiencing heavy traffic volume")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded!", 15 * 60 * 1000l);
                         if (br.containsHTML("Unfortunately we have encountered a problem locating your file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }

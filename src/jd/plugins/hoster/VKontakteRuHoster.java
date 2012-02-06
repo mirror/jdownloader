@@ -118,7 +118,12 @@ public class VKontakteRuHoster extends PluginForHost {
         for (Map.Entry<String, String> entry : cookies.entrySet()) {
             this.br.setCookie(DOMAIN, entry.getKey(), entry.getValue());
         }
+        br.getPage("http://vk.com/photo" + photoID);
+        /* seems we have to refesh the login process */
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         br.postPage("http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
         final String correctedBR = br.toString().replace("\\", "");
         /**

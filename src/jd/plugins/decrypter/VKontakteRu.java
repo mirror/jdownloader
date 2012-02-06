@@ -56,10 +56,11 @@ public class VKontakteRu extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = param.toString().replace("vkontakte.ru/", "vk.com/");
-        br.setCookiesExclusive(true);
+        br.setCookiesExclusive(false);
         synchronized (LOCK) {
             /** Login process */
             if (!getUserLogin()) return null;
+            /* this call can refesh the login */
             br.getPage(parameter);
             /** Retry if login failed */
             if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com") || br.containsHTML("(method=\"post\" name=\"login\" id=\"login\"|name=\"login\" id=\"quick_login_form\")")) {
@@ -70,6 +71,13 @@ public class VKontakteRu extends PluginForDecrypt {
                 br.clearCookies("login.vk.com");
                 if (!getUserLogin()) return null;
             }
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = this.br.getCookies(DOMAIN);
+            for (final Cookie c : add.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            this.getPluginConfig().setProperty("cookies", cookies);
+            this.getPluginConfig().save();
             /** Decryption process START */
             br.setFollowRedirects(false);
             if (parameter.matches(".*?vk\\.com/audio.*?")) {
