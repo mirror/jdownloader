@@ -702,7 +702,7 @@ public class Rapidshare extends PluginForHost {
         boolean follow = br.isFollowingRedirects();
         try {
             br.getHeaders().put("Accept-Language", "de-DE,de;q=0.8,en-US;q=0.6,en;q=0.4");
-            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.77 Safari/535.7");
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/5.357 (KHTML, like Gecko) Chrome/16.09.12.77 Safari/535.7");
             br.setFollowRedirects(true);
             br.getPage(req);
         } catch (final BrowserException e) {
