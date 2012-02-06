@@ -167,7 +167,7 @@ public class FourSharedCom extends PluginForHost {
         // streamlink
         if (br.containsHTML("In order to download files bigger that 500MB you need to login at 4shared") && url == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.foursharedcom.only4premium", "Files over 500MB are only downloadable for premiumusers!"));
         if (url == null) {
-            url = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]*).*?\" class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
+            url = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]+)\"  ?class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
             if (url == null) {
                 url = br.getRegex("\"(http://(www\\.)?4shared(\\-china)?\\.com/get/[A-Za-z0-9\\-_]+/.*?)\"").getMatch(0);
             }
@@ -207,17 +207,20 @@ public class FourSharedCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
         /**
          * Maybe download failed because we got a wrong directlink, disable
-         * getting directlinks first, if it then fails again the correct
-         * errormessage is shown
+         * getting directlinks first, if it then fails again the correct error
+         * message is shown
          */
         if (br.getURL().contains("401waitm") && downloadLink.getStringProperty("streamDownloadDisabled") == null) {
             downloadLink.setProperty("streamDownloadDisabled", "true");
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } else if (br.getURL().contains("401waitm") && downloadLink.getStringProperty("streamDownloadDisabled") != null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l); }
-        final String error = new Regex(dl.getConnection().getURL(), "\\?error(.*)").getMatch(0);
-        if (error != null) {
+        final String error = br.getURL();
+        if (error != null && error.contains("/linkerror.jsp")) {
             dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+            if (downloadLink.getLinkStatus().getRetryCount() == 3)
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster error, please contact the 4shared.com support!", 3 * 60 * 60 * 1000l);
+            else
+                throw new PluginException(LinkStatus.ERROR_RETRY, error);
         }
         if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
