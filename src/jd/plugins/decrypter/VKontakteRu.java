@@ -364,7 +364,12 @@ public class VKontakteRu extends PluginForDecrypt {
         String completeLink = "directhttp://http://" + urlPart.replace("http://", "") + "/" + additionalStuff + vtag + videoID + quality;
         DownloadLink dl = createDownloadlink(completeLink);
         // Set filename so we have nice filenames here ;)
-        if (videoName != null) dl.setFinalFileName(Encoding.htmlDecode(videoName).replaceAll("(»|\")", "").trim() + quality.substring(quality.length() - 4, quality.length()));
+        if (videoName != null) {
+            if (videoName.length() > 100) {
+                videoName = videoName.substring(0, 100);
+            }
+            dl.setFinalFileName(Encoding.htmlDecode(videoName).replaceAll("(»|\")", "").trim() + quality.substring(quality.length() - 4, quality.length()));
+        }
         return dl;
     }
 

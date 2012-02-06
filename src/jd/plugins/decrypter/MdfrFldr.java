@@ -43,6 +43,7 @@ public class MdfrFldr extends PluginForDecrypt {
         String parameter = param.toString().replace("mfi.re/", "mediafire.com/");
         parameter = parameter.replaceAll("(&.+)", "").replaceAll("(#.+)", "");
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.75 Safari/535.7");
         if (parameter.matches("http://download\\d+\\.mediafire.+")) {
             /* direct download */
             String ID = new Regex(parameter, "\\.com/\\?(.+)").getMatch(0);
@@ -122,6 +123,9 @@ public class MdfrFldr extends PluginForDecrypt {
         }
         String ID = new Regex(parameter, "\\.com/\\?(.+)").getMatch(0);
         if (ID == null) ID = new Regex(parameter, "\\.com/.*?/(.*?)/").getMatch(0);
+        if (ID == null) {
+            ID = br.getRegex("var afI= '(.*?)'").getMatch(0);
+        }
         if (ID != null) {
             br.getPage("http://www.mediafire.com/api/folder/get_info.php?r=nuul&recursive=yes&folder_key=" + ID + "&response_format=json&version=1");
             String links[][] = br.getRegex("quickkey\":\"(.*?)\",\"filename\":\"(.*?)\".*?\"size\":\"(\\d+)").getMatches();

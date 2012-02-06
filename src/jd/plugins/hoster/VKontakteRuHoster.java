@@ -113,6 +113,7 @@ public class VKontakteRuHoster extends PluginForHost {
             logger.warning("A property couldn't be found!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (!albumID.startsWith("album")) albumID = "album" + albumID;
         final HashMap<String, String> cookies = (HashMap<String, String>) ret;
         for (Map.Entry<String, String> entry : cookies.entrySet()) {
             this.br.setCookie(DOMAIN, entry.getKey(), entry.getValue());
@@ -133,6 +134,10 @@ public class VKontakteRuHoster extends PluginForHost {
                     FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"http://[^\"\\']+\",\"y_src\":\"(http://.*?)\"").getMatch(0);
                     if (FINALLINK == null || (FINALLINK != null && !linkOk(link))) {
                         FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"x_src\":\"(http://.*?)\"").getMatch(0);
+                        if (FINALLINK == null || (FINALLINK != null && !linkOk(link))) {
+                            String base = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"(http://.*?)\"").getMatch(0);
+                            if (base != null) FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"" + base + "\".*?\"x_src\":\"(" + base + ".*?)\"").getMatch(0);
+                        }
                     }
                 }
             }

@@ -44,6 +44,8 @@ public class ShragleCom extends PluginForHost {
 
     private String AGENT  = RandomUserAgent.generate();
 
+    private String url;
+
     public ShragleCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.shragle.com/index.php?p=accounts&ref=386");
@@ -102,11 +104,7 @@ public class ShragleCom extends PluginForHost {
         this.br.setFollowRedirects(true);
         this.requestFileInformation(downloadLink);
         this.br.setCookie("http://www.shragle.com", "lang", "de_DE");
-        if (downloadLink.getDownloadURL().contains("?")) {
-            this.br.getPage(downloadLink.getDownloadURL() + "&jd=1");
-        } else {
-            this.br.getPage(downloadLink.getDownloadURL() + "?jd=1");
-        }
+        this.br.getPage(url + "?jd=1");
         final boolean mayfail = this.br.getRegex("Download-Server ist unter").matches();
         String wait = this.br.getRegex(Pattern.compile("Bitte warten Sie(.*?)Minuten", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l); }
@@ -158,7 +156,7 @@ public class ShragleCom extends PluginForHost {
         br.forceDebug(true);
         this.br.setCookie("http://www.shragle.com", "lang", "de_DE");
         this.br.setFollowRedirects(false);
-        this.br.getPage(downloadLink.getDownloadURL());
+        this.br.getPage(url);
         if ((this.br.getRedirectLocation() != null) && this.br.getRedirectLocation().contains("index.php")) {
             this.br.getPage(this.br.getRedirectLocation());
         }
@@ -217,6 +215,7 @@ public class ShragleCom extends PluginForHost {
         final String[] data = Regex.getLines(this.br.getPage("http://www.shragle.com/api.php?key=" + ShragleCom.apikey + "&action=getStatus&fileID=" + id));
         if (data.length != 4) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final String name = data[0];
+        this.url = "http://www.shragle.com/files/" + id + "/" + Encoding.urlEncode(name);
         final String size = data[1];
         final String md5 = data[2];
         // status 0: all ok 1: abused

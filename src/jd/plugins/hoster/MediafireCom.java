@@ -26,7 +26,6 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.ext.BasicBrowserEnviroment;
@@ -123,7 +122,7 @@ public class MediafireCom extends PluginForHost {
         }
     }
 
-    private static final String                   UA                 = RandomUserAgent.generate();
+    private static final String                   UA                 = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.75 Safari/535.7";
 
     static private final String                   offlinelink        = "tos_aup_violation";
 
