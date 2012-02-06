@@ -50,6 +50,7 @@ public class MultiupOrg extends PluginForDecrypt {
         br.postPage(br.getURL(), "_method=POST&data%5BFichier%5D%5Bsecurity_code%5D=" + result + "&data%5BFichier%5D%5BindiceQuestion%5D=" + quest);
         boolean decrypt = false;
         String[] links = br.getRegex("<a target=\"_blank\" onMouseDown=\"\" href=\"([^<>\"\\']+)\"").getColumn(0);
+        if (links == null || links.length == 0) links = br.getRegex("href=\"([^<>\"\\']+)\">Download</a>").getColumn(0);
         if (links == null || links.length == 0) {
             links = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
             decrypt = true;
