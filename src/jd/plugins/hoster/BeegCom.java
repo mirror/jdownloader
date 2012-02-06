@@ -62,18 +62,19 @@ public class BeegCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(<h1>404 error \\- Page Not found</h1>|<title>beeg\\. \\— Page Not Found\\. \\(Error 404\\)</title>|<p>In about 5 seconds, you will be automatically redirected to the main page| the page you’re looking for can\\'t be found\\. May be invalid or outdated\\.</h2>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)(</title>| \\()").getMatch(0);
-        DLLINK = br.getRegex("\\'file\\'(,|: )\\'(http://.*?)\\'").getMatch(1);
+        String filename = br.getRegex("<title>(.*?) \\(Bang Bros[^<>]+</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<meta name=\"description\" content=\"([^\"<>]+)\"").getMatch(0);
+        DLLINK = br.getRegex("\\'file\\': \\'(https?://[^\\'\"\\,]+)\\'").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("\\'file\\'(,|: )\\'(http://.*?)\\'").getMatch(1);
         if (DLLINK == null) DLLINK = br.getRegex("\\'(http://\\d+\\.video\\.mystreamservice\\.com/default/[a-z0-9\\-]+\\.flv)\\'").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".flv";
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
