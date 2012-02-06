@@ -28,7 +28,6 @@ import jd.config.ConfigEntry;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
-import jd.http.RandomUserAgent;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.Formatter;
@@ -680,8 +679,6 @@ public class Rapidshare extends PluginForHost {
         }
     }
 
-    private static final String UA = RandomUserAgent.generate();
-
     /**
      * requests the API url req. if the http ip is blocked (UK-BT isp returns
      * 500 or 502 error) https is used.
@@ -695,7 +692,6 @@ public class Rapidshare extends PluginForHost {
         if (br == null) {
             br = this.br;
         }
-        br.getHeaders().put("User-Agent", UA);
         this.workAroundTimeOut(br);/* TODO: remove me after 0.9xx public */
         br.forceDebug(true);
         // ssl works in free mode, too we have connection timeouts for many
@@ -705,22 +701,8 @@ public class Rapidshare extends PluginForHost {
         }
         boolean follow = br.isFollowingRedirects();
         try {
-            // br.getHeaders().put("Accept",
-            // "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-            // br.getHeaders().put("Accept-Charset",
-            // "ISO-8859-1,utf-8;q=0.7,*;q=0.3");
-            // br.getHeaders().put("Accept-Encoding", "gzip,deflate,sdch");
-            // br.getHeaders().put("Accept-Language",
-            // "de-DE,de;q=0.8,en-US;q=0.6,en;q=0.4");
-            // br.getHeaders().put("Connection", "keep-alive");
+            br.getHeaders().put("Accept-Language", "de-DE,de;q=0.8,en-US;q=0.6,en;q=0.4");
             br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.77 Safari/535.7");
-            // br.getHeaders().put("Referer", "http://www.rapidshare.com");
-            // Cache-Control: no-cache
-            // Pragma: no-cache
-            // Connection: close
-            // Referer:
-            // https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download&try=1&fileid=2173028867&filename=Workspace2.png
-
             br.setFollowRedirects(true);
             br.getPage(req);
         } catch (final BrowserException e) {

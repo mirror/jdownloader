@@ -471,7 +471,11 @@ public class MediafireCom extends PluginForHost {
                 br.setFollowRedirects(false);
                 br.getPage("http://www.mediafire.com/?" + fileID);
                 url = br.getRedirectLocation();
-                if (url == null || !url.contains("download")) throw new PluginException(LinkStatus.ERROR_FATAL, "Private file. No Download possible");
+                if (url == null || !url.contains("download")) {
+                    this.handlePW(downloadLink);
+                    url = this.getDownloadUrl(downloadLink);
+                }
+                if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Private file. No Download possible");
             }
             if ("-204".equals(this.br.getRegex("<flags>(.*?)</").getMatch(0))) {
                 passwordprotected = true;
