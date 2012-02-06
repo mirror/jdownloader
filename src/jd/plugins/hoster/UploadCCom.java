@@ -179,7 +179,12 @@ public class UploadCCom extends PluginForHost {
             finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
             if (finallink == null) {
                 finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
-                if (finallink == null) finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+                if (finallink == null) {
+                    finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+                    if (finallink == null) {
+                        finallink = new Regex(decoded, "document\\.location\\.href=\\'(http://[^<>\"\\']+)\\'").getMatch(0);
+                    }
+                }
             }
         }
         return finallink;
@@ -290,6 +295,9 @@ public class UploadCCom extends PluginForHost {
             if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
             if (!skipWaittime) waitTime(timeBefore, downloadLink);
             br.submitForm(dlForm);
+            String continueLink = br.getRegex("id=\"btndnlbt\" ><a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+            if (continueLink == null) continueLink = br.getRegex("\"(http://(www\\.)?uploadc\\.com/download\\-[a-z0-9]{12}\\.html)\"").getMatch(0);
+            if (continueLink != null) br.getPage(Encoding.htmlDecode(continueLink));
             logger.info("Submitted DLForm");
             doSomething();
             checkErrors(downloadLink, true, passCode);

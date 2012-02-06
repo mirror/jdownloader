@@ -104,7 +104,6 @@ public class PutLockerCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(">You have exceeded the daily stream limit for your country\\. You can wait until tomorrow")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         String hash = br.getRegex("<input type=\"hidden\" value=\"([a-z0-9]+)\" name=\"hash\">").getMatch(0);
         if (hash == null) {
             logger.warning("hash is null...");
@@ -117,6 +116,7 @@ public class PutLockerCom extends PluginForHost {
         // if (waittime != null) wait = Integer.parseInt(waittime);
         // sleep(wait * 1001l, downloadLink);
         br.postPage(br.getURL(), "hash=" + Encoding.urlEncode(hash) + "&confirm=Continue+as+Free+User");
+        if (br.containsHTML(">You have exceeded the daily stream limit for your country\\. You can wait until tomorrow")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         if (br.containsHTML("(>This content server has been temporarily disabled for upgrades|Try again soon\\. You can still download it below\\.<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily disabled!", 2 * 60 * 60 * 1000l);
         String dllink = getDllink(downloadLink);
         if (dllink == null) {
