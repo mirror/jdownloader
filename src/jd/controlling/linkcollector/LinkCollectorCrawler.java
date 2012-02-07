@@ -1,5 +1,6 @@
 package jd.controlling.linkcollector;
 
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 
 public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorListener {
@@ -25,6 +26,9 @@ public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorLi
     }
 
     public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
+    }
+
+    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
     }
 
 }

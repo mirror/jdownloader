@@ -424,4 +424,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setLastIfFileExists(IfFileExistsAction value);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @Description("If enabled, The User Interface will switch to Linkgrabber Tab if a new job has been added")
+    boolean isLinkgrabberAutoTabSwitchEnabled();
+
+    void setLinkgrabberAutoTabSwitchEnabled(boolean b);
 }

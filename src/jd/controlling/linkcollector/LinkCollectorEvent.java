@@ -1,6 +1,5 @@
 package jd.controlling.linkcollector;
 
-
 import org.appwork.utils.event.SimpleEvent;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 
@@ -47,7 +46,12 @@ public class LinkCollectorEvent extends SimpleEvent<LinkCollector, Object, LinkC
         /* content got removed */
         REMOVE_CONTENT,
         /* request collector abort */
-        ABORT
+        ABORT,
+        /**
+         * New link has been added and grouped.<br>
+         * Parameter[0]: (CrawledLink) added Link
+         */
+        ADDED_LINK
     }
 
 }

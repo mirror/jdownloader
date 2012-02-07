@@ -47,6 +47,7 @@ import jd.controlling.JSonWrapper;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
@@ -559,6 +560,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
+    }
+
+    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
     }
 
 }

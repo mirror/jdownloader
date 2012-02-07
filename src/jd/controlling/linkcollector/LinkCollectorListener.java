@@ -2,6 +2,8 @@ package jd.controlling.linkcollector;
 
 import java.util.EventListener;
 
+import jd.controlling.linkcrawler.CrawledLink;
+
 public interface LinkCollectorListener extends EventListener {
     /**
      * abort requested
@@ -44,5 +46,11 @@ public interface LinkCollectorListener extends EventListener {
      * @param event
      */
     void onLinkCollectorLinksRemoved(LinkCollectorEvent event);
+
+    /**
+     * New link has been added and grouped.<br>
+     * Parameter[0]: (CrawledLink) added Link
+     */
+    void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter);
 
 }

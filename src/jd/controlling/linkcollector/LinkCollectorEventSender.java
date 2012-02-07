@@ -1,5 +1,7 @@
 package jd.controlling.linkcollector;
 
+import jd.controlling.linkcrawler.CrawledLink;
+
 import org.appwork.utils.event.Eventsender;
 
 public class LinkCollectorEventSender extends Eventsender<LinkCollectorListener, LinkCollectorEvent> {
@@ -24,6 +26,9 @@ public class LinkCollectorEventSender extends Eventsender<LinkCollectorListener,
             break;
         case REMOVE_CONTENT:
             listener.onLinkCollectorLinksRemoved(event);
+            break;
+        case ADDED_LINK:
+            listener.onLinkCollectorLinkAdded(event, (CrawledLink) event.getParameter());
             break;
         // fill
         default:

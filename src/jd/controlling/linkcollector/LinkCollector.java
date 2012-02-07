@@ -146,6 +146,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
                 asyncSaving.run();
             }
+
+            public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+            }
         });
     }
 
@@ -299,7 +302,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         add.add(link);
                         LinkCollector.this.addmoveChildren(pkg, add, -1);
                     }
-
+                    eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ADDED_LINK, link, QueuePriority.NORM));
                     return null;
                 } catch (RuntimeException e) {
                     dupeCheckMap.remove(link.getLinkID());

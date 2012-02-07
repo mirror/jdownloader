@@ -5,18 +5,23 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import javax.swing.JButton;
+import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.gui.UIConstants;
+import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.laf.LookAndFeelController;
@@ -91,6 +96,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         // filteredAdd.setVisible(false);
         LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorListener() {
+            private HashSet<LinkCollectingJob> newJobMap = new HashSet<LinkCollectingJob>();
 
             public void onLinkCollectorAbort(LinkCollectorEvent event) {
             }
@@ -110,6 +116,34 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
 
             public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
+                if (LinkCollector.getInstance().getPackages().size() == 0) {
+                    // I know that this is not a proper cleanup....feel free to
+                    // do it better ;-P
+                    newJobMap.clear();
+
+                }
+            }
+
+            public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+                if (GraphicalUserInterfaceSettings.CFG.isLinkgrabberAutoTabSwitchEnabled()) {
+                    if (newJobMap.add(parameter.getSourceJob())) {
+                        // new job arrived
+                        new EDTRunner() {
+
+                            @Override
+                            protected void runInEDT() {
+                                try {
+                                    JDGui.getInstance().requestPanel(UserIF.Panels.LINKGRABBER, null);
+                                    if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) {
+                                        JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
+                                    }
+                                } catch (Throwable e) {
+
+                                }
+                            }
+                        };
+                    }
+                }
             }
         });
         autoConfirm = new AutoConfirmButton();
@@ -364,5 +398,8 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
     public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
         tableModel.recreateModel(!QueuePriority.HIGH.equals(event.getPrio()));
+    }
+
+    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
     }
 }
