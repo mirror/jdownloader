@@ -74,6 +74,9 @@ public class TurboBitNet extends PluginForHost {
         try {
             login(account);
         } catch (final PluginException e) {
+            if (br.containsHTML("Our service is currently unavailable in your country.")) {
+                ai.setStatus("Our service is currently unavailable in your country.");
+            }
             account.setValid(false);
             return ai;
         }
@@ -116,6 +119,7 @@ public class TurboBitNet extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setDebug(true);
         String downloadUrl = null;
+        if (br.containsHTML("Our service is currently unavailable in your country.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Our service is currently unavailable in your country."); }
         String id = new Regex(downloadLink.getDownloadURL(), "turbobit\\.net/(.*?)/.*?\\.html").getMatch(0);
         if (id == null) {
             id = new Regex(downloadLink.getDownloadURL(), "turbobit\\.net/(.*?)\\.html").getMatch(0);
@@ -234,12 +238,14 @@ public class TurboBitNet extends PluginForHost {
             dllink = br.getRegex("(\\'|\")(http://(www\\.)?turbobit\\.net//download/redirect/.*?)(\\'|\")").getMatch(1);
         }
         if (dllink == null) {
+            if (br.containsHTML("Our service is currently unavailable in your country.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Our service is currently unavailable in your country."); }
             logger.warning("dllink equals null, plugin seems to be broken!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!dllink.contains("turbobit.net")) {
             dllink = MAINPAGE + dllink;
         }
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -328,7 +334,13 @@ public class TurboBitNet extends PluginForHost {
         if (fileSize == null) {
             fileSize = br.getRegex("<span class=\\'file\\-icon.*?\\'>.*?</span>.*?\\((.*?)\\)").getMatch(0);
         }
-        if (fileName == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (fileName == null) {
+            if (br.containsHTML("Our service is currently unavailable in your country.")) {
+                downloadLink.getLinkStatus().setStatusText("Our service is currently unavailable in your country.");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setName(fileName.trim());
         if (fileSize != null) {
             fileSize = fileSize.replace("М", "M");

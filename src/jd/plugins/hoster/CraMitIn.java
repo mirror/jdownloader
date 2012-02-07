@@ -391,6 +391,7 @@ public class CraMitIn extends PluginForHost {
                 ai.setStatus("Premium User");
             }
         } else {
+            ai.setValidUntil(-1);
             ai.setStatus("Registered (free) User");
         }
         return ai;
@@ -485,7 +486,7 @@ public class CraMitIn extends PluginForHost {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
                 Form DLForm = br.getFormbyProperty("name", "F1");
-                if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (DLForm == null) throw new PluginException(LinkStatus.ERROR_RETRY);
                 DLForm.put("op", "download2");
                 if (br.containsHTML(passwordText)) {
                     passCode = handlePassword(passCode, DLForm, link);
@@ -501,8 +502,9 @@ public class CraMitIn extends PluginForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            br.setFollowRedirects(true);
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (passCode != null) {
                 link.setProperty("pass", passCode);
             }
@@ -542,7 +544,7 @@ public class CraMitIn extends PluginForHost {
         synchronized (LOCK) {
             // Load cookies
             try {
-                br.setCookiesExclusive(false);
+                br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 nopremium = account.getBooleanProperty("nopremium", false);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));

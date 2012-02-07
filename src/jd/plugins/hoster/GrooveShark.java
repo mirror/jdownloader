@@ -251,7 +251,7 @@ public class GrooveShark extends PluginForHost {
 
     private void gsProxy(final boolean b) {
         if (getPluginConfig().getBooleanProperty("STATUS") && "de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            final org.appwork.utils.net.httpconnection.HTTPProxy proxy = new org.appwork.utils.net.httpconnection.HTTPProxy(org.appwork.utils.net.httpconnection.HTTPProxy.TYPE.HTTP, getPluginConfig().getStringProperty("PROXYSERVER"), getPluginConfig().getIntegerProperty("PROXYPORT"));
+            org.appwork.utils.net.httpconnection.HTTPProxy proxy = org.appwork.utils.net.httpconnection.HTTPProxy.parseHTTPProxy("http://" + getPluginConfig().getStringProperty("PROXYSERVER") + ":" + getPluginConfig().getIntegerProperty("PROXYPORT"));
             if (b) {
                 if (proxy.getHost() != null || proxy.getHost() != "" && proxy.getPort() > 0) {
                     br.setProxy(proxy);

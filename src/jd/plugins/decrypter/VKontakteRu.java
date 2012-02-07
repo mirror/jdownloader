@@ -192,6 +192,7 @@ public class VKontakteRu extends PluginForDecrypt {
             for (String photoID : photoIDs) {
                 /** Pass those goodies over to the hosterplugin */
                 DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + photoID);
+                dl.setAvailable(true);
                 dl.setProperty("albumid", albumID);
                 decryptedLinks.add(dl);
             }
