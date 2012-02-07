@@ -41,7 +41,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
@@ -67,45 +66,39 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         return INSTANCE;
     }
 
-    private transient Eventsender<LinkCollectorListener, LinkCollectorEvent> broadcaster   = new Eventsender<LinkCollectorListener, LinkCollectorEvent>() {
+    private transient LinkCollectorEventSender      eventsender   = new LinkCollectorEventSender();
+    private static LinkCollector                    INSTANCE      = new LinkCollector();
 
-                                                                                               @Override
-                                                                                               protected void fireEvent(final LinkCollectorListener listener, final LinkCollectorEvent event) {
-                                                                                                   listener.onLinkCollectorEvent(event);
-                                                                                               };
-                                                                                           };
-    private static LinkCollector                                             INSTANCE      = new LinkCollector();
-
-    private LinkChecker<CrawledLink>                                         linkChecker   = null;
+    private LinkChecker<CrawledLink>                linkChecker   = null;
     /**
      * NOTE: only access these fields inside the IOEQ
      */
-    private HashSet<String>                                                  dupeCheckMap  = new HashSet<String>();
-    private HashMap<String, CrawledPackage>                                  packageMap    = new HashMap<String, CrawledPackage>();
+    private HashSet<String>                         dupeCheckMap  = new HashSet<String>();
+    private HashMap<String, CrawledPackage>         packageMap    = new HashMap<String, CrawledPackage>();
 
     /* sync on filteredStuff itself when accessing it */
-    private ArrayList<CrawledLink>                                           filteredStuff = new ArrayList<CrawledLink>();
+    private ArrayList<CrawledLink>                  filteredStuff = new ArrayList<CrawledLink>();
 
-    private LinkCrawlerFilter                                                crawlerFilter = null;
+    private LinkCrawlerFilter                       crawlerFilter = null;
 
-    private ExtractionExtension                                              archiver;
-    private DelayedRunnable                                                  asyncSaving   = null;
+    private ExtractionExtension                     archiver;
+    private DelayedRunnable                         asyncSaving   = null;
 
-    private boolean                                                          allowSave     = false;
+    private boolean                                 allowSave     = false;
 
-    private boolean                                                          allowLoad     = true;
+    private boolean                                 allowLoad     = true;
 
-    private PackagizerInterface                                              packagizer    = null;
+    private PackagizerInterface                     packagizer    = null;
 
-    protected OfflineCrawledPackage                                          offlinePackage;
+    protected OfflineCrawledPackage                 offlinePackage;
 
-    protected VariousCrawledPackage                                          variousPackage;
+    protected VariousCrawledPackage                 variousPackage;
 
-    protected PermanentOfflinePackage                                        permanentofflinePackage;
+    protected PermanentOfflinePackage               permanentofflinePackage;
 
-    private HashMap<String, ArrayList<CrawledLink>>                          offlineMap    = new HashMap<String, ArrayList<CrawledLink>>();
+    private HashMap<String, ArrayList<CrawledLink>> offlineMap    = new HashMap<String, ArrayList<CrawledLink>>();
 
-    private HashMap<String, ArrayList<CrawledLink>>                          variousMap    = new HashMap<String, ArrayList<CrawledLink>>();
+    private HashMap<String, ArrayList<CrawledLink>> variousMap    = new HashMap<String, ArrayList<CrawledLink>>();
 
     private LinkCollector() {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
@@ -128,17 +121,41 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
 
         };
-        this.broadcaster.addListener(new LinkCollectorListener() {
+        this.eventsender.addListener(new LinkCollectorListener() {
 
-            public void onLinkCollectorEvent(LinkCollectorEvent event) {
+            public void onLinkCollectorAbort(LinkCollectorEvent event) {
+                asyncSaving.run();
+            }
+
+            public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+                asyncSaving.run();
+            }
+
+            public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+                asyncSaving.run();
+            }
+
+            public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+                asyncSaving.run();
+            }
+
+            public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+                asyncSaving.run();
+            }
+
+            public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
                 asyncSaving.run();
             }
         });
     }
 
+    public LinkCollectorEventSender getEventsender() {
+        return eventsender;
+    }
+
     @Override
     protected void _controllerPackageNodeAdded(CrawledPackage pkg, QueuePriority priority) {
-        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE, priority));
+        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE, priority));
     }
 
     @Override
@@ -146,7 +163,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         /* update packageMap */
         String id = getPackageMapID(pkg);
         if (id != null) packageMap.remove(id);
-        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, pkg, priority));
+        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, pkg, priority));
         ArrayList<CrawledLink> children = null;
         synchronized (pkg) {
             children = new ArrayList<CrawledLink>(pkg.getChildren());
@@ -167,17 +184,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     @Override
     protected void _controllerParentlessLinks(List<CrawledLink> links, QueuePriority priority) {
-        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, links, priority));
+        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, links, priority));
         cleanupMaps(links);
     }
 
     @Override
     protected void _controllerStructureChanged(QueuePriority priority) {
-        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE, priority));
+        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE, priority));
     }
 
     public void abort() {
-        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ABORT));
+        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ABORT));
         if (linkChecker != null) linkChecker.stopChecking();
     }
 
@@ -353,7 +370,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
             }
         };
-        broadcaster.addListener(lc, true);
+        eventsender.addListener(lc, true);
         lc.setFilter(crawlerFilter);
         lc.setHandler(this);
         lc.crawl(new ArrayList<CrawledLink>(links));
@@ -387,7 +404,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
 
         };
-        broadcaster.addListener(lc, true);
+        eventsender.addListener(lc, true);
         lc.setFilter(crawlerFilter);
         lc.setHandler(this);
         String jobText = job.getText();
@@ -404,11 +421,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         synchronized (filteredStuff) {
             filteredStuff.add(filtered);
         }
-        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_AVAILABLE));
-    }
-
-    public void addListener(final LinkCollectorListener l) {
-        broadcaster.addListener(l);
+        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_AVAILABLE));
     }
 
     // clean up offline/various/dupeCheck maps
@@ -433,7 +446,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         permanentofflinePackage = null;
         variousMap.clear();
         offlineMap.clear();
-        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_EMPTY));
+        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_EMPTY));
     }
 
     /*
@@ -499,7 +512,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             ret = new ArrayList<CrawledLink>(filteredStuff);
             if (clearAfterGet) filteredStuff.clear();
         }
-        if (clearAfterGet) broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_EMPTY));
+        if (clearAfterGet) eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_EMPTY));
         return ret;
     }
 
@@ -646,7 +659,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public void refreshData() {
-        broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_DATA));
+        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_DATA));
     }
 
     public ArrayList<FilePackage> removeAndConvert(final ArrayList<CrawledLink> links) {
@@ -695,10 +708,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 break;
             }
         }
-    }
-
-    public void removeListener(final LinkCollectorListener l) {
-        broadcaster.removeListener(l);
     }
 
     /**
@@ -760,7 +769,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         setSaveAllowed(true);
                         writeUnlock();
                     }
-                    broadcaster.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE));
+                    eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE));
                 }
                 return null;
             }

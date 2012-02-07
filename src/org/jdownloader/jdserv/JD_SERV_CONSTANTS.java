@@ -10,17 +10,19 @@ public class JD_SERV_CONSTANTS {
     public static final InstallerInterface INSTALLER = CLIENT.create(InstallerInterface.class);
 
     public static void main(String[] args) {
-        System.out.println("\"DE\"".substring(1, 3));
-        // CounterInterface.INST.inc("test");
-        // System.out.println(CounterInterface.INST.getValue("test"));#
-        String ip = null;
-        System.out.println("IP: " + GEO.getIP());
-        System.out.println("ASN: " + GEO.getASNByIP(ip));
-        GEO.getCountryCode();
-
-        System.out.println("Country Code: " + GEO.getCountryCodebyIP(ip));
-        System.out.println("Country Name: " + GEO.getCountryNameByIP(ip));
+        // System.out.println("\"DE\"".substring(1, 3));
+        // // CounterInterface.INST.inc("test");
+        // // System.out.println(CounterInterface.INST.getValue("test"));#
+        // String ip = null;
+        // System.out.println("IP: " + GEO.getIP());
+        // System.out.println("ASN: " + GEO.getASNByIP(ip));
+        // GEO.getCountryCode();
+        //
+        // System.out.println("Country Code: " + GEO.getCountryCodebyIP(ip));
+        // System.out.println("Country Name: " + GEO.getCountryNameByIP(ip));
         // CLIENT.create(RedirectInterface.class).redirect("google.de?q=affenschauckel");
+        CLIENT.create(CounterInterface.class).inc("a");
+        System.out.println(CLIENT.create(CounterInterface.class).getValue("a"));
 
     }
 

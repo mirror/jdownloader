@@ -12,6 +12,8 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.Checkbox;
+import org.jdownloader.gui.views.components.Header;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.CustomFilterHeader;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterExceptionsTable;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterHosterTable;

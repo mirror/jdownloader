@@ -90,18 +90,26 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         });
 
         // filteredAdd.setVisible(false);
-        LinkCollector.getInstance().addListener(new LinkCollectorListener() {
+        LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorListener() {
 
-            public void onLinkCollectorEvent(LinkCollectorEvent event) {
-                LinkCollector caller = event.getCaller();
-                switch (event.getType()) {
-                case FILTERED_AVAILABLE:
-                    setFilteredAvailable(caller.getfilteredStuffSize());
-                    break;
-                case FILTERED_EMPTY:
-                    setFilteredAvailable(0);
-                    break;
-                }
+            public void onLinkCollectorAbort(LinkCollectorEvent event) {
+            }
+
+            public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+                setFilteredAvailable(LinkCollector.getInstance().getfilteredStuffSize());
+            }
+
+            public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+                setFilteredAvailable(0);
+            }
+
+            public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+            }
+
+            public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+            }
+
+            public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
             }
         });
         autoConfirm = new AutoConfirmButton();
@@ -168,7 +176,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         leftBar.add(clearAll, "width 24!,height 24!,aligny top");
         leftBar.add(popupRemove, "height 24!,width 12!,aligny top");
         searchField = new SearchField<CrawledPackage, CrawledLink>(table);
-        leftBar.add(searchField, "height 24!,aligny top");
         searchField.addKeyListener(new KeyListener() {
 
             public void keyTyped(KeyEvent e) {
@@ -184,6 +191,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             public void keyPressed(KeyEvent e) {
             }
         });
+        leftBar.add(searchField, "height 24!,aligny top");
 
         leftBar.add(filteredAdd, "height 24!,hidemode 3,gapleft 4");
         // leftBar.add(Box.createGlue());
@@ -194,6 +202,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getEventSender().addListener(this);
         GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_VISIBLE.getEventSender().addListener(this);
+
     }
 
     private void setFilteredAvailable(final int size) {
@@ -307,25 +316,13 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     @Override
     protected void onShow() {
         tableModel.recreateModel(false);
-        LinkCollector.getInstance().addListener(this);
+        LinkCollector.getInstance().getEventsender().addListener(this);
         table.requestFocusInWindow();
     }
 
     @Override
     protected void onHide() {
-        LinkCollector.getInstance().removeListener(this);
-    }
-
-    public void onLinkCollectorEvent(LinkCollectorEvent event) {
-        switch (event.getType()) {
-        case REFRESH_STRUCTURE:
-        case REMOVE_CONTENT:
-            tableModel.recreateModel(!QueuePriority.HIGH.equals(event.getPrio()));
-            break;
-        case REFRESH_DATA:
-            tableModel.refreshModel(!QueuePriority.HIGH.equals(event.getPrio()));
-            break;
-        }
+        LinkCollector.getInstance().getEventsender().removeListener(this);
     }
 
     public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
@@ -346,5 +343,26 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 revalidate();
             }
         };
+    }
+
+    public void onLinkCollectorAbort(LinkCollectorEvent event) {
+    }
+
+    public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+    }
+
+    public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+    }
+
+    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+        tableModel.refreshModel(!QueuePriority.HIGH.equals(event.getPrio()));
+    }
+
+    public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+        tableModel.recreateModel(!QueuePriority.HIGH.equals(event.getPrio()));
+    }
+
+    public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
+        tableModel.recreateModel(!QueuePriority.HIGH.equals(event.getPrio()));
     }
 }

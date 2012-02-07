@@ -80,7 +80,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
             guiFrame.setAlwaysOnTop(false);
             guiFrame = null;
         }
-        LinkCollector.getInstance().removeListener(this);
+        LinkCollector.getInstance().getEventsender().removeListener(this);
         JDController.getInstance().removeControlListener(this);
     }
 
@@ -112,7 +112,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                                     logger.info("Systemtray OK");
                                     initGUI();
                                     JDController.getInstance().addControlListener(TrayExtension.this);
-                                    LinkCollector.getInstance().addListener(TrayExtension.this);
+                                    LinkCollector.getInstance().getEventsender().addListener(TrayExtension.this);
                                 }
                             }
 
@@ -510,42 +510,55 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         configPanel = createPanelFromContainer(cc);
     }
 
-    public void onLinkCollectorEvent(LinkCollectorEvent event) {
-        if (LinkCollectorEvent.TYPE.REFRESH_STRUCTURE.equals(event.getType())) {
-            if ((!guiFrame.isVisible() && subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB, true)) || subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB2, false)) {
-                /* dont try to restore jd if password required */
-                if (subConfig.getBooleanProperty(PROPERTY_PASSWORD_REQUIRED, false)) return;
-                if (!guiFrame.isVisible()) {
-                    /* set visible */
-                    new EDTHelper<Object>() {
-                        @Override
-                        public Object edtRun() {
-                            guiFrame.setVisible(true);
-                            return null;
-                        }
-                    }.start();
-                }
-                /* workaround for : toFront() */
+    public void onLinkCollectorAbort(LinkCollectorEvent event) {
+    }
+
+    public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+    }
+
+    public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+    }
+
+    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+    }
+
+    public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+        if ((!guiFrame.isVisible() && subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB, true)) || subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB2, false)) {
+            /* dont try to restore jd if password required */
+            if (subConfig.getBooleanProperty(PROPERTY_PASSWORD_REQUIRED, false)) return;
+            if (!guiFrame.isVisible()) {
+                /* set visible */
                 new EDTHelper<Object>() {
                     @Override
                     public Object edtRun() {
-                        guiFrame.toFront();
+                        guiFrame.setVisible(true);
                         return null;
                     }
                 }.start();
-                if (iconified) {
-                    /* restore normale state,if windows was iconified */
-                    new EDTHelper<Object>() {
-                        @Override
-                        public Object edtRun() {
-                            /* after this normal, its back to iconified */
-                            guiFrame.setState(JFrame.NORMAL);
-                            return null;
-                        }
-                    }.start();
+            }
+            /* workaround for : toFront() */
+            new EDTHelper<Object>() {
+                @Override
+                public Object edtRun() {
+                    guiFrame.toFront();
+                    return null;
                 }
+            }.start();
+            if (iconified) {
+                /* restore normale state,if windows was iconified */
+                new EDTHelper<Object>() {
+                    @Override
+                    public Object edtRun() {
+                        /* after this normal, its back to iconified */
+                        guiFrame.setState(JFrame.NORMAL);
+                        return null;
+                    }
+                }.start();
             }
         }
+    }
+
+    public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
     }
 
 }

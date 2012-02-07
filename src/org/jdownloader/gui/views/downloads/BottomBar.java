@@ -2,139 +2,154 @@ package org.jdownloader.gui.views.downloads;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 
-import javax.swing.Box;
-import javax.swing.JLabel;
-import javax.swing.JPopupMenu;
-import javax.swing.Timer;
+import javax.swing.JButton;
+import javax.swing.JToggleButton;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.swing.jdgui.menu.actions.CleanupDownloads;
-import jd.gui.swing.jdgui.menu.actions.CleanupPackages;
-import jd.gui.swing.jdgui.menu.actions.RemoveDisabledAction;
-import jd.gui.swing.jdgui.menu.actions.RemoveDupesAction;
-import jd.gui.swing.jdgui.menu.actions.RemoveFailedAction;
-import jd.gui.swing.jdgui.menu.actions.RemoveOfflineAction;
 import jd.gui.swing.laf.LookAndFeelController;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtButton;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.action.ClearAction;
+import org.jdownloader.gui.views.downloads.action.RemoveOptionsAction;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
+import org.jdownloader.gui.views.linkgrabber.SearchField;
+import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
+import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class BottomBar extends MigPanel implements ActionListener {
+public class BottomBar extends MigPanel {
 
-    private GraphicalUserInterfaceSettings config;
-    private JLabel                         label;
-    private Timer                          timer;
+    private GraphicalUserInterfaceSettings         config;
+    private JButton                                addLinks;
+
+    private JButton                                clearAll;
+    private JButton                                popup;
+    private JButton                                popupRemove;
+    private SearchField<FilePackage, DownloadLink> searchField;
+    private JToggleButton                          showHideSidebar;
 
     public BottomBar(DownloadsTable table) {
-        super("ins 2 0 1 0", "[]", "[]");
+        super("ins 0 0 1 0", "[]1[][]1[]", "[]");
 
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
-        if (config.isDownloadViewBottombarEnabled()) {
-            label = new JLabel();
-            label.setEnabled(false);
-            add(label);
-            add(Box.createGlue(), "pushx,growx");
 
-            // add();
-            addButton(new AppAction() {
-                {
-                    setTooltipText(_GUI._.BottomBar_BottomBar_add());
-                    setIconKey("add");
+        addLinks = new JButton(new AddLinksAction());
 
-                    // setIconSizes(20);
-                }
+        clearAll = new JButton(new ClearAction());
+        popup = new JButton(new AddOptionsAction(addLinks)) {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
 
-                public void actionPerformed(ActionEvent e) {
-
-                }
-            });
-            addButton(new AppAction() {
-                {
-                    setTooltipText(_GUI._.BottomBar_BottomBar_cleanup());
-                    setIconKey("remove");
-                    // setIconSizes(18);
-                }
-
-                public void actionPerformed(ActionEvent e) {
-                    JPopupMenu pu = new JPopupMenu();
-                    pu.add(new CleanupDownloads());
-                    pu.add(new CleanupPackages());
-                    pu.addSeparator();
-                    pu.add(new RemoveDupesAction());
-                    pu.add(new RemoveDisabledAction());
-                    pu.add(new RemoveOfflineAction());
-                    pu.add(new RemoveFailedAction());
-                    int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
-                    pu.show((Component) e.getSource(), -insets[1], -pu.getPreferredSize().height + insets[2]);
-                    // new CleanupMenu()
-                }
-            });
-            boolean first = true;
-            if (config.isShowMoveToTopButton()) {
-                if (first) {
-                    add(Box.createHorizontalGlue(), "width 10!");
-                    first = false;
-                }
-                addButton(table.getMoveTopAction());
+            public void setBounds(int x, int y, int width, int height) {
+                super.setBounds(x - 2, y, width + 2, height);
             }
-            if (config.isShowMoveUpButton()) {
-                if (first) {
-                    add(Box.createHorizontalGlue(), "width 10!");
-                    first = false;
-                }
-                addButton(table.getMoveUpAction());
-            }
-            if (config.isShowMoveDownButton()) {
-                if (first) {
-                    add(Box.createHorizontalGlue(), "width 10!");
-                    first = false;
-                }
-                addButton(table.getMoveDownAction());
-            }
-            if (config.isShowMoveToBottomButton()) {
-                if (first) {
-                    add(Box.createHorizontalGlue(), "width 10!");
-                    first = false;
-                }
-                addButton(table.getMoveToBottomAction());
-            }
-            add(Box.createHorizontalGlue(), "width 10!");
-            addButton(new AppAction() {
-                {
-                    setTooltipText(_GUI._.BottomBar_BottomBar_settings());
-                    setIconKey("settings");
-                    // setIconSizes(18);
-                }
+        };
+        popupRemove = new JButton(new RemoveOptionsAction(table, clearAll)) {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
 
-                public void actionPerformed(ActionEvent e) {
-                    QuickSettingsPopup pu = new QuickSettingsPopup();
-                    int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
-                    pu.show((Component) e.getSource(), -pu.getPreferredSize().width + insets[3] + ((Component) e.getSource()).getWidth(), -pu.getPreferredSize().height + insets[2]);
-                    // new CleanupMenu()
+            public void setBounds(int x, int y, int width, int height) {
+                super.setBounds(x - 2, y, width + 2, height);
+            }
+        };
+        searchField = new SearchField<FilePackage, DownloadLink>(table);
+        searchField.addKeyListener(new KeyListener() {
+
+            public void keyTyped(KeyEvent e) {
+            }
+
+            public void keyReleased(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    searchField.setText("");
+
                 }
-            });
-            timer = new Timer(1000, this);
-            timer.setRepeats(true);
-            timer.start();
+            }
+
+            public void keyPressed(KeyEvent e) {
+            }
+        });
+        add(addLinks, "height 24!,aligny top");
+
+        add(popup, "height 24!,width 12!,aligny top");
+        add(clearAll, "width 24!,height 24!,aligny top");
+        add(popupRemove, "height 24!,width 12!,aligny top");
+
+        add(searchField, "height 24!,aligny top,gapleft 3,pushx,growx");
+
+        if (config.isShowMoveToTopButton()) {
+
+            addButton(table.getMoveTopAction());
         }
+        if (config.isShowMoveUpButton()) {
+
+            addButton(table.getMoveUpAction());
+        }
+        if (config.isShowMoveDownButton()) {
+
+            addButton(table.getMoveDownAction());
+        }
+        if (config.isShowMoveToBottomButton()) {
+
+            addButton(table.getMoveToBottomAction());
+        }
+        addButton(new AppAction() {
+            {
+                setTooltipText(_GUI._.BottomBar_BottomBar_settings());
+                setIconKey("settings");
+                // setIconSizes(18);
+            }
+
+            public void actionPerformed(ActionEvent e) {
+                QuickSettingsPopup pu = new QuickSettingsPopup();
+                int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
+                pu.show((Component) e.getSource(), -pu.getPreferredSize().width + insets[3] + ((Component) e.getSource()).getWidth() + 29, -pu.getPreferredSize().height + insets[2]);
+                // new CleanupMenu()
+            }
+        });
+        showHideSidebar = new JToggleButton(new AppAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
+            {
+
+                putValue(SMALL_ICON, NewTheme.I().getIcon("sidebar", -1));
+                setTooltipText(_GUI._.LinkGrabberPanel_LinkGrabberPanel_btn_showsidebar_tt_up());
+
+            }
+
+            public void actionPerformed(ActionEvent e) {
+                GraphicalUserInterfaceSettings.CFG.setDownloadViewSidebarVisible(!GraphicalUserInterfaceSettings.CFG.isDownloadViewSidebarVisible());
+            }
+        });
+
+        if (GraphicalUserInterfaceSettings.DOWNLOAD_VIEW_SIDEBAR_TOGGLE_BUTTON_ENABLED.getValue() && GraphicalUserInterfaceSettings.DOWNLOAD_VIEW_SIDEBAR_ENABLED.getValue()) {
+            //
+            add(showHideSidebar, "height 24!,width 24!,gapleft 3,aligny top");
+        }
+
     }
 
     private void addButton(AppAction action) {
         ExtButton bt = new ExtButton(action);
         // bt.setText("");
-        bt.setRolloverEffectEnabled(true);
+        // bt.setRolloverEffectEnabled(true);
 
-        add(bt, "width 22!,height 22!,gapleft 3");
+        add(bt, "width 24!,height 24!,gapleft 3,aligny top");
     }
 
-    public void actionPerformed(ActionEvent e) {
-        label.setText(_GUI._.BottomBar_actionPerformed_running_downloads(DownloadWatchDog.getInstance().getActiveDownloads(), DownloadWatchDog.getInstance().getConnectionManager().getIncommingConnections()));
-    }
 }

@@ -1,5 +1,6 @@
 package jd.controlling.linkcollector;
 
+
 import org.appwork.utils.event.SimpleEvent;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 

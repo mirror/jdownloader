@@ -1,22 +1,32 @@
 package org.jdownloader.gui.views.downloads;
 
+import java.awt.Color;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.JScrollPane;
+import javax.swing.ScrollPaneConstants;
 
-import jd.Main;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadControllerEvent;
 import jd.controlling.downloadcontroller.DownloadControllerListener;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class DownloadsPanel extends SwitchPanel implements DownloadControllerListener {
+public class DownloadsPanel extends SwitchPanel implements DownloadControllerListener, GenericConfigEventListener<Boolean> {
 
     /**
      * 
@@ -27,28 +37,102 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     private DownloadsTableModel tableModel;
     private ScheduledFuture<?>  timer            = null;
     private BottomBar           bottomBar;
+    private HeaderScrollPane    sidebarScrollPane;
+    private DownloadViewSidebar sidebar;
 
     public DownloadsPanel() {
-        super(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[grow, fill]"));
+        super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
         tableModel = new DownloadsTableModel();
         table = new DownloadsTable(tableModel);
         tableScrollPane = new JScrollPane(table);
         tableScrollPane.setBorder(null);
-        this.add(tableScrollPane, "cell 0 0");
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        bottomBar = new BottomBar(table);
 
-            public void run() {
-                new EDTRunner() {
+        layoutComponents();
 
-                    @Override
-                    protected void runInEDT() {
-                        bottomBar = new BottomBar(table);
-                        add(bottomBar, "dock south,hidemode 3");
-                    }
-                };
+        GraphicalUserInterfaceSettings.DOWNLOAD_VIEW_SIDEBAR_ENABLED.getEventSender().addListener(this);
+
+        GraphicalUserInterfaceSettings.DOWNLOAD_VIEW_SIDEBAR_TOGGLE_BUTTON_ENABLED.getEventSender().addListener(this);
+        GraphicalUserInterfaceSettings.DOWNLOAD_VIEW_SIDEBAR_VISIBLE.getEventSender().addListener(this);
+
+    }
+
+    private void layoutComponents() {
+        if (GraphicalUserInterfaceSettings.CFG.isDownloadViewSidebarEnabled() && GraphicalUserInterfaceSettings.CFG.isDownloadViewSidebarVisible()) {
+
+            if (sidebarScrollPane == null) {
+                createSidebar();
             }
+            this.add(tableScrollPane, "pushx,growx");
+            add(sidebarScrollPane, "width 240!");
+        } else {
+            this.add(tableScrollPane, "pushx,growx,spanx");
 
-        });
+        }
+
+        add(bottomBar, "spanx,height 24!");
+    }
+
+    private void createSidebar() {
+        sidebar = new DownloadViewSidebar(table);
+
+        sidebarScrollPane = new HeaderScrollPane(sidebar) {
+
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+            // protected int getHeaderHeight() {
+            // return (int)
+            // table.getTableHeader().getPreferredSize().getHeight();
+            // }
+        };
+
+        // ScrollPaneUI udi = sp.getUI();
+        int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
+        // LayoutManager lm = sp.getLayout();
+
+        if (c >= 0) {
+            sidebarScrollPane.setBackground(new Color(c));
+            sidebarScrollPane.setOpaque(true);
+
+        }
+        sidebarScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        sidebarScrollPane.setColumnHeaderView(new DownloadViewSideBarHeader());
+        // ExtButton bt = new ExtButton(new AppAction() {
+        // {
+        // setSmallIcon(NewTheme.I().getIcon("close", -1));
+        // setToolTipText(_GUI._.LinkGrabberSideBarHeader_LinkGrabberSideBarHeader_object_());
+        // }
+        //
+        // public void actionPerformed(ActionEvent e) {
+        // GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.setValue(false);
+        // }
+        // });
+        //
+        // sidebarScrollPane.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER,
+        // bt);
+        // LinkFilterSettings.LINKGRABBER_QUICK_SETTINGS_VISIBLE.getEventSender().addListener(new
+        // GenericConfigEventListener<Boolean>() {
+        //
+        // public void onConfigValidatorError(KeyHandler<Boolean> keyHandler,
+        // Boolean invalidValue, ValidationException validateException) {
+        // }
+        //
+        // public void onConfigValueModified(KeyHandler<Boolean> keyHandler,
+        // Boolean newValue) {
+        //
+        // if (Boolean.TRUE.equals(newValue)) {
+        // SwingUtilities.invokeLater(new Runnable() {
+        //
+        // public void run() {
+        // sidebarScrollPane.getVerticalScrollBar().setValue(sidebarScrollPane.getVerticalScrollBar().getMaximum());
+        // }
+        // });
+        //
+        // }
+        // }
+        // });
 
     }
 
@@ -92,4 +176,23 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         }
     }
 
+    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+    }
+
+    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+        if (!newValue && keyHandler == GraphicalUserInterfaceSettings.DOWNLOAD_VIEW_SIDEBAR_VISIBLE) {
+            JDGui.help(_GUI._.LinkGrabberPanel_onConfigValueModified_title_(), _GUI._.LinkGrabberPanel_onConfigValueModified_msg_(), NewTheme.I().getIcon("warning_green", 32));
+
+        }
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                removeAll();
+                layoutComponents();
+
+                revalidate();
+            }
+        };
+    }
 }

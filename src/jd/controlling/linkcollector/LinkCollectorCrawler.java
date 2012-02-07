@@ -8,12 +8,23 @@ public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorLi
         super(true, true);
     }
 
-    public void onLinkCollectorEvent(LinkCollectorEvent event) {
-        switch (event.getType()) {
-        case ABORT:
-            stopCrawling();
-            break;
-        }
+    public void onLinkCollectorAbort(LinkCollectorEvent event) {
+        stopCrawling();
+    }
+
+    public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+    }
+
+    public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+    }
+
+    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+    }
+
+    public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+    }
+
+    public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
     }
 
 }

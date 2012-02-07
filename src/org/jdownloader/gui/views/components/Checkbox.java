@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.linkgrabber;
+package org.jdownloader.gui.views.components;
 
 import javax.swing.Box;
 import javax.swing.JCheckBox;

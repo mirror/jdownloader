@@ -14,7 +14,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
 import org.jdownloader.controlling.filter.LinkFilterSettings;
-import org.jdownloader.gui.views.linkgrabber.Header;
+import org.jdownloader.gui.views.components.Header;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 
 public class QuickFilterHosterTable extends FilterTable {

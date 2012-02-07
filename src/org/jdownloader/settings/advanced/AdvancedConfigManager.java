@@ -56,7 +56,7 @@ public class AdvancedConfigManager {
 
     public static void main(String[] args) {
         Log.L.setLevel(Level.OFF);
-        ConfigUtils.printStaticMappings(LinkgrabberSettings.class);
+        ConfigUtils.printStaticMappings(GraphicalUserInterfaceSettings.class);
     }
 
     public AdvancedConfigEventSender getEventSender() {
