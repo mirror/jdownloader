@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sho.rtify.com" }, urls = { "http://(www\\.)?sho\\.rtify\\.com/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 15830 $", interfaceVersion = 2, names = { "sho.rtify.com" }, urls = { "http://(www\\.)?sho\\.rtify\\.com/\\d+" }, flags = { 0 })
 public class ShoRtifyCom extends PluginForDecrypt {
 
     public ShoRtifyCom(PluginWrapper wrapper) {

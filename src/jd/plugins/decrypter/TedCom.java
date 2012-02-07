@@ -12,7 +12,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ted.com" }, urls = { "http://(www\\.)?ted.com/talks/(lang/[a-zA-Z\\-]+/)?\\w+.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 15830 $", interfaceVersion = 2, names = { "ted.com" }, urls = { "http://(www\\.)?ted.com/talks/(lang/[a-zA-Z\\-]+/)?\\w+.html" }, flags = { 0 })
 public class TedCom extends PluginForDecrypt {
 
     public TedCom(PluginWrapper wrapper) {
