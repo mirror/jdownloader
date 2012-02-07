@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://(www\\.)?rapidgator\\.net/file/\\d+/[^/<>]+\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://(www\\.)?rapidgator\\.net/file/\\d+(/[^/<>]+\\.html)?" }, flags = { 2 })
 public class RapidGatorNet extends PluginForHost {
 
     public RapidGatorNet(PluginWrapper wrapper) {
@@ -53,7 +53,7 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://rapidgator.net/?content=terms";
+        return "http://rapidgator.net/article/terms";
     }
 
     @Override
@@ -69,7 +69,11 @@ public class RapidGatorNet extends PluginForHost {
         if (waittime != null) wait = Integer.parseInt(waittime);
         Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.getPage("http://rapidgator.net/download/AjaxStartTimer?fid=" + new Regex(downloadLink.getDownloadURL(), "rapidgator\\.net/file/(\\d+)/").getMatch(0));
+        String fid = new Regex(downloadLink.getDownloadURL(), "rapidgator\\.net/file/(\\d+)").getMatch(0);
+        if (fid != null)
+            br2.getPage("http://rapidgator.net/download/AjaxStartTimer?fid=" + fid);
+        else
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final String sid = br2.getRegex("\"sid\":\"(.*?)\"").getMatch(0);
         if (sid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         sleep(wait * 1001l, downloadLink);
@@ -95,7 +99,12 @@ public class RapidGatorNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("<div class=\"error\">[\r\n ]+Error\\. Link expired. You have reached your daily limit of downloads\\."))
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Link expired, or You've reached your daily limit ", 60 * 60 * 1000l);
+            else if (br.containsHTML("<div class=\"error\">[\r\n ]+File is already downloading</div>"))
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download session in progress", 20 * 60 * 1000l);
+            else
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -107,6 +116,8 @@ public class RapidGatorNet extends PluginForHost {
         br.setCookie("http://rapidgator.net/", "lang", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String freedlsizelimit = br.getRegex("(?i)\\'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
+        if (freedlsizelimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, "Only premium users can download files larger than" + freedlsizelimit + ".");
         String filename = br.getRegex("Downloading:[\t\n\r ]+</strong>([^<>\"]+)</p>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Download file ([^<>\"]+)</title>").getMatch(0);
         String filesize = br.getRegex("File size:[\t\n\r ]+<strong>([^<>\"]+)</strong>").getMatch(0);
@@ -188,7 +199,10 @@ public class RapidGatorNet extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("<h2>Error 500</h2>[\r\n ]+<div class=\"error\">"))
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster is issues", 60 * 60 * 1000l);
+            else
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
