@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -25,7 +24,6 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.comFolder" }, urls = { "http://(www\\.)?filesmonster\\.com/folders\\.php\\?fid=([0-9a-zA-Z_-]{22}|\\d+)" }, flags = { 0 })
@@ -34,7 +32,11 @@ public class FilesMonsterComFolder extends PluginForDecrypt {
     public FilesMonsterComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
+    
+    // DEV NOTES:
+    // packagename is useless, as Filesmonster decrypter creates its own..
 
+    
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -47,15 +49,21 @@ public class FilesMonsterComFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        String fpName = br.getRegex(">Folder: (.*?)</span>").getMatch(0);
-
         parsePage(decryptedLinks);
-        parseNextPage(decryptedLinks, parameter);
 
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
+        String firstpanel = br.getRegex("<(.*?)<table").getMatch(0);
+        if (firstpanel == null) {
+            logger.warning("FilesMonster Folder Decrypter: Page finding broken: " + parameter);
+            logger.warning("FilesMonster Folder Decrypter: Please report to JDownloader Development Team.");
+            logger.warning("FilesMonster Folder Decrypter: Continuing with the first page only.");
+        }
+        String[] Pages = new Regex(firstpanel, "\\&nbsp\\;<a href=\\'(folders.php\\?fid=.*?)\\'").getColumn(0);
+        if (Pages == null || Pages.length == 0) return null;
+        if (Pages != null && Pages.length != 0) {
+            for (String page : Pages) {
+                br.getPage("http://filesmonster.com/" + page);
+                parsePage(decryptedLinks);
+            }
         }
         return decryptedLinks;
     }
@@ -67,19 +75,5 @@ public class FilesMonsterComFolder extends PluginForDecrypt {
             for (String dl : links)
                 ret.add(createDownloadlink(dl));
         }
-    }
-
-    private boolean parseNextPage(ArrayList<DownloadLink> ret, String parameter) throws IOException {
-        String firstpanel = new Regex(parameter, "</div>(.*?)<table class=\"folder\\_files\"").getMatch(0);
-        String nextPage[] = new Regex(firstpanel, "\\&nbsp\\;<a href=\\'(folders.php\\?fid=.*?)\\'").getColumn(0);
-        if (nextPage == null || nextPage.length == 0) return false;
-        if (nextPage != null && nextPage.length != 0) {
-            for (String page : nextPage) {
-                br.getPage("http://filesmonster.com/" + page);
-                parsePage(ret);
-                return true;
-            }
-        }
-        return false;
     }
 }
