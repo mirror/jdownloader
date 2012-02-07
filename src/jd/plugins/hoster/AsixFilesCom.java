@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -45,13 +46,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "asixfiles.com" }, urls = { "http://(www\\.)?asixfiles\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class AsixFilesCom extends PluginForHost {
 
-    private String              BRBEFORE     = "";
-
-    private static final String PASSWORDTEXT = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-
-    private static final String COOKIE_HOST  = "http://asixfiles.com";
-
-    public boolean              NOPREMIUM    = false;
+    private String               BRBEFORE     = "";
+    private static final String  PASSWORDTEXT = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
+    private static final String  COOKIE_HOST  = "http://asixfiles.com";
+    public boolean               NOPREMIUM    = false;
+    private static AtomicInteger maxPrem      = new AtomicInteger(1);
 
     public AsixFilesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -299,6 +298,8 @@ public class AsixFilesCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         try {
             login(account);
         } catch (PluginException e) {
@@ -377,7 +378,8 @@ public class AsixFilesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     @Override
@@ -404,7 +406,7 @@ public class AsixFilesCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         doSomething();
         if (NOPREMIUM) {
-            doFree(link, true, 0);
+            doFree(link, false, 1);
         } else {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
@@ -461,7 +463,20 @@ public class AsixFilesCom extends PluginForHost {
         br.getPage(COOKIE_HOST + "/?op=my_account");
         doSomething();
         if (!new Regex(BRBEFORE, "(Premium-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!new Regex(BRBEFORE, "(Premium-Account expire|>Renew premium<)").matches()) NOPREMIUM = true;
+        if (!new Regex(BRBEFORE, "(Premium-Account expire|>Renew premium<)").matches()) {
+            NOPREMIUM = true;
+            try {
+                maxPrem.set(1);
+                account.setMaxSimultanDownloads(1);
+            } catch (final Throwable e) {
+            }
+        } else {
+            try {
+                maxPrem.set(-1);
+                account.setMaxSimultanDownloads(-1);
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     @Override
