@@ -118,8 +118,7 @@ public class TurboBitNet extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setDebug(true);
-        String downloadUrl = null;
-        if (br.containsHTML("Our service is currently unavailable in your country.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Our service is currently unavailable in your country."); }
+        String downloadUrl = null, waittime = null;
         String id = new Regex(downloadLink.getDownloadURL(), "turbobit\\.net/(.*?)/.*?\\.html").getMatch(0);
         if (id == null) {
             id = new Regex(downloadLink.getDownloadURL(), "turbobit\\.net/(.*?)\\.html").getMatch(0);
@@ -127,24 +126,19 @@ public class TurboBitNet extends PluginForHost {
         if (id == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.getPage("/download/free/" + id);
         if (br.containsHTML(parseImage("FE8CFBFAFA57CDE31BC2B798DF5141AB2DC171EC0852D89A1A135E3F116C83D15D8BF93A"))) {
-            String waittime = br.getRegex("<span id=\\'timeout\\'>(\\d+)</span></h1>").getMatch(0);
-            if (waittime == null) {
-                waittime = br.getRegex(parseImage("FDDBFBFAFA57CDEF1A90B5CEDF5647AE2CC572EC0958DD981E125C68156882D65D82F869")).getMatch(0);
-            }
-            int wait = 0;
-            if (waittime != null) {
-                wait = Integer.parseInt(waittime);
-            }
-            if (wait < 31) {
+            waittime = br.getRegex(parseImage("FDDBFBFAFA57CDEF1A90B5CEDF5647AE2CC572EC0958DD981E125C68156882D65D82F869")).getMatch(0);
+            final int wait = waittime != null ? Integer.parseInt(waittime) : -1;
+
+            if (wait > 31) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+            } else if (wait < 0) {
+            } else {
                 sleep(wait * 1000l, downloadLink);
-            } else if (wait == 0) {
-            } else if (wait > 31) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l); }
+            }
         }
-        String wait2 = br.getRegex("id=\\'timeout\\'>(\\d+)</span>").getMatch(0);
-        if (wait2 == null) {
-            wait2 = br.getRegex(parseImage("FDDBFBFAFA57CDEF1A90B5CEDF5647AE2CC572EC0958DD981E125C68156882D65D82F869")).getMatch(0);
-        }
-        if (wait2 != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait2) * 1001l); }
+        waittime = br.getRegex(parseImage("FDDBFBFAFA57CDEF1A90B5CEDF5647AE2CC572EC0958DD981E125C68156882D65D82F869")).getMatch(0);
+        if (waittime != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l); }
+
         Form captchaform = null;
         final Form[] allForms = br.getForms();
         if (allForms != null && allForms.length != 0) {
