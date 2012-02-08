@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.Webinterface;
+package org.jdownloader.extensions.webinterface;
 
 import java.io.IOException;
 
