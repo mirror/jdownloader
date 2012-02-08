@@ -364,7 +364,6 @@ public class GrvShrkCm extends PluginForDecrypt {
     private void gsProxy(final boolean b) {
         final SubConfiguration cfg = SubConfiguration.getConfig("grooveshark.com");
         if (cfg.getBooleanProperty("STATUS")) {
-            /** FIXME Hi Jiaz! proxy ist hier null */
             final org.appwork.utils.net.httpconnection.HTTPProxy proxy = org.appwork.utils.net.httpconnection.HTTPProxy.parseHTTPProxy("http://" + cfg.getStringProperty("PROXYSERVER") + ":" + cfg.getIntegerProperty("PROXYPORT"));
             if (b) {
                 if (proxy.getHost() != null || proxy.getHost() != "" && proxy.getPort() > 0) {
