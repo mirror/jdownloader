@@ -25,7 +25,7 @@ public class TedCom extends PluginForDecrypt {
         String url = parameter.toString();
         br.getPage(url);
         String[] info = br.getRegex("<meta property=\"og:video\" content=\"([^\"]+)/([^/\"\\-]+)(?:-320k)?\\.(\\w+)\"").getRow(0);
-        if (info == null) return decryptedLinks;
+        if (info == null || info.length == 0) return decryptedLinks;
 
         // Videos
         String baseUrl = info[0] + "/" + info[1];

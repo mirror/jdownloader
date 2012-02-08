@@ -449,6 +449,7 @@ public class VKontakteRu extends PluginForDecrypt {
         br.getPage("http://vk.com/login.php");
         String damnIPH = br.getRegex("name=\"ip_h\" value=\"(.*?)\"").getMatch(0);
         if (damnIPH == null) damnIPH = br.getRegex("\\{loginscheme: \\'https\\', ip_h: \\'(.*?)\\'\\}").getMatch(0);
+        if (damnIPH == null) damnIPH = br.getRegex("loginscheme: 'https'.*?ip_h: '(.*?)'").getMatch(0);
         if (damnIPH == null) return false;
         br.postPage("https://login.vk.com/", "act=login&success_url=&fail_url=&try_to_login=1&to=&vk=&al_test=3&from_host=vkontakte.ru&ip_h=" + damnIPH + "&email=" + Encoding.urlEncode(username) + "&pass=" + Encoding.urlEncode(password) + "&expire=1");
         String hash = br.getRegex("type=\"hidden\" name=\"hash\" value=\"(.*?)\"").getMatch(0);

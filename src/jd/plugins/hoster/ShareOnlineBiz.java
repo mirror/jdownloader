@@ -318,7 +318,8 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url != null && url.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 5 * 60 * 1000l);
+        if (url == null || !url.startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();

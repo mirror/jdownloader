@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.UUID;
@@ -43,7 +44,7 @@ import jd.plugins.hoster.GrooveShark;
 public class GrvShrkCm extends PluginForDecrypt {
 
     private static final String     LISTEN  = "http://grooveshark.com/";
-    private static final String     USERUID = UUID.randomUUID().toString().toUpperCase();
+    private static final String     USERUID = UUID.randomUUID().toString().toUpperCase(Locale.ENGLISH);
     private String                  USERID;
     private String                  USERNAME;
     private ArrayList<DownloadLink> decryptedLinks;

@@ -56,7 +56,7 @@ public class FileFactory extends PluginForHost {
 
     private static final String  FILESIZE         = "id=\"info\" class=\"metadata\">[\t\n\r ]+<span>(.*?) file uploaded";
     private static AtomicInteger maxPrem          = new AtomicInteger(1);
-    private static final String  NO_SLOT          = ">All free download slots are in use";
+    private static final String  NO_SLOT          = ">All free download slots";
     private static final String  NO_SLOT_USERTEXT = "No free slots available";
     private static final String  NOT_AVAILABLE    = "class=\"box error\"";
     private static final String  SERVERFAIL       = "(<p>Your download slot has expired\\.|>Unfortunately the file you have requested cannot be downloaded at this time)";
@@ -78,7 +78,7 @@ public class FileFactory extends PluginForHost {
         if (this.br.containsHTML(FileFactory.SERVERFAIL)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error"); }
         if (this.br.containsHTML(NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NO_SLOT_USERTEXT, 10 * 60 * 1000l); }
         if (this.br.containsHTML(FileFactory.NOT_AVAILABLE)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (this.br.containsHTML(FileFactory.SERVER_DOWN) || this.br.containsHTML(FileFactory.NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
+        if (this.br.containsHTML(FileFactory.SERVER_DOWN)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
         if (this.br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0) != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(this.br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0)) * 60 * 1001l); }
     }
 

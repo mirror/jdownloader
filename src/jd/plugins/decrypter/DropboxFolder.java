@@ -26,12 +26,13 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.apache.commons.lang.StringEscapeUtils;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision: 15830 $", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/gallery/\\d+/\\d+/[^?]+\\?h=[0-9a-f]+" }, flags = { 0 })
 public class DropboxFolder extends PluginForDecrypt {
-    private static final String[] urlAttrs = { "video_url", "original", "extralarge", "large", "thumbnail" };
+    private static final String[] urlAttrs     = { "video_url", "original", "extralarge", "large", "thumbnail" };
+    private static boolean        pluginloaded = false;
 
     public DropboxFolder(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,23 +52,32 @@ public class DropboxFolder extends PluginForDecrypt {
         for (String singleLink : links) {
             // Finds the JSON attribute with one of the keys of the array, by
             // the order given (i.e. always highest quality)
-            for (int i = 0; i < urlAttrs.length; i++) {
-                String url = new Regex(singleLink, "'" + urlAttrs[i] + "': *'(.*?)'").getMatch(0);
-                if (url != null && !url.isEmpty()) {
-                    // Since Java doesn't like \x, replaces by u00 and unescapes
-                    url = StringEscapeUtils.unescapeJavaScript(url.replace("\\x", "\\u00"));
+            for (String urlAttr : urlAttrs) {
+                String url = new Regex(singleLink, "'" + urlAttr + "': *'(.*?)'").getMatch(0);
+                if (url != null && url.length() != 0) {
+                    url = unescape(url);
                     decryptedLinks.add(createDownloadlink(url));
                     break;
                 }
             }
         }
-        
+
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private static synchronized String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (pluginloaded == false) {
+            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            pluginloaded = true;
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
 }
