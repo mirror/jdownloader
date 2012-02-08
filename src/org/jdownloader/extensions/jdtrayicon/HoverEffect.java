@@ -35,6 +35,7 @@ public class HoverEffect extends JDMouseAdapter {
         comp.setOpaque(true);
         comp.setContentAreaFilled(true);
         comp.setBorderPainted(true);
+        comp.setVisible(true);
     }
 
     @Override
