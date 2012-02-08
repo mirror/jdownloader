@@ -51,7 +51,12 @@ public class Paste2Org extends PluginForDecrypt {
         /* Error handling */
         if (br.containsHTML("Page Not Found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
         String plaintxt = br.getRegex("main-container(.*?)footer-contents").getMatch(0);
-        if (plaintxt == null) return null;
+        if (plaintxt == null) plaintxt = br.getRegex("<div class=\"code\\-wrap\">(.*?)</div>").getMatch(0);
+        if (plaintxt == null) {
+            logger.info("Paste2 Decrypter: Could not find textfield: " + parameter);
+            logger.info("Paste2 Decrypter: Please report this to JDownloader' Development Team.");
+            return null;
+        }
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links == null || links.length == 0) {
             logger.info("Found no hosterlinks in plaintext from link " + parameter);
