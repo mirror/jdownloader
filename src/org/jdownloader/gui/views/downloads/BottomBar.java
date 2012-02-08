@@ -6,7 +6,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 import javax.swing.JButton;
-import javax.swing.JToggleButton;
 
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
@@ -23,7 +22,6 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.SearchField;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class BottomBar extends MigPanel {
@@ -35,7 +33,8 @@ public class BottomBar extends MigPanel {
     private JButton                                popup;
     private JButton                                popupRemove;
     private SearchField<FilePackage, DownloadLink> searchField;
-    private JToggleButton                          showHideSidebar;
+
+    // private JToggleButton showHideSidebar;
 
     public BottomBar(DownloadsTable table) {
         super("ins 0 0 1 0", "[]1[][]1[]", "[]");
@@ -115,32 +114,36 @@ public class BottomBar extends MigPanel {
             public void actionPerformed(ActionEvent e) {
                 QuickSettingsPopup pu = new QuickSettingsPopup();
                 int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();
-                pu.show((Component) e.getSource(), -pu.getPreferredSize().width + insets[3] + ((Component) e.getSource()).getWidth() + 29, -pu.getPreferredSize().height + insets[2]);
+                pu.show((Component) e.getSource(), -pu.getPreferredSize().width + insets[3] + ((Component) e.getSource()).getWidth() + 1, -pu.getPreferredSize().height + insets[2]);
                 // new CleanupMenu()
             }
         });
-        showHideSidebar = new JToggleButton(new AppAction() {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 1L;
-
-            {
-
-                putValue(SMALL_ICON, NewTheme.I().getIcon("sidebar", -1));
-                setTooltipText(_GUI._.LinkGrabberPanel_LinkGrabberPanel_btn_showsidebar_tt_up());
-
-            }
-
-            public void actionPerformed(ActionEvent e) {
-                GraphicalUserInterfaceSettings.CFG.setDownloadViewSidebarVisible(!GraphicalUserInterfaceSettings.CFG.isDownloadViewSidebarVisible());
-            }
-        });
-
-        if (GraphicalUserInterfaceSettings.DOWNLOAD_VIEW_SIDEBAR_TOGGLE_BUTTON_ENABLED.getValue() && GraphicalUserInterfaceSettings.DOWNLOAD_VIEW_SIDEBAR_ENABLED.getValue()) {
-            //
-            add(showHideSidebar, "height 24!,width 24!,gapleft 3,aligny top");
-        }
+        // showHideSidebar = new JToggleButton(new AppAction() {
+        // /**
+        // *
+        // */
+        // private static final long serialVersionUID = 1L;
+        //
+        // {
+        //
+        // putValue(SMALL_ICON, NewTheme.I().getIcon("sidebar", -1));
+        // setTooltipText(_GUI._.LinkGrabberPanel_LinkGrabberPanel_btn_showsidebar_tt_up());
+        //
+        // }
+        //
+        // public void actionPerformed(ActionEvent e) {
+        // GraphicalUserInterfaceSettings.CFG.setDownloadViewSidebarVisible(!GraphicalUserInterfaceSettings.CFG.isDownloadViewSidebarVisible());
+        // }
+        // });
+        //
+        // if
+        // (GraphicalUserInterfaceSettings.DOWNLOAD_VIEW_SIDEBAR_TOGGLE_BUTTON_ENABLED.getValue()
+        // &&
+        // GraphicalUserInterfaceSettings.DOWNLOAD_VIEW_SIDEBAR_ENABLED.getValue())
+        // {
+        // //
+        // add(showHideSidebar, "height 24!,width 24!,gapleft 3,aligny top");
+        // }
 
     }
 

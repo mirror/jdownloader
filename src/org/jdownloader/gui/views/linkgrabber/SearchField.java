@@ -8,6 +8,7 @@ import java.awt.Image;
 import java.util.regex.Pattern;
 
 import javax.swing.BorderFactory;
+import javax.swing.JLabel;
 
 import jd.controlling.IOEQ;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
@@ -34,12 +35,25 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
     private DelayedRunnable                                delayedFilter;
     private PackageControllerTable<PackageType, ChildType> table2Filter;
     private Pattern                                        filterPattern    = null;
+    private JLabel                                         label;
 
     public SearchField(PackageControllerTable<PackageType, ChildType> table2Filter) {
         super();
         this.table2Filter = table2Filter;
         img = NewTheme.I().getImage("search", SIZE);
-        setBorder(BorderFactory.createCompoundBorder(getBorder(), BorderFactory.createEmptyBorder(0, 22, 0, 0)));
+        label = new JLabel("Filename") {
+            public boolean isShowing() {
+
+                return true;
+            }
+
+            public boolean isVisible() {
+                return true;
+            }
+        };
+        label.setSize(122, 24);
+        label.setEnabled(false);
+        setBorder(BorderFactory.createCompoundBorder(getBorder(), BorderFactory.createEmptyBorder(0, 122, 0, 0)));
         setHelpText(_GUI._.SearchField_SearchField_helptext());
         delayedFilter = new DelayedRunnable(IOEQ.TIMINGQUEUE, 150l, 2000l) {
 
@@ -62,7 +76,13 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
         Composite comp = g2.getComposite();
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
         g2.drawImage(img, 3, 3, 3 + SIZE, 3 + SIZE, 0, 0, SIZE, SIZE, null);
+        g2.translate(24, 0);
+
+        label.getUI().paint(g2, label);
+        // label.paintComponents(g2);
+        g2.translate(-24, 0);
         g2.setComposite(comp);
+
     }
 
     private synchronized void updateFilter() {

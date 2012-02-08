@@ -39,8 +39,8 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     // Static Mappings for interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings
 
-    public static final GraphicalUserInterfaceSettings                 CFG                                         = JsonConfig.create(GraphicalUserInterfaceSettings.class);
-    public static final StorageHandler<GraphicalUserInterfaceSettings> SH                                          = (StorageHandler<GraphicalUserInterfaceSettings>) CFG.getStorageHandler();
+    public static final GraphicalUserInterfaceSettings                 CFG                                       = JsonConfig.create(GraphicalUserInterfaceSettings.class);
+    public static final StorageHandler<GraphicalUserInterfaceSettings> SH                                        = (StorageHandler<GraphicalUserInterfaceSettings>) CFG.getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers,
     // access is faster, and we get an error on init if mappings are wrong.
     // Keyhandler interface
@@ -49,7 +49,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     /**
      * Enable/disable Enable/disable Clipboard monitoring
      **/
-    public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                         = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                       = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.captchabackgroundcleanupenabled
     // = true
@@ -57,46 +57,49 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
      * If enabled, the background of captchas will be removed to fit to the rest
      * of the design (transparency)
      **/
-    public static final BooleanKeyHandler                              CAPTCHA_BACKGROUND_CLEANUP_ENABLED          = SH.getKeyHandler("CaptchaBackgroundCleanupEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              CAPTCHA_BACKGROUND_CLEANUP_ENABLED        = SH.getKeyHandler("CaptchaBackgroundCleanupEnabled", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.showmovedownbutton
     // = true
     /**
      * True if move button should be visible in downloadview
      **/
-    public static final BooleanKeyHandler                              SHOW_MOVE_DOWN_BUTTON                       = SH.getKeyHandler("ShowMoveDownButton", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              SHOW_MOVE_DOWN_BUTTON                     = SH.getKeyHandler("ShowMoveDownButton", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.activeconfigpanel
     // = jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings
-    public static final StringKeyHandler                               ACTIVE_CONFIG_PANEL                         = SH.getKeyHandler("ActiveConfigPanel", StringKeyHandler.class);
+    public static final StringKeyHandler                               ACTIVE_CONFIG_PANEL                       = SH.getKeyHandler("ActiveConfigPanel", StringKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.fontrespectssystemdpi
     // = true
     /**
      * Enable/disable support for system DPI settings. Default value is true.
      **/
-    public static final BooleanKeyHandler                              FONT_RESPECTS_SYSTEM_DPI                    = SH.getKeyHandler("FontRespectsSystemDPI", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              FONT_RESPECTS_SYSTEM_DPI                  = SH.getKeyHandler("FontRespectsSystemDPI", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.downloadviewsidebartogglebuttonenabled
     // = true
-    /**
-     * Enable/Disable the DownloadView Sidebar QuicktoggleButton
-     **/
-    public static final BooleanKeyHandler                              DOWNLOAD_VIEW_SIDEBAR_TOGGLE_BUTTON_ENABLED = SH.getKeyHandler("DownloadViewSidebarToggleButtonEnabled", BooleanKeyHandler.class);
+    // /**
+    // * Enable/Disable the DownloadView Sidebar QuicktoggleButton
+    // **/
+    // public static final BooleanKeyHandler
+    // DOWNLOAD_VIEW_SIDEBAR_TOGGLE_BUTTON_ENABLED =
+    // SH.getKeyHandler("DownloadViewSidebarToggleButtonEnabled",
+    // BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.linkgrabbersidebartogglebuttonenabled
     // = true
     /**
      * Enable/Disable the Linkgrabber Sidebar QuicktoggleButton
      **/
-    public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED   = SH.getKeyHandler("LinkgrabberSidebarToggleButtonEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED = SH.getKeyHandler("LinkgrabberSidebarToggleButtonEnabled", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.themeid =
     // standard
     /**
      * Icon Theme ID. Make sure that ./themes/<ID>/ exists
      **/
-    public static final StringKeyHandler                               THEME_ID                                    = SH.getKeyHandler("ThemeID", StringKeyHandler.class);
+    public static final StringKeyHandler                               THEME_ID                                  = SH.getKeyHandler("ThemeID", StringKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.fontscalefactor =
     // 100
@@ -104,95 +107,97 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
      * Font scale factor in percent. Default value is 100 which means no font
      * scaling.
      **/
-    public static final IntegerKeyHandler                              FONT_SCALE_FACTOR                           = SH.getKeyHandler("FontScaleFactor", IntegerKeyHandler.class);
+    public static final IntegerKeyHandler                              FONT_SCALE_FACTOR                         = SH.getKeyHandler("FontScaleFactor", IntegerKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.downloadviewsidebarenabled
     // = true
-    /**
-     * Enable/Disable the Linkgrabber Sidebar
-     **/
-    public static final BooleanKeyHandler                              DOWNLOAD_VIEW_SIDEBAR_ENABLED               = SH.getKeyHandler("DownloadViewSidebarEnabled", BooleanKeyHandler.class);
+    // /**
+    // * Enable/Disable the Linkgrabber Sidebar
+    // **/
+    // public static final BooleanKeyHandler DOWNLOAD_VIEW_SIDEBAR_ENABLED =
+    // SH.getKeyHandler("DownloadViewSidebarEnabled", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.textantialiasenabled
     // = false
     /**
      * Paint all labels/text with or without antialias. Default value is false.
      **/
-    public static final BooleanKeyHandler                              TEXT_ANTI_ALIAS_ENABLED                     = SH.getKeyHandler("TextAntiAliasEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              TEXT_ANTI_ALIAS_ENABLED                   = SH.getKeyHandler("TextAntiAliasEnabled", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.sortcolumnhighlightenabled
     // = true
     /**
      * Highlight Column in Downloadview if table is not in downloadsortorder
      **/
-    public static final BooleanKeyHandler                              SORT_COLUMN_HIGHLIGHT_ENABLED               = SH.getKeyHandler("SortColumnHighlightEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              SORT_COLUMN_HIGHLIGHT_ENABLED             = SH.getKeyHandler("SortColumnHighlightEnabled", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.showmovetobottombutton
     // = true
     /**
      * True if move button should be visible in downloadview
      **/
-    public static final BooleanKeyHandler                              SHOW_MOVE_TO_BOTTOM_BUTTON                  = SH.getKeyHandler("ShowMoveToBottomButton", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              SHOW_MOVE_TO_BOTTOM_BUTTON                = SH.getKeyHandler("ShowMoveToBottomButton", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.balloonnotificationenabled
     // = true
-    public static final BooleanKeyHandler                              BALLOON_NOTIFICATION_ENABLED                = SH.getKeyHandler("BalloonNotificationEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              BALLOON_NOTIFICATION_ENABLED              = SH.getKeyHandler("BalloonNotificationEnabled", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.logviewvisible =
     // false
-    public static final BooleanKeyHandler                              LOG_VIEW_VISIBLE                            = SH.getKeyHandler("LogViewVisible", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              LOG_VIEW_VISIBLE                          = SH.getKeyHandler("LogViewVisible", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.configviewvisible
     // = true
-    public static final BooleanKeyHandler                              CONFIG_VIEW_VISIBLE                         = SH.getKeyHandler("ConfigViewVisible", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              CONFIG_VIEW_VISIBLE                       = SH.getKeyHandler("ConfigViewVisible", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.lookandfeel =
     // null
-    public static final StringKeyHandler                               LOOK_AND_FEEL                               = SH.getKeyHandler("LookAndFeel", StringKeyHandler.class);
+    public static final StringKeyHandler                               LOOK_AND_FEEL                             = SH.getKeyHandler("LookAndFeel", StringKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.lastiffileexists
     // = SKIP_FILE
-    public static final EnumKeyHandler                                 LAST_IF_FILE_EXISTS                         = SH.getKeyHandler("LastIfFileExists", EnumKeyHandler.class);
+    public static final EnumKeyHandler                                 LAST_IF_FILE_EXISTS                       = SH.getKeyHandler("LastIfFileExists", EnumKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.captchascalefactor
     // = 100
     /**
      * Captcha Dialog Image scale Faktor in %
      **/
-    public static final IntegerKeyHandler                              CAPTCHA_SCALE_FACTOR                        = SH.getKeyHandler("CaptchaScaleFactor", IntegerKeyHandler.class);
+    public static final IntegerKeyHandler                              CAPTCHA_SCALE_FACTOR                      = SH.getKeyHandler("CaptchaScaleFactor", IntegerKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.showmovetotopbutton
     // = true
     /**
      * True if move button should be visible in downloadview
      **/
-    public static final BooleanKeyHandler                              SHOW_MOVE_TO_TOP_BUTTON                     = SH.getKeyHandler("ShowMoveToTopButton", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              SHOW_MOVE_TO_TOP_BUTTON                   = SH.getKeyHandler("ShowMoveToTopButton", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.fontname =
     // default
     /**
      * Font to be used. Default value is default.
      **/
-    public static final StringKeyHandler                               FONT_NAME                                   = SH.getKeyHandler("FontName", StringKeyHandler.class);
+    public static final StringKeyHandler                               FONT_NAME                                 = SH.getKeyHandler("FontName", StringKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.linkgrabbersidebarenabled
     // = true
     /**
      * Enable/Disable the Linkgrabber Sidebar
      **/
-    public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_ENABLED                 = SH.getKeyHandler("LinkgrabberSidebarEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_ENABLED               = SH.getKeyHandler("LinkgrabberSidebarEnabled", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.dialogdefaulttimeout
     // = 20
-    public static final IntegerKeyHandler                              DIALOG_DEFAULT_TIMEOUT                      = SH.getKeyHandler("DialogDefaultTimeout", IntegerKeyHandler.class);
+    public static final IntegerKeyHandler                              DIALOG_DEFAULT_TIMEOUT                    = SH.getKeyHandler("DialogDefaultTimeout", IntegerKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.downloadviewsidebarvisible
     // = true
-    public static final BooleanKeyHandler                              DOWNLOAD_VIEW_SIDEBAR_VISIBLE               = SH.getKeyHandler("DownloadViewSidebarVisible", BooleanKeyHandler.class);
+    // public static final BooleanKeyHandler DOWNLOAD_VIEW_SIDEBAR_VISIBLE =
+    // SH.getKeyHandler("DownloadViewSidebarVisible", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.linkgrabbersidebarvisible
     // = true
-    public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_VISIBLE                 = SH.getKeyHandler("LinkgrabberSidebarVisible", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_VISIBLE               = SH.getKeyHandler("LinkgrabberSidebarVisible", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.downloadviewbottombarenabled
     // = true
@@ -201,14 +206,14 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
      * Disable animation and all animation threads. Optional value. Default
      * value is true.
      **/
-    public static final BooleanKeyHandler                              ANIMATION_ENABLED                           = SH.getKeyHandler("AnimationEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              ANIMATION_ENABLED                         = SH.getKeyHandler("AnimationEnabled", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.showmoveupbutton
     // = true
     /**
      * True if move button should be visible in downloadview
      **/
-    public static final BooleanKeyHandler                              SHOW_MOVE_UP_BUTTON                         = SH.getKeyHandler("ShowMoveUpButton", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              SHOW_MOVE_UP_BUTTON                       = SH.getKeyHandler("ShowMoveUpButton", BooleanKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.windowopaque =
     // false
@@ -224,7 +229,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
      * application performance. Default value is false which means the
      * translucency feature is enabled
      **/
-    public static final BooleanKeyHandler                              WINDOW_OPAQUE                               = SH.getKeyHandler("WindowOpaque", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              WINDOW_OPAQUE                             = SH.getKeyHandler("WindowOpaque", BooleanKeyHandler.class);
 
     String getActiveConfigPanel();
 
@@ -299,21 +304,21 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @RequiresRestart
     boolean isLinkgrabberSidebarVisible();
 
-    @AboutConfig
-    @Description("Enable/Disable the Linkgrabber Sidebar")
-    @DefaultBooleanValue(true)
-    @RequiresRestart
-    boolean isDownloadViewSidebarEnabled();
-
-    @AboutConfig
-    @Description("Enable/Disable the DownloadView Sidebar QuicktoggleButton")
-    @DefaultBooleanValue(true)
-    @RequiresRestart
-    boolean isDownloadViewSidebarToggleButtonEnabled();
-
-    @DefaultBooleanValue(true)
-    @RequiresRestart
-    boolean isDownloadViewSidebarVisible();
+    // @AboutConfig
+    // @Description("Enable/Disable the Linkgrabber Sidebar")
+    // @DefaultBooleanValue(true)
+    // @RequiresRestart
+    // boolean isDownloadViewSidebarEnabled();
+    //
+    // @AboutConfig
+    // @Description("Enable/Disable the DownloadView Sidebar QuicktoggleButton")
+    // @DefaultBooleanValue(true)
+    // @RequiresRestart
+    // boolean isDownloadViewSidebarToggleButtonEnabled();
+    //
+    // @DefaultBooleanValue(true)
+    // @RequiresRestart
+    // boolean isDownloadViewSidebarVisible();
 
     @DefaultBooleanValue(false)
     boolean isLogViewVisible();
@@ -393,11 +398,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setLinkgrabberSidebarVisible(boolean b);
 
-    void setDownloadViewSidebarEnabled(boolean b);
-
-    void setDownloadViewSidebarToggleButtonEnabled(boolean b);
-
-    void setDownloadViewSidebarVisible(boolean b);
+    // void setDownloadViewSidebarEnabled(boolean b);
+    //
+    // void setDownloadViewSidebarToggleButtonEnabled(boolean b);
+    //
+    // void setDownloadViewSidebarVisible(boolean b);
 
     void setLogViewVisible(boolean b);
 
