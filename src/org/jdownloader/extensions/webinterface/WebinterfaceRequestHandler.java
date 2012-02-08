@@ -1,6 +1,6 @@
 package org.jdownloader.extensions.webinterface;
 
-import java.io.File;
+import java.net.URL;
 import java.net.URLDecoder;
 
 import org.appwork.exceptions.WTFException;
@@ -25,8 +25,8 @@ public class WebinterfaceRequestHandler implements HttpRequestHandler {
         if (filePath != null) {
             try {
                 if (filePath.contains("/../")) throw new WTFException("Directory Traversal!");
-                File file = Application.getResource("webinterface/" + URLDecoder.decode(filePath, "UTF-8"));
-                if (file.isFile() && file.exists()) {
+                URL file = Application.getRessourceURL("webinterface/" + URLDecoder.decode(filePath, "UTF-8"));
+                if (file != null) {
                     final FileResponse fr = new FileResponse(request, response, file) {
 
                         protected boolean useContentDisposition() {

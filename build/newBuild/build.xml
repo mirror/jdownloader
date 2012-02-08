@@ -382,6 +382,7 @@
 		<buildAddon package="AntiReconnect" include="antireconnect/**/*" />
 		<buildAddon package="Extraction" include="extraction/**/*" />
 		<buildAddon package="folderwatch" include="folderwatch/**/*" />
+		<buildAddon package="webinterface" include="webinterface/**/*" />
 		<delete file="${dist}/Manifest.MF" failonerror="false" />
 	</target>
 
