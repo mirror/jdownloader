@@ -249,76 +249,6 @@
 		<delete file="${dist}/Manifest.MF" failonerror="false" />
 	</target>
 
-	<!--Webupdater-->
-	<target name="jarWebupdater" depends="compile">
-		<mkdir dir="${working}" />
-		<manifest file="${working}/Manifest.MF">
-			<attribute name="Created-By" value="AppWork GmbH" />
-			<attribute name="Main-Class" value="org.appwork.update.Main" />
-		</manifest>
-		<jar file="${working}/Updater.jar" manifest="${working}/Manifest.MF">
-			<zipfileset src="${dep.awu}/libs/miglayout.jar" excludes="META-INF/*" />
-			<fileset dir="${working}">
-							<include name="version.nfo" />
-						</fileset>
-			<fileset dir="${cls}">	
-				<include name="org/appwork/update/**/*" />
-				<include name="org/appwork/controlling/**/*" />
-				<include name="org/appwork/utils/logging/**/*" />
-				<include name="org/appwork/storage/**/*" />
-				<include name="org/appwork/exceptions/WTFException.class" />
-				<include name="org/appwork/utils/images/**/*" />
-				<include name="org/appwork/utils/swing/windowflasher/**/*" />
-				<include name="org/appwork/scheduler/**/*" />
-				<include name="org/appwork/resources/**/*" />
-				<include name="org/appwork/app/**/*" />	
-				<include name="org/appwork/shutdown/**/*" />
-				<include name="org/appwork/utils/net/**/*" />
-				<include name="org/appwork/utils/parser/ShellParser.class" />
-				<include name="org/appwork/net/**/*" />
-				<include name="org/appwork/utils/*.class" />
-				<include name="org/appwork/utils/formatter/**/*" />
-				<include name="org/appwork/utils/event/**/*" />
-				<include name="org/appwork/utils/locale/**/*" />
-				<include name="org/appwork/utils/reflection/**/*" />
-				<include name="org/appwork/txtresource/**/*" />
-				<include name="org/appwork/utils/os/**/*" />
-				<include name="org/appwork/utils/zip/**/*" />
-				<include name="org/appwork/utils/swing/dialog/**/*" />
-				<include name="org/appwork/utils/swing/*.class" />
-				<include name="org/appwork/utils/ImageProvider/**/*" />
-			
-			
-			</fileset>
-		
-			<fileset dir="${dep.update}/themes">
-				<include name="themes/standard/org/appwork/updater/**/*" />
-		</fileset>
-			<fileset dir="${dep.updateclient}/src">
-			
-				<include name="**/*.lng" />
-				<include name="tbs.jar" />
-			
-			</fileset>
-			<fileset dir="${dep.update}/src">
-	
-				<include name="**/*.lng" />
-
-			</fileset>
-			<fileset dir="src">
-				<include name="**/*.lng" />
-		
-			</fileset>
-			<fileset dir="${dep.awu}/src">
-				<include name="**/*.lng" />	
-				<include name="tbs.jar" />
-			
-			</fileset>
-
-		</jar>
-		<delete file="${working}/Manifest.MF" failonerror="false" />
-	</target>
-
 
 
 	<!-- Copies compiled classes(hoster, decrypter, dynamics -->
@@ -427,13 +357,13 @@
 		</signjar>
 	</target>
 
-	<target name="all" depends="clean,compile,copy_res,jarMain,copy_compiled,jarReconnectOptionals,jarWebupdater,jarOptionals,sign">
+	<target name="all" depends="clean,compile,copy_res,jarMain,copy_compiled,jarReconnectOptionals,jarOptionals,sign">
 		<echo message="Finished." />
 	</target>
-	<target name="withoutsign" depends="clean,compile,copy_res,jarMain,copy_compiled,jarReconnectOptionals,jarWebupdater,jarOptionals">
+	<target name="withoutsign" depends="clean,compile,copy_res,jarMain,copy_compiled,jarReconnectOptionals,jarOptionals">
 			<echo message="Finished." />
 		</target>
-	<target name="updater" depends="clean,compile,copy_compiled,jarWebupdater">
+	<target name="updater" depends="clean,compile,copy_compiled">
 			<echo message="Finished." />
 		</target>
 </project>
