@@ -37,7 +37,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+)|(photos|id)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album\\d+_\\d+|photo\\d+_\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+)|(photos|id)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album\\d+_\\d+|photo(\\-)?\\d+_\\d+)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -92,7 +92,7 @@ public class VKontakteRu extends PluginForDecrypt {
                  * http://vk.com/id28426816 http://vk.com/album87171972_0
                  */
                 decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter, progress);
-            } else if (parameter.matches(".*?vk\\.com/photo\\d+_\\d+")) {
+            } else if (parameter.matches(".*?vk\\.com/photo(\\-)?\\d+_\\d+")) {
                 /**
                  * Single photo links, those are just passed to the
                  * hosterplugin! Example:http://vk.com/photo125005168_269986868
@@ -210,7 +210,7 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter + "\n");
             return null;
         }
-        DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + new Regex(parameter, ".*?vk\\.com/photo(.+)").getMatch(0));
+        DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + new Regex(parameter, ".*?vk\\.com/photo" + "(.+)").getMatch(0));
         dl.setProperty("albumid", albumID);
         decryptedLinks.add(dl);
         return decryptedLinks;

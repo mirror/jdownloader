@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "die-schnelle-kuh.de", "otr-share.de" }, urls = { "http://(www\\.)?die\\-schnelle\\-kuh\\.de/\\?file=[^<>\"\\']+", "http://(www\\.)?otr\\-share\\.de/\\?s=download\\&key=[^<>\"\\']+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "die-schnelle-kuh.de", "otr-share.de", "tivootix.co.cc/" }, urls = { "http://(www\\.)?die\\-schnelle\\-kuh\\.de/\\?file=[^<>\"\\']+", "http://(www\\.)?otr\\-share\\.de/\\?s=download\\&key=[^<>\"\\']+", "http://(www\\.)?tivootix\\.co\\.cc/\\?file=[^<>\"\\']+" }, flags = { 0, 0, 0 })
 public class GeneralOtrDecrypter extends PluginForDecrypt {
 
     public GeneralOtrDecrypter(PluginWrapper wrapper) {
@@ -60,8 +60,6 @@ public class GeneralOtrDecrypter extends PluginForDecrypt {
                 return null;
             }
             decryptedLinks.add(createDownloadlink(finallink));
-        } else if (parameter.contains("tivootix.co.cc/")) {
-        } else if (parameter.contains("otr-drive.com/")) {
         } else if (parameter.contains("otr-share.de/")) {
             br.getPage(parameter);
             final String linkTable = br.getRegex("<table align=\"center\" class=\"stable\" width=\"360\">(.*?)</table>").getMatch(0);
@@ -83,6 +81,26 @@ public class GeneralOtrDecrypter extends PluginForDecrypt {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(new Regex(parameter, "otr\\-share\\.de/\\?s=download\\&key=(.+)").getMatch(0));
             fp.addLinks(decryptedLinks);
+        } else if (parameter.contains("tivootix.co.cc/")) {
+            br.getPage(parameter);
+            final String tmplink = br.getRegex("\"(go2\\.php\\?id=\\d+)\"").getMatch(0);
+            if (tmplink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            br.getPage("http://www.tivootix.co.cc/" + tmplink);
+            String[] ochLinks = br.getRegex("title=\"Datei von [^<>\"\\']+ herunterladen\" src=\"[^<>\"\\']+\" alt=\"\" /> [^<>\"\\']+:</b></td><td><a href=\"(http://[^<>\"\\']+)\"").getColumn(0);
+            if (ochLinks == null || ochLinks.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String ochLink : ochLinks) {
+                if (!ochLink.contains("tivootix.co.cc/")) decryptedLinks.add(createDownloadlink(ochLink));
+            }
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(new Regex(parameter, "tivootix\\.co\\.cc/\\?file=(.+)").getMatch(0));
+            fp.addLinks(decryptedLinks);
+        } else if (parameter.contains("otr-drive.com/")) {
         } else if (parameter.contains("otr.seite.com/")) {
         }
 
