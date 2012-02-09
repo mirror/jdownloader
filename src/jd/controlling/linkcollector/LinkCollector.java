@@ -105,7 +105,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             @Override
             public void run() {
-                saveLinkCollectorLinks();
+                IOEQ.getQueue().addWait(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
+
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        saveLinkCollectorLinks();
+                        return null;
+                    }
+                });
             }
 
             @Override
@@ -713,6 +720,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
     }
 
+    private String getIDFromMap(HashMap<String, ArrayList<CrawledLink>> idListMap, CrawledLink l) {
+        Iterator<Entry<String, ArrayList<CrawledLink>>> it = idListMap.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<String, ArrayList<CrawledLink>> elem = it.next();
+            String identifier = elem.getKey();
+            ArrayList<CrawledLink> mapElems = elem.getValue();
+            if (mapElems != null && mapElems.contains(l)) return identifier;
+        }
+        return null;
+    }
+
     /**
      * load all CrawledPackages/CrawledLinks from Database
      */
@@ -759,9 +777,29 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             }
                             filePackage.setControlledBy(LinkCollector.this);
                             CrawledPackageStorable storable = restoreMap.get(filePackage);
-                            if (storable != null && CrawledPackageStorable.TYPE.NORMAL.equals(storable.getType()) && storable.getPackageID() != null) {
-                                /* keep packageMap up2date */
-                                packageMap.put(storable.getPackageID(), filePackage);
+                            if (storable != null) {
+                                if (CrawledPackageStorable.TYPE.NORMAL.equals(storable._getType()) && storable.getPackageID() != null) {
+                                    /* keep packageMap up2date */
+                                    packageMap.put(storable.getPackageID(), filePackage);
+                                } else if (CrawledPackageStorable.TYPE.VARIOUS.equals(storable._getType())) {
+                                    /* restore variousMap */
+                                    for (CrawledLinkStorable link : storable.getLinks()) {
+                                        String id = link.getID();
+                                        if (id != null) {
+                                            ArrayList<CrawledLink> list = getIdentifiedMap(id, variousMap);
+                                            list.add(link._getCrawledLink());
+                                        }
+                                    }
+                                } else if (CrawledPackageStorable.TYPE.OFFLINE.equals(storable._getType())) {
+                                    /* restore variousMap */
+                                    for (CrawledLinkStorable link : storable.getLinks()) {
+                                        String id = link.getID();
+                                        if (id != null) {
+                                            ArrayList<CrawledLink> list = getIdentifiedMap(id, offlineMap);
+                                            list.add(link._getCrawledLink());
+                                        }
+                                    }
+                                }
                             }
                         }
                         packages.addAll(0, lpackages2);
@@ -971,6 +1009,21 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             CrawledPackageStorable storable = new CrawledPackageStorable(pkg);
                             /* save packageID */
                             storable.setPackageID(LinkCollector.this.getPackageMapID(pkg));
+                            if (!CrawledPackageStorable.TYPE.NORMAL.equals(storable.getType())) {
+                                if (CrawledPackageStorable.TYPE.VARIOUS.equals(storable.getType())) {
+                                    /* save ID for variousMap */
+                                    for (CrawledLinkStorable link : storable.getLinks()) {
+                                        CrawledLink cLink = link._getCrawledLink();
+                                        link.setID(getIDFromMap(variousMap, cLink));
+                                    }
+                                } else if (CrawledPackageStorable.TYPE.OFFLINE.equals(storable.getType())) {
+                                    /* save ID for variousMap */
+                                    for (CrawledLinkStorable link : storable.getLinks()) {
+                                        CrawledLink cLink = link._getCrawledLink();
+                                        link.setID(getIDFromMap(offlineMap, cLink));
+                                    }
+                                }
+                            }
                             String string = JSonStorage.toString(storable);
                             storable = null;
                             byte[] bytes = string.getBytes("UTF-8");

@@ -56,7 +56,10 @@ public class RPNetBiz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) {
-            con.disconnect();
+            try {
+                br.followConnection();
+            } catch (final Throwable e) {
+            }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dl.startDownload();

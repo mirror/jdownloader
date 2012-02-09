@@ -10,7 +10,8 @@ import org.appwork.storage.Storable;
 
 public class FilePackageStorable implements Storable {
 
-    private FilePackage filePackage;
+    private FilePackage                     filePackage;
+    private ArrayList<DownloadLinkStorable> links;
 
     @SuppressWarnings("unused")
     private FilePackageStorable(/* Storable */) {
@@ -19,6 +20,12 @@ public class FilePackageStorable implements Storable {
 
     public FilePackageStorable(FilePackage filePackage) {
         this.filePackage = filePackage;
+        links = new ArrayList<DownloadLinkStorable>(filePackage.size());
+        synchronized (filePackage) {
+            for (DownloadLink link : filePackage.getChildren()) {
+                links.add(new DownloadLinkStorable(link));
+            }
+        }
     }
 
     public String getName() {
@@ -62,17 +69,12 @@ public class FilePackageStorable implements Storable {
     }
 
     public ArrayList<DownloadLinkStorable> getLinks() {
-        ArrayList<DownloadLinkStorable> ret = new ArrayList<DownloadLinkStorable>(filePackage.size());
-        synchronized (filePackage) {
-            for (DownloadLink link : filePackage.getChildren()) {
-                ret.add(new DownloadLinkStorable(link));
-            }
-        }
-        return ret;
+        return links;
     }
 
     public void setLinks(ArrayList<DownloadLinkStorable> links) {
         if (links != null) {
+            this.links = links;
             synchronized (filePackage) {
                 for (DownloadLinkStorable link : links) {
                     filePackage.add(link._getDownloadLink());

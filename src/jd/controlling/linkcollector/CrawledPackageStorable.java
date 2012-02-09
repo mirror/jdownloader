@@ -19,6 +19,7 @@ public class CrawledPackageStorable implements Storable {
     private TYPE   type      = null;
     private String packageID = null;
 
+    /* this one is correct during JSON serialization */
     public TYPE getType() {
         if (pkg instanceof OfflineCrawledPackage) return TYPE.OFFLINE;
         if (pkg instanceof PermanentOfflinePackage) return TYPE.POFFLINE;
@@ -30,11 +31,13 @@ public class CrawledPackageStorable implements Storable {
         this.type = type;
     }
 
+    /* this one was set by JSON on restore */
     public TYPE _getType() {
         return type;
     }
 
-    private CrawledPackage pkg;
+    private CrawledPackage                 pkg;
+    private ArrayList<CrawledLinkStorable> links;
 
     public String getComment() {
         return pkg.getComment();
@@ -47,10 +50,17 @@ public class CrawledPackageStorable implements Storable {
     @SuppressWarnings("unused")
     private CrawledPackageStorable(/* storable */) {
         pkg = new CrawledPackage();
+        links = new ArrayList<CrawledLinkStorable>();
     }
 
     public CrawledPackageStorable(CrawledPackage pkg) {
         this.pkg = pkg;
+        links = new ArrayList<CrawledLinkStorable>(pkg.getChildren().size());
+        synchronized (pkg) {
+            for (CrawledLink link : pkg.getChildren()) {
+                links.add(new CrawledLinkStorable(link));
+            }
+        }
     }
 
     public CrawledPackage _getCrawledPackage() {
@@ -72,13 +82,7 @@ public class CrawledPackageStorable implements Storable {
     }
 
     public ArrayList<CrawledLinkStorable> getLinks() {
-        ArrayList<CrawledLinkStorable> ret = new ArrayList<CrawledLinkStorable>(pkg.getChildren().size());
-        synchronized (pkg) {
-            for (CrawledLink link : pkg.getChildren()) {
-                ret.add(new CrawledLinkStorable(link));
-            }
-        }
-        return ret;
+        return links;
     }
 
     public boolean isAutoExtractionEnabled() {
@@ -112,6 +116,7 @@ public class CrawledPackageStorable implements Storable {
 
     public void setLinks(ArrayList<CrawledLinkStorable> links) {
         if (links != null) {
+            this.links = links;
             synchronized (pkg) {
                 for (CrawledLinkStorable link : links) {
                     CrawledLink l = link._getCrawledLink();

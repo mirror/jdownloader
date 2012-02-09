@@ -223,6 +223,10 @@ public abstract class PluginForDecrypt extends Plugin {
                 ((JDPluginLogger) logger).logInto(JDLogger.getLogger());
             }
         }
+        if (logger instanceof JDPluginLogger) {
+            /* make sure we use the right logger */
+            ((JDPluginLogger) logger).clear();
+        }
         return tmpLinks;
     }
 

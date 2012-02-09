@@ -8,6 +8,15 @@ import org.appwork.storage.Storable;
 public class CrawledLinkStorable implements Storable {
 
     private CrawledLink link;
+    private String      id = null;
+
+    public String getID() {
+        return id;
+    }
+
+    public void setID(String id) {
+        this.id = id;
+    }
 
     public String getName() {
         return link._getName();

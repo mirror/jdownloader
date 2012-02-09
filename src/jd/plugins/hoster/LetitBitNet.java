@@ -265,6 +265,13 @@ public class LetitBitNet extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             dlUrl = getUrl(account);
             if (dlUrl == null && br.containsHTML("callback_file_unavailable")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
+            if (dlUrl == null && br.containsHTML("If you already have a premium")) {
+                /* no url found, maybe our login/php session expired */
+                synchronized (LOCK) {
+                    account.setProperty("cookies", null);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server or Session error", 2 * 60 * 1000l);
+                }
+            }
             if (dlUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {

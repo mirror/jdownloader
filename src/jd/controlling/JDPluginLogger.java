@@ -8,11 +8,14 @@ import java.util.logging.Logger;
 
 import jd.JDInitFlags;
 
+import org.appwork.utils.logging.FileLogFormatter;
+
 public class JDPluginLogger extends Logger {
 
-    private ArrayList<LogRecord>       records = new ArrayList<LogRecord>();
+    private ArrayList<LogRecord>       records   = new ArrayList<LogRecord>();
 
-    public static final JDPluginLogger Trash   = new JDPluginLogger("TRASH", true);
+    public static final JDPluginLogger Trash     = new JDPluginLogger("TRASH", true);
+    private final FileLogFormatter     formatter = new FileLogFormatter();
 
     public JDPluginLogger(String name) {
         this(name, false);
@@ -27,35 +30,28 @@ public class JDPluginLogger extends Logger {
             for (Handler handler : JDLogger.getLogger().getHandlers()) {
                 addHandler(handler);
             }
-        } else {
-            this.addHandler(new Handler() {
-                @Override
-                public void publish(LogRecord record) {
-                    synchronized (records) {
-                        records.add(record);
-                    }
-                }
-
-                @Override
-                public void flush() {
-                }
-
-                @Override
-                public void close() throws SecurityException {
-                }
-
-            });
         }
+        this.addHandler(new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                synchronized (records) {
+                    records.add(record);
+                }
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() throws SecurityException {
+            }
+
+        });
     }
 
     protected JDPluginLogger(String name, String resourceBundleName) {
         super(name, resourceBundleName);
-    }
-
-    public ArrayList<LogRecord> getRecords() {
-        synchronized (records) {
-            return new ArrayList<LogRecord>(records);
-        }
     }
 
     public void clear() {
@@ -76,4 +72,17 @@ public class JDPluginLogger extends Logger {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        if (records.size() == 0) return "empty logger";
+        StringBuilder sb = new StringBuilder();
+        synchronized (records) {
+            for (LogRecord record : records) {
+                sb.append(formatter.format(record));
+            }
+        }
+        return sb.toString();
+    }
+
 }

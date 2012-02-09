@@ -164,7 +164,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
 
     private void handlePlugin() {
         try {
-
             linkStatus.setStatusText(_JDT._.gui_download_create_connection());
             currentPlugin.init();
             if ((downloadLink.getLinkStatus().getRetryCount()) <= currentPlugin.getMaxRetries()) {
@@ -652,6 +651,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     // @Override
     @Override
     public void run() {
+        JDPluginLogger llogger = null;
         try {
             stateMachine.setStatus(RUNNING_STATE);
             /**
@@ -668,7 +668,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             downloadLink.setLivePlugin(downloadLink.getDefaultPlugin().getNewInstance());
             currentPlugin = downloadLink.getLivePlugin();
             currentPlugin.setIOPermission(ioP);
-            JDPluginLogger llogger = null;
             currentPlugin.setLogger(llogger = new JDPluginLogger(downloadLink.getHost() + ":Download:" + downloadLink.getName()));
             super.setLogger(llogger);
             /*
@@ -718,6 +717,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             }
             if (SwingGui.getInstance() != null) downloadLink.requestGuiUpdate();
         } finally {
+            if (llogger != null) llogger.clear();
             try {
                 linkStatus.setInProgress(false);
                 /* cleanup the DownloadInterface/Controller references */
