@@ -79,20 +79,19 @@ public class FileServeCom extends PluginForHost {
             final StringBuilder sb = new StringBuilder();
             while (true) {
                 sb.delete(0, sb.capacity());
-                sb.append("submit=Check+Urls&urls=");
+                sb.append("shortens=");
                 links.clear();
                 while (true) {
                     /*
                      * we test 100 links at once - its tested with 500 links,
                      * probably we could test even more at the same time...
                      */
-                    if (index == urls.length || links.size() > 100) {
+                    if (index == urls.length || links.size() > 40) {
                         break;
                     }
                     links.add(urls[index]);
                     index++;
                 }
-                this.br.getPage("http://fileserve.com/link-checker.php");
                 int c = 0;
                 for (final DownloadLink dl : links) {
                     /*
@@ -102,30 +101,31 @@ public class FileServeCom extends PluginForHost {
                     if (c > 0) {
                         sb.append("%0D%0A");
                     }
-                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                    sb.append(Encoding.urlEncode(getID(dl)));
                     c++;
                 }
-                this.br.postPage("http://fileserve.com/link-checker.php", sb.toString());
+                sb.append("&submit=Submit+Query");
+                this.br.postPage("http://app.fileserve.com/api/linkchecker/", sb.toString());
                 for (final DownloadLink dl : links) {
-                    final String fileid = new Regex(dl.getDownloadURL(), this.FILEIDREGEX).getMatch(0);
+                    final String fileid = getID(dl);
                     if (fileid == null) {
                         logger.warning("Fileserve availablecheck is broken!");
                         return false;
                     }
-                    final String regexForThisLink = "(<td>http://fileserve\\.com/file/" + fileid + "([\r\n\t]+)?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>))";
+                    final String regexForThisLink = "\"" + fileid + "\":\\{(.*?)\\}";
                     final String theData = this.br.getRegex(regexForThisLink).getMatch(0);
                     if (theData == null) {
                         logger.warning("Fileserve availablecheck is broken!");
                         return false;
                     }
-                    final Regex linkinformation = new Regex(theData, "<td>http://fileserve\\.com/file/" + fileid + "([\r\n\t]+)?</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(.*?)</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>)");
-                    final String status = linkinformation.getMatch(3);
+                    final Regex linkinformation = new Regex(theData, "status\":\"(.*?)\".*?filename\":\"(.*?)\".*?filesize\":\"(\\d+)");
+                    final String status = linkinformation.getMatch(0);
                     String filename = linkinformation.getMatch(1);
                     String filesize = linkinformation.getMatch(2);
                     if (filename == null || filesize == null) {
                         logger.warning("Fileserve availablecheck is broken!");
                         dl.setAvailable(false);
-                    } else if (!status.equals("Available") || filename.equals("--") || filesize.equals("--")) {
+                    } else if (!status.equalsIgnoreCase("Available") || filename.equals("--") || filesize.equals("--")) {
                         filename = fileid;
                         dl.setAvailable(false);
                     } else {
@@ -138,7 +138,7 @@ public class FileServeCom extends PluginForHost {
                             /* workaround for 1.000,00 MB bug */
                             filesize = filesize.replaceFirst("\\.", "");
                         }
-                        dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                        dl.setDownloadSize(Long.parseLong(filesize));
                     }
                 }
                 if (index == urls.length) {
