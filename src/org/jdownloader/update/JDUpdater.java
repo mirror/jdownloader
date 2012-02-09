@@ -17,8 +17,11 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.update.Options;
 import org.appwork.update.exchange.UpdateFile;
 import org.appwork.update.exchange.UpdatePackage;
+import org.appwork.update.standalone.UpdaterHttpClientImpl;
+import org.appwork.update.standalone.gui.UpdateFoundDialog;
 import org.appwork.update.updateclient.InstalledFile;
 import org.appwork.update.updateclient.RestartEvent;
 import org.appwork.update.updateclient.UpdateHttpClient;
@@ -42,7 +45,6 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.update.gui.UpdateFoundDialog;
 
 public class JDUpdater extends Updater implements Runnable {
     private static final JDUpdater INSTANCE = new JDUpdater();

@@ -82,7 +82,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingMac.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingWin.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/swingx.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/JDUpdater"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/UpdateClient"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/mqtt.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/htmlUnit/commons-codec-1.4.jar"/>

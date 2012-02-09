@@ -254,15 +254,14 @@
 		<mkdir dir="${working}" />
 		<manifest file="${working}/Manifest.MF">
 			<attribute name="Created-By" value="AppWork GmbH" />
-			<attribute name="Main-Class" value="org.jdownloader.update.Main" />
+			<attribute name="Main-Class" value="org.appwork.update.Main" />
 		</manifest>
 		<jar file="${working}/Updater.jar" manifest="${working}/Manifest.MF">
 			<zipfileset src="${dep.awu}/libs/miglayout.jar" excludes="META-INF/*" />
 			<fileset dir="${working}">
 							<include name="version.nfo" />
 						</fileset>
-			<fileset dir="${cls}">
-				<include name="org/jdownloader/update/**/*" />
+			<fileset dir="${cls}">	
 				<include name="org/appwork/update/**/*" />
 				<include name="org/appwork/controlling/**/*" />
 				<include name="org/appwork/utils/logging/**/*" />
@@ -293,7 +292,7 @@
 			</fileset>
 		
 			<fileset dir="${dep.update}/themes">
-				<include name="themes/standard/org/jdownloader/updater/**/*" />
+				<include name="themes/standard/org/appwork/updater/**/*" />
 		</fileset>
 			<fileset dir="${dep.updateclient}/src">
 			

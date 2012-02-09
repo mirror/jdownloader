@@ -17,10 +17,11 @@ import jd.gui.swing.jdgui.JDGui;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.resources.AWUTheme;
+import org.appwork.update.standalone.gui.UpdaterCoreGui;
+import org.appwork.update.standalone.translate.T;
 import org.appwork.update.updateclient.UpdaterState;
 import org.appwork.update.updateclient.event.UpdaterEvent;
 import org.appwork.update.updateclient.event.UpdaterListener;
-import org.appwork.update.updateclient.gui.UpdaterCoreGui;
 import org.appwork.utils.locale._AWU;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -28,7 +29,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.update.translate.T;
 
 public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListener {
 
