@@ -61,7 +61,7 @@ public class Netloadin extends PluginForHost {
     }
 
     private void checkErrors(DownloadLink downloadLink, Browser br, boolean checkFail) throws Exception {
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("index.php")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 5 * 60 * 1000l);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().endsWith("index.php")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 5 * 60 * 1000l);
         String state = br.getRegex("state\":\"(.*?)\"").getMatch(0);
         if ("hddcrash".equalsIgnoreCase(state)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HDDCrash(In Recovery)", 12 * 60 * 60 * 1000l);
         if ("maintenance".equalsIgnoreCase(state)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maintenance", 2 * 60 * 60 * 1000l);

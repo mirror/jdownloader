@@ -89,7 +89,7 @@ public class LetitBitNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 5;
     }
 
     private String getUrl(Account account) throws IOException {

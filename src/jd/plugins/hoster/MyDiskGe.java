@@ -66,6 +66,7 @@ public class MyDiskGe extends PluginForHost {
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
         String filename = br.getRegex("style='margin-top:320px;margin-bottom:5px;'>ფაილის სახელი -(.*?)</div>").getMatch(0);
+        if (filename == null) filename = br.getRegex("DownloadFileCode\\(.*?div style.*?><h5>(.*?)</h").getMatch(0);
         String filesize = br.getRegex("style='margin-top:5px;margin-bottom:5px;'>ფაილის ზომა  -(.*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (filename.length() == 0 || filesize.equals(" byte")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

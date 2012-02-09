@@ -71,6 +71,7 @@ public class FileServeCom extends PluginForHost {
      */
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
+        boolean seemsOkay = false;
         try {
             br.setCustomCharset("utf-8");
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -128,6 +129,7 @@ public class FileServeCom extends PluginForHost {
                         filename = fileid;
                         dl.setAvailable(false);
                     } else {
+                        seemsOkay = true;
                         dl.setAvailable(true);
                     }
                     dl.setName(filename);
@@ -146,7 +148,12 @@ public class FileServeCom extends PluginForHost {
         } catch (final Exception e) {
             return false;
         }
-        return true;
+        if (seemsOkay == false) {
+            for (DownloadLink link : urls) {
+                link.setAvailableStatus(AvailableStatus.UNCHECKED);
+            }
+        }
+        return seemsOkay;
     }
 
     @Override
@@ -588,8 +595,24 @@ public class FileServeCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         correctHeaders(this.br);
         if (this.checkLinks(new DownloadLink[] { link }) == false) {
-            link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        } else if (!link.isAvailabilityStatusChecked()) {
+            /* linkcheck broken */
+            br.getPage(link.getDownloadURL());
+            if (br.containsHTML("The file could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String filename = br.getRegex("down_arrow.*?h1>(.*?)<").getMatch(0);
+            String filesize = br.getRegex("down_arrow.*?span.*?strong>.*?([0-9\\. GBMK]+)").getMatch(0);
+            if (filename != null) {
+                link.setName(filename);
+            }
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
+            if (filename != null) {
+                link.setAvailableStatus(AvailableStatus.TRUE);
+            } else {
+                link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+            }
+        }
+        if (!link.isAvailabilityStatusChecked()) {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         } else if (!link.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return link.getAvailableStatus();

@@ -69,7 +69,7 @@ public class BuyAction extends AbstractAction {
                     }
                 }
                 if (plg == null) {
-                    plg = HostPluginController.getInstance().get("filesonic.com");
+                    plg = HostPluginController.getInstance().get("filepost.com");
                 }
                 final LazyHostPlugin defaultSelection = plg;
                 try {
