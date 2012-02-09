@@ -42,17 +42,13 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(?!download/)[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
 
     private static final String CAPTCHATEXT    = "hitfile\\.net/captcha/";
-
     private static final String RECAPTCHATEXT  = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-
     private static final String WAITTIMEREGEX1 = "limit: (\\d+)";
-
     private static final String WAITTIMEREGEX2 = "id=\\'timeout\\'>(\\d+)</span>";
-
     public static final Object  LOCK           = new Object();
     private static final String MAINPAGE       = "http://hitfile.net";
     private static final String ENPAGE         = "http://hitfile.net/lang/en";
@@ -60,6 +56,31 @@ public class HitFileNet extends PluginForHost {
     public HitFileNet(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://hitfile.net/premium/emoney/5");
+    }
+
+    // Also check TurboBitNet plugin if this one is broken
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
+        synchronized (LOCK) {
+            if (isAborted(link)) { return AvailableStatus.TRUE; }
+            /* wait 3 seconds between filechecks, otherwise they'll block our IP */
+            Thread.sleep(3000);
+        }
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getHeaders().put("Referer", link.getDownloadURL());
+        br.getPage(ENPAGE);
+        if (!br.getURL().equals(link.getDownloadURL())) {
+            br.getPage(link.getDownloadURL());
+        }
+        if (br.containsHTML("(<h1>File was not found|It could possibly be deleted\\.)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        final Regex fileInfo = br.getRegex("class=\\'file-icon\\d+ [a-z0-9]+\\'></span><span>(.*?)</span>[\n\t\r ]+<span style=\"color: #626262; font\\-weight: bold; font\\-size: 14px;\">\\((.*?)\\)</span>");
+        final String filename = fileInfo.getMatch(0);
+        final String filesize = fileInfo.getMatch(1);
+        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -263,31 +284,6 @@ public class HitFileNet extends PluginForHost {
             }
             return next[0] + result.toString();
         }
-    }
-
-    // Also check TurboBitNet plugin if this one is broken
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
-        synchronized (LOCK) {
-            if (isAborted(link)) { return AvailableStatus.TRUE; }
-            /* wait 3 seconds between filechecks, otherwise they'll block our IP */
-            Thread.sleep(3000);
-        }
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getHeaders().put("Referer", link.getDownloadURL());
-        br.getPage(ENPAGE);
-        if (!br.getURL().equals(link.getDownloadURL())) {
-            br.getPage(link.getDownloadURL());
-        }
-        if (br.containsHTML("(<h1>File was not found|It could possibly be deleted\\.)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        final Regex fileInfo = br.getRegex("class=\\'file-icon\\d+ [a-z0-9]+\\'></span><span>(.*?)</span>[\n\t\r ]+<span style=\"color: #626262; font-weight: bold; font-size: 14px;\">\\((.*?)\\)</span>");
-        final String filename = fileInfo.getMatch(0);
-        final String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
-        return AvailableStatus.TRUE;
     }
 
     @Override
