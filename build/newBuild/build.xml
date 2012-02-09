@@ -3,7 +3,7 @@
 	<property name="dep.awu" value="../AppWorkUtils" />
 	<property name="dep.browser" value="../JDBrowser" />
 	<property name="dep.updateclient" value="../UpdateClient" />
-	<property name="dep.update" value="../JDUpdater" />
+
 	<property name="debug" value="true" />
 
 
@@ -24,7 +24,7 @@
 		<fileset dir="${dep.browser}/libs" includes="**/*.jar" />
 	
 		<fileset dir="${dep.updateclient}/libs" includes="**/*.jar" />
-		<fileset dir="${dep.update}/libs" includes="**/*.jar" />
+
 
 
 		<fileset dir="${res}/libs" includes="**/*.jar" />
@@ -62,10 +62,7 @@
 			<classpath refid="classpath" />
 
 		</javac>
-		<javac srcdir="${dep.update}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
-			<classpath refid="classpath" />
-
-		</javac>
+	
 
 		<javac srcdir="src" debug="${debug}" excludes="jd/utils/dev/*,org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/neembuu/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
@@ -235,10 +232,7 @@
 				<include name="**/*.lng" />
 				<include name="**/*.png" />
 			</fileset>
-			<fileset dir="${dep.update}/src">
-				<include name="**/*.lng" />
-				<include name="**/*.png" />
-			</fileset>
+	
 	
 
 			<fileset dir="${res}">
