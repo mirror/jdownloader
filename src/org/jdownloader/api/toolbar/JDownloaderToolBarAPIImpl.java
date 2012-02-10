@@ -13,11 +13,15 @@ import javax.swing.JFrame;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkchecker.LinkCheckerHandler;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.BrokenCrawlerHandler;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerFilter;
+import jd.controlling.linkcrawler.LinkCrawlerHandler;
 import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.gui.UIConstants;
@@ -27,6 +31,7 @@ import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.PluginForHost;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
@@ -57,12 +62,17 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
 
     private class CheckedDom extends ChunkedDom {
 
+        protected final String ID;
+
         protected CheckedDom(ChunkedDom dom) {
             this.completeDOM = dom.completeDOM;
             this.URL = dom.URL;
+            this.ID = "check" + System.nanoTime();
         }
 
-        protected int status = 0;
+        protected LinkChecker<CrawledLink> linkChecker;
+        protected LinkCrawler              linkCrawler;
+        protected int                      status = 0;
     }
 
     private HashMap<String, MinTimeWeakReference<ChunkedDom>> domSessions   = new HashMap<String, MinTimeWeakReference<ChunkedDom>>();
@@ -333,12 +343,44 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         try {
             ChunkedDom chunkedDom = getCompleteDOM(request);
             if (chunkedDom != null) {
-                CheckedDom checkSession = new CheckedDom(chunkedDom);
-                String checkID = "check" + System.nanoTime();
+                final CheckedDom checkSession = new CheckedDom(chunkedDom);
                 synchronized (checkSessions) {
-                    checkSessions.put(checkID, checkSession);
+                    checkSessions.put(checkSession.ID, checkSession);
                 }
-                ret.put("checkid", checkID);
+                ret.put("checkid", checkSession.ID);
+                checkSession.linkCrawler = new LinkCrawler();
+                final LinkCrawlerHandler defaultHandler = checkSession.linkCrawler.getHandler();
+                checkSession.linkCrawler.setFilter(new LinkCrawlerFilter() {
+                    /* ignore crawler/ftp/http links */
+                    public boolean dropByUrl(CrawledLink link) {
+                        if (link.getdPlugin() != null) return true;
+                        PluginForHost plugin = link.gethPlugin();
+                        if (plugin != null && ("ftp".equalsIgnoreCase(plugin.getHost()) || "http links".equalsIgnoreCase(plugin.getHost()))) return true;
+                        return false;
+                    }
+
+                    public boolean dropByFileProperties(CrawledLink link) {
+                        return false;
+                    }
+                });
+                checkSession.linkChecker = new LinkChecker<CrawledLink>();
+                checkSession.linkChecker.setLinkCheckHandler(new LinkCheckerHandler<CrawledLink>() {
+
+                    public void linkCheckDone(CrawledLink link) {
+                        defaultHandler.handleFinalLink(link);
+                    }
+                });
+                checkSession.linkCrawler.setHandler(new LinkCrawlerHandler() {
+
+                    public void handleFinalLink(CrawledLink link) {
+                        checkSession.linkChecker.check(link);
+                    }
+
+                    public void handleFilteredLink(CrawledLink link) {
+                        defaultHandler.handleFilteredLink(link);
+                    }
+                });
+                checkSession.linkCrawler.crawl(checkSession.completeDOM);
             }
             ret.put("status", true);
             ret.put("msg", (Object) null);
@@ -381,18 +423,11 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         String ret = "-1";
         if (session != null) {
             synchronized (session) {
-                switch (session.status) {
-                case 0:
-                    session.status = 1;
+                boolean stillRunning = session.linkChecker.isRunning() || session.linkCrawler.isCrawling();
+                if (stillRunning) {
                     ret = "0";
-                    break;
-                case 1:
-                    session.status = 2;
-                    ret = "var jDownloaderObj = {statusCheck: function(){alert(\"jDObj: script injected to page successfully\");}};jDownloaderObj.statusCheck();";
-                    break;
-                default:
-                    ret = "-1";
-                    break;
+                } else {
+                    ret = "var jDownloaderObj = {statusCheck: function(){alert(\"jDObj: " + session.linkCrawler.getCrawledLinks().size() + "\");}};jDownloaderObj.statusCheck();";
                 }
             }
         }

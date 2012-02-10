@@ -773,7 +773,7 @@ public class LinkCrawler implements IOPermission {
                 /* link is filtered, stop here */
                 return;
             }
-            if (cryptedLink == null || cryptedLink.getcPlugin() == null || cryptedLink.getURL() == null) return;
+            if (cryptedLink.getcPlugin() == null || cryptedLink.getURL() == null) return;
             PluginsC plg = null;
             try {
                 plg = cryptedLink.getcPlugin().getClass().newInstance();
@@ -835,7 +835,7 @@ public class LinkCrawler implements IOPermission {
                 /* link is filtered, stop here */
                 return;
             }
-            if (cryptedLink == null || cryptedLink.getdPlugin() == null || cryptedLink.getCryptedLink() == null) return;
+            if (cryptedLink.getdPlugin() == null || cryptedLink.getCryptedLink() == null) return;
             PluginForDecrypt oplg = cryptedLink.getdPlugin();
             PluginForDecrypt wplg = oplg.getNewInstance();
             wplg.setIOPermission(this);
