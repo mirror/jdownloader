@@ -4,6 +4,7 @@ import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.SessionRemoteAPI;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.api.accounts.AccountAPIImpl;
 import org.jdownloader.api.captcha.CaptchaAPIImpl;
 import org.jdownloader.api.downloads.DownloadsAPIImpl;
 import org.jdownloader.api.jd.JDAPIImpl;
@@ -54,6 +55,7 @@ public class RemoteAPIController {
         register(new DownloadsAPIImpl());
         register(new AdvancedConfigManagerAPIImpl());
         register(new JDownloaderToolBarAPIImpl());
+        register(new AccountAPIImpl());
     }
 
     public synchronized void register(final RemoteAPIInterface x, boolean forceRegister) {

@@ -89,9 +89,16 @@ public class ImgSrcRu extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        String name = "";
+        if (username != null) {
+            name = username + " ";
+        }
         if (fpName != null) {
+            name = name + fpName;
+        }
+        if (name != null && name.length() > 0) {
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(Encoding.htmlDecode(name.trim()));
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;

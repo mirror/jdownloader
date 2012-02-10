@@ -20,30 +20,32 @@ import jd.config.Property;
 import jd.controlling.AccountController;
 
 import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.UniqueSessionID;
 
 public class Account extends Property {
 
-    private static final long serialVersionUID      = -7578649066389032068L;
+    private static final long         serialVersionUID      = -7578649066389032068L;
 
-    private String            user;
-    private String            pass;
+    private String                    user;
+    private String                    pass;
 
-    private boolean           enabled               = true;
-    private boolean           valid                 = true;
+    private boolean                   enabled               = true;
+    private boolean                   valid                 = true;
 
-    private transient long    tmpDisabledIntervalv3 = 10 * 60 * 1000;
-    private transient boolean tempDisabled          = false;
-    private transient long    tmpDisabledTime       = 0;
+    private transient long            tmpDisabledIntervalv3 = 10 * 60 * 1000;
+    private transient boolean         tempDisabled          = false;
+    private transient long            tmpDisabledTime       = 0;
+    private transient UniqueSessionID ID                    = new UniqueSessionID();
 
     /* keep for comp. reasons */
-    private String            hoster                = null;
-    private AccountInfo       accinfo               = null;
+    private String                    hoster                = null;
+    private AccountInfo               accinfo               = null;
     /**
      * if an account becomes invalid, or outdated, we can set active to false.
      * enabled should be used for user en/disable active should be used to
      * en/disable the account programmatically
      */
-    private boolean           active;
+    private boolean                   active;
 
     public boolean isActive() {
 
@@ -157,6 +159,11 @@ public class Account extends Property {
         tmpDisabledIntervalv3 = 10 * 60 * 1000l;
         tempDisabled = false;
         tmpDisabledTime = 0;
+        ID = new UniqueSessionID();
+    }
+
+    public UniqueSessionID getID() {
+        return ID;
     }
 
     public boolean isTempDisabled() {

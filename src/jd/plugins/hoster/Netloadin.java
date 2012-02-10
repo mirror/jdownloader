@@ -236,6 +236,10 @@ public class Netloadin extends PluginForHost {
         loginAPI(account, null);
         String cookie = br.getCookie("http://www.netload.in", "cookie_user");
         if (cookie == null) {
+            if (br.containsHTML("too_many_logins_wait_5_min")) {
+                logger.info("too_many_logins_wait_5_min");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             logger.severe("no cookie!");
             logger.severe(br.toString());
             try {
@@ -295,7 +299,6 @@ public class Netloadin extends PluginForHost {
                 if ("disallowed_agent".equalsIgnoreCase(res) || "unknown_auth".equalsIgnoreCase(res)) {
                     logger.severe("api reports: " + res);
                     ai.setStatus("api reports: " + res);
-
                     if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "Unexpected error occured during login: '" + res + "'\r\nPlease contact JDownloader Support.");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if ("0".equalsIgnoreCase(res)) {
@@ -312,6 +315,10 @@ public class Netloadin extends PluginForHost {
                 } else if ("unknown_password".equalsIgnoreCase(res) || "wrong_password".equalsIgnoreCase(res)) {
                     ai.setStatus("Wrong password");
                     if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "The username '" + account.getUser() + "' is ok, but the given password is wrong.\r\nPlease check your Password!");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if ("login_failed".equalsIgnoreCase(res)) {
+                    ai.setStatus("Login failed");
+                    if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "Login failed!\r\nPlease check your Username and Password!");
 
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else if ("-1".equalsIgnoreCase(res)) {

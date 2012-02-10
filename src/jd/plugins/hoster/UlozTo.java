@@ -40,7 +40,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://(www\\.)?((uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[0-9]+/.+|bagruj\\.cz/[a-z0-9]{12}/.*?\\.html)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://(www\\.)?((uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[a-zA-Z0-9]+/.+|bagruj\\.cz/[a-z0-9]{12}/.*?\\.html)" }, flags = { 2 })
 public class UlozTo extends PluginForHost {
 
     private static final String REPEAT_CAPTCHA = "REPEAT_CAPTCHA";
