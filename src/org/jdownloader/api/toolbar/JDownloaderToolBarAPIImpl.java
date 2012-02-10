@@ -72,7 +72,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
 
         protected LinkChecker<CrawledLink> linkChecker;
         protected LinkCrawler              linkCrawler;
-        protected int                      status = 0;
+        boolean                            finished = false;
     }
 
     private HashMap<String, MinTimeWeakReference<ChunkedDom>> domSessions   = new HashMap<String, MinTimeWeakReference<ChunkedDom>>();
@@ -416,19 +416,27 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         CheckedDom session = null;
         synchronized (checkSessions) {
             session = checkSessions.get(checkID);
-            if (session != null && session.status == 2) {
+            if (session != null && session.finished) {
                 checkSessions.remove(checkID);
             }
         }
+        boolean finished = false;
         String ret = "-1";
         if (session != null) {
             synchronized (session) {
-                boolean stillRunning = session.linkChecker.isRunning() || session.linkCrawler.isCrawling();
+                boolean stillRunning = session.linkChecker.isRunning() || session.linkCrawler.isRunning();
                 if (stillRunning) {
+                    session.finished = false;
                     ret = "0";
                 } else {
+                    finished = session.finished = true;
                     ret = "var jDownloaderObj = {statusCheck: function(){alert(\"jDObj: " + session.linkCrawler.getCrawledLinks().size() + "\");}};jDownloaderObj.statusCheck();";
                 }
+            }
+        }
+        if (finished) {
+            synchronized (checkSessions) {
+                checkSessions.remove(checkID);
             }
         }
         writeString(response, request, ret, false);

@@ -9,4 +9,6 @@ import org.appwork.remoteapi.RemoteAPIInterface;
 public interface AccountAPI extends RemoteAPIInterface {
 
     public List<AccountStorable> list();
+
+    public boolean remove(Long[] ids);
 }

@@ -757,6 +757,10 @@ public class LinkCrawler implements IOPermission {
         return crawler.get() == 0;
     }
 
+    public boolean isRunning() {
+        return crawler.get() > 0;
+    }
+
     public static boolean isCrawling() {
         return CRAWLER.get() > 0;
     }

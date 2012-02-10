@@ -310,7 +310,10 @@ public class AccountController implements AccountControllerListener {
                 ret.put(next.getKey(), list);
 
                 for (AccountData ad : next.getValue()) {
-                    list.add(ad.toAccount());
+                    Account acc;
+                    list.add(acc = ad.toAccount());
+                    /* make sure hostername is set */
+                    acc.setHoster(next.getKey());
                 }
             }
         }
