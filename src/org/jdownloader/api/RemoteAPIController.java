@@ -6,6 +6,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.api.accounts.AccountAPIImpl;
 import org.jdownloader.api.captcha.CaptchaAPIImpl;
+import org.jdownloader.api.content.ContentAPIImpl;
 import org.jdownloader.api.downloads.DownloadsAPIImpl;
 import org.jdownloader.api.jd.JDAPIImpl;
 import org.jdownloader.api.toolbar.JDownloaderToolBarAPIImpl;
@@ -56,6 +57,7 @@ public class RemoteAPIController {
         register(new AdvancedConfigManagerAPIImpl());
         register(new JDownloaderToolBarAPIImpl());
         register(new AccountAPIImpl());
+        register(new ContentAPIImpl());
     }
 
     public synchronized void register(final RemoteAPIInterface x, boolean forceRegister) {
