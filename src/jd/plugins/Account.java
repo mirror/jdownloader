@@ -48,7 +48,6 @@ public class Account extends Property {
     private boolean                   active;
 
     public boolean isActive() {
-
         return active;
     }
 

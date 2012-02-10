@@ -66,6 +66,7 @@ public class OronCom extends PluginForHost {
 
     public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
         // Some waittimes...
+        if (brbefore.contains("class=\"err\">Site maintenance mode")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Site maintenance mode", 10 * 60 * 1000l); }
         if (brbefore.contains("err\">Expired session<\"")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
         if (brbefore.contains("files sized up to 1024 Mb")) throw new PluginException(LinkStatus.ERROR_FATAL, "Free Users can only download files sized up to 1024 Mb");
         if (brbefore.contains("You have to wait")) {
@@ -115,6 +116,7 @@ public class OronCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+        if (br.containsHTML("class=\"err\">Site maintenance mode")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Site maintenance mode", 10 * 60 * 1000l); }
         if (brbefore.contains(ONLY4PREMIUMERROR0) || brbefore.contains(ONLY4PREMIUMERROR1)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
         br.setFollowRedirects(true);
         if (brbefore.contains("\"download1\"")) br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Free+Download");
@@ -305,6 +307,7 @@ public class OronCom extends PluginForHost {
             } else {
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
+                    if (br.containsHTML("class=\"err\">Site maintenance mode")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Site maintenance mode", 10 * 60 * 1000l); }
                     if (br.containsHTML("File could not be found due to its possible expiration")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                     if (br.containsHTML("You have reached the download")) {
                         String errormessage = "You have reached the download limit!";
@@ -490,6 +493,10 @@ public class OronCom extends PluginForHost {
         }
         if (filename != null) link.setName(filename);
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.containsHTML("class=\"err\">Site maintenance mode")) {
+            link.getLinkStatus().setStatusText("Site maintenance");
+            return AvailableStatus.UNCHECKABLE;
+        }
         return AvailableStatus.TRUE;
     }
 
