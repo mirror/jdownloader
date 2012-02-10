@@ -12,7 +12,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 15830 $", interfaceVersion = 2, names = { "ted.com" }, urls = { "http://(www\\.)?ted.com/talks/(lang/[a-zA-Z\\-]+/)?\\w+.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ted.com" }, urls = { "http://(www\\.)?ted.com/talks/(lang/[a-zA-Z\\-]+/)?\\w+.html" }, flags = { 0 })
 public class TedCom extends PluginForDecrypt {
 
     public TedCom(PluginWrapper wrapper) {
@@ -26,15 +26,16 @@ public class TedCom extends PluginForDecrypt {
         br.getPage(url);
         String[] info = br.getRegex("<meta property=\"og:video\" content=\"([^\"]+)/([^/\"\\-]+)(?:-320k)?\\.(\\w+)\"").getRow(0);
         if (info == null || info.length == 0) return decryptedLinks;
+        System.out.println(info[0] + ", " + info[1] + "; " + info[2]);
 
         // Videos
         String baseUrl = info[0] + "/" + info[1];
         FilePackage fp = FilePackage.getInstance();
         fp.setName(info[1] + " (video)");
-        fp.add(createDownloadlink(baseUrl + "-light." + info[2]));
-        fp.add(createDownloadlink(baseUrl + "." + info[2]));
-        fp.add(createDownloadlink(baseUrl + "-480p." + info[2]));
-        decryptedLinks.addAll(fp.getChildren());
+        decryptedLinks.add(createDownloadlink(baseUrl + "-light." + info[2]));
+        decryptedLinks.add(createDownloadlink(baseUrl + "." + info[2]));
+        decryptedLinks.add(createDownloadlink(baseUrl + "-480p." + info[2]));
+        fp.addLinks(decryptedLinks);
 
         // Subtitles: gets talkId and JSON array of languages from HTML
         String talkId = br.getRegex("var +talkID *= *(\\d+);").getMatch(0);
@@ -53,8 +54,8 @@ public class TedCom extends PluginForDecrypt {
             DownloadLink dl = createDownloadlink("directhttp://http://www.ted.com/talks/subtitles/id/" + talkId + "/lang/" + langArr[i][0] + "/format/srt");
             dl.setFinalFileName(info[1] + "." + langArr[i][0] + ".srt");
             subP.add(dl);
+            decryptedLinks.add(dl);
         }
-        decryptedLinks.addAll(subP.getChildren());
         return decryptedLinks;
     }
 
