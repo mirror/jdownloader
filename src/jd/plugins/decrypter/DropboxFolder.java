@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 15830 $", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/gallery/\\d+/\\d+/[^?]+\\?h=[0-9a-f]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/gallery/\\d+/\\d+/[^?]+\\?h=[0-9a-f]+" }, flags = { 0 })
 public class DropboxFolder extends PluginForDecrypt {
     private static final String[] urlAttrs     = { "video_url", "original", "extralarge", "large", "thumbnail" };
     private static boolean        pluginloaded = false;
