@@ -1,1 +1,8 @@
-{"app":"JDownloader","icontheme":"jdownloader"}
+{
+"app":"JDownloader",
+"icontheme":"jdownloader",
+"mainmacapp":"JDownloader.app",
+"mainexe":"JDownloader.exe",
+"mainjar":"JDownloader.jar",
+"packagepollinterval":10000
+}
