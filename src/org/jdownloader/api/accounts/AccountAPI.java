@@ -10,5 +10,9 @@ public interface AccountAPI extends RemoteAPIInterface {
 
     public List<AccountStorable> list();
 
+    public AccountStorable getAccountInfo(long id);
+
     public boolean remove(Long[] ids);
+
+    public boolean setEnabledState(boolean enabled, Long[] ids);
 }
