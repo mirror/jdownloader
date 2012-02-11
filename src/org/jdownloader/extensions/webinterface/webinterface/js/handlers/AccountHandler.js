@@ -51,6 +51,9 @@ var AccountHandler = {
 						AccountHandler.addAccount(acc);
 					}
 				});
+				if(AccountHandler._active_queue.length == 0) {
+					$('#dashboard__report_activeprem_val').text("0");
+				}
 			});
 	},
 	rload : function reloadpremium() {

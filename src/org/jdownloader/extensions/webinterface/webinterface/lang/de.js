@@ -8,7 +8,7 @@ var jd__de_de = {
     "main.nav.downloads.aborted"  : "Fehlerhafte Downloads",
     "main.nav.addlinks"  : "Links hinzufügen",
     "main.nav.passwordlist"  : "Passwortliste",
-    "main.nav.premium"  : "Premium",
+    "main.nav.accounts"  : "Accounts",
     "main.nav.settings"  : "Einstellungen",
 	/* Dashboard */
     "dashboard.report.donedl"  : "Abgeschlossene Downloads",

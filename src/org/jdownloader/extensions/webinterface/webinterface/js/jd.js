@@ -1,7 +1,4 @@
 $(document).ready(function() {
-	
-	
-	
 	/* LOADCONTENT */
 	function loadContent(hash) {
 		var subd = "";
