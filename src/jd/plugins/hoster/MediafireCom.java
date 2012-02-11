@@ -451,6 +451,16 @@ public class MediafireCom extends PluginForHost {
             this.br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        org.jdownloader.extensions.neembuu.JDDownloadSession downloadSession = 
+            new org.jdownloader.extensions.neembuu.JDDownloadSession(downloadLink, this.dl, this, this.dl.getConnection());
+        if(org.jdownloader.extensions.neembuu.NeembuuExtension.tryHandle(downloadSession)){
+            org.jdownloader.extensions.neembuu.WatchAsYouDownloadSession watchAsYouDownloadSession = downloadSession.getWatchAsYouDownloadSession();
+            //^^^ this reference to the mounted virtual file, 
+            // and can be used to manipulate the download session controlled
+            // be neembuu
+            return;
+        }
+        logger.severe("Neembuu could not handle");
         this.dl.startDownload();
     }
 
@@ -743,5 +753,9 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+    
+    public static void main(String[] args) {
+        
     }
 }
