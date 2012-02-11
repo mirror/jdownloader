@@ -223,7 +223,6 @@ public class OneFichierCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
-        System.out.print(br.toString());
         if (br.containsHTML("(The requested file could not be found|The file may has been deleted by its owner|Le fichier demandé n\\'existe pas\\.|Il a pu être supprimé par son propriétaire\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>Téléchargement du fichier : (.*?)</title>").getMatch(0);
         if (filename == null) {
@@ -236,6 +235,7 @@ public class OneFichierCom extends PluginForHost {
                         filename = br.getRegex("<title>Download of (.*?)</title>").getMatch(0);
                         if (filename == null) {
                             filename = br.getRegex("<div style=\"width:450px;margin:auto;text\\-align:center\">[\t\n\r ]+Download of ([^<>\"]+)<br/>").getMatch(0);
+                            if (filename == null) filename = br.getRegex("(Téléchargement de|Download of) ([^<>\"\\']+)<br/>").getMatch(1);
                         }
                     }
                 }

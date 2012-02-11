@@ -43,7 +43,7 @@ public class ImgSrcRu extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.setCookie(MAINPAGE, "lang", "en");
-        br.getPage(parameter + "?per_page=48&pwd=");
+        br.getPage(parameter + "?per_page=48");
         if (br.containsHTML(">Album foreword:")) {
             final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html\\?pwd=)\\'").getMatch(0);
             if (newLink == null) return null;
