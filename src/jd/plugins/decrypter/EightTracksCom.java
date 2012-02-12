@@ -40,7 +40,7 @@ public class EightTracksCom extends PluginForDecrypt {
     }
 
     private String createFilename() {
-        String album = getClipData("release\\-name");
+        String album = getClipData("release_name");
         final String title = getClipData("name");
         if (album == null || title == null) { return null; }
         if (album.contains(":")) {
@@ -74,35 +74,38 @@ public class EightTracksCom extends PluginForDecrypt {
                 name = "8tracks_playlist" + System.currentTimeMillis();
             }
         }
+        name = Encoding.htmlDecode(name.trim());
 
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (br.getRegex("name=\"csrf-token\" content=\"(.*?)\"").matches()) {
             br.getHeaders().put("X-CSRF-Token", br.getRegex("name=\"csrf-token\" content=\"(.*?)\"").getMatch(0));
         }
-        br.getPage(MAINPAGE + "sets/new.xml");
+        // 20120212: die xml Version erfordert jetzt einen API Key.
+        // Wechsel zur json Variante.
+        clipData = br.getPage(MAINPAGE + "sets/new?format=jsonh");
 
-        final String playToken = br.getRegex("<play\\-token>(\\d+)</play\\-token>").getMatch(0);
+        final String playToken = getClipData("play_token");
         if (playToken == null || mixId == null) { return null; }
 
         long count = 8;
         progress.setRange(count);
         /* Start playlist */
         br.setFollowRedirects(false);
-        clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/play.xml?mix_id=" + mixId);
-        String dllink = getClipData("url");
+        clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/play?mix_id=" + mixId + "&format=jsonh");
+        String dllink = getClipData("track_file_stream_url");
         String filename = createFilename();
         String ext = "", sameLink = "";
 
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(name.trim());
+        fp.setName(name);
         while (!ATEND) {
             /* ATEND=true --> end of playlist */
-            ATEND = Boolean.parseBoolean(getClipData("<at\\-end>"));
+            ATEND = Boolean.parseBoolean(getClipData("at_end"));
             if (dllink != null && filename != null) {
                 sameLink = dllink;
                 ext = dllink.substring(dllink.lastIndexOf(".") + 1);
                 ext = ext.equals("m4a") || ext.length() > 5 ? "mp4" : ext;
-                if (!dllink.startsWith("http://8tracks")) {
+                if (!dllink.startsWith("http://([0-9a-z]+\\.)?8tracks")) {
                     dllink = "directhttp://" + dllink;
                 }
                 final DownloadLink dl = createDownloadlink(dllink);
@@ -118,8 +121,8 @@ public class EightTracksCom extends PluginForDecrypt {
                 /* Anzahl der Titel unbestimmt. Siehe ATEND! */
                 progress.setRange(count++);
             }
-            clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/next.xml?mix_id=" + mixId);
-            dllink = getClipData("url");
+            clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/next?mix_id=" + mixId + "&format=jsonh");
+            dllink = getClipData("track_file_stream_url");
             filename = createFilename();
 
             if (!ATEND && dllink == null || !ATEND && dllink != null && dllink.equals(sameLink)) {
@@ -136,7 +139,7 @@ public class EightTracksCom extends PluginForDecrypt {
     }
 
     private String getClipData(final String tag) {
-        return new Regex(clipData, "<" + tag + ">(.*?)</" + tag + ">").getMatch(0);
+        return new Regex(clipData, "\"" + tag + "\"\\s?:\\s?\"?(.*?)\"?,").getMatch(0);
     }
 
 }

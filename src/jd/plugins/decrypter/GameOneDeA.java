@@ -44,7 +44,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "http://(www\\.)?gameone\\.de/(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\w\\-]+/\\d+(/(sd|hd))?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "http://(www\\.)?gameone\\.de/(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\w\\-]+/\\d+(/(sd|hd))?)|http://feedproxy.google.com/~r/mtvgameone/.*\\.mp3" }, flags = { 0 })
 public class GameOneDeA extends PluginForDecrypt {
 
     private Document doc;
@@ -56,7 +56,16 @@ public class GameOneDeA extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        String parameter = param.toString();
+        if (parameter.startsWith("http://feedproxy.google.com")) {
+            br.getPage(parameter);
+            parameter = br.getRedirectLocation();
+            if (parameter != null) {
+                decryptedLinks.add(createDownloadlink(parameter));
+                return decryptedLinks;
+            }
+            return null;
+        }
         setBrowserExclusive();
         br.setFollowRedirects(false);
         br.setReadTimeout(60 * 1000);
@@ -97,7 +106,10 @@ public class GameOneDeA extends PluginForDecrypt {
             if (br.containsHTML("<div class=\'gallery\' id=\'gallery_\\d+\'")) {
                 pictureOrAudio = br.getRegex("<a href=\"(http://.*?/gallery_pictures/.*?/large/.*?)\"").getColumn(0);
             } else if (br.containsHTML("class=\"flash_container_audio\"")) {
-                pictureOrAudio = br.getRegex("\n<p><a href=\"(http://.*?\\.mp3)\">Download</a>").getColumn(0);
+                pictureOrAudio = br.getRegex("<a href=\"(http://[^<>]+\\.mp3)").getColumn(0);
+                if (pictureOrAudio == null || pictureOrAudio.length == 0) {
+                    pictureOrAudio = br.getRegex(",\\s?file:\\s?\"(http://[^<>\",]+)").getColumn(0);
+                }
             }
             if (pictureOrAudio == null || pictureOrAudio.length == 0) {
                 logger.warning("Decrypter out of date for link: " + parameter);

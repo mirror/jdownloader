@@ -205,7 +205,7 @@ public class GrooveShark extends PluginForHost {
         return true;
     }
 
-    private static String reqk(final Integer i) {
+    private static String reqk(final int i) {
         String s = "ff8cf9faf900cfe71996b4cedc5040f02a9072bb0b5bdbcd19495a6d116482d15ddaf96c8c00e16e211254e8ee241a72e7242d9dc19c6262";
         if (i == 1) {
             s = "fd8efaf1fa55cdb21997b695de5443fa2b9771e9085fd8cb1e125b6e113d83d25d82fd3f890ae239201152baef231824e4702dcfc4ca6531ac20d3e56e0f373b5aa1cc785c2b";

@@ -166,7 +166,7 @@ public class TurboBitNet extends PluginForHost {
             rc.setForm(captchaform);
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode(null, cf, downloadLink);
+            final String c = getCaptchaCode("recaptcha", cf, downloadLink);
             rc.getForm().setAction(MAINPAGE + "/download/free/" + id + "#");
             rc.setCode(c);
             if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML("Incorrect, try again")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
@@ -175,7 +175,7 @@ public class TurboBitNet extends PluginForHost {
             final String captchaUrl = br.getRegex(CAPTCHAREGEX).getMatch(0);
             if (captchaUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             for (int i = 1; i <= 3; i++) {
-                final String captchaCode = getCaptchaCode("recaptcha", captchaUrl, downloadLink);
+                final String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
                 captchaform.put("captcha_response", captchaCode);
                 br.submitForm(captchaform);
                 if (br.getRegex(CAPTCHAREGEX).getMatch(0) == null) {
