@@ -307,15 +307,27 @@ public class Netloadin extends PluginForHost {
                     if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "Account '" + account.getUser() + "' is a free account and this not supported.\r\nPlease buy a Netload.in Premium account!");
 
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if ("unknown_user".equalsIgnoreCase(res)) {
-                    ai.setStatus("Unknown user");
-                    if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "The username '" + account.getUser() + "' is unknown.\r\nPlease check your Username!");
-
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if ("unknown_password".equalsIgnoreCase(res) || "wrong_password".equalsIgnoreCase(res)) {
-                    ai.setStatus("Wrong password");
-                    if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "The username '" + account.getUser() + "' is ok, but the given password is wrong.\r\nPlease check your Password!");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    // gibt es laut netload nicht mehr
+                    // } else if ("unknown_user".equalsIgnoreCase(res)) {
+                    // ai.setStatus("Unknown user");
+                    // if (showDialog)
+                    // UserIO.getInstance().requestMessageDialog(0,
+                    // "Netload.in Premium Error", "The username '" +
+                    // account.getUser() +
+                    // "' is unknown.\r\nPlease check your Username!");
+                    //
+                    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
+                    // PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    // } else if ("unknown_password".equalsIgnoreCase(res) ||
+                    // "wrong_password".equalsIgnoreCase(res)) {
+                    // ai.setStatus("Wrong password");
+                    // if (showDialog)
+                    // UserIO.getInstance().requestMessageDialog(0,
+                    // "Netload.in Premium Error", "The username '" +
+                    // account.getUser() +
+                    // "' is ok, but the given password is wrong.\r\nPlease check your Password!");
+                    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
+                    // PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else if ("login_failed".equalsIgnoreCase(res)) {
                     ai.setStatus("Login failed");
                     if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "Login failed!\r\nPlease check your Username and Password!");
