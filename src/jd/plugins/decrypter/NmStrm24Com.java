@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -43,24 +44,32 @@ public class NmStrm24Com extends PluginForDecrypt {
         regexes.add("scrolling=\"no\" src=\"(.*?)\"");
         regexes.add("<object data=\"(.*?)\"");
         regexes.add("style=\"display: none;\"><script src=\"(.*?)\"");
+        regexes.add("flashvars=\\'file=(http://[^<>\"\\']+)\\&image");
+        regexes.add("<iframe SRC=\"(http://[^<>\"\\']+)\"");
+        regexes.add("<iframe SRC=\\'(http://[^<>\"\\']+)\\'");
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("Seite nicht gefunden<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String fpName = br.getRegex("<title>(.*?) - Anime-Stream24\\.com</title>").getMatch(0);
-        if (fpName != null) fpName = br.getRegex("addthis:title=\\'(.*?)\\'").getMatch(0);
+        String fpName = br.getRegex("\\'pageName\\': \\'([^<>\"\\']+)\\'").getMatch(0);
+        if (fpName != null) fpName = br.getRegex("class=\\'post\\-title entry\\-title\\'>[\t\n\r ]+<a href=\\'http://[^<>\"\\']+\\'>([^<>\"\\']+)</a>").getMatch(0);
         String[] links = br.getRegex("id=\"fragment-\\d+\"><iframe (style=\\'overflow: hidden; border: 0; width: 600px; height: 480px\\' )?(src|SRC)=(\\'|\")(.*?)(\\'|\")").getColumn(3);
-        if (links == null || links.length == 0) {
-            for (String regex : regexes) {
-                String tempLinks[] = br.getRegex(regex).getColumn(0);
-                if (tempLinks != null && tempLinks.length != 0) {
-                    for (String tempLink : tempLinks)
-                        cryptedLinks.add(Encoding.htmlDecode(tempLink));
-                }
-            }
-        } else {
+        if (links != null && links.length != 0) {
             for (String cryptedLink : links)
                 cryptedLinks.add(cryptedLink);
-
+        }
+        for (String regex : regexes) {
+            String tempLinks[] = br.getRegex(Pattern.compile(regex, Pattern.CASE_INSENSITIVE)).getColumn(0);
+            if (tempLinks != null && tempLinks.length != 0) {
+                for (String tempLink : tempLinks)
+                    cryptedLinks.add(Encoding.htmlDecode(tempLink));
+            }
+        }
+        final String dailyMotionUrl = br.getRegex("\"(http://dai\\.ly/[A-Za-z0-9]+)\"").getMatch(0);
+        if (dailyMotionUrl != null) {
+            br.getPage(dailyMotionUrl);
+            final String finallink = br.getRegex("\"stream_h264_url\":\"(http:[^<>\"\\']+)\"").getMatch(0);
+            if (finallink != null) decryptedLinks.add(createDownloadlink("directhttp://" + finallink.replace("\\", "")));
         }
         if (cryptedLinks == null || cryptedLinks.size() == 0) return null;
         for (String aLink : cryptedLinks)
