@@ -194,8 +194,19 @@ public class ShareFlareNet extends PluginForHost {
             logger.info("Downloadpassword seems to be wrong, disabeling account now!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
+        /** 1 point = 1 GB */
+        String points = br.getRegex(">Points:</span>([0-9\\.]+)\\&nbsp;").getMatch(0);
+        if (points == null) points = br.getRegex("<p>You have: ([0-9\\.]+) Points</p>").getMatch(0);
+        if (points != null) {
+            AccountInfo ai = new AccountInfo();
+            ai.setTrafficLeft(SizeFormatter.getSize(points + "GB"));
+            account.setAccountInfo(ai);
+        }
         String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("valign=\"middle\"><br><span style=\"font-size:12px;\"><a href='(http://.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (url == null) url = br.getRegex("('|\")(http://\\d+\\.\\d+\\.\\d+\\.\\d+/downloadp\\d+/.*?\\..*?/\\d+/shareflare\\.net/.*?)('|\")").getMatch(1);
+        if (url == null) {
+            url = br.getRegex("('|\")(http://\\d+\\.\\d+\\.\\d+\\.\\d+/[^<>\"\\']+\\d+/[^<>\"\\']+/" + downloadLink.getName() + ")('|\")").getMatch(1);
+            if (url == null) url = br.getRegex("class=\"btn\\-corner\\-tl\"><a style=\\'font\\-size: 16px\\' href=\\'(http://[^<>\"\\']+)\\'").getMatch(0);
+        }
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

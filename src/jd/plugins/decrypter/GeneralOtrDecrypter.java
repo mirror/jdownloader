@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
@@ -28,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "die-schnelle-kuh.de", "otr-share.de", "tivootix.co.cc/" }, urls = { "http://(www\\.)?die\\-schnelle\\-kuh\\.de/\\?file=[^<>\"\\']+", "http://(www\\.)?otr\\-share\\.de/\\?s=download\\&key=[^<>\"\\']+", "http://(www\\.)?tivootix\\.co\\.cc/\\?file=[^<>\"\\']+" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "die-schnelle-kuh.de", "otr-share.de", "tivootix.co.cc", "otr-drive.com", "otr.seite.com" }, urls = { "http://(www\\.)?die\\-schnelle\\-kuh\\.de/\\?file=[^<>\"\\']+", "http://(www\\.)?otr\\-share\\.de/\\?s=download\\&key=[^<>\"\\']+", "http://(www\\.)?tivootix\\.co\\.cc/\\?file=[^<>\"\\']+", "http://(www\\.)?otr\\-drive\\.com/(index\\.php)?\\?file=[^<>\"\\']+", "http://(www\\.)?otr\\.seite\\.com/get\\.php\\?file=[^<>\"\\']+" }, flags = { 0, 0, 0, 0, 0 })
 public class GeneralOtrDecrypter extends PluginForDecrypt {
 
     public GeneralOtrDecrypter(PluginWrapper wrapper) {
@@ -101,7 +102,29 @@ public class GeneralOtrDecrypter extends PluginForDecrypt {
             fp.setName(new Regex(parameter, "tivootix\\.co\\.cc/\\?file=(.+)").getMatch(0));
             fp.addLinks(decryptedLinks);
         } else if (parameter.contains("otr-drive.com/")) {
+            br.getPage(parameter);
+            String continu = br.getRegex("<big><big>>>> <a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+            if (continu == null) continu = br.getRegex("\"(http://(www\\.)?otr\\-drive\\.com/index\\.php\\?file=[^<>\"\\']+)\"").getMatch(0);
+            if (continu == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            br.getPage(Encoding.htmlDecode(continu));
+            final String finallink = br.getRegex("name=\"download_iframe\"><p>(http://[^<>\"\\']+)</p></iframe>").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
         } else if (parameter.contains("otr.seite.com/")) {
+            br.setReadTimeout(3 * 60 * 1000);
+            br.getPage(parameter);
+            final String finallink = br.getRegex("name=\"Downloadpage\" src=\"([^<>\"\\']+)\"").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
         }
 
         return decryptedLinks;
