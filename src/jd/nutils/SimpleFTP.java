@@ -65,7 +65,7 @@ import org.appwork.utils.speedmeter.AverageSpeedMeter;
  * Based on Work of Paul Mutton http://www.jibble.org/
  */
 public class SimpleFTP {
-    private static final int                   TIMEOUT    = 10 * 1000;
+    private static final int                   TIMEOUT    = 20 * 1000;
     private boolean                            binarymode = false;
     private static boolean                     DEBUG      = true;
     private BufferedReader                     reader     = null;
