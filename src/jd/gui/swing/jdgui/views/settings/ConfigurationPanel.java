@@ -2,6 +2,8 @@ package jd.gui.swing.jdgui.views.settings;
 
 import java.awt.Component;
 
+import javax.swing.JScrollPane;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -11,6 +13,7 @@ import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.app.gui.MigPanel;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -22,12 +25,17 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     private ConfigSidebar                  sidebar;
     private SwitchPanel                    panel;
     private GraphicalUserInterfaceSettings cfg;
+    private MigPanel                       right;
 
     public ConfigurationPanel() {
         super(new MigLayout("ins 0", "[200!,grow,fill][grow,fill]", "[grow,fill]"));
         sidebar = new ConfigSidebar();
-
+        right = new RightPanel();
         add(sidebar, "");
+        JScrollPane sp;
+        add(sp = new JScrollPane(right));
+        sp.setBorder(null);
+        sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         cfg = JsonConfig.create(GraphicalUserInterfaceSettings.class);
         // add(viewport);
         sidebar.addListener(this);
@@ -95,7 +103,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
 
         }
         boolean found = false;
-        for (final Component c : getComponents()) {
+        for (final Component c : right.getComponents()) {
             // c.setVisible(false);
             if (c == selectedPanel) {
                 found = true;
@@ -109,7 +117,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
         }
 
         if (!found) {
-            add(selectedPanel, "hidemode 3");
+            right.add(selectedPanel, "hidemode 3");
         } else {
             selectedPanel.setVisible(true);
         }
