@@ -31,7 +31,7 @@ public class ConfirmAction extends AppAction {
     private boolean                 autostart;
 
     public ConfirmAction(boolean autostart, ArrayList<AbstractNode> arrayList) {
-        if ((LinkFilterSettings.LINKGRABBER_AUTO_START_ENABLED.getValue() && !autostart) || (autostart && !LinkFilterSettings.LINKGRABBER_AUTO_START_ENABLED.getValue())) {
+        if ((org.jdownloader.settings.staticreferences.LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue() && !autostart) || (autostart && !org.jdownloader.settings.staticreferences.LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue())) {
             setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_start());
             Image add = NewTheme.I().getImage("media-playback-start", 20);
             Image play = NewTheme.I().getImage("add", 12);
@@ -50,7 +50,7 @@ public class ConfirmAction extends AppAction {
         IOEQ.add(new Runnable() {
 
             public void run() {
-                boolean addTop = LinkFilterSettings.LINKGRABBER_ADD_AT_TOP.getValue();
+                boolean addTop = org.jdownloader.settings.staticreferences.LINKFILTER.LINKGRABBER_ADD_AT_TOP.getValue();
                 ArrayList<FilePackage> fpkgs = new ArrayList<FilePackage>();
                 ArrayList<CrawledLink> clinks = new ArrayList<CrawledLink>();
                 for (AbstractNode node : values) {

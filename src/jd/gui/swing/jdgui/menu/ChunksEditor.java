@@ -17,7 +17,7 @@ public class ChunksEditor extends MenuEditor {
 
         add(getLbl(_GUI._.ChunksEditor_ChunksEditor_(), NewTheme.I().getIcon("chunks", 18)));
         config = JsonConfig.create(GeneralSettings.class);
-        spinner = new ExtSpinner(new ConfigIntSpinnerModel(GeneralSettings.MAX_CHUNKS_PER_FILE));
+        spinner = new ExtSpinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.GENERAL.MAX_CHUNKS_PER_FILE));
         // new SpinnerNumberModel(config.getMaxChunksPerFile(), 1, 20, 1)
 
         add(spinner, "height 20!");

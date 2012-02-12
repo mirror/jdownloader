@@ -22,7 +22,6 @@ import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 
 import org.jdownloader.controlling.packagizer.PackagizerController;
-import org.jdownloader.controlling.packagizer.PackagizerSettings;
 import org.jdownloader.extensions.Header;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
@@ -44,7 +43,7 @@ public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
     public Packagizer() {
         super();
 
-        add(new Header(getTitle(), NewTheme.I().getIcon("packagizer", 32), PackagizerSettings.ENABLED), "spanx,newline,growx,pushx");
+        add(new Header(getTitle(), NewTheme.I().getIcon("packagizer", 32), org.jdownloader.settings.staticreferences.PACKAGIZER.PACKAGIZER_ENABLED), "spanx,newline,growx,pushx");
 
         this.addDescriptionPlain(_JDT._.gui_settings_linkgrabber_packagizer_description());
         packagizer = new PackagizerFilter();
@@ -83,7 +82,7 @@ public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
     }
 
     public boolean _isEnabled() {
-        return PackagizerSettings.ENABLED.getValue();
+        return org.jdownloader.settings.staticreferences.PACKAGIZER.PACKAGIZER_ENABLED.getValue();
     }
 
     public String getDescription() {
@@ -91,6 +90,6 @@ public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
     }
 
     public void _setEnabled(boolean b) throws StartException, StopException {
-        PackagizerSettings.ENABLED.setValue(b);
+        org.jdownloader.settings.staticreferences.PACKAGIZER.PACKAGIZER_ENABLED.setValue(b);
     }
 }

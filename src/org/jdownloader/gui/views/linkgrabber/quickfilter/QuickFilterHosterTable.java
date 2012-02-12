@@ -26,7 +26,7 @@ public class QuickFilterHosterTable extends FilterTable {
     private LinkedHashMap<String, Filter> filterMap;
 
     public QuickFilterHosterTable(Header hosterFilter, LinkGrabberTable table) {
-        super(hosterFilter, table, LinkFilterSettings.LINKGRABBER_HOSTER_QUICKFILTER_ENABLED);
+        super(hosterFilter, table, org.jdownloader.settings.staticreferences.LINKFILTER.LINKGRABBER_HOSTER_QUICKFILTER_ENABLED);
 
     }
 

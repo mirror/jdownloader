@@ -15,7 +15,7 @@ public class EnableClipboard implements SchedulerModuleInterface {
     }
 
     public void execute(String parameter) {
-        GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.setValue(true);
+        org.jdownloader.settings.staticreferences.GUI.CLIPBOARD_MONITORED.setValue(true);
     }
 
     public String getTranslation() {

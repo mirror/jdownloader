@@ -42,16 +42,16 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
         layoutComponents();
 
-        // GraphicalUserInterfaceSettings.DOWNLOAD_VIEW_SIDEBAR_ENABLED.getEventSender().addListener(this);
+        // org.jdownloader.settings.statics.GUI.DOWNLOAD_VIEW_SIDEBAR_ENABLED.getEventSender().addListener(this);
         //
-        // GraphicalUserInterfaceSettings.DOWNLOAD_VIEW_SIDEBAR_TOGGLE_BUTTON_ENABLED.getEventSender().addListener(this);
-        // GraphicalUserInterfaceSettings.DOWNLOAD_VIEW_SIDEBAR_VISIBLE.getEventSender().addListener(this);
+        // org.jdownloader.settings.statics.GUI.DOWNLOAD_VIEW_SIDEBAR_TOGGLE_BUTTON_ENABLED.getEventSender().addListener(this);
+        // org.jdownloader.settings.statics.GUI.DOWNLOAD_VIEW_SIDEBAR_VISIBLE.getEventSender().addListener(this);
 
     }
 
     private void layoutComponents() {
-        // if (GraphicalUserInterfaceSettings.CFG.isDownloadViewSidebarEnabled()
-        // && GraphicalUserInterfaceSettings.CFG.isDownloadViewSidebarVisible())
+        // if (org.jdownloader.settings.statics.GUI.CFG.isDownloadViewSidebarEnabled()
+        // && org.jdownloader.settings.statics.GUI.CFG.isDownloadViewSidebarVisible())
         // {
         //
         // if (sidebarScrollPane == null) {
@@ -103,14 +103,14 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     // //
     // // public void actionPerformed(ActionEvent e) {
     // //
-    // GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.setValue(false);
+    // org.jdownloader.settings.statics.GUI.LINKGRABBER_SIDEBAR_ENABLED.setValue(false);
     // // }
     // // });
     // //
     // // sidebarScrollPane.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER,
     // // bt);
     // //
-    // LinkFilterSettings.LINKGRABBER_QUICK_SETTINGS_VISIBLE.getEventSender().addListener(new
+    // org.jdownloader.settings.statics.LINKFILTER.LINKGRABBER_QUICK_SETTINGS_VISIBLE.getEventSender().addListener(new
     // // GenericConfigEventListener<Boolean>() {
     // //
     // // public void onConfigValidatorError(KeyHandler<Boolean> keyHandler,
@@ -180,7 +180,7 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
         // if (!newValue && keyHandler ==
-        // GraphicalUserInterfaceSettings.DOWNLOAD_VIEW_SIDEBAR_VISIBLE) {
+        // org.jdownloader.settings.statics.GUI.DOWNLOAD_VIEW_SIDEBAR_VISIBLE) {
         // JDGui.help(_GUI._.LinkGrabberPanel_onConfigValueModified_title_(),
         // _GUI._.LinkGrabberPanel_onConfigValueModified_msg_(),
         // NewTheme.I().getIcon("warning_green", 32));

@@ -125,7 +125,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
 
             public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
-                if (GraphicalUserInterfaceSettings.CFG.isLinkgrabberAutoTabSwitchEnabled()) {
+                if (org.jdownloader.settings.staticreferences.GUI.CFG.isLinkgrabberAutoTabSwitchEnabled()) {
                     if (newJobMap.add(parameter.getSourceJob())) {
                         // new job arrived
                         new EDTRunner() {
@@ -197,10 +197,10 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
 
             public void actionPerformed(ActionEvent e) {
-                GraphicalUserInterfaceSettings.CFG.setLinkgrabberSidebarVisible(!GraphicalUserInterfaceSettings.CFG.isLinkgrabberSidebarVisible());
+                org.jdownloader.settings.staticreferences.GUI.CFG.setLinkgrabberSidebarVisible(!org.jdownloader.settings.staticreferences.GUI.CFG.isLinkgrabberSidebarVisible());
             }
         });
-        showHideSidebar.setSelected(GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue());
+        showHideSidebar.setSelected(org.jdownloader.settings.staticreferences.GUI.LINKGRABBER_SIDEBAR_ENABLED.getValue());
         leftBar = new MigPanel("ins 0", "[]1[][]1[][grow,fill]0[]", "[]");
         rightBar = new MigPanel("ins 0", "[]0[]1[]0[]0", "[]");
 
@@ -231,11 +231,11 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         // leftBar.add(Box.createGlue());
         layoutComponents();
 
-        // showHideSidebar.setVisible(GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue());
-        GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(this);
+        // showHideSidebar.setVisible(org.jdownloader.settings.statics.GUI.LINKGRABBER_SIDEBAR_ENABLED.getValue());
+        org.jdownloader.settings.staticreferences.GUI.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(this);
 
-        GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getEventSender().addListener(this);
-        GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_VISIBLE.getEventSender().addListener(this);
+        org.jdownloader.settings.staticreferences.GUI.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getEventSender().addListener(this);
+        org.jdownloader.settings.staticreferences.GUI.LINKGRABBER_SIDEBAR_VISIBLE.getEventSender().addListener(this);
 
     }
 
@@ -266,12 +266,12 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         rightBar.add(confirmAll, "height 24!,pushx,growx");
         rightBar.add(popupConfirm, "height 24!,width 12!");
-        if (GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getValue() && GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getValue()) {
+        if (org.jdownloader.settings.staticreferences.GUI.LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED.getValue() && org.jdownloader.settings.staticreferences.GUI.LINKGRABBER_SIDEBAR_ENABLED.getValue()) {
             //
             rightBar.add(showHideSidebar, "height 24!,width 24!,gapleft 4");
         }
 
-        if (GraphicalUserInterfaceSettings.CFG.isLinkgrabberSidebarEnabled() && GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_VISIBLE.getValue()) {
+        if (org.jdownloader.settings.staticreferences.GUI.CFG.isLinkgrabberSidebarEnabled() && org.jdownloader.settings.staticreferences.GUI.LINKGRABBER_SIDEBAR_VISIBLE.getValue()) {
 
             if (sidebarScrollPane == null) {
                 createSidebar();
@@ -320,13 +320,13 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         // }
         //
         // public void actionPerformed(ActionEvent e) {
-        // GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.setValue(false);
+        // org.jdownloader.settings.statics.GUI.LINKGRABBER_SIDEBAR_ENABLED.setValue(false);
         // }
         // });
         //
         // sidebarScrollPane.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER,
         // bt);
-        LinkFilterSettings.LINKGRABBER_QUICK_SETTINGS_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+        org.jdownloader.settings.staticreferences.LINKFILTER.LINKGRABBER_QUICK_SETTINGS_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
@@ -363,7 +363,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     }
 
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        if (!newValue && keyHandler == GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_VISIBLE) {
+        if (!newValue && keyHandler == org.jdownloader.settings.staticreferences.GUI.LINKGRABBER_SIDEBAR_VISIBLE) {
             JDGui.help(_GUI._.LinkGrabberPanel_onConfigValueModified_title_(), _GUI._.LinkGrabberPanel_onConfigValueModified_msg_(), NewTheme.I().getIcon("warning_green", 32));
 
         }

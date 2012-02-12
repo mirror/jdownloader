@@ -82,7 +82,7 @@ public class ClickPositionDialog extends AbstractDialog<Point> implements Action
                 imageIcon = IconIO.getImageIcon(imagefile.toURI().toURL());
 
                 // if
-                // (GraphicalUserInterfaceSettings.CFG.isCaptchaBackgroundCleanupEnabled())
+                // (org.jdownloader.settings.statics.GUI.CFG.isCaptchaBackgroundCleanupEnabled())
                 // {
                 // imageIcon = new
                 // ImageIcon(IconIO.removeBackground((BufferedImage)
@@ -97,7 +97,7 @@ public class ClickPositionDialog extends AbstractDialog<Point> implements Action
             imageIcon = NewTheme.I().getIcon("ocr", 0);
         }
 
-        final int size = GraphicalUserInterfaceSettings.CAPTCHA_SCALE_FACTOR.getValue();
+        final int size = org.jdownloader.settings.staticreferences.GUI.CAPTCHA_SCALE_FACTOR.getValue();
         if (size != 100) {
             imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance((int) (imageIcon.getIconWidth() * size / 100.0f), (int) (imageIcon.getIconHeight() * size / 100.0f), Image.SCALE_SMOOTH));
         }
@@ -138,7 +138,7 @@ public class ClickPositionDialog extends AbstractDialog<Point> implements Action
 
     public void mouseReleased(final MouseEvent e) {
         this.result = e.getPoint();
-        final int size = GraphicalUserInterfaceSettings.CAPTCHA_SCALE_FACTOR.getValue();
+        final int size = org.jdownloader.settings.staticreferences.GUI.CAPTCHA_SCALE_FACTOR.getValue();
         if (size != 100) {
             this.result.setLocation(this.result.getX() / (size / 100.0f), this.result.getY() / (size / 100.0f));
         }

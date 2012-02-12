@@ -31,7 +31,7 @@ public class DisablePremium implements SchedulerModuleInterface {
     }
 
     public void execute(String parameter) {
-        GeneralSettings.USE_AVAILABLE_ACCOUNTS.setValue(false);
+        org.jdownloader.settings.staticreferences.GENERAL.USE_AVAILABLE_ACCOUNTS.setValue(false);
     }
 
     public String getTranslation() {

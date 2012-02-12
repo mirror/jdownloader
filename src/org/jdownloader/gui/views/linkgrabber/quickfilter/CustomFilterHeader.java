@@ -57,15 +57,15 @@ public class CustomFilterHeader extends MigPanel implements HeaderInterface {
         });
         config.setRolloverEffectEnabled(true);
         add(config, "height 16!,width 16!");
-        // LinkFilterSettings.LG_QUICKFILTER_EXCEPTIONS_VISIBLE
+        // org.jdownloader.settings.statics.LINKFILTER.LG_QUICKFILTER_EXCEPTIONS_VISIBLE
         lbl = SwingUtils.toBold(new JLabel(_GUI._.LinkGrabberSidebar_LinkGrabberSidebar_exceptionfilter()));
         counter = SwingUtils.toBold(new JLabel(""));
         // lbl.setForeground(new
         // Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor()));
         add(counter);
         add(lbl);
-        keyHandler = LinkFilterSettings.LINKGRABBER_EXCEPTIONS_QUICKFILTER_ENABLED;
-        checkBox = new ExtCheckBox(LinkFilterSettings.EXCEPTION_AS_QUICKFILTER_ENABLED, lbl, counter);
+        keyHandler = org.jdownloader.settings.staticreferences.LINKFILTER.LINKGRABBER_EXCEPTIONS_QUICKFILTER_ENABLED;
+        checkBox = new ExtCheckBox(org.jdownloader.settings.staticreferences.LINKFILTER.EXCEPTION_AS_QUICKFILTER_ENABLED, lbl, counter);
         add(checkBox);
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new JTable().getGridColor()));
 

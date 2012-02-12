@@ -442,10 +442,10 @@ public class Main {
                         /* load extensions */
                         ExtensionController.getInstance().init();
                         /* init clipboardMonitoring stuff */
-                        if (GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.isEnabled()) {
+                        if (org.jdownloader.settings.staticreferences.GUI.CLIPBOARD_MONITORED.isEnabled()) {
                             ClipboardMonitoring.getINSTANCE().startMonitoring();
                         }
-                        GraphicalUserInterfaceSettings.CLIPBOARD_MONITORED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+                        org.jdownloader.settings.staticreferences.GUI.CLIPBOARD_MONITORED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
                             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                                 if (Boolean.TRUE.equals(newValue) && ClipboardMonitoring.getINSTANCE().isMonitoring() == false) {

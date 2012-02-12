@@ -78,8 +78,8 @@ public class PremiumStatus extends JPanel implements MouseListener {
         }
 
         this.setOpaque(false);
-        updateGUI(GeneralSettings.USE_AVAILABLE_ACCOUNTS.getDefaultValue());
-        GeneralSettings.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+        updateGUI(org.jdownloader.settings.staticreferences.GENERAL.USE_AVAILABLE_ACCOUNTS.getDefaultValue());
+        org.jdownloader.settings.staticreferences.GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                 updateGUI(newValue);
@@ -128,7 +128,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
                                 case AccountControllerEvent.ACCOUNT_REMOVED:
                                 case AccountControllerEvent.ACCOUNT_EXPIRED:
                                 case AccountControllerEvent.ACCOUNT_INVALID:
-                                    if (GeneralSettings.USE_AVAILABLE_ACCOUNTS.isEnabled()) redrawTimer.run();
+                                    if (org.jdownloader.settings.staticreferences.GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled()) redrawTimer.run();
                                     break;
                                 default:
                                     break;

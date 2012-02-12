@@ -143,14 +143,14 @@ public class BottomBar extends MigPanel {
         // }
         //
         // public void actionPerformed(ActionEvent e) {
-        // GraphicalUserInterfaceSettings.CFG.setDownloadViewSidebarVisible(!GraphicalUserInterfaceSettings.CFG.isDownloadViewSidebarVisible());
+        // org.jdownloader.settings.statics.GUI.CFG.setDownloadViewSidebarVisible(!org.jdownloader.settings.statics.GUI.CFG.isDownloadViewSidebarVisible());
         // }
         // });
         //
         // if
-        // (GraphicalUserInterfaceSettings.DOWNLOAD_VIEW_SIDEBAR_TOGGLE_BUTTON_ENABLED.getValue()
+        // (org.jdownloader.settings.statics.GUI.DOWNLOAD_VIEW_SIDEBAR_TOGGLE_BUTTON_ENABLED.getValue()
         // &&
-        // GraphicalUserInterfaceSettings.DOWNLOAD_VIEW_SIDEBAR_ENABLED.getValue())
+        // org.jdownloader.settings.statics.GUI.DOWNLOAD_VIEW_SIDEBAR_ENABLED.getValue())
         // {
         // //
         // add(showHideSidebar, "height 24!,width 24!,gapleft 3,aligny top");

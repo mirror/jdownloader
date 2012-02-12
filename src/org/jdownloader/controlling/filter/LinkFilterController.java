@@ -179,7 +179,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
              */
             return false;
         }
-        if (!LinkFilterSettings.LINK_FILTER_ENABLED.getValue()) return false;
+        if (!org.jdownloader.settings.staticreferences.LINKFILTER.LINK_FILTER_ENABLED.getValue()) return false;
         boolean matches = false;
         LinkgrabberFilterRule matchingFilter = null;
         final ArrayList<LinkgrabberFilterRuleWrapper> localdenyUrlFilter = denyUrlFilter;
@@ -260,7 +260,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
              */
             return false;
         }
-        if (!LinkFilterSettings.LINK_FILTER_ENABLED.getValue()) return false;
+        if (!org.jdownloader.settings.staticreferences.LINKFILTER.LINK_FILTER_ENABLED.getValue()) return false;
         DownloadLink dlink = link.getDownloadLink();
         if (dlink == null) { throw new WTFException(); }
         boolean matches = false;

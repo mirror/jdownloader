@@ -22,8 +22,6 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.controlling.filter.LinkFilterSettings;
-import org.jdownloader.controlling.packagizer.PackagizerSettings;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionControllerListener;
 import org.jdownloader.extensions.LazyExtension;
@@ -48,8 +46,8 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
 
     public SettingsSidebarModel() {
         super();
-        LinkFilterSettings.LINK_FILTER_ENABLED.getEventSender().addListener(this);
-        PackagizerSettings.ENABLED.getEventSender().addListener(this);
+        org.jdownloader.settings.staticreferences.LINKFILTER.LINK_FILTER_ENABLED.getEventSender().addListener(this);
+        org.jdownloader.settings.staticreferences.PACKAGIZER.PACKAGIZER_ENABLED.getEventSender().addListener(this);
         ExtensionController.getInstance().getEventSender().addListener(this);
     }
 

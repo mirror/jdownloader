@@ -135,7 +135,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         visible.getEventSender().addListener(this);
         init();
         onConfigValueModified(null, visible.getValue());
-        GraphicalUserInterfaceSettings.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(this, true);
+        org.jdownloader.settings.staticreferences.GUI.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(this, true);
 
     }
 
@@ -147,8 +147,8 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         // clear selection in other filter tables if we switched to a new one
         if (this.hasFocus()) {
 
-            // LinkFilterSettings.CFG
-            if (LinkgrabberSettings.QUICK_VIEW_SELECTION_ENABLED.getValue()) {
+            // org.jdownloader.settings.statics.LINKFILTER.CFG
+            if (org.jdownloader.settings.staticreferences.LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue()) {
                 ArrayList<Filter> selection = getSelectedFilters();
                 ArrayList<AbstractNode> newSelection = getMatches(selection);
 
@@ -204,7 +204,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
             nonSel.remove(f);
         }
 
-        // if (LinkgrabberSettings.QUICK_VIEW_SELECTION_ENABLED.getValue()) {
+        // if (org.jdownloader.settings.statics.LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue()) {
         ArrayList<AbstractNode> matches = getMatches(getSelectedFilters());
         popup.add(new ConfirmAction(false, matches));
         popup.add(new MergeToPackageAction(matches));
@@ -334,7 +334,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
     }
 
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        if (Boolean.TRUE.equals(newValue) && GraphicalUserInterfaceSettings.CFG.isLinkgrabberSidebarEnabled()) {
+        if (Boolean.TRUE.equals(newValue) && org.jdownloader.settings.staticreferences.GUI.CFG.isLinkgrabberSidebarEnabled()) {
             enabled = true;
             linkgrabberTable.getPackageControllerTableModel().addFilter(this);
 

@@ -3,7 +3,6 @@ package jd.controlling.reconnect;
 import jd.controlling.reconnect.ipcheck.IP;
 
 import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
@@ -11,12 +10,9 @@ import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.PlainStorage;
 import org.appwork.storage.config.annotations.SpinnerValidator;
-import org.appwork.storage.config.handler.StringKeyHandler;
 
 @PlainStorage
 public interface ReconnectConfig extends ConfigInterface {
-    public static ReconnectConfig        CFG              = JsonConfig.create(ReconnectConfig.class);
-    public static final StringKeyHandler ACTIVE_PLUGIN_ID = CFG.getStorageHandler().getKeyHandler("ActivePluginID", StringKeyHandler.class);
 
     @AboutConfig
     String getActivePluginID();

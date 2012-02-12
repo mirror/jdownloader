@@ -204,7 +204,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             if (isAbsolute(folder)) {
                 return folder;
             } else {
-                return new File(GeneralSettings.DEFAULT_DOWNLOAD_FOLDER.getValue(), folder).toString();
+                return new File(org.jdownloader.settings.staticreferences.GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), folder).toString();
             }
         } else if (value instanceof CrawledLink) {
             value = ((CrawledLink) value).getParentNode();
@@ -213,7 +213,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
                 if (isAbsolute(folder)) {
                     return folder;
                 } else {
-                    return new File(GeneralSettings.DEFAULT_DOWNLOAD_FOLDER.getValue(), folder).toString();
+                    return new File(org.jdownloader.settings.staticreferences.GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), folder).toString();
                 }
             }
         }

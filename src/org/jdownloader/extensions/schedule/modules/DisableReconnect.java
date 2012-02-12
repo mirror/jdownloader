@@ -31,7 +31,7 @@ public class DisableReconnect implements SchedulerModuleInterface {
     }
 
     public void execute(final String parameter) {
-        GeneralSettings.AUTO_RECONNECT_ENABLED.setValue(false);
+        org.jdownloader.settings.staticreferences.GENERAL.AUTO_RECONNECT_ENABLED.setValue(false);
     }
 
     public String getTranslation() {
