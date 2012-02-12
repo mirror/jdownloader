@@ -31,7 +31,6 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -168,9 +167,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                 stImgs = rcBr.getRegex("\\(\'([0-9a-f]+)\',\'(http.*?\\.png)\',(.*?),(true|false)\\)").getRow(0);
                 sscStc = rcBr.getRegex("\\(\'([0-9a-f]+)\',\'(http.*?\\.png)\',(.*?),(true|false)\\)").getRow(1);
                 SERVERSTRING = rcBr.getRegex("s_s_c_resscript\\.setAttribute\\(\'src\',\'(.*?)\'").getMatch(0) + Encoding.urlEncode(getGjsParameter());
-                if (stImgs == null || sscStc == null || SERVERSTRING == null) { throw new Exception("Keycaptcha Module fails: "); }
+                if (stImgs == null || sscStc == null || SERVERSTRING == null) { throw new Exception("KeyCaptcha Module fails"); }
             } else {
-                throw new Exception("Keycaptcha Module fails: ");
+                throw new Exception("KeyCaptcha Module fails");
             }
         }
 
@@ -184,7 +183,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                     }
                 }
                 if (FORM == null) {
-                    throw new Exception("KeyCAPTCHA form couldn't be found: ");
+                    throw new Exception("KeyCaptcha form couldn't be found");
                 } else {
                     PARAMS = new HashMap<String, String>();
                     final String[][] parameter = FORM.getRegex("(s_s_c_\\w+) = \'(.*?)\'").getMatches();
@@ -195,13 +194,13 @@ public class LnkCrptWs extends PluginForDecrypt {
                         PARAMS.put(para[0], para[1]);
                     }
                     if (PARAMS == null || PARAMS.size() == 0) {
-                        throw new Exception("KeyCaptcha values couldn't be found: ");
+                        throw new Exception("KeyCaptcha values couldn't be found");
                     } else {
                         PARAMS.put("src", FORM.getRegex("src=\'(.*?)\'").getMatch(0));
                     }
                 }
             } else {
-                throw new Exception("KeyCAPTCHA handling couldn't be found: ");
+                throw new Exception("KeyCaptcha handling couldn't be found");
             }
         }
 
@@ -791,8 +790,6 @@ public class LnkCrptWs extends PluginForDecrypt {
                     IMAGE[i] = ImageIO.read(fragmentedPic);
                     // IMAGE[i] = Toolkit.getDefaultToolkit().getImage(new
                     // URL(imgUrl));
-                } catch (final MalformedURLException e) {
-                    e.printStackTrace();
                 } catch (final IOException e) {
                     e.printStackTrace();
                 }
@@ -931,7 +928,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     public static String IMAGEREGEX(final String b) {
         final KeyCaptchaShowDialogTwo v = new KeyCaptchaShowDialogTwo();
-        final byte[] o = JDHash.getMD5(Encoding.Base64Decode("Yzg0MDdhMDhiM2M3MWVhNDE4ZWM5ZGM2NjJmMmE1NmU0MGNiZDZkNWExMTRhYTUwZmIxZTEwNzllMTdmMmI4Mw==") + org.appwork.utils.Hash.getMD5("V2UgZG8gbm90IGVuZG9yc2UgdGhlIHVzZSBvZiBKRG93bmxvYWRlci4=")).getBytes();
+        final byte[] o = JDHash.getMD5(Encoding.Base64Decode("Yzg0MDdhMDhiM2M3MWVhNDE4ZWM5ZGM2NjJmMmE1NmU0MGNiZDZkNWExMTRhYTUwZmIxZTEwNzllMTdmMmI4Mw==") + JDHash.getMD5("V2UgZG8gbm90IGVuZG9yc2UgdGhlIHVzZSBvZiBKRG93bmxvYWRlci4=")).getBytes();
         if (b != null) { return new String(v.D(o, JDHexUtils.getByteArray(b))); }
         return new String(v.D(o, JDHexUtils.getByteArray("E3CEACB19040D08244C9E5C29D115AE220F83AB417")));
     }
