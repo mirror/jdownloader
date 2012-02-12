@@ -143,6 +143,7 @@ public class YunFileCom extends PluginForHost {
     private void login(Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             // Load/Save cookies, if we do NOT do this parallel downloads fail
+            br.setReadTimeout(3 * 60 * 1000);
             br.setCookiesExclusive(false);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = account.getUser().matches(account.getStringProperty("name", account.getUser()));
@@ -177,6 +178,7 @@ public class YunFileCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setReadTimeout(3 * 60 * 1000);
         URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
         if (con.getResponseCode() == 503) {
             con.disconnect();
