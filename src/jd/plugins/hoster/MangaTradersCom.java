@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangatraders.com" }, urls = { "http://[\\w\\.]*?mangatraders\\.com/download/file/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangatraders.com" }, urls = { "http://[\\w\\.]*?mangatraders\\.com/(download|view)/file/\\d+" }, flags = { 2 })
 public class MangaTradersCom extends PluginForHost {
 
     private boolean             weAreAlreadyLoggedIn = false;
@@ -43,6 +43,11 @@ public class MangaTradersCom extends PluginForHost {
     public MangaTradersCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.mangatraders.com/register/");
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replace("/view/file/", "/download/file/"));
     }
 
     public boolean checkLinks(DownloadLink[] urls) {

@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -34,6 +34,12 @@ public class MotherLessCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    // DEV NOTES:
+    // - Server issues can return many 503's in high load situations.
+    // - Server also punishes user who downloads with too many connections. This
+    // is a linkchecking issue also, as grabs info from headers. Ultimately we
+    // might need a hoster plugin to define & enforce connection settings.
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String fpName = parameter.getStringProperty("package");
@@ -64,25 +70,28 @@ public class MotherLessCom extends PluginForDecrypt {
             dlink.setName(new Regex(param, "motherless\\.com/(.+)").getMatch(0));
             decryptedLinks.add(dlink);
         } else if (!br.containsHTML("<strong>Uploaded</strong>")) {
-            ArrayList<String> pages = new ArrayList<String>();
-            pages.add("currentPage");
-            String pagenumbers[] = br.getRegex("page=(\\d+)\"").getColumn(0);
-            if (!(pagenumbers == null) && !(pagenumbers.length == 0)) {
-                for (String aPageNumber : pagenumbers) {
-                    if (!pages.contains(aPageNumber) && !aPageNumber.equals("1")) pages.add(aPageNumber);
+            fpName = br.getRegex("<title>MOTHERLESS\\.COM \\- Go Ahead She Isn\\'t Looking\\! :  (.*?)</title>").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<div class=\"member\\-bio\\-username\">.*?\\'s Gallery \\&bull; (.*?)</div>").getMatch(0);
+            }
+            // grabs final page as count.
+            String totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=\\d+\">(\\d+)</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\">NEXT").getMatch(0);
+            if (totalpages == null) {
+                totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=(\\d+)\">\\d+</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\">NEXT").getMatch(0);
+                if (br.containsHTML("<span class=\"current\">1</span><span class=\"current\"> NEXT")) totalpages = "1";
+                if (totalpages == null) {
+                    logger.warning("MotherLess Decrypter: 'totalpages' failure: " + param);
+                    logger.warning("MotherLess Decrypter: Please report issue to JDownloader development team!");
+                    return null;
                 }
             }
-            logger.info("Found " + pages.size() + " pages, decrypting now...");
-            progress.setRange(pages.size());
-            for (String getthepage : pages) {
-                if (!getthepage.equals("currentPage")) br.getPage(param + "?page=" + getthepage);
-                fpName = br.getRegex("<title>MOTHERLESS\\.COM \\- Go Ahead She Isn\\'t Looking\\! :  (.*?)</title>").getMatch(0);
-                if (fpName == null) {
-                    fpName = br.getRegex("<div class=\"member\\-bio\\-username\">.*?\\'s Gallery \\&bull; (.*?)</div>").getMatch(0);
-                }
+            int numberOfPages = Integer.parseInt(totalpages);
+            progress.setRange(numberOfPages);
+            logger.info("Found " + numberOfPages + " page(s), decrypting now...");
+            for (int i = 1; i <= numberOfPages; i++) {
                 String[] picturelinks = br.getRegex("class=\"thumbnail mediatype_image\" rel=\"[A-Z0-9]+\">[\t\n\r ]+<div class=\"thumbnail\\-img-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a([\t\n\r ]+)?href=\"((http://motherless\\.com)?/[A-Z0-9]+(/[A-Z0-9]+)?)\"").getColumn(1);
                 if (picturelinks != null && picturelinks.length != 0) {
-                    logger.info("Decrypting page " + getthepage + " which contains " + picturelinks.length + " links.");
+                    logger.info("Decrypting page " + i + " which contains " + picturelinks.length + " links.");
                     for (String singlelink : picturelinks) {
                         singlelink = formLink(singlelink);
                         DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlesspictures.com/"));
@@ -107,6 +116,8 @@ public class MotherLessCom extends PluginForDecrypt {
                     logger.warning("Decrypter failed for link: " + param);
                     return null;
                 }
+                // grab next page if required.
+                if (i != numberOfPages) br.getPage(param + "?page=" + (i + 1));
                 progress.increase(1);
             }
         } else {
