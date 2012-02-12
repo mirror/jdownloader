@@ -16,6 +16,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtButton;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.SearchCategory;
 import org.jdownloader.gui.views.downloads.action.ClearAction;
 import org.jdownloader.gui.views.downloads.action.RemoveOptionsAction;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
@@ -64,7 +65,17 @@ public class BottomBar extends MigPanel {
                 super.setBounds(x - 2, y, width + 2, height);
             }
         };
-        searchField = new SearchField<FilePackage, DownloadLink>(table);
+        searchField = new SearchField<FilePackage, DownloadLink>(table) {
+
+            @Override
+            public void setSelectedCategory(SearchCategory selectedCategory) {
+                super.setSelectedCategory(selectedCategory);
+                JsonConfig.create(GraphicalUserInterfaceSettings.class).setSelectedDownloadSearchCategory(selectedCategory);
+            }
+
+        };
+        searchField.setSelectedCategory(JsonConfig.create(GraphicalUserInterfaceSettings.class).getSelectedDownloadSearchCategory());
+        searchField.setCategories(new SearchCategory[] { SearchCategory.FILENAME, SearchCategory.HOSTER, SearchCategory.PACKAGE });
         searchField.addKeyListener(new KeyListener() {
 
             public void keyTyped(KeyEvent e) {

@@ -19,6 +19,7 @@ import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
 import org.appwork.utils.Application;
+import org.jdownloader.gui.views.components.SearchCategory;
 
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
@@ -435,4 +436,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isLinkgrabberAutoTabSwitchEnabled();
 
     void setLinkgrabberAutoTabSwitchEnabled(boolean b);
+
+    @DefaultEnumValue("FILENAME")
+    void setSelectedDownloadSearchCategory(SearchCategory selectedCategory);
+
+    SearchCategory getSelectedDownloadSearchCategory();
 }

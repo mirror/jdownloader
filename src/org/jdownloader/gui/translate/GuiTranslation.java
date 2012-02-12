@@ -3442,4 +3442,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "File Name" })
     String PackagizerSingleTestTableModel_initColumns_filename_();
 
+    @Default(lngs = { "en" }, values = { "File Name" })
+    String searchcategory_filename();
+
+    @Default(lngs = { "en" }, values = { "Hoster" })
+    String searchcategory_hoster();
+
+    @Default(lngs = { "en" }, values = { "Package Name" })
+    String searchcategory_package();
+
 }
