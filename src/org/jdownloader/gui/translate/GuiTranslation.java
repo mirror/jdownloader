@@ -3451,4 +3451,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Package Name" })
     String searchcategory_package();
 
+    @Default(lngs = { "en" }, values = { "View: Running Downloads" })
+    String downloadview_running();
+
+    @Default(lngs = { "en" }, values = { "View: All Downloads" })
+    String downloadview_all();
+
+    @Default(lngs = { "en" }, values = { "View: Failed Downloads" })
+    String downloadview_failed();
+
+    @Default(lngs = { "en" }, values = { "View: Successful Downloads" })
+    String downloadview_successful();
+
 }

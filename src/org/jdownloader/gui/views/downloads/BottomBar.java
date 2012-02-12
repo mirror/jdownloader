@@ -2,10 +2,15 @@ package org.jdownloader.gui.views.downloads;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.ListCellRenderer;
 
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
@@ -24,6 +29,7 @@ import org.jdownloader.gui.views.linkgrabber.SearchField;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.staticreferences.GUI;
 
 public class BottomBar extends MigPanel {
 
@@ -34,6 +40,7 @@ public class BottomBar extends MigPanel {
     private JButton                                popup;
     private JButton                                popupRemove;
     private SearchField<FilePackage, DownloadLink> searchField;
+    private JComboBox                              combo;
 
     // private JToggleButton showHideSidebar;
 
@@ -98,7 +105,30 @@ public class BottomBar extends MigPanel {
         add(popupRemove, "height 24!,width 12!,aligny top");
 
         add(searchField, "height 24!,aligny top,gapleft 3,pushx,growx");
+        combo = new JComboBox(new View[] { View.ALL, View.RUNNING, View.FAILED, View.SUCCESSFUL });
+        final ListCellRenderer org = combo.getRenderer();
+        combo.setRenderer(new ListCellRenderer() {
 
+            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                Component comp = org.getListCellRendererComponent(list, ((View) value).getLabel(), index, isSelected, cellHasFocus);
+                try {
+                    JLabel ret = (JLabel) comp;
+                    ret.setIcon(((View) value).getIcon());
+                    comp = ret;
+                } catch (Throwable e) {
+
+                }
+                return comp;
+            }
+        });
+        combo.setSelectedItem(GUI.DOWNLOAD_VIEW.getValue());
+        add(combo, "height 24!,aligny top");
+        combo.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                JsonConfig.create(GraphicalUserInterfaceSettings.class).setDownloadView((View) combo.getSelectedItem());
+            }
+        });
         if (config.isShowMoveToTopButton()) {
 
             addButton(table.getMoveTopAction());

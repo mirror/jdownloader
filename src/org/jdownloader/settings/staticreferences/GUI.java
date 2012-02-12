@@ -21,6 +21,10 @@ public class GUI {
     // let's do this mapping here. If we map all methods to static handlers,
     // access is faster, and we get an error on init if mappings are wrong.
     // Keyhandler interface
+    // org.jdownloader.settings.GraphicalUserInterfaceSettings.downloadview =
+    // ALL
+    public static final EnumKeyHandler                                 DOWNLOAD_VIEW                             = SH.getKeyHandler("DownloadView", EnumKeyHandler.class);
+    // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.clipboardmonitored
     // = false
     /**
@@ -54,19 +58,19 @@ public class GUI {
      **/
     public static final BooleanKeyHandler                              FONT_RESPECTS_SYSTEM_DPI                  = SH.getKeyHandler("FontRespectsSystemDPI", BooleanKeyHandler.class);
     // Keyhandler interface
-    // org.jdownloader.settings.GraphicalUserInterfaceSettings.themeid =
-    // standard
-    /**
-     * Icon Theme ID. Make sure that ./themes/<ID>/ exists
-     **/
-    public static final StringKeyHandler                               THEME_ID                                  = SH.getKeyHandler("ThemeID", StringKeyHandler.class);
-    // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.linkgrabbersidebartogglebuttonenabled
     // = true
     /**
      * Enable/Disable the Linkgrabber Sidebar QuicktoggleButton
      **/
     public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED = SH.getKeyHandler("LinkgrabberSidebarToggleButtonEnabled", BooleanKeyHandler.class);
+    // Keyhandler interface
+    // org.jdownloader.settings.GraphicalUserInterfaceSettings.themeid =
+    // standard
+    /**
+     * Icon Theme ID. Make sure that ./themes/<ID>/ exists
+     **/
+    public static final StringKeyHandler                               THEME_ID                                  = SH.getKeyHandler("ThemeID", StringKeyHandler.class);
     // Keyhandler interface
     // org.jdownloader.settings.GraphicalUserInterfaceSettings.fontscalefactor =
     // 100

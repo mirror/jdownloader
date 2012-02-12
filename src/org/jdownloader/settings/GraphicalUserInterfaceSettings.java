@@ -240,4 +240,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setSelectedDownloadSearchCategory(SearchCategory selectedCategory);
 
     SearchCategory getSelectedDownloadSearchCategory();
+
+    @DefaultEnumValue("ALL")
+    org.jdownloader.gui.views.downloads.View getDownloadView();
+
+    void setDownloadView(org.jdownloader.gui.views.downloads.View view);
 }
