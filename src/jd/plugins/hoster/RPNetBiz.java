@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -55,7 +57,8 @@ public class RPNetBiz extends PluginForHost {
         // requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         URLConnectionAdapter con = dl.getConnection();
-        if (con.getResponseCode() != 200 || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) {
+        List<Integer> allowedResponseCodes = Arrays.asList(200, 206);
+        if (!allowedResponseCodes.contains(con.getResponseCode()) || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) {
             try {
                 br.followConnection();
             } catch (final Throwable e) {
@@ -72,7 +75,8 @@ public class RPNetBiz extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(link.getDownloadURL());
-            if (con.getResponseCode() != 200 || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            List<Integer> allowedResponseCodes = Arrays.asList(200, 206);
+            if (!allowedResponseCodes.contains(con.getResponseCode()) || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             link.setName(getFileNameFromHeader(con));
             link.setDownloadSize(con.getLongContentLength());
         } finally {
