@@ -25,4 +25,8 @@ public enum View {
     public Icon getIcon() {
         return NewTheme.I().getIcon(iconKey, 18);
     }
+
+    public String getIconKey() {
+        return iconKey;
+    }
 }

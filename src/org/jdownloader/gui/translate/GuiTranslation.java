@@ -3475,4 +3475,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Choose a View to filter the download list..." })
     String PseudoCombo_PseudoCombo_tt_();
 
+    @Default(lngs = { "en" }, values = { "JDownloader Download View's" })
+    String PseudoCombo_actionPerformed_views_();
+
+    @Default(lngs = { "en" }, values = { "You just changed the current View of the Downloadtable. Views can be very useful to get rid of huge lists of links.\r\nIf a view is active, the Downloadlist is colored to remind you that this is a filtered view. \r\nIf you need no reminder, or just do not like the color, you may have a look into the advanced settings." })
+    String PseudoCombo_actionPerformed_views_msg();
+
 }

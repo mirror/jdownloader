@@ -154,6 +154,14 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isSortColumnHighlightEnabled();
 
     @AboutConfig
+    @Description("Highlight Table in Downloadview if table is filtered")
+    @DefaultBooleanValue(true)
+    @RequiresRestart
+    boolean isFilterHighlightEnabled();
+
+    void setFilterHighlightEnabled(boolean b);
+
+    @AboutConfig
     @Description("Paint all labels/text with or without antialias. Default value is false.")
     @DefaultBooleanValue(false)
     @RequiresRestart

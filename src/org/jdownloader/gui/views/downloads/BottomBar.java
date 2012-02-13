@@ -155,7 +155,7 @@ public class BottomBar extends MigPanel {
         };
 
         combo.setSelectedItem((View) GUI.DOWNLOAD_VIEW.getValue());
-        add(combo, "height 24!,aligny top,gapleft 3");
+        add(combo, "height 24!,aligny top,gapleft 2");
         combo.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -226,7 +226,7 @@ public class BottomBar extends MigPanel {
         // bt.setText("");
         // bt.setRolloverEffectEnabled(true);
 
-        add(bt, "width 24!,height 24!,gapleft 3,aligny top");
+        add(bt, "width 24!,height 24!,gapleft 2,aligny top");
     }
 
 }

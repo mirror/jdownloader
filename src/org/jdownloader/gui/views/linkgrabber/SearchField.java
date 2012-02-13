@@ -25,6 +25,7 @@ import javax.swing.border.Border;
 import jd.controlling.IOEQ;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 
@@ -135,6 +136,8 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
             try {
                 filterPattern = LinkgrabberFilterRuleWrapper.createPattern(filterRegex, (JsonConfig.create(GeneralSettings.class).isFilterRegex()));
                 table2Filter.getPackageControllerTableModel().addFilter(this);
+                JDGui.help(_GUI._.PseudoCombo_actionPerformed_views_(), _GUI._.PseudoCombo_actionPerformed_views_msg(), NewTheme.I().getIcon("find", 32));
+
             } catch (final Throwable e) {
                 Log.exception(e);
             }
@@ -142,6 +145,7 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
             table2Filter.getPackageControllerTableModel().removeFilter(this);
         }
         table2Filter.getPackageControllerTableModel().recreateModel(true);
+
     }
 
     public boolean isFiltered(PackageType e) {

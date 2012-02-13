@@ -63,6 +63,7 @@ public class PseudoCombo extends JButton {
 
                 public void actionPerformed(ActionEvent e) {
                     setSelectedItem(view);
+
                 }
             });
         }

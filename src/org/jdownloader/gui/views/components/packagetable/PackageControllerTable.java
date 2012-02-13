@@ -15,12 +15,12 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.swing.jdgui.BasicJDTable;
+import jd.gui.swing.laf.LookAndFeelController;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel.TOGGLEMODE;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.staticreferences.GUI;
 
 public abstract class PackageControllerTable<ParentType extends AbstractPackageNode<ChildrenType, ParentType>, ChildrenType extends AbstractPackageChildrenNode<ParentType>> extends BasicJDTable<AbstractNode> {
 
@@ -30,15 +30,20 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     private static final long                                     serialVersionUID = 3880570615872972276L;
     private PackageControllerTableModel<ParentType, ChildrenType> tableModel       = null;
     private Color                                                 sortNotifyColor;
+    private Color                                                 filterNotifyColor;
 
     public PackageControllerTable(PackageControllerTableModel<ParentType, ChildrenType> pctm) {
         super(pctm);
         tableModel = pctm;
         this.setShowVerticalLines(false);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSortColumnHighlightEnabled()) {
-            sortNotifyColor = Color.ORANGE;
-        }
+        // if
+        // (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSortColumnHighlightEnabled())
+        // {
+
+        sortNotifyColor = GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.getValue() ? new Color(LookAndFeelController.getInstance().getLAFOptions().getHighlightColor1()) : null;
+        filterNotifyColor = GUI.CFG.isFilterHighlightEnabled() ? new Color(LookAndFeelController.getInstance().getLAFOptions().getHighlightColor2()) : null;
+        // }
     }
 
     public PackageControllerTableModel<ParentType, ChildrenType> getPackageControllerTableModel() {
@@ -78,6 +83,14 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         Graphics2D g2 = (Graphics2D) g;
         Composite comp = g2.getComposite();
         final Rectangle visibleRect = this.getVisibleRect();
+
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f));
+        if (filterNotifyColor != null && tableModel.isFilteredView()) {
+
+            g2.setColor(filterNotifyColor);
+
+            g2.fillRect(visibleRect.x, visibleRect.y, visibleRect.x + visibleRect.width, visibleRect.y + visibleRect.height);
+        }
         Rectangle first;
         ExtColumn<AbstractNode> sortColumn = getExtTableModel().getSortColumn();
         if (sortColumn == null) return;
@@ -89,12 +102,13 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
             first = this.getCellRect(0, index, true);
 
-            g2.setColor(Color.ORANGE);
+            g2.setColor(sortNotifyColor);
 
-            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f));
             g2.fillRect(visibleRect.x + first.x, visibleRect.y, visibleRect.x + getExtTableModel().getSortColumn().getWidth(), visibleRect.y + visibleRect.height);
         }
-        if (isOriginalOrder()) return;
+
+        // ;
+
         g2.setComposite(comp);
     }
 

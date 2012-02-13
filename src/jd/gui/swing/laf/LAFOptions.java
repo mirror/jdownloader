@@ -31,6 +31,20 @@ public class LAFOptions implements Storable {
     private int[] popupBorderInsets      = new int[] { 0, 0, 0, 0 };
     private int   errorForeground        = 16711680;
     private int   tooltipForegroundColor = 0xcccccc;
+    private int   highlightColor1        = Color.ORANGE.getRGB();
+    private int   highlightColor2        = Color.GREEN.getRGB();
+
+    public int getHighlightColor2() {
+        return highlightColor2;
+    }
+
+    public void setHighlightColor2(int highlightColor2) {
+        this.highlightColor2 = highlightColor2;
+    }
+
+    public void setHighlightColor1(int highlightColor1) {
+        this.highlightColor1 = highlightColor1;
+    }
 
     public void setTooltipForegroundColor(int tooltipForegroundColor) {
         this.tooltipForegroundColor = tooltipForegroundColor;
@@ -86,5 +100,9 @@ public class LAFOptions implements Storable {
 
     public int getTooltipForegroundColor() {
         return tooltipForegroundColor;
+    }
+
+    public int getHighlightColor1() {
+        return highlightColor1;
     }
 }
