@@ -53,7 +53,7 @@ public class NmStrm24Com extends PluginForDecrypt {
         if (br.containsHTML("Seite nicht gefunden<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("\\'pageName\\': \\'([^<>\"\\']+)\\'").getMatch(0);
         if (fpName != null) fpName = br.getRegex("class=\\'post\\-title entry\\-title\\'>[\t\n\r ]+<a href=\\'http://[^<>\"\\']+\\'>([^<>\"\\']+)</a>").getMatch(0);
-        String[] links = br.getRegex("id=\"fragment-\\d+\"><iframe (style=\\'overflow: hidden; border: 0; width: 600px; height: 480px\\' )?(src|SRC)=(\\'|\")(.*?)(\\'|\")").getColumn(3);
+        String[] links = br.getRegex("id=\"fragment\\-\\d+\"><iframe (style=\\'overflow: hidden; border: 0; width: 600px; height: 480px\\' )?(src|SRC)=(\\'|\")(.*?)(\\'|\")").getColumn(3);
         if (links != null && links.length != 0) {
             for (String cryptedLink : links)
                 cryptedLinks.add(cryptedLink);

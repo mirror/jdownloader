@@ -29,11 +29,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitsor.com", "flameupload.com", "mirrorafile.com", "lougyl.com", "neo-share.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "megaupper.com", "shrta.com", "1filesharing.com", "7ups.net", "mirrorfusion.com", "digzip.com", "needmirror.com" }, urls = { "http://(www\\.)?bitsor\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?flameupload\\.(com|co)/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?neo\\-share\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}",
-        "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?7ups\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?digzip\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
-public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multisiteupload.com" }, urls = { "http://(www\\.)?multisiteupload\\.com/files/[0-9A-Z]{8}" }, flags = { 0 })
+public class MultiSiteUploadCom extends PluginForDecrypt {
 
-    public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
+    public MultiSiteUploadCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -42,12 +41,9 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String parameter = param.toString();
-        // Only uploadmirrors.com has those "/download/" links so we need to
-        // correct them
-        parameter = parameter.replaceAll("(/dl/|/mirror/|/download/)", "/files/").replace("flameupload.co/", "flameupload.com/");
         // Tohse links need a "/" at the end to be valid
         if (!param.getCryptedUrl().endsWith("/")) param.setCryptedUrl(param.getCryptedUrl().toString() + "/");
-        String host = new Regex(parameter, "(.+)/(files|dl)").getMatch(0);
+        String host = "http://www.multisiteupload.com";
         String id = new Regex(parameter, "files/([0-9A-Z]+)").getMatch(0);
         // This should never happen but in case a dev changes the plugin without
         // much testing he ll see the error later!
@@ -63,9 +59,10 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         }
         br.setFollowRedirects(false);
+        final String adfLink = br.getRegex("(http://adf\\.ly/\\d+/)").getMatch(0);
         String[] redirectLinks = br.getRegex("(/(redirect|rd)/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("><a href=(.*?)target=").getColumn(0);
-        if (redirectLinks == null || redirectLinks.length == 0) return null;
+        if (redirectLinks == null || redirectLinks.length == 0 || adfLink == null) return null;
         progress.setRange(redirectLinks.length);
         String nicelookinghost = host.replaceAll("(www\\.|http://|/)", "");
         logger.info("Found " + redirectLinks.length + " " + nicelookinghost + " links to decrypt...");
@@ -75,8 +72,13 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             // Handling for links that need to be regexed or that need to be get
             // by redirect
             if (singlelink.contains("/redirect/") || singlelink.contains("/rd/")) {
+                brc.getHeaders().put("Referer", adfLink + host.replace("www.", "") + singlelink);
                 brc.getPage(host.replace("www.", "") + singlelink);
                 dllink = brc.getRedirectLocation();
+                if (dllink != null && dllink.contains("multisiteupload.com/")) {
+                    brc.getPage(dllink);
+                    dllink = null;
+                }
                 if (dllink == null) {
                     dllink = brc.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
                     // For 1filesharing.com links
@@ -92,9 +94,6 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             }
             progress.increase(1);
             if (dllink == null) continue;
-            if (dllink.contains("flameupload")) {
-                logger.info("Recursion? " + param.toString() + "->" + dllink);
-            }
             decryptedLinks.add(createDownloadlink(dllink));
         }
         return decryptedLinks;

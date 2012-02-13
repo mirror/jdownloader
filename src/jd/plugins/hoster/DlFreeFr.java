@@ -38,6 +38,8 @@ public class DlFreeFr extends PluginForHost {
         super(wrapper);
     }
 
+    private boolean HTML = false;
+
     @Override
     public String getAGBLink() {
         return "http://dl.free.fr/";
@@ -52,24 +54,22 @@ public class DlFreeFr extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
-        if (dl.getConnection().isContentDisposition()) {
-            /* directdownload */
-        } else {
-            br.followConnection();
+        if (HTML) {
             if (br.containsHTML("Trop de slots utilis")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
             String filename = br.getRegex(Pattern.compile("Fichier:</td>.*?<td.*?>(.*?)<", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)soit", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             String dlLink = br.getRegex("window\\.location\\.href = \\'(http://.*?)\\'").getMatch(0);
-            if (dlLink == null) dlLink = br.getRegex("<tr><td colspan=\"2\" style=\"text\\-align: center; border: 1px solid #ffffff\"><a style=\"text\\-decoration: underline\" href=\"(.*?free.*?fr.*?)\">").getMatch(0);
+            if (dlLink == null) dlLink = br.getRegex("style=\"text\\-decoration: underline\" id=\"link\" href=\"(http[^<>\"\\']+)\">").getMatch(0);
             if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, 1);
-            if (!dl.getConnection().isContentDisposition()) {
-                br.followConnection();
-                if (br.getURL().contains("overload")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
+        }
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            if (br.getURL().contains("overload")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -77,6 +77,7 @@ public class DlFreeFr extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
         URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
         if (con.isContentDisposition()) {
@@ -86,6 +87,7 @@ public class DlFreeFr extends PluginForHost {
             return AvailableStatus.TRUE;
         } else {
             br.followConnection();
+            HTML = true;
         }
         String filename = br.getRegex(Pattern.compile("Fichier:</td>.*?<td.*?>(.*?)<", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)soit", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);

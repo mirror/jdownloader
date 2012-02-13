@@ -71,9 +71,7 @@ public class ErtkiOg extends PluginForDecrypt {
                 fp.setName(fpName);
                 fp.addLinks(decryptedLinks);
             }
-        }
-
-        else if (parameter.matches("http://(www\\.)?erotelki\\.org/engine/go\\.php\\?url=[^<>\"\\']+")) {
+        } else {
             String finallink = Encoding.Base64Decode(Encoding.htmlDecode(new Regex(parameter, "url=([^<>\"\\']+)").getMatch(0)));
             decryptedLinks.add(createDownloadlink(finallink));
         }
