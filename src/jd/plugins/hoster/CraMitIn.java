@@ -59,6 +59,7 @@ public class CraMitIn extends PluginForHost {
 
     public CraMitIn(PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall(5000l);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
@@ -486,7 +487,7 @@ public class CraMitIn extends PluginForHost {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
                 Form DLForm = br.getFormbyProperty("name", "F1");
-                if (DLForm == null) throw new PluginException(LinkStatus.ERROR_RETRY);
+                if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 DLForm.put("op", "download2");
                 if (br.containsHTML(passwordText)) {
                     passCode = handlePassword(passCode, DLForm, link);

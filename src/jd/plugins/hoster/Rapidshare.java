@@ -28,6 +28,7 @@ import jd.config.ConfigEntry;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
+import jd.http.RandomUserAgent;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.Formatter;
@@ -140,6 +141,8 @@ public class Rapidshare extends PluginForHost {
     private static final Account dummyAccount     = new Account("TRAFSHARE", "TRAFSHARE");
 
     private static final String  PRE_RESOLVE      = "PRE_RESOLVE2";
+
+    private static final String  UA               = RandomUserAgent.generate();
 
     /* returns file id of link */
     private static String getID(final String link) {
@@ -702,7 +705,7 @@ public class Rapidshare extends PluginForHost {
         boolean follow = br.isFollowingRedirects();
         try {
             br.getHeaders().put("Accept-Language", "de-DE,de;q=0.8,en-US;q=0.6,en;q=0.4");
-            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/5.357 (KHTML, like Gecko) Chrome/16.09.12.77 Safari/535.7");
+            br.getHeaders().put("User-Agent", UA);
             br.setFollowRedirects(true);
             br.getPage(req);
         } catch (final BrowserException e) {

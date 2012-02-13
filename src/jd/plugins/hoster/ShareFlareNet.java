@@ -60,8 +60,13 @@ public class ShareFlareNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         synchronized (LOCK) {
             AccountInfo ai = new AccountInfo();
-            ai.setStatus("Status can only be checked while downloading!");
-            account.setValid(true);
+            if (account.getUser() != null && account.getUser().length() > 0) {
+                ai.setStatus("Please leave username empty and enter premium code as password only!");
+                account.setValid(false);
+            } else {
+                ai.setStatus("Status can only be checked while downloading!");
+                account.setValid(true);
+            }
             return ai;
         }
     }
@@ -177,6 +182,7 @@ public class ShareFlareNet extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        if (account.getUser() != null && account.getUser().length() > 0) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
         requestFileInformation(downloadLink);
         Form premForm = null;
         Form allForms[] = br.getForms();
@@ -198,9 +204,12 @@ public class ShareFlareNet extends PluginForHost {
         String points = br.getRegex(">Points:</span>([0-9\\.]+)\\&nbsp;").getMatch(0);
         if (points == null) points = br.getRegex("<p>You have: ([0-9\\.]+) Points</p>").getMatch(0);
         if (points != null) {
-            AccountInfo ai = new AccountInfo();
+            AccountInfo ai = account.getAccountInfo();
+            if (ai == null) {
+                ai = new AccountInfo();
+                account.setAccountInfo(ai);
+            }
             ai.setTrafficLeft(SizeFormatter.getSize(points + "GB"));
-            account.setAccountInfo(ai);
         }
         String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("valign=\"middle\"><br><span style=\"font-size:12px;\"><a href='(http://.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (url == null) {

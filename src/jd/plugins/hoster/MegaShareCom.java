@@ -183,7 +183,10 @@ public class MegaShareCom extends PluginForHost {
         getForm(remove);
 
         final String dllink = Encoding.htmlDecode(DLFORM.getRegex("name=\"link\".*?value=\"(.*?)\"").getMatch(0));
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dllink == null) {
+            if (br.containsHTML("Invalid Captcha Value")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Unlimited chunks are possible but cause servererrors
         // ("DOWNLOAD_IMCOMPLETE")
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
