@@ -63,7 +63,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         if (t) {
             result = JSonStorage.getPlainStorage("IfFileExistsOptions").get(getDontShowAgainKey(), IfFileExistsAction.SKIP_FILE);
         } else if (result != null) {
-            org.jdownloader.settings.staticreferences.GUI.CFG.setLastIfFileExists(result);
+            org.jdownloader.settings.staticreferences.CFG_GUI.CFG.setLastIfFileExists(result);
             JSonStorage.getPlainStorage("IfFileExistsOptions").put(getDontShowAgainKey(), result);
         }
         return result;
@@ -132,7 +132,7 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         p.add(skip, "gapleft 10");
         p.add(overwrite, "gapleft 10");
         p.add(rename, "gapleft 10");
-        IfFileExistsAction def = org.jdownloader.settings.staticreferences.GUI.CFG.getLastIfFileExists();
+        IfFileExistsAction def = org.jdownloader.settings.staticreferences.CFG_GUI.CFG.getLastIfFileExists();
         if (def == null) def = IfFileExistsAction.SKIP_FILE;
         switch (def) {
         case AUTO_RENAME:

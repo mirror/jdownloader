@@ -7,7 +7,7 @@ import org.appwork.storage.config.handler.ObjectKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 
-public class LINKFILTER {
+public class CFG_LINKFILTER {
     public static void main(String[] args) {
         ConfigUtils.printStaticMappings(LinkFilterSettings.class);
     }

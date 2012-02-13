@@ -34,7 +34,7 @@ public class AddContainerAction extends AppAction {
         try {
             String exts = ContainerPluginController.getInstance().getContainerExtensions(null);
 
-            ret = Dialog.getInstance().showFileChooser("loaddlc", _GUI._.AddContainerAction_actionPerformed_(), FileChooserSelectionMode.FILES_ONLY, new JDFileFilter(_GUI._.AddContainerAction_actionPerformed_extensions(exts), exts, true), false, FileChooserType.OPEN_DIALOG, new File(org.jdownloader.settings.staticreferences.GENERAL.CFG.getDefaultDownloadFolder()));
+            ret = Dialog.getInstance().showFileChooser("loaddlc", _GUI._.AddContainerAction_actionPerformed_(), FileChooserSelectionMode.FILES_ONLY, new JDFileFilter(_GUI._.AddContainerAction_actionPerformed_extensions(exts), exts, true), false, FileChooserType.OPEN_DIALOG, new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getDefaultDownloadFolder()));
 
             if (ret == null) return;
             StringBuilder sb = new StringBuilder();

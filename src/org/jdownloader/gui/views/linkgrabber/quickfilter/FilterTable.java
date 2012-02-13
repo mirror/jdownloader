@@ -135,7 +135,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         visible.getEventSender().addListener(this);
         init();
         onConfigValueModified(null, visible.getValue());
-        org.jdownloader.settings.staticreferences.GUI.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(this, true);
+        org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_ENABLED.getEventSender().addListener(this, true);
 
     }
 
@@ -148,7 +148,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         if (this.hasFocus()) {
 
             // org.jdownloader.settings.statics.LINKFILTER.CFG
-            if (org.jdownloader.settings.staticreferences.LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue()) {
+            if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue()) {
                 ArrayList<Filter> selection = getSelectedFilters();
                 ArrayList<AbstractNode> newSelection = getMatches(selection);
 
@@ -334,7 +334,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
     }
 
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        if (Boolean.TRUE.equals(newValue) && org.jdownloader.settings.staticreferences.GUI.CFG.isLinkgrabberSidebarEnabled()) {
+        if (Boolean.TRUE.equals(newValue) && org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberSidebarEnabled()) {
             enabled = true;
             linkgrabberTable.getPackageControllerTableModel().addFilter(this);
 

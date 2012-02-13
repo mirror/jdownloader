@@ -32,10 +32,10 @@ public class AwesomeReconnectListener implements ProposalRequestListener {
     public void performAction(final Action action) {
         switch ((actionid) action.getProposal().getActionID()) {
         case TURNOFF:
-            org.jdownloader.settings.staticreferences.GENERAL.AUTO_RECONNECT_ENABLED.setValue(false);
+            org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.setValue(false);
             break;
         case TURNON:
-            org.jdownloader.settings.staticreferences.GENERAL.AUTO_RECONNECT_ENABLED.setValue(true);
+            org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.setValue(true);
             break;
         case RCNOW:
             Reconnecter.getInstance().forceReconnect();
@@ -49,7 +49,7 @@ public class AwesomeReconnectListener implements ProposalRequestListener {
 
         }
         if (request.isParamsEmpty() || request.getParams().startsWith("o")) {
-            if (org.jdownloader.settings.staticreferences.GENERAL.AUTO_RECONNECT_ENABLED.getValue()) {
+            if (org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.getValue()) {
                 new Proposal(this, request, new JLabel("Turn automatic reconnect off"), actionid.TURNOFF, Utils.createProposalListElement(this, request.withParams("off")), 1.0f);
             } else {
                 new Proposal(this, request, new JLabel("Turn automatic reconnect on"), actionid.TURNON, Utils.createProposalListElement(this, request.withParams("on")), 1.0f);

@@ -59,7 +59,7 @@ public class SpeedMeterPanel extends Graph {
         speedLimiter = new Limiter(a, b);
         config = JsonConfig.create(GeneralSettings.class);
         speedLimiter.setValue(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
-        org.jdownloader.settings.staticreferences.GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
 
             public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
                 new EDTRunner() {
@@ -75,7 +75,7 @@ public class SpeedMeterPanel extends Graph {
 
             }
         }, false);
-        org.jdownloader.settings.staticreferences.GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }

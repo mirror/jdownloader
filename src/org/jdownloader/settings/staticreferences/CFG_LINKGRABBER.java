@@ -9,7 +9,7 @@ import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 
-public class LINKGRABBER {
+public class CFG_LINKGRABBER {
     public static void main(String[] args) {
         ConfigUtils.printStaticMappings(LinkgrabberSettings.class);
     }

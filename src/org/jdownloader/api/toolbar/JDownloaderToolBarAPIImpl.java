@@ -86,16 +86,16 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         HashMap<String, Object> ret = new HashMap<String, Object>();
         int running = DownloadWatchDog.getInstance().getActiveDownloads();
         ret.put("running", running > 0);
-        ret.put("limit", org.jdownloader.settings.staticreferences.GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
-        if (org.jdownloader.settings.staticreferences.GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled()) {
-            ret.put("limitspeed", org.jdownloader.settings.staticreferences.GENERAL.DOWNLOAD_SPEED_LIMIT.getValue());
+        ret.put("limit", org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
+        if (org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled()) {
+            ret.put("limitspeed", org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue());
         } else {
             ret.put("limitspeed", 0);
         }
-        ret.put("reconnect", org.jdownloader.settings.staticreferences.GENERAL.AUTO_RECONNECT_ENABLED.isEnabled());
-        ret.put("clipboard", org.jdownloader.settings.staticreferences.GUI.CLIPBOARD_MONITORED.isEnabled());
+        ret.put("reconnect", org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.isEnabled());
+        ret.put("clipboard", org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled());
         ret.put("stopafter", DownloadWatchDog.getInstance().isStopMarkSet());
-        ret.put("premium", org.jdownloader.settings.staticreferences.GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
+        ret.put("premium", org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
         if (running == 0) {
             ret.put("speed", 0);
         } else {
@@ -143,19 +143,19 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
     }
 
     public boolean toggleDownloadSpeedLimit() {
-        org.jdownloader.settings.staticreferences.GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.toggle();
-        return org.jdownloader.settings.staticreferences.GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled();
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.toggle();
+        return org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled();
     }
 
     public boolean toggleClipboardMonitoring() {
-        boolean b = org.jdownloader.settings.staticreferences.GUI.CLIPBOARD_MONITORED.isEnabled();
-        org.jdownloader.settings.staticreferences.GUI.CLIPBOARD_MONITORED.setValue(!b);
+        boolean b = org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled();
+        org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.setValue(!b);
         return !b;
     }
 
     public boolean toggleAutomaticReconnect() {
-        org.jdownloader.settings.staticreferences.GENERAL.AUTO_RECONNECT_ENABLED.toggle();
-        return org.jdownloader.settings.staticreferences.GENERAL.AUTO_RECONNECT_ENABLED.isEnabled();
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.toggle();
+        return org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.isEnabled();
     }
 
     public boolean toggleStopAfterCurrentDownload() {
@@ -167,8 +167,8 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
     }
 
     public boolean togglePremium() {
-        org.jdownloader.settings.staticreferences.GENERAL.USE_AVAILABLE_ACCOUNTS.toggle();
-        return org.jdownloader.settings.staticreferences.GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled();
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.toggle();
+        return org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled();
     }
 
     public Object addLinksFromDOM(RemoteAPIRequest request) {

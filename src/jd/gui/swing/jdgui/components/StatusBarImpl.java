@@ -18,15 +18,20 @@ package jd.gui.swing.jdgui.components;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.SwingConstants;
+import javax.swing.Timer;
 
 import jd.Main;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerEvent;
 import jd.controlling.linkchecker.LinkCheckerListener;
@@ -51,6 +56,7 @@ public class StatusBarImpl extends JPanel {
     private static final long      serialVersionUID = 3676496738341246846L;
     private ReconnectProgress      reconnectIndicator;
     private IconedProcessIndicator linkGrabberIndicator;
+    private JLabel                 statusLabel;
 
     public StatusBarImpl() {
         Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
@@ -71,60 +77,16 @@ public class StatusBarImpl extends JPanel {
     }
 
     private void initGUI() {
-        setLayout(new MigLayout("ins 0", "[fill,grow,left][][][]3", "[22!]"));
+        setLayout(new MigLayout("ins 0", "[left]0[grow,fill][][][]3", "[22!]"));
         if (LookAndFeelController.getInstance().getLAFOptions().isPaintStatusbarTopBorder()) {
             setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
         } else {
             setBorder(BorderFactory.createMatteBorder(0, 0, 0, 0, getBackground().darker()));
         }
 
-        // spMaxSpeed = new JDSpinner(_GUI._.gui_statusbar_speed());
-        // spMaxSpeed.getSpinner().addChangeListener(this);
-        // spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(0, 0,
-        // Integer.MAX_VALUE, 50));
-        // try {
-        // spMaxSpeed.setValue(JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit());
-        // } catch (Throwable e) {
-        // spMaxSpeed.setValue(0);
-        // // dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
-        // //
-        // // dlConfig.save();
-        // JsonConfig.create(GeneralSettings.class).setDownloadSpeedLimit(0);
-        // }
-        // spMaxSpeed.setToolTipText(_GUI._.gui_tooltip_statusbar_speedlimiter());
-        // colorizeSpinnerSpeed();
-        //
-        // spMaxDls = new JDSpinner(_GUI._.gui_statusbar_sim_ownloads(),
-        // "h 20!");
-        // spMaxDls.getSpinner().setModel(new SpinnerNumberModel(2, 1, 20, 1));
-        // try {
-        // spMaxDls.setValue(JsonConfig.create(GeneralSettings.class).getMaxSimultaneDownloads());
-        // } catch (Throwable e) {
-        // spMaxDls.setValue(2);
-        // // dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,
-        // // 2);
-        // // dlConfig.save();
-        // JsonConfig.create(GeneralSettings.class).setMaxSimultaneDownloads(2);
-        // }
-        // spMaxDls.setToolTipText(_GUI._.gui_tooltip_statusbar_simultan_downloads());
-        // spMaxDls.getSpinner().addChangeListener(this);
-        //
-        // spMaxChunks = new JDSpinner(_GUI._.gui_statusbar_maxChunks(),
-        // "h 20!");
-        // spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(2, 1, 20,
-        // 1));
-        // try {
-        // spMaxChunks.setValue(JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile());
-        // } catch (Throwable e) {
-        // // dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2);
-        // // dlConfig.save();
-        // JsonConfig.create(GeneralSettings.class).setMaxChunksPerFile(2);
-        // }
-        // spMaxChunks.setToolTipText(_GUI._.gui_tooltip_statusbar_max_chunks());
-        // spMaxChunks.getSpinner().addChangeListener(this);
-
         super.add(PremiumStatus.getInstance());
-
+        statusLabel = new JLabel();
+        statusLabel.setEnabled(false);
         reconnectIndicator = new ReconnectProgress();
         // IconedProcessIndicator;
         reconnectIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_reconnect());
@@ -234,11 +196,20 @@ public class StatusBarImpl extends JPanel {
         // extractIndicator.setToolTipText("<html><img src=\"" +
         // NewTheme.I().getImageUrl("archive") +
         // "\"></img>Extracting Archives: 85%</html>");
-
+        super.add(statusLabel, "height 22!");
+        statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
         super.add(Box.createHorizontalGlue(), "height 22!,width 22!");
         super.add(reconnectIndicator, "height 22!,width 22!");
         super.add(linkGrabberIndicator, "height 22!,width 22!");
+        Timer timer = new Timer(1000, new ActionListener() {
 
+            public void actionPerformed(ActionEvent e) {
+                statusLabel.setText(_GUI._.BottomBar_actionPerformed_running_downloads(DownloadWatchDog.getInstance().getActiveDownloads(), DownloadWatchDog.getInstance().getConnectionManager().getIncommingConnections()));
+
+            }
+        });
+        timer.setRepeats(true);
+        timer.start();
         // add(extractIndicator, "height 22!,width 22!,hidemode 2");
     }
 
@@ -257,7 +228,7 @@ public class StatusBarImpl extends JPanel {
 
     private void updateLayout(int components) {
         StringBuilder sb = new StringBuilder();
-        sb.append("[fill,grow,left][22!][22!]");
+        sb.append("[left]0[grow,fill,left][22!][22!]");
         for (int i = 4; i < components; i++) {
             sb.append("[22!]");
         }

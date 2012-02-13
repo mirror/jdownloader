@@ -46,8 +46,8 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
 
     public SettingsSidebarModel() {
         super();
-        org.jdownloader.settings.staticreferences.LINKFILTER.LINK_FILTER_ENABLED.getEventSender().addListener(this);
-        org.jdownloader.settings.staticreferences.PACKAGIZER.PACKAGIZER_ENABLED.getEventSender().addListener(this);
+        org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getEventSender().addListener(this);
+        org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.getEventSender().addListener(this);
         ExtensionController.getInstance().getEventSender().addListener(this);
     }
 

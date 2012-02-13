@@ -23,9 +23,9 @@ public class DownloadStatusAPIStorable implements Storable {
         connections = DownloadWatchDog.getInstance().getConnectionManager().getIncommingConnections();
         // TODO: remaining and downloaded file size + ETA.
 
-        reconnectEnabled = org.jdownloader.settings.staticreferences.GENERAL.AUTO_RECONNECT_ENABLED.getValue();
-        speedlimitEnabled = org.jdownloader.settings.staticreferences.GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getValue();
-        speedlimit = org.jdownloader.settings.staticreferences.GENERAL.DOWNLOAD_SPEED_LIMIT.getValue();
+        reconnectEnabled = org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.getValue();
+        speedlimitEnabled = org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getValue();
+        speedlimit = org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue();
 
     }
 }

@@ -64,8 +64,8 @@ public class CustomFilterHeader extends MigPanel implements HeaderInterface {
         // Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor()));
         add(counter);
         add(lbl);
-        keyHandler = org.jdownloader.settings.staticreferences.LINKFILTER.LINKGRABBER_EXCEPTIONS_QUICKFILTER_ENABLED;
-        checkBox = new ExtCheckBox(org.jdownloader.settings.staticreferences.LINKFILTER.EXCEPTION_AS_QUICKFILTER_ENABLED, lbl, counter);
+        keyHandler = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_EXCEPTIONS_QUICKFILTER_ENABLED;
+        checkBox = new ExtCheckBox(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.EXCEPTION_AS_QUICKFILTER_ENABLED, lbl, counter);
         add(checkBox);
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new JTable().getGridColor()));
 

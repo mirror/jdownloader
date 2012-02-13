@@ -519,7 +519,7 @@ public class AccountController implements AccountControllerListener {
                     AccountChecker.getInstance().check(acc, true);
                 }
             }
-            org.jdownloader.settings.staticreferences.GENERAL.USE_AVAILABLE_ACCOUNTS.setValue(true);
+            org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.setValue(true);
             break;
         case AccountControllerEvent.ACCOUNT_UPDATE:
             acc = event.getAccount();

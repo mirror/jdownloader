@@ -15,7 +15,7 @@ public class DisableClipboard implements SchedulerModuleInterface {
     }
 
     public void execute(String parameter) {
-        org.jdownloader.settings.staticreferences.GUI.CLIPBOARD_MONITORED.setValue(false);
+        org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.setValue(false);
     }
 
     public String getTranslation() {

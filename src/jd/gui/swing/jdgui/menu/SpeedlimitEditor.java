@@ -23,7 +23,7 @@ public class SpeedlimitEditor extends MenuEditor {
         setOpaque(false);
 
         lbl = getLbl(_GUI._.SpeedlimitEditor_SpeedlimitEditor_(), NewTheme.I().getIcon("speed", 18));
-        spinner = new SizeSpinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.GENERAL.DOWNLOAD_SPEED_LIMIT)) {
+        spinner = new SizeSpinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT)) {
             /**
              * 
              */
@@ -36,7 +36,7 @@ public class SpeedlimitEditor extends MenuEditor {
         };
 
         add(lbl);
-        add(new ExtCheckBox(org.jdownloader.settings.staticreferences.GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED, lbl, spinner), "width 20!");
+        add(new ExtCheckBox(org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED, lbl, spinner), "width 20!");
         add(spinner, "height 22!,width 100!");
 
     }

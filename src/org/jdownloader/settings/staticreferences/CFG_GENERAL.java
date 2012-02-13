@@ -10,7 +10,7 @@ import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
 import org.jdownloader.settings.GeneralSettings;
 
-public class GENERAL {
+public class CFG_GENERAL {
     public static void main(String[] args) {
         ConfigUtils.printStaticMappings(GeneralSettings.class);
     }

@@ -7,7 +7,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 
-public class LINKCOLLECTOR {
+public class CFG_LINKCOLLECTOR {
     public static void main(String[] args) {
         ConfigUtils.printStaticMappings(LinkCollectorConfig.class);
     }

@@ -23,7 +23,7 @@ public class QuickFilterTypeTable extends FilterTable {
     private ArrayList<Filter> allFilters;
 
     public QuickFilterTypeTable(Header filetypeFilter, LinkGrabberTable table2Filter) {
-        super(filetypeFilter, table2Filter, org.jdownloader.settings.staticreferences.LINKFILTER.LINKGRABBER_FILETYPE_QUICKFILTER_ENABLED);
+        super(filetypeFilter, table2Filter, org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_FILETYPE_QUICKFILTER_ENABLED);
 
     }
 

@@ -31,7 +31,7 @@ public class EnablePremium implements SchedulerModuleInterface {
     }
 
     public void execute(String parameter) {
-        org.jdownloader.settings.staticreferences.GENERAL.USE_AVAILABLE_ACCOUNTS.setValue(true);
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.setValue(true);
     }
 
     public String getTranslation() {

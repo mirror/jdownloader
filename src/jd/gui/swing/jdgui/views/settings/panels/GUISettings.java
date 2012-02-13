@@ -37,7 +37,7 @@ public class GUISettings extends AbstractConfigPanel {
 
     public GUISettings() {
         super();
-        captchaSize = new Spinner(org.jdownloader.settings.staticreferences.GUI.CAPTCHA_SCALE_FACTOR);
+        captchaSize = new Spinner(org.jdownloader.settings.staticreferences.CFG_GUI.CAPTCHA_SCALE_FACTOR);
         captchaSize.setFormat("#'%'");
         this.addHeader(getTitle(), NewTheme.I().getIcon("barrierfreesettings", 32));
         this.addDescription(_JDT._.gui_settings_barrierfree_description());

@@ -25,7 +25,7 @@ import org.jdownloader.gui.views.linkgrabber.SearchField;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-import org.jdownloader.settings.staticreferences.GUI;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class BottomBar extends MigPanel {
 
@@ -154,11 +154,11 @@ public class BottomBar extends MigPanel {
                     table.getPackageControllerTableModel().addFilter(filter);
                 }
                 table.getPackageControllerTableModel().recreateModel(true);
-                GUI.DOWNLOAD_VIEW.setValue(value);
+                CFG_GUI.DOWNLOAD_VIEW.setValue(value);
             }
         };
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSaveDownloadViewCrossSessionEnabled()) {
-            combo.setSelectedItem((View) GUI.DOWNLOAD_VIEW.getValue());
+            combo.setSelectedItem((View) CFG_GUI.DOWNLOAD_VIEW.getValue());
         } else {
             combo.setSelectedItem(View.ALL);
         }

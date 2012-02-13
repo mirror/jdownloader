@@ -9,7 +9,7 @@ import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class GUI {
+public class CFG_GUI {
     public static void main(String[] args) {
         ConfigUtils.printStaticMappings(GraphicalUserInterfaceSettings.class);
     }

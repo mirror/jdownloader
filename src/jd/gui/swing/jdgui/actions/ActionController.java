@@ -186,7 +186,7 @@ public class ActionController {
                         }
                     });
 
-                    org.jdownloader.settings.staticreferences.GENERAL.PAUSE_SPEED.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
+                    org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
 
                         public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
                         }
@@ -196,7 +196,7 @@ public class ActionController {
 
                                 @Override
                                 protected void runInEDT() {
-                                    setToolTipText(_GUI._.gui_menu_action_break2_desc(org.jdownloader.settings.staticreferences.GENERAL.PAUSE_SPEED.getValue()));
+                                    setToolTipText(_GUI._.gui_menu_action_break2_desc(org.jdownloader.settings.staticreferences.CFG_GENERAL.PAUSE_SPEED.getValue()));
 
                                 }
                             };
@@ -398,7 +398,7 @@ public class ActionController {
 
                 @Override
                 public void initAction() {
-                    org.jdownloader.settings.staticreferences.GUI.CLIPBOARD_MONITORED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+                    org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
                         public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                             setSelected(newValue);
@@ -412,12 +412,12 @@ public class ActionController {
                 @Override
                 public void initDefaults() {
                     this.setType(ToolBarAction.Types.TOGGLE);
-                    this.setSelected(org.jdownloader.settings.staticreferences.GUI.CLIPBOARD_MONITORED.isEnabled());
+                    this.setSelected(org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled());
                 }
 
                 @Override
                 public void onAction(final ActionEvent e) {
-                    org.jdownloader.settings.staticreferences.GUI.CLIPBOARD_MONITORED.toggle();
+                    org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.toggle();
                 }
 
                 @Override
@@ -441,7 +441,7 @@ public class ActionController {
 
                 @Override
                 public void initAction() {
-                    org.jdownloader.settings.staticreferences.GENERAL.AUTO_RECONNECT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+                    org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
                         public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
                         }
@@ -456,12 +456,12 @@ public class ActionController {
                 @Override
                 public void initDefaults() {
                     this.setType(ToolBarAction.Types.TOGGLE);
-                    this.setSelected(org.jdownloader.settings.staticreferences.GENERAL.AUTO_RECONNECT_ENABLED.isEnabled());
+                    this.setSelected(org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.isEnabled());
                 }
 
                 @Override
                 public void onAction(final ActionEvent e) {
-                    org.jdownloader.settings.staticreferences.GENERAL.AUTO_RECONNECT_ENABLED.toggle();
+                    org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.toggle();
                 }
 
                 @Override
@@ -622,8 +622,8 @@ public class ActionController {
                 @Override
                 public void initDefaults() {
                     this.setType(ToolBarAction.Types.TOGGLE);
-                    this.setSelected(org.jdownloader.settings.staticreferences.GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
-                    org.jdownloader.settings.staticreferences.GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+                    this.setSelected(org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
+                    org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
                         public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
                         }
@@ -637,7 +637,7 @@ public class ActionController {
 
                 @Override
                 public void onAction(final ActionEvent e) {
-                    org.jdownloader.settings.staticreferences.GENERAL.USE_AVAILABLE_ACCOUNTS.toggle();
+                    org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.toggle();
                 }
 
                 @Override

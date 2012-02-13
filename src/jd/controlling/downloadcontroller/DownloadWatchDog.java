@@ -136,7 +136,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
         this.connectionManager = new ThrottledConnectionManager();
         this.connectionManager.setIncommingBandwidthLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
-        org.jdownloader.settings.staticreferences.GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
 
             public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
                 connectionManager.setIncommingBandwidthLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
@@ -145,7 +145,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
             }
         }, false);
-        org.jdownloader.settings.staticreferences.GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
@@ -382,7 +382,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             /* no plugin available or plugin already active */
             return null;
         }
-        final boolean tryAcc = org.jdownloader.settings.staticreferences.GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled();
+        final boolean tryAcc = org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled();
         Account acc = null;
         if (!link.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
             if (tryAcc) {
@@ -421,7 +421,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         } else {
             ret = new DownloadControlInfo();
         }
-        final boolean tryAcc = org.jdownloader.settings.staticreferences.GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled();
+        final boolean tryAcc = org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled();
         DownloadLink nextDownloadLink = null;
         Account acc = null;
         String accHost = null;
@@ -515,7 +515,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      */
     public int getSimultanDownloadNumPerHost() {
         int ret = 0;
-        if (!org.jdownloader.settings.staticreferences.GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.isEnabled() || (ret = config.getMaxSimultaneDownloadsPerHost()) <= 0) { return Integer.MAX_VALUE; }
+        if (!org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.isEnabled() || (ret = config.getMaxSimultaneDownloadsPerHost()) <= 0) { return Integer.MAX_VALUE; }
         return ret;
     }
 
@@ -567,7 +567,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             /* reconnect in progress */
             return false;
         }
-        if (org.jdownloader.settings.staticreferences.GENERAL.AUTO_RECONNECT_ENABLED.isEnabled() && config.isDownloadControllerPrefersReconnectEnabled() && IPController.getInstance().isInvalidated()) {
+        if (org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.isEnabled() && config.isDownloadControllerPrefersReconnectEnabled() && IPController.getInstance().isInvalidated()) {
             /*
              * auto reconnect is enabled and downloads are waiting for reconnect
              * and user set to wait for reconnect

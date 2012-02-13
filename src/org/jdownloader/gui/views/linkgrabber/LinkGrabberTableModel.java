@@ -36,7 +36,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
 
     public ArrayList<AbstractNode> sort(final ArrayList<AbstractNode> data, ExtColumn<AbstractNode> column) {
         ArrayList<AbstractNode> ret = super.sort(data, column);
-        boolean autoConfirm = org.jdownloader.settings.staticreferences.LINKFILTER.LINKGRABBER_AUTO_CONFIRM_ENABLED.getValue() && ret.size() > 0;
+        boolean autoConfirm = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_CONFIRM_ENABLED.getValue() && ret.size() > 0;
         if (!autoConfirm) {
             for (CrawledLink l : this.getAllChildrenNodes(ret)) {
                 if (l.getLinkState() != LinkState.OFFLINE) {

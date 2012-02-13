@@ -62,15 +62,15 @@ public class QuickSettingsHeader extends MigPanel implements GenericConfigEventL
         btn = new ExtButton(new BasicAction() {
 
             public void actionPerformed(ActionEvent e) {
-                boolean nv = !org.jdownloader.settings.staticreferences.LINKFILTER.LINKGRABBER_QUICK_SETTINGS_VISIBLE.getValue();
-                org.jdownloader.settings.staticreferences.LINKFILTER.LINKGRABBER_QUICK_SETTINGS_VISIBLE.setValue(nv);
+                boolean nv = !org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_QUICK_SETTINGS_VISIBLE.getValue();
+                org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_QUICK_SETTINGS_VISIBLE.setValue(nv);
             }
 
         });
 
         add(btn, "height 14!,width 14!");
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new JTable().getGridColor()));
-        org.jdownloader.settings.staticreferences.LINKFILTER.LINKGRABBER_QUICK_SETTINGS_VISIBLE.getEventSender().addListener(this);
+        org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_QUICK_SETTINGS_VISIBLE.getEventSender().addListener(this);
         onConfigValueModified(null, null);
     }
 
@@ -78,7 +78,7 @@ public class QuickSettingsHeader extends MigPanel implements GenericConfigEventL
     }
 
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        if (org.jdownloader.settings.staticreferences.LINKFILTER.LINKGRABBER_QUICK_SETTINGS_VISIBLE.getValue()) {
+        if (org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_QUICK_SETTINGS_VISIBLE.getValue()) {
             btn.setIcon(NewTheme.I().getIcon("popdownButton", -1));
         } else {
             btn.setIcon(NewTheme.I().getIcon("popupButton", -1));

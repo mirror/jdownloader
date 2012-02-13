@@ -26,10 +26,10 @@ public class AwesomeClipboardListener implements ProposalRequestListener {
     public void performAction(Action action) {
         switch ((actionid) action.getProposal().getActionID()) {
         case TURNOFF:
-            org.jdownloader.settings.staticreferences.GUI.CLIPBOARD_MONITORED.setValue(false);
+            org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.setValue(false);
             break;
         case TURNON:
-            org.jdownloader.settings.staticreferences.GUI.CLIPBOARD_MONITORED.setValue(true);
+            org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.setValue(true);
             break;
         case ADDLINKS:
             LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(ClipboardMonitoring.getINSTANCE().getCurrentContent()));
@@ -49,7 +49,7 @@ public class AwesomeClipboardListener implements ProposalRequestListener {
 
         }
         if (request.isParamsEmpty() || request.getParams().startsWith("o")) {
-            if (org.jdownloader.settings.staticreferences.GUI.CLIPBOARD_MONITORED.getValue()) {
+            if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.getValue()) {
                 new Proposal(this, request, new JLabel("Turn automatic clipboard detection off"), actionid.TURNOFF, Utils.createProposalListElement(this, request.withParams("off")), 1.0f);
             } else {
                 new Proposal(this, request, new JLabel("Turn automatic clipboard detection on"), actionid.TURNON, Utils.createProposalListElement(this, request.withParams("on")), 1.0f);

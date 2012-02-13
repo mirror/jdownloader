@@ -9,7 +9,7 @@ import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
 
-public class RECONNECT {
+public class CFG_RECONNECT {
     public static void main(String[] args) {
         ConfigUtils.printStaticMappings(ReconnectConfig.class);
     }

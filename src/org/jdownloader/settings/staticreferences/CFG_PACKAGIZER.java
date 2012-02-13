@@ -7,7 +7,7 @@ import org.appwork.storage.config.handler.ObjectKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.jdownloader.controlling.packagizer.PackagizerSettings;
 
-public class PACKAGIZER {
+public class CFG_PACKAGIZER {
     public static void main(String[] args) {
         ConfigUtils.printStaticMappings(PackagizerSettings.class);
     }

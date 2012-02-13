@@ -271,4 +271,10 @@ public interface GeneralSettings extends ConfigInterface {
     void setAutoRestartDownloadsIfExitWithRunningDownloads(boolean b);
 
     boolean isAutoRestartDownloadsIfExitWithRunningDownloads();
+
+    @DefaultIntValue(10)
+    @Description("AutoStart Downloads will show a Countdown Dialog after Startup. Set the countdown time to 0 to remove this dialog")
+    int getAutoStartCountdownSeconds();
+
+    void setAutoStartCountdownSeconds(int seconds);
 }

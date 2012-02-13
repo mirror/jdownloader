@@ -775,4 +775,13 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Yes" })
     String literally_yes();
+
+    @Default(lngs = { "en" }, values = { "Starting Downloads" })
+    String Main_run_autostart_();
+
+    @Default(lngs = { "en" }, values = { "Downloads will start a few seconds..." })
+    String Main_run_autostart_msg();
+
+    @Default(lngs = { "en" }, values = { "Start NOW!" })
+    String Mainstart_now();
 }

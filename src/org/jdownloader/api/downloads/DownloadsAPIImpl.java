@@ -60,13 +60,13 @@ public class DownloadsAPIImpl implements DownloadsAPI {
     }
 
     public boolean reconnectenabled(boolean enable) {
-        org.jdownloader.settings.staticreferences.GENERAL.AUTO_RECONNECT_ENABLED.setValue(enable);
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.setValue(enable);
         return true;
     }
 
     public boolean speedlimit(boolean enable, int limit) {
-        org.jdownloader.settings.staticreferences.GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.setValue(enable);
-        org.jdownloader.settings.staticreferences.GENERAL.DOWNLOAD_SPEED_LIMIT.setValue(limit);
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.setValue(enable);
+        org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.setValue(limit);
         return true;
     }
 }

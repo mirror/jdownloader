@@ -207,10 +207,10 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
             // panel.setBackground(new Color(col));
         }
         final ImageIcon imageIcon;
-        final int size = org.jdownloader.settings.staticreferences.GUI.CAPTCHA_SCALE_FACTOR.getValue();
+        final int size = org.jdownloader.settings.staticreferences.CFG_GUI.CAPTCHA_SCALE_FACTOR.getValue();
         if (this.imagefile != null) {
             // imageIcon = new ImageIcon(this.imagefile.getAbsolutePath());
-            if (org.jdownloader.settings.staticreferences.GUI.CFG.isCaptchaBackgroundCleanupEnabled()) {
+            if (org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isCaptchaBackgroundCleanupEnabled()) {
                 imagefile = new ImageIcon(IconIO.removeBackground((BufferedImage) imagefile.getImage(), 0.05d));
             }
 

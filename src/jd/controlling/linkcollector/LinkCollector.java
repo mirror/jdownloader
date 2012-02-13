@@ -256,7 +256,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         downloadFolder = dpi.getDestinationFolder();
                     }
                     CrawledLinkFactory clf = new CrawledLinkFactory(link);
-                    if (archiver != null && org.jdownloader.settings.staticreferences.LINKGRABBER.ARCHIVE_PACKAGIZER_ENABLED.getValue()) {
+                    if (archiver != null && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.ARCHIVE_PACKAGIZER_ENABLED.getValue()) {
                         if (archiver.isMultiPartArchive(clf)) {
                             isMultiArchive = true;
                         }
@@ -280,18 +280,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                             add.add(link);
                             LinkCollector.this.addmoveChildren(getPermanentOfflineCrawledPackage(), add, -1);
-                        } else if (link.getLinkState() == LinkState.OFFLINE && org.jdownloader.settings.staticreferences.LINKGRABBER.OFFLINE_PACKAGE_ENABLED.getValue()) {
+                        } else if (link.getLinkState() == LinkState.OFFLINE && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.OFFLINE_PACKAGE_ENABLED.getValue()) {
                             getOfflineCrawledPackage();
                             ArrayList<CrawledLink> list = getIdentifiedMap(identifier, offlineMap);
                             list.add(link);
                             List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                             add.add(link);
                             LinkCollector.this.addmoveChildren(getOfflineCrawledPackage(), add, -1);
-                        } else if (org.jdownloader.settings.staticreferences.LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue() > 0) {
+                        } else if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue() > 0) {
                             getVariousCrawledPackage();
                             ArrayList<CrawledLink> list = getIdentifiedMap(identifier, variousMap);
                             list.add(link);
-                            if (list.size() > org.jdownloader.settings.staticreferences.LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue()) {
+                            if (list.size() > org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue()) {
                                 newPackage(null, packageName, downloadFolder, identifier);
                             } else {
                                 List<CrawledLink> add = new ArrayList<CrawledLink>(1);
@@ -543,7 +543,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public void handleFinalLink(CrawledLink link) {
-        if (org.jdownloader.settings.staticreferences.LINKCOLLECTOR.DO_LINK_CHECK.isEnabled()) {
+        if (org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR.DO_LINK_CHECK.isEnabled()) {
             linkChecker.check(link);
         } else {
             PackagizerInterface pc;
@@ -599,7 +599,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
-                int positionMerge = org.jdownloader.settings.staticreferences.LINKCOLLECTOR.DO_MERGE_TOP_BOTTOM.getValue() ? 0 : -1;
+                int positionMerge = org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR.DO_MERGE_TOP_BOTTOM.getValue() ? 0 : -1;
                 if (srcLinks != null) {
                     /* move srcLinks to dest */
                     addmoveChildren(dest, srcLinks, positionMerge);

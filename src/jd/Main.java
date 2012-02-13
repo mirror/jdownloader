@@ -70,6 +70,7 @@ import org.appwork.utils.singleapp.AnotherInstanceRunningException;
 import org.appwork.utils.singleapp.InstanceMessageListener;
 import org.appwork.utils.singleapp.SingleAppInstance;
 import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.ExternInterface;
@@ -82,7 +83,6 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.jdserv.stats.StatsManager;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
 import org.jdownloader.update.WebupdateSettings;
@@ -442,10 +442,10 @@ public class Main {
                         /* load extensions */
                         ExtensionController.getInstance().init();
                         /* init clipboardMonitoring stuff */
-                        if (org.jdownloader.settings.staticreferences.GUI.CLIPBOARD_MONITORED.isEnabled()) {
+                        if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled()) {
                             ClipboardMonitoring.getINSTANCE().startMonitoring();
                         }
-                        org.jdownloader.settings.staticreferences.GUI.CLIPBOARD_MONITORED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+                        org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
                             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                                 if (Boolean.TRUE.equals(newValue) && ClipboardMonitoring.getINSTANCE().isMonitoring() == false) {
@@ -471,7 +471,25 @@ public class Main {
                         if (JsonConfig.create(GeneralSettings.class).isAutoStartDownloadsOnStartupEnabled() || doRestartRunninfDownloads) {
                             /* autostart downloads when no autoupdate is enabled */
                             Log.exception(new WTFException("REIMPLEMENT ME:autostart on startup"));
-                            DownloadWatchDog.getInstance().startDownloads();
+
+                            if (JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() > 0) {
+                                ConfirmDialog d = new ConfirmDialog(Dialog.LOGIC_COUNTDOWN, _JDT._.Main_run_autostart_(), _JDT._.Main_run_autostart_msg(), NewTheme.I().getIcon("start", 32), _JDT._.Mainstart_now(), null);
+                                d.setCountdownTime(JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds());
+                                try {
+                                    Dialog.getInstance().showDialog(d);
+                                    DownloadWatchDog.getInstance().startDownloads();
+                                } catch (DialogNoAnswerException e) {
+                                    if (e.isCausedByTimeout()) {
+                                        DownloadWatchDog.getInstance().startDownloads();
+                                    }
+
+                                }
+                            } else {
+                                DownloadWatchDog.getInstance().startDownloads();
+                            }
+                            // Dialog.getInstance().showConfirmDialog(Dialog,
+                            // title, message, tmpicon, okOption, cancelOption)
+
                         }
                     }
                 }.start();

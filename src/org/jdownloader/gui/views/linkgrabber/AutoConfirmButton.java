@@ -60,7 +60,7 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
     public AutoConfirmButton() {
         super();
         setVisible(false);
-        waittime = org.jdownloader.settings.staticreferences.LINKGRABBER.CFG.getAutoConfirmDelay();
+        waittime = org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.CFG.getAutoConfirmDelay();
         progress = new IconedProcessIndicator(NewTheme.I().getIcon("paralell", 18)) {
             /**
              * 
@@ -172,7 +172,7 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
 
                             public void run() {
                                 ArrayList<AbstractNode> list = new ArrayList<AbstractNode>();
-                                boolean autoStart = org.jdownloader.settings.staticreferences.LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue();
+                                boolean autoStart = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue();
                                 for (CrawledLink l : LinkGrabberTableModel.getInstance().getAllChildrenNodes()) {
                                     if (l.getLinkState() == LinkState.OFFLINE) continue;
                                     if (l.isAutoConfirmEnabled()) {

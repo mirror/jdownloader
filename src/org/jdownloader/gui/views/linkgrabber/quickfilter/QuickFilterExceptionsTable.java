@@ -40,7 +40,7 @@ public class QuickFilterExceptionsTable extends FilterTable {
     private HashMap<FilterRule, Filter> filterMap;
 
     public QuickFilterExceptionsTable(CustomFilterHeader exceptions, LinkGrabberTable table) {
-        super(exceptions, table, org.jdownloader.settings.staticreferences.LINKFILTER.LINKGRABBER_EXCEPTIONS_QUICKFILTER_ENABLED);
+        super(exceptions, table, org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_EXCEPTIONS_QUICKFILTER_ENABLED);
         LinkFilterController.getInstance().getEventSender().addListener(new ChangeListener() {
 
             public void onChangeEvent(ChangeEvent event) {

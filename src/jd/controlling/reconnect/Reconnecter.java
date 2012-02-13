@@ -294,7 +294,7 @@ public final class Reconnecter implements StateMachineInterface {
      * @return
      */
     public boolean isReconnectAllowed() {
-        boolean ret = org.jdownloader.settings.staticreferences.GENERAL.AUTO_RECONNECT_ENABLED.getValue();
+        boolean ret = org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.getValue();
         /* TODO: check for running linkcrawler and linkchecker */
         ret &= DownloadWatchDog.getInstance().getForbiddenReconnectDownloadNum() == 0;
         return ret;
@@ -339,7 +339,7 @@ public final class Reconnecter implements StateMachineInterface {
                  * more than 5 failed reconnects in row, disable autoreconnect
                  * and show message
                  */
-                org.jdownloader.settings.staticreferences.GENERAL.AUTO_RECONNECT_ENABLED.setValue(false);
+                org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.setValue(false);
                 UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.jd_controlling_reconnect_Reconnector_progress_failed2());
             }
         }

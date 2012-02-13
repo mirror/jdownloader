@@ -52,11 +52,11 @@ public class DownloadControll extends AbstractConfigPanel implements ChangeListe
         this.addHeader(_JDT._.gui_settings_downloadcontroll_title(), NewTheme.I().getIcon("downloadmanagment", 32));
         this.addDescription(_JDT._.gui_settings_downloadcontroll_description());
 
-        maxSimPerHost = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST));
+        maxSimPerHost = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST));
 
-        maxSim = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.GENERAL.MAX_SIMULTANE_DOWNLOADS));
+        maxSim = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS));
 
-        maxchunks = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.GENERAL.MAX_CHUNKS_PER_FILE));
+        maxchunks = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_CHUNKS_PER_FILE));
 
         String[] removeDownloads = new String[] { _GUI._.gui_config_general_toDoWithDownloads_immediate(), _GUI._.gui_config_general_toDoWithDownloads_atstart(), _GUI._.gui_config_general_toDoWithDownloads_packageready(), _GUI._.gui_config_general_toDoWithDownloads_never() };
 
@@ -65,12 +65,12 @@ public class DownloadControll extends AbstractConfigPanel implements ChangeListe
         String[] fileExists = new String[] { _GUI._.system_download_triggerfileexists_overwrite(), _GUI._.system_download_triggerfileexists_skip(), _GUI._.system_download_triggerfileexists_rename(), _GUI._.system_download_triggerfileexists_ask(), _GUI._.system_download_triggerfileexists_ask() };
         ifFileExists = new ComboBox<IfFileExistsAction>(IfFileExistsAction.values(), fileExists);
         this.addPair(_GUI._.gui_config_download_simultan_downloads(), null, maxSim);
-        this.addPair(_GUI._.gui_config_download_simultan_downloads_per_host(), org.jdownloader.settings.staticreferences.GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED, maxSimPerHost);
+        this.addPair(_GUI._.gui_config_download_simultan_downloads_per_host(), org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED, maxSimPerHost);
         this.addPair(_GUI._.gui_config_download_max_chunks(), null, maxchunks);
 
         this.addPair(_GUI._.gui_config_general_todowithdownloads(), null, remove);
         this.addPair(_GUI._.system_download_triggerfileexists(), null, ifFileExists);
-        config = org.jdownloader.settings.staticreferences.GENERAL.CFG;
+        config = org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG;
 
     }
 
