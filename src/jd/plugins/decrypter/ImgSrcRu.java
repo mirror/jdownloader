@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -68,13 +69,15 @@ public class ImgSrcRu extends PluginForDecrypt {
                 DownloadLink dlink = getDownloadLink();
                 if (dlink != null) decryptedLinks.add(dlink);
             }
-            final String[] allPics = br.getRegex("align=center><a href=\\'(/" + username + "/\\d+\\.html)").getColumn(0);
+            final String[] allPics = br.getRegex("<a href=\\'(/" + username + "/\\d+\\.html)").getColumn(0);
             if (allPics == null || allPics.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             int counter = 0;
+            HashSet<String> dups = new HashSet<String>();
             for (String pic : allPics) {
+                if (!dups.add(pic)) continue;
                 if (counter > 10 && decryptedLinks.size() == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
