@@ -428,6 +428,7 @@ public class OronCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", ua);
         br.setCookie("http://oron.com", "lang", "english");
         br.setDebug(true);
         br.getPage("http://oron.com/login");
