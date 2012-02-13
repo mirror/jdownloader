@@ -50,7 +50,7 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
     private Image                                          img;
     private DelayedRunnable                                delayedFilter;
     private PackageControllerTable<PackageType, ChildType> table2Filter;
-    private Pattern                                        filterPattern    = null;
+    protected Pattern                                      filterPattern    = null;
     private JLabel                                         label;
     private int                                            labelWidth;
     private Color                                          bgColor;
@@ -149,7 +149,7 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
     }
 
     public boolean isFiltered(ChildType v) {
-        return !filterPattern.matcher(v.getName()).find();
+        return false;
     }
 
     public void reset() {
@@ -229,7 +229,7 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
     public void mouseExited(MouseEvent e) {
     }
 
-    private SearchCategory selectedCategory = SearchCategory.FILENAME;
+    protected SearchCategory selectedCategory = SearchCategory.FILENAME;
 
     public SearchCategory getSelectedCategory() {
         return selectedCategory;
@@ -239,11 +239,11 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
         if (selectedCategory == null) {
             Log.exception(Level.WARNING, new NullPointerException("selectedCategory null"));
         }
+        if (this.selectedCategory != selectedCategory) onChanged();
         this.selectedCategory = selectedCategory;
         if (label != null) {
             label.setText(selectedCategory.getLabel());
             setHelpText(selectedCategory.getHelpText());
-
         }
     }
 

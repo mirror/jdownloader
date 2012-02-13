@@ -185,6 +185,10 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         }
     }
 
+    public boolean isFilteredView() {
+        return tableFilters.size() > 0;
+    }
+
     /*
      * we override sort to have a better sorting of packages/files, to keep
      * their structure alive,data is only used to specify the size of the new

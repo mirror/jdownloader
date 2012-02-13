@@ -18,6 +18,7 @@ import org.appwork.swing.components.ExtButton;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.SearchCategory;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.downloads.action.ClearAction;
 import org.jdownloader.gui.views.downloads.action.RemoveOptionsAction;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
@@ -40,7 +41,7 @@ public class BottomBar extends MigPanel {
 
     // private JToggleButton showHideSidebar;
 
-    public BottomBar(DownloadsTable table) {
+    public BottomBar(final DownloadsTable table) {
         super("ins 0 0 1 0", "[]1[]1[]1[]", "[]");
 
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
@@ -76,6 +77,23 @@ public class BottomBar extends MigPanel {
                 JsonConfig.create(GraphicalUserInterfaceSettings.class).setSelectedDownloadSearchCategory(selectedCategory);
             }
 
+            @Override
+            public boolean isFiltered(FilePackage e) {
+                if (SearchCategory.PACKAGE == selectedCategory) { return !filterPattern.matcher(e.getName()).find(); }
+                return false;
+            }
+
+            @Override
+            public boolean isFiltered(DownloadLink v) {
+                switch (selectedCategory) {
+                case FILENAME:
+                    return !filterPattern.matcher(v.getName()).find();
+                case HOSTER:
+                    return !filterPattern.matcher(v.getHost()).find();
+                }
+                return false;
+            }
+
         };
         searchField.setSelectedCategory(JsonConfig.create(GraphicalUserInterfaceSettings.class).getSelectedDownloadSearchCategory());
         searchField.setCategories(new SearchCategory[] { SearchCategory.FILENAME, SearchCategory.HOSTER, SearchCategory.PACKAGE });
@@ -101,7 +119,40 @@ public class BottomBar extends MigPanel {
         add(popupRemove, "height 24!,width 12!,aligny top");
 
         add(searchField, "height 24!,aligny top,gapleft 2,pushx,growx");
-        combo = new PseudoCombo(new View[] { View.ALL, View.RUNNING, View.FAILED, View.SUCCESSFUL });
+        combo = new PseudoCombo(new View[] { View.ALL, View.RUNNING, View.FAILED, View.SUCCESSFUL }) {
+
+            private PackageControllerTableModelFilter<FilePackage, DownloadLink> filter = new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
+
+                                                                                            public void reset() {
+                                                                                            }
+
+                                                                                            public boolean isFiltered(DownloadLink v) {
+                                                                                                switch (selectedItem) {
+                                                                                                case RUNNING:
+                                                                                                    return !v.isEnabled() || !v.getLinkStatus().isPluginActive();
+                                                                                                case SUCCESSFUL:
+                                                                                                    return !(v.getLinkStatus().isFinished());
+                                                                                                case FAILED:
+                                                                                                    return !(v.getLinkStatus().isFailed());
+                                                                                                }
+                                                                                                return false;
+                                                                                            }
+
+                                                                                            public boolean isFiltered(FilePackage e) {
+                                                                                                return false;
+                                                                                            }
+                                                                                        };
+
+            @Override
+            public void onChanged(View value) {
+                if (View.ALL.equals(value)) {
+                    table.getPackageControllerTableModel().removeFilter(filter);
+                } else {
+                    table.getPackageControllerTableModel().addFilter(filter);
+                }
+                table.getPackageControllerTableModel().recreateModel(true);
+            }
+        };
 
         combo.setSelectedItem((View) GUI.DOWNLOAD_VIEW.getValue());
         add(combo, "height 24!,aligny top,gapleft 3");
