@@ -61,6 +61,7 @@ public class MegaShareCom extends PluginForHost {
             return ai;
         }
         account.setValid(true);
+        ai.setStatus("Valid Account");
         return ai;
     }
 

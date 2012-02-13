@@ -373,6 +373,10 @@ public class FileServeCom extends PluginForHost {
 
     private void handleErrors(Browser br2) throws Exception {
         logger.info("Handling errors...");
+        if (br2.containsHTML("<li>The file access is protected, please")) {
+            logger.info("The file access is protected");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br2.containsHTML("Your daily download limit has been reached")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 2 * 60 * 60 * 1000l);
         if (br2.containsHTML("li>This file has been deleted by the system")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br2.containsHTML("li>This file was either in breach of a copyright holder or deleted by the uploader")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

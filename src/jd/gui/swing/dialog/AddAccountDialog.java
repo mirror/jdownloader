@@ -208,7 +208,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
             } catch (final Exception e) {
             }
         } else {
-            LazyHostPlugin plg = HostPluginController.getInstance().get("filesonic.com");
+            LazyHostPlugin plg = HostPluginController.getInstance().get("netload.in");
             if (plg != null) {
                 try {
                     hoster.setSelectedItem(plg);
