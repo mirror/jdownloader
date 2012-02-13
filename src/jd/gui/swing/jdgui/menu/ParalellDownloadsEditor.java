@@ -17,6 +17,6 @@ public class ParalellDownloadsEditor extends MenuEditor {
         config = JsonConfig.create(GeneralSettings.class);
         add(getLbl(_GUI._.ParalellDownloadsEditor_ParalellDownloadsEditor_(), NewTheme.I().getIcon("paralell", 18)));
         spinner = new ExtSpinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.GENERAL.MAX_SIMULTANE_DOWNLOADS));
-        add(spinner, "height 20!");
+        add(spinner, "height 22!");
     }
 }

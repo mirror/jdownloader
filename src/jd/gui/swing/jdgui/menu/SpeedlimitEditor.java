@@ -10,7 +10,6 @@ import org.appwork.swing.components.SizeSpinner;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GeneralSettings;
 
 public class SpeedlimitEditor extends MenuEditor {
 
@@ -19,7 +18,7 @@ public class SpeedlimitEditor extends MenuEditor {
 
     public SpeedlimitEditor() {
         super();
-        setLayout(new MigLayout("ins 0", "6[grow,fill][][]", "[grow,fill]"));
+        setLayout(new MigLayout("ins 2", "6[grow,fill][][]", "[grow,fill]"));
 
         setOpaque(false);
 
@@ -38,7 +37,7 @@ public class SpeedlimitEditor extends MenuEditor {
 
         add(lbl);
         add(new ExtCheckBox(org.jdownloader.settings.staticreferences.GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED, lbl, spinner), "width 20!");
-        add(spinner, "height 20!,width 100!");
+        add(spinner, "height 22!,width 100!");
 
     }
 

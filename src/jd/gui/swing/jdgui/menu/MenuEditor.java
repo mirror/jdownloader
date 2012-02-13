@@ -7,7 +7,7 @@ import org.appwork.app.gui.MigPanel;
 
 public class MenuEditor extends MigPanel {
     public MenuEditor() {
-        super("ins 0", "6[grow,fill][100!,fill]", "[grow,fill]");
+        super("ins 2", "6[grow,fill][100!,fill]", "[grow,fill]");
         setOpaque(false);
     }
 

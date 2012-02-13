@@ -33,7 +33,7 @@ public class RestartViaUpdaterEvent extends ShutdownEvent {
     @Override
     public void run() {
 
-        final String tiny[] = new String[] { CrossSystem.getJavaBinary(), "-jar", RestartController.UPDATER_JARNAME, "-restart", RestartController.getRestartCommandLine() };
+        final String tiny[] = new String[] { CrossSystem.getJavaBinary(), "-jar", RestartController.UPDATER_JARNAME, "-restart", "\"" + RestartController.getRestartCommandLine().replace("\"", "\\\"") + "\"" };
         if (Application.getResource(RestartController.JARNAME).exists()) {
             System.out.println(Application.getResource(RestartController.JARNAME) + " exists");
         } else {

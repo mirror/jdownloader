@@ -23,6 +23,6 @@ public enum View {
     }
 
     public Icon getIcon() {
-        return NewTheme.I().getIcon(iconKey, 20);
+        return NewTheme.I().getIcon(iconKey, 18);
     }
 }

@@ -7,10 +7,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.ListCellRenderer;
 
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
@@ -40,7 +36,7 @@ public class BottomBar extends MigPanel {
     private JButton                                popup;
     private JButton                                popupRemove;
     private SearchField<FilePackage, DownloadLink> searchField;
-    private JComboBox                              combo;
+    private PseudoCombo                            combo;
 
     // private JToggleButton showHideSidebar;
 
@@ -105,24 +101,10 @@ public class BottomBar extends MigPanel {
         add(popupRemove, "height 24!,width 12!,aligny top");
 
         add(searchField, "height 24!,aligny top,gapleft 3,pushx,growx");
-        combo = new JComboBox(new View[] { View.ALL, View.RUNNING, View.FAILED, View.SUCCESSFUL });
-        final ListCellRenderer org = combo.getRenderer();
-        combo.setRenderer(new ListCellRenderer() {
+        combo = new PseudoCombo(new View[] { View.ALL, View.RUNNING, View.FAILED, View.SUCCESSFUL });
 
-            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                Component comp = org.getListCellRendererComponent(list, ((View) value).getLabel(), index, isSelected, cellHasFocus);
-                try {
-                    JLabel ret = (JLabel) comp;
-                    ret.setIcon(((View) value).getIcon());
-                    comp = ret;
-                } catch (Throwable e) {
-
-                }
-                return comp;
-            }
-        });
-        combo.setSelectedItem(GUI.DOWNLOAD_VIEW.getValue());
-        add(combo, "height 24!,aligny top");
+        combo.setSelectedItem((View) GUI.DOWNLOAD_VIEW.getValue());
+        add(combo, "height 24!,aligny top,gapleft 3");
         combo.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

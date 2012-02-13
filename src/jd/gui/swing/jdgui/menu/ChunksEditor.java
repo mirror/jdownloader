@@ -20,7 +20,7 @@ public class ChunksEditor extends MenuEditor {
         spinner = new ExtSpinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.GENERAL.MAX_CHUNKS_PER_FILE));
         // new SpinnerNumberModel(config.getMaxChunksPerFile(), 1, 20, 1)
 
-        add(spinner, "height 20!");
+        add(spinner, "height 22!");
     }
 
 }

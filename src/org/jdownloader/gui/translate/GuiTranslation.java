@@ -3463,4 +3463,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "View: Successful Downloads" })
     String downloadview_successful();
 
+    @Default(lngs = { "en" }, values = { "Please enter the file name you are looking for..." })
+    String searchcategory_filename_help();
+
+    @Default(lngs = { "en" }, values = { "Please enter the domain you are looking for..." })
+    String searchcategory_hoster_help();
+
+    @Default(lngs = { "en" }, values = { "Please enter the package name you are looking for..." })
+    String searchcategory_package_help();
+
 }
