@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -46,22 +47,22 @@ public class OronCom extends PluginForHost {
 
     private static AtomicInteger maxPrem            = new AtomicInteger(1);
     private boolean              showAccountCaptcha = false;
-
     public String                brbefore           = "";
-
     public boolean               nopremium          = false;
-
     private static final String  COOKIE_HOST        = "http://oron.com";
-
     private static final String  ONLY4PREMIUMERROR0 = "The file status can only be queried by Premium Users";
-
     private static final String  ONLY4PREMIUMERROR1 = "This file can only be downloaded by Premium Users";
-
     private static final String  FILEINCOMPLETE     = "File incomplete on server, please contact oron support!";
+    private final static String  ua                 = RandomUserAgent.generate();
 
     public OronCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://oron.com/premium.html");
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("://.*\\.oron.com", "://oron.com"));
     }
 
     public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
@@ -465,10 +466,16 @@ public class OronCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", ua);
         br.setCookie("http://www.oron.com", "lang", "english");
         br.getPage(link.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            logger.warning("Oron: Hoster server problems, or the hoster blocking JD.");
+            logger.warning("Oron: Please confirm in browser and report issues to JD developement team.");
+            throw new PluginException(LinkStatus.ERROR_FATAL);
+        }
         doSomething();
-        if (new Regex(brbefore, Pattern.compile("(No such file with this filename|No such user exist|File Not Found|>This file has been blocked for TOS violation)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(brbefore, Pattern.compile("(?i)(No such file with this filename|No such user exist|File( could)? Not( be)? Found|>This file has been blocked for TOS violation)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Not using brbefore as filename can be <!--commented out & cleanup
         // removes comments.
         String filename = br.getRegex("Filename: ?(<[\\w\"\\= ]+>)?([^\"<]+)").getMatch(1);
