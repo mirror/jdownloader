@@ -52,6 +52,7 @@ import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
 import org.jdownloader.settings.GeneralSettings;
@@ -217,11 +218,17 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
     }
 
     private void addMenuEntry(JPanel panel, String actionId) {
-        panel.add(getMenuEntry(actionId), "growx, pushx");
+        JToggleButton ret = getMenuEntry(actionId);
+        if (ret == null) return;
+        panel.add(ret, "growx, pushx");
     }
 
     private JToggleButton getMenuEntry(String actionId) {
         final ToolBarAction action = ActionController.getToolBarAction(actionId);
+        if (action == null) {
+            Log.exception(new Exception(actionId + " not available"));
+            return null;
+        }
         JToggleButton b = createButton(action);
         if (actionId.equals("action.exit")) {
             b.addActionListener(new ActionListener() {

@@ -2,7 +2,6 @@ package org.jdownloader.gui.views.downloads;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
@@ -155,17 +154,16 @@ public class BottomBar extends MigPanel {
                     table.getPackageControllerTableModel().addFilter(filter);
                 }
                 table.getPackageControllerTableModel().recreateModel(true);
+                GUI.DOWNLOAD_VIEW.setValue(value);
             }
         };
-
-        combo.setSelectedItem((View) GUI.DOWNLOAD_VIEW.getValue());
+        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSaveDownloadViewCrossSessionEnabled()) {
+            combo.setSelectedItem((View) GUI.DOWNLOAD_VIEW.getValue());
+        } else {
+            combo.setSelectedItem(View.ALL);
+        }
         add(combo, "height 24!,aligny top,gapleft 2");
-        combo.addActionListener(new ActionListener() {
 
-            public void actionPerformed(ActionEvent e) {
-                JsonConfig.create(GraphicalUserInterfaceSettings.class).setDownloadView((View) combo.getSelectedItem());
-            }
-        });
         if (config.isShowMoveToTopButton()) {
 
             addButton(table.getMoveTopAction());

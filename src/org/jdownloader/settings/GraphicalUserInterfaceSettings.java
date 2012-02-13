@@ -253,4 +253,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     org.jdownloader.gui.views.downloads.View getDownloadView();
 
     void setDownloadView(org.jdownloader.gui.views.downloads.View view);
+
+    @AboutConfig
+    @Description("Set to true of you want jd to remember the latest selected download view")
+    @DefaultBooleanValue(false)
+    boolean isSaveDownloadViewCrossSessionEnabled();
+
+    void setSaveDownloadViewCrossSessionEnabled(boolean b);
 }

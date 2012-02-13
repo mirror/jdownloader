@@ -96,6 +96,7 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
     }
 
     protected void paintComponent(Graphics g) {
+
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
         Composite comp = g2.getComposite();
@@ -105,13 +106,14 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
 
             g2.setColor(bgColor);
 
-            g2.fillRect(0, 0, labelWidth + 5 + iconGap + 8, getHeight());
+            g2.fillRect(1, 1, labelWidth + 5 + iconGap + 8 - 1, getHeight() - 1);
             g2.setColor(getBackground().darker());
             g2.drawLine(labelWidth + 5 + iconGap + 8, 1, labelWidth + iconGap + 5 + 8, getHeight() - 1);
             g2.setComposite(comp);
-            g2.drawImage(selectedCategory.getIcon().getImage(), iconGap - 24, 3, iconGap - 24 + SIZE, 3 + SIZE, 0, 0, SIZE, SIZE, null);
-            g2.translate(iconGap + 1, 0);
 
+            g2.drawImage(selectedCategory.getIcon().getImage(), iconGap - 24, 3, null);
+
+            g2.translate(iconGap + 1, 0);
             label.getUI().paint(g2, label);
             g2.drawImage(popIcon, labelWidth + 3, (getHeight() - popIcon.getHeight(null)) / 2, null);
             // label.paintComponents(g2);
@@ -126,6 +128,8 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
             g2.drawImage(img, 3, 3, 3 + SIZE, 3 + SIZE, 0, 0, SIZE, SIZE, null);
         }
 
+        // g2.dispose();
+
     }
 
     private synchronized void updateFilter() {
@@ -135,6 +139,7 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
             try {
                 filterPattern = LinkgrabberFilterRuleWrapper.createPattern(filterRegex, (JsonConfig.create(GeneralSettings.class).isFilterRegex()));
                 table2Filter.getPackageControllerTableModel().addFilter(this);
+
             } catch (final Throwable e) {
                 Log.exception(e);
             }
