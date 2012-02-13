@@ -31,25 +31,26 @@ public final class JD_Utils {
                 DownloadInterface di,
                 PluginForHost plugin,
                 long startByte,
+                Browser b,
                 URLConnectionAdapter connection) {
-            try {
-                while (/*downloadLink.getLivePlugin()*/plugin.waitForNextConnectionAllowed()) {
-                }
-                /*downloadLink.getLivePlugin()*/plugin.putLastConnectionTime(System.currentTimeMillis());
-            } catch (InterruptedException e) {
-                return null;
-            } catch (NullPointerException npe){
-                npe.printStackTrace(System.err);
-                //ignore
-            }
+//            try {
+//                while (/*downloadLink.getLivePlugin()*/plugin.waitForNextConnectionAllowed()) {
+//                }
+//                /*downloadLink.getLivePlugin()*/plugin.putLastConnectionTime(System.currentTimeMillis());
+//            } catch (InterruptedException e) {
+//                return null;
+//            } catch (NullPointerException npe){
+//                npe.printStackTrace(System.err);
+//                //ignore
+//            }
             
             long start = startByte;
             //String end = (endByte > 0 ? endByte + 1 : "") + "";
 
-            if (start == 0) {
+            /*if (start == 0) {
                 di.logger.finer("Takeover 0 Connection");
                 return connection;
-            }
+            }*/
             if (connection.getRange() != null && connection.getRange()[0] == (start)) {
                 di.logger.finer("Takeover connection at " + connection.getRange()[0]);
                 return connection;
@@ -57,8 +58,8 @@ public final class JD_Utils {
 
             try {
                 /* only forward referer if referer already has been sent! */
-                boolean forwardReferer = plugin.getBrowser().getHeaders().contains("Referer");
-                Browser br = plugin.getBrowser().cloneBrowser();
+                boolean forwardReferer = /*plugin.getBrowser()*/b.getHeaders().contains("Referer");
+                Browser br = /*plugin.getBrowser()*/b.cloneBrowser();
                 br.setReadTimeout(di.getReadTimeout());
                 br.setConnectTimeout(di.getRequestTimeout());
                 /* set requested range */

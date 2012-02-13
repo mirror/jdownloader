@@ -5,6 +5,7 @@
 package org.jdownloader.extensions.neembuu;
 
 import java.util.concurrent.atomic.AtomicReference;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
@@ -19,15 +20,17 @@ public final class JDDownloadSession {
     private final DownloadInterface di;
     private final PluginForHost plugin;
     private final URLConnectionAdapter connection;
+    private final Browser b;
     
     private final AtomicReference<WatchAsYouDownloadSession> watchAsYouDownloadSessionRef 
             = new AtomicReference<WatchAsYouDownloadSession>(null);
     
-    public JDDownloadSession(DownloadLink downloadLink, DownloadInterface di, PluginForHost plugin, URLConnectionAdapter connection) {
+    public JDDownloadSession(DownloadLink downloadLink, DownloadInterface di, PluginForHost plugin, URLConnectionAdapter connection, Browser b) {
         this.downloadLink = downloadLink;
         this.di = di;
         this.plugin = plugin;
         this.connection = connection;
+        this.b = b;
     }
 
     public final URLConnectionAdapter getURLConnectionAdapter() {
@@ -40,6 +43,10 @@ public final class JDDownloadSession {
 
     public final DownloadLink getDownloadLink() {
         return downloadLink;
+    }
+
+    public final Browser getBrowser() {
+        return b;
     }
 
     public final PluginForHost getPluginForHost() {

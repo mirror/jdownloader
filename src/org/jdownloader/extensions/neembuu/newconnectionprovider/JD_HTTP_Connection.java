@@ -41,6 +41,7 @@ public final class JD_HTTP_Connection extends AbstractConnection{
                     jddm.jdds.getDownloadInterface(),
                     jddm.jdds.getPluginForHost(),
                     cp.getOffset(), 
+                    jddm.jdds.getBrowser(),
                     jddm.jdds.getURLConnectionAdapter());
             if(urlca!=null){
                 is = urlca.getInputStream();

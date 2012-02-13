@@ -21,4 +21,5 @@ public interface WatchAsYouDownloadSession {
     void mount()throws Exception;
     void unMount()throws Exception;
     File getMountLocation();
+    void waitForDownloadToFinish()throws Exception;
 }

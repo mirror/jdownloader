@@ -10,6 +10,9 @@ import java.util.logging.Level;
 
 import javax.swing.JPanel;
 
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.download.DownloadInterface.Chunk;
 import jpfm.FormatterEvent;
 import jpfm.MountListener;
 import jpfm.mount.Mount;
@@ -18,11 +21,13 @@ import jpfm.mount.MountParamsBuilder;
 import jpfm.mount.Mounts;
 import neembuu.diskmanager.DiskManager;
 import neembuu.diskmanager.DiskManagers;
+import neembuu.rangearray.UnsyncRangeArrayCopy;
 import neembuu.vfs.file.MonitoredHttpFile;
 import neembuu.vfs.file.SeekableConnectionFile;
 import neembuu.vfs.file.SeekableConnectionFileParams;
 import neembuu.vfs.file.TroubleHandler;
 import neembuu.vfs.progresscontrol.ThrottleFactory;
+import neembuu.vfs.readmanager.ReadRequestState;
 import neembuu.vfs.readmanager.impl.SeekableConnectionFileImplBuilder;
 import neembuu.vfs.test.MonitoredSeekableHttpFilePanel;
 
@@ -41,6 +46,8 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
 	private final JDDownloadSession jdds;
 	private final Object lock = new Object();
 	private Mount mount = null;
+
+	private volatile long totalDownload = 0;
 
 	static WatchAsYouDownloadSessionImpl makeNew(JDDownloadSession jdds)
 			throws Exception {
@@ -114,11 +121,10 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
 
 		MonitoredHttpFile httpFile = new MonitoredHttpFile(file,
 				newConnectionProvider);
-		httpFile.setParent(fileSystem.getVectorRootDirectory());
-		
+
 		MonitoredSeekableHttpFilePanel httpFilePanel = new MonitoredSeekableHttpFilePanel(
 				httpFile);
-                fileSystem.getVectorRootDirectory().add(httpFile);
+		fileSystem.getVectorRootDirectory().add(httpFile);
 		WatchAsYouDownloadSessionImpl sessionImpl = new WatchAsYouDownloadSessionImpl(
 				file, httpFile, httpFilePanel, fileSystem, jdds);
 		jdds.setWatchAsYouDownloadSession(sessionImpl);
@@ -226,4 +232,95 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
 			mount.unMount();
 		}
 	}
+
+	// @Override
+	public void waitForDownloadToFinish() throws Exception {
+		jdds.getDownloadInterface().addChunksDownloading(1);
+		Chunk ch = jdds.getDownloadInterface().new Chunk(0, 0, null, null) {
+			@Override
+			public long getSpeed() {
+				return (long) jdds.getWatchAsYouDownloadSession()
+						.getSeekableConnectionFile()
+						.getTotalFileReadStatistics()
+						.getTotalAverageDownloadSpeedProvider()
+						.getDownloadSpeed_KiBps() * 1024;
+			}
+
+			/*
+			 * @Override public long getBytesLoaded() { return totalDownload; }
+			 * 
+			 * @Override public long getCurrentBytesPosition() { return
+			 * totalDownload; }
+			 */
+
+		};
+		ch.setInProgress(true);
+		jdds.getDownloadInterface().getChunks().add(ch);
+		jdds.getDownloadLink().getLinkStatus()
+				.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
+
+		UPDATE_LOOP: while (totalDownload < jdds.getDownloadLink()
+				.getDownloadSize()
+				&& jdds.getWatchAsYouDownloadSession().isMounted()) {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException ie) {
+
+			}
+
+			updateProgress(ch);
+
+			if (jdds.getDownloadInterface().externalDownloadStop()) {
+				break UPDATE_LOOP;
+			}
+		}
+
+		jdds.getDownloadLink().getLinkStatus()
+				.removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
+		jdds.getDownloadLink().setDownloadInstance(null);
+		jdds.getDownloadLink().getLinkStatus().setStatusText(null);
+		ch.setInProgress(false);
+
+		if (jdds.getWatchAsYouDownloadSession().isMounted()) {
+			jdds.getWatchAsYouDownloadSession().unMount();
+		}
+
+		// make sure that the file is close
+		// jdds.getWatchAsYouDownloadSession().getSeekableConnectionFile().close();
+
+		if (totalDownload >= jdds.getDownloadLink().getDownloadSize()) {
+			jdds.getDownloadLink().getLinkStatus()
+					.addStatus(LinkStatus.FINISHED);
+			jdds.getWatchAsYouDownloadSession()
+					.getSeekableConnectionFile()
+					.getFileStorageManager()
+					.completeSession(
+							new File(jdds.getDownloadLink().getFileOutput()),
+							jdds.getDownloadLink().getDownloadSize());
+		} else {
+			jdds.getWatchAsYouDownloadSession().getSeekableConnectionFile()
+					.getFileStorageManager().close();
+			throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
+		}
+	}
+
+	private void updateProgress(Chunk ch) {
+		UnsyncRangeArrayCopy<ReadRequestState> handlers = jdds
+				.getWatchAsYouDownloadSession().getSeekableConnectionFile()
+				.getTotalFileReadStatistics().getReadRequestStates();
+		// ReadRequestState is equivalent to a JD Chunk
+
+		long total = 0;
+		for (int i = 0; i < handlers.size(); i++) {
+			total += handlers.get(i).ending() - handlers.get(i).starting() + 1;
+		}
+
+		totalDownload = total;
+
+		jdds.getDownloadLink().setDownloadCurrent(total);
+		jdds.getDownloadLink().setChunksProgress(new long[] { total });
+		jdds.getDownloadLink().requestGuiUpdate();
+		jdds.getDownloadInterface().addToChunksInProgress(total);
+	}
+
 }

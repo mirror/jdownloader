@@ -32,6 +32,7 @@ public final class JD_HTTP_Download_Manager implements NewConnectionProvider {
 
 	private void connectionsRequested() {
 		String message = "++++++++++ConnectionsRequested+++++++++\n";
+                message = message + "DownloadLink="+jdds.getDownloadLink()+ "\n";
 		for (JD_HTTP_Connection e : connection_list) {
 			message = message + e.getConnectionParams().toString() + "\n";
 		}
@@ -54,7 +55,7 @@ public final class JD_HTTP_Download_Manager implements NewConnectionProvider {
 			StartNewJDBrowserConnectionThread() {
 				// always name thread, otherwise it can be extremely difficult
 				// to debug
-				super("StartNew[JD_Download_Manager]{" + connectionParams + "}");
+				super("StartNew[JD_HTTP_Download_Manager]{" + connectionParams + "}");
 			}
 
 			@Override

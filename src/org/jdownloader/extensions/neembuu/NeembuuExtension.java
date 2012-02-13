@@ -8,10 +8,15 @@ import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import jd.gui.swing.SwingGui;
 import jd.plugins.download.DownloadInterface.Chunk;
 
+import neembuu.rangearray.UnsyncRangeArrayCopy;
+import neembuu.vfs.readmanager.ReadRequestState;
+import neembuu.vfs.readmanager.RegionHandler;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.ExtensionController;
@@ -38,6 +43,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> {
 				tab = new NeembuuGui(NeembuuExtension.this);
 			}
 		}.waitForEDT();
+                System.setProperty("neembuu.vfs.test.MoniorFrame.resumepolicy","resumeFromPreviousState");
 	}
 
 	public final boolean isUsable() {
@@ -68,9 +74,11 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> {
 
 	private boolean tryHandle_(final JDDownloadSession jdds) {
 		synchronized (watchAsYouDownloadSessions) {
-			int o = JOptionPane.showConfirmDialog(null,
+			int o = JOptionPane.showConfirmDialog(
+                                        SwingGui.getInstance().getMainFrame(),
 					"Do you wish to watch as you download this file?",
-					"Neembuu Watch as you download", JOptionPane.YES_NO_OPTION);
+                                        "Neembuu watch as you download",
+					JOptionPane.YES_NO_OPTION);
 			if (o != JOptionPane.YES_OPTION) {
 				return false;
 			}
@@ -83,7 +91,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> {
 				SwingUtilities.invokeLater(new Runnable() {
 					// @Override
 					public void run() {
-						JOptionPane.showMessageDialog(null,
+						JOptionPane.showMessageDialog(SwingGui.getInstance().getMainFrame(),
 								"Could not start a watch as you download session for\n"
 										+ jdds.toString(),
 								"Neembuu watch as you download failed.",
@@ -95,20 +103,6 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> {
 						"Could not start a watch as you download session", a);
 				return false;
 			}
-
-			jdds.getDownloadInterface().addChunksDownloading(1);
-			Chunk ch = jdds.getDownloadInterface().new Chunk(0, 0, null, null) {
-				@Override
-				public long getSpeed() {
-					return (long) jdds.getWatchAsYouDownloadSession()
-							.getSeekableConnectionFile()
-							.getTotalFileReadStatistics()
-							.getTotalAverageDownloadSpeedProvider()
-							.getDownloadSpeed_KiBps() * 1024;
-				}
-			};
-			ch.setInProgress(true);
-			jdds.getDownloadInterface().getChunks().add(ch);
 			tab.addSession(jdds);
 
 			return true;
