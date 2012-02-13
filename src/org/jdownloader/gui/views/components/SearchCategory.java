@@ -7,7 +7,7 @@ import org.jdownloader.images.NewTheme;
 
 public enum SearchCategory {
 
-    FILENAME(_GUI._.searchcategory_filename(), "file", _GUI._.searchcategory_filename_help()),
+    FILENAME(_GUI._.searchcategory_filename(), "text", _GUI._.searchcategory_filename_help()),
     HOSTER(_GUI._.searchcategory_hoster(), "browse", _GUI._.searchcategory_hoster_help()),
     PACKAGE(_GUI._.searchcategory_package(), "archive", _GUI._.searchcategory_package_help());
 

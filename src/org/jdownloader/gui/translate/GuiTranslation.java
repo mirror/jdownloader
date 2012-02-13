@@ -3451,16 +3451,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Package Name" })
     String searchcategory_package();
 
-    @Default(lngs = { "en" }, values = { "View: Running Downloads" })
+    @Default(lngs = { "en" }, values = { "Running Downloads" })
     String downloadview_running();
 
-    @Default(lngs = { "en" }, values = { "View: All Downloads" })
+    @Default(lngs = { "en" }, values = { "All Downloads" })
     String downloadview_all();
 
-    @Default(lngs = { "en" }, values = { "View: Failed Downloads" })
+    @Default(lngs = { "en" }, values = { "Failed Downloads" })
     String downloadview_failed();
 
-    @Default(lngs = { "en" }, values = { "View: Successful Downloads" })
+    @Default(lngs = { "en" }, values = { "Successful Downloads" })
     String downloadview_successful();
 
     @Default(lngs = { "en" }, values = { "Please enter the file name you are looking for..." })
@@ -3471,5 +3471,8 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Please enter the package name you are looking for..." })
     String searchcategory_package_help();
+
+    @Default(lngs = { "en" }, values = { "Choose a View to filter the download list..." })
+    String PseudoCombo_PseudoCombo_tt_();
 
 }

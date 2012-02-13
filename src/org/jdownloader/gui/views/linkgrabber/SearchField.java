@@ -20,6 +20,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRootPane;
+import javax.swing.border.Border;
 
 import jd.controlling.IOEQ;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
@@ -56,12 +57,14 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
     private SearchCategory[]                               searchCategories;
     private Image                                          popIcon;
     private int                                            iconGap          = 38;
+    private Border                                         orgBorder;
 
     public SearchField(PackageControllerTable<PackageType, ChildType> table2Filter) {
         super();
         this.table2Filter = table2Filter;
         img = NewTheme.I().getImage("search", SIZE);
-
+        LAFOptions lafo = LookAndFeelController.getInstance().getLAFOptions();
+        bgColor = new Color(lafo.getPanelHeaderColor());
         setHelpText(_GUI._.SearchField_SearchField_helptext());
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         popIcon = NewTheme.I().getImage("popupButton", -1);
@@ -73,7 +76,8 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
             }
 
         };
-
+        orgBorder = getBorder();
+        setBorder(BorderFactory.createCompoundBorder(orgBorder, BorderFactory.createEmptyBorder(0, 28, 0, 0)));
         addMouseMotionListener(this);
         addMouseListener(this);
     }
@@ -105,15 +109,21 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
             g2.setColor(getBackground().darker());
             g2.drawLine(labelWidth + 5 + iconGap + 8, 1, labelWidth + iconGap + 5 + 8, getHeight() - 1);
             g2.setComposite(comp);
-        }
-        g2.drawImage(img, iconGap - 24, 3, iconGap - 24 + SIZE, 3 + SIZE, 0, 0, SIZE, SIZE, null);
-        if (label != null) {
+            g2.drawImage(selectedCategory.getIcon().getImage(), iconGap - 24, 3, iconGap - 24 + SIZE, 3 + SIZE, 0, 0, SIZE, SIZE, null);
             g2.translate(iconGap + 1, 0);
 
             label.getUI().paint(g2, label);
             g2.drawImage(popIcon, labelWidth + 3, (getHeight() - popIcon.getHeight(null)) / 2, null);
             // label.paintComponents(g2);
             g2.translate(-iconGap - 1, 0);
+        } else {
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+            g2.setColor(bgColor);
+            g2.fillRect(0, 0, 26, getHeight());
+            g2.setColor(getBackground().darker());
+            g2.drawLine(26, 1, 26, getHeight() - 1);
+            g2.setComposite(comp);
+            g2.drawImage(img, 3, 3, 3 + SIZE, 3 + SIZE, 0, 0, SIZE, SIZE, null);
         }
 
     }
@@ -166,7 +176,7 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
     }
 
     public void focusGained(final FocusEvent arg0) {
-        if (arg0.getOppositeComponent() instanceof JRootPane) return;
+        if (arg0 != null && arg0.getOppositeComponent() instanceof JRootPane) return;
         super.focusGained(arg0);
     }
 
@@ -249,8 +259,6 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
                 return true;
             }
         };
-        LAFOptions lafo = LookAndFeelController.getInstance().getLAFOptions();
-        bgColor = new Color(lafo.getPanelHeaderColor());
 
         for (SearchCategory sc : searchCategories) {
             label.setText(sc.getLabel());
@@ -261,7 +269,7 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
 
         label.setSize(labelWidth, 24);
         // label.setEnabled(false);
-        setBorder(BorderFactory.createCompoundBorder(getBorder(), BorderFactory.createEmptyBorder(0, labelWidth + 14 + iconGap, 0, 0)));
+        setBorder(BorderFactory.createCompoundBorder(orgBorder, BorderFactory.createEmptyBorder(0, labelWidth + 14 + iconGap, 0, 0)));
 
     }
 }

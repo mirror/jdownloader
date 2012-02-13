@@ -41,7 +41,7 @@ public class BottomBar extends MigPanel {
     // private JToggleButton showHideSidebar;
 
     public BottomBar(DownloadsTable table) {
-        super("ins 0 0 1 0", "[]1[][]1[]", "[]");
+        super("ins 0 0 1 0", "[]1[]1[]1[]", "[]");
 
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
 
@@ -97,10 +97,10 @@ public class BottomBar extends MigPanel {
         add(addLinks, "height 24!,aligny top");
 
         add(popup, "height 24!,width 12!,aligny top");
-        add(clearAll, "width 24!,height 24!,aligny top");
+        add(clearAll, "width 24!,height 24!,gapleft 2,aligny top");
         add(popupRemove, "height 24!,width 12!,aligny top");
 
-        add(searchField, "height 24!,aligny top,gapleft 3,pushx,growx");
+        add(searchField, "height 24!,aligny top,gapleft 2,pushx,growx");
         combo = new PseudoCombo(new View[] { View.ALL, View.RUNNING, View.FAILED, View.SUCCESSFUL });
 
         combo.setSelectedItem((View) GUI.DOWNLOAD_VIEW.getValue());

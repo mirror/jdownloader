@@ -13,6 +13,7 @@ import javax.swing.SwingConstants;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class PseudoCombo extends JButton {
@@ -29,6 +30,7 @@ public class PseudoCombo extends JButton {
                 onPopup();
             }
         });
+        this.setToolTipText(_GUI._.PseudoCombo_PseudoCombo_tt_());
         this.views = views;
         this.setHorizontalAlignment(SwingConstants.LEFT);
 
