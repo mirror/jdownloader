@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -42,13 +42,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class FilePlanetComUa extends PluginForHost {
 
     public String               brbefore            = "";
-
     private static final String passwordText        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-
     private static final String COOKIE_HOST         = "http://fileplanet.com.ua";
-
     public boolean              nopremium           = false;
-
     private static final String ONLY4PREMIUM        = "(To download files you need to buy a premium account.<br>|Скачивание из Вашей страны доступно только при наличии премиум аккаунта\\! Сейчас вы будете перенаправлены на страницу покупки\\!<)";
     private static final String ONLYPREMIUMUSERTEXT = "Only downloadable for premium users";
 
@@ -364,7 +360,7 @@ public class FilePlanetComUa extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.fileplanetcomua.only4premium", ONLYPREMIUMUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        if (brbefore.contains("(No such file|No such user exist|File not found)")) {
+        if (brbefore.contains("No such file") || brbefore.contains("No such user exist") || brbefore.contains("File not found") || brbefore.contains("Извините, мы вынуждены на неопределённое время прекратить обслуживание зарубежных посетителей в бесплатном режиме")) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
