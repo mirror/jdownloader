@@ -37,13 +37,10 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         tableModel = pctm;
         this.setShowVerticalLines(false);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        // if
-        // (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSortColumnHighlightEnabled())
-        // {
 
         sortNotifyColor = GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.getValue() ? new Color(LookAndFeelController.getInstance().getLAFOptions().getHighlightColor1()) : null;
         filterNotifyColor = GUI.CFG.isFilterHighlightEnabled() ? new Color(LookAndFeelController.getInstance().getLAFOptions().getHighlightColor2()) : null;
-        // }
+
     }
 
     public PackageControllerTableModel<ParentType, ChildrenType> getPackageControllerTableModel() {
@@ -79,36 +76,26 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-
+        boolean filteredView = filterNotifyColor != null && tableModel.isFilteredView();
+        ExtColumn<AbstractNode> sortColumn = getExtTableModel().getSortColumn();
+        int filteredColumn = -1;
+        if (sortNotifyColor != null && sortColumn != null) {
+            filteredColumn = sortColumn.getIndex();
+        }
+        if (filteredView == false && filteredColumn < 0) return;
         Graphics2D g2 = (Graphics2D) g;
         Composite comp = g2.getComposite();
         final Rectangle visibleRect = this.getVisibleRect();
-
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f));
-        if (filterNotifyColor != null && tableModel.isFilteredView()) {
-
+        if (filteredView) {
             g2.setColor(filterNotifyColor);
-
             g2.fillRect(visibleRect.x, visibleRect.y, visibleRect.x + visibleRect.width, visibleRect.y + visibleRect.height);
         }
-        Rectangle first;
-        ExtColumn<AbstractNode> sortColumn = getExtTableModel().getSortColumn();
-        if (sortColumn == null) return;
-        int index = sortColumn.getIndex();
-
-        if (index < 0) return;
-
-        if (sortNotifyColor != null) {
-
-            first = this.getCellRect(0, index, true);
-
+        if (filteredColumn >= 0) {
+            Rectangle first = this.getCellRect(0, filteredColumn, true);
             g2.setColor(sortNotifyColor);
-
             g2.fillRect(visibleRect.x + first.x, visibleRect.y, visibleRect.x + getExtTableModel().getSortColumn().getWidth(), visibleRect.y + visibleRect.height);
         }
-
-        // ;
-
         g2.setComposite(comp);
     }
 

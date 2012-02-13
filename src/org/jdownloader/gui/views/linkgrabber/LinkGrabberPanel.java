@@ -35,7 +35,6 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
@@ -45,7 +44,6 @@ import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.RemoveOptionsAction;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
     /**
@@ -209,7 +207,14 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         leftBar.add(popup, "height 24!,width 12!,aligny top");
         leftBar.add(clearAll, "width 24!,height 24!,aligny top");
         leftBar.add(popupRemove, "height 24!,width 12!,aligny top");
-        searchField = new SearchField<CrawledPackage, CrawledLink>(table);
+        searchField = new SearchField<CrawledPackage, CrawledLink>(table) {
+
+            @Override
+            public boolean isFiltered(CrawledLink v) {
+                return !filterPattern.matcher(v.getName()).find();
+            }
+
+        };
         searchField.addKeyListener(new KeyListener() {
 
             public void keyTyped(KeyEvent e) {

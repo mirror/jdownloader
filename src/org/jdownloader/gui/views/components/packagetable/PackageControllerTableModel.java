@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.Icon;
 
@@ -39,6 +40,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     protected PackageController<PackageType, ChildrenType>                          pc;
     private DelayedRunnable                                                         asyncRecreate = null;
     private ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> tableFilters  = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
+    private AtomicInteger                                                           filterHits    = new AtomicInteger(0);
 
     public ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> getTableFilters() {
         return tableFilters;
@@ -186,7 +188,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     public boolean isFilteredView() {
-        return tableFilters.size() > 0;
+        return tableFilters.size() > 0 && filterHits.get() > 0;
     }
 
     /*
@@ -226,12 +228,14 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             pc.readUnlock(readL);
         }
         ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters = this.tableFilters;
+        filterHits.set(0);
 
         /* filter packages */
         for (int index = packages.size() - 1; index >= 0; index--) {
             PackageType pkg = packages.get(index);
             for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
                 if (filter.isFiltered((PackageType) pkg)) {
+                    filterHits.incrementAndGet();
                     pkg.getView().clear();
                     /* remove package because it is filtered */
                     packages.remove(index);
@@ -252,6 +256,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 ChildrenType child = files.get(index);
                 for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
                     if (filter.isFiltered((ChildrenType) child)) {
+                        filterHits.incrementAndGet();
                         /* remove child because it is filtered */
                         files.remove(index);
                         break;
