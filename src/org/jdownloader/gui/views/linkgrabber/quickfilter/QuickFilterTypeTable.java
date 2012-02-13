@@ -13,7 +13,6 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensio
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.AudioExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
-import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.Header;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
@@ -188,6 +187,10 @@ public class QuickFilterTypeTable extends FilterTable {
     @Override
     ArrayList<Filter> getAllFilters() {
         return allFilters;
+    }
+
+    public boolean highlightFilter() {
+        return false;
     }
 
 }

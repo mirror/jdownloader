@@ -141,6 +141,10 @@ public class BottomBar extends MigPanel {
                                                                                             public boolean isFiltered(FilePackage e) {
                                                                                                 return false;
                                                                                             }
+
+                                                                                            public boolean highlightFilter() {
+                                                                                                return true;
+                                                                                            }
                                                                                         };
 
             @Override

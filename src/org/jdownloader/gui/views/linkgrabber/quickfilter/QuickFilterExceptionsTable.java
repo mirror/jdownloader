@@ -25,7 +25,6 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.controlling.filter.LinkFilterController;
-import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
 import org.jdownloader.controlling.filter.NoDownloadLinkException;
@@ -230,6 +229,10 @@ public class QuickFilterExceptionsTable extends FilterTable {
     @Override
     ArrayList<Filter> getAllFilters() {
         return new ArrayList<Filter>(filterMap.values());
+    }
+
+    public boolean highlightFilter() {
+        return false;
     }
 
 }

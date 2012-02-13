@@ -235,7 +235,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             PackageType pkg = packages.get(index);
             for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
                 if (filter.isFiltered((PackageType) pkg)) {
-                    filterHits.incrementAndGet();
+                    if (filter.highlightFilter()) filterHits.incrementAndGet();
                     pkg.getView().clear();
                     /* remove package because it is filtered */
                     packages.remove(index);
@@ -256,7 +256,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 ChildrenType child = files.get(index);
                 for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
                     if (filter.isFiltered((ChildrenType) child)) {
-                        filterHits.incrementAndGet();
+                        if (filter.highlightFilter()) filterHits.incrementAndGet();
                         /* remove child because it is filtered */
                         files.remove(index);
                         break;

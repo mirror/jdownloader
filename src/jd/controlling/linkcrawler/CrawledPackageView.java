@@ -35,6 +35,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         offline = new HashSet<CrawledLink>();
         online = new HashSet<CrawledLink>();
         sizes = new HashMap<CrawledLink, Long>();
+        domainInfos = new DomainInfo[0];
     }
 
     @Override

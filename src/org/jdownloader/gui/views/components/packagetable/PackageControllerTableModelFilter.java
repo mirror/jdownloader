@@ -11,4 +11,6 @@ public interface PackageControllerTableModelFilter<E extends AbstractPackageNode
 
     public void reset();
 
+    public boolean highlightFilter();
+
 }
