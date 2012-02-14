@@ -49,8 +49,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksProgress;
-import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEventListener {
 
@@ -425,12 +423,22 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         if (session != null) {
             synchronized (session) {
                 boolean stillRunning = session.linkChecker.isRunning() || session.linkCrawler.isRunning();
-                if (stillRunning) {
-                    session.finished = false;
-                    ret = "0";
+                ArrayList<CrawledLink> retL = null;
+                synchronized (session.linkCrawler.getCrawledLinks()) {
+                    retL = new ArrayList<CrawledLink>(session.linkCrawler.getCrawledLinks());
+                    session.linkCrawler.getCrawledLinks().clear();
+                }
+                if (retL.size() > 0) {
+                    /* we have links to output */
+                    ret = "var jDownloaderObj = {statusCheck: function(){alert(\"jDObj: " + retL.size() + "\");}};jDownloaderObj.statusCheck();";
                 } else {
-                    finished = session.finished = true;
-                    ret = "var jDownloaderObj = {statusCheck: function(){alert(\"jDObj: " + session.linkCrawler.getCrawledLinks().size() + "\");}};jDownloaderObj.statusCheck();";
+                    /* lets wait again */
+                    ret = "0";
+                }
+                if (stillRunning == false && retL.size() == 0) {
+                    /* we are finished an no more links to output */
+                    session.finished = true;
+                    ret = "-1";
                 }
             }
         }
