@@ -130,21 +130,32 @@ public class UlozTo extends PluginForHost {
             // If property not selected or read failed (no data), asks to solve
             if (key == null || code == null) {
                 code = getCaptchaCode(captchaUrl, downloadLink);
-                captchaForm.put("captcha[text]", code);
-
                 Matcher m = Pattern.compile("http://img\\.uloz\\.to/captcha/(\\d+)\\.png").matcher(captchaUrl);
                 if (m.find()) {
                     key = m.group(1);
                     getPluginConfig().setProperty(CAPTCHA_ID, key);
                     getPluginConfig().setProperty(CAPTCHA_TEXT, code);
                 }
-            } else {
-                captchaForm.put("captcha[id]", key);
-                captchaForm.put("captcha[text]", code);
             }
 
+            // if something failed
+            if (key == null || code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+            captchaForm.put("captcha%5Bid%5D", key);
+            captchaForm.put("captcha%5Btext%5D", code);
             captchaForm.remove(null);
             br.submitForm(captchaForm);
+
+            // If captcha fails, throws exception
+            // If in automatic mode, clears saved data
+            if (br.containsHTML("Text je opsán špatně")) {
+                if (getPluginConfig().getBooleanProperty(REPEAT_CAPTCHA)) {
+                    getPluginConfig().setProperty(CAPTCHA_ID, null);
+                    getPluginConfig().setProperty(CAPTCHA_TEXT, null);
+                }
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+
             dllink = br.getRedirectLocation();
             if (dllink == null) break;
             URLConnectionAdapter con = null;

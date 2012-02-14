@@ -39,10 +39,10 @@ public class RapidshareFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(parameter.replace("https://", "http://"));
 
         String[] folderInfo = new Regex(br.getURL(), "https?://(?:www\\.)?rapidshare\\.com/\\#\\!users\\|(\\d+-[0-9a-f]+)(?:\\|(\\d+))?").getRow(0);
-        if (folderInfo[0] == null) return decryptedLinks;
+        if (folderInfo == null || folderInfo[0] == null) return decryptedLinks;
         
         String contact = folderInfo[0];
         String folder = folderInfo[1];
