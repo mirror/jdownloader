@@ -128,7 +128,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public int getDefaultWidth() {
-        return 65;
+        return 85;
     }
 
     // @Override

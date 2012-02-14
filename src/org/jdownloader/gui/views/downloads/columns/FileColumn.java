@@ -19,6 +19,8 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
+import sun.swing.SwingUtilities2;
+
 public class FileColumn extends ExtTextColumn<AbstractNode> {
 
     /**
@@ -30,10 +32,12 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
     private ImageIcon         iconPackageClosed;
     private ImageIcon         iconArchive;
     private ImageIcon         iconArchiveOpen;
+    private Border            normalBorder;
 
     public FileColumn() {
         super(_GUI._.filecolumn_title());
         leftGapBorder = BorderFactory.createEmptyBorder(0, 32, 0, 0);
+        normalBorder = BorderFactory.createEmptyBorder(0, 0, 0, 0);
         iconPackageOpen = NewTheme.I().getIcon("tree_package_open", 32);
         iconArchiveOpen = NewTheme.I().getIcon("tree_archive_open", 32);
         iconArchive = NewTheme.I().getIcon("tree_archive", 32);
@@ -99,7 +103,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
     public void configureRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         super.configureRendererComponent(value, isSelected, hasFocus, row, column);
         if (value instanceof AbstractPackageNode) {
-            renderer.setBorder(null);
+            renderer.setBorder(normalBorder);
         } else {
             renderer.setBorder(leftGapBorder);
         }
@@ -110,7 +114,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
     public void configureEditorComponent(AbstractNode value, boolean isSelected, int row, int column) {
         super.configureEditorComponent(value, isSelected, row, column);
         if (value instanceof AbstractPackageNode) {
-            editor.setBorder(null);
+            editor.setBorder(normalBorder);
         } else {
             editor.setBorder(leftGapBorder);
         }
@@ -137,7 +141,14 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public final String getStringValue(AbstractNode value) {
-        return value.getName();
+        if (value instanceof AbstractPackageNode) {
+            return value.getName();
+
+        } else {
+            return SwingUtilities2.clipStringIfNecessary(rendererField, rendererField.getFontMetrics(rendererField.getFont()), value.getName(), getTableColumn().getWidth() - rendererIcon.getPreferredSize().width - 5 - 32);
+
+        }
+
     }
 
 }

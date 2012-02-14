@@ -68,10 +68,21 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
 
         this.addColumn(new SizeColumn());
         this.addColumn(new HosterColumn());
-        this.addColumn(new AvailabilityColumn());
+        this.addColumn(new AvailabilityColumn() {
+            @Override
+            public boolean isDefaultVisible() {
+                return true;
+            }
+
+        });
         // this.addColumn(new AddedDateColumn());
         this.addColumn(new PriorityColumn());
-        this.addColumn(new CommentColumn());
+        this.addColumn(new CommentColumn() {
+            @Override
+            public boolean isDefaultVisible() {
+                return false;
+            }
+        });
     }
 
 }

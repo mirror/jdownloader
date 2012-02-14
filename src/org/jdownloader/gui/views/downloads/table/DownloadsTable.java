@@ -236,7 +236,9 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     protected void onDoubleClick(final MouseEvent e, final AbstractNode obj) {
-        new EditLinkOrPackageAction(this, obj).actionPerformed(null);
+        if (!isEditing()) {
+            new EditLinkOrPackageAction(this, obj).actionPerformed(null);
+        }
     }
 
     @Override

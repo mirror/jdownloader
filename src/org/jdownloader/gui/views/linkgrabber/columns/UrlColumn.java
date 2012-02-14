@@ -39,6 +39,11 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
         return isEditable(obj);
     }
 
+    @Override
+    public boolean isDefaultVisible() {
+        return false;
+    }
+
     public UrlColumn() {
         super(_GUI._.LinkGrabberTableModel_initColumns_url());
         this.setClickcount(2);
