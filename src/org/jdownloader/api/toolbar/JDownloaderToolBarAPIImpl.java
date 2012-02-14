@@ -48,6 +48,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.api.toolbar.LinkCheckResult.STATUS;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksProgress;
 
 public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEventListener {
@@ -410,7 +411,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         }
     }
 
-    public void pollCheckedLinksFromDOM(RemoteAPIResponse response, RemoteAPIRequest request, String checkID) {
+    public LinkCheckResult pollCheckedLinksFromDOM(String checkID) {
         CheckedDom session = null;
         synchronized (checkSessions) {
             session = checkSessions.get(checkID);
@@ -418,8 +419,8 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                 checkSessions.remove(checkID);
             }
         }
+        LinkCheckResult result = new LinkCheckResult();
         boolean finished = false;
-        String ret = "-1";
         if (session != null) {
             synchronized (session) {
                 boolean stillRunning = session.linkChecker.isRunning() || session.linkCrawler.isRunning();
@@ -428,17 +429,19 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                     retL = new ArrayList<CrawledLink>(session.linkCrawler.getCrawledLinks());
                     session.linkCrawler.getCrawledLinks().clear();
                 }
+                result.setStatus(STATUS.PENDING);
                 if (retL.size() > 0) {
                     /* we have links to output */
-                    ret = "var jDownloaderObj = {statusCheck: function(){alert(\"jDObj: " + retL.size() + "\");}};jDownloaderObj.statusCheck();";
-                } else {
-                    /* lets wait again */
-                    ret = "0";
+                    ArrayList<LinkStatus> linkStats = new ArrayList<LinkStatus>();
+                    for (CrawledLink link : retL) {
+                        linkStats.add(new LinkStatus(link));
+                    }
+                    result.setLinks(linkStats);
                 }
                 if (stillRunning == false && retL.size() == 0) {
                     /* we are finished an no more links to output */
                     session.finished = true;
-                    ret = "-1";
+                    result.setStatus(STATUS.FINISHED);
                 }
             }
         }
@@ -447,12 +450,16 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                 checkSessions.remove(checkID);
             }
         }
-        writeString(response, request, ret, false);
+        return result;
     }
 
     public void onStateChange(StateEvent event) {
     }
 
     public void onStateUpdate(StateEvent event) {
+    }
+
+    public String specialURLHandling(String url) {
+        return "";
     }
 }

@@ -4,7 +4,6 @@ import org.appwork.remoteapi.ApiNamespace;
 import org.appwork.remoteapi.ApiRawMethod;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
-import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.storage.config.annotations.AllowStorage;
 
 @ApiNamespace("toolbar")
@@ -31,6 +30,8 @@ public interface JDownloaderToolBarAPI extends RemoteAPIInterface {
 
     public boolean toggleStopAfterCurrentDownload();
 
+    public String specialURLHandling(String url);
+
     @AllowStorage(value = { Object.class })
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     public Object addLinksFromDOM(RemoteAPIRequest request);
@@ -39,6 +40,6 @@ public interface JDownloaderToolBarAPI extends RemoteAPIInterface {
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     public Object checkLinksFromDOM(RemoteAPIRequest request);
 
-    public void pollCheckedLinksFromDOM(RemoteAPIResponse response, RemoteAPIRequest request, String checkID);
+    public LinkCheckResult pollCheckedLinksFromDOM(String checkID);
 
 }
