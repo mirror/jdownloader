@@ -678,3 +678,4 @@ jd/captcha/methods/xn6cm
 jd/plugins/hoster/XsharewareCom.class
 jd/plugins/hoster/EnteruploadCom.class
 jd/plugins/hoster/GrooveFileCom.class
+jd/plugins/hoster/VistaUploadCom.class

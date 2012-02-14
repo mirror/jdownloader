@@ -98,7 +98,7 @@ public class Freaksharenet extends PluginForHost {
             break;
         }
         if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        if (br.containsHTML("api\\.recaptcha\\.net")) {
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             for (int i = 0; i <= 5; i++) {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -108,12 +108,15 @@ public class Freaksharenet extends PluginForHost {
                 final String c = getCaptchaCode(cf, downloadLink);
                 rc.setCode(c);
                 if (br.containsHTML(MAXDLSLIMITMESSAGE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Reached max free DLs", 10 * 60 * 1000l); }
-                if (br.getRedirectLocation() == null) {
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>Wrong Captcha)")) {
                     continue;
                 }
                 break;
             }
-            if (br.getRedirectLocation() == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+            if (br.getRedirectLocation() == null) {
+                handleOtherErrors(downloadLink);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), resume, maxchunks);
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, resume, maxchunks);
@@ -121,18 +124,7 @@ public class Freaksharenet extends PluginForHost {
         if (!dl.getConnection().isContentDisposition()) {
             logger.info("The finallink is no file, trying to handle errors...");
             br.followConnection();
-            if (br.containsHTML(MAXDLSLIMITMESSAGE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Reached max free DLs", 10 * 60 * 1000l); }
-            if (br.containsHTML("File can not be found")) {
-                logger.info("File for the following is offline (server error): " + downloadLink.getDownloadURL());
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (br.containsHTML("bad try")) {
-                logger.warning("Hoster said \"bad try\" which means that jd didn't wait enough time before trying to start the download!");
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            if (br.containsHTML("your Traffic is used up for today")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001); }
-            if (br.containsHTML("No Downloadserver. Please try again")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l); }
-            if (br.containsHTML("you cant  download more then 1 at time")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001); }
+            handleOtherErrors(downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -213,6 +205,21 @@ public class Freaksharenet extends PluginForHost {
         if (br.containsHTML("You can Download only 1 File in")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
         if (br.containsHTML("No Downloadserver\\. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
         if (br.containsHTML(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+    }
+
+    private void handleOtherErrors(DownloadLink downloadLink) throws PluginException {
+        if (br.containsHTML(MAXDLSLIMITMESSAGE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Reached max free DLs", 10 * 60 * 1000l); }
+        if (br.containsHTML("File can not be found")) {
+            logger.info("File for the following is offline (server error): " + downloadLink.getDownloadURL());
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("bad try")) {
+            logger.warning("Hoster said \"bad try\" which means that jd didn't wait enough time before trying to start the download!");
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        if (br.containsHTML("your Traffic is used up for today")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001); }
+        if (br.containsHTML("No Downloadserver. Please try again")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l); }
+        if (br.containsHTML("you cant  download more then 1 at time")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001); }
     }
 
     @Override

@@ -150,8 +150,8 @@ public class ShareFlareNet extends PluginForHost {
         }
         br.getPage(NEXTPAGE);
         String dllink = getDllink();
+        String wait = br.getRegex("y =[ ]+(\\d+);").getMatch(0);
         if (dllink == null) {
-            String wait = br.getRegex("y =[ ]+(\\d+);").getMatch(0);
             int tt = 45;
             if (wait != null) {
                 logger.info("Regexed waittime is found...(" + wait + " seconds)");
@@ -160,13 +160,16 @@ public class ShareFlareNet extends PluginForHost {
             sleep(tt * 1001, downloadLink);
             br.getPage(NEXTPAGE);
             dllink = getDllink();
+            if (dllink == null) {
+                /** If waittime still exists we should have a server error */
+                wait = br.getRegex("y =[ ]+(\\d+);").getMatch(0);
+                if (wait != null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 60 * 60 * 1000l);
+                logger.warning("dllink is null");
+                logger.info(debug);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         } else {
             logger.info("dllink found, hopefully we have no hidden waittime here...");
-        }
-        if (dllink == null) {
-            logger.warning("dllink is null");
-            logger.info(debug);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         URLConnectionAdapter con = dl.getConnection();
@@ -211,6 +214,7 @@ public class ShareFlareNet extends PluginForHost {
             }
             ai.setTrafficLeft(SizeFormatter.getSize(points + "GB"));
         }
+        if (br.containsHTML("(>The file is temporarily unavailable for download|Please try a little bit later\\.<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 60 * 60 * 1000l);
         String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("valign=\"middle\"><br><span style=\"font-size:12px;\"><a href='(http://.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (url == null) {
             url = br.getRegex("('|\")(http://\\d+\\.\\d+\\.\\d+\\.\\d+/[^<>\"\\']+\\d+/[^<>\"\\']+/" + downloadLink.getName() + ")('|\")").getMatch(1);

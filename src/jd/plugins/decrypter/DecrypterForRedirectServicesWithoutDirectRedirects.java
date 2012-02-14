@@ -640,7 +640,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             finallink = br.getRegex("<iframe src=\"([^<>\"\\']+)\"").getMatch(0);
             if (finallink != null) finallink = Encoding.deepHtmlDecode(finallink).replace("&#114", "r");
         } else if (parameter.contains("digitaldripped.com/")) {
-            finallink = br.getRegex("\"(http://(www\\.)?hulkshare\\.com/[a-z0-9]{12})\"").getMatch(0);
+            finallink = br.getRegex("<a class=\"download\\-btn\" target=\"[^<>\"\\']+\" href=\"(http://[^<>`\"\\']+)\"").getMatch(0);
         }
         if (finallink == null) {
             logger.info("DecrypterForRedirectServicesWithoutDirectRedirects says \"Out of date\" for link: " + parameter);
