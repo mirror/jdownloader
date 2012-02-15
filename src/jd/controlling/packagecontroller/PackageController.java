@@ -21,9 +21,10 @@ import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 
-public abstract class PackageController<PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> {
+public abstract class PackageController<PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> implements AbstractNodeNotifier<PackageType> {
     private final AtomicLong structureChanged = new AtomicLong(0);
     private final AtomicLong childrenChanged  = new AtomicLong(0);
+    private final AtomicLong contentChanged   = new AtomicLong(0);
 
     public long getPackageControllerChanges() {
         return structureChanged.get();
@@ -31,6 +32,10 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     public long getChildrenChanges() {
         return childrenChanged.get();
+    }
+
+    public long getContentChanges() {
+        return contentChanged.get();
     }
 
     protected LinkedList<PackageType>    packages  = new LinkedList<PackageType>();
@@ -487,6 +492,10 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     public LinkedList<PackageType> getPackages() {
         return packages;
+    }
+
+    public void nodeUpdated(PackageType source) {
+        contentChanged.incrementAndGet();
     }
 
 }

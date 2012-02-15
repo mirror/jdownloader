@@ -37,6 +37,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.http.Browser;
 import jd.nutils.io.JDIO;
@@ -70,107 +71,107 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         TRUE;
     }
 
-    private static final String                PROPERTY_MD5            = "MD5";
-    private static final String                PROPERTY_SHA1           = "SHA1";
-    private static final String                PROPERTY_PASS           = "pass";
-    private static final String                PROPERTY_FINALFILENAME  = "FINAL_FILENAME";
-    private static final String                PROPERTY_FORCEDFILENAME = "FORCED_FILENAME";
-    private static final String                PROPERTY_COMMENT        = "COMMENT";
-    private static final String                PROPERTY_PRIORITY       = "PRIORITY";
-    private static final String                PROPERTY_FINISHTIME     = "FINISHTIME";
-    private static final String                PROPERTY_ENABLED        = "ENABLED";
-    private static final String                PROPERTY_PWLIST         = "PWLIST";
-    private static final String                PROPERTY_LINKDUPEID     = "LINKDUPEID";
+    private static final String                          PROPERTY_MD5            = "MD5";
+    private static final String                          PROPERTY_SHA1           = "SHA1";
+    private static final String                          PROPERTY_PASS           = "pass";
+    private static final String                          PROPERTY_FINALFILENAME  = "FINAL_FILENAME";
+    private static final String                          PROPERTY_FORCEDFILENAME = "FORCED_FILENAME";
+    private static final String                          PROPERTY_COMMENT        = "COMMENT";
+    private static final String                          PROPERTY_PRIORITY       = "PRIORITY";
+    private static final String                          PROPERTY_FINISHTIME     = "FINISHTIME";
+    private static final String                          PROPERTY_ENABLED        = "ENABLED";
+    private static final String                          PROPERTY_PWLIST         = "PWLIST";
+    private static final String                          PROPERTY_LINKDUPEID     = "LINKDUPEID";
 
-    public static final int                    LINKTYPE_CONTAINER      = 1;
+    public static final int                              LINKTYPE_CONTAINER      = 1;
 
-    public static final int                    LINKTYPE_NORMAL         = 0;
+    public static final int                              LINKTYPE_NORMAL         = 0;
 
-    private transient static Logger            logger                  = JDLogger.getLogger();
+    private transient static Logger                      logger                  = JDLogger.getLogger();
 
-    private static final long                  serialVersionUID        = 1981079856214268373L;
+    private static final long                            serialVersionUID        = 1981079856214268373L;
 
-    public static final String                 UNKNOWN_FILE_NAME       = "unknownFileName.file";
-    private static final String                PROPERTY_CHUNKS         = "CHUNKS";
+    public static final String                           UNKNOWN_FILE_NAME       = "unknownFileName.file";
+    private static final String                          PROPERTY_CHUNKS         = "CHUNKS";
 
-    private transient AvailableStatus          availableStatus         = AvailableStatus.UNCHECKED;
+    private transient AvailableStatus                    availableStatus         = AvailableStatus.UNCHECKED;
 
-    private long[]                             chunksProgress          = null;
+    private long[]                                       chunksProgress          = null;
 
     /** Containername */
-    private String                             container;
+    private String                                       container;
 
     /** Dateiname des Containers */
-    private String                             containerFile           = null;
+    private String                                       containerFile           = null;
 
     /** Index dieses DownloadLinks innerhalb der Containerdatei */
-    private int                                containerIndex          = -1;
+    private int                                          containerIndex          = -1;
 
     /** Aktuell heruntergeladene Bytes der Datei */
-    private long                               downloadCurrent         = 0;
+    private long                                         downloadCurrent         = 0;
 
-    private transient DownloadInterface        downloadInstance;
+    private transient DownloadInterface                  downloadInstance;
 
-    private transient SingleDownloadController downloadLinkController;
+    private transient SingleDownloadController           downloadLinkController;
 
     /** Maximum der heruntergeladenen Datei (Dateilaenge) */
-    private long                               downloadMax             = 0;
+    private long                                         downloadMax             = 0;
 
-    private String                             browserurl              = null;
+    private String                                       browserurl              = null;
 
-    private FilePackage                        filePackage;
+    private FilePackage                                  filePackage;
 
     /** Hoster des Downloads */
-    private String                             host;
+    private String                                       host;
 
     /** Zeigt an, ob dieser Downloadlink aktiviert ist */
-    private boolean                            isEnabled;
+    private boolean                                      isEnabled;
 
-    private LinkStatus                         linkStatus;
+    private LinkStatus                                   linkStatus;
 
-    private TransferStatus                     transferstatus;
+    private TransferStatus                               transferstatus;
 
-    private int                                linkType                = LINKTYPE_NORMAL;
+    private int                                          linkType                = LINKTYPE_NORMAL;
 
     /** Beschreibung des Downloads */
     /* kann sich noch ändern, NICHT final */
-    private String                             name;
+    private String                                       name;
 
-    private transient PluginForHost            defaultplugin;
+    private transient PluginForHost                      defaultplugin;
 
-    private transient PluginForHost            liveplugin;
+    private transient PluginForHost                      liveplugin;
 
     /**
      * Falls vorhanden, das Plugin fuer den Container, aus der dieser Download
      * geladen wurde
      */
-    private transient PluginsC                 pluginForContainer;
+    private transient PluginsC                           pluginForContainer;
 
     /*
      * we need to keep this some time to perfom conversion from variable to
      * property
      */
-    private String                             finalFileName;
+    private String                                       finalFileName;
 
     /**
      * /** Von hier soll der Download stattfinden
      */
-    private String                             urlDownload;
+    private String                                       urlDownload;
 
     /**
      * Password welches einem weiteren Decrypter-Plugin uebergeben werden soll
      * (zb FolderPassword)
      */
 
-    private transient PluginProgress           pluginProgress;
+    private transient PluginProgress                     pluginProgress;
 
-    private transient ImageIcon                icon                    = null;
+    private transient ImageIcon                          icon                    = null;
 
-    private long                               created                 = -1l;
+    private long                                         created                 = -1l;
 
-    private transient UniqueSessionID          uniqueID                = null;
-    private transient String                   iconHost                = null;
-    transient private DLinkPropertyListener    propertyListener;
+    private transient UniqueSessionID                    uniqueID                = null;
+    private transient String                             iconHost                = null;
+    transient private AbstractNodeNotifier<DownloadLink> propertyListener;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -644,14 +645,19 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             if (availableStatus == null || getDefaultPlugin() == null) availableStatus = AvailableStatus.UNCHECKABLE;
             return availableStatus;
         } finally {
-            if (propertyListener != null) propertyListener.onDownloadLinkUpdated();
+            notifyChanges();
         }
     }
 
     public void setAvailableStatus(AvailableStatus availableStatus) {
         this.availableStatus = availableStatus;
-        DLinkPropertyListener pl;
-        if ((pl = propertyListener) != null) pl.onDownloadLinkUpdated();
+        notifyChanges();
+    }
+
+    private void notifyChanges() {
+        AbstractNodeNotifier<DownloadLink> pl = propertyListener;
+        if (pl == null) pl = this.filePackage;
+        if (pl != null) pl.nodeUpdated(this);
     }
 
     /**
@@ -745,8 +751,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public void setAvailable(boolean available) {
         this.availableStatus = available ? AvailableStatus.TRUE : AvailableStatus.FALSE;
-        DLinkPropertyListener pl;
-        if ((pl = propertyListener) != null) pl.onDownloadLinkUpdated();
+        notifyChanges();
     }
 
     /**
@@ -803,8 +808,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setDownloadSize(long downloadMax) {
         this.downloadMax = downloadMax;
-        DLinkPropertyListener pl;
-        if ((pl = propertyListener) != null) pl.onDownloadLinkUpdated();
+        notifyChanges();
     }
 
     /**
@@ -825,8 +829,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         } else {
             setProperty(PROPERTY_ENABLED, isEnabled);
         }
-        DLinkPropertyListener pl;
-        if ((pl = propertyListener) != null) pl.onDownloadLinkUpdated();
+        notifyChanges();
     }
 
     /**
@@ -1151,21 +1154,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return this;
     }
 
-    /**
-     * INterface is implemended by Crawledlink. downloadlink can notify his
-     * master this way. can be removed as soona s we kick downloadlink
-     * 
-     * @author Thomas
-     * 
-     */
-    public static interface DLinkPropertyListener {
-
-        void onDownloadLinkUpdated();
-
-    }
-
-    public void setPropertyListener(DLinkPropertyListener crawledLink) {
-        this.propertyListener = crawledLink;
+    public void setNodeChangeListener(AbstractNodeNotifier<DownloadLink> propertyListener) {
+        this.propertyListener = propertyListener;
     }
 
 }

@@ -149,16 +149,22 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         this.expanded = b;
     }
 
-    public void onChildEnabledStateChanged(CrawledLink crawledLink) {
-        getView().updateInfo(crawledLink);
-    }
-
     public CrawledPackageView getView() {
         return view;
     }
 
     public boolean isEnabled() {
         return getView().isEnabled();
+    }
+
+    public void nodeUpdated(CrawledLink source) {
+        getView().updateInfo(source);
+        notifyChanges();
+    }
+
+    private void notifyChanges() {
+        PackageController<CrawledPackage, CrawledLink> n = getControlledBy();
+        if (n != null) n.nodeUpdated(this);
     }
 
 }

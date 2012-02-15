@@ -491,7 +491,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     /* set correct enabled/disabled state */
                     dl.setEnabled(link.isEnabled());
                     /* remove reference to crawledLink */
-                    dl.setPropertyListener(null);
+                    dl.setNodeChangeListener(null);
                     dl.setCreated(link.getCreated());
                     links.add(dl);
                     /* set correct Parent node */

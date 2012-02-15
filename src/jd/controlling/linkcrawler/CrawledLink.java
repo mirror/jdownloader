@@ -4,11 +4,11 @@ import javax.swing.ImageIcon;
 
 import jd.controlling.captcha.CaptchaController;
 import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.DLinkPropertyListener;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
@@ -19,7 +19,7 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 
-public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, DLinkPropertyListener {
+public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, AbstractNodeNotifier<DownloadLink> {
 
     public static enum LinkState {
         ONLINE,
@@ -191,13 +191,13 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public CrawledLink(DownloadLink dlLink) {
         this.dlLink = dlLink;
-        if (dlLink != null) dlLink.setPropertyListener(this);
+        if (dlLink != null) dlLink.setNodeChangeListener(this);
     }
 
     public void setDownloadLink(DownloadLink dlLink) {
-        if (this.dlLink != null) this.dlLink.setPropertyListener(null);
+        if (this.dlLink != null) this.dlLink.setNodeChangeListener(null);
         this.dlLink = dlLink;
-        if (dlLink != null) dlLink.setPropertyListener(this);
+        if (dlLink != null) dlLink.setNodeChangeListener(this);
     }
 
     public CrawledLink(CryptedLink cLink) {
@@ -311,8 +311,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public void setEnabled(boolean b) {
         if (b == enabledState) return;
         enabledState = b;
-        CrawledPackage lparent = parent;
-        if (lparent != null) lparent.onChildEnabledStateChanged(this);
+        notifyChanges();
     }
 
     public long getCreated() {
@@ -410,11 +409,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return DomainInfo.getInstance(Browser.getHost(getURL(), false));
     }
 
-    public void onDownloadLinkUpdated() {
-        CrawledPackage lparent = parent;
-        if (lparent != null) lparent.onChildEnabledStateChanged(this);
-    }
-
     public CrawledLinkModifier getCustomCrawledLinkModifier() {
         return modifyHandler;
     }
@@ -436,6 +430,15 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      */
     public BrokenCrawlerHandler getBrokenCrawlerHandler() {
         return brokenCrawlerHandler;
+    }
+
+    public void nodeUpdated(DownloadLink source) {
+        notifyChanges();
+    }
+
+    private void notifyChanges() {
+        CrawledPackage lparent = parent;
+        if (lparent != null) lparent.nodeUpdated(this);
     }
 
 }

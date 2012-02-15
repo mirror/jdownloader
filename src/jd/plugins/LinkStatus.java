@@ -213,11 +213,13 @@ public class LinkStatus implements Serializable {
      * @param status
      */
     public void addStatus(final int status) {
+        if (lastestStatus == status) return;
         this.status |= status;
         if (JDFlags.hasSomeFlags(status, FINISHED)) {
             if (downloadLink.getFinishedDate() == -1l) downloadLink.setFinishedDate(System.currentTimeMillis());
         }
         lastestStatus = status;
+        notifyChanges();
     }
 
     public void exceptionToErrorMessage(Exception e) {
@@ -420,6 +422,7 @@ public class LinkStatus implements Serializable {
     }
 
     public void reset(boolean resetRetryCounter) {
+        notifyChanges();
         setStatus(TODO);
         setLatestStatus(TODO);
         errorMessage = null;
@@ -445,11 +448,20 @@ public class LinkStatus implements Serializable {
     }
 
     public void setInProgress(final boolean b) {
+        if (b == this.inProgress) return;
         this.inProgress = b;
+        notifyChanges();
     }
 
     public void setActive(final boolean b) {
+        if (b == isActive) return;
         isActive = b;
+        notifyChanges();
+    }
+
+    private void notifyChanges() {
+        DownloadLink dl = this.downloadLink;
+        if (dl != null) dl.getFilePackage().nodeUpdated(dl);
     }
 
     /**

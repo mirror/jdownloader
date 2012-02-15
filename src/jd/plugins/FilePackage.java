@@ -155,7 +155,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     private transient boolean                                      isExpanded          = false;
 
     private transient PackageController<FilePackage, DownloadLink> controlledby        = null;
-    private transient UniqueSessionID                                     uniqueID            = null;
+    private transient UniqueSessionID                              uniqueID            = null;
     public static final String                                     PROPERTY_EXPANDED   = "EXPANDED";
     private static final String                                    PROPERTY_COMMENT    = "COMMENT";
     private static final String                                    PROPERTY_EXTRACT    = "EXTRACT";
@@ -691,4 +691,14 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public FilePackageView getView() {
         return view;
     }
+
+    public void nodeUpdated(DownloadLink source) {
+        notifyChanges();
+    }
+
+    private void notifyChanges() {
+        PackageController<FilePackage, DownloadLink> n = getControlledBy();
+        if (n != null) n.nodeUpdated(this);
+    }
+
 }

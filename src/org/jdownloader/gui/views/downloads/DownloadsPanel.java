@@ -50,8 +50,10 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     }
 
     private void layoutComponents() {
-        // if (org.jdownloader.settings.statics.GUI.CFG.isDownloadViewSidebarEnabled()
-        // && org.jdownloader.settings.statics.GUI.CFG.isDownloadViewSidebarVisible())
+        // if
+        // (org.jdownloader.settings.statics.GUI.CFG.isDownloadViewSidebarEnabled()
+        // &&
+        // org.jdownloader.settings.statics.GUI.CFG.isDownloadViewSidebarVisible())
         // {
         //
         // if (sidebarScrollPane == null) {
@@ -141,9 +143,23 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         synchronized (this) {
             if (timer != null) timer.cancel(false);
             timer = tableModel.getThreadPool().scheduleWithFixedDelay(new Runnable() {
+                long lastContentChanges = -1;
 
                 public void run() {
-                    tableModel.refreshModel();
+                    long contentChanges = DownloadController.getInstance().getContentChanges();
+                    if (lastContentChanges != contentChanges && tableModel.isFilteredView()) {
+                        /*
+                         * in case we have content changes(eg downloads started)
+                         * and an active filteredView, we need to recreate the
+                         * tablemodel to reflect possible status changes in
+                         * filtered view
+                         */
+                        tableModel.recreateModel();
+                    } else {
+                        /* just refresh the table */
+                        tableModel.refreshModel();
+                    }
+                    lastContentChanges = contentChanges;
                 }
 
             }, 250, 1000, TimeUnit.MILLISECONDS);
