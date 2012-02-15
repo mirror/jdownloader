@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -77,7 +77,6 @@ public class YouSendItCom extends PluginForHost {
                     dllink = br.getRegex("\"(directDownload\\?phi_action=app/directDownload\\&fl=[A-Za-z0-9]+(\\&experience=bas)?)\"").getMatch(0);
                     if (dllink == null) {
                         dllink = br.getRegex("<a id=\"download-button\" href=\"(http.*?)\"").getMatch(0);
-                        dllink = null;
                         if (dllink == null) {
                             dllink = br.getRegex("\"(http(s)?://(www\\.)?yousendit\\.com/transfer\\.php\\?action=check_download\\&ufid=[a-zA-Z0-9]+\\&key=[a-z0-9]+)\"").getMatch(0);
                         }
@@ -127,20 +126,43 @@ public class YouSendItCom extends PluginForHost {
             br.getPage(link.getDownloadURL());
             if (br.containsHTML("Download link is invalid")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = br.getRegex("style=\"width:390px; display:block; overflow:hidden;\">(.*?)</a>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<span style=\\'color:#1F3CD6;\\'>(.*?)</span><").getMatch(0);
-            if (filename == null) filename = br.getRegex("clsDownloadFileName\">(.*?)</").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<span style=\\'color:#1F3CD6;\\'>(.*?)</span><").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("clsDownloadFileName\">(.*?)</").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex(">([^<>]+)</a>\\&nbsp\\; <span>").getMatch(0);
+                        if (filename == null) {
+                            filename = br.getRegex("title=\"([^<>\"]+)\" style=\"w").getMatch(0);
+                            if (filename == null) {
+                                logger.warning("YouSendIt: Can't find filename, Please report this to the JD Developement team!");
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        }
+                    }
+                }
+            }
             String filesize = br.getRegex("\">Size:\\&nbsp;<strong>(.*?)</strong>").getMatch(0);
-            if (filesize == null) filesize = br.getRegex(";\\'>Size: (.*?)\\&nbsp;").getMatch(0);
-            if (filesize == null) filesize = br.getRegex("\">Size: (.*?)</").getMatch(0);
-            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filesize == null) {
+                filesize = br.getRegex(";\\'>Size: (.*?)\\&nbsp;").getMatch(0);
+                if (filesize == null) {
+                    filesize = br.getRegex("\">Size: (.*?)</").getMatch(0);
+                    if (filesize == null) {
+                        filesize = br.getRegex("(?i)\\(([\\d\\.]+ ?(MB|GB))\\)").getMatch(0);
+                        if (filesize == null) {
+                            logger.warning("YouSendIt: Can't find filesize, Please report this to the JD Developement team!");
+                            logger.warning("YouSendIt: Continuing...");
+                        }
+                    }
+                }
+            }
             // Set the final filename here because server sometimes doesn't give
-            // us
-            // the correct filename
+            // us the correct filename
             if (!filename.endsWith("..."))
                 link.setFinalFileName(filename.trim());
             else
                 link.setName(filename.trim() + new Random().nextInt(1000));
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+            if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }
