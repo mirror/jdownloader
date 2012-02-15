@@ -3481,4 +3481,22 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "You just changed the current View of the Downloadtable. Views can be very useful to get rid of huge lists of links.\r\nIf a view is active, the Downloadlist is colored to remind you that this is a filtered view. \r\nIf you need no reminder, or just do not like the color, you may have a look into the advanced settings." })
     String PseudoCombo_actionPerformed_views_msg();
 
+    @Default(lngs = { "en" }, values = { "How to rename Package" })
+    String LinkGrabberTable_editCellAt_filepackage_title();
+
+    @Default(lngs = { "en" }, values = { "Renaming a Package is very simple. \r\nJust double click on a Package, enter the new name, and confim with <ENTER>" })
+    String LinkGrabberTable_editCellAt_filepackage_msg();
+
+    @Default(lngs = { "en" }, values = { "Change the Filename" })
+    String LinkGrabberTable_editCellAt_link_title();
+
+    @Default(lngs = { "en" }, values = { "Choosing a new name for a file is very simple.\r\nJust double click on the current Filename, enter the new name, and confim with <ENTER>" })
+    String LinkGrabberTable_editCellAt_link_msg();
+
+    @Default(lngs = { "en" }, values = { "Renamed Multiarchive!" })
+    String FileColumn_setStringValue_title_();
+
+    @Default(lngs = { "en" }, values = { "You renamed one file of an archive that has several parts.\r\nYou have to rename all parts in order to keep the archive extractable!" })
+    String FileColumn_setStringValue_msg_();
+
 }

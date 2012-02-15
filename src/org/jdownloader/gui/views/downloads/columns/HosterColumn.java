@@ -1,8 +1,8 @@
 package org.jdownloader.gui.views.downloads.columns;
 
 import java.awt.Point;
+import java.awt.event.MouseEvent;
 
-import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 
@@ -12,6 +12,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.swing.components.tooltips.ExtTooltip;
@@ -23,24 +24,28 @@ import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.HosterToolTip;
+import org.jdownloader.images.NewTheme;
 
 public class HosterColumn extends ExtColumn<AbstractNode> {
 
     /**
      * 
      */
-    private static final long serialVersionUID = 1L;
-    private int               maxIcons         = 10;
+    private static final long serialVersionUID   = 1L;
+    private int               maxIcons           = 10;
     private MigPanel          panel;
     private RenderLabel[]     labels;
+    private ImageIcon         moreIcon;
+    private static int        DEFAULT_ICON_COUNT = 4;
 
     public HosterColumn() {
         super(_GUI._.HosterColumn_HosterColumn(), null);
-        panel = new RendererMigPanel("ins 0 5 0 5", "[]", "[grow,fill]");
-        labels = new RenderLabel[maxIcons];
+        panel = new RendererMigPanel("ins 0 0 0 0", "[]", "[grow,fill]");
+        labels = new RenderLabel[maxIcons + 1];
 
         // panel.add(Box.createGlue(), "pushx,growx");
-        for (int i = 0; i < maxIcons; i++) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i <= maxIcons; i++) {
             labels[i] = new RenderLabel() {
 
                 /**
@@ -59,12 +64,18 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
                 }
 
             };
+            // labels[i].setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1,
+            // Color.RED));
             labels[i].setOpaque(false);
             labels[i].setBackground(null);
-            panel.add(labels[i], "gapleft 1,hidemode 3");
+            if (sb.length() > 0) sb.append("1");
+            sb.append("[18!]");
+            panel.add(labels[i]);
 
         }
-        panel.add(Box.createGlue(), "pushx,growx");
+        moreIcon = NewTheme.I().getIcon("more", -1);
+        panel.setLayout(new MigLayout("ins 0 0 0 0", sb.toString(), "[]"));
+        // panel.add(Box.createGlue(), "pushx,growx");
         setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
 
             /*
@@ -128,7 +139,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public int getDefaultWidth() {
-        return 85;
+        return DEFAULT_ICON_COUNT * 19 + 7;
     }
 
     // @Override
@@ -150,10 +161,17 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     // }
 
     public void configureRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
+        int width = getTableColumn().getWidth();
+        int count = ((width - 6) / 19);
         if (value instanceof FilePackage) {
             int i = 0;
-            for (PluginForHost link : ((FilePackage) value).getFilePackageInfo().getIcons()) {
-                if (i == maxIcons) break;
+            PluginForHost[] icons = ((FilePackage) value).getFilePackageInfo().getIcons();
+            for (PluginForHost link : icons) {
+                if (i == maxIcons || i == count) {
+                    labels[i].setIcon(moreIcon);
+                    labels[i].setVisible(true);
+                    break;
+                }
                 ImageIcon icon = link.getHosterIcon();
                 if (icon != null) {
                     labels[i].setVisible(true);
@@ -161,6 +179,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
                     i++;
                 }
             }
+
         } else if (value instanceof CrawledPackage) {
             int i = 0;
             for (DomainInfo link : ((CrawledPackage) value).getView().getDomainInfos()) {
@@ -184,6 +203,14 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
                 labels[0].setVisible(true);
                 labels[0].setIcon(icon);
             }
+        }
+    }
+
+    @Override
+    protected void onDoubleClick(MouseEvent e, AbstractNode value) {
+        if (value instanceof FilePackage) {
+            PluginForHost[] icons = ((FilePackage) value).getFilePackageInfo().getIcons();
+            getTableColumn().setMinWidth(icons.length * 19 + 7);
         }
     }
 
@@ -218,7 +245,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public void resetRenderer() {
-        for (int i = 0; i < maxIcons; i++) {
+        for (int i = 0; i <= maxIcons; i++) {
             labels[i].setVisible(false);
         }
         this.panel.setOpaque(false);

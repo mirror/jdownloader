@@ -236,9 +236,9 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     protected void onDoubleClick(final MouseEvent e, final AbstractNode obj) {
-        if (!isEditing()) {
-            new EditLinkOrPackageAction(this, obj).actionPerformed(null);
-        }
+        // if (!isEditing()) {
+        // new EditLinkOrPackageAction(this, obj).actionPerformed(null);
+        // }
     }
 
     @Override
@@ -384,6 +384,11 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                 ImageIcon icon = NewTheme.I().getIcon("wizard", 32);
                 JDGui.help(title, msg, icon);
 
+            } else {
+                String title = _GUI._.LinkGrabberTable_editCellAt_link_title();
+                String msg = _GUI._.LinkGrabberTable_editCellAt_link_msg();
+                ImageIcon icon = NewTheme.I().getIcon("edit", 32);
+                JDGui.help(title, msg, icon);
             }
 
         }

@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
 import java.awt.event.FocusEvent;
+import java.util.logging.Level;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -12,10 +13,15 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.DownloadLink;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging.Log;
+import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -42,6 +48,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
         iconArchiveOpen = NewTheme.I().getIcon("tree_archive_open", 32);
         iconArchive = NewTheme.I().getIcon("tree_archive", 32);
         iconPackageClosed = NewTheme.I().getIcon("tree_package_closed", 32);
+
     }
 
     public boolean isPaintWidthLockIcon() {
@@ -83,7 +90,26 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
         if (object instanceof CrawledPackage) {
             ((CrawledPackage) object).setName(value);
         } else if (object instanceof CrawledLink) {
+            boolean isMultiArchive = false;
+
+            try {
+                ExtractionExtension archiver = ((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension());
+                if (archiver != null) {
+                    CrawledLinkFactory clf = new CrawledLinkFactory(((CrawledLink) object));
+                    isMultiArchive = archiver.isMultiPartArchive(clf);
+                }
+            } catch (Throwable e) {
+                Log.exception(Level.SEVERE, e);
+            }
+
             ((CrawledLink) object).setName(value);
+
+            if (isMultiArchive) {
+                String title = _GUI._.FileColumn_setStringValue_title_();
+                String msg = _GUI._.FileColumn_setStringValue_msg_();
+                ImageIcon icon = NewTheme.I().getIcon("warning", 32);
+                JDGui.help(title, msg, icon);
+            }
         }
     }
 
