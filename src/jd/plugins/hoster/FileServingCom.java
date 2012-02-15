@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -82,6 +82,7 @@ public class FileServingCom extends PluginForHost {
         }
         if (dllink == null) {
             br.getPage(downloadLink.getDownloadURL());
+            if (br.containsHTML("(?i)>Sorry, this file has been removed\\. It may have been deleted by the uploader or due to the received complaint\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             final String fid = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
             final String sid = br.getRegex("sid:\\'(\\d+)\\'").getMatch(0);
             final String server = br.getRegex("server:\\'([^<>\"\\']+)\\'").getMatch(0);
@@ -173,16 +174,24 @@ public class FileServingCom extends PluginForHost {
                         logger.warning("Fileserving.com availablecheck is broken!");
                         return false;
                     }
-                    Regex fileInfo = br.getRegex("(fileserving\\.com/files/" + fileid + "[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]+)</td>[\t\n\r ]+<td>([^<>\"]+)</td>)");
+                    Regex fileInfo = br.getRegex("(fileserving\\.com/files/" + fileid + "[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]+)</td>[\t\n\r ]+<td>([^<>\"]+)</td>[\t\n\r ]+<td  class=\"staus\">[\t\r\n ]+<span class=\"([^<>\"]+)\"></span>)");
                     String filename = fileInfo.getMatch(1);
                     String filesize = fileInfo.getMatch(2);
+                    String status = fileInfo.getMatch(3);
+
+                    if (status.contains("removed")) {
+                        dl.setAvailable(false);
+                        continue;
+                    }
+                    // not sure if the below if is still needed.
                     if (br.containsHTML("class=\"icon_file_check_notvalid\"></span>[\t\n\r ]+http://(www\\.)?fileserving\\.com/files/" + fileid)) {
                         dl.setAvailable(false);
                         continue;
-                    } else if (filename == null || filesize == null) {
-                        logger.warning("Fileserving.com availablecheck is broken!");
+                    } else if (filename == null || status == null) {
+                        // best to not set false for filesize.
+                        logger.warning("Fileserving.com availablecheck is possibly broken! Please report this to JD Development team");
                         dl.setAvailable(false);
-                    } else {
+                    } else if (status.contains("valid")) {
                         dl.setAvailable(true);
                     }
                     dl.setName(filename);
