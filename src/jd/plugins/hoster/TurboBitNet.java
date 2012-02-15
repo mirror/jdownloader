@@ -17,11 +17,15 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -53,6 +57,9 @@ public class TurboBitNet extends PluginForHost {
 
     private static String       MAINPAGE      = "http://turbobit.net";
 
+    private static final Object LOCK          = new Object();
+    private static final String COOKIE_HOST   = "http://turbobit.net";
+
     public TurboBitNet(final PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://turbobit.net/turbo");
@@ -72,7 +79,7 @@ public class TurboBitNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(account);
+            login(account, true);
         } catch (final PluginException e) {
             if (br.containsHTML("Our service is currently unavailable in your country.")) {
                 ai.setStatus("Our service is currently unavailable in your country.");
@@ -81,9 +88,9 @@ public class TurboBitNet extends PluginForHost {
             return ai;
         }
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex("<u>(Turbo Access|Turbo Zugang)</u> to(.*?)<a").getMatch(1);
+        String expire = br.getRegex("<u>(Turbo Access|Turbo Zugang)</u> to(.*?)(<a|</di)").getMatch(1);
         if (expire == null) {
-            expire = br.getRegex("<u>Турбо доступ</u> до(.*?)<a").getMatch(0);
+            expire = br.getRegex("<u>Турбо доступ</u> до(.*?)(<a|</di)").getMatch(0);
             if (expire == null) {
                 expire = br.getRegex("<img src=\\'/img/icon/yesturbo\\.png\\'> <u>.{5,20}</u> .{1,5} (.*?) <a href=\\'/turbo\\'>").getMatch(0);
             }
@@ -225,7 +232,7 @@ public class TurboBitNet extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account);
+        login(account, false);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRegex("<h1><a href=\\'(.*?)\\'>").getMatch(0);
         if (dllink == null) {
@@ -266,16 +273,47 @@ public class TurboBitNet extends PluginForHost {
         return true;
     }
 
-    private void login(final Account account) throws Exception {
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", UA);
-        br.setCookie("http://turbobit.net/", "set_user_lang_change", "en");
-        br.setCustomCharset("UTF-8");
-        br.getPage(MAINPAGE);
-        br.postPage(MAINPAGE + "/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=Login");
-        if (!br.containsHTML("yesturbo")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-        if (br.getCookie(MAINPAGE + "/", "sid") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            // Load cookies
+            try {
+                this.setBrowserExclusive();
+                br.getHeaders().put("User-Agent", UA);
+                br.setCookie("http://turbobit.net/", "set_user_lang_change", "en");
+                br.setCustomCharset("UTF-8");
+                br.setFollowRedirects(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(COOKIE_HOST, key, value);
+                        }
+                        return;
+                    }
+                }
+                br.getPage(MAINPAGE);
+                br.postPage(MAINPAGE + "/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=Login");
+                if (!br.containsHTML("yesturbo")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                if (br.getCookie(MAINPAGE + "/", "sid") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                // cookies
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", null);
+                throw e;
+            }
+        }
     }
 
     private String parseImage(final String s) {
