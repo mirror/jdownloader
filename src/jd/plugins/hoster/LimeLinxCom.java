@@ -37,7 +37,7 @@ public class LimeLinxCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://limelinx.com/terms.php";
+        return "http://limelinx.com/terms/";
     }
 
     @Override
@@ -48,30 +48,9 @@ public class LimeLinxCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = null;
-        // Basically you only have to reload the page 3 times (1. access the
-        // DownloadURL in the linkcheck and then reload it 2 times) to get the
-        // link...dunno it's a strange kind of protection and in case they
-        // change the times you have to refresh the page i just made it with a
-        // for loop
-        for (int i = 0; i <= 5; i++) {
-            br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML("Please wait while your download initializes")) {
-                dllink = downloadLink.getDownloadURL();
-                break;
-            }
-            continue;
-        }
+        String dllink = br.getRegex("<a href=\"(https?://[^\"\\'<>]+)\">Download</a>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Ticket Time
-        String ttt = br.getRegex("CountdownSeconds =.*?(\\d+);").getMatch(0);
-        if (ttt != null) {
-            int tt = Integer.parseInt(ttt);
-            sleep(tt * 1001, downloadLink);
-        } else {
-            logger.warning("Waittime regex broken, plugin maybe waits too long!");
-            sleep(15001l, downloadLink);
-        }
+
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
