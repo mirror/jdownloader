@@ -32,7 +32,6 @@ public class BookFiOrg extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink param) throws Exception {
         final String parameter = param.getDownloadURL();
         this.setBrowserExclusive();
-        br.reset();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
 
@@ -40,14 +39,13 @@ public class BookFiOrg extends PluginForHost {
         br.getPage(parameter);
         String[] info = br.getRegex("<a class=\"button active\" href=\"([^\"]+)\">.*?\\([^,]+, ([^\\)]+?)\\)</a>").getRow(0);
         if (info == null || info[0] == null || info[1] == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        
+
         br.setFollowRedirects(false);
         br.getPage(info[0]);
 
         // Goes to download link to find out filename
         String filename = null;
-        if (br.getRedirectLocation() != null)
-            filename = new Regex(br.getRedirectLocation(), "/([^/]*)$").getMatch(0);
+        if (br.getRedirectLocation() != null) filename = new Regex(br.getRedirectLocation(), "/([^/]*)$").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         param.setFinalFileName(filename);

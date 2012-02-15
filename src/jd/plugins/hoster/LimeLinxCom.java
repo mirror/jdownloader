@@ -48,9 +48,9 @@ public class LimeLinxCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("<a href=\"(https?://[^\"\\'<>]+)\">Download</a>").getMatch(0);
+        String dllink = br.getRegex("DownloadLI.*?href=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("<a href=\"(https?://[^\"\\'<>]+)\">Download</a>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();

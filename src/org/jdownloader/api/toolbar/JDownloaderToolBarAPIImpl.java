@@ -3,7 +3,6 @@ package org.jdownloader.api.toolbar;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -36,13 +35,8 @@ import jd.plugins.PluginForHost;
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.exceptions.WTFException;
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.remoteapi.RemoteAPI;
-import org.appwork.remoteapi.RemoteAPIException;
 import org.appwork.remoteapi.RemoteAPIRequest;
-import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.storage.config.MinTimeWeakReference;
-import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -340,6 +334,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         HashMap<String, Object> ret = new HashMap<String, Object>();
         ret.put("checkid", null);
         try {
+            boolean hosterOnly = "true".equalsIgnoreCase(HttpRequest.getParameterbyKey(request, "hosteronly"));
             ChunkedDom chunkedDom = getCompleteDOM(request);
             if (chunkedDom != null) {
                 final CheckedDom checkSession = new CheckedDom(chunkedDom);
@@ -349,19 +344,21 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                 ret.put("checkid", checkSession.ID);
                 checkSession.linkCrawler = new LinkCrawler();
                 final LinkCrawlerHandler defaultHandler = checkSession.linkCrawler.getHandler();
-                checkSession.linkCrawler.setFilter(new LinkCrawlerFilter() {
-                    /* ignore crawler/ftp/http links */
-                    public boolean dropByUrl(CrawledLink link) {
-                        if (link.getdPlugin() != null) return true;
-                        PluginForHost plugin = link.gethPlugin();
-                        if (plugin != null && ("ftp".equalsIgnoreCase(plugin.getHost()) || "http links".equalsIgnoreCase(plugin.getHost()))) return true;
-                        return false;
-                    }
+                if (hosterOnly) {
+                    checkSession.linkCrawler.setFilter(new LinkCrawlerFilter() {
+                        /* ignore crawler/ftp/http links */
+                        public boolean dropByUrl(CrawledLink link) {
+                            if (link.getdPlugin() != null) return true;
+                            PluginForHost plugin = link.gethPlugin();
+                            if (plugin != null && ("ftp".equalsIgnoreCase(plugin.getHost()) || "http links".equalsIgnoreCase(plugin.getHost()))) return true;
+                            return false;
+                        }
 
-                    public boolean dropByFileProperties(CrawledLink link) {
-                        return false;
-                    }
-                });
+                        public boolean dropByFileProperties(CrawledLink link) {
+                            return false;
+                        }
+                    });
+                }
                 checkSession.linkChecker = new LinkChecker<CrawledLink>();
                 checkSession.linkChecker.setLinkCheckHandler(new LinkCheckerHandler<CrawledLink>() {
 
@@ -389,26 +386,6 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
             ret.put("msg", e.getMessage());
         }
         return ret;
-    }
-
-    private void writeString(RemoteAPIResponse response, RemoteAPIRequest request, String string, boolean wrapCallback) {
-        OutputStream out = null;
-        try {
-            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "text/html", false));
-            out = RemoteAPI.getOutputStream(response, request, false, true);
-            if (wrapCallback && request.getJqueryCallback() != null) {
-                if (string == null) string = "";
-                string = "{\"content\": \"" + string.trim() + "\"}";
-            }
-            out.write(string.getBytes("UTF-8"));
-        } catch (Throwable e) {
-            throw new RemoteAPIException(e);
-        } finally {
-            try {
-                out.close();
-            } catch (final Throwable e) {
-            }
-        }
     }
 
     public LinkCheckResult pollCheckedLinksFromDOM(String checkID) {
