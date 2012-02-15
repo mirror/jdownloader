@@ -363,7 +363,7 @@ public class LinkCrawler implements IOPermission {
                 } else {
                     /* try to load the webpage and find links on it */
                     br.followConnection();
-                    String baseUrl = new Regex(source.getURL(), "(.*?//.*?)(/|$)").getMatch(0);
+                    String baseUrl = new Regex(source.getURL(), "(.+)/").getMatch(0);
                     if (baseUrl != null && !baseUrl.endsWith("/")) {
                         baseUrl = baseUrl + "/";
                     }
