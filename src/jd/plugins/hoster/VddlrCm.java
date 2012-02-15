@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -104,11 +103,11 @@ public class VddlrCm extends PluginForHost {
         requestVideo(downloadLink);
         if (DLURL == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLURL, true, 0);
-        dl.setFilenameFix(true);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        dl.setFilenameFix(true);
         dl.startDownload();
     }
 
@@ -135,25 +134,22 @@ public class VddlrCm extends PluginForHost {
         setBrowserExclusive();
         final String dllink = downloadLink.getDownloadURL();
         String filename = null, key = null, value = null;
-
+        br.setDebug(true);
+        br.setFollowRedirects(true);
+        br.getPage(dllink);
         if (!new Regex(dllink, "/(player|simple)/").matches()) {
-            br.getPage(dllink);
             if (br.containsHTML("Video not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            filename = Encoding.htmlDecode(br.getRegex("title=\"(.*?)\"").getMatch(0, 3));
+            filename = br.getRegex("<meta content=\"([^<>]+)\"\\s?property=\"og:title\"").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<title>(.*?),.*?</title>").getMatch(0);
+                filename = br.getRegex(" <h2 id=\"single\\-title\">(.*?)</h2>").getMatch(0);
             }
-            final String keys = br.getRegex("addVariable\\((.*?)\\)").getMatch(0);
-            key = new Regex(keys, "key=(.*?)&").getMatch(0);
-            value = new Regex(keys, "viewToken=(.*?)&").getMatch(0);
+            key = br.getRegex("<iframe id=\"([0-9a-f]+)\"").getMatch(0);
+            value = br.getRegex("viewToken=(.*?)\\&").getMatch(0);
         } else {
             key = new Regex(dllink, "(player|simple)/(\\w+)/?").getMatch(1);
-            value = null;
         }
         if (key == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-        br.setFollowRedirects(true);
-        br.getPage(dllink);
         final String postdata = getAMFRequest(key, value);
         final String url = "http://www.viddler.com/amfgateway.action";
         br.getHeaders().put("Content-Type", "application/x-amf");
@@ -167,9 +163,9 @@ public class VddlrCm extends PluginForHost {
             }
         }
         if (filename == null) {
-            filename = new Regex(new String(raw), "title[#]+(.*?)[#]+trackbacksCnt").getMatch(0);
+            filename = new Regex(new String(raw), "title[#]+(.*?)[#]+").getMatch(0);
         }
-        final String path = new Regex(new String(raw), "path[#]+\\??(.*?)[#]+type").getMatch(0);
+        final String path = new Regex(new String(raw), "path[#]+\\??(.*?)[#]+").getMatch(0);
         DLURL = getLink(path);
         if (DLURL == null || !br.containsHTML("onResult") || filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         downloadLink.setName(filename + ".flv");
@@ -187,4 +183,5 @@ public class VddlrCm extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }
