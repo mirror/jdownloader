@@ -155,7 +155,13 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        String numberOfEntrys = getNumberOfEntrys();
+        String numberOfEntrys = br.getRegex("\\| (\\d+) zdj&#281").getMatch(0);
+        if (numberOfEntrys == null) {
+            numberOfEntrys = br.getRegex("count: (\\d+),").getMatch(0);
+            if (numberOfEntrys == null) {
+                numberOfEntrys = br.getRegex("</a>(\\d+) zdj\\&#281;\\&#263;<span").getMatch(0);
+            }
+        }
         if (numberOfEntrys == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -218,15 +224,18 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptPhotoAlbums(ArrayList<DownloadLink> decryptedLinks, String parameter, ProgressController progress) throws IOException {
         br.getPage(parameter);
-        final String[] regexes = { "class=\\\\\"ge_photos_album\\\\\" href=\\\\\"\\\\(/album(\\-)?\\d+_\\d+)\\\\\"", "<div class=\"fl_l info_wrap\">[\t\n\r ]+<div class=\"name\"><a href=\"(/album(\\-)?\\d+_\\d+)\\?" };
+        final String[] regexes = { "class=\\\\\"photo_row\\\\\" id=\\\\\"photo_row\\d+_\\d+\\\\\"><a href=\\\\\"\\\\(/photo\\d+_\\d+)", "class=\"photo_album_row\" id=\"(album\\d+_\\d+)\"" };
         for (String regex : regexes) {
             String[] photoAlbums = br.getRegex(regex).getColumn(0);
             if (photoAlbums == null || photoAlbums.length == 0) continue;
             for (String photoAlbum : photoAlbums) {
-                decryptedLinks.add(createDownloadlink("http://vk.com" + photoAlbum));
+                if (photoAlbum.contains("/"))
+                    decryptedLinks.add(createDownloadlink("http://vk.com" + photoAlbum));
+                else
+                    decryptedLinks.add(createDownloadlink("http://vk.com/" + photoAlbum));
             }
         }
-        String numberOfEntrys = getNumberOfEntrys();
+        String numberOfEntrys = br.getRegex(",[\t\n\r ]+count: (\\d+),").getMatch(0);
         if (numberOfEntrys == null && (decryptedLinks == null || decryptedLinks.size() == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -242,15 +251,16 @@ public class VKontakteRu extends PluginForDecrypt {
             int offset = 20;
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             progress.setRange(maxLoops);
+            final String postPage = parameter.replace("vk.com/albums", "vk.com/photos");
             /** Photos are placed in different locations, find them all */
             // Dev note: similar process as above with the offset:
             // http://vk.com/albums3793387, al=1&offset=40&part=1
             for (int i = 0; i <= maxLoops; i++) {
                 if (i > 0) {
                     offset += 20;
-                    br.postPage(parameter, "al=1&offset=" + offset + "&part=1");
+                    br.postPage(postPage, "&from=albums&al=1&offset=" + offset + "&part=1");
                 }
-                String[] photoAlbums = br.getRegex("class=\"ge_photos_album\" href=\"(/album(\\-)?\\d+_\\d+)\"").getColumn(0);
+                String[] photoAlbums = br.getRegex("class=\"photo_row\" id=\"photo_row\\d+_\\d+\"><a href=\"(/photo\\d+_\\d+)").getColumn(0);
                 if (photoAlbums == null || photoAlbums.length == 0) continue;
                 for (String photoAlbum : photoAlbums) {
                     decryptedLinks.add(createDownloadlink("http://vk.com" + photoAlbum));
@@ -295,17 +305,6 @@ public class VKontakteRu extends PluginForDecrypt {
             counter++;
         }
         return decryptedLinks;
-    }
-
-    private String getNumberOfEntrys() {
-        String numberOfEntrys = br.getRegex("\\| (\\d+) zdj&#281").getMatch(0);
-        if (numberOfEntrys == null) {
-            numberOfEntrys = br.getRegex("count: (\\d+),").getMatch(0);
-            if (numberOfEntrys == null) {
-                numberOfEntrys = br.getRegex("</a>(\\d+) zdj\\&#281;\\&#263;<span").getMatch(0);
-            }
-        }
-        return numberOfEntrys;
     }
 
     private DownloadLink findVideolink(String parameter) throws IOException {

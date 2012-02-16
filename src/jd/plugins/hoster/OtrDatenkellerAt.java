@@ -62,7 +62,7 @@ public class OtrDatenkellerAt extends PluginForHost {
     }
 
     public String getDllink() throws Exception, PluginException {
-        Regex allMatches = br.getRegex("onclick=\"startCount\\(\\d+, \\d+, \\'(.*?)\\', \\'(.*?)\\', \\'(.*?)\\'\\)");
+        Regex allMatches = br.getRegex("onclick=\"startCount\\(\\d+, +\\d+, +\\'([^<>\"\\']+)\\', +\\'([^<>\"\\']+)\\', +\\'([^<>\"\\']+)\\'\\)");
         String firstPart = allMatches.getMatch(1);
         String secondPart = allMatches.getMatch(0);
         String thirdPart = allMatches.getMatch(2);

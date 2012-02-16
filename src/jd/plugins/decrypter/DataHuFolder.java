@@ -20,11 +20,13 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
@@ -43,6 +45,16 @@ public class DataHuFolder extends PluginForDecrypt {
         br.setCookie("http://data.hu", "lang", "en");
         br.getPage(parameter);
         if (br.containsHTML(">Sajnos ez a megosztás már megszűnt\\. Valószínűleg tulajdonosa már törölte rendszerünkből\\.<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Wrong URL or the folder no longer exists."));
+        /** Password protected folders */
+        if (br.containsHTML("Kérlek add meg a jelszót\\!<")) {
+            for (int i = 0; i <= 3; i++) {
+                final String passCode = Plugin.getUserInput("Enter password for: " + parameter, param);
+                br.postPage(parameter, "mappa_pass=" + Encoding.urlEncode(passCode));
+                if (br.containsHTML(">Hibás jelszó")) continue;
+                break;
+            }
+            if (br.containsHTML(">Hibás jelszó")) throw new DecrypterException(DecrypterException.PASSWORD);
+        }
         String[] links = br.getRegex("\\'(http://[\\w\\.]*?data\\.hu/get/\\d+/.*?)\\'").getColumn(0);
         String[] folders = br.getRegex("\\'(http://[\\w\\.]*?data\\.hu/dir/[0-9a-z]+)\\'").getColumn(0);
         if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
