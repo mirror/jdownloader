@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -192,19 +192,19 @@ public class TurboBitNet extends PluginForHost {
             if (br.getRegex(CAPTCHAREGEX).getMatch(0) != null || br.containsHTML(RECAPTCHATEXT)) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         }
         // Ticket Time
-        final String ttt = parseImageUrl(br.getRegex(LnkCrptWs.IMAGEREGEX(null)).getMatch(0), true);
+        String ttt = parseImageUrl(br.getRegex(LnkCrptWs.IMAGEREGEX(null)).getMatch(0), true);
         int tt = 60;
         if (ttt != null) {
-            logger.info(" Waittime detected, waiting " + ttt + " seconds from now on...");
             tt = Integer.parseInt(ttt);
+            if (tt < 60 || tt > 600) {
+                ttt = parseImageUrl(parseImage("fdd9fbf2fb05cde71a97b69edf5742f1289470bb0a5bd9c81a1b5e39116c85805982fc6e880ce26a201651b8ea211874e4232d90c59b6462ac28d2b26f0537385fa6") + tt + "};" + br.getRegex(parseImage("f980f8f7fa0acdb21b91b6cbdf5043fc2ac775ea080fd8c71a4f5d68156586d05982fd3e8b5ae33f244555e8eb201d77e12128cbc1c7")).getMatch(0), false);
+                if (ttt == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!", 10 * 60 * 60 * 1000l); }
+                tt = Integer.parseInt(ttt);
+            }
+            logger.info(" Waittime detected, waiting " + ttt + " seconds from now on...");
         }
         if (tt > 250) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l); }
-        // IMPORTANT: This is changed most of the time when the plugin is broken
-        // maxLimit : 60
-        String maxtime = br.getRegex("maxLimit([ ]+)?:([ ]+)?(\\d+)").getMatch(2);
-        if (maxtime == null) {
-            maxtime = br.getRegex("var Timeout.*?maxLimit: (\\d+)").getMatch(0);
-        }
+
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         final String res = parseImageUrl(br.getRegex(LnkCrptWs.IMAGEREGEX(null)).getMatch(0), false);
         if (res != null) {
@@ -277,21 +277,23 @@ public class TurboBitNet extends PluginForHost {
         synchronized (LOCK) {
             // Load cookies
             try {
-                this.setBrowserExclusive();
+                setBrowserExclusive();
                 br.getHeaders().put("User-Agent", UA);
                 br.setCookie("http://turbobit.net/", "set_user_lang_change", "en");
                 br.setCustomCharset("UTF-8");
                 br.setFollowRedirects(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
+                            br.setCookie(COOKIE_HOST, key, value);
                         }
                         return;
                     }
@@ -302,7 +304,7 @@ public class TurboBitNet extends PluginForHost {
                 if (br.getCookie(MAINPAGE + "/", "sid") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 // cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                final Cookies add = br.getCookies(COOKIE_HOST);
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -323,18 +325,18 @@ public class TurboBitNet extends PluginForHost {
     private String parseImageUrl(final String fun, final boolean NULL) {
         if (fun == null) { return null; }
         if (!NULL) {
-            final String[] next = new Regex(fun, parseImage(Encoding.Base64Decode("Rjk4QUZFQTVGOTUwQzlFMjE4QzdCMjk1REE1NzQ2RkIyQUM2NzJFQzA5NUNEQjlEMUU0RTVDNkYxMTNFODI4NjVBRDhGODMzOEI1QUU2NjkyMTQwNTBFQUVGNzQxOTIyRTcyNDI5OTFDMUNDNjM2N0E4MjlENkIzNkI1RDMzNkE1RUZFQzk3ODU5NzlGODlFMjVGOTJGRUY1NTNCQzhCMzQyRkM4RjhFNkJBRTk4QTE5Q0RGMkI5NTI5NjU3ODRFQzQyMDNBNUI="))).getRow(0);
+            final String[] next = fun.split(parseImage("ff88"));
             if (next == null || next.length != 2) { return new Regex(fun, parseImage("F98AFEA5F950C9E218C7B295DA5746FB2AC672EC095CDB9D1E4E5C6F113E82865AD8F8338B5AE669214050EAEF741922E7242991C1CC6367A829D6B36B5D336A5EFEC9785979F89E20F3")).getMatch(0); }
             Object result = new Object();
             final ScriptEngineManager manager = new ScriptEngineManager();
             final ScriptEngine engine = manager.getEngineByName("javascript");
             try {
-                engine.eval(fun);
-                result = ((Double) engine.eval(next[1])).longValue();
+                engine.eval(next[1]);
+                result = ((Double) engine.eval("Timeout.minLimit")).longValue();
             } catch (final Throwable e) {
                 return null;
             }
-            return next[0] + result.toString();
+            return result.toString();
         }
         return new Regex(fun, parseImage("FDDCFBFAFA56CFB51B9DB6C9DE5C43FC2AC770BC0D0DDD9F19495E38103A828C5AD8FC3E8C5BE6352540")).getMatch(0);
     }
