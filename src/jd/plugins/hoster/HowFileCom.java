@@ -56,10 +56,10 @@ public class HowFileCom extends PluginForHost {
         // Those cookies are important, no downloadstart without them!
         br.setCookie(MAINPAGE, "vid", vid);
         br.setCookie(MAINPAGE, "vid1", vid1);
-        br.setFollowRedirects(false);
         String dllink = br.getRegex("width=0 height=0></iframe>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?dl\\d+\\.howfile\\.com/downfile/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
