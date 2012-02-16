@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/(g/[\\w\\-]+/[A-Z0-9]{7}|[A-Z0-9]{7}(/[A-Z0-9]{7})?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/(g/[\\w\\-]+/[A-Z0-9]{7}|G?[A-Z0-9]{7}(/[A-Z0-9]{7})?)" }, flags = { 0 })
 public class MotherLessCom extends PluginForDecrypt {
 
     private String fpName = null;
