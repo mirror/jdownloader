@@ -911,7 +911,7 @@ public class Rapidshare extends PluginForHost {
         try {
             if (br != null) {
                 br.setConnectTimeout(30000);
-                br.setReadTimeout(30000);
+                br.setReadTimeout(100000);
             }
         } catch (final Throwable e) {
         }
