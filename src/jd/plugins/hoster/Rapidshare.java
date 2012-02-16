@@ -499,10 +499,14 @@ public class Rapidshare extends PluginForHost {
             } catch (Throwable e) {
                 /* only available after 0.9xx version */
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directurl, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directurl, false, 1);
             URLConnectionAdapter urlConnection = dl.getConnection();
             if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
-                urlConnection.disconnect();
+                try {
+                    br.followConnection();
+                } catch (final Throwable e) {
+                }
+                logger.severe(br.toString());
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
             this.dl.startDownload();
