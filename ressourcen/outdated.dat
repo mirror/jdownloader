@@ -679,3 +679,4 @@ jd/plugins/hoster/XsharewareCom.class
 jd/plugins/hoster/EnteruploadCom.class
 jd/plugins/hoster/GrooveFileCom.class
 jd/plugins/hoster/VistaUploadCom.class
+jd/plugins/decrypter/FpsBananaCom.class
