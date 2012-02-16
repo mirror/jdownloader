@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -35,10 +36,9 @@ import jd.plugins.PluginForHost;
 public class MotherLessCom extends PluginForHost {
 
     private static final String SUBSCRIBEFAILED     = "Failed to subscribe to the owner of the video";
-
     private static final String ONLY4REGISTEREDTEXT = "This link is only downloadable for registered users.";
-
     private String              DLLINK              = null;
+    public final static String  ua                  = RandomUserAgent.generate();
 
     public MotherLessCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -167,6 +167,7 @@ public class MotherLessCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", ua);
         br.postPage("http://motherless.com/auth/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=1&__remember_me=0");
         if (br.getCookie("http://motherless.com/", "motherless_auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
@@ -178,6 +179,7 @@ public class MotherLessCom extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", ua);
         br.setFollowRedirects(true);
         if ("video".equals(parameter.getStringProperty("dltype"))) {
             getVideoLink(parameter);

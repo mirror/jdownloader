@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -27,101 +28,77 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/((?!movies|thumbs|uploads|gi/)g/[A-Za-z0-9\\-_]+/[A-Z0-9]+|[A-Z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/(g/[\\w\\-]+/[A-Z0-9]{7}|[A-Z0-9]{7}(/[A-Z0-9]{7})?)" }, flags = { 0 })
 public class MotherLessCom extends PluginForDecrypt {
+
+    private String fpName = null;
 
     public MotherLessCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     // DEV NOTES:
+    //
+    // REGEX run down, allows the following
+    // motherless.com/g/WHAT_EVER_HERE/UID
+    // motherless.com/UID1/UID
+    // motherless.com/UID
+    //
+    // - don't support: groups(/g[a-z]{1}/), images or videos they can have over
+    // 1000 pages
+    // - supports spanning pages and galleries with submenu (MORE links).
+    // - set same UA from hoster plugin, making it harder to distinguish.
     // - Server issues can return many 503's in high load situations.
     // - Server also punishes user who downloads with too many connections. This
-    // is a linkchecking issue also, as grabs info from headers. Ultimately we
-    // might need a hoster plugin to define & enforce connection settings.
+    // is a linkchecking issue also, as grabs info from headers.
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String fpName = parameter.getStringProperty("package");
         br.setFollowRedirects(true);
-        String param = parameter.toString().replaceAll("motherless\\.com/g/[A-Za-z0-9_\\-]+/", "motherless.com/");
-        br.getPage(param);
+        br.getHeaders().put("User-Agent", jd.plugins.hoster.MotherLessCom.ua);
+        // alters 'domain/(g/name/)uid' by removing all but uid
+        String parameter = param.toString().replaceAll("motherless\\.com/g/[\\w\\-]+/", "motherless.com/");
+        br.getPage(parameter);
         if (br.containsHTML("Not Available") || br.containsHTML("not found") || br.containsHTML("You will be redirected to")) return decryptedLinks;
         // Common bug: It can happen that the texts that we use to differ
         // between the kinds of links change so the decrypter breaks down,
         // always check that first!
         if (br.containsHTML("The member uploaded this image for subscribers only")) {
-            DownloadLink dl = createDownloadlink(param.replace("motherless", "premiummotherlesspictures"));
+            DownloadLink dl = createDownloadlink(parameter.replace("motherless", "premiummotherlesspictures"));
             dl.setProperty("dltype", "image");
             dl.setProperty("onlyregistered", "true");
             decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (br.containsHTML("The member uploaded this video for subscribers only")) {
-            DownloadLink dl = createDownloadlink(param.replace("motherless.com/", "motherlessvideos.com/"));
+            DownloadLink dl = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
             dl.setProperty("dltype", "video");
             dl.setProperty("onlyregistered", "true");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        String[] SubGal = br.getRegex("<a href=\"(/[A-Z0-9]+)\" title=\"More [^ ]+ in this gallery\" class=\"pop plain more\">See More \\&raquo\\;</a>").getColumn(0);
+        if (SubGal != null && SubGal.length != 0) {
+            for (String subuid : SubGal) {
+                br.getPage("http://motherless.com" + subuid);
+                Gallery(decryptedLinks, parameter, progress);
+            }
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName.trim());
+                fp.addLinks(decryptedLinks);
+            }
+            return decryptedLinks;
+        }
         if (br.containsHTML("(jwplayer\\(|jwplayer_playing|jwplayer_position)")) {
-            DownloadLink dlink = createDownloadlink(param.replace("motherless.com/", "motherlessvideos.com/"));
+            DownloadLink dlink = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
             dlink.setProperty("dltype", "video");
-            dlink.setBrowserUrl(param);
-            dlink.setName(new Regex(param, "motherless\\.com/(.+)").getMatch(0));
+            dlink.setBrowserUrl(parameter);
+            dlink.setName(new Regex(parameter, "motherless\\.com/(.+)").getMatch(0));
             decryptedLinks.add(dlink);
         } else if (!br.containsHTML("<strong>Uploaded</strong>")) {
-            fpName = br.getRegex("<title>MOTHERLESS\\.COM \\- Go Ahead She Isn\\'t Looking\\! :  (.*?)</title>").getMatch(0);
-            if (fpName == null) {
-                fpName = br.getRegex("<div class=\"member\\-bio\\-username\">.*?\\'s Gallery \\&bull; (.*?)</div>").getMatch(0);
-            }
-            // grabs final page as count.
-            String totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=\\d+\">(\\d+)</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\">NEXT").getMatch(0);
-            if (totalpages == null) {
-                totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=(\\d+)\">\\d+</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\">NEXT").getMatch(0);
-                if (br.containsHTML("<span class=\"current\">1</span><span class=\"current\"> NEXT")) totalpages = "1";
-                if (totalpages == null) {
-                    logger.warning("MotherLess Decrypter: 'totalpages' failure: " + param);
-                    logger.warning("MotherLess Decrypter: Please report issue to JDownloader development team!");
-                    return null;
-                }
-            }
-            int numberOfPages = Integer.parseInt(totalpages);
-            progress.setRange(numberOfPages);
-            logger.info("Found " + numberOfPages + " page(s), decrypting now...");
-            for (int i = 1; i <= numberOfPages; i++) {
-                String[] picturelinks = br.getRegex("class=\"thumbnail mediatype_image\" rel=\"[A-Z0-9]+\">[\t\n\r ]+<div class=\"thumbnail\\-img-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a([\t\n\r ]+)?href=\"((http://motherless\\.com)?/[A-Z0-9]+(/[A-Z0-9]+)?)\"").getColumn(1);
-                if (picturelinks != null && picturelinks.length != 0) {
-                    logger.info("Decrypting page " + i + " which contains " + picturelinks.length + " links.");
-                    for (String singlelink : picturelinks) {
-                        singlelink = formLink(singlelink);
-                        DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlesspictures.com/"));
-                        if (fpName != null) dl.setProperty("package", fpName);
-                        decryptedLinks.add(dl);
-                        dl.setProperty("dltype", "image");
-                    }
-                }
-                String[] videolinks = br.getRegex("class=\"thumbnail mediatype_video\" rel=\"[A-Z0-9]+\">[\t\n\r ]+<div class=\"thumbnail\\-img\\-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a([\t\n\r ]+)?href=\"((http://motherless\\.com/)?.*?)\"").getColumn(1);
-                if (videolinks != null && videolinks.length != 0) {
-                    for (String singlelink : videolinks) {
-                        String linkID = new Regex(singlelink, "/g/.*?/([A-Z0-9]+$)").getMatch(0);
-                        if (linkID != null) singlelink = "http://motherless.com/" + linkID;
-                        singlelink = formLink(singlelink);
-                        DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlessvideos.com/"));
-                        dl.setProperty("dltype", "video");
-                        if (fpName != null) dl.setProperty("package", fpName);
-                        decryptedLinks.add(dl);
-                    }
-                }
-                if ((picturelinks == null || picturelinks.length == 0) && (videolinks == null || videolinks.length == 0)) {
-                    logger.warning("Decrypter failed for link: " + param);
-                    return null;
-                }
-                // grab next page if required.
-                if (i != numberOfPages) br.getPage(param + "?page=" + (i + 1));
-                progress.increase(1);
-            }
+            Gallery(decryptedLinks, parameter, progress);
         } else {
-            DownloadLink fina = createDownloadlink(param.replace("motherless.com/", "motherlesspictures.com/"));
+            DownloadLink fina = createDownloadlink(parameter.replace("motherless.com/", "motherlesspictures.com/"));
             fina.setProperty("dltype", "image");
             decryptedLinks.add(fina);
         }
@@ -133,10 +110,63 @@ public class MotherLessCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    // finds the uid within the grouping
     private String formLink(String singlelink) {
         if (singlelink.startsWith("/")) singlelink = "http://motherless.com" + singlelink;
         String ID = new Regex(singlelink, "http://motherless\\.com/[A-Z0-9]+/([A-Z0-9]+)").getMatch(0);
         if (ID != null) singlelink = "http://motherless.com/" + ID;
         return singlelink;
     }
+
+    private void Gallery(ArrayList<DownloadLink> ret, String parameter, ProgressController progress) throws IOException {
+        if (fpName == null) {
+            fpName = br.getRegex("<title>MOTHERLESS\\.COM \\- Go Ahead She Isn\\'t Looking\\! :  (.*?)</title>").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<div class=\"member\\-bio\\-username\">.*?\\'s Gallery \\&bull; (.*?)</div>").getMatch(0);
+            }
+        }
+        // grabs final page as count.
+        String totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=\\d+\">(\\d+)</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\">NEXT").getMatch(0);
+        if (totalpages == null) {
+            totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=(\\d+)\">\\d+</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\">NEXT").getMatch(0);
+            if (totalpages == null) totalpages = "1";
+        }
+
+        int numberOfPages = Integer.parseInt(totalpages);
+        progress.setRange(numberOfPages);
+        logger.info("Found " + numberOfPages + " page(s), decrypting now...");
+        for (int i = 1; i <= numberOfPages; i++) {
+            String[] picturelinks = br.getRegex("class=\"thumbnail mediatype_image\" rel=\"[A-Z0-9]+\">[\t\n\r ]+<div class=\"thumbnail\\-img-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a([\t\n\r ]+)?href=\"((http://motherless\\.com)?/[A-Z0-9]+(/[A-Z0-9]+)?)\"").getColumn(1);
+            if (picturelinks != null && picturelinks.length != 0) {
+                logger.info("Decrypting page " + i + " which contains " + picturelinks.length + " links.");
+                for (String singlelink : picturelinks) {
+                    singlelink = formLink(singlelink);
+                    DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlesspictures.com/"));
+                    if (fpName != null) dl.setProperty("package", fpName);
+                    ret.add(dl);
+                    dl.setProperty("dltype", "image");
+                }
+            }
+            String[] videolinks = br.getRegex("class=\"thumbnail mediatype_video\" rel=\"[A-Z0-9]+\">[\t\n\r ]+<div class=\"thumbnail\\-img\\-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a([\t\n\r ]+)?href=\"((http://motherless\\.com/)?.*?)\"").getColumn(1);
+            if (videolinks != null && videolinks.length != 0) {
+                for (String singlelink : videolinks) {
+                    String linkID = new Regex(singlelink, "/g/.*?/([A-Z0-9]+$)").getMatch(0);
+                    if (linkID != null) singlelink = "http://motherless.com/" + linkID;
+                    singlelink = formLink(singlelink);
+                    DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlessvideos.com/"));
+                    dl.setProperty("dltype", "video");
+                    if (fpName != null) dl.setProperty("package", fpName);
+                    ret.add(dl);
+                }
+            }
+            if ((picturelinks == null || picturelinks.length == 0) && (videolinks == null || videolinks.length == 0)) {
+                logger.warning("Decrypter failed for link: " + parameter);
+                return;
+            }
+            // grab next page if required.
+            if (i != numberOfPages) br.getPage(parameter + "?page=" + (i + 1));
+            progress.increase(1);
+        }
+    }
+
 }
