@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -124,25 +126,27 @@ public class Rapidshare extends PluginForHost {
 
     }
 
-    private static final String  WAIT_HOSTERFULL  = "WAIT_HOSTERFULL";
+    private static final String  WAIT_HOSTERFULL   = "WAIT_HOSTERFULL";
 
-    private static final String  SSL_CONNECTION   = "SSL_CONNECTION2";
+    private static final String  SSL_CONNECTION    = "SSL_CONNECTION2";
 
-    private static final String  HTTPS_WORKAROUND = "HTTPS_WORKAROUND";
+    private static final String  HTTPS_WORKAROUND  = "HTTPS_WORKAROUND";
 
-    private static final Object  LOCK             = new Object();
+    private static final Object  LOCK              = new Object();
 
-    private static final Boolean HTMLWORKAROUND   = new Boolean(false);
+    private static final Boolean HTMLWORKAROUND    = new Boolean(false);
 
-    private static long          RS_API_WAIT      = 0;
+    private static long          RS_API_WAIT       = 0;
 
-    private static final String  COOKIEPROP       = "cookiesv2";
+    private static final String  COOKIEPROP        = "cookiesv2";
 
-    private static final Account dummyAccount     = new Account("TRAFSHARE", "TRAFSHARE");
+    private static final Account dummyAccount      = new Account("TRAFSHARE", "TRAFSHARE");
 
-    private static final String  PRE_RESOLVE      = "PRE_RESOLVE2";
+    private static final String  PRE_RESOLVE       = "PRE_RESOLVE2";
 
-    private static final String  UA               = RandomUserAgent.generate();
+    private static final String  UA                = RandomUserAgent.generate();
+
+    private static boolean       ReadTimeoutHotFix = false;
 
     /* returns file id of link */
     private static String getID(final String link) {
@@ -441,6 +445,7 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        readTimeoutHotFix();
         this.accName = "FreeUser";
         if ("MD5NOTFOUND".equalsIgnoreCase(downloadLink.getMD5Hash())) {
             downloadLink.setMD5Hash(null);
@@ -508,8 +513,56 @@ public class Rapidshare extends PluginForHost {
         }
     }
 
+    private void readTimeoutHotFix() {
+        if (ReadTimeoutHotFix) return;
+        synchronized (LOCK) {
+            if (ReadTimeoutHotFix) return;
+            ReadTimeoutHotFix = true;
+            try {
+                final Class<?> c = Class.forName("sun.net.NetworkClient");
+                Field field = null;
+                if (field == null) {
+                    try {
+                        field = c.getField("defaultSoTimeout");
+                    } catch (final NoSuchFieldException e) {
+                    }
+                }
+                if (field == null) {
+                    try {
+                        field = c.getDeclaredField("defaultSoTimeout");
+                    } catch (final NoSuchFieldException e) {
+                    }
+                }
+                if (field != null) {
+                    field.setAccessible(true);
+                    try {
+                        final Field modifiersField = Field.class.getDeclaredField("modifiers");
+                        modifiersField.setAccessible(true);
+                        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+                    } catch (final Throwable e) {
+                        e.printStackTrace();
+                    }
+                    int newValue = 100000;
+                    field.setInt(null, newValue);
+                    int after = field.getInt(null);
+                    if (after == newValue) {
+                        System.out.println("ReadTimeout Hotfix!YEAH!!!!");
+                    } else {
+                        System.out.println("ReadTimeout Hotfix!FAILED!!!!");
+                    }
+                } else {
+                    System.out.println("ReadTimeout Hotfix!FAILED!!!!");
+                }
+            } catch (final Throwable e) {
+                e.printStackTrace();
+                System.out.println("ReadTimeout Hotfix!FAILED!!!!");
+            }
+        }
+    }
+
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        readTimeoutHotFix();
         this.br.forceDebug(true);
         this.workAroundTimeOut(this.br);
 
