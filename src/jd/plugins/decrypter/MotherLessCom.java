@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/(g/[\\w\\-]+/[A-Z0-9]{7}|G?[A-Z0-9]{7}(/[A-Z0-9]{7})?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/(g/[\\w\\-]+/[A-Z0-9]{7}|[A-Z0-9]{7,9}(/[A-Z0-9]{7})?)" }, flags = { 0 })
 public class MotherLessCom extends PluginForDecrypt {
 
     private String fpName = null;
@@ -51,6 +51,8 @@ public class MotherLessCom extends PluginForDecrypt {
     // - Server issues can return many 503's in high load situations.
     // - Server also punishes user who downloads with too many connections. This
     // is a linkchecking issue also, as grabs info from headers.
+    // - To reduce server loads associated with linkchecking, I've set
+    // 'setAvailable(true) for greater than 5 pages.
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -137,14 +139,18 @@ public class MotherLessCom extends PluginForDecrypt {
         logger.info("Found " + numberOfPages + " page(s), decrypting now...");
         for (int i = 1; i <= numberOfPages; i++) {
             String[] picturelinks = br.getRegex("class=\"thumbnail mediatype_image\" rel=\"[A-Z0-9]+\">[\t\n\r ]+<div class=\"thumbnail\\-img-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a([\t\n\r ]+)?href=\"((http://motherless\\.com)?/[A-Z0-9]+(/[A-Z0-9]+)?)\"").getColumn(1);
+            // stupid site jumps URLS for NextPage depending on parameter
+            String NextPage = br.getRegex("<a href=\"(/[A-Z0-9]{7,9}\\?page=\\d+)\">NEXT \\&raquo;</a></div>").getMatch(0);
             if (picturelinks != null && picturelinks.length != 0) {
                 logger.info("Decrypting page " + i + " which contains " + picturelinks.length + " links.");
                 for (String singlelink : picturelinks) {
                     singlelink = formLink(singlelink);
                     DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlesspictures.com/"));
                     if (fpName != null) dl.setProperty("package", fpName);
-                    ret.add(dl);
                     dl.setProperty("dltype", "image");
+                    // fast add.
+                    if (numberOfPages > 5) dl.setAvailable(true);
+                    ret.add(dl);
                 }
             }
             String[] videolinks = br.getRegex("class=\"thumbnail mediatype_video\" rel=\"[A-Z0-9]+\">[\t\n\r ]+<div class=\"thumbnail\\-img\\-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a([\t\n\r ]+)?href=\"((http://motherless\\.com/)?.*?)\"").getColumn(1);
@@ -156,6 +162,8 @@ public class MotherLessCom extends PluginForDecrypt {
                     DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlessvideos.com/"));
                     dl.setProperty("dltype", "video");
                     if (fpName != null) dl.setProperty("package", fpName);
+                    // fast add.
+                    if (numberOfPages > 5) dl.setAvailable(true);
                     ret.add(dl);
                 }
             }
@@ -163,8 +171,7 @@ public class MotherLessCom extends PluginForDecrypt {
                 logger.warning("Decrypter failed for link: " + parameter);
                 return;
             }
-            // grab next page if required.
-            if (i != numberOfPages) br.getPage(parameter + "?page=" + (i + 1));
+            if (i != numberOfPages && NextPage != null) br.getPage(NextPage);
             progress.increase(1);
         }
     }
