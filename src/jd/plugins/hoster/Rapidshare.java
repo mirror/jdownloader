@@ -397,6 +397,10 @@ public class Rapidshare extends PluginForHost {
             protected boolean writeChunkBytes(final Chunk chunk) {
                 final boolean ret = super.writeChunkBytes(chunk);
                 if (this.lastWrite == -1) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (final InterruptedException e) {
+                    }
                     this.lastWrite = System.currentTimeMillis();
                 } else {
                     long diff = System.currentTimeMillis() - this.lastWrite;
