@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(www\\.)?justindecrypted\\.tv/[a-z0-9\\-_]+/b/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(www\\.)?justindecrypted\\.tv/[a-z0-9\\-_]+/./\\d+" }, flags = { 0 })
 public class JustinTv extends PluginForHost {
 
     private String  DLLINK  = null;
@@ -71,7 +71,17 @@ public class JustinTv extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        URLConnectionAdapter con = br.openGetConnection("http://api.justin.tv/api/broadcast/show/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + ".xml");
+
+        String type = getType(downloadLink);
+        URLConnectionAdapter con = null;
+        // System.out.println(type);
+        if ("c".equals(type)) {
+            con = br.openGetConnection("http://api.justin.tv/api/broadcast/by_chapter/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + ".xml");
+
+        } else {
+            con = br.openGetConnection("http://api.justin.tv/api/broadcast/show/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + ".xml");
+
+        }
         if (con.getResponseCode() == 400) {
             con.disconnect();
             blocked = true;
@@ -103,6 +113,11 @@ public class JustinTv extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getType(DownloadLink downloadLink) {
+
+        return new Regex(downloadLink.getDownloadURL(), "\\.tv/[a-z0-9\\-_]+/(.)/\\d+").getMatch(0);
     }
 
     @Override

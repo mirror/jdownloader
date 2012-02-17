@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(www\\.)?(justin\\.tv|(de\\.)?(twitchtv\\.com|twitch\\.tv))/[a-z0-9\\-_]+/(b/\\d+|videos(\\?page=\\d+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(www\\.)?(justin\\.tv|(de\\.)?(twitchtv\\.com|twitch\\.tv))/[a-z0-9\\-_]+/(./\\d+|videos(\\?page=\\d+)?)" }, flags = { 0 })
 public class JustinTvDecrypt extends PluginForDecrypt {
 
     public JustinTvDecrypt(PluginWrapper wrapper) {
@@ -41,6 +41,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // twitchtv belongs to justin.tv
         String parameter = param.toString().replaceAll("((de\\.)?(twitchtv\\.com|twitch\\.tv))", "justin.tv");
+        parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (parameter.contains("/videos")) {
@@ -56,7 +57,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
                 if (filename == null) filename = br.getRegex("<h2 class=\"clip_title\">(.*?)</h2>").getMatch(0);
             }
-            DownloadLink singleLink = createDownloadlink(parameter.replace("justin", "justindecrypted"));
+            DownloadLink singleLink = createDownloadlink(parameter.replaceAll("((de\\.)?(twitchtv\\.com|twitch\\.tv))", "justin.tv").replace("justin", "justindecrypted"));
             String[] links = br.getRegex("\\|[\t\n\r ]+<a href=\"(/.*?)\"").getColumn(0);
             int counter = 2;
             if (links != null && links.length != 0) {
