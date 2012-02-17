@@ -18,13 +18,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
-import java.util.HashMap;
 import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -253,10 +250,7 @@ public class LetitBitNet extends PluginForHost {
             if (dlUrl == null && br.containsHTML("callback_file_unavailable")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
             if (dlUrl == null && br.containsHTML("If you already have a premium")) {
                 /* no url found, maybe our login/php session expired */
-                synchronized (LOCK) {
-                    account.setProperty("cookies", null);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server or Session error", 2 * 60 * 1000l);
-                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server or Session error", 2 * 60 * 1000l);
             }
             if (dlUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -299,13 +293,7 @@ public class LetitBitNet extends PluginForHost {
         br.postPage("http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
         String check = br.getCookie("http://letitbit.net/", "log");
         if (check == null) check = br.getCookie("http://letitbit.net/", "pas");
-        if (check == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);// Save
-                                                                                                                         // cookies
-        final HashMap<String, String> cookies = new HashMap<String, String>();
-        final Cookies add = this.br.getCookies(COOKIE_HOST);
-        for (final Cookie c : add.getCookies()) {
-            cookies.put(c.getKey(), c.getValue());
-        }
+        if (check == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     private void prepareBrowser(final Browser br) {
