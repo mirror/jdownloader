@@ -179,8 +179,8 @@ public class GrooveShark extends PluginForHost {
     }
 
     public static boolean getClientVersion(final Browser br) {
-        CLIENTREVISION = br.getRegex("\"coreVersion\":([\\d\\.]+),").getMatch(0);
         APPJSURL = br.getRegex("app\\.src = \'(http://.*?/app\\.js\\?[0-9\\.]+)\'").getMatch(0);
+        CLIENTREVISION = getClientVersion_(br);
         CLIENTREVISION = CLIENTREVISION == null ? new Regex(APPJSURL, "\\?(\\d+)\\.").getMatch(0) : CLIENTREVISION;
         FLASHURL = br.getRegex("type=\"application\\/x\\-shockwave\\-flash\" data=\"\\/?(.*?)\"").getMatch(0);
         CLIENTREVISION = CLIENTREVISION == null ? new Regex(FLASHURL, "\\?(\\d+)\\.").getMatch(0) : CLIENTREVISION;
@@ -205,10 +205,22 @@ public class GrooveShark extends PluginForHost {
         return true;
     }
 
+    public static String getClientVersion_(final Browser br) {
+        if (APPJSURL == null) { return CLIENTREVISION; }
+        final Browser appjs = br.cloneBrowser();
+        try {
+            appjs.getPage(APPJSURL);
+        } catch (final Throwable e) {
+            return null;
+        }
+        return appjs.getRegex(reqk(2)).getMatch(0);
+    }
+
     private static String reqk(final int i) {
-        final String[] s = new String[2];
+        final String[] s = new String[3];
         s[0] = "ff8cf9faf900cfe71996b4cedc5040f02a9072bb0b5bdbcd19495a6d116482d15ddaf96c8c00e16e211254e8ee241a72e7242d9dc19c6262";
         s[1] = "fd8efaf1fa55cdb21997b695de5443fa2b9771e9085fd8cb1e125b6e113d83d25d82fd3f890ae239201152baef231824e4702dcfc4ca6531ac20d3e56e0f373b5aa1cc785c2b";
+        s[2] = "fd8bfba0fa0acde31bc1b799dd5742fd289271b60958d8c71a4c5f6e103d82865d83ff69880de66e251a54be";
         return JDHexUtils.toString(LnkCrptWs.IMAGEREGEX(s[i]));
     }
 
