@@ -1,0 +1,32 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- Required Stylesheets -->
+<link rel="stylesheet" type="text/css" href="css/reset.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="css/text.css" media="screen" />
+<!-- Required JavaScripts --> 
+<script type="text/javascript" src="js/jquery-1.7.1.min.js"></script>
+<script type="text/javascript" src="js/jquery.cookie.js"></script>
+<script type="text/javascript" src="js/jquery.i18n.js"></script>
+<script type="text/javascript" src="js/handlebars.js"></script>
+<script type="text/javascript">
+$.cookie('theme', 'main');
+$.getScript("themes/"+$.cookie('theme')+"/lang/"+navigator.language.substr(0,2)+".js",function() {
+	$.getScript("themes/"+$.cookie('theme')+"/scripts/main.js");
+});
+var themepath = "themes/"+$.cookie('theme')+"/";
+</script>
+<script id="head" type="text/x-handlebars-template">
+	{{#css}}   
+		$('head').append('<link rel="stylesheet" type="text/css" href="'+themepath+'css/{{src}}" media="screen" />');
+	{{/css}}
+	{{#scripts}}   
+		$.getScript(themepath+"scripts/{{src}}");
+	{{/scripts}}
+	$('head').append('<title>{{title}}</title>');
+</script>
+</head>
+<body>
+</body>
+</html>
