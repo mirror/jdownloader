@@ -12,10 +12,20 @@
 <script type="text/javascript" src="js/handlebars.js"></script>
 <script type="text/javascript">
 $.cookie('theme', 'main');
-$.getScript("themes/"+$.cookie('theme')+"/lang/"+navigator.language.substr(0,2)+".js",function() {
-	$.getScript("themes/"+$.cookie('theme')+"/scripts/main.js");
-});
 var themepath = "themes/"+$.cookie('theme')+"/";
+$.ajax({
+	url: "themes/"+$.cookie('theme')+"/lang/"+navigator.language.substr(0,2)+".js",
+	dataType: "script",
+	success: function() {
+		$.getScript("themes/"+$.cookie('theme')+"/scripts/main.js"); 
+	},
+	error: function() {
+		alert("This Language is Currently NOT supported. Loading now English Interface!");
+		$.getScript("themes/"+$.cookie('theme')+"/lang/en.js",function() {
+			$.getScript("themes/"+$.cookie('theme')+"/scripts/main.js");
+		});
+	}
+});
 </script>
 <script id="head" type="text/x-handlebars-template">
 	{{#css}}   
