@@ -1158,4 +1158,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.propertyListener = propertyListener;
     }
 
+    @Deprecated
+    public PluginForHost getPlugin() {
+        return this.liveplugin;
+    }
+
 }

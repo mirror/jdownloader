@@ -115,6 +115,15 @@ abstract public class DownloadInterface {
             setPriority(Thread.MIN_PRIORITY);
         }
 
+        @Deprecated
+        public int getMaximalSpeed() {
+            return 0;
+        }
+
+        @Deprecated
+        public void setMaximalSpeed(final int i) {
+        }
+
         private void addChunkBytesLoaded(long limit) {
             chunkBytesLoaded += limit;
         }
