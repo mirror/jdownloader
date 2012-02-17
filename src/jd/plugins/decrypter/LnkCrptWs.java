@@ -1000,6 +1000,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                             valid = false;
                             final String capDescription = captcha.getRegex("<b>(.*?)</b>").getMatch(0);
                             final File file = this.getLocalCaptchaFile();
+                            file.deleteOnExit();
                             br.cloneBrowser().getDownload(file, url);
                             final Point p = UserIO.getInstance().requestClickPositionDialog(file, "LinkCrypt.ws | " + String.valueOf(max_attempts - attempts), capDescription);
                             captcha.put("x", p.x + "");

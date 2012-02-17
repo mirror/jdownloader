@@ -164,6 +164,7 @@ public class TwoSharedCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
         br.setCookiesExclusive(true);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         final Form pwform = br.getForm(0);
         if (pwform != null && !pwform.getAction().contains("paypal")) {
