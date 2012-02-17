@@ -170,7 +170,8 @@ public class ImageFap extends PluginForHost {
                 }
             }
             final String orderid = downloadLink.getStringProperty("orderid");
-            if (authorsName == null || galleryName == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (authorsName == null) authorsName = "Unknown author";
+            if (galleryName == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             galleryName = galleryName.trim();
             authorsName = authorsName.trim();
             if (orderid != null) {

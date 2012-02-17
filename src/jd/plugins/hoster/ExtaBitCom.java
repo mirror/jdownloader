@@ -130,23 +130,38 @@ public class ExtaBitCom extends PluginForHost {
         }
         // If the waittime was forced it yould be here but it isn't!
         // Re Captcha handling
-
+        final String fileID = new Regex(link.getDownloadURL(), "extabit\\.com/file/(.+)").getMatch(0);
         Browser xmlbrowser = br.cloneBrowser();
         xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        if (br.containsHTML("api.recaptcha.net")) {
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.parse();
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, link);
-            rc.getForm().put("capture", "1");
-            rc.getForm().setAction(addedlink);
-            rc.setCode(c);
+            for (int i = 0; i <= 5; i++) {
+                rc.parse();
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, link);
+                xmlbrowser.getPage("http://extabit.com/file/" + fileID + "?type=recaptcha&challenge=" + rc.getChallenge() + "&capture=" + Encoding.urlEncode(c));
+                if (xmlbrowser.containsHTML("\"Entered digits are incorrect\\.\"")) {
+                    rc.reload();
+                    continue;
+                }
+                if (!xmlbrowser.containsHTML("\"ok\":true")) {
+                    logger.warning("Unknown captcha error...");
+                    break;
+                }
+                String xmlhref = new Regex(xmlbrowser, "href\":\"(\\?.*?)\"").getMatch(0);
+                if (xmlhref != null) {
+                    br.getPage(link.getDownloadURL() + xmlhref);
+                    break;
+                } else {
+                    br.getPage(link.getDownloadURL());
+                    break;
+                }
+            }
         } else {
             for (int i = 0; i <= 5; i++) {
                 // *Normal* captcha handling
-                // Form dlform = br.getFormbyProperty("id", "cmn_form");
                 String captchaurl = br.getRegex("(/capture\\.gif\\?\\d+)").getMatch(0);
                 if (captchaurl == null) captchaurl = br.getRegex("<div id=\"reload_captcha\">.*?<img src=\"(/.*?)\"").getMatch(0);
                 if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -169,7 +184,7 @@ public class ExtaBitCom extends PluginForHost {
                 }
             }
         }
-        if (br.containsHTML("api\\.recaptcha\\.net") || !xmlbrowser.containsHTML("\"ok\":true")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("\"Entered digits are incorrect\\.\"") || !xmlbrowser.containsHTML("\"ok\":true")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String dllink = br.getRegex("Turn your download manager off and[ ]+<a href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://guest\\d+\\.extabit\\.com/[a-z0-9]+/.*?)\"").getMatch(0);
         if (dllink == null) {

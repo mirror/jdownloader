@@ -680,3 +680,9 @@ jd/plugins/hoster/EnteruploadCom.class
 jd/plugins/hoster/GrooveFileCom.class
 jd/plugins/hoster/VistaUploadCom.class
 jd/plugins/decrypter/FpsBananaCom.class
+jd/plugins/hoster/FileshakerCom.class
+jd/plugins/hoster/UploadHereCom.class
+jd/plugins/hoster/UploadKingCom.class
+jd/plugins/hoster/MultiUploadCom.class
+jd/plugins/decrypter/MltpldCm.class
+jd/plugins/decrypter/UndeadLinkCom.class

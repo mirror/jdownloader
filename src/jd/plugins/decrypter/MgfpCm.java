@@ -22,13 +22,14 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://[\\w\\.]*?imagefap\\.com/(gallery\\.php\\?gid=.+|gallery/.+|pictures/\\d+/.{1})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://[\\w\\.]*?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.{1})" }, flags = { 0 })
 public class MgfpCm extends PluginForDecrypt {
 
     public MgfpCm(PluginWrapper wrapper) {
@@ -40,7 +41,7 @@ public class MgfpCm extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
-        if (!parameter.contains("view=2")) parameter += "?view=2";
+        if (!parameter.contains("view=2") && !new Regex("imagefap\\.com/gallery\\.php\\?pgid=", "").matches()) parameter += "?view=2";
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().contains("/pictures/")) {
@@ -65,10 +66,7 @@ public class MgfpCm extends PluginForDecrypt {
             logger.warning("Gallery name could not be found!");
             return null;
         }
-        if (authorsName == null) {
-            logger.warning("Author's name could not be found!");
-            return null;
-        }
+        if (authorsName == null) authorsName = "Unknown author";
         galleryName = Encoding.htmlDecode(galleryName);
         authorsName = Encoding.htmlDecode(authorsName);
         int counter = 1;
