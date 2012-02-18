@@ -380,6 +380,7 @@ public class FileServeCom extends PluginForHost {
         if (br2.containsHTML("Your daily download limit has been reached")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 2 * 60 * 60 * 1000l);
         if (br2.containsHTML("li>This file has been deleted by the system")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br2.containsHTML("li>This file was either in breach of a copyright holder or deleted by the uploader")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br2.containsHTML("The file could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br2.containsHTML("File not available, please register as <a href=\"/login\\.php\">Premium</a> Member to download<br")) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.FileServeCom.errors.only4premium", "This file is only downloadable for premium users")); }
         if (br2.containsHTML(">Your download link has expired")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download link expired, contact fileserve support", 10 * 60 * 1000l); }
         if (br2.containsHTML("Captcha error") || this.br.containsHTML("incorrect-captcha")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
@@ -596,12 +597,12 @@ public class FileServeCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctHeaders(this.br);
         if (this.checkLinks(new DownloadLink[] { link }) == false) {
             /* linkcheck broken */
             br.getPage(link.getDownloadURL());
-            if (br.containsHTML("The file could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            this.handleErrors(br);
             String filename = br.getRegex("down_arrow.*?h1>(.*?)<").getMatch(0);
             String filesize = br.getRegex("down_arrow.*?span.*?strong>.*?([0-9\\. GBMK]+)").getMatch(0);
             if (filename != null) {
