@@ -164,6 +164,8 @@ public class DateiTo extends PluginForHost {
         if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
             logger.warning("The dllink doesn't seem to be a file...");
             br.followConnection();
+            // Shouldn't happen often
+            if (br.containsHTML("(window\\.location\\.href=\\'http://datei\\.to/login|form id=\"UploadForm\")")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

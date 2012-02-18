@@ -686,3 +686,4 @@ jd/plugins/hoster/UploadKingCom.class
 jd/plugins/hoster/MultiUploadCom.class
 jd/plugins/decrypter/MltpldCm.class
 jd/plugins/decrypter/UndeadLinkCom.class
+jd/plugins/decrypter/WCrptIn.class
