@@ -27,27 +27,28 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://(www\\.)?[A-Za-z0-9\\-_]+\\.1000eb\\.com/[A-Za-z0-9\\-_]+\\.htm" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://(www\\.)?[\\w\\-]+\\.1000eb\\.com/([\\w\\-]+\\.htm)?" }, flags = { 0 })
 public class OneThousandEbComFolder extends PluginForDecrypt {
 
-    public OneThousandEbComFolder(PluginWrapper wrapper) {
+    public OneThousandEbComFolder(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         br.getPage(parameter);
         final String fpName = br.getRegex("\">我的空间</a>\\&nbsp;\\&gt;\\&gt;\\&nbsp;<a href=\"[^<>\"\\']+\" title=\"([^<>\"\\']+)\">").getMatch(0);
-        String[] links = br.getRegex("class=\"li\\-name\"><a title=\"[^<>\"\\']+\" href=\\'(http://1000eb\\.com/[a-z0-9]+)\\'").getColumn(0);
+        final String[] links = br.getRegex("class=\"li\\-name\"><a title=\"[^<>\"\\']+\" href=\\'(http://1000eb\\.com/[a-z0-9]+)\\'").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleLink : links)
+        for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));
+        }
         if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
+            final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
