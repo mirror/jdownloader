@@ -8,9 +8,9 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 import jd.plugins.Account;
-import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.exttable.columns.ExtComponentColumn;
+import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.gui.translate._GUI;
 
 public class ActionColumn extends ExtComponentColumn<Account> {
@@ -25,8 +25,8 @@ public class ActionColumn extends ExtComponentColumn<Account> {
 
     public ActionColumn() {
         super(_GUI._.premiumaccounttablemodel_column_actions());
-        renderer = new JPanel(new MigLayout("ins 2", "[]", "[]"));
-        editor = new JPanel(new MigLayout("ins 2", "[]", "[]"));
+        renderer = new RendererMigPanel("ins 2", "[]", "[]");
+        editor = new RendererMigPanel("ins 2", "[]", "[]");
         renew = new RenewAction();
         info = new InfoAction();
         premzone = new PremiumzoneAction();
@@ -43,6 +43,7 @@ public class ActionColumn extends ExtComponentColumn<Account> {
 
     private Component getButton(TableBarAction action) {
         final JButton bt = new JButton(action);
+
         // final Border border = bt.getBorder();
 
         // bt.addMouseListener(new MouseAdapter() {
@@ -96,6 +97,7 @@ public class ActionColumn extends ExtComponentColumn<Account> {
     }
 
     private void setAccount(Account value) {
+
         renew.setAccount(value);
     }
 
@@ -106,6 +108,7 @@ public class ActionColumn extends ExtComponentColumn<Account> {
 
     @Override
     public void resetEditor() {
+
         editor.setBackground(null);
         editor.setOpaque(false);
     }
