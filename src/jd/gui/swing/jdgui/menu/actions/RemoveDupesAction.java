@@ -22,14 +22,13 @@ import java.util.LinkedList;
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
 import org.jdownloader.gui.translate._GUI;
 
-public class RemoveDupesAction extends ToolBarAction {
+public class RemoveDupesAction extends ActionAdapter {
 
     private static final long serialVersionUID = 3088399063634025074L;
 
@@ -69,17 +68,17 @@ public class RemoveDupesAction extends ToolBarAction {
     }
 
     @Override
-    protected String createMnemonic() {
+    public String createMnemonic() {
         return _GUI._.action_remove_dupe_links_mnemonic();
     }
 
     @Override
-    protected String createAccelerator() {
+    public String createAccelerator() {
         return _GUI._.action_remove_dupe_links_accelerator();
     }
 
     @Override
-    protected String createTooltip() {
+    public String createTooltip() {
         return _GUI._.action_remove_dupe_links_tooltip();
     }
 }

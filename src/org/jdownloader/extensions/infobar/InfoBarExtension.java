@@ -3,14 +3,17 @@ package org.jdownloader.extensions.infobar;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JMenuItem;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTHelper;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -30,7 +33,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
 
     private static final String                    PROPERTY_DOCKING      = "PROPERTY_DOCKING";
 
-    private MenuAction                             activateAction;
+    private AppAction                              activateAction;
 
     private InfoDialog                             infoDialog;
 
@@ -99,31 +102,16 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
 
     @Override
     protected void start() throws StartException {
-        activateAction = new MenuAction("Show Infobar", "infobar", 0) {
-            private static final long serialVersionUID = 3252473048646596851L;
-
-            @Override
-            public void onAction(ActionEvent e) {
-                setGuiEnable(activateAction.isSelected());
+        activateAction = new AppAction() {
+            {
+                setName("Show Infobar");
+                setIconKey(this.getIconKey());
+                setSelected(false);
             }
 
-            @Override
-            protected String createMnemonic() {
-                return null;
-            }
-
-            @Override
-            protected String createAccelerator() {
-                return null;
-            }
-
-            @Override
-            protected String createTooltip() {
-                return null;
+            public void actionPerformed(ActionEvent e) {
             }
         };
-        activateAction.setIcon(this.getIconKey());
-        activateAction.setSelected(false);
 
         logger.info("InfoBar: OK");
     }
@@ -187,10 +175,10 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
     }
 
     @Override
-    public ArrayList<MenuAction> getMenuAction() {
-        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
+    public java.util.ArrayList<JMenuItem> getMenuAction() {
+        ArrayList<JMenuItem> menu = new ArrayList<JMenuItem>();
 
-        menu.add(activateAction);
+        menu.add(new JCheckBoxMenuItem(activateAction));
 
         return menu;
     }

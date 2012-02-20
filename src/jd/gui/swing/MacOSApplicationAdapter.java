@@ -29,7 +29,7 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.dialog.AboutDialog;
-import jd.gui.swing.jdgui.actions.ActionController;
+import jd.gui.swing.jdgui.components.toolbar.actions.ShowSettingsAction;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -87,7 +87,8 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
     }
 
     public void handlePreferences(PreferencesEvent e) {
-        ActionController.getToolBarAction("action.settings").onAction(null);
+        ShowSettingsAction.getInstance().actionPerformed(null);
+
         appReOpened(null);
     }
 

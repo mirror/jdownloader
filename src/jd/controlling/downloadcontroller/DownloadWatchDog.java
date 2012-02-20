@@ -36,8 +36,7 @@ import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyInfo;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ipcheck.IPController;
-import jd.gui.swing.jdgui.actions.ActionController;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.PauseDownloadsAction;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -614,7 +613,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 if (DownloadWatchDog.this.paused == value) { return; }
                 DownloadWatchDog.this.paused = value;
                 if (value) {
-                    ActionController.getToolBarAction("toolbar.control.pause").setSelected(true);
+                    PauseDownloadsAction.getInstance().setSelected(true);
                     speedLimitBeforePause = config.getDownloadSpeedLimit();
                     speedLimitedBeforePause = config.isDownloadSpeedLimitEnabled();
                     config.setDownloadSpeedLimit(config.getPauseSpeed());
@@ -625,7 +624,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     config.setDownloadSpeedLimitEnabled(speedLimitedBeforePause);
                     speedLimitBeforePause = 0;
                     DownloadWatchDog.LOG.info("Pause disabled: Switch back to old downloadspeed");
-                    ActionController.getToolBarAction("toolbar.control.pause").setSelected(false);
+                    PauseDownloadsAction.getInstance().setSelected(false);
                 }
 
             }
@@ -841,24 +840,27 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                 }
                 DownloadWatchDog.this.currentstopMark = entry;
-                final ToolBarAction stopMark = ActionController.getToolBarAction("toolbar.control.stopmark");
+                // final ToolBarAction stopMark =
+                // ActionController.getToolBarAction("toolbar.control.stopmark");
                 /* set new stopmark */
-                if (entry instanceof DownloadLink) {
-                    stopMark.setSelected(true);
-                    stopMark.setEnabled(true);
-                    stopMark.setToolTipText(_JDT._.jd_controlling_DownloadWatchDog_stopmark_downloadlink(((DownloadLink) entry).getName()));
-                } else if (entry instanceof FilePackage) {
-                    stopMark.setSelected(true);
-                    stopMark.setEnabled(true);
-                    stopMark.setToolTipText(_JDT._.jd_controlling_DownloadWatchDog_stopmark_filepackage(((FilePackage) entry).getName()));
-                } else if (entry == STOPMARK.HIDDEN) {
-                    stopMark.setSelected(true);
-                    stopMark.setEnabled(true);
-                    stopMark.setToolTipText(_JDT._.jd_controlling_DownloadWatchDog_stopmark_set());
-                } else if (entry == STOPMARK.NONE) {
-                    stopMark.setSelected(false);
-                    stopMark.setToolTipText(_JDT._.jd_gui_swing_jdgui_actions_actioncontroller_toolbar_control_stopmark_tooltip());
-                }
+                // if (entry instanceof DownloadLink) {
+                // stopMark.setSelected(true);
+                // stopMark.setEnabled(true);
+                // stopMark.setToolTipText(_JDT._.jd_controlling_DownloadWatchDog_stopmark_downloadlink(((DownloadLink)
+                // entry).getName()));
+                // } else if (entry instanceof FilePackage) {
+                // stopMark.setSelected(true);
+                // stopMark.setEnabled(true);
+                // stopMark.setToolTipText(_JDT._.jd_controlling_DownloadWatchDog_stopmark_filepackage(((FilePackage)
+                // entry).getName()));
+                // } else if (entry == STOPMARK.HIDDEN) {
+                // stopMark.setSelected(true);
+                // stopMark.setEnabled(true);
+                // stopMark.setToolTipText(_JDT._.jd_controlling_DownloadWatchDog_stopmark_set());
+                // } else if (entry == STOPMARK.NONE) {
+                // stopMark.setSelected(false);
+                // stopMark.setToolTipText(_JDT._.jd_gui_swing_jdgui_actions_actioncontroller_toolbar_control_stopmark_tooltip());
+                // }
                 DownloadController.getInstance().fireDataUpdate();
             }
         }, true);

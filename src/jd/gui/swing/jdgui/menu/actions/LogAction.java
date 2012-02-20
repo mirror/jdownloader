@@ -19,14 +19,13 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.views.log.LogView;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class LogAction extends ToolBarAction {
+public class LogAction extends ActionAdapter {
 
     private static final long serialVersionUID = -353145605693194634L;
 
@@ -46,17 +45,17 @@ public class LogAction extends ToolBarAction {
     }
 
     @Override
-    protected String createMnemonic() {
+    public String createMnemonic() {
         return _GUI._.action_log_mnemonic();
     }
 
     @Override
-    protected String createAccelerator() {
+    public String createAccelerator() {
         return _GUI._.action_log_accelerator();
     }
 
     @Override
-    protected String createTooltip() {
+    public String createTooltip() {
         return _GUI._.action_log_tooltip();
     }
 

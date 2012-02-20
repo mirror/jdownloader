@@ -60,7 +60,8 @@ public abstract class UserIF {
          * Displays the {@link Premium}-ConfigPanel. The parameter is the
          * account which should be selected.
          */
-        PREMIUMCONFIG
+        PREMIUMCONFIG,
+        CONFIG
 
     }
 

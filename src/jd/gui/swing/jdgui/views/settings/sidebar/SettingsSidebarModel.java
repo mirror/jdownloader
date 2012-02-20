@@ -106,11 +106,21 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                     List<LazyExtension> pluginsOptional = ExtensionController.getInstance().getExtensions();
                     if (pluginsOptional != null) {
                         for (final LazyExtension plg : pluginsOptional) {
+
                             if (contains(plg)) continue;
                             if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) continue;
                             if (CrossSystem.isLinux() && !plg.isLinuxRunnable()) continue;
                             if (CrossSystem.isMac() && !plg.isMacRunnable()) continue;
+                            final int index = getSize();
+                            plg._getSettings().getStorageHandler().getEventSender().addListener(new GenericConfigEventListener<Object>() {
 
+                                public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
+                                    fireContentsChanged(this, index, index);
+                                }
+
+                                public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
+                                }
+                            });
                             if (first) {
                                 if (eh == null) eh = new ExtensionHeader();
                                 addElement(eh);

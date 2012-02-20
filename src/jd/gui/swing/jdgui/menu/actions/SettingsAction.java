@@ -19,14 +19,13 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class SettingsAction extends ToolBarAction {
+public class SettingsAction extends ActionAdapter {
 
     private static final long serialVersionUID = 2547991585530678706L;
 
@@ -45,17 +44,17 @@ public class SettingsAction extends ToolBarAction {
     }
 
     @Override
-    protected String createMnemonic() {
+    public String createMnemonic() {
         return _GUI._.action_settings_menu_mnemonic();
     }
 
     @Override
-    protected String createAccelerator() {
+    public String createAccelerator() {
         return _GUI._.action_settings_menu_accelerator();
     }
 
     @Override
-    protected String createTooltip() {
+    public String createTooltip() {
         return _GUI._.action_settings_menu_tooltip();
     }
 

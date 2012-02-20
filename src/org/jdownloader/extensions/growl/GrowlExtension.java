@@ -20,8 +20,9 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
+
+import javax.swing.JMenuItem;
 
 import jd.Main;
 import jd.controlling.JDController;
@@ -29,7 +30,6 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Executer;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
@@ -110,7 +110,7 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig> implements Co
     }
 
     @Override
-    public ArrayList<MenuAction> getMenuAction() {
+    public java.util.ArrayList<JMenuItem> getMenuAction() {
         return null;
     }
 

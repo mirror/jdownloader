@@ -46,14 +46,22 @@ import jd.controlling.JSonWrapper;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.components.JDSpinner;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.actions.ActionController;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.AutoReconnectToggleAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.ClipBoardToggleAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.ExitToolbarAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.GlobalPremiumSwitchToggleAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.OpenDefaultDownloadFolderAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.PauseDownloadsAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.ReconnectAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.StartDownloadsAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -167,30 +175,30 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
     private void initEntryPanel() {
         entryPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]0[]0[]0[]0[]"));
         if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE)) {
-            addMenuEntry(entryPanel, "toolbar.control.stop");
-            addMenuEntry(entryPanel, "toolbar.control.pause");
+            addMenuEntry(entryPanel, StopDownloadsAction.getInstance().init());
+            addMenuEntry(entryPanel, PauseDownloadsAction.getInstance().init());
         } else if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.STOPPED_STATE)) {
-            addMenuEntry(entryPanel, "toolbar.control.start");
-            addMenuEntry(entryPanel, "toolbar.control.pause");
+            addMenuEntry(entryPanel, StartDownloadsAction.getInstance().init());
+            addMenuEntry(entryPanel, PauseDownloadsAction.getInstance().init());
         }
 
-        addMenuEntry(entryPanel, "action.addurl");
-        addMenuEntry(entryPanel, "action.load");
-        addMenuEntry(entryPanel, "toolbar.interaction.update");
-        addMenuEntry(entryPanel, "toolbar.interaction.reconnect");
-        addMenuEntry(entryPanel, "action.opendlfolder");
+        // addMenuEntry(entryPanel, "action.addurl");
+        // addMenuEntry(entryPanel, "action.load");
+        addMenuEntry(entryPanel, UpdateAction.getInstance().init());
+        addMenuEntry(entryPanel, ReconnectAction.getInstance().init());
+        addMenuEntry(entryPanel, OpenDefaultDownloadFolderAction.getInstance().init());
     }
 
     private void initQuickConfigPanel() {
         quickConfigPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]"));
-        addMenuEntry(quickConfigPanel, "premiumMenu.toggle");
-        addMenuEntry(quickConfigPanel, "toolbar.quickconfig.clipboardoberserver");
-        addMenuEntry(quickConfigPanel, "toolbar.quickconfig.reconnecttoggle");
+        addMenuEntry(quickConfigPanel, GlobalPremiumSwitchToggleAction.getInstance().init());
+        addMenuEntry(quickConfigPanel, ClipBoardToggleAction.getInstance().init());
+        addMenuEntry(quickConfigPanel, AutoReconnectToggleAction.getInstance().init());
     }
 
     private void initExitPanel() {
         exitPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]"));
-        addMenuEntry(exitPanel, "action.exit");
+        addMenuEntry(exitPanel, ExitToolbarAction.getInstance().init());
     }
 
     private void initBottomPanel() {
@@ -217,20 +225,16 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
         bottomPanel.add(spMaxChunks);
     }
 
-    private void addMenuEntry(JPanel panel, String actionId) {
+    private void addMenuEntry(JPanel panel, AppAction actionId) {
         JToggleButton ret = getMenuEntry(actionId);
         if (ret == null) return;
         panel.add(ret, "growx, pushx");
     }
 
-    private JToggleButton getMenuEntry(String actionId) {
-        final ToolBarAction action = ActionController.getToolBarAction(actionId);
-        if (action == null) {
-            Log.exception(new Exception(actionId + " not available"));
-            return null;
-        }
+    private JToggleButton getMenuEntry(AppAction action) {
+
         JToggleButton b = createButton(action);
-        if (actionId.equals("action.exit")) {
+        if (action == ExitToolbarAction.getInstance()) {
             b.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     hideThreadrunning = false;
@@ -242,8 +246,8 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
         return b;
     }
 
-    private JToggleButton createButton(ToolBarAction action) {
-        action.init();
+    private JToggleButton createButton(AppAction action) {
+
         JToggleButton bt = new JToggleButton(action);
         bt.setOpaque(false);
         bt.setContentAreaFilled(false);

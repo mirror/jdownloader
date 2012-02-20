@@ -19,11 +19,10 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 
 import org.jdownloader.gui.translate._GUI;
 
-public class ExitAction extends ToolBarAction {
+public class ExitAction extends ActionAdapter {
 
     private static final long serialVersionUID = -1428029294638573437L;
 
@@ -41,17 +40,17 @@ public class ExitAction extends ToolBarAction {
     }
 
     @Override
-    protected String createMnemonic() {
+    public String createMnemonic() {
         return _GUI._.action_exit_mnemonic();
     }
 
     @Override
-    protected String createAccelerator() {
+    public String createAccelerator() {
         return _GUI._.action_exit_accelerator();
     }
 
     @Override
-    protected String createTooltip() {
+    public String createTooltip() {
         return _GUI._.action_exit_tooltip();
     }
 

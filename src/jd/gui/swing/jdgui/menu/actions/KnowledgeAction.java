@@ -18,12 +18,10 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.swing.jdgui.actions.ToolBarAction;
-
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
 
-public class KnowledgeAction extends ToolBarAction {
+public class KnowledgeAction extends ActionAdapter {
 
     private static final long serialVersionUID = 2227665710503234763L;
 
@@ -41,17 +39,17 @@ public class KnowledgeAction extends ToolBarAction {
     }
 
     @Override
-    protected String createMnemonic() {
+    public String createMnemonic() {
         return _GUI._.action_help_mnemonic();
     }
 
     @Override
-    protected String createAccelerator() {
+    public String createAccelerator() {
         return _GUI._.action_help_accelerator();
     }
 
     @Override
-    protected String createTooltip() {
+    public String createTooltip() {
         return _GUI._.action_help_tooltip();
     }
 

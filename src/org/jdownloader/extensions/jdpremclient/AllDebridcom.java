@@ -8,7 +8,6 @@ import java.util.Locale;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.controlling.AccountController;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
@@ -432,12 +431,6 @@ public class AllDebridcom extends PluginForHost implements JDPremInterface {
     public String getFileInformationString(DownloadLink downloadLink) {
         if (proxyused || plugin == null) return "";
         return plugin.getFileInformationString(downloadLink);
-    }
-
-    @Override
-    public ArrayList<MenuAction> createMenuitems() {
-        if (plugin == null) return super.createMenuitems();
-        return plugin.createMenuitems();
     }
 
     @Override

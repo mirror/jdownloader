@@ -21,11 +21,11 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
+import javax.swing.JMenuItem;
 
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
 import jd.controlling.JSonWrapper;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.plugins.AddonPanel;
 import jd.plugins.ExtensionConfigInterface;
@@ -303,7 +303,7 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
         return version;
     }
 
-    public ArrayList<MenuAction> getMenuAction() {
+    public ArrayList<JMenuItem> getMenuAction() {
         return null;
     }
 

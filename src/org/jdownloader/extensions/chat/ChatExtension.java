@@ -38,6 +38,7 @@ import java.util.regex.Pattern;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
@@ -55,7 +56,6 @@ import jd.controlling.reconnect.ReconnecterListener;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -1041,7 +1041,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
     }
 
     @Override
-    public ArrayList<MenuAction> getMenuAction() {
+    public java.util.ArrayList<JMenuItem> getMenuAction() {
         return null;
     }
 

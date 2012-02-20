@@ -24,14 +24,11 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
 import jd.controlling.IOEQ;
-import jd.gui.swing.jdgui.actions.ActionController;
-import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionControllerListener;
 import org.jdownloader.extensions.LazyExtension;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class AddonsMenu extends JMenu implements ExtensionControllerListener {
@@ -51,7 +48,6 @@ public class AddonsMenu extends JMenu implements ExtensionControllerListener {
     }
 
     private void updateMenu() {
-        this.add(ActionController.getToolBarAction("addonsMenu.configuration"));
 
         ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();
@@ -62,41 +58,17 @@ public class AddonsMenu extends JMenu implements ExtensionControllerListener {
 
             if (wrapper._isEnabled()) {
                 final AbstractExtension<?> plg = wrapper._getExtension();
-                ArrayList<MenuAction> mis = plg.getMenuAction();
-                if (mis != null && !mis.isEmpty()) {
-                    if (mis.size() == 1) {
-                        JMenuItem c = mis.get(0).toJMenuItem();
-                        c.setIcon(NewTheme.I().getIcon(plg.getIconKey(), 16));
-                        if (mis.get(0).getType() == Types.TOGGLE) {
-                            itemsToggle.add(c);
+
+                ArrayList<JMenuItem> mis = plg.getMenuAction();
+                if (mis != null) {
+                    for (JMenuItem m : mis) {
+                        if (m instanceof JMenu) {
+                            itemsWithSubmenu.add(m);
+                        } else if (m instanceof JCheckBoxMenuItem) {
+                            itemsToggle.add(m);
                         } else {
-                            itemsPress.add(c);
+                            itemsPress.add(m);
                         }
-                    } else {
-                        MenuAction m = new MenuAction(plg.getConfigID(), plg.getName(), plg.getIconKey()) {
-
-                            private static final long serialVersionUID = -985890347522920606L;
-
-                            @Override
-                            protected String createMnemonic() {
-                                return plg.getName();
-                            }
-
-                            @Override
-                            protected String createAccelerator() {
-                                return "ctrl+shift" + plg.getName().charAt(0);
-                            }
-
-                            @Override
-                            protected String createTooltip() {
-                                return plg.getName();
-                            }
-
-                        };
-                        m.setItems(mis);
-
-                        JMenuItem mi = m.toJMenuItem();
-                        itemsWithSubmenu.add(mi);
                     }
                 }
             }
@@ -111,25 +83,27 @@ public class AddonsMenu extends JMenu implements ExtensionControllerListener {
 
         boolean pre = false;
         for (JMenuItem jmi : itemsWithSubmenu) {
-            if (!pre) {
+            if (!pre && getComponentCount() > 0) {
                 addSeparator();
                 pre = true;
             }
+
             add(jmi);
         }
 
         pre = false;
         for (JMenuItem jmi : itemsPress) {
-            if (!pre) {
+            if (!pre && getComponentCount() > 0) {
                 addSeparator();
                 pre = true;
             }
+
             add(jmi);
         }
 
         pre = false;
         for (JMenuItem jmi : itemsToggle) {
-            if (!pre) {
+            if (!pre && getComponentCount() > 0) {
                 addSeparator();
                 pre = true;
             }

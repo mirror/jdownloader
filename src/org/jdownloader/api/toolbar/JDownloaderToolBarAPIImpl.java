@@ -26,8 +26,6 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.gui.UIConstants;
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.actions.ActionController;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.PluginForHost;
@@ -152,11 +150,13 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
     }
 
     public boolean toggleStopAfterCurrentDownload() {
-        final ToolBarAction stopMark = ActionController.getToolBarAction("toolbar.control.stopmark");
-        if (stopMark != null) {
-            stopMark.actionPerformed(null);
-        }
-        return DownloadWatchDog.getInstance().isStopMarkSet();
+        // final ToolBarAction stopMark =
+        // ActionController.getToolBarAction("toolbar.control.stopmark");
+        // if (stopMark != null) {
+        // stopMark.actionPerformed(null);
+        // }
+        // return DownloadWatchDog.getInstance().isStopMarkSet();
+        return false;
     }
 
     public boolean togglePremium() {

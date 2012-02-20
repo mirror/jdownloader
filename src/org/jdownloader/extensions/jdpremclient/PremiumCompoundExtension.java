@@ -26,7 +26,6 @@ import jd.config.ConfigGroup;
 import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.Account;
 import jd.plugins.AddonPanel;
 import jd.plugins.PluginForHost;
@@ -243,11 +242,6 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
 
     @Override
     public AddonPanel<PremiumCompoundExtension> getGUI() {
-        return null;
-    }
-
-    @Override
-    public ArrayList<MenuAction> getMenuAction() {
         return null;
     }
 

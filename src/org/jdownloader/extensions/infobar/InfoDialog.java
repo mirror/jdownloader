@@ -21,11 +21,11 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Formatter;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.EDTHelper;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.infobar.translate.T;
 import org.jdownloader.images.NewTheme;
 
@@ -33,7 +33,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
     private static InfoDialog INSTANCE = null;
 
-    public static InfoDialog getInstance(MenuAction action) {
+    public static InfoDialog getInstance(AppAction action) {
         if (INSTANCE == null) INSTANCE = new InfoDialog(action);
         return INSTANCE;
     }
@@ -43,7 +43,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     private static final int           DOCKING_DISTANCE = 25;
 
     private final DownloadInformations ds;
-    private final MenuAction           action;
+    private final AppAction            action;
     private final DragDropHandler      ddh;
     private boolean                    enableDocking;
 
@@ -55,7 +55,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     private JLabel                     lblETA;
     private JLabel                     lblHelp;
 
-    private InfoDialog(MenuAction action) {
+    private InfoDialog(AppAction action) {
         super();
 
         this.ds = DownloadInformations.getInstance();

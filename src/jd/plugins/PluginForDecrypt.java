@@ -32,7 +32,6 @@ import jd.controlling.ProgressController;
 import jd.controlling.captcha.CaptchaController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawlerDistributer;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
@@ -139,11 +138,6 @@ public abstract class PluginForDecrypt extends Plugin {
 
     protected DownloadLink createDownloadlink(String link) {
         return new DownloadLink(null, null, getHost(), Encoding.urlDecode(link, true), true);
-    }
-
-    @Override
-    public final ArrayList<MenuAction> createMenuitems() {
-        return null;
     }
 
     public void setLogger(JDPluginLogger logger) {

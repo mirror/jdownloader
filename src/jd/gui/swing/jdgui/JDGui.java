@@ -237,16 +237,6 @@ public class JDGui extends SwingGui {
             // this.mainTabbedPane.addTab(LogView.getInstance());
         }
         this.mainTabbedPane.setSelectedComponent(this.downloadView);
-        // TODO
-        // this.toolBar.setList(GUIUtils.getConfig().getGenericProperty("TOOLBAR",
-        // ToolBar.DEFAULT_LIST).toArray(new String[] {}));
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
-            public void run() {
-                toolBar.updateToolbar();
-            }
-
-        });
 
         if (CrossSystem.isMac()) {
             // add handling for Command+W for closing window on Mac OS
@@ -382,7 +372,7 @@ public class JDGui extends SwingGui {
 
         this.mainFrame.setContentPane(contentPane);
         this.mainFrame.setJMenuBar(this.menuBar);
-        this.mainFrame.add(this.toolBar, "dock NORTH");
+        this.mainFrame.add(this.toolBar, "dock NORTH,height 38!");
 
     }
 
@@ -405,6 +395,7 @@ public class JDGui extends SwingGui {
                     break;
                 case LINKGRABBER:
                     JDGui.this.mainTabbedPane.setSelectedComponent(JDGui.this.linkgrabberView);
+
                     break;
                 case PREMIUMCONFIG:
                     // ConfigurationView.getInstance().getSidebar().setSelectedTreeEntry(Premium.class);

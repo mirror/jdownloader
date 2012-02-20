@@ -18,12 +18,10 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.swing.jdgui.actions.ToolBarAction;
-
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
 
-public class LatestChangesAction extends ToolBarAction {
+public class LatestChangesAction extends ActionAdapter {
 
     private static final long serialVersionUID = 2705114922279833817L;
 
@@ -41,17 +39,17 @@ public class LatestChangesAction extends ToolBarAction {
     }
 
     @Override
-    protected String createMnemonic() {
+    public String createMnemonic() {
         return _GUI._.action_changelog_mnemonic();
     }
 
     @Override
-    protected String createAccelerator() {
+    public String createAccelerator() {
         return _GUI._.action_changelog_accelerator();
     }
 
     @Override
-    protected String createTooltip() {
+    public String createTooltip() {
         return _GUI._.action_changelog_tooltip();
     }
 

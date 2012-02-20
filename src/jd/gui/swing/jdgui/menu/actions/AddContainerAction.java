@@ -22,13 +22,12 @@ import java.io.File;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.nutils.io.JDFileFilter;
 
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
 
-public class AddContainerAction extends ToolBarAction {
+public class AddContainerAction extends ActionAdapter {
 
     private static final long serialVersionUID = 4713690050852393405L;
 
@@ -54,17 +53,17 @@ public class AddContainerAction extends ToolBarAction {
     }
 
     @Override
-    protected String createMnemonic() {
+    public String createMnemonic() {
         return _GUI._.action_addcontainer_mnemonic();
     }
 
     @Override
-    protected String createAccelerator() {
+    public String createAccelerator() {
         return _GUI._.action_addcontainer_accelerator();
     }
 
     @Override
-    protected String createTooltip() {
+    public String createTooltip() {
         return _GUI._.action_addcontainer_tooltip();
     }
 

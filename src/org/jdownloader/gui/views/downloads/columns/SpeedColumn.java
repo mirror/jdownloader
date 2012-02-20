@@ -42,7 +42,7 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public int getDefaultWidth() {
-        return 65;
+        return 100;
     }
 
     // @Override

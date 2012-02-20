@@ -19,45 +19,32 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 
 import jd.gui.swing.dialog.AboutDialog;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 
-public class AboutAction extends ToolBarAction {
+public class AboutAction extends AppAction {
 
     private static final long serialVersionUID = -353145605693194634L;
 
     public AboutAction() {
-        super(_GUI._.action_aboutaction(), "action.about", "about");
+        super();
+        setName(_GUI._.action_aboutaction());
+        setIconKey("about");
+        setTooltipText(_GUI._.action_aboutaction_tooltip());
+        setAccelerator(_GUI._.action_aboutaction_accelerator());
+        setMnemonic(_GUI._.action_aboutaction_mnemonics());
+
     }
 
-    @Override
-    public void onAction(ActionEvent e) {
+    public void actionPerformed(ActionEvent e) {
+
         try {
             Dialog.getInstance().showDialog(new AboutDialog());
         } catch (DialogNoAnswerException e1) {
         }
-    }
-
-    @Override
-    public void initDefaults() {
-    }
-
-    @Override
-    protected String createMnemonic() {
-        return _GUI._.action_aboutaction_mnemonics();
-    }
-
-    @Override
-    protected String createAccelerator() {
-        return _GUI._.action_aboutaction_accelerator();
-    }
-
-    @Override
-    protected String createTooltip() {
-        return _GUI._.action_aboutaction_tooltip();
     }
 
 }

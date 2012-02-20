@@ -16,7 +16,6 @@ public class JDMenuBar extends JMenuBar {
                 add(new FileMenu());
                 // add(new EditMenu());
                 add(new SettingsMenu());
-                add(PremiumMenu.getInstance());
                 add(AddonsMenu.getInstance());
                 add(WindowMenu.getInstance());
                 add(new AboutMenu());

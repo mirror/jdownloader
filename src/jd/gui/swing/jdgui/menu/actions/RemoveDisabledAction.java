@@ -22,13 +22,12 @@ import java.util.LinkedList;
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.jdownloader.gui.translate._GUI;
 
-public class RemoveDisabledAction extends ToolBarAction {
+public class RemoveDisabledAction extends ActionAdapter {
 
     private static final long serialVersionUID = -5335194420202699757L;
 
@@ -72,18 +71,18 @@ public class RemoveDisabledAction extends ToolBarAction {
     }
 
     @Override
-    protected String createMnemonic() {
+    public String createMnemonic() {
         return _GUI._.action_remove_disabled_links_mnemonic();
     }
 
     @Override
-    protected String createAccelerator() {
+    public String createAccelerator() {
 
         return _GUI._.action_remove_disabled_links_accelerator();
     }
 
     @Override
-    protected String createTooltip() {
+    public String createTooltip() {
         return _GUI._.action_remove_disabled_links_tooltip();
     }
 }

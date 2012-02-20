@@ -19,13 +19,12 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.nutils.JDFlags;
 
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.update.RestartController;
 
-public class RestartAction extends ToolBarAction {
+public class RestartAction extends ActionAdapter {
 
     private static final long serialVersionUID = 1333126351380171619L;
 
@@ -45,17 +44,17 @@ public class RestartAction extends ToolBarAction {
     }
 
     @Override
-    protected String createMnemonic() {
+    public String createMnemonic() {
         return _GUI._.action_restart_mnemonic();
     }
 
     @Override
-    protected String createAccelerator() {
+    public String createAccelerator() {
         return _GUI._.action_restart_accelerator();
     }
 
     @Override
-    protected String createTooltip() {
+    public String createTooltip() {
         return _GUI._.action_restart_tooltip();
     }
 

@@ -18,10 +18,11 @@ package org.jdownloader.extensions.antireconnect;
 
 import java.util.ArrayList;
 
+import javax.swing.JMenuItem;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 
 import org.appwork.storage.config.JsonConfig;
@@ -113,7 +114,7 @@ public class AntiReconnectExtension extends AbstractExtension<AntiReconnectConfi
     }
 
     @Override
-    public ArrayList<MenuAction> getMenuAction() {
+    public ArrayList<JMenuItem> getMenuAction() {
         return null;
     }
 

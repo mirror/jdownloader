@@ -21,9 +21,7 @@ import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 
 import jd.Main;
 import jd.controlling.AccountController;
@@ -33,7 +31,6 @@ import jd.controlling.IOEQ;
 import jd.controlling.JDLogger;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.gui.UserIF;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -51,7 +48,6 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.settings.GeneralSettings;
 
 public class PremiumStatus extends JPanel implements MouseListener {
 
@@ -285,17 +281,18 @@ public class PremiumStatus extends JPanel implements MouseListener {
         if (e.getSource() instanceof TinyProgressBar) {
             TinyProgressBar tpb = (TinyProgressBar) e.getSource();
             if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-                JPopupMenu popup = new JPopupMenu();
-                ArrayList<MenuAction> entries = tpb.getPlugin().createMenuitems();
-                for (MenuAction next : entries) {
-                    JMenuItem mi = next.toJMenuItem();
-                    if (mi == null) {
-                        popup.addSeparator();
-                    } else {
-                        popup.add(mi);
-                    }
-                }
-                popup.show(tpb, e.getPoint().x, e.getPoint().y);
+                // JPopupMenu popup = new JPopupMenu();
+                // ArrayList<MenuAction> entries =
+                // tpb.getPlugin().createMenuitems();
+                // for (MenuAction next : entries) {
+                // JMenuItem mi = next.toJMenuItem();
+                // if (mi == null) {
+                // popup.addSeparator();
+                // } else {
+                // popup.add(mi);
+                // }
+                // }
+                // popup.show(tpb, e.getPoint().x, e.getPoint().y);
             } else {
                 if (tpb.getPlugin().hasConfig()) {
                     UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, tpb.getPlugin().getConfig());

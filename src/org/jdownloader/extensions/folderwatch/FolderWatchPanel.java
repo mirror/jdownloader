@@ -7,7 +7,6 @@ import javax.swing.JScrollPane;
 
 import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.InfoPanel;
 import jd.gui.swing.jdgui.views.ViewToolbar;
@@ -15,6 +14,7 @@ import jd.nutils.JDFlags;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.swing.EDTHelper;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.folderwatch.data.History;
 import org.jdownloader.extensions.folderwatch.data.HistoryEntry;
 import org.jdownloader.extensions.folderwatch.translate.T;
@@ -29,6 +29,10 @@ public class FolderWatchPanel extends SwitchPanel {
 
     private FolderWatchExtension owner;
 
+    private AppAction            clearAction;
+
+    private AppAction            addAction;
+
     public FolderWatchPanel(JSonWrapper jSonWrapper, FolderWatchExtension owner) {
         this.owner = owner;
         table = new FolderWatchTable(this);
@@ -40,19 +44,17 @@ public class FolderWatchPanel extends SwitchPanel {
     private void initGUI() {
         this.setLayout(new MigLayout("", "[]min[][grow,fill]min[grow, fill]"));
         this.add(new JScrollPane(table), "width max,wrap");
-        this.add(new ViewToolbar("action.folderwatch.history.clear", "action.folderwatch.history.reimport"), "align center");
+        this.add(new ViewToolbar(clearAction, addAction), "align center");
     }
 
     private void initActions() {
-        new ToolBarAction("Clear", "action.folderwatch.history.clear", "clear") {
-            private static final long serialVersionUID = 3349495273700955040L;
-
-            @Override
-            public void initDefaults() {
+        clearAction = new AppAction() {
+            {
+                setName("Clear");
+                setIconKey("clear");
             }
 
-            @Override
-            public void onAction(final ActionEvent e) {
+            public void actionPerformed(ActionEvent e) {
                 new EDTHelper<Object>() {
                     @Override
                     public Object edtRun() {
@@ -68,31 +70,15 @@ public class FolderWatchPanel extends SwitchPanel {
                 }.start();
             }
 
-            @Override
-            protected String createMnemonic() {
-                return null;
-            }
-
-            @Override
-            protected String createAccelerator() {
-                return null;
-            }
-
-            @Override
-            protected String createTooltip() {
-                return null;
-            }
         };
 
-        new ToolBarAction("Add", "action.folderwatch.history.reimport", "add") {
-            private static final long serialVersionUID = 9034432457172125570L;
-
-            @Override
-            public void initDefaults() {
+        addAction = new AppAction() {
+            {
+                setName("Add");
+                setIconKey("add");
             }
 
-            @Override
-            public void onAction(final ActionEvent e) {
+            public void actionPerformed(ActionEvent e) {
                 new EDTHelper<Object>() {
                     @Override
                     public Object edtRun() {
@@ -110,20 +96,6 @@ public class FolderWatchPanel extends SwitchPanel {
                 }.start();
             }
 
-            @Override
-            protected String createMnemonic() {
-                return null;
-            }
-
-            @Override
-            protected String createAccelerator() {
-                return null;
-            }
-
-            @Override
-            protected String createTooltip() {
-                return null;
-            }
         };
     }
 

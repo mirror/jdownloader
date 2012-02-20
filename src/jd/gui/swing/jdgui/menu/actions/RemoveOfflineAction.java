@@ -22,14 +22,13 @@ import java.util.LinkedList;
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
 import org.jdownloader.gui.translate._GUI;
 
-public class RemoveOfflineAction extends ToolBarAction {
+public class RemoveOfflineAction extends ActionAdapter {
 
     private static final long serialVersionUID = 4181319974731148936L;
 
@@ -68,17 +67,17 @@ public class RemoveOfflineAction extends ToolBarAction {
     }
 
     @Override
-    protected String createMnemonic() {
+    public String createMnemonic() {
         return _GUI._.action_remove_offline_links_mnemonic();
     }
 
     @Override
-    protected String createAccelerator() {
+    public String createAccelerator() {
         return _GUI._.action_remove_offline_links_accelerator();
     }
 
     @Override
-    protected String createTooltip() {
+    public String createTooltip() {
         return _GUI._.action_remove_offline_links_tooltip();
     }
 }

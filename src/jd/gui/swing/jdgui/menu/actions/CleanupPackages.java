@@ -22,13 +22,12 @@ import java.util.LinkedList;
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
 import org.jdownloader.gui.translate._GUI;
 
-public class CleanupPackages extends ToolBarAction {
+public class CleanupPackages extends ActionAdapter {
 
     private static final long serialVersionUID = -7185006215784212976L;
 
@@ -66,17 +65,17 @@ public class CleanupPackages extends ToolBarAction {
     }
 
     @Override
-    protected String createMnemonic() {
+    public String createMnemonic() {
         return _GUI._.action_remove_packages_mnemonic();
     }
 
     @Override
-    protected String createAccelerator() {
+    public String createAccelerator() {
         return _GUI._.action_remove_packages_accelerator();
     }
 
     @Override
-    protected String createTooltip() {
+    public String createTooltip() {
         return _GUI._.action_remove_packages_tooltip();
     }
 

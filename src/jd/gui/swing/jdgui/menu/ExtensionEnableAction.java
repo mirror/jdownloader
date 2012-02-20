@@ -7,7 +7,6 @@ import javax.swing.ImageIcon;
 
 import jd.gui.UserIO;
 
-import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
@@ -21,12 +20,11 @@ public class ExtensionEnableAction extends AbstractAction {
     private LazyExtension     plg;
     private ImageIcon         icon16Enabled;
     private ImageIcon         icon16Disabled;
-    private boolean           java15;
 
     public ExtensionEnableAction(LazyExtension plg) {
         super(plg.getName());
         this.plg = plg;
-        java15 = Application.getJavaVersion() < 16000000;
+
         putValue(SELECTED_KEY, plg._isEnabled());
         icon16Enabled = getCheckBoxImage(20, true);
         icon16Disabled = getCheckBoxImage(20, false);
@@ -42,11 +40,8 @@ public class ExtensionEnableAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (java15) {
-            this.setSelected(!this.isSelected());
-        } else {
-            updateIcon();
-        }
+
+        updateIcon();
 
         if (!plg._isEnabled()) {
             try {
@@ -94,14 +89,7 @@ public class ExtensionEnableAction extends AbstractAction {
     }
 
     public ImageIcon getCheckBoxImage(int size, boolean selected) {
-        // ImageIcon ret = null;
-        //
-        // Image back = plg._getIcon(size).getImage();
-        // Image checkBox = NewTheme.I().getImage("checkbox_" + selected, 12);
-        // back = ImageProvider.merge(back, checkBox, 2, 0, 0,
-        // back.getHeight(null) - checkBox.getHeight(null) + 2);
-        // ret = new ImageIcon(back);
-        // return ret;
+
         if (selected) {
             return plg._getIcon(size);
         } else {

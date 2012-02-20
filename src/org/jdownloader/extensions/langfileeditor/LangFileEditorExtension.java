@@ -27,7 +27,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.SingletonPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
-import jd.gui.swing.jdgui.menu.MenuAction;
+
 import jd.nutils.svn.Subversion;
 import jd.plugins.AddonPanel;
 import org.appwork.utils.os.CrossSystem;
@@ -225,7 +225,7 @@ public class LangFileEditorExtension extends AbstractExtension<LangFileEditorCon
     }
 
     @Override
-    public ArrayList<MenuAction> getMenuAction() {
+    public java.util.ArrayList<JMenuItem> getMenuAction() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
         menu.add(activateAction);

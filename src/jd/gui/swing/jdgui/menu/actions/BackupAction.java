@@ -21,25 +21,26 @@ import java.io.File;
 
 import jd.controlling.IOEQ;
 import jd.controlling.JDController;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.update.JDUpdateUtils;
 
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 
-public class BackupAction extends ToolBarAction {
+public class BackupAction extends AppAction {
 
     private static final long serialVersionUID = 823930266263085474L;
 
     public BackupAction() {
-        super(_GUI._.action_backup(), "action.backup", "save");
+        super();
+        setName(_GUI._.action_backup());
+        setIconKey("save");
+        setMnemonic(_GUI._.action_backup_mnemonic());
+        setAccelerator(_GUI._.action_backup_accelerator());
+        setTooltipText(_GUI._.action_backup_tooltip());
     }
 
-    @Override
-    public void initDefaults() {
-    }
+    public void actionPerformed(ActionEvent e) {
 
-    @Override
-    public void onAction(ActionEvent e) {
         IOEQ.add(new Runnable() {
 
             public void run() {
@@ -48,22 +49,6 @@ public class BackupAction extends ToolBarAction {
             }
 
         });
-
-    }
-
-    @Override
-    protected String createMnemonic() {
-        return _GUI._.action_backup_mnemonic();
-    }
-
-    @Override
-    protected String createAccelerator() {
-        return _GUI._.action_backup_accelerator();
-    }
-
-    @Override
-    protected String createTooltip() {
-        return _GUI._.action_backup_tooltip();
     }
 
 }

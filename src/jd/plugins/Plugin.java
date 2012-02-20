@@ -20,7 +20,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Random;
 import java.util.regex.Matcher;
@@ -33,7 +32,6 @@ import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
 import jd.controlling.JDPluginLogger;
 import jd.event.ControlEvent;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -176,14 +174,6 @@ public abstract class Plugin implements ActionListener {
     public void clean() {
         br = null;
     }
-
-    /**
-     * Create MenuItems erlaubt es den Plugins eine MenuItemliste zurückzugeben.
-     * Die Gui kann diese Menüpunkte dann darstellen. Die Gui muss das Menu bei
-     * jedem zugriff neu aufbauen, weil sich das ToolBarAction Array geändert
-     * haben kann. MenuItems sind Datenmodelle für ein TreeMenü.
-     */
-    public abstract ArrayList<MenuAction> createMenuitems();
 
     /**
      * Verwendet den JDController um ein ControlEvent zu broadcasten

@@ -31,9 +31,9 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.event.WindowStateListener;
-import java.util.ArrayList;
 
 import javax.swing.JFrame;
+import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
@@ -53,7 +53,6 @@ import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 
 import org.appwork.utils.Application;
@@ -174,7 +173,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     @Override
-    public ArrayList<MenuAction> getMenuAction() {
+    public java.util.ArrayList<JMenuItem> getMenuAction() {
         return null;
     }
 

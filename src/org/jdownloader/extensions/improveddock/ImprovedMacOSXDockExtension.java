@@ -16,10 +16,9 @@
 
 package org.jdownloader.extensions.improveddock;
 
-import java.util.ArrayList;
+import javax.swing.JMenuItem;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.AddonPanel;
 
 import org.appwork.controlling.StateEvent;
@@ -95,7 +94,7 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOS
     }
 
     @Override
-    public ArrayList<MenuAction> getMenuAction() {
+    public java.util.ArrayList<JMenuItem> getMenuAction() {
         return null;
     }
 

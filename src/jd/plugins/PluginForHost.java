@@ -38,8 +38,6 @@ import jd.controlling.JDPluginLogger;
 import jd.controlling.captcha.CaptchaController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.gui.UserIF;
-import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.NewAction;
 import jd.http.Browser;
 import jd.nutils.Formatter;
@@ -52,7 +50,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
@@ -264,237 +261,245 @@ public abstract class PluginForHost extends Plugin {
         accountWithoutUsername = b;
     }
 
-    @Override
-    public ArrayList<MenuAction> createMenuitems() {
-        final ArrayList<MenuAction> menuList = new ArrayList<MenuAction>();
-        if (!enablePremium) return menuList;
-        MenuAction account;
-        MenuAction m;
-
-        if (hasConfig()) {
-            m = new MenuAction(_GUI._.action_plugin_config(), "plugins.configs", 1) {
-
-                private static final long serialVersionUID = -5376242428242330373L;
-
-                @Override
-                protected String createMnemonic() {
-                    return _GUI._.action_plugin_config_mnemonic();
-                }
-
-                @Override
-                protected String createAccelerator() {
-                    return _GUI._.action_plugin_config_accelerator();
-                }
-
-                @Override
-                protected String createTooltip() {
-                    return _GUI._.action_plugin_config_tooltip();
-                }
-
-            };
-            m.setActionListener(this);
-            menuList.add(m);
-            menuList.add(new MenuAction(Types.SEPARATOR) {
-
-                private static final long serialVersionUID = -5071061048221401102L;
-
-                @Override
-                protected String createMnemonic() {
-                    return null;
-                }
-
-                @Override
-                protected String createAccelerator() {
-                    return null;
-                }
-
-                @Override
-                protected String createTooltip() {
-                    return null;
-                }
-            });
-        }
-
-        MenuAction premiumAction = new MenuAction(_GUI._.action_plugin_accounts(), "accounts", 0) {
-
-            private static final long serialVersionUID = -1987064249424203910L;
-
-            @Override
-            protected String createMnemonic() {
-                return _GUI._.action_plugin_accounts_mnemonic();
-            }
-
-            @Override
-            protected String createAccelerator() {
-                return _GUI._.action_plugin_accounts_accelerator();
-            }
-
-            @Override
-            protected String createTooltip() {
-                return _GUI._.action_plugin_accounts_tooltip();
-            }
-
-        };
-        premiumAction.setType(Types.CONTAINER);
-        ArrayList<Account> accounts = getPremiumAccounts();
-
-        int i = 1;
-        int c = 0;
-        for (final Account a : accounts) {
-            if (a != null) {
-                try {
-                    c++;
-                    if (getAccountwithoutUsername()) {
-                        if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
-                        account = new MenuAction(i++ + ". " + _JDT._.jd_plugins_PluginsForHost_account()) {
-
-                            private static final long serialVersionUID = 8808632091567875643L;
-
-                            @Override
-                            protected String createMnemonic() {
-                                return null;
-                            }
-
-                            @Override
-                            protected String createAccelerator() {
-                                return null;
-                            }
-
-                            @Override
-                            protected String createTooltip() {
-                                return null;
-                            }
-                        };
-                        account.setType(Types.CONTAINER);
-                    } else {
-                        if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
-                        account = new MenuAction(i++ + ". " + a.getUser()) {
-
-                            private static final long serialVersionUID = -8277393315361677608L;
-
-                            @Override
-                            protected String createMnemonic() {
-                                return null;
-                            }
-
-                            @Override
-                            protected String createAccelerator() {
-                                return null;
-                            }
-
-                            @Override
-                            protected String createTooltip() {
-                                return null;
-                            }
-                        };
-                        account.setType(Types.CONTAINER);
-                    }
-                    m = AccountMenuItemSyncer.getInstance().get(a);
-
-                    if (m == null) {
-                        m = new MenuAction(_GUI._.action_plugin_enable_premium(), "plugins.PluginForHost.enable_premium", 100 + c - 1) {
-
-                            private static final long serialVersionUID = 1487783746694078208L;
-
-                            @Override
-                            protected String createMnemonic() {
-                                return _GUI._.action_plugin_enable_premium_mnemonic();
-                            }
-
-                            @Override
-                            protected String createAccelerator() {
-                                return _GUI._.action_plugin_enable_premium_accelerator();
-                            }
-
-                            @Override
-                            protected String createTooltip() {
-                                return _GUI._.action_plugin_enable_premium_tooltip();
-                            }
-                        };
-                    }
-                    m.setActionID(100 + c - 1);
-                    m.setSelected(a.isEnabled());
-                    m.setActionListener(this);
-                    account.addMenuItem(m);
-
-                    AccountMenuItemSyncer.getInstance().map(a, m);
-
-                    m = new MenuAction(_GUI._.action_plugin_premium_info(), "plugins.PluginForHost.premiumInfo", 200 + c - 1) {
-
-                        private static final long serialVersionUID = -9129239333353281936L;
-
-                        @Override
-                        protected String createMnemonic() {
-                            return _GUI._.action_plugin_premium_info_mnemonic();
-                        }
-
-                        @Override
-                        protected String createAccelerator() {
-                            return _GUI._.action_plugin_premium_info_accelerator();
-                        }
-
-                        @Override
-                        protected String createTooltip() {
-                            return _GUI._.action_plugin_premium_info_tooltip();
-                        }
-                    };
-                    m.setActionListener(this);
-                    account.addMenuItem(m);
-                    premiumAction.addMenuItem(account);
-
-                } catch (Exception e) {
-                    JDLogger.exception(e);
-                }
-            }
-        }
-
-        if (premiumAction.getSize() != 0) {
-            menuList.add(premiumAction);
-        } else {
-            menuList.add(m = new MenuAction(_GUI._.action_plugin_premium_noAccounts(), "plugins.menu.noaccounts", 2) {
-
-                private static final long serialVersionUID = -2329091953907925997L;
-
-                @Override
-                protected String createMnemonic() {
-                    return _GUI._.action_plugin_premium_noAccounts_mnemonic();
-                }
-
-                @Override
-                protected String createAccelerator() {
-                    return _GUI._.action_plugin_premium_noAccounts_accelerator();
-                }
-
-                @Override
-                protected String createTooltip() {
-                    return _GUI._.action_plugin_premium_noAccounts_tooltip();
-                }
-            });
-            m.setActionListener(this);
-        }
-        menuList.add(m = new MenuAction(_GUI._.action_plugin_premium_buyAccount(), "plugins.menu.buyaccount", 3) {
-
-            private static final long serialVersionUID = 4684046655398621492L;
-
-            @Override
-            protected String createMnemonic() {
-                return _GUI._.action_plugin_premium_buyAccount_mnemonic();
-            }
-
-            @Override
-            protected String createAccelerator() {
-                return _GUI._.action_plugin_premium_buyAccount_accelerator();
-            }
-
-            @Override
-            protected String createTooltip() {
-                return _GUI._.action_plugin_premium_buyAccount_tooltip();
-            }
-        });
-        m.setActionListener(this);
-
-        return menuList;
-    }
+    // @Override
+    // public ArrayList<MenuAction> createMenuitems() {
+    // final ArrayList<MenuAction> menuList = new ArrayList<MenuAction>();
+    // if (!enablePremium) return menuList;
+    // MenuAction account;
+    // MenuAction m;
+    //
+    // if (hasConfig()) {
+    // m = new MenuAction(_GUI._.action_plugin_config(), "plugins.configs", 1) {
+    //
+    // private static final long serialVersionUID = -5376242428242330373L;
+    //
+    // @Override
+    // protected String createMnemonic() {
+    // return _GUI._.action_plugin_config_mnemonic();
+    // }
+    //
+    // @Override
+    // protected String createAccelerator() {
+    // return _GUI._.action_plugin_config_accelerator();
+    // }
+    //
+    // @Override
+    // protected String createTooltip() {
+    // return _GUI._.action_plugin_config_tooltip();
+    // }
+    //
+    // };
+    // m.setActionListener(this);
+    // menuList.add(m);
+    // menuList.add(new MenuAction(Types.SEPARATOR) {
+    //
+    // private static final long serialVersionUID = -5071061048221401102L;
+    //
+    // @Override
+    // protected String createMnemonic() {
+    // return null;
+    // }
+    //
+    // @Override
+    // protected String createAccelerator() {
+    // return null;
+    // }
+    //
+    // @Override
+    // protected String createTooltip() {
+    // return null;
+    // }
+    // });
+    // }
+    //
+    // MenuAction premiumAction = new
+    // MenuAction(_GUI._.action_plugin_accounts(), "accounts", 0) {
+    //
+    // private static final long serialVersionUID = -1987064249424203910L;
+    //
+    // @Override
+    // protected String createMnemonic() {
+    // return _GUI._.action_plugin_accounts_mnemonic();
+    // }
+    //
+    // @Override
+    // protected String createAccelerator() {
+    // return _GUI._.action_plugin_accounts_accelerator();
+    // }
+    //
+    // @Override
+    // protected String createTooltip() {
+    // return _GUI._.action_plugin_accounts_tooltip();
+    // }
+    //
+    // };
+    // premiumAction.setType(Types.CONTAINER);
+    // ArrayList<Account> accounts = getPremiumAccounts();
+    //
+    // int i = 1;
+    // int c = 0;
+    // for (final Account a : accounts) {
+    // if (a != null) {
+    // try {
+    // c++;
+    // if (getAccountwithoutUsername()) {
+    // if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
+    // account = new MenuAction(i++ + ". " +
+    // _JDT._.jd_plugins_PluginsForHost_account()) {
+    //
+    // private static final long serialVersionUID = 8808632091567875643L;
+    //
+    // @Override
+    // protected String createMnemonic() {
+    // return null;
+    // }
+    //
+    // @Override
+    // protected String createAccelerator() {
+    // return null;
+    // }
+    //
+    // @Override
+    // protected String createTooltip() {
+    // return null;
+    // }
+    // };
+    // account.setType(Types.CONTAINER);
+    // } else {
+    // if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
+    // account = new MenuAction(i++ + ". " + a.getUser()) {
+    //
+    // private static final long serialVersionUID = -8277393315361677608L;
+    //
+    // @Override
+    // protected String createMnemonic() {
+    // return null;
+    // }
+    //
+    // @Override
+    // protected String createAccelerator() {
+    // return null;
+    // }
+    //
+    // @Override
+    // protected String createTooltip() {
+    // return null;
+    // }
+    // };
+    // account.setType(Types.CONTAINER);
+    // }
+    // m = AccountMenuItemSyncer.getInstance().get(a);
+    //
+    // if (m == null) {
+    // m = new MenuAction(_GUI._.action_plugin_enable_premium(),
+    // "plugins.PluginForHost.enable_premium", 100 + c - 1) {
+    //
+    // private static final long serialVersionUID = 1487783746694078208L;
+    //
+    // @Override
+    // protected String createMnemonic() {
+    // return _GUI._.action_plugin_enable_premium_mnemonic();
+    // }
+    //
+    // @Override
+    // protected String createAccelerator() {
+    // return _GUI._.action_plugin_enable_premium_accelerator();
+    // }
+    //
+    // @Override
+    // protected String createTooltip() {
+    // return _GUI._.action_plugin_enable_premium_tooltip();
+    // }
+    // };
+    // }
+    // m.setActionID(100 + c - 1);
+    // m.setSelected(a.isEnabled());
+    // m.setActionListener(this);
+    // account.addMenuItem(m);
+    //
+    // AccountMenuItemSyncer.getInstance().map(a, m);
+    //
+    // m = new MenuAction(_GUI._.action_plugin_premium_info(),
+    // "plugins.PluginForHost.premiumInfo", 200 + c - 1) {
+    //
+    // private static final long serialVersionUID = -9129239333353281936L;
+    //
+    // @Override
+    // protected String createMnemonic() {
+    // return _GUI._.action_plugin_premium_info_mnemonic();
+    // }
+    //
+    // @Override
+    // protected String createAccelerator() {
+    // return _GUI._.action_plugin_premium_info_accelerator();
+    // }
+    //
+    // @Override
+    // protected String createTooltip() {
+    // return _GUI._.action_plugin_premium_info_tooltip();
+    // }
+    // };
+    // m.setActionListener(this);
+    // account.addMenuItem(m);
+    // premiumAction.addMenuItem(account);
+    //
+    // } catch (Exception e) {
+    // JDLogger.exception(e);
+    // }
+    // }
+    // }
+    //
+    // if (premiumAction.getSize() != 0) {
+    // menuList.add(premiumAction);
+    // } else {
+    // menuList.add(m = new
+    // MenuAction(_GUI._.action_plugin_premium_noAccounts(),
+    // "plugins.menu.noaccounts", 2) {
+    //
+    // private static final long serialVersionUID = -2329091953907925997L;
+    //
+    // @Override
+    // protected String createMnemonic() {
+    // return _GUI._.action_plugin_premium_noAccounts_mnemonic();
+    // }
+    //
+    // @Override
+    // protected String createAccelerator() {
+    // return _GUI._.action_plugin_premium_noAccounts_accelerator();
+    // }
+    //
+    // @Override
+    // protected String createTooltip() {
+    // return _GUI._.action_plugin_premium_noAccounts_tooltip();
+    // }
+    // });
+    // m.setActionListener(this);
+    // }
+    // menuList.add(m = new
+    // MenuAction(_GUI._.action_plugin_premium_buyAccount(),
+    // "plugins.menu.buyaccount", 3) {
+    //
+    // private static final long serialVersionUID = 4684046655398621492L;
+    //
+    // @Override
+    // protected String createMnemonic() {
+    // return _GUI._.action_plugin_premium_buyAccount_mnemonic();
+    // }
+    //
+    // @Override
+    // protected String createAccelerator() {
+    // return _GUI._.action_plugin_premium_buyAccount_accelerator();
+    // }
+    //
+    // @Override
+    // protected String createTooltip() {
+    // return _GUI._.action_plugin_premium_buyAccount_tooltip();
+    // }
+    // });
+    // m.setActionListener(this);
+    //
+    // return menuList;
+    // }
 
     public abstract String getAGBLink();
 

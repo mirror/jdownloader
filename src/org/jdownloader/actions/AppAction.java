@@ -35,6 +35,10 @@ public abstract class AppAction extends BasicAction {
         setIconSizes(20);
     }
 
+    public String getIconKey() {
+        return iconKey;
+    }
+
     public AppAction setIconSizes(int size) {
         this.size = size;
         return this;

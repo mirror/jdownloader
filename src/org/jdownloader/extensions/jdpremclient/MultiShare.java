@@ -364,12 +364,6 @@ public class MultiShare extends PluginForHost implements JDPremInterface {
     }
 
     @Override
-    public ArrayList<jd.gui.swing.jdgui.menu.MenuAction> createMenuitems() {
-        if (plugin == null) return super.createMenuitems();
-        return plugin.createMenuitems();
-    }
-
-    @Override
     public ArrayList<Account> getPremiumAccounts() {
         if (plugin != null) return plugin.getPremiumAccounts();
         return super.getPremiumAccounts();

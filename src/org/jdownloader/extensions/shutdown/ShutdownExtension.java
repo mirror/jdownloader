@@ -24,6 +24,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JMenuItem;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -31,8 +34,6 @@ import jd.controlling.JDController;
 import jd.controlling.JSonWrapper;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
-import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Executer;
 import jd.nutils.JDFlags;
 import jd.plugins.AddonPanel;
@@ -43,6 +44,7 @@ import org.appwork.controlling.StateEventListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -57,7 +59,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
     private static final String                     CONFIG_FORCESHUTDOWN  = "FORCE";
     private Thread                                  shutdown              = null;
     private boolean                                 shutdownEnabled;
-    private MenuAction                              menuAction            = null;
+    private AppAction                               menuAction            = null;
     private String[]                                MODES_AVAIL           = null;
     private ExtensionConfigPanel<ShutdownExtension> configPanel;
 
@@ -411,23 +413,14 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
 
     @Override
     protected void start() throws StartException {
-        if (menuAction == null) menuAction = new MenuAction("Shutdown", "gui.jdshutdown.toggle", "logout") {
-            private static final long serialVersionUID = 4359802245569811800L;
+        if (menuAction == null) menuAction = new AppAction() {
+            {
+                setName("Shutdown");
+                setIconKey("logout");
 
-            @Override
-            public void initDefaults() {
                 this.setEnabled(true);
-                setType(ToolBarAction.Types.TOGGLE);
-                this.setIcon("logout");
-                this.setActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        if (shutdownEnabled) {
-                            UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, T._.addons_jdshutdown_statusmessage_enabled());
-                        } else {
-                            UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, T._.addons_jdshutdown_statusmessage_disabled());
-                        }
-                    }
-                });
+                setSelected(false);
+
                 this.addPropertyChangeListener(new PropertyChangeListener() {
                     public void propertyChange(PropertyChangeEvent evt) {
                         if (evt.getPropertyName() == SELECTED_KEY) {
@@ -437,20 +430,14 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
                 });
             }
 
-            @Override
-            protected String createMnemonic() {
-                return null;
+            public void actionPerformed(ActionEvent e) {
+                if (shutdownEnabled) {
+                    UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, T._.addons_jdshutdown_statusmessage_enabled());
+                } else {
+                    UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, T._.addons_jdshutdown_statusmessage_disabled());
+                }
             }
 
-            @Override
-            protected String createAccelerator() {
-                return null;
-            }
-
-            @Override
-            protected String createTooltip() {
-                return null;
-            }
         };
         menuAction.setSelected(shutdownEnabled);
         DownloadWatchDog.getInstance().getStateMachine().addListener(this);
@@ -512,9 +499,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
     }
 
     @Override
-    public ArrayList<MenuAction> getMenuAction() {
-        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-        menu.add(menuAction);
+    public java.util.ArrayList<JMenuItem> getMenuAction() {
+        ArrayList<JMenuItem> menu = new ArrayList<JMenuItem>();
+        menu.add(new JCheckBoxMenuItem(menuAction));
         return menu;
     }
 
