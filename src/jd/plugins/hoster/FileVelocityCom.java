@@ -54,10 +54,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FileVelocityCom extends PluginForHost {
 
     /*
-     * DEV NOTES: 
-     * - no https.
-     * - allows total number of 200 connections for premium.
-     * - free resumes though they say it doesn't.
+     * DEV NOTES: - no https. - allows total number of 200 connections for
+     * premium. - free resumes though they say it doesn't.
      */
 
     private String              correctedBR         = "";
@@ -560,8 +558,8 @@ public class FileVelocityCom extends PluginForHost {
             /** Load cookies */
             br.setCookiesExclusive(false);
             final Object ret = account.getProperty("cookies", null);
-            boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (account.isValid()) {

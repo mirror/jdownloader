@@ -44,7 +44,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.Eventsender;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
-import org.jdownloader.settings.GeneralSettings;
 
 public class AccountController implements AccountControllerListener {
 
@@ -226,7 +225,7 @@ public class AccountController implements AccountControllerListener {
             }
         } catch (final IOException e) {
             logger.severe("AccountUpdate: " + host + " failed!");
-        } catch (final Exception e) {
+        } catch (final Throwable e) {
             if (e instanceof PluginException) {
                 PluginException pe = (PluginException) e;
                 ai = account.getAccountInfo();

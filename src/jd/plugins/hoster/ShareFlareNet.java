@@ -219,6 +219,7 @@ public class ShareFlareNet extends PluginForHost {
         if (url == null) {
             url = br.getRegex("('|\")(http://\\d+\\.\\d+\\.\\d+\\.\\d+/[^<>\"\\']+\\d+/[^<>\"\\']+/" + downloadLink.getName() + ")('|\")").getMatch(1);
             if (url == null) url = br.getRegex("class=\"btn\\-corner\\-tl\"><a style=\\'font\\-size: 16px\\' href=\\'(http://[^<>\"\\']+)\\'").getMatch(0);
+            if (url == null) url = br.getRegex("Link to the file download\" href=\"(http://[^<>\"\\']+)\"").getMatch(0);
         }
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);

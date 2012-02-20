@@ -89,7 +89,8 @@ public class UlozTo extends PluginForHost {
         if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) \\| Ulož\\.to</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<a href=\"#download\" class=\"jsShowDownload\">(.*?)</a>").getMatch(0);
-        String filesize = br.getRegex("<span id=\"fileSize\">(.*?)</span>").getMatch(0);
+        String filesize = br.getRegex("<span id=\"fileSize\">.*?\\|(.*?)</span>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<span id=\"fileSize\">(.*?)</span>").getMatch(0);
         if (filesize == null) filesize = br.getRegex("(?i)([\\d\\.]+ ?(MB|GB))").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));

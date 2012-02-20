@@ -405,8 +405,8 @@ public class ShareOnlineBiz extends PluginForHost {
             String dl = infos.get("dl");
             String a = infos.get("a");
             if (dl == null && a == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            boolean valid = "not_available".equalsIgnoreCase(dl);
-            if (valid == false) valid = "not_available".equalsIgnoreCase(a);
+            boolean valid = !"not_available".equalsIgnoreCase(dl);
+            if (valid == false) valid = !"not_available".equalsIgnoreCase(a);
             if (valid == false) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             /*
              * check expire date, expire >0 (normal handling) expire<0 (never
