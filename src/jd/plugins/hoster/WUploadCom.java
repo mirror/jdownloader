@@ -332,8 +332,9 @@ public class WUploadCom extends PluginForHost implements ControlListener {
         // this is an ajax call
         Browser ajax = br.cloneBrowser();
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        ajax.getHeaders().put("Content-Length", "0");
         ajax.postPage(freeDownloadLink, "");
-
+        ajax.getHeaders().put("Content-Length", null);
         errorHandling(downloadLink, ajax);
         br.setFollowRedirects(true);
         // download is ready already

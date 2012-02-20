@@ -171,6 +171,8 @@ public class Property implements Serializable {
             Object r = getProperty(key, def);
             if (r instanceof String) {
                 r = Long.parseLong((String) r);
+            } else if (r instanceof Integer) {
+                r = ((Integer) r).longValue();
             }
             final Long ret = (Long) r;
             return ret;
@@ -224,6 +226,10 @@ public class Property implements Serializable {
      */
     public Object getProperty(final String key, final Object def) {
         Object ret = getProperty(key);
+        if (def instanceof Long && ret instanceof Integer) {
+            /* fix for integer in property map, but long wanted */
+            ret = ((Integer) ret).longValue();
+        }
         if (ret == null) {
             /* FIXME: WHY THE HELL DO WE PUT DEFAULTS INTO HASHMAP?!?!? */
             // setProperty(key, def);

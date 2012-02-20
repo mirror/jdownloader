@@ -167,6 +167,7 @@ public class ShareOnlineBiz extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (br.getURL().contains("failure/precheck")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l); }
         if (br.getURL().contains("failure/invalid")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
         if (br.getURL().contains("failure/ip")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already loading", 15 * 60 * 1000l); }
         if (br.getURL().contains("failure/size")) { throw new PluginException(LinkStatus.ERROR_FATAL, "File too big. Premium needed!"); }
@@ -334,7 +335,14 @@ public class ShareOnlineBiz extends PluginForHost {
         this.setBrowserExclusive();
         final HashMap<String, String> infos = loginAPI(account, false);
         final String linkID = getID(parameter);
-        br.setCookie("http://www.share-online.biz", "dl", infos.get("dl"));
+        String dlC = infos.get("dl");
+        if (dlC != null && !"not_available".equalsIgnoreCase(dlC)) {
+            br.setCookie("http://www.share-online.biz", "dl", dlC);
+        }
+        String a = infos.get("a");
+        if (a != null && !"not_available".equalsIgnoreCase(a)) {
+            br.setCookie("http://www.share-online.biz", "a", a);
+        }
         br.setFollowRedirects(true);
         final String response = br.getPage("http://api.share-online.biz/account.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=download&lid=" + linkID);
         if (response.contains("EXCEPTION request download link not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -394,9 +402,12 @@ public class ShareOnlineBiz extends PluginForHost {
                 ACCOUNTINFOS.put(account, infos);
             }
             /* check dl cookie, must be available for premium accounts */
-            final String dlCookie = infos.get("dl");
-            if (dlCookie == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if ("not_available".equalsIgnoreCase(dlCookie)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            String dl = infos.get("dl");
+            String a = infos.get("a");
+            if (dl == null && a == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            boolean valid = "not_available".equalsIgnoreCase(dl);
+            if (valid == false) valid = "not_available".equalsIgnoreCase(a);
+            if (valid == false) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             /*
              * check expire date, expire >0 (normal handling) expire<0 (never
              * expire)
