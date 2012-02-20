@@ -14,6 +14,11 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class ReconnectTestAction extends BasicAction {
+    /**
+	 * 
+	 */
+    private static final long serialVersionUID = 2580441275315364611L;
+
     {
         putValue(NAME, _GUI._.ReconnectTestAction());
         putValue(SMALL_ICON, NewTheme.I().getIcon("test", 20));

@@ -28,19 +28,17 @@ import org.jdownloader.images.NewTheme;
 
 public class TwoTextFieldDialog extends AbstractDialog<String[]> {
 
-    private static final long serialVersionUID = -7426399217833694784L;
+    private final String messageOne;
 
-    private final String      messageOne;
+    private final String defOne;
 
-    private final String      defOne;
+    private final String messageTwo;
 
-    private final String      messageTwo;
+    private final String defTwo;
 
-    private final String      defTwo;
+    private JDTextField  txtFieldOne;
 
-    private JDTextField       txtFieldOne;
-
-    private JDTextField       txtFieldTwo;
+    private JDTextField  txtFieldTwo;
 
     public TwoTextFieldDialog(final String title, final String messageOne, final String defOne, final String messageTwo, final String defTwo) {
         super(0, title, NewTheme.I().getIcon("info", 32), null, null);

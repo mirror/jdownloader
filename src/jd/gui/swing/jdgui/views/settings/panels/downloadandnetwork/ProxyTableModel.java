@@ -210,6 +210,11 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
         });
         this.addColumn(new ExtSpinnerColumn<ProxyInfo>(_GUI._.gui_column_port()) {
 
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = 7770193565380136904L;
+
             @Override
             protected Number getNumber(ProxyInfo value) {
                 return value.getPort();

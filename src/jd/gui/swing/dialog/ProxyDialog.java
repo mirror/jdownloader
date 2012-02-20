@@ -22,19 +22,17 @@ import org.jdownloader.images.NewTheme;
 
 public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListener {
 
-    private static final long serialVersionUID = 8512889396415100663L;
+    private JComboBox      cmbType;
+    private JTextField     txtHost;
+    private JTextField     txtPort;
+    private JTextField     txtUser;
+    private JTextField     txtPass;
 
-    private JComboBox         cmbType;
-    private JTextField        txtHost;
-    private JTextField        txtPort;
-    private JTextField        txtUser;
-    private JTextField        txtPass;
-
-    private final String[]    types            = new String[] { _GUI._.jd_gui_swing_dialog_ProxyDialog_http(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks5() };
-    private JLabel            lblUser;
-    private JLabel            lblPass;
-    private JLabel            lblPort;
-    private JLabel            lblHost;
+    private final String[] types = new String[] { _GUI._.jd_gui_swing_dialog_ProxyDialog_http(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks5() };
+    private JLabel         lblUser;
+    private JLabel         lblPass;
+    private JLabel         lblPort;
+    private JLabel         lblHost;
 
     public ProxyDialog() {
         super(0, _GUI._.jd_gui_swing_dialog_ProxyDialog_title(), NewTheme.I().getIcon("proxy", 32), null, null);

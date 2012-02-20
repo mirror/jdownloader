@@ -13,12 +13,21 @@ import org.jdownloader.extensions.cvidplay.translate._CVPT;
 
 public class CVidPlayGui extends AddonPanel<CVidPlayExtension> {
 
-    private static final String ID = "CVIDPLAYGUI";
+    /**
+	 * 
+	 */
+    private static final long   serialVersionUID = 7834140957996658357L;
+    private static final String ID               = "CVIDPLAYGUI";
     private SwitchPanel         panel;
 
     public CVidPlayGui(CVidPlayExtension plg) {
         super(plg);
         this.panel = new SwitchPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]")) {
+
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = -1376837819858450584L;
 
             @Override
             protected void onShow() {

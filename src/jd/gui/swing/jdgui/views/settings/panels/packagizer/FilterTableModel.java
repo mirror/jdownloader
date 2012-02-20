@@ -93,6 +93,11 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements C
 
         addColumn(new ExtTextColumn<PackagizerRule>(_GUI._.settings_linkgrabber_filter_columns_name()) {
 
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = 2457046463046132551L;
+
             @Override
             public boolean isEnabled(PackagizerRule obj) {
                 return obj.isEnabled();
@@ -120,6 +125,11 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements C
         });
 
         addColumn(new ExtTextColumn<PackagizerRule>(_GUI._.settings_linkgrabber_filter_columns_cond()) {
+
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = -5750253374104171542L;
 
             @Override
             public boolean isEnabled(PackagizerRule obj) {

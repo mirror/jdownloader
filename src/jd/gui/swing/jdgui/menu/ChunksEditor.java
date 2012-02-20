@@ -9,8 +9,12 @@ import org.jdownloader.settings.GeneralSettings;
 
 public class ChunksEditor extends MenuEditor {
 
-    private ExtSpinner      spinner;
-    private GeneralSettings config;
+    /**
+	 * 
+	 */
+    private static final long serialVersionUID = 4058537656898670477L;
+    private ExtSpinner        spinner;
+    private GeneralSettings   config;
 
     public ChunksEditor() {
         super();

@@ -100,7 +100,6 @@ public class ShareFlareNet extends PluginForHost {
         return 1;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);

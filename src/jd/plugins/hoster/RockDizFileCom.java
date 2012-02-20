@@ -175,7 +175,6 @@ public class RockDizFileCom extends PluginForHost {
         return finallink;
     }
 
-    @SuppressWarnings("deprecation")
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean checkFastWay) throws Exception, PluginException {
         String passCode = null;
         String md5hash = new Regex(BRBEFORE, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);

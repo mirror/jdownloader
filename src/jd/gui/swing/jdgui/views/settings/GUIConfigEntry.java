@@ -57,8 +57,6 @@ import net.miginfocom.swing.MigLayout;
  */
 public class GUIConfigEntry implements GuiConfigListener, ActionListener, ChangeListener, DocumentListener {
 
-    private static final long serialVersionUID = -1391952049282528582L;
-
     private final ConfigEntry configEntry;
 
     /**
@@ -68,7 +66,7 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
 
     private JComponent        decoration;
 
-    private Logger            logger           = JDLogger.getLogger();
+    private Logger            logger = JDLogger.getLogger();
 
     /**
      * Erstellt einen neuen GUIConfigEntry

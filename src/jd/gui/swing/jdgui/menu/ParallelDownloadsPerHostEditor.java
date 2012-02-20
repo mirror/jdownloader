@@ -12,9 +12,14 @@ import org.jdownloader.images.NewTheme;
 
 public class ParallelDownloadsPerHostEditor extends MenuEditor {
 
-    private ExtSpinner spinner;
+    /**
+	 * 
+	 */
+    private static final long serialVersionUID = 8113594595061609525L;
 
-    private JLabel     lbl;
+    private ExtSpinner        spinner;
+
+    private JLabel            lbl;
 
     public ParallelDownloadsPerHostEditor() {
         super();

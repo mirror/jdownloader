@@ -9,7 +9,11 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.uiserio.NewUIO;
 
 public class BuyPremiumAction extends AppAction {
-    private DomainInfo info;
+    /**
+	 * 
+	 */
+    private static final long serialVersionUID = 2671995579523131972L;
+    private DomainInfo        info;
 
     public BuyPremiumAction(DomainInfo info) {
         this.info = info;

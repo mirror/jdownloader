@@ -16,17 +16,21 @@ import org.jdownloader.images.NewTheme;
 
 public class OrderColumn extends ExtComponentColumn<PackagizerRule> {
 
-    private MigPanel       renderer;
-    private MigPanel       editor;
+    /**
+	 * 
+	 */
+    private static final long serialVersionUID = 5932073061658364800L;
+    private MigPanel          renderer;
+    private MigPanel          editor;
 
-    private RenderLabel    rendererLbl;
-    private RenderLabel    editorLbl;
-    private RenderLabel    rendererUp;
-    private RenderLabel    rendererDown;
-    private ExtButton      editorUp;
-    private ExtButton      editorDown;
-    private PackagizerRule editing;
-    private int            editingRow;
+    private RenderLabel       rendererLbl;
+    private RenderLabel       editorLbl;
+    private RenderLabel       rendererUp;
+    private RenderLabel       rendererDown;
+    private ExtButton         editorUp;
+    private ExtButton         editorDown;
+    private PackagizerRule    editing;
+    private int               editingRow;
 
     public OrderColumn() {
         super(_GUI._.settings_linkgrabber_filter_columns_exepriority());
@@ -45,6 +49,11 @@ public class OrderColumn extends ExtComponentColumn<PackagizerRule> {
         rendererDown.setIcon(NewTheme.I().getIcon("go-down", 18));
 
         editorUp = new ExtButton(new AppAction() {
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = -6373308629670760194L;
+
             {
                 setSmallIcon(NewTheme.I().getIcon("go-up", 18));
             }
@@ -61,6 +70,11 @@ public class OrderColumn extends ExtComponentColumn<PackagizerRule> {
         });
 
         editorDown = new ExtButton(new AppAction() {
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = 359422892536364704L;
+
             {
                 setSmallIcon(NewTheme.I().getIcon("go-down", 18));
             }

@@ -26,6 +26,10 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class ExtractorProgress extends IconedProcessIndicator {
+    /**
+	 * 
+	 */
+    private static final long       serialVersionUID = -7582954114939419184L;
     private ExtractorToolTip        tooltip;
     private ExtractionExtension     extension;
     private JPopupMenu              pu;
@@ -50,9 +54,18 @@ public class ExtractorProgress extends IconedProcessIndicator {
         tooltip = new ExtractorToolTip(extractionExtension);
         pu = new JPopupMenu();
         tModel = new ExtractionJobTableModel(new JLabel().getForeground()) {
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = 7254604415572431495L;
+
             protected void initColumns() {
                 super.initColumns();
                 addColumn(new ExtComponentColumn<ExtractionController>("Cancel") {
+                    /**
+					 * 
+					 */
+                    private static final long    serialVersionUID = 261994408344732524L;
                     private ExtButton            renderer;
                     private ExtButton            editor;
                     private ExtractionController activeValue;
@@ -70,6 +83,11 @@ public class ExtractorProgress extends IconedProcessIndicator {
 
                     private ExtButton getButton() {
                         ExtButton ret = new ExtButton(new AppAction() {
+                            /**
+							 * 
+							 */
+                            private static final long serialVersionUID = -2183896670625238331L;
+
                             {
                                 setSmallIcon(NewTheme.I().getIcon("cancel", 16));
                             }

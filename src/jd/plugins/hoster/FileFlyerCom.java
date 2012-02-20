@@ -69,7 +69,6 @@ public class FileFlyerCom extends PluginForHost {
         return 1;
     }
 
-    @SuppressWarnings("deprecation")
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (br.containsHTML(ONLY4PREMIUM)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.FileFlyerCom.errors.Only4Premium", "Only downloadable for premium users"));
@@ -87,7 +86,6 @@ public class FileFlyerCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings("deprecation")
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         br.setDebug(true);

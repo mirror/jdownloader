@@ -419,7 +419,6 @@ public class GlumboUploadsCom extends PluginForHost {
         return ai;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         String passCode = null;

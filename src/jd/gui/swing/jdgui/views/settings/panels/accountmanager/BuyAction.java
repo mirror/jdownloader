@@ -89,6 +89,11 @@ public class BuyAction extends AbstractAction {
 
                             combo = new SearchComboBox<LazyHostPlugin>(plugins) {
 
+                                /**
+								 * 
+								 */
+                                private static final long serialVersionUID = -7421876925835937449L;
+
                                 @Override
                                 protected Icon getIconForValue(LazyHostPlugin value) {
 

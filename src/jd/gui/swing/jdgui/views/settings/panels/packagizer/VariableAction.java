@@ -10,8 +10,12 @@ import org.jdownloader.actions.AppAction;
 
 public class VariableAction extends AppAction {
 
-    private String         pattern;
-    private JTextComponent txtComp;
+    /**
+	 * 
+	 */
+    private static final long serialVersionUID = -1614015840584960927L;
+    private String            pattern;
+    private JTextComponent    txtComp;
 
     public VariableAction(JTextComponent txtPackagename2, String name, String pattern) {
         super();

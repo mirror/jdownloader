@@ -9,8 +9,12 @@ import org.jdownloader.settings.GeneralSettings;
 
 public class ParalellDownloadsEditor extends MenuEditor {
 
-    private ExtSpinner      spinner;
-    private GeneralSettings config;
+    /**
+	 * 
+	 */
+    private static final long serialVersionUID = -2226927990185644213L;
+    private ExtSpinner        spinner;
+    private GeneralSettings   config;
 
     public ParalellDownloadsEditor() {
         super();

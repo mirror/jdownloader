@@ -41,8 +41,6 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import jd.config.Property;
-import jd.controlling.JSonWrapper;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.components.JDSpinner;
 import jd.gui.swing.jdgui.JDGui;
@@ -71,7 +69,6 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
 
     private static final long        serialVersionUID  = 2623190748929934409L;
 
-    private Property                 config;
     private JPanel                   entryPanel;
     private JPanel                   quickConfigPanel;
     private JPanel                   bottomPanel;
@@ -89,7 +86,6 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
     public TrayIconPopup() {
         // required. JWindow needs a parent to grant a nested Component focus
         super(JDGui.getInstance().getMainFrame());
-        config = JSonWrapper.get("DOWNLOAD");
         resizecomps = new ArrayList<JToggleButton>();
         setVisible(false);
         setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));

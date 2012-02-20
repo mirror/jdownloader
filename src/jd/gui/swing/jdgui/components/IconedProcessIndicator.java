@@ -22,7 +22,11 @@ import org.appwork.utils.swing.SwingUtils;
 
 public class IconedProcessIndicator extends CircledProgressBar implements MouseListener {
 
-    private boolean active;
+    /**
+	 * 
+	 */
+    private static final long serialVersionUID = 1627427388265904122L;
+    private boolean           active;
 
     protected boolean isActive() {
         return active;

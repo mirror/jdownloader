@@ -27,6 +27,11 @@ import org.jdownloader.translate._JDT;
 
 public class AutoSetupAction extends BasicAction {
 
+    /**
+	 * 
+	 */
+    private static final long serialVersionUID = -1089268040145686928L;
+
     public AutoSetupAction() {
         putValue(NAME, _JDT._.reconnectmanager_wizard());
         putValue(SMALL_ICON, NewTheme.I().getIcon("wizard", 20));

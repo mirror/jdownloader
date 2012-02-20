@@ -10,7 +10,11 @@ import org.jdownloader.jdserv.JD_SERV_CONSTANTS;
 
 public class OpenURLAction extends AppAction {
 
-    private DomainInfo info;
+    /**
+	 * 
+	 */
+    private static final long serialVersionUID = -7939070621339510855L;
+    private DomainInfo        info;
 
     public OpenURLAction(DomainInfo info) {
         super();

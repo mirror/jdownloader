@@ -42,8 +42,6 @@ import org.jdownloader.update.JDUpdater;
 
 public class AboutDialog extends AbstractDialog<Integer> {
 
-    private static final long serialVersionUID = -7647771640756844691L;
-
     public AboutDialog() {
         super(Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK | Dialog.STYLE_HIDE_ICON, _GUI._.jd_gui_swing_components_AboutDialog_title(), null, null, null);
     }

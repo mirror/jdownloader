@@ -3,6 +3,11 @@ package org.jdownloader.controlling.filter;
 public class NoDownloadLinkException extends Exception {
 
     /**
+	 * 
+	 */
+    private static final long serialVersionUID = -2136640314749783457L;
+
+    /**
      * 
      */
     public NoDownloadLinkException() {

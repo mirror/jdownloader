@@ -185,7 +185,6 @@ public class EyVxCom extends PluginForHost {
         return finallink;
     }
 
-    @SuppressWarnings("deprecation")
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean checkFastWay) throws Exception, PluginException {
         String passCode = null;
         String md5hash = new Regex(BRBEFORE, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
@@ -436,7 +435,6 @@ public class EyVxCom extends PluginForHost {
         return Encoding.urlEncode(passCode);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         String passCode = null;

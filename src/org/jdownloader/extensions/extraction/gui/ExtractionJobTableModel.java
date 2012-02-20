@@ -26,8 +26,12 @@ import org.jdownloader.extensions.extraction.translate.T;
 
 public class ExtractionJobTableModel extends ExtTableModel<ExtractionController> {
 
-    private Color textColor;
-    private Color back;
+    /**
+	 * 
+	 */
+    private static final long serialVersionUID = 7585295834599426087L;
+    private Color             textColor;
+    private Color             back;
 
     public ExtractionJobTableModel(Color c) {
         super("ExtractionJobTableModel4");
@@ -42,6 +46,11 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
     @Override
     protected void initColumns() {
         addColumn(new ExtTextColumn<ExtractionController>("number") {
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = 7047854499241202678L;
+
             {
 
             }
@@ -94,6 +103,11 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
         });
         addColumn(new ExtTextColumn<ExtractionController>(T._.tooltip_NameColumn()) {
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = -7294960809807602558L;
+
             {
 
             }
@@ -126,6 +140,11 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
         });
 
         addColumn(new ExtTextColumn<ExtractionController>("status") {
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = -5325290576078384961L;
+
             {
 
             }
@@ -199,6 +218,11 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
         });
         ExtCircleProgressColumn<ExtractionController> sorter;
         addColumn(sorter = new ExtCircleProgressColumn<ExtractionController>("Progress") {
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = -7238552518783596726L;
+
             {
                 determinatedRenderer.setForeground(textColor);
                 determinatedRenderer.setValueClipPainter(new IconPainter() {
@@ -270,7 +294,11 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
         });
 
         addColumn(new ExtTextColumn<ExtractionController>("percent") {
-            private DecimalFormat format;
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = -3330335576942677846L;
+            private DecimalFormat     format;
 
             {
                 format = new DecimalFormat("00.00 %");

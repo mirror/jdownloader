@@ -83,8 +83,7 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class JDGui extends SwingGui {
 
-    private static final long serialVersionUID = 1048792964102830601L;
-    private static JDGui      INSTANCE;
+    private static JDGui INSTANCE;
 
     /**
      * Factorymethode. Erzeugt eine INstanc der Gui oder gibt eine bereits

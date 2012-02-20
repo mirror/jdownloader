@@ -7,21 +7,18 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.storage.config.handler.StorageHandler;
 
 public class AdvancedConfigInterfaceEntry implements AdvancedConfigEntry {
 
-    private ConfigInterface   configInterface;
-    private KeyHandler<?>     keyHandler;
-    private StorageHandler<?> storageHandler;
+    private ConfigInterface configInterface;
+    private KeyHandler<?>   keyHandler;
 
     public KeyHandler<?> getKeyHandler() {
         return keyHandler;
     }
 
-    public AdvancedConfigInterfaceEntry(ConfigInterface cf, KeyHandler m) {
+    public AdvancedConfigInterfaceEntry(ConfigInterface cf, KeyHandler<?> m) {
         configInterface = cf;
-        storageHandler = cf.getStorageHandler();
         keyHandler = m;
     }
 
@@ -33,7 +30,6 @@ public class AdvancedConfigInterfaceEntry implements AdvancedConfigEntry {
         return configInterface.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") + "." + keyHandler.getKey();
     }
 
-    @SuppressWarnings("unchecked")
     public Object getValue() {
         return keyHandler.getValue();
     }
@@ -78,7 +74,7 @@ public class AdvancedConfigInterfaceEntry implements AdvancedConfigEntry {
         Type gen = keyHandler.getGetter().getMethod().getGenericReturnType();
         String ret;
         if (gen instanceof Class) {
-            ret = ((Class) gen).getSimpleName();
+            ret = ((Class<?>) gen).getSimpleName();
         } else {
             ret = gen.toString();
         }

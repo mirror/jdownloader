@@ -16,7 +16,11 @@ import org.jdownloader.images.NewTheme;
 
 public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
-    private PackagizerRule rule;
+    /**
+	 * 
+	 */
+    private static final long serialVersionUID = -2808142012367413057L;
+    private PackagizerRule    rule;
 
     public PackagizerSingleTestTableModel(PackagizerRule rule) {
         super("PackagizerSingleTestTableModel");
@@ -26,6 +30,11 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
     @Override
     protected void initColumns() {
         addColumn(new ExtTextColumn<CrawledLink>(_GUI._.PackagizerSingleTestTableModel_initColumns_matches_()) {
+
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = -8023575216919771671L;
 
             public int getDefaultWidth() {
 
@@ -60,6 +69,11 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
         });
 
         addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_link_()) {
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = -4783542565565393138L;
+
             {
                 editorField.setEditable(false);
             }
@@ -80,6 +94,11 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
             }
         });
         addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_filename_()) {
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = 2177279417196723941L;
+
             public int getDefaultWidth() {
                 return 150;
             }
@@ -96,6 +115,11 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
             }
         });
         addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_online_()) {
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = 7302435270960407040L;
+
             @Override
             protected String getTooltipText(final CrawledLink value) {
 
@@ -148,6 +172,11 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
         });
 
         addColumn(new ExtFileSizeColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_size_()) {
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = -3198585422004322732L;
+
             public int getDefaultWidth() {
                 return 80;
             }
@@ -167,6 +196,11 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
             }
         });
         addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_filetype_()) {
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = -2845784989103727716L;
+
             public int getDefaultWidth() {
                 return 65;
             }
@@ -192,6 +226,11 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
             }
         });
         addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_hoster()) {
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = 3673059407306941787L;
+
             public int getDefaultWidth() {
                 return 100;
             }
@@ -217,6 +256,11 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
         });
 
         addColumn(new ExtTextColumn<CrawledLink>(_GUI._.ResultTableModel_initColumns_source()) {
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = -6866522293823735808L;
+
             {
                 editorField.setEditable(false);
             }
@@ -252,6 +296,11 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
         addColumn(new ExtTextColumn<CrawledLink>(_GUI._.PackagizerSingleTestTableModel_initColumns_downloadfolder_()) {
 
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = -4648517798862470360L;
+
             @Override
             public boolean isEnabled(CrawledLink obj) {
                 return rule.getDownloadDestination() != null;
@@ -269,6 +318,11 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
         });
 
         addColumn(new ExtTextColumn<CrawledLink>(_GUI._.PackagizerSingleTestTableModel_initColumns_packagename_()) {
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = -399219090023179926L;
+
             public boolean isVisible(boolean savedValue) {
                 return rule.getPackageName() != null;
             }
@@ -279,6 +333,11 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
             }
         });
         addColumn(new ExtTextColumn<CrawledLink>(_GUI._.PackagizerSingleTestTableModel_initColumns_filename_()) {
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = 5325984890669861167L;
+
             public boolean isVisible(boolean savedValue) {
                 return rule.getFilename() != null;
             }

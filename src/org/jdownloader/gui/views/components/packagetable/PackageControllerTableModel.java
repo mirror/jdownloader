@@ -198,7 +198,6 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
      * their structure alive,data is only used to specify the size of the new
      * ArrayList
      */
-    @SuppressWarnings("unchecked")
     @Override
     public ArrayList<AbstractNode> sort(final ArrayList<AbstractNode> data, ExtColumn<AbstractNode> column) {
         if (column == null || column.getSortOrderIdentifier() == SORT_ORIGINAL) {

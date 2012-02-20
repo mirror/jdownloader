@@ -16,6 +16,10 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.translate.T;
 
 public class ExtractorToolTip extends PanelToolTip {
+    /**
+	 * 
+	 */
+    private static final long       serialVersionUID = 2863662451264465139L;
     private Color                   color;
     private JLabel                  empty;
     private ExtractionJobTable      table;

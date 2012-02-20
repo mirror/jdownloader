@@ -8,6 +8,10 @@ import org.jdownloader.translate._JDT;
 
 public class DuplicateAction extends AppAction {
 
+    /**
+	 * 
+	 */
+    private static final long     serialVersionUID = 3259061642936241235L;
     private PackagizerRule        contextObject;
     private PackagizerFilterTable filterTable;
 

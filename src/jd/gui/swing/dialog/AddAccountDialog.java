@@ -54,8 +54,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class AddAccountDialog extends AbstractDialog<Integer> {
 
-    private static final long serialVersionUID = -2099080199110932990L;
-
     public static void showDialog(final PluginForHost pluginForHost, Account acc) {
         final AddAccountDialog dialog = new AddAccountDialog(pluginForHost, acc);
 

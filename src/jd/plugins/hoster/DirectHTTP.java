@@ -623,7 +623,7 @@ public class DirectHTTP extends PluginForHost {
                  * and ArrayList<String>
                  */
                 if (header instanceof ArrayList) {
-                    br.getHeaders().put((String) ((ArrayList) header).get(0), (String) ((ArrayList) header).get(1));
+                    br.getHeaders().put((String) ((ArrayList<?>) header).get(0), (String) ((ArrayList<?>) header).get(1));
                 } else if (header.getClass().isArray()) {
                     br.getHeaders().put(((String[]) header)[0], ((String[]) header)[1]);
                 }

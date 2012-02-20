@@ -25,9 +25,8 @@ public class LookAndFeelWrapper implements Storable {
         // required by Storable
     }
 
-    private static final long serialVersionUID = 8010506524416796786L;
-    private String            className;
-    private String            name;
+    private String className;
+    private String name;
 
     public LookAndFeelWrapper(LookAndFeelInfo lafi) {
         this.className = lafi.getClassName();

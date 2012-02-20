@@ -13,8 +13,12 @@ import org.jdownloader.images.NewTheme;
 
 public class SpeedlimitEditor extends MenuEditor {
 
-    private JLabel      lbl;
-    private SizeSpinner spinner;
+    /**
+	 * 
+	 */
+    private static final long serialVersionUID = 5406904697287119514L;
+    private JLabel            lbl;
+    private SizeSpinner       spinner;
 
     public SpeedlimitEditor() {
         super();

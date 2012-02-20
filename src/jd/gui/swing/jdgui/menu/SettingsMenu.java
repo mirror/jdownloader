@@ -8,6 +8,11 @@ import jd.gui.swing.jdgui.menu.actions.SettingsAction;
 import org.jdownloader.gui.translate._GUI;
 
 public class SettingsMenu extends JMenu {
+    /**
+	 * 
+	 */
+    private static final long serialVersionUID = -9005381954255451222L;
+
     public SettingsMenu() {
         super(_GUI._.SettingsMenu_SettingsMenu_());
 

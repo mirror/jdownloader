@@ -5,7 +5,6 @@ import javax.swing.JMenuItem;
 import jd.plugins.AddonPanel;
 import jd.utils.locale.JDL;
 
-import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -16,7 +15,6 @@ import org.jdownloader.extensions.omnibox.omni.gui.AwesomeToolbarPanel;
 
 public class OmniboxExtension extends AbstractExtension<OmniboxConfig> {
 
-    private AppAction            toolbarAction;
     private AwesomeToolbarPanel  toolbarPanel;
     private AwesomeProposalPanel proposalPanel = null;
     private Omni                 omni          = new Omni();
@@ -87,7 +85,7 @@ public class OmniboxExtension extends AbstractExtension<OmniboxConfig> {
     }
 
     @Override
-    public AddonPanel getGUI() {
+    public AddonPanel<AbstractExtension<OmniboxConfig>> getGUI() {
         return null;
     }
 

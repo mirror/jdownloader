@@ -4,6 +4,11 @@ import java.util.ArrayList;
 
 public class ChildrenView<T> extends ArrayList<T> {
     /**
+	 * 
+	 */
+    private static final long serialVersionUID = 5324936310983343571L;
+
+    /**
      * Update the whole view.
      */
     public void update() {

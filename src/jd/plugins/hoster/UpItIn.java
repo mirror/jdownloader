@@ -187,7 +187,6 @@ public class UpItIn extends PluginForHost {
         return finallink;
     }
 
-    @SuppressWarnings("deprecation")
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean checkFastWay) throws Exception, PluginException {
         String passCode = null;
         if (BRBEFORE.contains("\"download1\"")) {
@@ -435,7 +434,6 @@ public class UpItIn extends PluginForHost {
         return Encoding.urlEncode(passCode);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         String passCode = null;

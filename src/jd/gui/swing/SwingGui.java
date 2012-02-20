@@ -108,12 +108,15 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
     public void windowLostFocus(final WindowEvent e) {
     }
 
-    private static final long serialVersionUID = 7164420260634468080L;
-
-    private static SwingGui   INSTANCE         = null;
+    private static SwingGui INSTANCE = null;
 
     public SwingGui(final String string) {
         mainFrame = new JFrame(string) {
+
+            /**
+			 * 
+			 */
+            private static final long serialVersionUID = -4218493713632551975L;
 
             public void toFront() {
                 super.toFront();

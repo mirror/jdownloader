@@ -38,17 +38,14 @@ import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class ClickPositionDialog extends AbstractDialog<Point> implements ActionListener, MouseListener {
 
-    private static final long serialVersionUID = 5540481255364141955L;
+    private Point        result = null;
 
-    private Point             result           = null;
+    private final File   imagefile;
 
-    private final File        imagefile;
-
-    private final String      explain;
+    private final String explain;
 
     public ClickPositionDialog(final int flag, final File imagefile, final String title, final String explain) {
         super(flag | Dialog.STYLE_HIDE_ICON, title, null, null, null);

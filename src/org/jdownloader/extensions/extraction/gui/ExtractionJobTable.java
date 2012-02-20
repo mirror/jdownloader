@@ -6,6 +6,11 @@ import org.jdownloader.extensions.extraction.ExtractionController;
 
 public class ExtractionJobTable extends BasicJDTable<ExtractionController> {
 
+    /**
+	 * 
+	 */
+    private static final long serialVersionUID = -2198672161538215628L;
+
     public ExtractionJobTable(ExtractionJobTableModel extractionJobTableModel) {
         super(extractionJobTableModel);
         this.setBackground(null);

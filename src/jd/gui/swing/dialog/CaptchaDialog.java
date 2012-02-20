@@ -65,17 +65,14 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.premium.PremiumInfoDialog;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 /**
  * This Dialog is used to display a Inputdialog for the captchas
  */
 public class CaptchaDialog extends AbstractDialog<String> implements ActionListener, WindowListener, MouseListener, CaptchaDialogInterface {
 
-    private static final long   serialVersionUID = 1L;
-
-    private static final String FILESONIC        = "filesonic.com";
-    private static final String WUPLOAD          = "filesonic.com";
+    private static final String FILESONIC = "filesonic.com";
+    private static final String WUPLOAD   = "filesonic.com";
     private ExtTextField        textField;
 
     private ImageIcon           imagefile;
