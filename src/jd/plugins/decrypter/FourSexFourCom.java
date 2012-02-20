@@ -77,6 +77,7 @@ public class FourSexFourCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         tempID = br.getRegex("xvideos\\.com/embedframe/(\\d+)").getMatch(0);
+        if (tempID == null) tempID = br.getRegex("\\?video=xv(\\d+)\\'").getMatch(0);
         if (tempID != null) {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + tempID));
             return decryptedLinks;

@@ -24,31 +24,41 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sprezer.com" }, urls = { "http://[\\w\\.]*?sprezer\\.com/file-.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sprezer.com" }, urls = { "http://(www\\.)?sprezer\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class SprzrCm extends PluginForDecrypt {
 
     public SprzrCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setReadTimeout(3 * 60 * 1000);
         String parameter = param.toString();
         br.getPage(parameter);
-        String[] links = br.getRegex("<a href=\"(get-.*?)\">").getColumn(0);
+        final String fpName = br.getRegex("<title>Download ([^<>\"\\']+)</title>").getMatch(0);
+        String[] links = br.getRegex("id=\\'stat\\d+_\\d+\\'><a href=\\'(http://(www\\.)?" + this.getHost() + "/[a-z0-9]{2}_[a-z0-9]{12})\\'").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String link : links) {
-            br.getPage("http://www.sprezer.com/" + link);
-            String code = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
-            String plainlink = Encoding.deepHtmlDecode(code);
-            decryptedLinks.add(createDownloadlink(plainlink));
+            // Saves traffic and time
+            br.getHeaders().put("Referer", "http://www.sprezer.com/r_counter");
+            br.getPage(link);
+            String finallink = br.getRegex("\\'>[\t\n\r ]+<frame src=\"(http://[^<>\"\\']+)\"").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink)));
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
     }
-
-    // @Override
 
 }

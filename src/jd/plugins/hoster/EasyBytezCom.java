@@ -407,7 +407,7 @@ public class EasyBytezCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 4;
+        return 1;
     }
 
     @Override

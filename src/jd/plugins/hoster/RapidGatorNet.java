@@ -64,6 +64,8 @@ public class RapidGatorNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        final String reconnectWait = br.getRegex("Delay between downloads must be not less than (\\d+) min\\.<br>Don`t want to wait\\? <a style=\"").getMatch(0);
+        if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(reconnectWait) + 1) * 60 * 1000l);
         int wait = 30;
         final String waittime = br.getRegex("var secs = (\\d+);").getMatch(0);
         if (waittime != null) wait = Integer.parseInt(waittime);

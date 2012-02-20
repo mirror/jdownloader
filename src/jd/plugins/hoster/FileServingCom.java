@@ -84,10 +84,12 @@ public class FileServingCom extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             if (br.containsHTML("(?i)>Sorry, this file has been removed\\. It may have been deleted by the uploader or due to the received complaint\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             final String fid = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
-            final String sid = br.getRegex("sid:\\'(\\d+)\\'").getMatch(0);
-            final String server = br.getRegex("server:\\'([^<>\"\\']+)\\'").getMatch(0);
+            String sid = br.getRegex("sid:\\'(\\d+)\\'").getMatch(0);
+            if (sid == null) sid = "";
+            String server = br.getRegex("server:\\'([^<>\"\\']+)\\'").getMatch(0);
+            if (server == null) server = "";
             final String rcID = br.getRegex("k=([^\\'<>\"]+)\"").getMatch(0);
-            if (fid == null || sid == null || server == null || rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (fid == null || rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             Browser xmlBrowser = br.cloneBrowser();
             xmlBrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");

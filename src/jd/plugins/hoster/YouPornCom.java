@@ -59,14 +59,18 @@ public class YouPornCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.postPage(parameter.getDownloadURL(), "user_choice=Enter");
+        br.setCookie("http://youporn.com/", "age_verified", "1");
+        br.setCookie("http://youporn.com/", "is_pc", "1");
+        br.getPage(parameter.getDownloadURL());
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("invalid video_id")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) - Free Porn Videos - YouPorn</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("addthis:title=\"YouPorn - (.*?)\"></a>").getMatch(0);
-        DLLINK = br.getRegex("\"(http://download\\.youporn\\.com/download/\\d+\\?save=1)\"").getMatch(0);
+        DLLINK = br.getRegex("\"(http://[^<>\"\\']+)\">MP4").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("\"(http://videos\\-\\d+\\.youporn\\.com/[^<>\"\\'/]+/save/scene_h264[^<>\"\\']+)\"").getMatch(0);
         if (DLLINK == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        parameter.setFinalFileName(Encoding.htmlDecode(filename).trim().replaceAll(" ", "-") + ".flv");
+        DLLINK = Encoding.htmlDecode(DLLINK);
+        parameter.setFinalFileName(Encoding.htmlDecode(filename).trim().replaceAll("   ", "-") + ".mp4");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
