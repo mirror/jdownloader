@@ -6,7 +6,7 @@ import java.util.logging.Level;
 import jd.http.URLConnectionAdapter;
 import neembuu.vfs.connection.AbstractConnection;
 import neembuu.vfs.connection.NewConnectionParams;
-import org.jdownloader.extensions.neembuu.JD_Utils;
+import org.jdownloader.extensions.neembuu.NBUtils;
 
 /**
  *
@@ -36,7 +36,7 @@ public final class JD_HTTP_Connection extends AbstractConnection{
         InputStream is = null;
         
         while(firstByte==-1){
-            urlca = JD_Utils.copyConnection(
+            urlca = NBUtils.copyConnection(
                     jddm.jdds.getDownloadLink(),
                     jddm.jdds.getDownloadInterface(),
                     jddm.jdds.getPluginForHost(),

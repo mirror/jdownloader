@@ -12,13 +12,13 @@ import jpfm.volume.vector.VectorRootDirectory;
  *
  * @author Shashank Tulsyan
  */
-public final class JDNB_VirtualFileSystem extends SimpleReadOnlyFileSystem {
+public final class NBVirtualFileSystem extends SimpleReadOnlyFileSystem {
     
-    static JDNB_VirtualFileSystem newInstance(){
-        return new JDNB_VirtualFileSystem(new VectorRootDirectory());
+    static NBVirtualFileSystem newInstance(){
+        return new NBVirtualFileSystem(new VectorRootDirectory());
     }
     
-    private JDNB_VirtualFileSystem(DirectoryStream rootDirectoryStream) {
+    private NBVirtualFileSystem(DirectoryStream rootDirectoryStream) {
         super(rootDirectoryStream);
     }
 

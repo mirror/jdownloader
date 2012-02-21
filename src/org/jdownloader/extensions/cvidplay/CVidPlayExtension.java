@@ -54,7 +54,7 @@ public class CVidPlayExtension extends AbstractExtension<CVidPlayConfig> {
 
     @Override
     public boolean isDefaultEnabled() {
-        return true;
+        return false;
     }
 
     @Override

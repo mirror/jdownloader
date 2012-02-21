@@ -14,7 +14,7 @@ import neembuu.vfs.file.SeekableConnectionFile;
  */
 public interface WatchAsYouDownloadSession {
     SeekableConnectionFile getSeekableConnectionFile();
-    JDNB_VirtualFileSystem getVirtualFileSystem();
+    NBVirtualFileSystem getVirtualFileSystem();
     JPanel getFilePanel();
     
     boolean isMounted();

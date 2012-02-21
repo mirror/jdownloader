@@ -26,7 +26,7 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.plaf.basic.BasicButtonUI;
 
-import org.jdownloader.extensions.neembuu.JDDownloadSession;
+import org.jdownloader.extensions.neembuu.DownloadSession;
 
 /**
  * Component to be used as tabComponent; Contains a JLabel to show the text and
@@ -38,10 +38,10 @@ public class ButtonTabComponent extends JPanel {
 	 */
     private static final long       serialVersionUID = 1672135537070393545L;
     private final JTabbedPane       pane;
-    private final JDDownloadSession jdds;
+    private final DownloadSession jdds;
     private final NeembuuGui        neembuuGui;
 
-    public ButtonTabComponent(final JTabbedPane pane, JDDownloadSession jdds, NeembuuGui neembuuGui) {
+    public ButtonTabComponent(final JTabbedPane pane, DownloadSession jdds, NeembuuGui neembuuGui) {
         // unset default FlowLayout' gaps
         super(new FlowLayout(FlowLayout.LEFT, 0, 0));
         this.jdds = jdds;

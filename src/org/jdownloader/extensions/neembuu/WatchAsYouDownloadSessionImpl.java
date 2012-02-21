@@ -42,20 +42,20 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
 	private final SeekableConnectionFile file;
 	private final MonitoredHttpFile httpFile;
 	private final MonitoredSeekableHttpFilePanel filePanel;
-	private final JDNB_VirtualFileSystem virtualFileSystem;
-	private final JDDownloadSession jdds;
+	private final NBVirtualFileSystem virtualFileSystem;
+	private final DownloadSession jdds;
 	private final Object lock = new Object();
 	private Mount mount = null;
 
 	private volatile long totalDownload = 0;
 
-	static WatchAsYouDownloadSessionImpl makeNew(JDDownloadSession jdds)
+	static WatchAsYouDownloadSessionImpl makeNew(DownloadSession jdds)
 			throws Exception {
-		JDNB_VirtualFileSystem fileSystem = JDNB_VirtualFileSystem
+		NBVirtualFileSystem fileSystem = NBVirtualFileSystem
 				.newInstance();
 
 		// read the javadoc to know what this does
-		TroubleHandler troubleHandler = new JDNB_TroubleHandler(jdds);
+		TroubleHandler troubleHandler = new NBTroubleHandler(jdds);
 
 		// JD team might like to change this to something they like.
 		// this default diskmanager saves each chunk in a different file
@@ -136,7 +136,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
 	WatchAsYouDownloadSessionImpl(SeekableConnectionFile file,
 			MonitoredHttpFile httpFile,
 			MonitoredSeekableHttpFilePanel filePanel,
-			JDNB_VirtualFileSystem virtualFileSystem, JDDownloadSession jdds) {
+			NBVirtualFileSystem virtualFileSystem, DownloadSession jdds) {
 		this.file = file;
 		this.httpFile = httpFile;
 		this.filePanel = filePanel;
@@ -145,7 +145,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
 	}
 
 	// @Override
-	public final JDNB_VirtualFileSystem getVirtualFileSystem() {
+	public final NBVirtualFileSystem getVirtualFileSystem() {
 		return virtualFileSystem;
 	}
 

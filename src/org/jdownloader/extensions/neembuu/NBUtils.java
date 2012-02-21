@@ -22,7 +22,7 @@ import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
  * 
  * @author Shashank Tulsyan
  */
-public final class JD_Utils {
+public final class NBUtils {
     public static URLConnectionAdapter copyConnection(DownloadLink downloadLink, DownloadInterface di, PluginForHost plugin, long startByte, Browser b, URLConnectionAdapter connection) {
         // try {
         // while

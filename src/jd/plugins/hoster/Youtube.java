@@ -162,7 +162,7 @@ public class Youtube extends PluginForHost {
             this.dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        org.jdownloader.extensions.neembuu.JDDownloadSession downloadSession = new org.jdownloader.extensions.neembuu.JDDownloadSession(downloadLink, this.dl, this, this.dl.getConnection(), this.br.cloneBrowser());
+        org.jdownloader.extensions.neembuu.DownloadSession downloadSession = new org.jdownloader.extensions.neembuu.DownloadSession(downloadLink, this.dl, this, this.dl.getConnection(), this.br.cloneBrowser());
         if (org.jdownloader.extensions.neembuu.NeembuuExtension.tryHandle(downloadSession)) {
             org.jdownloader.extensions.neembuu.WatchAsYouDownloadSession watchAsYouDownloadSession = downloadSession.getWatchAsYouDownloadSession();
             watchAsYouDownloadSession.waitForDownloadToFinish();

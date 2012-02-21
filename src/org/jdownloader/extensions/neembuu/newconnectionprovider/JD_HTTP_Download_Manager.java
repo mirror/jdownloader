@@ -12,21 +12,21 @@ import neembuu.vfs.connection.NewConnectionParams;
 import neembuu.vfs.connection.NewConnectionProvider;
 
 import org.appwork.utils.logging.Log;
-import org.jdownloader.extensions.neembuu.JDDownloadSession;
+import org.jdownloader.extensions.neembuu.DownloadSession;
 
 /**
  * 
  * @author Shashank Tulsyan
  */
 public final class JD_HTTP_Download_Manager implements NewConnectionProvider {
-	final JDDownloadSession jdds;
+	final DownloadSession jdds;
 
 	private static final Logger LOGGER = Logger
 			.getLogger(JD_HTTP_Download_Manager.class.getName());
 
 	private final ConcurrentLinkedQueue<JD_HTTP_Connection> connection_list = new ConcurrentLinkedQueue<JD_HTTP_Connection>();
 
-	public JD_HTTP_Download_Manager(JDDownloadSession jdds) {
+	public JD_HTTP_Download_Manager(DownloadSession jdds) {
 		this.jdds = jdds;
 	}
 

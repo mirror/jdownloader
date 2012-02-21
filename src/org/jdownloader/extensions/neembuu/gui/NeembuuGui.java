@@ -14,7 +14,7 @@ import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.logging.Log;
-import org.jdownloader.extensions.neembuu.JDDownloadSession;
+import org.jdownloader.extensions.neembuu.DownloadSession;
 import org.jdownloader.extensions.neembuu.NeembuuExtension;
 import org.jdownloader.extensions.neembuu.translate._NT;
 
@@ -52,7 +52,7 @@ public class NeembuuGui extends AddonPanel<NeembuuExtension> {
         layoutPanel();
     }
 
-    public void addSession(JDDownloadSession jdds) {
+    public void addSession(DownloadSession jdds) {
         tabbedPane.add(jdds.getDownloadLink().getBrowserUrl(), jdds.getWatchAsYouDownloadSession().getFilePanel());
         /*
          * tabbedPane.setTabComponentAt(
@@ -61,7 +61,7 @@ public class NeembuuGui extends AddonPanel<NeembuuExtension> {
          */
     }
 
-    public void removeSession(JDDownloadSession jdds) {
+    public void removeSession(DownloadSession jdds) {
         tabbedPane.removeTabAt(tabbedPane.indexOfTab(jdds.getDownloadLink().getBrowserUrl()));
     }
 

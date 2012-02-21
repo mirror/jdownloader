@@ -18,11 +18,11 @@ import neembuu.vfs.file.TroubleHandler;
  * 
  * @author Shashank Tulsyan
  */
-public final class JDNB_TroubleHandler implements TroubleHandler {
+public final class NBTroubleHandler implements TroubleHandler {
 
-	private final JDDownloadSession jdds;
+	private final DownloadSession jdds;
 
-	public JDNB_TroubleHandler(JDDownloadSession jdds) {
+	public NBTroubleHandler(DownloadSession jdds) {
 		this.jdds = jdds;
 	}
 

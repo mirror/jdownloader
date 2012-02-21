@@ -15,7 +15,7 @@ import jd.plugins.download.DownloadInterface;
  *
  * @author Shashank Tulsyan
  */
-public final class JDDownloadSession {
+public final class DownloadSession {
     private final DownloadLink downloadLink;
     private final DownloadInterface di;
     private final PluginForHost plugin;
@@ -25,7 +25,7 @@ public final class JDDownloadSession {
     private final AtomicReference<WatchAsYouDownloadSession> watchAsYouDownloadSessionRef 
             = new AtomicReference<WatchAsYouDownloadSession>(null);
     
-    public JDDownloadSession(DownloadLink downloadLink, DownloadInterface di, PluginForHost plugin, URLConnectionAdapter connection, Browser b) {
+    public DownloadSession(DownloadLink downloadLink, DownloadInterface di, PluginForHost plugin, URLConnectionAdapter connection, Browser b) {
         this.downloadLink = downloadLink;
         this.di = di;
         this.plugin = plugin;
