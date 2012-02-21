@@ -49,24 +49,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
         // panel.add(Box.createGlue(), "pushx,growx");
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i <= maxIcons; i++) {
-            labels[i] = new RenderLabel() {
-
-                /**
-                 * 
-                 */
-                private static final long serialVersionUID = 1L;
-
-                @SuppressWarnings("deprecation")
-                @Override
-                public void show(boolean b) {
-                    if (b) {
-                        show();
-                    } else {
-                        hide();
-                    }
-                }
-
-            };
+            labels[i] = new RenderLabel();
             // labels[i].setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1,
             // Color.RED));
             labels[i].setOpaque(false);

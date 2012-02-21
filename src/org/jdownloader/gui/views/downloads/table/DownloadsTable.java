@@ -320,6 +320,11 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         return ret;
     }
 
+    protected void processMouseMotionEvent(MouseEvent e) {
+
+        super.processMouseMotionEvent(e);
+    }
+
     @Override
     public boolean editCellAt(int row, int column, EventObject e) {
         boolean ret = super.editCellAt(row, column, e);
