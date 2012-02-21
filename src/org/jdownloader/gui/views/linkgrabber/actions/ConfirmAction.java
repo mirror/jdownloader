@@ -17,7 +17,6 @@ import jd.plugins.FilePackage;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -56,7 +55,6 @@ public class ConfirmAction extends AppAction {
                 for (AbstractNode node : values) {
                     if (node instanceof CrawledPackage) {
                         /* first convert all CrawledPackages to FilePackages */
-                        CrawledPackage pkg = (CrawledPackage) node;
                         ArrayList<CrawledLink> links = new ArrayList<CrawledLink>(((CrawledPackage) node).getView());
                         ArrayList<FilePackage> packages = LinkCollector.getInstance().removeAndConvert(links);
                         if (packages != null) fpkgs.addAll(packages);
@@ -71,8 +69,14 @@ public class ConfirmAction extends AppAction {
                 /* add the converted FilePackages to DownloadController */
                 DownloadController.getInstance().addAllAt(fpkgs, addTop ? 0 : -(fpkgs.size() + 10));
                 if (autostart) {
-                    /* start DownloadWatchDog if wanted */
-                    DownloadWatchDog.getInstance().startDownloads();
+                    IOEQ.add(new Runnable() {
+
+                        public void run() {
+                            /* start DownloadWatchDog if wanted */
+                            DownloadWatchDog.getInstance().startDownloads();
+                        }
+
+                    }, true);
                 }
             }
 

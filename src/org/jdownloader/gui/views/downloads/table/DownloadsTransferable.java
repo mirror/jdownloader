@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.linkgrabber;
+package org.jdownloader.gui.views.downloads.table;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -7,17 +7,16 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.utils.ClipboardUtils;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferableContent;
 
-public class LinkGrabberTransferable extends PackageControllerTableTransferable<CrawledPackage, CrawledLink> {
+public class DownloadsTransferable extends PackageControllerTableTransferable<FilePackage, DownloadLink> {
 
-    public LinkGrabberTransferable(PackageControllerTableTransferable<CrawledPackage, CrawledLink> transferable) {
+    public DownloadsTransferable(PackageControllerTableTransferable<FilePackage, DownloadLink> transferable) {
         super(transferable.getContent().getPackages(), transferable.getContent().getLinks(), transferable.getContent().getTable());
         ArrayList<DataFlavor> availableFlavors = new ArrayList<DataFlavor>();
         availableFlavors.add(FLAVOR);
@@ -42,35 +41,23 @@ public class LinkGrabberTransferable extends PackageControllerTableTransferable<
         throw new UnsupportedFlavorException(flavor);
     }
 
-    @Override
-    public boolean isDataFlavorSupported(DataFlavor wished) {
-        if (wished != null) {
-            for (DataFlavor exist : flavors) {
-                if (exist.equals(wished)) return true;
-            }
-        }
-        return false;
-    }
-
     private HashSet<String> getURLs() {
-        PackageControllerTableTransferableContent<CrawledPackage, CrawledLink> lcontent = content;
+        PackageControllerTableTransferableContent<FilePackage, DownloadLink> lcontent = content;
         HashSet<String> urls = new HashSet<String>();
         if (lcontent == null) return urls;
         if (lcontent.getLinks() != null) {
-            for (CrawledLink link : lcontent.getLinks()) {
-                DownloadLink llink = link.getDownloadLink();
-                if (llink != null && DownloadLink.LINKTYPE_CONTAINER != llink.getLinkType()) {
-                    urls.add(llink.getDownloadURL());
+            for (DownloadLink link : lcontent.getLinks()) {
+                if (DownloadLink.LINKTYPE_CONTAINER != link.getLinkType()) {
+                    urls.add(link.getDownloadURL());
                 }
             }
         }
         if (lcontent.getPackages() != null) {
-            for (CrawledPackage fp : lcontent.getPackages()) {
+            for (FilePackage fp : lcontent.getPackages()) {
                 synchronized (fp) {
-                    for (CrawledLink link : fp.getChildren()) {
-                        DownloadLink llink = link.getDownloadLink();
-                        if (llink != null && DownloadLink.LINKTYPE_CONTAINER != llink.getLinkType()) {
-                            urls.add(llink.getDownloadURL());
+                    for (DownloadLink link : fp.getChildren()) {
+                        if (DownloadLink.LINKTYPE_CONTAINER != link.getLinkType()) {
+                            urls.add(link.getDownloadURL());
                         }
                     }
                 }

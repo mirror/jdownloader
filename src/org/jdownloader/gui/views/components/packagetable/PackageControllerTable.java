@@ -14,6 +14,7 @@ import javax.swing.ListSelectionModel;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController;
 import jd.gui.swing.jdgui.BasicJDTable;
 import jd.gui.swing.laf.LookAndFeelController;
 
@@ -45,6 +46,10 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
     public PackageControllerTableModel<ParentType, ChildrenType> getPackageControllerTableModel() {
         return tableModel;
+    }
+
+    public PackageController<ParentType, ChildrenType> getController() {
+        return tableModel.getController();
     }
 
     @Override

@@ -136,7 +136,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                                         JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
                                     }
                                 } catch (Throwable e) {
-
                                 }
                             }
                         };

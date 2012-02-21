@@ -125,6 +125,10 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         pc.sortPackageChildren((PackageType) pkg, comparator);
     }
 
+    public PackageController<PackageType, ChildrenType> getController() {
+        return pc;
+    }
+
     public void toggleFilePackageExpand(final AbstractPackageNode fp2, final TOGGLEMODE mode) {
         queue.execute(new Runnable() {
             public void run() {

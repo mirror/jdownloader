@@ -283,6 +283,37 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         return ret;
     }
 
+    public void merge(final PackageType dest, final ArrayList<ChildType> srcLinks, final ArrayList<PackageType> srcPkgs, final boolean mergeTop) {
+        if (dest == null) return;
+        if (srcLinks == null && srcPkgs == null) return;
+        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+            @Override
+            protected Void run() throws RuntimeException {
+                int positionMerge = mergeTop ? 0 : -1;
+                if (srcLinks != null) {
+                    /* move srcLinks to dest */
+                    addmoveChildren(dest, srcLinks, positionMerge);
+                    if (positionMerge != -1) {
+                        /* update positionMerge in case we want merge@top */
+                        positionMerge += srcLinks.size();
+                    }
+                }
+                if (srcPkgs != null) {
+                    for (PackageType pkg : srcPkgs) {
+                        /* move links from srcPkgs to dest */
+                        int size = pkg.getChildren().size();
+                        addmoveChildren(dest, pkg.getChildren(), positionMerge);
+                        if (positionMerge != -1) {
+                            /* update positionMerge in case we want merge@top */
+                            positionMerge += size;
+                        }
+                    }
+                }
+                return null;
+            }
+        });
+    }
+
     public void addmoveChildren(final PackageType pkg, final List<ChildType> movechildren, final int index) {
         if (pkg != null && movechildren != null && movechildren.size() > 0) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
@@ -448,6 +479,49 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                 for (PackageType pkg : clearList) {
                     removePackage(pkg);
                 }
+                return null;
+            }
+        });
+    }
+
+    public void move(final ArrayList<PackageType> srcPkgs, final PackageType afterDest) {
+        if (srcPkgs == null || srcPkgs.size() == 0) return;
+        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+            @Override
+            protected Void run() throws RuntimeException {
+                for (PackageType srcPkg : srcPkgs) {
+                    int destination = 0;
+                    if (afterDest != null) {
+                        int destI = 0;
+                        boolean readL = readLock();
+                        try {
+                            destI = packages.indexOf(afterDest);
+                        } finally {
+                            readUnlock(readL);
+                        }
+                        destination = Math.max(destI, 0) + 1;
+                    }
+                    addmovePackageAt(srcPkg, destination);
+                }
+                return null;
+            }
+        });
+    }
+
+    public void move(final ArrayList<ChildType> srcLinks, final PackageType dstPkg, final ChildType afterLink) {
+        if (dstPkg == null || srcLinks == null || srcLinks.size() == 0) return;
+        IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+            @Override
+            protected Void run() throws RuntimeException {
+                int destination = 0;
+                if (afterLink != null) {
+                    int destI = 0;
+                    synchronized (dstPkg) {
+                        destI = dstPkg.getChildren().indexOf(afterLink);
+                    }
+                    destination = Math.max(destI, 0) + 1;
+                }
+                addmoveChildren(dstPkg, srcLinks, destination);
                 return null;
             }
         });
