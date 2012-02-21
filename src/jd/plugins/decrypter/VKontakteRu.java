@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -55,61 +56,69 @@ public class VKontakteRu extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
+        br.setReadTimeout(3 * 60 * 1000);
         String parameter = param.toString().replace("vkontakte.ru/", "vk.com/");
         br.setCookiesExclusive(false);
         synchronized (LOCK) {
-            /** Login process */
-            if (!getUserLogin()) return null;
-            /* this call can refesh the login */
-            br.getPage(parameter);
-            /** Retry if login failed */
-            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com") || br.containsHTML("(method=\"post\" name=\"login\" id=\"login\"|name=\"login\" id=\"quick_login_form\")")) {
-                logger.info("Retrying vk.com login...");
-                this.getPluginConfig().setProperty("logincounter", "-1");
-                this.getPluginConfig().save();
-                br.clearCookies(DOMAIN);
-                br.clearCookies("login.vk.com");
+            try {
+                /** Login process */
                 if (!getUserLogin()) return null;
-            }
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = this.br.getCookies(DOMAIN);
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            this.getPluginConfig().setProperty("cookies", cookies);
-            this.getPluginConfig().save();
-            /** Decryption process START */
-            br.setFollowRedirects(false);
-            if (parameter.matches(".*?vk\\.com/audio.*?")) {
-                /** Audio playlists */
-                decryptedLinks = decryptAudioAlbum(decryptedLinks, parameter);
-            } else if (parameter.matches(".*?vk\\.com/video(\\-)?\\d+_\\d+")) {
-                /** Single video */
-                decryptedLinks = decryptSingleVideo(decryptedLinks, parameter);
-            } else if (parameter.matches(".*?(album\\d+_|photos|id)\\d+")) {
-                /**
-                 * Photo albums Examples: http://vk.com/photos575934598
-                 * http://vk.com/id28426816 http://vk.com/album87171972_0
-                 */
-                decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter, progress);
-            } else if (parameter.matches(".*?vk\\.com/photo(\\-)?\\d+_\\d+")) {
-                /**
-                 * Single photo links, those are just passed to the
-                 * hosterplugin! Example:http://vk.com/photo125005168_269986868
-                 */
-                decryptedLinks = decryptSinglePhoto(decryptedLinks, parameter);
-            } else if (parameter.matches(".*?vk\\.com/albums(\\-)?\\d+")) {
-                /**
-                 * Photo Album lists/overviews Example:
-                 * http://vk.com/albums46486585
-                 */
-                decryptedLinks = decryptPhotoAlbums(decryptedLinks, parameter, progress);
-            } else {
-                /**
-                 * Video-Albums Example: http://vk.com/videos575934598 Example2:
-                 * http://vk.com/video?section=tagged&id=46468795637
-                 */
-                decryptedLinks = decryptVideoAlbum(decryptedLinks, parameter, progress);
+                /* this call can refesh the login */
+                br.getPage(parameter);
+                /** Retry if login failed */
+                if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com") || br.containsHTML("(method=\"post\" name=\"login\" id=\"login\"|name=\"login\" id=\"quick_login_form\")")) {
+                    logger.info("Retrying vk.com login...");
+                    this.getPluginConfig().setProperty("logincounter", "-1");
+                    this.getPluginConfig().save();
+                    br.clearCookies(DOMAIN);
+                    br.clearCookies("login.vk.com");
+                    if (!getUserLogin()) return null;
+                }
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(DOMAIN);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                this.getPluginConfig().setProperty("cookies", cookies);
+                this.getPluginConfig().save();
+                /** Decryption process START */
+                br.setFollowRedirects(false);
+                if (parameter.matches(".*?vk\\.com/audio.*?")) {
+                    /** Audio playlists */
+                    decryptedLinks = decryptAudioAlbum(decryptedLinks, parameter);
+                } else if (parameter.matches(".*?vk\\.com/video(\\-)?\\d+_\\d+")) {
+                    /** Single video */
+                    decryptedLinks = decryptSingleVideo(decryptedLinks, parameter);
+                } else if (parameter.matches(".*?(album\\d+_|photos|id)\\d+")) {
+                    /**
+                     * Photo albums Examples: http://vk.com/photos575934598
+                     * http://vk.com/id28426816 http://vk.com/album87171972_0
+                     */
+                    decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter, progress);
+                } else if (parameter.matches(".*?vk\\.com/photo(\\-)?\\d+_\\d+")) {
+                    /**
+                     * Single photo links, those are just passed to the
+                     * hosterplugin!
+                     * Example:http://vk.com/photo125005168_269986868
+                     */
+                    decryptedLinks = decryptSinglePhoto(decryptedLinks, parameter);
+                } else if (parameter.matches(".*?vk\\.com/albums(\\-)?\\d+")) {
+                    /**
+                     * Photo Album lists/overviews Example:
+                     * http://vk.com/albums46486585
+                     */
+                    decryptedLinks = decryptPhotoAlbums(decryptedLinks, parameter, progress);
+                } else {
+                    /**
+                     * Video-Albums Example: http://vk.com/videos575934598
+                     * Example2:
+                     * http://vk.com/video?section=tagged&id=46468795637
+                     */
+                    decryptedLinks = decryptVideoAlbum(decryptedLinks, parameter, progress);
+                }
+            } catch (BrowserException e) {
+                logger.warning("Browser exception thrown: " + e.getMessage());
+                logger.warning("Decrypter failed for link: " + parameter);
             }
             return decryptedLinks;
         }

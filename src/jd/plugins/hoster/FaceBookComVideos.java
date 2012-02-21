@@ -132,10 +132,6 @@ public class FaceBookComVideos extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.urlDecode(decodeUnicode(dllink), true);
-        // if (dllink == null) {
-        // br.getPage(downloadLink.getDownloadURL());
-        // dllink = br.getRegex(DLLINKREGEXP).getMatch(1);
-        // }
         if (dllink == null) {
             logger.warning("Final downloadlink (dllink) is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -153,7 +149,7 @@ public class FaceBookComVideos extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     public void login(final Account account, final boolean force, Browser br) throws Exception {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:8.0) Gecko/20100101 Firefox/8.0");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:10.0.2) Gecko/20100101 Firefox/10.0.2");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
         br.getHeaders().put("Accept-Encoding", "gzip, deflate");

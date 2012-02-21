@@ -18,11 +18,15 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -43,9 +47,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FShareVn extends PluginForHost {
 
     private static final String  SERVERERROR = "Tài nguyên bạn yêu cầu không tìm thấy";
-
     private static final String  IPBLOCKED   = ">Vui lòng chờ lượt download kế tiếp";
-
+    private static final Object  LOCK        = new Object();
     private static AtomicInteger maxPrem     = new AtomicInteger(1);
 
     public FShareVn(PluginWrapper wrapper) {
@@ -101,16 +104,15 @@ public class FShareVn extends PluginForHost {
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
-            login(account);
+            login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
         }
         br.getPage("http://www.fshare.vn/index.php");
-        // >Hạn dùng:<strong class="color_red">20-12-2012</strong>
         String validUntil = br.getRegex(">Hạn dùng:<strong class=\"color_red\">(\\d+\\-\\d+\\-\\d+)</strong>").getMatch(0);
         if (validUntil != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "MM-dd-yyyy", Locale.ENGLISH));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd-MM-yyyy", Locale.ENGLISH));
             try {
                 maxPrem.set(-1);
                 account.setMaxSimultanDownloads(-1);
@@ -156,7 +158,7 @@ public class FShareVn extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        login(account);
+        login(account, false);
         br.getPage(link.getDownloadURL());
         if (account.getStringProperty("acctype") != null) {
             doFree(link);
@@ -187,12 +189,46 @@ public class FShareVn extends PluginForHost {
         return true;
     }
 
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage("https://www.fshare.vn/login.php");
-        br.postPage("https://www.fshare.vn/login.php", "login_useremail=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()) + "&url_refe=http%3A%2F%2Fwww.fshare.vn%2Flogin.php&auto_login=1");
-        if (br.getCookie("https://www.fshare.vn", "fshare_userpass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    @SuppressWarnings("unchecked")
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                br.setCookiesExclusive(false);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie("https://fshare.vn/", key, value);
+                        }
+                        return;
+                    }
+                }
+                br.setFollowRedirects(false);
+                // Sometime the page is extremely slow!
+                br.setReadTimeout(120 * 1000);
+                br.getPage("https://www.fshare.vn/login.php");
+                br.postPage("https://www.fshare.vn/login.php", "login_useremail=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()) + "&url_refe=http%3A%2F%2Fwww.fshare.vn%2Flogin.php&auto_login=1");
+                if (br.getCookie("https://www.fshare.vn", "fshare_userpass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies("https://fshare.vn/");
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
     }
 
     @Override

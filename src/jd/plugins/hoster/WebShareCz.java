@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,16 +28,11 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webshare.cz" }, urls = { "http://(www\\.)?webshare\\.cz/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]{10}.*)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webshare.cz" }, urls = { "http://(www\\.)?webshare\\.cz/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]{10}\\-)" }, flags = { 0 })
 public class WebShareCz extends PluginForHost {
 
     public WebShareCz(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        String fid = new Regex(link.getDownloadURL(), "webshare\\.cz/([A-Za-z0-9]{10}).*").getMatch(0);
-        if (fid != null) link.setUrlDownload("http://webshare.cz/?fhash=" + fid);
     }
 
     @Override
@@ -56,7 +50,7 @@ public class WebShareCz extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         String dllink = br.getRegex("<a style=\"text-decoration: none;\" id=\"download_link\" href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://.*?webshare\\.cz/[A-Za-z0-9]+\\-\\d+\\-.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://dl\\d+\\.webshare\\.cz/\\d+/[A-Za-z0-9]+/[A-Za-z0-9]+/[A-Za-z0-9]+/[A-Za-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -70,12 +64,13 @@ public class WebShareCz extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<h3>Požadovaný soubor nebyl nalezen")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("<h1>Requested file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h3>Stahujete soubor: </h3>[\t\n\r ]+<div class=\"textbox\">(.*?)</div>").getMatch(0);
-        String filesize = br.getRegex("<h3>Velikost souboru je: </h3>[\t\n\r ]+<div class=\"textbox\">(.*?)</div>").getMatch(0);
+        String filename = br.getRegex("<h3>Stahujete soubor: </h3>[\t\n\r ]+<div class=\"textbox\">([^<>\"\\']+)</div>").getMatch(0);
+        String filesize = br.getRegex("<h3>Velikost souboru je: </h3>[\t\n\r ]+<div class=\"textbox\">([^<>\"\\']+)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));

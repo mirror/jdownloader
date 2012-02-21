@@ -687,3 +687,6 @@ jd/plugins/hoster/MultiUploadCom.class
 jd/plugins/decrypter/MltpldCm.class
 jd/plugins/decrypter/UndeadLinkCom.class
 jd/plugins/decrypter/WCrptIn.class
+jd/plugins/decrypter/LnkcltCm.class
+jd/plugins/decrypter/FlZnR.class
+jd/plugins/hoster/FileZoneRo.class

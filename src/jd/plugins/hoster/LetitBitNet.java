@@ -173,12 +173,12 @@ public class LetitBitNet extends PluginForHost {
             String code = getCaptchaCode("letitbitnew", serverPart + "/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
             sleep(2000, downloadLink);
             br2.postPage(serverPart + "/ajax/check_captcha.php", "code=" + Encoding.urlEncode(code));
-            url = br2.toString();
+            url = br2.getRegex("\\[\"http:[^<>\"\\']+\",\"(http:[^<>\"\\']+)\"\\]").getMatch(0);
             if (url.length() < 2 || url.contains("No htmlCode read")) continue;
             break;
         }
         if (url.length() < 2 || url.contains("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (!url.startsWith("http://") || url.length() > 1000) {
+        if (!url.startsWith("http") || url.length() > 1000) {
             logger.warning("url couldn't be found!");
             logger.severe(br.toString());
             debugSwitch = true;
@@ -187,7 +187,7 @@ public class LetitBitNet extends PluginForHost {
         /* we have to wait little because server too buggy */
         sleep(2000, downloadLink);
         /* remove newline */
-        url = url.replaceAll("%0D%0A", "").trim();
+        url = url.replaceAll("%0D%0A", "").trim().replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() == 404) {

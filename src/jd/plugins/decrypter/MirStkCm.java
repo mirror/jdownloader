@@ -20,12 +20,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "mirrorstack.com", "uploading.to" }, urls = { "http://(www\\.)?(mirrorstack\\.com|uploading\\.to)/([a-z0-9]{2}_)?[a-z0-9]{12}", "UNUSED_ASDFYASDFHASDFYASDFYAS" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "http://(www\\.)?(mirrorstack\\.com|uploading\\.to)/([a-z0-9]{2}_)?[a-z0-9]{12}" }, flags = { 0 })
 public class MirStkCm extends PluginForDecrypt {
 
     /*
@@ -54,9 +56,16 @@ public class MirStkCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // set true to allow for 'www > domain' or 'domain > www' instead of
         // renaming them all manually.
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
+        String fpName = null;
+        if (parameter.contains("uploading.to/")) {
+            fpName = br.getRegex("<b>File:</b> <a href=\\'http://(www\\.)?uploading\\.to/[a-z0-9]{12}\\'>([^<>\"\\']+)</a>").getMatch(1);
+        } else {
+            fpName = br.getRegex("<a class=\"active\" href=\\'http://mirrorstack\\.com/[a-z0-9]{12}\\'>([^<>\"\\']+)</a>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("value=\\'<a href=http://mirrorstack\\.com/[a-z0-9]{12} >Download ([^<>\"\\']+) from mirrorstack\\.com</a>\\'").getMatch(0);
+        }
         if (br.containsHTML(">Not Found</h2>")) {
             logger.warning("Invalid URL, either removed or never existed :" + parameter);
             return null;
@@ -94,6 +103,11 @@ public class MirStkCm extends PluginForDecrypt {
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
                 progress.increase(1);
+            }
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
             }
         }
         return decryptedLinks;
