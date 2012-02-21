@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?(motherless\\.com/(movies|thumbs).*|(premium)?motherlesspictures(media)?\\.com/[a-zA-Z0-9/\\.]+|motherlessvideos\\.com/[a-zA-Z0-9]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?(motherless\\.com/(movies|thumbs).*|(premium)?motherlesspictures(media)?\\.com/[a-zA-Z0-9/\\.]+|motherlessvideos\\.com/[a-zA-Z0-9/\\.]+)" }, flags = { 2 })
 public class MotherLessCom extends PluginForHost {
 
     private static final String SUBSCRIBEFAILED     = "Failed to subscribe to the owner of the video";

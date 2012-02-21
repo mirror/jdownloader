@@ -88,7 +88,6 @@ public class ToolbarManager {
     }
 
     private void addIntern(AbstractToolbarAction action) {
-
         if (action != Seperator.getInstance() && map.containsKey(action.getID())) throw new WTFException("Please Choose a different id for " + action + " OVERRIDE  public String getID() {");
         map.put(action.getID(), action);
         if (action.isDefaultVisible()) list.add(action);
