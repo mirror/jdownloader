@@ -69,7 +69,7 @@ public class DoriDroNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         synchronized (LOCK) {
-            br.setCookiesExclusive(false);
+            br.setCookiesExclusive(true);
             final Object ret = this.getPluginConfig().getProperty("cookies", null);
             if (ret != null && ret instanceof HashMap<?, ?>) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;

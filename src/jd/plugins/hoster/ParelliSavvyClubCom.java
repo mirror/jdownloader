@@ -143,7 +143,7 @@ public class ParelliSavvyClubCom extends PluginForHost {
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             // Load cookies
-            br.setCookiesExclusive(false);
+            br.setCookiesExclusive(true);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
             if (acmatch) {

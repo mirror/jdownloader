@@ -483,7 +483,7 @@ public class GlumboUploadsCom extends PluginForHost {
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             /** Load cookies */
-            br.setCookiesExclusive(false);
+            br.setCookiesExclusive(true);
             br.setFollowRedirects(true);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));

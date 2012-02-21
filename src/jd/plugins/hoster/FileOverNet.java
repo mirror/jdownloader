@@ -194,7 +194,7 @@ public class FileOverNet extends PluginForHost {
         // users on too many logins!
         synchronized (LOCK) {
             this.setBrowserExclusive();
-            br.setCookiesExclusive(false);
+            br.setCookiesExclusive(true);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = account.getUser().matches(account.getStringProperty("name", account.getUser()));
             if (acmatch) acmatch = account.getPass().matches(account.getStringProperty("pass", account.getPass()));

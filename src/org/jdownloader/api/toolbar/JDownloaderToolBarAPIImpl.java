@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 
 import javax.swing.JFrame;
 
@@ -34,6 +35,7 @@ import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.RemoteAPIRequest;
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.swing.EDTRunner;
@@ -335,6 +337,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         ret.put("checkid", null);
         try {
             boolean hosterOnly = "true".equalsIgnoreCase(HttpRequest.getParameterbyKey(request, "hosteronly"));
+            boolean map = "1".equals(HttpRequest.getParameterbyKey(request, "map"));
             ChunkedDom chunkedDom = getCompleteDOM(request);
             if (chunkedDom != null) {
                 final CheckedDom checkSession = new CheckedDom(chunkedDom);
@@ -376,7 +379,20 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                         defaultHandler.handleFilteredLink(link);
                     }
                 });
-                checkSession.linkCrawler.crawl(checkSession.completeDOM);
+                if (map == false) {
+                    /* we parse complete dom here and check for valid links */
+                    checkSession.linkCrawler.crawl(checkSession.completeDOM);
+                } else {
+                    /* we got a linkID-URL map and will check only those links */
+                    HashMap<String, String> linkMap = JSonStorage.restoreFromString(checkSession.completeDOM, new HashMap<String, String>().getClass());
+                    ArrayList<CrawledLink> links2Check = new ArrayList<CrawledLink>();
+                    Iterator<Entry<String, String>> it = linkMap.entrySet().iterator();
+                    while (it.hasNext()) {
+                        Entry<String, String> next = it.next();
+                        links2Check.add(new LinkCheckLink(next.getValue(), next.getKey()));
+                    }
+                    checkSession.linkCrawler.crawl(links2Check);
+                }
             }
             ret.put("status", true);
             ret.put("msg", (Object) null);

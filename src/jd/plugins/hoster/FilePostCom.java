@@ -355,7 +355,7 @@ public class FilePostCom extends PluginForHost {
         synchronized (LOCK) {
             // Load cookies, because no multiple downloads possible when always
             // loggin in for every download
-            br.setCookiesExclusive(false);
+            br.setCookiesExclusive(true);
             try {
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals((account.getStringProperty("name", Encoding.urlEncode(account.getUser()))));

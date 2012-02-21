@@ -38,4 +38,10 @@ public class LinkStatus implements Storable {
         return link.getLinkState();
     }
 
+    public String getLinkCheckID() {
+        CrawledLink parent = link.getSourceLink();
+        if (parent != null && parent instanceof LinkCheckLink) { return ((LinkCheckLink) parent).getLinkCheckID(); }
+        return null;
+    }
+
 }

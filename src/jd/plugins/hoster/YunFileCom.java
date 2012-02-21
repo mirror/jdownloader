@@ -144,7 +144,7 @@ public class YunFileCom extends PluginForHost {
         synchronized (LOCK) {
             // Load/Save cookies, if we do NOT do this parallel downloads fail
             br.setReadTimeout(3 * 60 * 1000);
-            br.setCookiesExclusive(false);
+            br.setCookiesExclusive(true);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = account.getUser().matches(account.getStringProperty("name", account.getUser()));
             if (acmatch) acmatch = account.getPass().matches(account.getStringProperty("pass", account.getPass()));

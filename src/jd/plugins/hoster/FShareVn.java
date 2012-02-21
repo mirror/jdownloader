@@ -194,7 +194,7 @@ public class FShareVn extends PluginForHost {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
-                br.setCookiesExclusive(false);
+                br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));

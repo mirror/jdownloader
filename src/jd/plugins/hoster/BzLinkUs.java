@@ -535,7 +535,7 @@ public class BzLinkUs extends PluginForHost {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
-                br.setCookiesExclusive(false);
+                br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
