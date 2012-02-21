@@ -529,6 +529,7 @@ public class BzLinkUs extends PluginForHost {
         }
     }
 
+    /** Only tested for registered accounts */
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {

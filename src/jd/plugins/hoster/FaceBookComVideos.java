@@ -22,6 +22,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -42,14 +44,15 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?facebook\\.com/(video/video\\.php\\?v=|profile\\.php\\?id=\\d+\\&ref=ts#\\!/video/video\\.php\\?v=)\\d+" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
 
-    private String              dllink           = null;
     private static String       FACEBOOKMAINPAGE = "http://www.facebook.com";
+    private static String       PREFERHD         = "http://www.facebook.com";
     private static final String DLLINKREGEXP     = "\\(\"(highqual|video)_src\", \"(http.*?)\"\\)";
     private static final Object LOCK             = new Object();
 
     public FaceBookComVideos(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.facebook.com/r.php");
+        setConfigElements();
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -104,14 +107,35 @@ public class FaceBookComVideos extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
     }
 
+    private String getHigh() {
+        return br.getRegex("\"highqual_src\",\"(http[^<>\"\\']+)\"").getMatch(0);
+    }
+
+    private String getLow() {
+        return br.getRegex("\"lowqual_src\",\"(http[^<>\"\\']+)\"").getMatch(0);
+    }
+
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
-        final String addedlink = downloadLink.getDownloadURL();
-        if (dllink == null) {
-            br.getPage(addedlink);
-            dllink = br.getRegex(DLLINKREGEXP).getMatch(1);
+        boolean preferHD = getPluginConfig().getBooleanProperty(PREFERHD);
+        String dllink = null;
+        if (preferHD) {
+            dllink = getHigh();
+            if (dllink == null) getLow();
+        } else {
+            dllink = getLow();
+            if (dllink == null) getHigh();
         }
+        if (dllink == null) {
+            logger.warning("Final downloadlink (dllink) is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = Encoding.urlDecode(decodeUnicode(dllink), true);
+        // if (dllink == null) {
+        // br.getPage(downloadLink.getDownloadURL());
+        // dllink = br.getRegex(DLLINKREGEXP).getMatch(1);
+        // }
         if (dllink == null) {
             logger.warning("Final downloadlink (dllink) is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -200,30 +224,12 @@ public class FaceBookComVideos extends PluginForHost {
         br.getPage(link.getDownloadURL());
         String getThisPage = br.getRegex("window\\.location\\.replace\\(\"(http:.*?)\"").getMatch(0);
         if (getThisPage != null) br.getPage(getThisPage.replace("\\", ""));
-        if (br.containsHTML("(No htmlCode read|>Dieses Video wurde entweder von Facebook entfernt oder)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        dllink = Encoding.urlDecode(decodeUnicode(br.getRegex(DLLINKREGEXP).getMatch(1)), true);
-        // extrahiere Videoname aus HTML-Quellcode
-        String filename = br.getRegex("class=\"video_title datawrap\">(.*)</h3>").getMatch(0);
-        // wird nichts gefunden, versuche Videoname aus einem anderen
-        // Teil des Quellcodes rauszusuchen
+        if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("tabindex=\"0\" class=\"uiHeaderTitle\">([^<>\"\\']+)</h2>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>Facebook \\| Videos posted by .*: (.*)</title>").getMatch(0);
+            filename = br.getRegex("\">Titel:</span>([^<>\"\\']+)</div>").getMatch(0);
             if (filename == null) {
-                // Immer versuchen, allgemeine Regexes zu machen, da die
-                // Spracheinstellung nicht per Cookie funktioniert und jedes mal
-                // die Sprache ändern sinnlos ist!
-                filename = br.getRegex("class=\"mbs\"><span class=\"mtm mbs mrs fsm fwn fcg\">[A-Za-z]{1,30}:</span>(.*?)<span class").getMatch(0);
-                // falls Videoname immer noch nicht gefunden wurde, dann
-                // versuche Username & Video-ID als Filename zu nehmen
-                if (filename == null) {
-                    filename = br.getRegex("<title>Facebook \\| Videos posted by (.*): .*</title>").getMatch(0);
-                    // falls Username gefunden wurde, so setze dies und Video-ID
-                    // zusammen
-                    if (filename != null) {
-                        final String videoid = new Regex(link.getDownloadURL(), "facebook\\.com/video/video\\.php\\?v=(\\d+)").getMatch(0);
-                        filename = filename + " - Video_" + videoid;
-                    }
-                }
+                filename = br.getRegex("<title>([^<>\"\\']+) \\| Facebook</title>").getMatch(0);
             }
         }
 
@@ -237,6 +243,10 @@ public class FaceBookComVideos extends PluginForHost {
             // falls nicht, so setze den Download als nicht verfügbar
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FaceBookComVideos.PREFERHD, JDL.L("plugins.hoster.facebookcomvideos.preferhd", "Prefer HD quality")).setDefaultValue(true));
     }
 
     @Override

@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfreeporn.us" }, urls = { "http://(www\\.)?yourfreeporn\\.us/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfreeporn.us" }, urls = { "http://(www\\.)?yourfreeporn\\.us/video/\\d+(/[a-z0-9\\-_]+)?" }, flags = { 0 })
 public class YourFreePornUs extends PluginForHost {
 
     private String DLLINK = null;
@@ -46,14 +46,14 @@ public class YourFreePornUs extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        // More downloads/connections possible but only with server errors
-        return 8;
+        // 2 downloads, each 3 connections is max
+        return 2;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -3);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(">403 \\- Forbidden<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
@@ -68,11 +68,20 @@ public class YourFreePornUs extends PluginForHost {
         br.setFollowRedirects(true);
         br.postPage(downloadLink.getDownloadURL(), "language=en_US");
         if (br.getURL().contains("/error/video_missing") || br.containsHTML(">This video cannot be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) \\- Free Videos Adult Sex Tube \\- yourfreeporn\\.us</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        String filename = null;
+        /**
+         * Limit reached? We don't care, we can get the filename from the url
+         * and still start the download
+         */
+        if (br.containsHTML("<div align=\"center\"><a href=\"/signup\\.php\"")) {
+            filename = new Regex(downloadLink.getDownloadURL(), "yourfreeporn\\.us/video/\\d+/([a-z0-9\\-_]+)").getMatch(0);
+            if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), "yourfreeporn\\.us/video/(\\d+)").getMatch(0);
+        } else {
+            filename = br.getRegex("<title>(.*?) \\- Free Videos Adult Sex Tube \\- yourfreeporn\\.us</title>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        }
         br.getPage("http://www.yourfreeporn.us/media/player/config.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "yourfreeporn\\.us/video/(\\d+)").getMatch(0));
         DLLINK = br.getRegex("<src>(http://.*?)</src>").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
