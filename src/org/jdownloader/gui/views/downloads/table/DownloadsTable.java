@@ -22,7 +22,6 @@ import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtColumn;
-import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -41,14 +40,10 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     public DownloadsTable(final DownloadsTableModel tableModel) {
         super(tableModel);
-
-        if (Application.getJavaVersion() >= Application.JAVA16) {
-            this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
-            this.setTransferHandler(new DownloadsTableTransferHandler(this));
-            this.setDragEnabled(true);
-            this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
-        }
-
+        this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
+        this.setTransferHandler(new DownloadsTableTransferHandler(this));
+        this.setDragEnabled(true);
+        this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
         initActions();
         onSelectionChanged();
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);

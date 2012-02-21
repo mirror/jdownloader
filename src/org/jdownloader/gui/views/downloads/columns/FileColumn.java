@@ -127,7 +127,19 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
     }
 
     public void configureRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
-        super.configureRendererComponent(value, isSelected, hasFocus, row, column);
+        this.rendererIcon.setIcon(this.getIcon(value));
+        String str = this.getStringValue(value);
+        if (str == null) {
+            // under substance, setting setText(null) somehow sets the label
+            // opaque.
+            str = "";
+        }
+
+        if (getTableColumn() != null) {
+            this.rendererField.setText(SwingUtilities2.clipStringIfNecessary(rendererField, rendererField.getFontMetrics(rendererField.getFont()), str, getTableColumn().getWidth() - rendererIcon.getPreferredSize().width - 32));
+        } else {
+            this.rendererField.setText(str);
+        }
         if (value instanceof AbstractPackageNode) {
             renderer.setBorder(normalBorder);
         } else {
@@ -167,13 +179,8 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public final String getStringValue(AbstractNode value) {
-        if (value instanceof AbstractPackageNode) {
-            return value.getName();
 
-        } else {
-            return SwingUtilities2.clipStringIfNecessary(rendererField, rendererField.getFontMetrics(rendererField.getFont()), value.getName(), getTableColumn().getWidth() - rendererIcon.getPreferredSize().width - 5 - 32);
-
-        }
+        return value.getName();
 
     }
 

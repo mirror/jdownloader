@@ -1,12 +1,33 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import java.awt.Color;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.proxy.ProxyController;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
+import org.appwork.swing.components.multiprogressbar.MultiProgressBar;
+import org.appwork.swing.components.multiprogressbar.Range;
+import org.appwork.swing.components.tooltips.ExtTooltip;
+import org.appwork.swing.components.tooltips.PanelToolTip;
+import org.appwork.swing.components.tooltips.ToolTipController;
+import org.appwork.swing.components.tooltips.TooltipPanel;
 import org.appwork.swing.exttable.columns.ExtProgressColumn;
+import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.translate._GUI;
 
 public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
@@ -18,11 +39,96 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
 
     public ProgressColumn() {
         super(_GUI._.ProgressColumn_ProgressColumn());
+
     }
 
     @Override
     public boolean isEnabled(AbstractNode obj) {
+
         return obj.isEnabled();
+    }
+
+    protected void onDoubleClick(final MouseEvent e, final AbstractNode obj) {
+        SwingUtilities.invokeLater(new Runnable() {
+
+            public void run() {
+                ToolTipController.getInstance().show(getModel().getTable().createExtTooltip(null));
+            }
+        });
+
+    }
+
+    public ExtTooltip createToolTip(final Point position, final AbstractNode obj) {
+        TooltipPanel panel = new TooltipPanel("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]");
+        final MultiProgressBar mpb = new MultiProgressBar(1000);
+        mpb.setForeground(new Color(LookAndFeelController.getInstance().getLAFOptions().getTooltipForegroundColor()));
+
+        updateRanges(obj, mpb);
+
+        JLabel lbl = new JLabel(_GUI._.ProgressColumn_createToolTip_object_());
+        lbl.setForeground(new Color(LookAndFeelController.getInstance().getLAFOptions().getTooltipForegroundColor()));
+        SwingUtils.toBold(lbl);
+        panel.add(lbl);
+        mpb.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, new Color(LookAndFeelController.getInstance().getLAFOptions().getTooltipForegroundColor())));
+        panel.add(mpb, "width 300!,height 24!");
+
+        return new PanelToolTip(panel) {
+            private ActionListener listener;
+            private Timer          timer;
+
+            /**
+             * 
+             */
+            public void onShow() {
+                this.timer = new Timer(1000, listener = new ActionListener() {
+
+                    public void actionPerformed(ActionEvent e) {
+                        updateRanges(obj, mpb);
+                        repaint();
+                    }
+
+                });
+                timer.start();
+            }
+
+            /**
+             * 
+             */
+            public void onHide() {
+                timer.stop();
+            }
+        };
+    }
+
+    public void updateRanges(final AbstractNode obj, final MultiProgressBar mpb) {
+        if (obj instanceof DownloadLink) {
+            mpb.getModel().setMaximum(((DownloadLink) obj).getDownloadMax());
+            ArrayList<Range> ranges = new ArrayList<Range>();
+
+            long[] chunks = ((DownloadLink) obj).getChunksProgress();
+            long part = ((DownloadLink) obj).getDownloadMax() / chunks.length;
+            for (int i = 0; i < chunks.length; i++) {
+                ranges.add(new Range(i * part, chunks[i]));
+            }
+            mpb.getModel().setRanges(ranges.toArray(new Range[] {}));
+        } else if (obj instanceof FilePackage) {
+            synchronized (obj) {
+
+                long size = ((FilePackage) obj).getFilePackageInfo().getSize();
+                mpb.getModel().setMaximum(size);
+                ArrayList<Range> ranges = new ArrayList<Range>();
+
+                List<DownloadLink> children = ((FilePackage) obj).getChildren();
+                int count = children.size();
+
+                long all = 0;
+                for (int i = 0; i < count; i++) {
+                    ranges.add(new Range(all, all + children.get(i).getDownloadCurrent()));
+                    all += children.get(i).getDownloadSize();
+                }
+                mpb.getModel().setRanges(ranges.toArray(new Range[] {}));
+            }
+        }
     }
 
     @Override

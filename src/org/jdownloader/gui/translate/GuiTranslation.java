@@ -3499,4 +3499,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "You renamed one file of an archive that has several parts.\r\nYou have to rename all parts in order to keep the archive extractable!" })
     String FileColumn_setStringValue_msg_();
 
+    @Default(lngs = { "en" }, values = { "Chunks Progress:" })
+    String ProgressColumn_createToolTip_object_();
+
 }

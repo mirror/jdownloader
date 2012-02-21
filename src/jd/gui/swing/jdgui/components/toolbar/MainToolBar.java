@@ -113,7 +113,7 @@ public class MainToolBar extends JToolBar {
         for (int i = 0; i < size; ++i) {
             sb.append("[]2");
         }
-        sb.append("[grow,fill]");
+        sb.append("[grow,fill][]");
         return sb.toString();
     }
 
@@ -153,7 +153,7 @@ public class MainToolBar extends JToolBar {
         AbstractToolbarAction[] list = ToolbarManager.getInstance().getList();
         this.setLayout(new MigLayout("ins 0 3 0 0", this.getColConstraints(list.length), "[grow,fill,32!]"));
         AbstractButton ab;
-
+        // System.out.println(this.getColConstraints(list.length));
         for (final AbstractToolbarAction action : list) {
             action.init();
             AbstractButton bt = null;
