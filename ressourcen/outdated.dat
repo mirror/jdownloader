@@ -690,3 +690,6 @@ jd/plugins/decrypter/WCrptIn.class
 jd/plugins/decrypter/LnkcltCm.class
 jd/plugins/decrypter/FlZnR.class
 jd/plugins/hoster/FileZoneRo.class
+jd/plugins/decrypter/FourMuCm.class
+jd/plugins/hoster/XSevenTo.class
+jd/plugins/decrypter/X7ToFldr.class

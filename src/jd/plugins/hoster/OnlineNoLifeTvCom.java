@@ -162,7 +162,6 @@ public class OnlineNoLifeTvCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                // br.getPage("");
                 final String pwhash = Hash.getMD5(account.getPass());
                 br.postPage("http://forum.nolife-tv.com/login.php?do=login", "vb_login_username=" + Encoding.urlEncode(account.getUser()) + "&cookieuser=1&vb_login_password=&s=&securitytoken=guest&do=login&vb_login_md5password=" + pwhash + "&vb_login_md5password_utf=" + pwhash);
                 if (br.getCookie(MAINPAGE, "bbuserid") == null || br.getCookie(MAINPAGE, "bbpassword") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
