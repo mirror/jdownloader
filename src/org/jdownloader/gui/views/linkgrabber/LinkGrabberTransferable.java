@@ -42,16 +42,6 @@ public class LinkGrabberTransferable extends PackageControllerTableTransferable<
         throw new UnsupportedFlavorException(flavor);
     }
 
-    @Override
-    public boolean isDataFlavorSupported(DataFlavor wished) {
-        if (wished != null) {
-            for (DataFlavor exist : flavors) {
-                if (exist.equals(wished)) return true;
-            }
-        }
-        return false;
-    }
-
     private HashSet<String> getURLs() {
         PackageControllerTableTransferableContent<CrawledPackage, CrawledLink> lcontent = content;
         HashSet<String> urls = new HashSet<String>();

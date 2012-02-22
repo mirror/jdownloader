@@ -220,7 +220,13 @@ public class ShareFlareNet extends PluginForHost {
             if (url == null) url = br.getRegex("class=\"btn\\-corner\\-tl\"><a style=\\'font\\-size: 16px\\' href=\\'(http://[^<>\"\\']+)\\'").getMatch(0);
             if (url == null) url = br.getRegex("Link to the file download\" href=\"(http://[^<>\"\\']+)\"").getMatch(0);
         }
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url == null) {
+            if (br.containsHTML("The premium key you provided does not exist")) {
+                logger.info("The premium key you provided does not exist");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

@@ -40,6 +40,10 @@ public class PackageControllerTableTransferable<PackageType extends AbstractPack
         return flavors;
     }
 
+    protected boolean isEmpty() {
+        return content == null || (content.links == null || content.links.size() == 0) && (content.packages == null || content.packages.size() == 0);
+    }
+
     public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
         if (!isDataFlavorSupported(flavor)) throw new UnsupportedFlavorException(flavor);
         if (flavor.equals(FLAVOR)) return content;
@@ -47,17 +51,12 @@ public class PackageControllerTableTransferable<PackageType extends AbstractPack
     }
 
     public boolean isDataFlavorSupported(DataFlavor wished) {
-        if (wished != null) {
+        if (wished != null && !isEmpty()) {
             for (DataFlavor exist : flavors) {
                 if (exist.equals(wished)) return true;
             }
         }
         return false;
-    }
-
-    protected void exportDone() {
-        flavors = new DataFlavor[0];
-        content = null;
     }
 
 }

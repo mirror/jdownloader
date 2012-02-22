@@ -32,4 +32,9 @@ public class PackageControllerTableTransferableContent<PackageType extends Abstr
     }
 
     protected ArrayList<ChildrenType> links = null;
+
+    protected void exportDone() {
+        links = null;
+        packages = null;
+    }
 }

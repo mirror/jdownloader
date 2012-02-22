@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.Color;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import java.util.EventObject;
 import javax.swing.DropMode;
 import javax.swing.ImageIcon;
 import javax.swing.JPopupMenu;
+import javax.swing.TransferHandler;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -80,6 +82,24 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     @Override
     protected boolean onShortcutDelete(final ArrayList<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
         new RemoveSelectionAction(this, selectedObjects).actionPerformed(null);
+        return true;
+    }
+
+    @Override
+    protected boolean onShortcutCopy(ArrayList<AbstractNode> selectedObjects, KeyEvent evt) {
+        TransferHandler.getCopyAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "copy"));
+        return true;
+    }
+
+    @Override
+    protected boolean onShortcutCut(ArrayList<AbstractNode> selectedObjects, KeyEvent evt) {
+        TransferHandler.getCutAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "cut"));
+        return true;
+    }
+
+    @Override
+    protected boolean onShortcutPaste(ArrayList<AbstractNode> selectedObjects, KeyEvent evt) {
+        TransferHandler.getPasteAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "paste"));
         return true;
     }
 
