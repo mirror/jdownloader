@@ -14,6 +14,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.Timer;
+import javax.swing.TransferHandler;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.JDGui;
@@ -380,6 +381,24 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             }
         }).start();
 
+    }
+
+    @Override
+    protected boolean onShortcutCopy(ArrayList<AbstractNode> selectedObjects, KeyEvent evt) {
+        TransferHandler.getCopyAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "copy"));
+        return true;
+    }
+
+    @Override
+    protected boolean onShortcutCut(ArrayList<AbstractNode> selectedObjects, KeyEvent evt) {
+        TransferHandler.getCutAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "cut"));
+        return true;
+    }
+
+    @Override
+    protected boolean onShortcutPaste(ArrayList<AbstractNode> selectedObjects, KeyEvent evt) {
+        TransferHandler.getPasteAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "paste"));
+        return true;
     }
 
 }
