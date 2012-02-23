@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -57,7 +58,7 @@ public class Netloadin extends PluginForHost {
     public Netloadin(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(1000l);
-        this.enablePremium("http://netload.in/index.php?refer_id=134847&id=39");
+        this.enablePremium("http://netload.in/index.php?refer_id=134847&id=5");
     }
 
     private void checkErrors(DownloadLink downloadLink, Browser br, boolean checkFail) throws Exception {
@@ -65,6 +66,31 @@ public class Netloadin extends PluginForHost {
         String state = br.getRegex("state\":\"(.*?)\"").getMatch(0);
         if ("hddcrash".equalsIgnoreCase(state)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HDDCrash(In Recovery)", 12 * 60 * 60 * 1000l);
         if ("maintenance".equalsIgnoreCase(state)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maintenance", 2 * 60 * 60 * 1000l);
+        if ("only_premium_download".equalsIgnoreCase(state)) {
+
+            if (JDL.isGerman()) {
+                if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, "Download nur mit Netload Premium", "Leider kann diese Datei nur mit einem Netload Premium Account heruntergeladen werden.", null, "Mehr Informationen...", "Datei überspringen"))) {
+                    try {
+                        java.awt.Desktop.getDesktop().browse(new URL("http://jdownloader.org/r.php?u=http%3A%2F%2Fnetload.in%2Findex.php%3Frefer_id%3D134847%26id%3D5").toURI());
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Nur mit Premium");
+            } else {
+                if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, "Netload Premium required", "This file can be only downloaded with a Netload premium account.", null, "More Information...", "Skip Link"))) {
+                    try {
+                        java.awt.Desktop.getDesktop().browse(new URL("http://jdownloader.org/r.php?u=http%3A%2F%2Fnetload.in%2Findex.php%3Frefer_id%3D134847%26id%3D5").toURI());
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only");
+            }
+
+        }
+
         if (checkFail && "fail".equalsIgnoreCase(state)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 4 * 60 * 60 * 1000l); }
     }
 
