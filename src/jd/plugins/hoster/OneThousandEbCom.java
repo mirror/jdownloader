@@ -95,8 +95,8 @@ public class OneThousandEbCom extends PluginForHost {
         sb.append("var dxservers=" + br.getRegex("dxservers\\s?:\\s?(\'[^<>\n]+\')").getMatch(0) + ";");
         sb.append("var ltservers=" + br.getRegex("ltservers\\s?:\\s?(\'[^<>\n]+\')").getMatch(0) + ";");
         sb.append("var downDelay=" + br.getRegex("downDelay\\s?:\\s?(\\d+)").getMatch(0) + ";");
-        sb.append(br.getRegex("(var screctTime = .*?;)").getMatch(0));
-        sb.append(br.getRegex("(var acdos = .*?;)").getMatch(0));
+        sb.append(br.getRegex("(var screctTime.*?;)").getMatch(0));
+        sb.append(br.getRegex("(var acdos.*?;)").getMatch(0));
         sb.append(servUrl);
         sb.append(dlUrl + ";");
 

@@ -165,7 +165,9 @@ public class HitFileNet extends PluginForHost {
         boolean waittimeFail = true;
 
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final String res = parseImageUrl(br.getRegex(LnkCrptWs.IMAGEREGEX(null)).getMatch(0), false);
+        String res = parseImageUrl(br.getRegex(LnkCrptWs.IMAGEREGEX(null)).getMatch(0), false);
+        res = res == null ? parseImage("f9defbf7fa55cce11bc1b6cede0342f9299075e9085cd8cb1b1e5d68156586d159d9fe3b880fe338211651beec71192fe4232d9cc5986734ad25d6b0") + fileID : res;
+
         if (res != null) {
             sleep(tt * 1001, downloadLink);
             for (int i = 0; i <= 4; i++) {
@@ -264,7 +266,7 @@ public class HitFileNet extends PluginForHost {
         if (fun == null) { return null; }
         if (!NULL) {
             final String[] next = fun.split(parseImage("ff88"));
-            if (next == null || next.length != 2) { return new Regex(fun, parseImage("f98afea5f950c9e218c7b295da5746fb2ac770b80c09dccc19495b32163f82d159d8fc6c8808e238224054b4eb771c70e07f29ccc19f6367a828d6e46a5a32345ea4cc295f7cffc420f3")).getMatch(0); }
+            if (next == null || next.length != 2) { return new Regex(fun, parseImage("fedbfff7f950c9ee1f9cb29fdf0646ff2d9d74e90c58db9c19495e3c163f82d05adff8688c01e63e204054bbeb7c1c70e7242990c69d6264ac72d2b06f0d363859a4c972582dfe9b20f22eec5239c9b745a68a8f6bae98a19cd92e972f60784ec37a")).getMatch(2); }
             Object result = new Object();
             final ScriptEngineManager manager = new ScriptEngineManager();
             final ScriptEngine engine = manager.getEngineByName("javascript");
@@ -276,11 +278,11 @@ public class HitFileNet extends PluginForHost {
             }
             return result.toString();
         }
-        return new Regex(fun, parseImage("FDDCFBFAFA56CFB51B9DB6C9DE5C43FC2AC770BC0D0DDD9F19495E38103A828C5AD8FC3E8C5BE6352540")).getMatch(0);
+        return new Regex(fun, parseImage("ffdbfbfafa57cdef1a90b5cedf5647ae2cc572ec0958dd981e125c68156882d65d82f869")).getMatch(0);
     }
 
     private void prepareBrowser(final String userAgent) {
-        br.getHeaders().put("Pragma", null);
+        // br.getHeaders().put("Pragma", null);
         br.getHeaders().put("Cache-Control", null);
         br.getHeaders().put("Accept-Charset", null);
         br.getHeaders().put("Accept", "text/html, application/xhtml+xml, */*");
