@@ -572,4 +572,13 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         contentChanged.incrementAndGet();
     }
 
+    public int indexOf(PackageType pkg) {
+        boolean readL = readLock();
+        try {
+            return packages.indexOf(pkg);
+        } finally {
+            readUnlock(readL);
+        }
+    }
+
 }

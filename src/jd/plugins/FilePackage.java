@@ -701,4 +701,10 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         if (n != null) n.nodeUpdated(this);
     }
 
+    public int indexOf(DownloadLink child) {
+        synchronized (this) {
+            return downloadLinkList.indexOf(child);
+        }
+    }
+
 }

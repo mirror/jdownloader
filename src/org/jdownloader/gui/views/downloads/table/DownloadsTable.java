@@ -12,7 +12,6 @@ import javax.swing.DropMode;
 import javax.swing.ImageIcon;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
-import javax.swing.KeyStroke;
 import javax.swing.Timer;
 import javax.swing.TransferHandler;
 
@@ -28,10 +27,8 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.OffScreenException;
 import org.appwork.utils.swing.dialog.SimpleTextBallon;
-import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
-import org.jdownloader.gui.views.downloads.DownloadTableAction;
 import org.jdownloader.gui.views.downloads.context.DeleteAction;
 import org.jdownloader.images.NewTheme;
 
@@ -45,159 +42,8 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         this.setTransferHandler(new DownloadsTableTransferHandler(this));
         this.setDragEnabled(true);
         this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
-        initActions();
         onSelectionChanged();
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-    }
-
-    @Override
-    protected void onSelectionChanged() {
-        if (this.getExtTableModel().countSelectedObjects() == 0) {
-            // disable move buttons
-            moveDownAction.setEnabled(false);
-            moveToBottomAction.setEnabled(false);
-            moveTopAction.setEnabled(false);
-            moveUpAction.setEnabled(false);
-        } else {
-            // TODO
-            moveDownAction.setEnabled(true);
-            moveToBottomAction.setEnabled(true);
-            moveTopAction.setEnabled(true);
-            moveUpAction.setEnabled(true);
-        }
-    }
-
-    @Override
-    protected boolean processKeyBinding(KeyStroke stroke, KeyEvent evt, int condition, boolean pressed) {
-        if (!pressed) { return super.processKeyBinding(stroke, evt, condition, pressed); }
-
-        switch (evt.getKeyCode()) {
-
-        case KeyEvent.VK_UP:
-            if (evt.isAltDown()) {
-                this.moveUpAction.actionPerformed(null);
-                return true;
-            }
-            break;
-        case KeyEvent.VK_DOWN:
-            if (evt.isAltDown()) {
-                this.moveDownAction.actionPerformed(null);
-                return true;
-            }
-            break;
-
-        case KeyEvent.VK_HOME:
-            if (evt.isAltDown()) {
-                moveTopAction.actionPerformed(null);
-                return true;
-
-            }
-            break;
-        case KeyEvent.VK_END:
-            if (evt.isAltDown()) {
-                moveToBottomAction.actionPerformed(null);
-                return true;
-            }
-            break;
-        }
-
-        return super.processKeyBinding(stroke, evt, condition, pressed);
-    }
-
-    private void initActions() {
-        moveTopAction = new DownloadTableAction() {
-            {
-                // setName(_GUI._.BottomBar_BottomBar_totop());
-                setToolTipText(_GUI._.BottomBar_BottomBar_totop_tooltip());
-                setSmallIcon(NewTheme.I().getIcon("go-top", 20));
-
-            }
-
-            @Override
-            public boolean isEnabled() {
-                return super.isEnabled();
-            }
-
-            public void actionPerformed(ActionEvent e) {
-                System.out.println("go-top");
-            }
-
-        };
-        moveUpAction = new DownloadTableAction() {
-            {
-                // setName(_GUI._.BottomBar_BottomBar_moveup());
-                setToolTipText(_GUI._.BottomBar_BottomBar_moveup_tooltip());
-                setSmallIcon(NewTheme.I().getIcon("go-up", 20));
-
-            }
-
-            @Override
-            public boolean isEnabled() {
-                return super.isEnabled();
-            }
-
-            public void actionPerformed(ActionEvent e) {
-                System.out.println("go-up");
-            }
-
-        };
-        moveDownAction = new DownloadTableAction() {
-            {
-                // setName(_GUI._.BottomBar_BottomBar_movedown());
-                setToolTipText(_GUI._.BottomBar_BottomBar_movedown_tooltip());
-                setSmallIcon(NewTheme.I().getIcon("go-down", 20));
-
-            }
-
-            @Override
-            public boolean isEnabled() {
-                return super.isEnabled();
-            }
-
-            public void actionPerformed(ActionEvent e) {
-                System.out.println("go-down");
-            }
-
-        };
-        moveToBottomAction = new DownloadTableAction() {
-            {
-                // setName(_GUI._.BottomBar_BottomBar_tobottom());
-                setToolTipText(_GUI._.BottomBar_BottomBar_tobottom_tooltip());
-                setSmallIcon(NewTheme.I().getIcon("go-bottom", 20));
-
-            }
-
-            @Override
-            public boolean isEnabled() {
-                return super.isEnabled();
-            }
-
-            public void actionPerformed(ActionEvent e) {
-                System.out.println("go-bottom");
-            }
-
-        };
-    }
-
-    private DownloadTableAction moveTopAction;
-    private DownloadTableAction moveUpAction;
-    private DownloadTableAction moveDownAction;
-    private DownloadTableAction moveToBottomAction;
-
-    public AppAction getMoveDownAction() {
-        return moveDownAction;
-    }
-
-    public AppAction getMoveTopAction() {
-        return moveTopAction;
-    }
-
-    public AppAction getMoveToBottomAction() {
-        return moveToBottomAction;
-    }
-
-    public AppAction getMoveUpAction() {
-        return moveUpAction;
     }
 
     @Override
@@ -209,7 +55,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     protected boolean onShortcutDelete(final ArrayList<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
-
         new DeleteAction(getAllSelectedChildren(selectedObjects), direct).actionPerformed(null);
         return true;
     }
@@ -314,11 +159,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         boolean ret = super.editCellAt(row, column);
 
         return ret;
-    }
-
-    protected void processMouseMotionEvent(MouseEvent e) {
-
-        super.processMouseMotionEvent(e);
     }
 
     @Override

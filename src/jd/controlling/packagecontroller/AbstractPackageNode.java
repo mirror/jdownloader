@@ -20,4 +20,6 @@ public interface AbstractPackageNode<V extends AbstractPackageChildrenNode<E>, E
 
     void setExpanded(boolean b);
 
+    int indexOf(V child);
+
 }

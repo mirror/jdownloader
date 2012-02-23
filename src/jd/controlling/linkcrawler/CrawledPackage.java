@@ -167,4 +167,10 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         if (n != null) n.nodeUpdated(this);
     }
 
+    public int indexOf(CrawledLink child) {
+        synchronized (this) {
+            return children.indexOf(child);
+        }
+    }
+
 }

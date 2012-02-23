@@ -88,9 +88,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
         }
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public boolean canImport(TransferSupport support) {
+    protected boolean canImportPackageControllerTransferable(TransferSupport support) {
         if (!table.isOriginalOrder()) { return false; }
         PackageControllerTableTransferableContent<PackageType, ChildrenType> content = getContent(support);
         if (content == null) return false;
@@ -207,10 +205,21 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
         return true;
     }
 
-    @SuppressWarnings("unchecked")
+    abstract protected boolean importTransferable(TransferSupport support);
+
+    abstract protected boolean canImportTransferable(TransferSupport support);
+
     @Override
-    public boolean importData(TransferSupport support) {
-        if (canImport(support) == false) return false;
+    public boolean canImport(TransferSupport support) {
+        boolean ret = canImportPackageControllerTransferable(support);
+        if (ret == false && !support.isDataFlavorSupported(PackageControllerTableTransferable.FLAVOR)) {
+            ret = canImportTransferable(support);
+        }
+        return ret;
+    }
+
+    protected boolean importPackageControllerTransferable(TransferSupport support) {
+        if (canImportPackageControllerTransferable(support) == false) return false;
         QueuePriority prio = org.appwork.utils.event.queue.Queue.QueuePriority.HIGH;
         PackageControllerTableTransferableContent<PackageType, ChildrenType> content = getContent(support);
         ArrayList<ChildrenType> tmpLinks = null;
@@ -315,6 +324,15 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
         content.exportDone();
         return true;
 
+    }
+
+    @Override
+    public boolean importData(TransferSupport support) {
+        boolean ret = importPackageControllerTransferable(support);
+        if (ret == false && !support.isDataFlavorSupported(PackageControllerTableTransferable.FLAVOR)) {
+            ret = importTransferable(support);
+        }
+        return ret;
     }
 
 }

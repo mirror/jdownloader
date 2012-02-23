@@ -184,6 +184,9 @@ abstract public class DownloadInterface {
                 }
             } catch (InterruptedException e) {
                 return null;
+            } catch (NullPointerException e) {
+                if (downloadLink.getLivePlugin() == null) return null;
+                throw e;
             }
             downloadLink.getLivePlugin().putLastConnectionTime(System.currentTimeMillis());
             long start = startByte;

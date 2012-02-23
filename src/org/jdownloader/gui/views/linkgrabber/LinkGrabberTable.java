@@ -86,6 +86,11 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     }
 
     @Override
+    protected boolean updateMoveButtonEnabledStatus() {
+        return false;
+    }
+
+    @Override
     protected boolean onShortcutCopy(ArrayList<AbstractNode> selectedObjects, KeyEvent evt) {
         TransferHandler.getCopyAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "copy"));
         return true;

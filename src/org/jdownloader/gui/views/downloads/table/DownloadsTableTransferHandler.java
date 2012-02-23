@@ -17,35 +17,19 @@ public class DownloadsTableTransferHandler extends PackageControllerTableTransfe
     }
 
     @Override
-    public boolean canImport(TransferSupport support) {
-        boolean ret = super.canImport(support);
-        if (ret == false && support.isDataFlavorSupported(PackageControllerTableTransferable.FLAVOR)) {
-            /*
-             * check if we have DownloadList stuff inside our Transferable, if
-             * yes, we stop here to not fuxx up the dragdrop logic
-             */
-            return false;
-        }
-        if (ret == false) {
-            /* check for LinkCrawler stuff */
-            ret = ClipboardMonitoring.hasSupportedTransferData(support.getTransferable());
-        }
-        return ret;
-    }
-
-    @Override
     protected Transferable customizeTransferable(PackageControllerTableTransferable<FilePackage, DownloadLink> ret2) {
         return new DownloadsTransferable(ret2);
     }
 
     @Override
-    public boolean importData(TransferSupport support) {
-        boolean ret = super.importData(support);
-        if (ret == false && support.isDataFlavorSupported(PackageControllerTableTransferable.FLAVOR)) {
-            ClipboardMonitoring.processSupportedTransferData(support.getTransferable());
-            ret = true;
-        }
-        return ret;
+    protected boolean importTransferable(TransferSupport support) {
+        ClipboardMonitoring.processSupportedTransferData(support.getTransferable());
+        return true;
+    }
+
+    @Override
+    protected boolean canImportTransferable(TransferSupport support) {
+        return ClipboardMonitoring.hasSupportedTransferData(support.getTransferable());
     }
 
 }

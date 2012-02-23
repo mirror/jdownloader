@@ -165,19 +165,15 @@ public class BottomBar extends MigPanel {
         add(combo, "height 24!,aligny top,gapleft 2");
 
         if (config.isShowMoveToTopButton()) {
-
             addButton(table.getMoveTopAction());
         }
         if (config.isShowMoveUpButton()) {
-
             addButton(table.getMoveUpAction());
         }
         if (config.isShowMoveDownButton()) {
-
             addButton(table.getMoveDownAction());
         }
         if (config.isShowMoveToBottomButton()) {
-
             addButton(table.getMoveToBottomAction());
         }
         addButton(new AppAction() {
