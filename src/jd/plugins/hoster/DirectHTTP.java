@@ -221,7 +221,8 @@ public class DirectHTTP extends PluginForHost {
 
         }
 
-        public void prepareForm(final String code) throws PluginException {
+        /* do not use for plugins at the moment */
+        private void prepareForm(final String code) throws PluginException {
             if (this.challenge == null || code == null) {
                 JDLogger.getLogger().severe("Recaptcha Module fail: challenge or code equals null!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

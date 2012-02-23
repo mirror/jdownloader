@@ -237,7 +237,9 @@ public class XUploadingNet extends PluginForHost {
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 String c = getCaptchaCode(cf, downloadLink);
-                rc.prepareForm(c);
+                Form rcform = rc.getForm();
+                rcform.put("recaptcha_challenge_field", rc.getChallenge());
+                rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
                 logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                 dlForm = rc.getForm();
                 // waittime is often skippable for reCaptcha handling

@@ -88,7 +88,9 @@ public class FavUploadCom extends PluginForHost {
         rc.load();
         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
         String c = getCaptchaCode(cf, downloadLink);
-        rc.prepareForm(c);
+        Form rcform = rc.getForm();
+        rcform.put("recaptcha_challenge_field", rc.getChallenge());
+        rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, rc.getForm(), true, -5);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

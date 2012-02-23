@@ -557,6 +557,9 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             if (finallink == null) {
                 finallink = br.getRegex("name=\"movie\" value=\"([^\"\\'<>]+)\"").getMatch(0);
             }
+            if (finallink == null) {
+                finallink = br.getRedirectLocation();
+            }
         } else if (parameter.contains("unlimfiles.com/")) {
             finallink = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
         } else if (parameter.contains("mediaboom.org/")) {

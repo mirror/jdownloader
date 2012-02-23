@@ -367,14 +367,19 @@ public class Rapidshare extends PluginForHost {
             @Override
             protected void addChunk(final Chunk chunk) {
                 final Chunk newChunk = new Chunk(chunk.getStartByte(), chunk.getEndByte(), this.connection, this) {
+                    final int max   = 30 * 1024;
+                    int       speed = 30 * 1024;
 
                     @Override
                     public int getMaximalSpeed() {
-                        return 30 * 1024;
+                        if (speed >= max) return max;
+                        if (speed <= 0) return max;
+                        return speed;
                     }
 
                     @Override
                     public void setMaximalSpeed(final int i) {
+                        this.speed = i;
                     }
 
                 };
