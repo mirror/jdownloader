@@ -42,6 +42,7 @@ public class NaszaKlasa extends PluginForHost {
 
     public NaszaKlasa(final PluginWrapper wrapper) {
         super(wrapper);
+        setStartIntervall(2000l + (long) 1000 * (int) Math.round(Math.random() * 3 + Math.random() * 3));
         this.enablePremium("http://nk.pl/main");
     }
 
