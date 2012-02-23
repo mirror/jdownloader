@@ -287,11 +287,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 setSmallIcon(NewTheme.I().getIcon("go-bottom", 20));
             }
 
-            @Override
-            public boolean isEnabled() {
-                return super.isEnabled();
-            }
-
             public void actionPerformed(ActionEvent e) {
                 IOEQ.add(new Runnable() {
 

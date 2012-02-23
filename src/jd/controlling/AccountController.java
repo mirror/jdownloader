@@ -38,6 +38,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.apache.commons.lang.StringUtils;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
@@ -243,6 +244,7 @@ public class AccountController implements AccountControllerListener {
                     } else if (pe.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
                         account.setEnabled(false);
                         account.setValid(false);
+                        if (StringUtils.isEmpty(ai.getStatus())) ai.setStatus("Invalid Account!");
                         logger.severe("Premium Account " + account.getUser() + ": expired:");
                         this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_INVALID, hostname, account));
                         return ai;

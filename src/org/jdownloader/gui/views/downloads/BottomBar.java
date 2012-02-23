@@ -165,16 +165,17 @@ public class BottomBar extends MigPanel {
         add(combo, "height 24!,aligny top,gapleft 2");
 
         if (config.isShowMoveToTopButton()) {
-            addButton(table.getMoveTopAction());
+            addButton(table.getMoveTopAction()).setFocusable(false);
         }
         if (config.isShowMoveUpButton()) {
-            addButton(table.getMoveUpAction());
+            addButton(table.getMoveUpAction()).setFocusable(false);
+
         }
         if (config.isShowMoveDownButton()) {
-            addButton(table.getMoveDownAction());
+            addButton(table.getMoveDownAction()).setFocusable(false);
         }
         if (config.isShowMoveToBottomButton()) {
-            addButton(table.getMoveToBottomAction());
+            addButton(table.getMoveToBottomAction()).setFocusable(false);
         }
         addButton(new AppAction() {
             {
@@ -219,12 +220,13 @@ public class BottomBar extends MigPanel {
 
     }
 
-    private void addButton(AppAction action) {
+    private ExtButton addButton(AppAction action) {
         ExtButton bt = new ExtButton(action);
         // bt.setText("");
         // bt.setRolloverEffectEnabled(true);
 
         add(bt, "width 24!,height 24!,gapleft 2,aligny top");
+        return bt;
     }
 
 }
