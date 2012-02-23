@@ -397,7 +397,7 @@ public class OneHostClickCom extends PluginForHost {
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
-        if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        if (new Regex(correctedBR, Pattern.compile("(No file|was not found on this server\\.<)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -562,7 +562,8 @@ public class OneHostClickCom extends PluginForHost {
                 }
                 br.setCookie(COOKIE_HOST, "lang", "english");
                 br.getPage(COOKIE_HOST + "/login.html");
-                Form loginform = br.getForm(0);
+                Form loginform = br.getForm(1);
+                if (loginform == null) loginform = br.getForm(0);
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));

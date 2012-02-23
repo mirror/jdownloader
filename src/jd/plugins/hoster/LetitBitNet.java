@@ -173,12 +173,13 @@ public class LetitBitNet extends PluginForHost {
             String code = getCaptchaCode("letitbitnew", serverPart + "/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
             sleep(2000, downloadLink);
             br2.postPage(serverPart + "/ajax/check_captcha.php", "code=" + Encoding.urlEncode(code));
-            url = br2.getRegex("\\[\"http:[^<>\"\\']+\",\"(http:[^<>\"\\']+)\"\\]").getMatch(0);
-            if (url.length() < 2 || url.contains("No htmlCode read")) continue;
+            if (br2.toString().length() < 2 || br2.toString().contains("No htmlCode read")) continue;
             break;
         }
-        if (url.length() < 2 || url.contains("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (!url.startsWith("http") || url.length() > 1000) {
+        if (br2.toString().length() < 2 || br2.toString().contains("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        url = br2.getRegex("\\[\"http:[^<>\"\\']+\",\"(http:[^<>\"\\']+)\"\\]").getMatch(0);
+        if (url == null) url = br2.getRegex("\\[\"(http:[^<>\"\\']+)\"").getMatch(0);
+        if (url == null || url.length() > 1000 || !url.startsWith("http")) {
             logger.warning("url couldn't be found!");
             logger.severe(br.toString());
             debugSwitch = true;

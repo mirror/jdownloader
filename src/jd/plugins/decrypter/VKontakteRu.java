@@ -233,7 +233,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptPhotoAlbums(ArrayList<DownloadLink> decryptedLinks, String parameter, ProgressController progress) throws IOException {
         br.getPage(parameter);
-        final String[] regexes = { "class=\\\\\"photo_row\\\\\" id=\\\\\"photo_row\\d+_\\d+\\\\\"><a href=\\\\\"\\\\(/photo\\d+_\\d+)", "class=\"photo_album_row\" id=\"(album\\d+_\\d+)\"" };
+        final String[] regexes = { "class=\"photo_album_row\" id=\"(album\\d+_\\d+)\"", "<div class=\\\\\"photo_album_row\\\\\" id=\\\\\"album(\\d+_\\d+)\\\\\"" };
         for (String regex : regexes) {
             String[] photoAlbums = br.getRegex(regex).getColumn(0);
             if (photoAlbums == null || photoAlbums.length == 0) continue;
@@ -241,10 +241,10 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (photoAlbum.contains("/"))
                     decryptedLinks.add(createDownloadlink("http://vk.com" + photoAlbum));
                 else
-                    decryptedLinks.add(createDownloadlink("http://vk.com/" + photoAlbum));
+                    decryptedLinks.add(createDownloadlink("http://vk.com/album" + photoAlbum));
             }
         }
-        String numberOfEntrys = br.getRegex(",[\t\n\r ]+count: (\\d+),").getMatch(0);
+        String numberOfEntrys = br.getRegex("(\\d+) (альбома|альбомов)</").getMatch(0);
         if (numberOfEntrys == null && (decryptedLinks == null || decryptedLinks.size() == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -255,24 +255,24 @@ public class VKontakteRu extends PluginForDecrypt {
              * of albums - 40 (because without any request we already got 20)
              * and divide it by 20 (every reload we get 20)
              */
-            int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntrys) - 40) / 20);
+            int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntrys) - 40) / 12);
             if (maxLoops < 0) maxLoops = 0;
-            int offset = 20;
+            int offset = 22;
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             progress.setRange(maxLoops);
-            final String postPage = parameter.replace("vk.com/albums", "vk.com/photos");
+            final String postPage = parameter;
             /** Photos are placed in different locations, find them all */
             // Dev note: similar process as above with the offset:
             // http://vk.com/albums3793387, al=1&offset=40&part=1
             for (int i = 0; i <= maxLoops; i++) {
                 if (i > 0) {
-                    offset += 20;
-                    br.postPage(postPage, "&from=albums&al=1&offset=" + offset + "&part=1");
+                    offset += 12;
+                    br.postPage(postPage, "al=1&offset=" + offset + "&part=1");
                 }
-                String[] photoAlbums = br.getRegex("class=\"photo_row\" id=\"photo_row\\d+_\\d+\"><a href=\"(/photo\\d+_\\d+)").getColumn(0);
+                String[] photoAlbums = br.getRegex("class=\"photo_album_row\" id=\"album(\\d+_\\d+)\"").getColumn(0);
                 if (photoAlbums == null || photoAlbums.length == 0) continue;
                 for (String photoAlbum : photoAlbums) {
-                    decryptedLinks.add(createDownloadlink("http://vk.com" + photoAlbum));
+                    decryptedLinks.add(createDownloadlink("http://vk.com/album" + photoAlbum));
                 }
             }
         }

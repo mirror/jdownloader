@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "narod.ru" }, urls = { "http://(www\\.)?narod(\\.yandex)?\\.ru/disk/(\\d+/.+|start/[0-9]+\\.[0-9a-z]+-narod\\.yandex\\.ru/[0-9]{6,15}/[0-9a-z]+/[a-zA-Z0-9%.]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "narod.ru" }, urls = { "http://(www\\.)?narod(\\.yandex)?\\.ru/disk/([^<>\"\\']+\\.html|start/[0-9]+\\.[0-9a-z]+\\-narod\\.yandex\\.ru/[0-9]{6,15}/[0-9a-z]+/[a-zA-Z0-9%.]+)" }, flags = { 0 })
 public class NarodRu extends PluginForHost {
 
     public NarodRu(PluginWrapper wrapper) {
