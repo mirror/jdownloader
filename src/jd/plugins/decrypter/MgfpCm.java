@@ -41,7 +41,7 @@ public class MgfpCm extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
-        if (!parameter.contains("view=2") && !new Regex("imagefap\\.com/gallery\\.php\\?pgid=", "").matches()) parameter += "?view=2";
+        if (!parameter.contains("view=2") && !new Regex(parameter, "imagefap\\.com/gallery\\.php\\?pgid=").matches()) parameter += "?view=2";
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().contains("/pictures/")) {
@@ -66,7 +66,7 @@ public class MgfpCm extends PluginForDecrypt {
             logger.warning("Gallery name could not be found!");
             return null;
         }
-        if (authorsName == null) authorsName = "Unknown author";
+        if (authorsName == null) authorsName = "Anonymous";
         galleryName = Encoding.htmlDecode(galleryName);
         authorsName = Encoding.htmlDecode(authorsName);
         int counter = 1;

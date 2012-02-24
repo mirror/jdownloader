@@ -18,9 +18,15 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -42,13 +48,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class BitShareCom extends PluginForHost {
 
     // private static final String RECAPTCHA = "/recaptcha/";
-    private static final String JSONHOST    = "http://bitshare.com/files-ajax/";
-    private static final String AJAXIDREGEX = "var ajaxdl = \"(.*?)\";";
-    private static final String FILEIDREGEX = "bitshare\\.com/files/([a-z0-9]{8})/";
-    private static final String DLLINKREGEX = "SUCCESS#(http://.+)";
-    private static final String MAINPAGE    = "http://bitshare.com/";
+    private static final String  JSONHOST    = "http://bitshare.com/files-ajax/";
+    private static final String  AJAXIDREGEX = "var ajaxdl = \"(.*?)\";";
+    private static final String  FILEIDREGEX = "bitshare\\.com/files/([a-z0-9]{8})/";
+    private static final String  DLLINKREGEX = "SUCCESS#(http://.+)";
+    private static final String  MAINPAGE    = "http://bitshare.com/";
+    private static AtomicInteger maxPrem     = new AtomicInteger(1);
+    private static final Object  LOCK        = new Object();
 
-    private static final String agent       = RandomUserAgent.generate();
+    private static final String  agent       = RandomUserAgent.generate();
 
     public BitShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -58,8 +66,10 @@ public class BitShareCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         try {
-            login(account);
+            login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
@@ -71,15 +81,29 @@ public class BitShareCom extends PluginForHost {
         if (space != null) ai.setUsedSpace(space.trim());
         account.setValid(true);
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex("Valid until: (.*?)</div>").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
+        if (account.getBooleanProperty("freeaccount")) {
+            ai.setStatus("Registered (free) User");
+            try {
+                maxPrem.set(1);
+                account.setMaxSimultanDownloads(1);
+            } catch (final Throwable e) {
+            }
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "yyyy-MM-dd", null));
+            String expire = br.getRegex("Valid until: (.*?)</div>").getMatch(0);
+            if (expire == null) {
+                ai.setExpired(true);
+                account.setValid(false);
+                return ai;
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "yyyy-MM-dd", null));
+            }
+            ai.setStatus("Premium User");
+            try {
+                maxPrem.set(5);
+                account.setMaxSimultanDownloads(5);
+            } catch (final Throwable e) {
+            }
         }
-        ai.setStatus("Premium User");
         return ai;
     }
 
@@ -95,13 +119,17 @@ public class BitShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        // Maximum allowed connections = 15
-        return 5;
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    private void doFree(DownloadLink downloadLink) throws Exception {
         if (br.containsHTML("Sorry, you cant download more then 1 files at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("> Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
         if (br.containsHTML("You reached your hourly traffic limit")) {
@@ -164,7 +192,7 @@ public class BitShareCom extends PluginForHost {
                 rc.getForm().put("recaptcha_response_field", c);
                 rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
                 br2.submitForm(rc.getForm());
-                if (br2.containsHTML("ERROR:incorrect-captcha")) {
+                if (br2.containsHTML("ERROR:incorrect\\-captcha")) {
                     br.getPage(downloadLink.getDownloadURL());
                     continue;
                 }
@@ -195,6 +223,7 @@ public class BitShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+
     }
 
     private void errorHandling(DownloadLink link, Browser br) throws PluginException {
@@ -206,33 +235,37 @@ public class BitShareCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        login(account);
+        login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            String tempID = br.getRegex(AJAXIDREGEX).getMatch(0);
-            String fileID = new Regex(link.getDownloadURL(), FILEIDREGEX).getMatch(0);
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage(JSONHOST + fileID + "/request.html", "request=generateID&ajaxid=" + tempID);
-            br.postPage(JSONHOST + fileID + "/request.html", "request=getDownloadURL&ajaxid=" + tempID);
-            dllink = br.getRegex(DLLINKREGEX).getMatch(0);
+        if (account.getBooleanProperty("freeaccount")) {
+            doFree(link);
+        } else {
+            String dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                String tempID = br.getRegex(AJAXIDREGEX).getMatch(0);
+                String fileID = new Regex(link.getDownloadURL(), FILEIDREGEX).getMatch(0);
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage(JSONHOST + fileID + "/request.html", "request=generateID&ajaxid=" + tempID);
+                br.postPage(JSONHOST + fileID + "/request.html", "request=getDownloadURL&ajaxid=" + tempID);
+                dllink = br.getRegex(DLLINKREGEX).getMatch(0);
+            }
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* max 15 connections at all */
+            // Remove new line
+            dllink = dllink.trim();
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -3);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                errorHandling(link, br);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* max 15 connections at all */
-        // Remove new line
-        dllink = dllink.trim();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -3);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            errorHandling(link, br);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -245,12 +278,49 @@ public class BitShareCom extends PluginForHost {
         return true;
     }
 
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", agent);
-        br.setCookie(MAINPAGE, "language_selection", "EN");
-        br.postPage("http://bitshare.com/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&rememberlogin=&submit=Login");
-        if (!br.containsHTML("\\(<b>Premium</b>\\)")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(MAINPAGE, key, value);
+                        }
+                        return;
+                    }
+                }
+                br.getHeaders().put("User-Agent", agent);
+                br.setCookie(MAINPAGE, "language_selection", "EN");
+                br.postPage("http://bitshare.com/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&rememberlogin=&submit=Login");
+                if (br.containsHTML(">Free</a></b>")) {
+                    account.setProperty("freeaccount", "true");
+                } else if (br.containsHTML("\\(<b>Premium</b>\\)")) {
+                    account.setProperty("freeaccount", Property.NULL);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(MAINPAGE);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
     }
 
     @Override

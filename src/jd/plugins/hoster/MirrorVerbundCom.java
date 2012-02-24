@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirror-verbund.com" }, urls = { "http://(www\\.)?mirror\\-verbund\\.com/(download_\\d+_[a-z0-9]+.html|file\\.php\\?file=\\d+&hash=[a-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirror-verbund.com" }, urls = { "http://(www\\.)?mirror\\-verbund\\.com/\\?file=[^<>\"\\']+.otrkey" }, flags = { 0 })
 public class MirrorVerbundCom extends PluginForHost {
 
     public MirrorVerbundCom(PluginWrapper wrapper) {
@@ -43,24 +43,12 @@ public class MirrorVerbundCom extends PluginForHost {
         return "http://www.mirror-verbund.com/";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        final Regex stuff = new Regex(link.getDownloadURL(), "mirror\\-verbund\\.com/file\\.php\\?file=(\\d+)\\&hash=([a-z0-9]+)");
-        final String id = stuff.getMatch(0);
-        final String hash = stuff.getMatch(1);
-        if (id != null && hash != null) link.setUrlDownload("http://mirror-verbund.com/download_" + id + "_" + hash + ".html");
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Die URL wurde manipuliert")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("type=\"text/javascript\">title\\(\\'([^<>\"\\']+) \\- Download\\'\\);").getMatch(0);
-        /** Ist das Limit erreicht sieht man gar nichts */
-        if (filename == null) filename = new Regex(link.getDownloadURL(), "mirror\\-verbund\\.com/download_\\d+_([a-z0-9]+)\\.html").getMatch(0);
+        String filename = new Regex(link.getDownloadURL(), "mirror\\-verbund\\.com/\\?file=([^<>\"\\']+.otrkey)").getMatch(0);
         filename = Encoding.htmlDecode(filename.trim());
-        if (!filename.endsWith(".otrkey")) filename += ".otrkey";
         link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
@@ -68,6 +56,11 @@ public class MirrorVerbundCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
+        final String continueLink = br.getRegex("style=\"display:none;\"><a href=\"javascript:void\\(\\);\" onClick=\"mvpop_dl\\(\\'(\\d+_[a-z0-9]+)\\'\\)").getMatch(0);
+        if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://mirror-verbund.com/download_" + continueLink + ".html");
+        if (br.containsHTML("(>Interner Fehler, dass otrkey ist auf keinem Server mehr oder der Server ist offline|Die URL wurde manipuliert)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String dllink = downloadLink.getStringProperty("freelink");
         if (dllink != null) {
             try {

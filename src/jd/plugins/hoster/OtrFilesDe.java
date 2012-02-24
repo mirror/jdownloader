@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr-files.de" }, urls = { "http://(www\\.)?otr\\-files\\.de/index\\.php\\?option=com_content\\&task=view\\&id=\\d+\\&Itemid=\\d+\\&server=\\d+\\&f=[^<>\"\\']+\\.otrkey" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr-files.de" }, urls = { "http://(www\\.)?otr\\-files\\.de/(index\\.php\\?option=com_content\\&task=view\\&id=\\d+\\&Itemid=\\d+\\&server=\\d+\\&f=[^<>\"\\']+\\.otrkey|\\?file=[^<>\"\\']+\\.otrkey)" }, flags = { 0 })
 public class OtrFilesDe extends PluginForHost {
 
     public OtrFilesDe(PluginWrapper wrapper) {
@@ -51,6 +51,12 @@ public class OtrFilesDe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        if (!link.getDownloadURL().contains("?otr-files.de/index.php?option=")) {
+            final String correctLink = br.getRegex("\"(http://(www\\.)?otr\\-files\\.de/index\\.php\\?option=com_content\\&amp;task=view\\&amp;id=\\d+\\&amp;Itemid=\\d+\\&amp;server=[a-z0-9]+\\&amp;f=[^<>\"\\']+\\.otrkey)\"").getMatch(0);
+            if (correctLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setUrlDownload(Encoding.htmlDecode(correctLink));
+            br.getPage(link.getDownloadURL());
+        }
         if (!br.containsHTML("> Verf\\&uuml;gbare Formate auf otr\\-files") && !br.containsHTML(LIMITREACHED) && !br.containsHTML(NOSLOTS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setFinalFileName(Encoding.htmlDecode(new Regex(link.getDownloadURL(), "\\&f=(.+\\.otrkey)$").getMatch(0)));
         return AvailableStatus.TRUE;

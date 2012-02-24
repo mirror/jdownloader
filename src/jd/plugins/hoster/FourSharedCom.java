@@ -17,13 +17,18 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -46,6 +51,8 @@ public class FourSharedCom extends PluginForHost {
     private static String       agent        = RandomUserAgent.generate();
 
     private static final String PASSWORDTEXT = "enter a password to access";
+    private static final Object LOCK         = new Object();
+    private static final String COOKIE_HOST  = "http://4shared.com";
 
     public FourSharedCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -91,35 +98,6 @@ public class FourSharedCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        br.forceDebug(true);
-        login(account);
-        final String redirect = br.getRegex("loginRedirect\":\"(http.*?)\"").getMatch(0);
-        br.setFollowRedirects(true);
-        br.getPage(redirect);
-        final String[] dat = br.getRegex("Bandwidth\\:.*?<div class=\"quotacount\">(.+?)\\% of (.*?)</div>").getRow(0);
-        if (dat != null && dat.length == 2) {
-            ai.setTrafficMax(SizeFormatter.getSize(dat[1]));
-            ai.setTrafficLeft((long) (ai.getTrafficMax() * (100.0 - Float.parseFloat(dat[0])) / 100.0));
-        }
-        final String accountDetails = br.getRegex("(/account/myAccount\\.jsp\\?sId=[^\"]+)").getMatch(0);
-        br.getPage(accountDetails);
-        final String expire = br.getRegex("<td>Expiration Date:</td>.*?<td>(.*?)<span").getMatch(0);
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "yyyy-MM-dd", Locale.UK));
-        String accType = br.getRegex("Account Type:</td>.*?>(.*?)(&|<)").getMatch(0);
-        if (accType != null) accType = accType.trim();
-        if ("FREE".equalsIgnoreCase(accType)) {
-            ai.setStatus("Free accounts are not supported");
-            account.setValid(false);
-        } else {
-            ai.setStatus(accType);
-            account.setValid(true);
-        }
-        return ai;
-    }
-
-    @Override
     public String getAGBLink() {
         return "http://www.4shared.com/terms.jsp";
     }
@@ -134,6 +112,12 @@ public class FourSharedCom extends PluginForHost {
 
     private String getNormalDownloadlink() {
         String url = br.getRegex("<div class=\"xxlarge bold\">[\t\n\r ]+<a class=\"linkShowD3\" href=\\'(http://[^<>\"\\']+)\\'").getMatch(0);
+        if (url == null) {
+            url = br.getRegex("<input type=\"hidden\" name=\"d3torrent\" value=\"(http://dc\\d+\\.4shared\\.com/download\\-torrent/[^<>\"\\']+)\"").getMatch(0);
+            if (url != null) url = url.replace("/download-torrent/", "/download/");
+            /** For registered users */
+            if (url == null) url = br.getRegex("<div class=\"xxlarge bold\">[\t\n\r ]+<a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+        }
         return url;
     }
 
@@ -145,13 +129,21 @@ public class FourSharedCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        /* better fix the plugin out of date, limit of 10 seems still to work */
-        return 10;
+        return -1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    private void doFree(DownloadLink downloadLink) throws Exception {
         String pass = handlePassword(downloadLink);
         boolean downloadStreams = getPluginConfig().getBooleanProperty(DOWNLOADSTREAMS);
         String url = null;
@@ -178,6 +170,7 @@ public class FourSharedCom extends PluginForHost {
             } else {
                 br.getPage(url);
                 url = getNormalDownloadlink();
+                if (url == null) url = getDirectDownloadlink();
                 /** Will be disabled if we use stream links */
                 boolean wait = true;
                 boolean downloadStreamsErrorhandling = getPluginConfig().getBooleanProperty(DOWNLOADSTREAMSERRORHANDLING);
@@ -194,7 +187,7 @@ public class FourSharedCom extends PluginForHost {
                 if (wait) {
                     // Ticket Time
                     final String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
-                    int tt = 40;
+                    int tt = 20;
                     if (ttt != null) {
                         logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
                         tt = Integer.parseInt(ttt);
@@ -213,7 +206,7 @@ public class FourSharedCom extends PluginForHost {
         if (br.getURL().contains("401waitm") && downloadLink.getStringProperty("streamDownloadDisabled") == null) {
             downloadLink.setProperty("streamDownloadDisabled", "true");
             throw new PluginException(LinkStatus.ERROR_RETRY);
-        } else if (br.getURL().contains("401waitm") && downloadLink.getStringProperty("streamDownloadDisabled") != null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l); }
+        } else if (br.getURL().contains("401waitm") && downloadLink.getStringProperty("streamDownloadDisabled") != null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected error happened", 5 * 60 * 1000l); }
         final String error = br.getURL();
         if (error != null && error.contains("/linkerror.jsp")) {
             dl.getConnection().disconnect();
@@ -233,6 +226,7 @@ public class FourSharedCom extends PluginForHost {
         }
         if (pass != null) downloadLink.setProperty("pass", pass);
         dl.startDownload();
+
     }
 
     private void handleFreeErrors(DownloadLink downloadLink) throws PluginException {
@@ -261,37 +255,106 @@ public class FourSharedCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        login(account);
+        login(account, false);
         br.getPage(downloadLink.getDownloadURL());
-        String pass = handlePassword(downloadLink);
-        // direct download or not?
-        String link = br.getRedirectLocation();
-        if (link == null) link = getNormalDownloadlink();
-        if (link == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
-        final String error = new Regex(dl.getConnection().getURL(), "\\?error(.*)").getMatch(0);
-        if (error != null) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        if (account.getStringProperty("nopremium") != null) {
+            doFree(downloadLink);
+        } else {
+            String pass = handlePassword(downloadLink);
+            // direct download or not?
+            String link = br.getRedirectLocation();
+            if (link == null) link = getDirectDownloadlink();
+            if (link == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
+            final String error = new Regex(dl.getConnection().getURL(), "\\?error(.*)").getMatch(0);
+            if (error != null) {
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_RETRY, error);
+            }
+            if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (pass != null) downloadLink.setProperty("pass", pass);
+            dl.startDownload();
         }
-        if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (pass != null) downloadLink.setProperty("pass", pass);
-        dl.startDownload();
     }
 
-    public void login(final Account account) throws IOException, PluginException {
-        setBrowserExclusive();
-        br.getHeaders().put("User-Agent", agent);
-        br.getPage("http://www.4shared.com/");
-        br.setCookie("http://www.4shared.com", "4langcookie", "en");
-        br.postPage("http://www.4shared.com/login", "callback=jsonp" + System.currentTimeMillis() + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=false&doNotRedirect=true");
-        final String premlogin = br.getCookie("http://www.4shared.com", "premiumLogin");
-        if (premlogin == null || !premlogin.contains("true")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-        if (br.getCookie("http://www.4shared.com", "Password") == null || br.getCookie("http://www.4shared.com", "Login") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+    @SuppressWarnings("unchecked")
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(COOKIE_HOST, key, value);
+                        }
+                        return;
+                    }
+                }
+                br.setReadTimeout(3 * 60 * 1000);
+                br.getHeaders().put("User-Agent", agent);
+                br.getPage("http://www.4shared.com/");
+                br.setCookie("http://www.4shared.com", "4langcookie", "en");
+                br.postPage("http://www.4shared.com/login", "callback=jsonp" + System.currentTimeMillis() + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=false&doNotRedirect=true");
+                final String premlogin = br.getCookie("http://www.4shared.com", "premiumLogin");
+                if (premlogin == null || !premlogin.contains("true")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                if (br.getCookie("http://www.4shared.com", "Password") == null || br.getCookie("http://www.4shared.com", "Login") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        br.forceDebug(true);
+        login(account, true);
+        final String redirect = br.getRegex("loginRedirect\":\"(http.*?)\"").getMatch(0);
+        if (redirect == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.setFollowRedirects(true);
+        br.getPage(redirect);
+        final String[] dat = br.getRegex("Bandwidth\\:.*?<div class=\"quotacount\">(.+?)\\% of (.*?)</div>").getRow(0);
+        if (dat != null && dat.length == 2) {
+            ai.setTrafficMax(SizeFormatter.getSize(dat[1]));
+            ai.setTrafficLeft((long) (ai.getTrafficMax() * (100.0 - Float.parseFloat(dat[0])) / 100.0));
+        }
+        final String accountDetails = br.getRegex("(/account/myAccount\\.jsp\\?sId=[^\"]+)").getMatch(0);
+        if (accountDetails == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage(accountDetails);
+        final String expire = br.getRegex("<td>Expiration Date:</td>.*?<td>(.*?)<span").getMatch(0);
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "yyyy-MM-dd", Locale.UK));
+        String accType = br.getRegex("Account Type:</td>.*?>(.*?)(&|<)").getMatch(0);
+        if (accType != null) accType = accType.trim();
+        if ("FREE".equalsIgnoreCase(accType)) {
+            ai.setStatus("Registered (free) User");
+            account.setValid(true);
+            account.setProperty("nopremium", "true");
+        } else {
+            ai.setStatus(accType);
+            account.setValid(true);
+            account.setProperty("nopremium", Property.NULL);
+        }
+        return ai;
     }
 
     @Override

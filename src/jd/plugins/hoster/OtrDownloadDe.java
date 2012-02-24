@@ -23,6 +23,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr-download.de" }, urls = { "http://(www\\.)?otr\\-download\\.de/downloadpopup\\.php\\?option=2\\&file=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr-download.de" }, urls = { "http://(www\\.)?otr\\-download\\.de/\\?file=[^<>\"\\']+\\.otrkey" }, flags = { 0 })
 public class OtrDownloadDe extends PluginForHost {
 
     public OtrDownloadDe(PluginWrapper wrapper) {
@@ -50,14 +51,8 @@ public class OtrDownloadDe extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(<td width=\"418\"><div align=\"right\" id=\"d_header\"></div></td>|<title></title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<td width=\"418\"><div align=\"right\" id=\"d_header\">([^<>\"\\']+)</div></td>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("getElementById\\(\\'numberCountdown\\'\\)\\.innerHTML = \\'<u><a href=\"\">([^<>\"\\']+)</a>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>([^<>\"\\']+)</title>").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("Kosten an Traffic: ([^<>\"\\']+)\\)</u>").getMatch(0);
+        String filename = new Regex(link.getDownloadURL(), "otr\\-download\\.de/\\?file=(.+)").getMatch(0);
+        String filesize = br.getRegex("<br><b>Dateigröße:</b> ([^<>\"\\']+) <b>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -67,6 +62,13 @@ public class OtrDownloadDe extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        String dlid = br.getRegex("dl_popup(_info)?\\(\\'(\\d+)\\'\\)").getMatch(1);
+        if (dlid == null) {
+            dlid = br.getRegex("dl_popup(_info)?\\(\\'(\\d+)\\'\\)").getMatch(1);
+            if (dlid == null) dlid = br.getRegex("\"index\\.php\\?s=ftppush\\&id=(\\d+)\"").getMatch(0);
+        }
+        if (dlid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://otr-download.de/downloadpopup.php?option=2&file=" + dlid);
         String dllink = downloadLink.getStringProperty("freelink");
         if (dllink != null) {
             try {
