@@ -67,8 +67,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     @Override
     protected void onSelectionChanged() {
         super.onSelectionChanged();
-        if (!updateMoveButtonEnabledStatus()) return;
-        if (tableModel.countSelectedObjects() == 0) {
+        if (tableModel.countSelectedObjects() == 0 || !updateMoveButtonEnabledStatus()) {
             // disable move buttons
             moveDownAction.setEnabled(false);
             moveBottomAction.setEnabled(false);
@@ -87,10 +86,12 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     protected boolean updateMoveButtonEnabledStatus() {
+        if (getPackageControllerTableModel().isFilteredView()) return false;
         return true;
     }
 
     protected boolean moveUpPossible(ArrayList<ParentType> pkgs, ArrayList<ChildrenType> selectedChld) {
+        if (getPackageControllerTableModel().isFilteredView()) return false;
         if (pkgs.size() > 0 && selectedChld.size() > 0) {
             /* we don't allow moving of packages/children at the same time */
             return false;
@@ -116,6 +117,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     protected boolean moveDownPossible(ArrayList<ParentType> pkgs, ArrayList<ChildrenType> selectedChld) {
+        if (getPackageControllerTableModel().isFilteredView()) return false;
         if (pkgs.size() > 0 && selectedChld.size() > 0) {
             /* we don't allow moving of packages/children at the same time */
             return false;
@@ -144,6 +146,11 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
     protected void initAppActions() {
         moveTopAction = new AppAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
             {
                 // setName(_GUI._.BottomBar_BottomBar_totop());
                 setToolTipText(_GUI._.BottomBar_BottomBar_totop_tooltip());
@@ -174,6 +181,11 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
         };
         moveUpAction = new AppAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
             {
                 // setName(_GUI._.BottomBar_BottomBar_moveup());
                 setToolTipText(_GUI._.BottomBar_BottomBar_moveup_tooltip());
@@ -230,6 +242,11 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
         };
         moveDownAction = new AppAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
             {
                 // setName(_GUI._.BottomBar_BottomBar_movedown());
                 setToolTipText(_GUI._.BottomBar_BottomBar_movedown_tooltip());
@@ -281,6 +298,11 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
         };
         moveBottomAction = new AppAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
             {
                 // setName(_GUI._.BottomBar_BottomBar_tobottom());
                 setToolTipText(_GUI._.BottomBar_BottomBar_tobottom_tooltip());
@@ -334,6 +356,24 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     protected boolean processKeyBinding(KeyStroke stroke, KeyEvent evt, int condition, boolean pressed) {
         if (!pressed) { return super.processKeyBinding(stroke, evt, condition, pressed); }
         switch (evt.getKeyCode()) {
+        case KeyEvent.VK_KP_LEFT:
+        case KeyEvent.VK_LEFT: {
+            AbstractNode element = this.getPackageControllerTableModel().getElementAt(this.getSelectedRow());
+            if (element != null && element instanceof AbstractPackageNode) {
+                tableModel.setFilePackageExpand((AbstractPackageNode<?, ?>) element, false);
+                return true;
+            }
+        }
+            break;
+        case KeyEvent.VK_KP_RIGHT:
+        case KeyEvent.VK_RIGHT: {
+            AbstractNode element = this.getPackageControllerTableModel().getElementAt(this.getSelectedRow());
+            if (element != null && element instanceof AbstractPackageNode) {
+                tableModel.setFilePackageExpand((AbstractPackageNode<?, ?>) element, true);
+                return true;
+            }
+        }
+            break;
         case KeyEvent.VK_UP:
             if (evt.isAltDown()) {
                 this.moveUpAction.actionPerformed(null);

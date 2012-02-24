@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
-import jd.utils.JDUtilities;
 
 import org.jdownloader.gui.translate._GUI;
 
@@ -42,7 +41,6 @@ public class EnableAction extends ContextMenuAction {
         for (DownloadLink link : links) {
             link.setEnabled(true);
         }
-        JDUtilities.getDownloadController().fireDataUpdate();
     }
 
 }

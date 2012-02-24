@@ -168,6 +168,15 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 asyncRecreate.delayedrun();
             };
         });
+    }
+
+    public void setFilePackageExpand(final AbstractPackageNode fp2, final boolean expanded) {
+        queue.execute(new Runnable() {
+            public void run() {
+                fp2.setExpanded(expanded);
+                asyncRecreate.delayedrun();
+            };
+        });
 
     }
 

@@ -1364,7 +1364,6 @@ abstract public class DownloadInterface {
                 waitFlag = true;
                 // checkChunkParts();
                 downloadLink.setDownloadCurrent(totaleLinkBytesLoaded);
-                downloadLink.requestGuiUpdate();
             }
         } catch (Throwable e) {
             JDLogger.exception(e);

@@ -67,7 +67,6 @@ public class Netloadin extends PluginForHost {
         if ("hddcrash".equalsIgnoreCase(state)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "HDDCrash(In Recovery)", 12 * 60 * 60 * 1000l);
         if ("maintenance".equalsIgnoreCase(state)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maintenance", 2 * 60 * 60 * 1000l);
         if ("only_premium_download".equalsIgnoreCase(state)) {
-
             if (JDL.isGerman()) {
                 if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, "Download nur mit Netload Premium", "Leider kann diese Datei nur mit einem Netload Premium Account heruntergeladen werden.", null, "Mehr Informationen...", "Datei überspringen"))) {
                     try {
@@ -85,12 +84,9 @@ public class Netloadin extends PluginForHost {
                         e.printStackTrace();
                     }
                 }
-
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only");
             }
-
         }
-
         if (checkFail && "fail".equalsIgnoreCase(state)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 4 * 60 * 60 * 1000l); }
     }
 

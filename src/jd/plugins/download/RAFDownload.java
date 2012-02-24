@@ -82,14 +82,12 @@ public class RAFDownload extends DownloadInterface {
                         /* MD5 Check */
                         type = "MD5";
                         downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("MD5"));
-                        downloadLink.requestGuiUpdate();
                         String hashFile = Hash.getMD5(part);
                         success = hash.equalsIgnoreCase(hashFile);
                     } else if ((hash = downloadLink.getSha1Hash()) != null) {
                         /* SHA1 Check */
                         type = "MD5";
                         downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("SHA1"));
-                        downloadLink.requestGuiUpdate();
                         String hashFile = Hash.getSHA1(part);
                         success = hash.equalsIgnoreCase(hashFile);
                     } else {
@@ -110,7 +108,6 @@ public class RAFDownload extends DownloadInterface {
                                 sfvText = sfvText.replaceAll(";(.*?)[\r\n]{1,2}", "");
                                 if (sfvText != null && sfvText.contains(downloadLink.getName())) {
                                     downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("CRC32"));
-                                    downloadLink.requestGuiUpdate();
                                     type = "CRC32";
                                     String crc = Long.toHexString(Hash.getCRC32(part));
                                     success = new Regex(sfvText, downloadLink.getName() + "\\s*" + crc).matches();
@@ -187,13 +184,11 @@ public class RAFDownload extends DownloadInterface {
         logger.info(hashType + "-Check: " + (success ? "ok" : "failed"));
         if (success) {
             downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2_success(hashType));
-            downloadLink.requestGuiUpdate();
         } else {
             String error = _JDT._.system_download_doCRC2_failed(hashType);
             downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
             downloadLink.getLinkStatus().setStatusText(error);
             downloadLink.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
-            downloadLink.requestGuiUpdate();
             error(LinkStatus.ERROR_DOWNLOAD_FAILED, error);
         }
     }

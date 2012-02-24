@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 import javax.swing.JMenu;
 
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 
@@ -46,7 +45,6 @@ public class PrioritySubMenu extends ContextMenuAction {
         for (DownloadLink link : links) {
             link.setPriority(priority);
         }
-        DownloadController.getInstance().fireDataUpdate(links);
     }
 
     public static JMenu createPrioMenu(final ArrayList<DownloadLink> links) {

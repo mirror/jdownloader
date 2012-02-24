@@ -89,7 +89,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
     }
 
     protected boolean canImportPackageControllerTransferable(TransferSupport support) {
-        if (!table.isOriginalOrder()) { return false; }
+        if (!table.isOriginalOrder() || table.getPackageControllerTableModel().isFilteredView()) { return false; }
         PackageControllerTableTransferableContent<PackageType, ChildrenType> content = getContent(support);
         if (content == null) return false;
         if (!allowImport(content.packages, content.links)) return false;

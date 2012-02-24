@@ -39,10 +39,9 @@ public class ProxyController {
     private ArrayList<ProxyInfo>                      proxies       = new ArrayList<ProxyInfo>();
     private ArrayList<ProxyInfo>                      directs       = new ArrayList<ProxyInfo>();
     private ProxyInfo                                 defaultproxy  = null;
+    private ProxyInfo                                 none          = null;
 
     private DefaultEventSender<ProxyEvent<ProxyInfo>> eventSender   = null;
-
-    private ProxyInfo                                 none          = null;
 
     private InternetConnectionSettings                config;
 
@@ -104,9 +103,11 @@ public class ProxyController {
 
     private void exportUpdaterProxy() {
         ProxyInfo ldefaultproxy = defaultproxy;
-        if (ldefaultproxy != null) {
+        if (ldefaultproxy != null && !ldefaultproxy.isNone()) {
             HTTPProxyStorable storable = HTTPProxy.getStorable(ldefaultproxy);
             updaterConfig.setProxy(storable);
+        } else {
+            updaterConfig.setProxy(null);
         }
     }
 
@@ -225,11 +226,11 @@ public class ProxyController {
     }
 
     private List<HTTPProxy> getAvailableDirects() {
-        ArrayList<HTTPProxy> directs = new ArrayList<HTTPProxy>();
         List<InetAddress> ips = HTTPProxyUtils.getLocalIPs();
+        ArrayList<HTTPProxy> directs = new ArrayList<HTTPProxy>(ips.size());
         if (ips.size() > 1) {
             // we can use non if we have only one WAN ips anyway
-            for (InetAddress ip : HTTPProxyUtils.getLocalIPs()) {
+            for (InetAddress ip : ips) {
                 directs.add(new HTTPProxy(ip));
             }
         }
@@ -447,7 +448,7 @@ public class ProxyController {
      * @return
      */
     public ArrayList<ProxyInfo> getList() {
-        ArrayList<ProxyInfo> ret = new ArrayList<ProxyInfo>();
+        ArrayList<ProxyInfo> ret = new ArrayList<ProxyInfo>(directs.size() + proxies.size() + 1);
         ret.add(none);
         ret.addAll(directs);
         ret.addAll(proxies);

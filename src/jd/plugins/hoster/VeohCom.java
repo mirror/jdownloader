@@ -156,7 +156,6 @@ public class VeohCom extends PluginForHost {
         String hexTime = String.format("%08x", Integer.parseInt(sTime));
 
         downloadLink.getLinkStatus().setStatusText("download to initialize ...");
-        downloadLink.requestGuiUpdate();
         boolean oldDlHandling = false;
         br.getPage("http://content.veoh.com" + path + "?version=3&ct=" + cryptedToken + xor(cryptedToken.substring(p, p + 8), hexTime));
         if (br.getHttpConnection().getResponseCode() == 404 && br.containsHTML("<title>404 Not Found</title>")) {
@@ -201,7 +200,6 @@ public class VeohCom extends PluginForHost {
                 for (i = resume; i < content.length; i++) {
                     final String[] T = content[i];
                     downloadLink.getLinkStatus().setStatusText("Video Part " + (Integer.valueOf(T[3]) + 1) + " @ " + String.valueOf(content.length) + " in Progress...");
-                    downloadLink.requestGuiUpdate();
                     final String pieces = decryptUrl(T, baseUrl, fHash, hexTime, hexvidID, hexSize);
                     if (pieces == null) {
                         break;

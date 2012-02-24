@@ -193,7 +193,6 @@ public class RtmpDump extends RTMPDownload {
                                 SPEED = (BYTESLOADED - before) / (System.currentTimeMillis() - lastTime) * 1000l;
                                 lastTime = System.currentTimeMillis();
                                 before = BYTESLOADED;
-                                downloadLink.requestGuiUpdate();
                                 downloadLink.setChunksProgress(new long[] { BYTESLOADED });
                             }
                         }

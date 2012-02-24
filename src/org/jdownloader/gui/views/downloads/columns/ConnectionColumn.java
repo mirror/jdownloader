@@ -10,6 +10,7 @@ import jd.plugins.download.DownloadInterface;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.gui.translate._GUI;
 
 public class ConnectionColumn extends ExtTextColumn<AbstractNode> {
@@ -69,14 +70,15 @@ public class ConnectionColumn extends ExtTextColumn<AbstractNode> {
             if (dlc != null) {
                 //
                 DownloadInterface dli = ((DownloadLink) value).getDownloadInstance();
+                HTTPProxy proxy = dlc.getCurrentProxy();
                 if (dli == null) {
                     // return ("" + dlc.getCurrentProxy()+" (" +
                     // dli.getChunksDownloading() + "/" + dli.getChunkNum() +
                     // ")");
 
-                    return _GUI._.ConnectionColumn_getStringValue_pluginonly(dlc.getCurrentProxy());
+                    return _GUI._.ConnectionColumn_getStringValue_pluginonly(proxy != null ? proxy : HTTPProxy.NONE);
                 } else {
-                    return _GUI._.ConnectionColumn_getStringValue_withchunks(dlc.getCurrentProxy(), dli.getChunksDownloading(), dli.getChunkNum());
+                    return _GUI._.ConnectionColumn_getStringValue_withchunks(proxy != null ? proxy : HTTPProxy.NONE, dli.getChunksDownloading(), dli.getChunkNum());
                 }
 
             }

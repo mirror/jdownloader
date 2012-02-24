@@ -88,6 +88,13 @@ public interface GeneralSettings extends ConfigInterface {
     int getHttpReadTimeout();
 
     @AboutConfig
+    @Description("Timeout for network problems")
+    @SpinnerValidator(min = 0, max = 1000000)
+    @DefaultIntValue(15000)
+    @RequiresRestart
+    int getNetworkIssuesTimeout();
+
+    @AboutConfig
     @DefaultEnumValue("ASK_FOR_EACH_FILE")
     IfFileExistsAction getIfFileExistsAction();
 
@@ -277,4 +284,6 @@ public interface GeneralSettings extends ConfigInterface {
     int getAutoStartCountdownSeconds();
 
     void setAutoStartCountdownSeconds(int seconds);
+
+    void setNetworkIssuesTimeout(int timeout);
 }

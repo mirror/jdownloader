@@ -195,18 +195,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         this.addmovePackageAt(fp, 0);
     }
 
-    public void fireDataUpdate() {
-        fireDataUpdate(null);
-    }
-
-    public void fireDataUpdate(Object o) {
-        if (o != null) {
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_DATA, o));
-        } else {
-            broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_DATA));
-        }
-    }
-
     /**
      * return a list of all DownloadLinks controlled by this DownloadController
      * 

@@ -269,7 +269,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
             }
         }
-        DownloadController.getInstance().fireDataUpdate();
     }
 
     /**
@@ -861,7 +860,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 // stopMark.setSelected(false);
                 // stopMark.setToolTipText(_JDT._.jd_gui_swing_jdgui_actions_actioncontroller_toolbar_control_stopmark_tooltip());
                 // }
-                DownloadController.getInstance().fireDataUpdate();
             }
         }, true);
     }

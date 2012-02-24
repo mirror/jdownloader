@@ -148,10 +148,9 @@ public abstract class PluginForHost extends Plugin {
                 final BufferedImage img = ImageIO.read(file);
 
                 linkStatus.setStatusIcon(new ImageIcon(IconIO.getScaledInstance(img, 16, 16)));
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
-            link.requestGuiUpdate();
             final String cc = new CaptchaController(ioPermission, method, file, defaultValue, explain, this).getCode(flag);
             if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             return cc;
@@ -159,7 +158,6 @@ public abstract class PluginForHost extends Plugin {
             linkStatus.removeStatus(LinkStatus.WAITING_USERIO);
             linkStatus.setStatusText(status);
             linkStatus.setStatusIcon(null);
-            link.requestGuiUpdate();
         }
     }
 
@@ -844,7 +842,6 @@ public abstract class PluginForHost extends Plugin {
             while (i > 0 && dlc != null && !dlc.isAborted()) {
                 i -= 1000;
                 downloadLink.getLinkStatus().setStatusText(message + _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(i / 1000)));
-                downloadLink.requestGuiUpdate();
                 synchronized (this) {
                     this.wait(1000);
                 }

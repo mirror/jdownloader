@@ -238,7 +238,6 @@ public class Zevera extends PluginForHost {
 
     private void showMessage(DownloadLink link, String message) {
         link.getLinkStatus().setStatusText(message);
-        link.requestGuiUpdate();
     }
 
     /* TODO: remove me after 0.9xx public */

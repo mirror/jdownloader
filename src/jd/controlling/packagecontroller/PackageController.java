@@ -489,19 +489,22 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
+                PackageType internalafterDest = afterDest;
                 for (PackageType srcPkg : srcPkgs) {
                     int destination = 0;
-                    if (afterDest != null) {
+                    if (internalafterDest != null) {
                         int destI = 0;
                         boolean readL = readLock();
                         try {
-                            destI = packages.indexOf(afterDest);
+                            destI = packages.indexOf(internalafterDest);
                         } finally {
                             readUnlock(readL);
                         }
                         destination = Math.max(destI, 0) + 1;
                     }
                     addmovePackageAt(srcPkg, destination);
+                    /* move next package after last moved one */
+                    internalafterDest = srcPkg;
                 }
                 return null;
             }

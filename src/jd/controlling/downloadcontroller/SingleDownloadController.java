@@ -24,14 +24,12 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import jd.config.SubConfiguration;
 import jd.controlling.IOPermission;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.proxy.ProxyInfo;
 import jd.event.ControlEvent;
-import jd.gui.swing.SwingGui;
 import jd.http.Browser;
 import jd.http.BrowserSettingsThread;
 import jd.nutils.io.JDIO;
@@ -48,6 +46,7 @@ import org.appwork.controlling.StateMonitor;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationEvent;
@@ -74,8 +73,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
 
     private Account                         account           = null;
     private SingleDownloadControllerHandler handler           = null;
-
-    private ProxyInfo                       proxyInfo         = null;
 
     private StateMachine                    stateMachine;
 
@@ -133,14 +130,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         setPriority(Thread.MIN_PRIORITY);
         downloadLink.setDownloadLinkController(this);
         this.account = account;
-        this.proxyInfo = proxy;
-    }
-
-    /**
-     * @return the proxyInfo
-     */
-    public ProxyInfo getProxyInfo() {
-        return proxyInfo;
+        this.setCurrentProxy(proxy);
     }
 
     /**
@@ -185,15 +175,15 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 } catch (UnknownHostException e) {
                     linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_nointernetconn());
-                    linkStatus.setValue(SubConfiguration.getConfig("CONNECTION_PROBLEMS").getGenericProperty("UnknownHostException", 5 * 60 * 1000l));
+                    linkStatus.setValue(JsonConfig.create(GeneralSettings.class).getNetworkIssuesTimeout());
                 } catch (SocketTimeoutException e) {
                     linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_hosteroffline());
-                    linkStatus.setValue(SubConfiguration.getConfig("CONNECTION_PROBLEMS").getGenericProperty("SocketTimeoutException", 10 * 60 * 1000l));
+                    linkStatus.setValue(JsonConfig.create(GeneralSettings.class).getNetworkIssuesTimeout());
                 } catch (SocketException e) {
                     linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_disconnect());
-                    linkStatus.setValue(SubConfiguration.getConfig("CONNECTION_PROBLEMS").getGenericProperty("SocketException", 5 * 60 * 1000l));
+                    linkStatus.setValue(JsonConfig.create(GeneralSettings.class).getNetworkIssuesTimeout());
                 } catch (IOException e) {
                     linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_hosterproblem());
@@ -320,7 +310,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         }
         String orgMessage = downloadLink2.getLinkStatus().getErrorMessage();
         downloadLink2.getLinkStatus().setErrorMessage(_JDT._.controller_status_plugindefective() + (orgMessage == null ? "" : " " + orgMessage));
-        if (SwingGui.getInstance() != null) downloadLink.requestGuiUpdate();
     }
 
     /**
@@ -349,12 +338,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     link.getLinkStatus().addStatus(LinkStatus.ERROR_ALREADYEXISTS);
                     link.getLinkStatus().setErrorMessage(_JDT._.controller_status_fileexists_othersource(downloadLink.getHost()));
                     link.setEnabled(false);
-                    if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(link);
                 }
             }
         }
 
-        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(downloadLink);
     }
 
     /**
@@ -382,13 +369,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 plugin.sleep(Math.max((int) downloadLink.getLinkStatus().getValue(), 2000), downloadLink);
             } catch (PluginException e) {
                 downloadLink.getLinkStatus().setStatusText(null);
-                if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(downloadLink);
                 return;
             }
         } else {
             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(downloadLink);
+
     }
 
     private void onErrorChunkloadFailed(DownloadLink downloadLink, PluginForHost plugin) {
@@ -407,7 +393,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     }
 
     private void onErrorFatal(DownloadLink downloadLink, PluginForHost currentPlugin) {
-        if (SwingGui.getInstance() != null) downloadLink.requestGuiUpdate();
+
     }
 
     private void onErrorFileExists(DownloadLink downloadLink, PluginForHost plugin) {
@@ -509,7 +495,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 status.setErrorMessage(_JDT._.controller_status_fileexists_overwritefailed() + downloadLink.getFileOutput());
             }
         }
-        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(downloadLink);
+
     }
 
     /**
@@ -599,7 +585,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             /* plugin can evaluate retrycount and act differently then */
             downloadLink.getLinkStatus().setRetryCount(downloadLink.getLinkStatus().getRetryCount() + 1);
         }
-        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(downloadLink);
+
     }
 
     private void onErrorHostTemporarilyUnavailable(DownloadLink downloadLink, PluginForHost plugin) {
@@ -611,11 +597,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         }
         logger.warning("Error occurred: Download from this host is currently not possible: Please wait " + milliSeconds + " ms for a retry");
         status.setWaitTime(milliSeconds);
-        if (proxyInfo != null) {
+        HTTPProxy proxyInfo = getCurrentProxy();
+        if (proxyInfo != null && proxyInfo instanceof ProxyInfo) {
             /* set remaining waittime for host-temp unavailable */
-            proxyInfo.setRemainingTempUnavail(plugin.getHost(), milliSeconds);
+            ((ProxyInfo) proxyInfo).setRemainingTempUnavail(plugin.getHost(), milliSeconds);
         }
-        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(downloadLink);
+
     }
 
     /**
@@ -636,11 +623,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         }
         status.setWaitTime(milliSeconds);
         status.setStatusText(null);
-        if (proxyInfo != null) {
+        HTTPProxy proxyInfo = getCurrentProxy();
+        if (proxyInfo != null && proxyInfo instanceof ProxyInfo) {
             /* set remaining waittime for host-temp unavailable */
-            proxyInfo.setRemainingIPBlockWaittime(plugin.getHost(), milliSeconds);
+            ((ProxyInfo) proxyInfo).setRemainingIPBlockWaittime(plugin.getHost(), milliSeconds);
         }
-        if (SwingGui.getInstance() != null) DownloadController.getInstance().fireDataUpdate(downloadLink);
+
     }
 
     /*
@@ -715,7 +703,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 /* move download log into global log */
                 llogger.logInto(JDLogger.getLogger());
             }
-            if (SwingGui.getInstance() != null) downloadLink.requestGuiUpdate();
         } finally {
             if (llogger != null) llogger.clear();
             try {

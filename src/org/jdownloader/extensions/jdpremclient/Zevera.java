@@ -422,7 +422,6 @@ public class Zevera extends PluginForHost implements JDPremInterface {
 
     private void showMessage(DownloadLink link, String message) {
         link.getLinkStatus().setStatusText(message);
-        link.requestGuiUpdate();
     }
 
 }

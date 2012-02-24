@@ -483,6 +483,7 @@ public class LinkStatus implements Serializable {
 
     public void setStatusText(final String l) {
         statusText = l;
+        notifyChanges();
     }
 
     public void setValue(final long i) {
@@ -588,6 +589,7 @@ public class LinkStatus implements Serializable {
             linkStatus.setLatestStatus(curLState);
             linkStatus.setErrorMessage(tmp2);
             linkStatus.setStatusText(tmp3);
+            notifyChanges();
         }
     }
 }

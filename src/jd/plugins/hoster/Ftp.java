@@ -133,7 +133,6 @@ public class Ftp extends PluginForHost {
                             speed = ((last - before) / (System.currentTimeMillis() - lastTime)) * 1000l;
                             lastTime = System.currentTimeMillis();
                             before = last;
-                            downloadLink.requestGuiUpdate();
                             downloadLink.setChunksProgress(new long[] { last });
                         }
                     }
@@ -142,7 +141,6 @@ public class Ftp extends PluginForHost {
             } catch (Throwable e) {
                 /* stable does not have appwork utils */
                 downloadLink.getLinkStatus().setStatusText("ProgressBar not supported");
-                downloadLink.requestGuiUpdate();
             }
 
             File tmp = null;

@@ -97,13 +97,10 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
             getDownloadLink().getLinkStatus().setStatus(LinkStatus.FINISHED);
             break;
         }
-
-        getDownloadLink().requestGuiUpdate();
     }
 
     public void setMessage(String text) {
         getDownloadLink().getLinkStatus().setStatusText(text);
-        getDownloadLink().requestGuiUpdate();
     }
 
     public void setProgress(long value, long max, Color color) {

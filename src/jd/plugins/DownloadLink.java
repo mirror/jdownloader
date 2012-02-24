@@ -34,7 +34,6 @@ import javax.swing.ImageIcon;
 
 import jd.config.Property;
 import jd.controlling.JDLogger;
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
@@ -667,10 +666,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public boolean isEnabled() {
         return isEnabled;
-    }
-
-    public void requestGuiUpdate() {
-        DownloadController.getInstance().fireDataUpdate(this);
     }
 
     /** Setzt alle DownloadWErte zurueck */
