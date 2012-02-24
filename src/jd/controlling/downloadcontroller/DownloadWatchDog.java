@@ -956,18 +956,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         boolean waitingNewIP;
                         boolean resetWaitingNewIP;
                         int stopCounter = 2;
-                        int inProgress = 0;
-                        /*
-                         * TODO: optimize for less ressource using, eg only walk
-                         * through list when changes are available
-                         */
+                        long lastChange = -1;
                         while (DownloadWatchDog.this.stateMachine.isState(DownloadWatchDog.RUNNING_STATE)) {
                             /* start new download while we are in running state */
                             hasInProgressLinks = false;
                             hasTempDisabledLinks = false;
                             waitingNewIP = false;
                             resetWaitingNewIP = false;
-                            long lastChange = -1;
                             if (DownloadWatchDog.this.lastReconnectCounter < Reconnecter.getReconnectCounter()) {
                                 /* an IP-change happend, reset waittimes */
                                 lastReconnectCounter = Reconnecter.getReconnectCounter();
@@ -985,7 +980,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 }
 
                             }
-                            inProgress = 0;
                             try {
                                 for (final FilePackage filePackage : fps) {
                                     links = filePackage.getChildren();
@@ -1081,10 +1075,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                 /* we have active links in list */
                                                 hasInProgressLinks = true;
                                             }
-                                            if (linkStatus.hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                                                /* link is downloading atm */
-                                                inProgress++;
-                                            }
                                         }
                                     }
                                 }
@@ -1130,9 +1120,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 JDLogger.exception(e);
                             }
                             try {
-                                Thread.sleep(5000);
+                                int round = 0;
+                                while (DownloadWatchDog.this.stateMachine.isState(DownloadWatchDog.RUNNING_STATE)) {
+                                    sleep(1000);
+                                    if (++round == 5) break;
+                                }
                             } catch (final InterruptedException e) {
                             }
+
                         }
                         stateMachine.setStatus(STOPPING_STATE);
                         /* clear forcedLinks list */

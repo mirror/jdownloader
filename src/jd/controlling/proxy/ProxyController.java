@@ -11,11 +11,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.prefs.Preferences;
 
+import jd.controlling.IOEQ;
 import jd.controlling.JSonWrapper;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
@@ -23,6 +25,7 @@ import org.appwork.update.updateclient.UpdateHttpClientOptions;
 import org.appwork.update.updateclient.UpdaterConstants;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.DefaultEventSender;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -91,6 +94,20 @@ public class ProxyController {
             @Override
             public String toString() {
                 return "ProxyController: export important settings to updaterConfig";
+            }
+        });
+        eventSender.addListener(new DefaultEventListener<ProxyEvent<ProxyInfo>>() {
+            DelayedRunnable asyncSaving = new DelayedRunnable(IOEQ.TIMINGQUEUE, 5000l, 60000l) {
+
+                                            @Override
+                                            public void delayedrun() {
+                                                saveProxySettings();
+                                            }
+
+                                        };
+
+            public void onEvent(ProxyEvent<ProxyInfo> event) {
+                asyncSaving.resetAndStart();
             }
         });
     }
