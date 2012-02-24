@@ -86,7 +86,7 @@ public class DrTuberCom extends PluginForHost {
         // Check if link is an embedded link e.g. from a decrypter
         final String vk = new Regex(downloadLink.getDownloadURL(), "vkey=(.+)").getMatch(0);
         if (vk != null) {
-            br.getPage(downloadLink.getDownloadURL() + "&pkey=" + JDHash.getMD5(vk + Encoding.Base64Decode("UFQ2bDEzdW1xVjhLODI3")));
+            br.getPage(downloadLink.getDownloadURL() + "&pkey=" + JDHash.getMD5(vk + Encoding.Base64Decode("dTNtRzY0eUM1bXZHNVlj")));
             final String finallink = br.getRegex("type=video_click\\&amp;target_url=(http.*?)</url>").getMatch(0);
             if (finallink == null) {
                 logger.warning("Failed to find original link for: " + downloadLink.getDownloadURL());

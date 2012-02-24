@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -62,10 +62,8 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String gamer = br.getRegex("type=\"hidden\" name=\"DDL\" value=\"(.*?)\"").getMatch(0);
-        gamer = gamer == null ? br.getRegex("<input type=\"hidden\" name=\"[A-Z]+\" value=\"(.*?)\">").getMatch(0) : gamer;
-        gamer = gamer == null ? br.getRegex("<input type=\"hidden\" name=\".*?\" value=\"([0-9A-Z]+)\">").getMatch(0) : gamer;
-        if (gamer == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        final String[] pwnage = br.getRegex(zStatistic("RkM4Q0ZBRkFGQjAzQ0RFMzFFQzBCMjlGREU1RDQyRjEyOTkwNzFCQjA4NUVEODlCMUUxODVCM0IxNTM5ODY4NTU5REZGQzNGOEQ1REU2M0UyMjQxNTNFOUVBMjYxQzczRTA3NTJFQ0FDMUM5NjU2NUE4NzNENkU0NkIwQzM3M0E1QUY2Q0QyOTVEMkFGQkM4MjFBRTJFQkI1MjYwQ0ZCMzQyRkE4QkRFNkJBRDk4QUI5QkQ5MkJDMzJGNjc3ODE1QzM3QTNBNTA=")).getColumn(0);
+        if (pwnage == null || pwnage.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         final String waittime = br.getRegex("Bitte warte (\\d+) Sekunden und starte dann").getMatch(0);
         int wait = 10;
         if (waittime != null) {
@@ -75,8 +73,13 @@ public class FilestoreTo extends PluginForHost {
         }
         sleep(wait * 1001l, downloadLink);
         // If plugin breaks most times this link is changed
-        final String ajaxDownload = "http://filestore.to/ajax/download.php?Download=" + gamer;
-        br.getPage(ajaxDownload);
+        for (final String gam3r : pwnage) {
+            br.getPage("http://filestore.to/ajax/download.php?Download=" + gam3r);
+            if (br.containsHTML("(Da hat etwas nicht geklappt|Wartezeit nicht eingehalten|Versuche es erneut)")) {
+                continue;
+            }
+            break;
+        }
         if (br.containsHTML("(Da hat etwas nicht geklappt|Wartezeit nicht eingehalten|Versuche es erneut)")) {
             logger.warning("FATAL waittime error!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
