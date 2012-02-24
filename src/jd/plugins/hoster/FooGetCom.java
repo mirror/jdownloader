@@ -71,7 +71,7 @@ public class FooGetCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -85,6 +85,7 @@ public class FooGetCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
+        br.setReadTimeout(3 * 60 * 1000);
         doSomething();
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {

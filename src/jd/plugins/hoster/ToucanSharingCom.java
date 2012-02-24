@@ -69,7 +69,7 @@ public class ToucanSharingCom extends PluginForHost {
 
     public ToucanSharingCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility

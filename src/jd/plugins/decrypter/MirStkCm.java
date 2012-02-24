@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -54,25 +55,23 @@ public class MirStkCm extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        // set true to allow for 'www > domain' or 'domain > www' instead of
-        // renaming them all manually.
+        String parameter = param.toString().replaceFirst("://uploading\\.to", "://www.uploading.to");
         br.setFollowRedirects(false);
-        String parameter = param.toString();
         br.getPage(parameter);
-        String fpName = null;
-        if (parameter.contains("uploading.to/")) {
-            fpName = br.getRegex("<b>File:</b> <a href=\\'http://(www\\.)?uploading\\.to/[a-z0-9]{12}\\'>([^<>\"\\']+)</a>").getMatch(1);
-        } else {
-            fpName = br.getRegex("<a class=\"active\" href=\\'http://mirrorstack\\.com/[a-z0-9]{12}\\'>([^<>\"\\']+)</a>").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("value=\\'<a href=http://mirrorstack\\.com/[a-z0-9]{12} >Download ([^<>\"\\']+) from mirrorstack\\.com</a>\\'").getMatch(0);
-        }
         if (br.containsHTML(">Not Found</h2>")) {
             logger.warning("Invalid URL, either removed or never existed :" + parameter);
             return null;
         }
+        String fpName = null;
+        if (parameter.contains("uploading.to/")) {
+            fpName = br.getRegex("<b>File:</b> <a href=\\'http://(www\\.)?uploading\\.to/[a-z0-9]{12}\\'>([^<>\"\\']+)</a>").getMatch(1);
+        } else if (fpName == null && parameter.contains("mirrorstack.com/")) {
+            fpName = br.getRegex("<a class=\"active\" href=\\'http://mirrorstack\\.com/[a-z0-9]{12}\\'>([^<>\"\\']+)</a>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("value=\\'<a href=http://mirrorstack\\.com/[a-z0-9]{12} >Download ([^<>\"\\']+) from mirrorstack\\.com</a>\\'").getMatch(0);
+        } else if (fpName == null) fpName = new Regex(parameter, "/([a-z0-9]{2}_)?([a-z0-9]{12})").getMatch(1);
         String finallink = null;
         if (parameter.matches("http://[^/<>\"\\' ]+/[a-z0-9]{2}_[a-z0-9]{12}")) {
-            if (parameter.contains("uploading.to")) {
+            if (parameter.contains("uploading.to/")) {
                 br.getHeaders().put("Referer", "http://www.uploading.to/r_counter");
                 br.getPage(parameter + "?");
                 finallink = br.getRegex("frame src=\"(https?://[^\"\\' <>]+)\"").getMatch(0);
@@ -88,7 +87,7 @@ public class MirStkCm extends PluginForDecrypt {
             }
             progress.setRange(redirectLinks.length);
             for (String redirectLink : redirectLinks) {
-                if (parameter.contains("uploading.to")) {
+                if (parameter.contains("uploading.to/")) {
                     br.getHeaders().put("Referer", "http://www.uploading.to/r_counter");
                     br.getPage(redirectLink + "?");
                     finallink = br.getRegex("frame src=\"(https?://[^\"\\' <>]+)\"").getMatch(0);
