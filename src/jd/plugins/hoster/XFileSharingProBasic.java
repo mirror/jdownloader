@@ -61,7 +61,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static final Object LOCK                = new Object();
 
-    // XfileSharingProBasic Version 2.5.2.3
+    // XfileSharingProBasic Version 2.5.2.4
     /**
      * This is only for developers to easily implement hosters using the
      * "xfileshare(pro)" script (more informations can be found on
@@ -104,11 +104,17 @@ public class XFileSharingProBasic extends PluginForHost {
             filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
             if (filename == null) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                if (filename == null) {
+                    filename = new Regex(correctedBR, "(?i)(File)?name ?:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(2);
+                }
             }
         }
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+            if (filesize == null) {
+                filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(GB|MB))").getMatch(0);
+            }
         }
         if (filename == null || filename.equals("")) {
             if (correctedBR.contains("You have reached the download-limit")) {
