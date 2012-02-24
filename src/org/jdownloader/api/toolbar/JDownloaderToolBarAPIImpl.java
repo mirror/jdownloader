@@ -43,6 +43,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.api.toolbar.LinkCheckResult.STATUS;
+import org.jdownloader.api.toolbar.specialurls.YouTubeSpecialUrlHandling;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksProgress;
 
 public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEventListener {
@@ -453,6 +454,10 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
     }
 
     public String specialURLHandling(String url) {
-        return "";
+        if (url.contains("youtube.com")) {
+            return "var jDownloaderObj = {statusCheck: function(){" + YouTubeSpecialUrlHandling.handle(url) + "}};jDownloaderObj.statusCheck();";
+        } else {
+            return "";
+        }
     }
 }
