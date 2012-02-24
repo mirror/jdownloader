@@ -46,8 +46,8 @@ public class ResetAction extends ContextMenuAction {
                             DownloadWatchDog.getInstance().resetSingleDownloadController(link.getDownloadLinkController());
                         } else {
                             /* we can do the reset ourself */
-                            DownloadWatchDog.getInstance().resetIPBlockWaittime(link.getHost());
-                            DownloadWatchDog.getInstance().resetTempUnavailWaittime(link.getHost());
+                            DownloadWatchDog.getInstance().removeIPBlockTimeout(link);
+                            DownloadWatchDog.getInstance().removeTempUnavailTimeout(link);
                             link.reset();
                         }
                     }

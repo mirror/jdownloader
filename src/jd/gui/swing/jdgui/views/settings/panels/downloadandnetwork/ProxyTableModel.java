@@ -294,7 +294,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
                 ProxyController.getInstance().setproxyRotationEnabled(object, value);
                 if (!value) {
-                    if (ProxyController.getInstance().getListForRotation().size() == 0) {
+                    if (ProxyController.getInstance().hasRotation() == false) {
                         if (object == ProxyController.getInstance().getNone()) {
                             Dialog.getInstance().showMessageDialog(_GUI._.proxytablemodel_atleast_one_rotate_required());
                             ProxyController.getInstance().setproxyRotationEnabled(object, true);

@@ -14,11 +14,11 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.proxy.ProxyBlock;
 import jd.controlling.proxy.ProxyController;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 
 import org.appwork.swing.components.multiprogressbar.MultiProgressBar;
 import org.appwork.swing.components.multiprogressbar.Range;
@@ -36,6 +36,8 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
      * 
      */
     private static final long serialVersionUID = 1L;
+
+    private ProxyBlock        block            = null;
 
     public ProgressColumn() {
         super(_GUI._.ProgressColumn_ProgressColumn());
@@ -159,11 +161,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return _GUI._.gui_treetable_error_plugin();
             } else if (dLink.getPluginProgress() != null) {
                 return (dLink.getPluginProgress().getPercent() + " %");
-            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && ProxyController.getInstance().getRemainingIPBlockWaittime(dLink.getHost()) > 0)) {
-
-                return null;
-            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) && ProxyController.getInstance().getRemainingTempUnavailWaittime(dLink.getHost()) > 0)) {
-
+            } else if (block != null) {
                 return null;
             } else if (dLink.getLinkStatus().isFinished()) {
                 return null;
@@ -191,12 +189,8 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
             } else if (dLink.getPluginProgress() != null) {
                 return (dLink.getPluginProgress().getTotal());
 
-            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && ProxyController.getInstance().getRemainingIPBlockWaittime(dLink.getHost()) > 0)) {
-                return (dLink.getLinkStatus().getTotalWaitTime());
-
-            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) && ProxyController.getInstance().getRemainingTempUnavailWaittime(dLink.getHost()) > 0)) {
-                return (dLink.getLinkStatus().getTotalWaitTime());
-
+            } else if (block != null) {
+                return block.getBlockedUntil();
             } else if (dLink.getLinkStatus().isFinished()) {
                 return 100;
             } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) { return (dLink.getDownloadSize());
@@ -204,6 +198,17 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
             }
         }
         return 100;
+    }
+
+    @Override
+    protected void prepareGetter(AbstractNode value) {
+        if (value instanceof DownloadLink) {
+            DownloadLink dLink = (DownloadLink) value;
+            block = ProxyController.getInstance().getHostIPBlockTimeout(dLink.getHost());
+            if (block == null) block = ProxyController.getInstance().getHostBlockedTimeout(dLink.getHost());
+        } else {
+            block = null;
+        }
     }
 
     @Override
@@ -224,23 +229,11 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
             } else if (dLink.getPluginProgress() != null) {
                 return (dLink.getPluginProgress().getCurrent());
 
-            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && ProxyController.getInstance().getRemainingIPBlockWaittime(dLink.getHost()) > 0)) {
-
-                return (dLink.getLinkStatus().getRemainingWaittime());
-
-            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) && ProxyController.getInstance().getRemainingTempUnavailWaittime(dLink.getHost()) > 0)) {
-
-                return (dLink.getLinkStatus().getRemainingWaittime());
-
+            } else if (block != null) {
+                return block.getBlockedTimeout();
             } else if (dLink.getLinkStatus().isFinished()) {
-
                 return (100);
-
-            } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) {
-
-            return (dLink.getDownloadCurrent());
-
-            }
+            } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) { return (dLink.getDownloadCurrent()); }
         }
         return -1;
     }

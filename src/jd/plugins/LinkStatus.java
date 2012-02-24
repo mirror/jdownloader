@@ -24,7 +24,6 @@ import java.util.Map.Entry;
 import javax.swing.ImageIcon;
 
 import jd.controlling.JDLogger;
-import jd.controlling.proxy.ProxyController;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.plugins.download.DownloadInterface;
@@ -326,20 +325,8 @@ public class LinkStatus implements Serializable {
             return ret.toString();
         }
 
-        /* ip blocked */
-        if (hasStatus(ERROR_IP_BLOCKED) && ProxyController.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) > 0) {
-            ret.append(_JDT._.gui_download_waittime_status2(Formatter.formatSeconds(getRemainingWaittime() / 1000)));
-            if (errorMessage != null) return errorMessage + " " + ret.toString();
-            return ret.toString();
-        }
         /* temp unavail */
         if (hasStatus(ERROR_TEMPORARILY_UNAVAILABLE) && getRemainingWaittime() > 0) {
-            ret.append(_JDT._.gui_download_waittime_status2(Formatter.formatSeconds(getRemainingWaittime() / 1000)));
-            if (errorMessage != null) return errorMessage + " " + ret.toString();
-            return ret.toString();
-        }
-        /* hoster temp unavail */
-        if (hasStatus(ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) && ProxyController.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) > 0) {
             ret.append(_JDT._.gui_download_waittime_status2(Formatter.formatSeconds(getRemainingWaittime() / 1000)));
             if (errorMessage != null) return errorMessage + " " + ret.toString();
             return ret.toString();
@@ -347,8 +334,6 @@ public class LinkStatus implements Serializable {
 
         if (isFailed()) return getLongErrorMessage();
         final DownloadInterface dli = downloadLink.getDownloadInstance();
-        if (downloadLink.getDefaultPlugin() != null && ProxyController.getInstance().getRemainingIPBlockWaittime(downloadLink.getHost()) > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return _JDT._.gui_downloadlink_hosterwaittime(); }
-        if (downloadLink.getDefaultPlugin() != null && ProxyController.getInstance().getRemainingTempUnavailWaittime(downloadLink.getHost()) > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return _JDT._.gui_downloadlink_hostertempunavail(); }
         if (dli == null && hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
             removeStatus(DOWNLOADINTERFACE_IN_PROGRESS);
         }
@@ -374,10 +359,6 @@ public class LinkStatus implements Serializable {
         if (errorMessage != null) return errorMessage;
         if (statusText != null) return statusText;
         return "";
-    }
-
-    public long getTotalWaitTime() {
-        return totalWaitTime;
     }
 
     public long getValue() {

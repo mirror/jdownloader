@@ -252,9 +252,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      */
     private void clearDownloadListStatus() {
         /* reset ip waittimes only for local ips */
-        ProxyController.getInstance().resetIPBlockWaittime(null, true);
+        ProxyController.getInstance().removeIPBlockTimeout(null, true);
         /* reset temp unavailble times for all ips */
-        ProxyController.getInstance().resetTempUnavailWaittime(null, false);
+        ProxyController.getInstance().removeHostBlockedTimeout(null, false);
         synchronized (DownloadController.getInstance()) {
             for (final FilePackage filePackage : DownloadController.getInstance().getPackages()) {
                 synchronized (filePackage) {
@@ -685,9 +685,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * 
      * @param host
      */
-    public void resetIPBlockWaittime(final String host) {
+    public void removeIPBlockTimeout(DownloadLink link) {
         /* reset ip waittimes only for local ip */
-        ProxyController.getInstance().resetIPBlockWaittime(host, true);
+        ProxyController.getInstance().removeIPBlockTimeout(link.getHost(), true);
+        LinkStatus ls = link.getLinkStatus();
+        if (ls.hasStatus(LinkStatus.ERROR_IP_BLOCKED)) {
+            ls.reset();
+        }
     }
 
     /**
@@ -695,8 +699,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * 
      * @param host
      */
-    public void resetTempUnavailWaittime(final String host) {
-        ProxyController.getInstance().resetTempUnavailWaittime(host, false);
+    public void removeTempUnavailTimeout(DownloadLink link) {
+        ProxyController.getInstance().removeHostBlockedTimeout(link.getHost(), false);
+        LinkStatus ls = link.getLinkStatus();
+        if (ls.hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE)) {
+            ls.reset();
+        }
     }
 
     public long getDownloadSpeedbyFilePackage(FilePackage pkg) {
@@ -767,9 +775,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                     public void run() {
                         /* reset waittimes when controller reached final state */
-                        String host = link.getHost();
-                        resetIPBlockWaittime(host);
-                        resetTempUnavailWaittime(host);
+                        removeIPBlockTimeout(link);
+                        removeTempUnavailTimeout(link);
                         link.reset();
                     }
 
@@ -964,7 +971,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             if (DownloadWatchDog.this.lastReconnectCounter < Reconnecter.getReconnectCounter()) {
                                 /* an IP-change happend, reset waittimes */
                                 lastReconnectCounter = Reconnecter.getReconnectCounter();
-                                ProxyController.getInstance().resetIPBlockWaittime(null, true);
+                                ProxyController.getInstance().removeIPBlockTimeout(null, true);
                                 resetWaitingNewIP = true;
                             }
                             if (lastChange != DownloadController.getInstance().getPackageControllerChanges()) {
@@ -1043,13 +1050,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                         IPController.getInstance().invalidate();
                                                     }
                                                 }
-                                            } else if (ProxyController.getInstance().hasTempUnavailWaittime(link.getHost()) && !link.getLinkStatus().isFinished()) {
+                                            } else if (ProxyController.getInstance().hasHostBlocked(link.getHost()) && !link.getLinkStatus().isFinished()) {
                                                 /*
                                                  * we have links that are temp.
                                                  * unavail in list
                                                  */
                                                 hasTempDisabledLinks = true;
-                                            } else if (ProxyController.getInstance().hasRemainingIPBlockWaittime(link.getHost()) && !link.getLinkStatus().isFinished()) {
+                                            } else if (ProxyController.getInstance().hasIPBlock(link.getHost()) && !link.getLinkStatus().isFinished()) {
                                                 /*
                                                  * we have links that are
                                                  * ipblocked in list
@@ -1230,17 +1237,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
             }
         }, true);
-    }
-
-    /**
-     * needed to keep backwards compatibility to 0.9581 stable
-     * 
-     * @param host
-     * @return
-     */
-    @Deprecated
-    public long getRemainingTempUnavailWaittime(String host) {
-        return ProxyController.getInstance().getRemainingTempUnavailWaittime(host);
     }
 
     public StateMachine getStateMachine() {

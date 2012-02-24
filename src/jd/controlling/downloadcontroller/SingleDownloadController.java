@@ -600,7 +600,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         HTTPProxy proxyInfo = getCurrentProxy();
         if (proxyInfo != null && proxyInfo instanceof ProxyInfo) {
             /* set remaining waittime for host-temp unavailable */
-            ((ProxyInfo) proxyInfo).setRemainingTempUnavail(plugin.getHost(), milliSeconds);
+            ((ProxyInfo) proxyInfo).setHostBlockedTimeout(downloadLink, milliSeconds);
         }
 
     }
@@ -616,7 +616,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     private void onErrorIPWaittime(DownloadLink downloadLink, PluginForHost plugin) {
         LinkStatus status = downloadLink.getLinkStatus();
         long milliSeconds = downloadLink.getLinkStatus().getValue();
-
         if (milliSeconds <= 0) {
             logger.severe(_JDT._.plugins_errors_pluginerror());
             milliSeconds = 3600000l;
@@ -626,7 +625,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         HTTPProxy proxyInfo = getCurrentProxy();
         if (proxyInfo != null && proxyInfo instanceof ProxyInfo) {
             /* set remaining waittime for host-temp unavailable */
-            ((ProxyInfo) proxyInfo).setRemainingIPBlockWaittime(plugin.getHost(), milliSeconds);
+            ((ProxyInfo) proxyInfo).setHostIPBlockTimeout(downloadLink, milliSeconds);
         }
 
     }

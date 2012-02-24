@@ -42,10 +42,9 @@ public class ResumeAction extends ContextMenuAction {
             public void run() {
                 for (DownloadLink link : links) {
                     if (!link.getLinkStatus().isPluginActive() && link.getLinkStatus().isFailed()) {
-                        link.getLinkStatus().reset(true);
-                        String host = link.getHost();
-                        DownloadWatchDog.getInstance().resetIPBlockWaittime(host);
-                        DownloadWatchDog.getInstance().resetTempUnavailWaittime(host);
+                        link.getLinkStatus().reset(true);                        
+                        DownloadWatchDog.getInstance().removeIPBlockTimeout(link);
+                        DownloadWatchDog.getInstance().removeTempUnavailTimeout(link);
                     }
                 }
             }

@@ -3,6 +3,9 @@ package org.jdownloader.gui.views.downloads.columns;
 import javax.swing.Icon;
 
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.proxy.ProxyBlock;
+import jd.controlling.proxy.ProxyController;
+import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -11,6 +14,7 @@ import jd.plugins.PluginProgress;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.translate._JDT;
 
 public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
@@ -68,14 +72,28 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
+            DownloadLink dl = (DownloadLink) value;
+            ProxyBlock ipTimeout = null;
+            if (dl.getLivePlugin() == null && !dl.getLinkStatus().isPluginActive() && (ipTimeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
+                if (ipTimeout.getLink() == value) {
+                    return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(ipTimeout.getBlockedTimeout() / 1000));
+                } else {
+                    return _JDT._.gui_downloadlink_hosterwaittime();
+                }
+            }
+            ProxyBlock hostTimeout = null;
+            if (dl.getLivePlugin() == null && !dl.getLinkStatus().isPluginActive() && (hostTimeout = ProxyController.getInstance().getHostBlockedTimeout(dl.getHost())) != null) {
+                if (hostTimeout.getLink() == value) {
+                    return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(hostTimeout.getBlockedTimeout() / 1000));
+                } else {
+                    return _JDT._.gui_downloadlink_hostertempunavail();
+                }
+            }
             return ((DownloadLink) value).getLinkStatus().getStatusString();
 
         } else if (value instanceof FilePackage) {
-
             if (((FilePackage) value).isFinished()) { return "Finished"; }
-
         }
         return "";
     }
-
 }

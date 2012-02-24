@@ -2,15 +2,18 @@ package jd.controlling.proxy;
 
 import java.util.HashMap;
 
+import jd.plugins.DownloadLink;
+
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 public class ProxyInfo extends HTTPProxy {
 
-    private boolean                        proxyRotationEnabled = true;
+    private boolean                           proxyRotationEnabled = true;
 
-    private final HashMap<String, Integer> activeHosts          = new HashMap<String, Integer>();
-    private final HashMap<String, Long>    ipblockedHosts       = new HashMap<String, Long>();
-    private final HashMap<String, Long>    unavailHosts         = new HashMap<String, Long>();
+    private final HashMap<String, Integer>    activeHosts          = new HashMap<String, Integer>();
+
+    private final HashMap<String, ProxyBlock> unavailBlocks        = new HashMap<String, ProxyBlock>();
+    private final HashMap<String, ProxyBlock> ipBlocks             = new HashMap<String, ProxyBlock>();
 
     /**
      * @return the enabled
@@ -43,71 +46,83 @@ public class ProxyInfo extends HTTPProxy {
         cloneProxy(proxy);
     }
 
-    protected long getRemainingIPBlockWaittime(final String host) {
-        synchronized (ipblockedHosts) {
-            if (!ipblockedHosts.containsKey(host)) { return 0; }
-            long ret = Math.max(0, ipblockedHosts.get(host) - System.currentTimeMillis());
-            if (ret == 0) {
-                ipblockedHosts.remove(host);
+    protected ProxyBlock getHostIPBlockTimeout(final String host) {
+        synchronized (ipBlocks) {
+            ProxyBlock ret = ipBlocks.get(host);
+            if (ret != null && (ret.getBlockedTimeout()) <= 0) {
+                ipBlocks.remove(host);
+                ret = null;
             }
             return ret;
         }
     }
 
-    protected long getRemainingTempUnavailWaittime(final String host) {
-        synchronized (unavailHosts) {
-            if (!unavailHosts.containsKey(host)) { return 0; }
-            long ret = Math.max(0, unavailHosts.get(host) - System.currentTimeMillis());
-            if (ret == 0) {
-                unavailHosts.remove(host);
+    protected ProxyBlock getHostBlockedTimeout(final String host) {
+        synchronized (unavailBlocks) {
+            ProxyBlock ret = unavailBlocks.get(host);
+            if (ret != null && (ret.getBlockedTimeout()) <= 0) {
+                unavailBlocks.remove(host);
+                ret = null;
             }
             return ret;
         }
     }
 
-    public void setRemainingTempUnavail(final String host, final long waittime) {
-        synchronized (unavailHosts) {
+    public ProxyBlock setHostBlockedTimeout(final DownloadLink link, final long waittime) {
+        synchronized (unavailBlocks) {
             if (waittime <= 0) {
-                unavailHosts.remove(host);
+                unavailBlocks.remove(link.getHost());
+                return null;
             } else {
-                this.unavailHosts.put(host, System.currentTimeMillis() + waittime);
+                ProxyBlock old = unavailBlocks.get(link.getHost());
+                if (old == null || old.getBlockedUntil() > System.currentTimeMillis() + waittime) {
+                    unavailBlocks.put(link.getHost(), old = new ProxyBlock(link, System.currentTimeMillis() + waittime, ProxyBlock.REASON.UNAVAIL));
+                }
+                return old;
             }
         }
     }
 
-    public void setRemainingIPBlockWaittime(final String host, final long waittime) {
-        synchronized (ipblockedHosts) {
+    /* set IPBlock timeout for host of given DownloadLink */
+    public ProxyBlock setHostIPBlockTimeout(final DownloadLink link, final long waittime) {
+        synchronized (ipBlocks) {
             if (waittime <= 0) {
-                ipblockedHosts.remove(host);
+                ipBlocks.remove(link.getHost());
+                return null;
             } else {
-                ipblockedHosts.put(host, System.currentTimeMillis() + waittime);
+                ProxyBlock old = ipBlocks.get(link.getHost());
+                if (old == null || old.getBlockedUntil() > System.currentTimeMillis() + waittime) {
+                    ipBlocks.put(link.getHost(), old = new ProxyBlock(link, System.currentTimeMillis() + waittime, ProxyBlock.REASON.IP));
+                }
+                return old;
             }
         }
     }
 
-    protected void resetIPBlockWaittime(final String host) {
-        synchronized (ipblockedHosts) {
+    protected void removeHostIPBlockTimeout(final String host) {
+        synchronized (ipBlocks) {
             if (host == null) {
-                ipblockedHosts.clear();
+                ipBlocks.clear();
             } else {
-                ipblockedHosts.remove(host);
+                ipBlocks.remove(host);
             }
         }
     }
 
-    public void resetTempUnavailWaittime(final String host) {
-        synchronized (unavailHosts) {
+    public void removeHostBlockedWaittime(final String host) {
+        synchronized (unavailBlocks) {
             if (host == null) {
-                unavailHosts.clear();
+                unavailBlocks.clear();
             } else {
-                unavailHosts.remove(host);
+                unavailBlocks.remove(host);
             }
         }
     }
 
     public int activeDownloadsbyHosts(final String host) {
         synchronized (this.activeHosts) {
-            if (this.activeHosts.containsKey(host)) { return this.activeHosts.get(host); }
+            Integer ret = this.activeHosts.get(host);
+            if (ret != null) return ret;
         }
         return 0;
     }

@@ -568,7 +568,7 @@ public class ProxyController {
         }
         if (none.isProxyRotationEnabled()) {
             /* only use enabled proxies */
-            if (none.getRemainingIPBlockWaittime(host) <= 0 && none.getRemainingTempUnavailWaittime(host) <= 0) {
+            if (none.getHostBlockedTimeout(host) == null && none.getHostIPBlockTimeout(host) == null) {
                 /* active downloads must be less than allowed download */
                 int active = none.activeDownloadsbyHosts(host);
                 if (byPassMaxSimultanDownload || active < maxactive) return none;
@@ -578,7 +578,7 @@ public class ProxyController {
         for (ProxyInfo info : ldirects) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
-                if (info.getRemainingIPBlockWaittime(host) <= 0 && info.getRemainingTempUnavailWaittime(host) <= 0) {
+                if (info.getHostBlockedTimeout(host) == null && info.getHostIPBlockTimeout(host) == null) {
                     /* active downloads must be less than allowed download */
                     int active = info.activeDownloadsbyHosts(host);
                     if (byPassMaxSimultanDownload || active < maxactive) return info;
@@ -589,7 +589,7 @@ public class ProxyController {
         for (ProxyInfo info : lproxies) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
-                if (info.getRemainingIPBlockWaittime(host) <= 0 && info.getRemainingTempUnavailWaittime(host) <= 0) {
+                if (info.getHostBlockedTimeout(host) == null && info.getHostIPBlockTimeout(host) == null) {
                     /* active downloads must be less than allowed download */
                     int active = info.activeDownloadsbyHosts(host);
                     if (byPassMaxSimultanDownload || active < maxactive) return info;
@@ -599,141 +599,157 @@ public class ProxyController {
         return null;
     }
 
-    /* optimize for speed */
-    public long getRemainingIPBlockWaittime(final String host) {
-        long ret = -1;
+    public ProxyBlock getHostIPBlockTimeout(final String host) {
+        ProxyBlock ret = null;
         if (none.isProxyRotationEnabled()) {
-            ret = Math.max(0, none.getRemainingIPBlockWaittime(host));
+            ret = none.getHostIPBlockTimeout(host);
         }
+        if (ret == null) return null;
         ArrayList<ProxyInfo> lproxies = proxies;
         for (ProxyInfo info : lproxies) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
-                long ret2 = Math.max(0, info.getRemainingIPBlockWaittime(host));
-                if (ret2 < ret) ret = ret2;
+                ProxyBlock ret2 = info.getHostIPBlockTimeout(host);
+                if (ret2 == null) {
+                    return null;
+                } else if (ret == null || ret2.getBlockedUntil() < ret.getBlockedUntil()) {
+                    ret = ret2;
+                }
+
             }
         }
         ArrayList<ProxyInfo> ldirects = directs;
         for (ProxyInfo info : ldirects) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
-                long ret2 = Math.max(0, info.getRemainingIPBlockWaittime(host));
-                if (ret2 < ret) ret = ret2;
+                ProxyBlock ret2 = info.getHostIPBlockTimeout(host);
+                if (ret2 == null) {
+                    return null;
+                } else if (ret == null || ret2.getBlockedUntil() < ret.getBlockedUntil()) {
+                    ret = ret2;
+                }
             }
         }
         return ret;
     }
 
     /* optimize for speed */
-    public long getRemainingTempUnavailWaittime(final String host) {
-        long ret = -1;
+    public ProxyBlock getHostBlockedTimeout(final String host) {
+        ProxyBlock ret = null;
         if (none.isProxyRotationEnabled()) {
-            ret = Math.max(0, none.getRemainingTempUnavailWaittime(host));
+            ret = none.getHostBlockedTimeout(host);
         }
+        if (ret == null) return null;
         ArrayList<ProxyInfo> lproxies = proxies;
         for (ProxyInfo info : lproxies) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
-                long ret2 = Math.max(0, info.getRemainingTempUnavailWaittime(host));
-                if (ret2 < ret) ret = ret2;
+                ProxyBlock ret2 = info.getHostBlockedTimeout(host);
+                if (ret2 == null) {
+                    return null;
+                } else if (ret == null || ret2.getBlockedUntil() < ret.getBlockedUntil()) {
+                    ret = ret2;
+                }
+
             }
         }
         ArrayList<ProxyInfo> ldirects = directs;
         for (ProxyInfo info : ldirects) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
-                long ret2 = Math.max(0, info.getRemainingTempUnavailWaittime(host));
-                if (ret2 < ret) ret = ret2;
+                ProxyBlock ret2 = info.getHostBlockedTimeout(host);
+                if (ret2 == null) {
+                    return null;
+                } else if (ret == null || ret2.getBlockedUntil() < ret.getBlockedUntil()) {
+                    ret = ret2;
+                }
             }
         }
         return ret;
     }
 
-    public boolean hasRemainingIPBlockWaittime(final String host) {
+    public boolean hasIPBlock(final String host) {
         if (none.isProxyRotationEnabled()) {
-            if (none.getRemainingIPBlockWaittime(host) > 0) return true;
+            if (none.getHostIPBlockTimeout(host) != null) return true;
         }
         ArrayList<ProxyInfo> lproxies = proxies;
         for (ProxyInfo info : lproxies) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
-                if (info.getRemainingIPBlockWaittime(host) > 0) return true;
+                if (info.getHostIPBlockTimeout(host) != null) return true;
             }
         }
         ArrayList<ProxyInfo> ldirects = directs;
         for (ProxyInfo info : ldirects) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
-                if (info.getRemainingIPBlockWaittime(host) > 0) return true;
+                if (info.getHostIPBlockTimeout(host) != null) return true;
             }
         }
         return false;
     }
 
-    public boolean hasTempUnavailWaittime(final String host) {
+    public boolean hasHostBlocked(final String host) {
         if (none.isProxyRotationEnabled()) {
-            if (none.getRemainingTempUnavailWaittime(host) > 0) return true;
+            if (none.getHostBlockedTimeout(host) != null) return true;
         }
         ArrayList<ProxyInfo> lproxies = proxies;
         for (ProxyInfo info : lproxies) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
-                if (info.getRemainingTempUnavailWaittime(host) > 0) return true;
+                if (info.getHostBlockedTimeout(host) != null) return true;
             }
         }
         ArrayList<ProxyInfo> ldirects = directs;
         for (ProxyInfo info : ldirects) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
-                if (info.getRemainingTempUnavailWaittime(host) > 0) return true;
+                if (info.getHostBlockedTimeout(host) != null) return true;
             }
         }
         return false;
     }
 
-    public void resetTempUnavailWaittime(final String host, boolean onlyLocal) {
-
-        none.resetTempUnavailWaittime(host);
+    public void removeHostBlockedTimeout(final String host, boolean onlyLocal) {
+        none.removeHostBlockedWaittime(host);
         ArrayList<ProxyInfo> ldirects = directs;
         for (ProxyInfo info : ldirects) {
-            info.resetIPBlockWaittime(host);
+            info.removeHostBlockedWaittime(host);
         }
         if (!onlyLocal) {
             ArrayList<ProxyInfo> lproxies = proxies;
             for (ProxyInfo info : lproxies) {
                 // if (onlyLocal && info.getProxy().isRemote()) continue;
-                info.resetTempUnavailWaittime(host);
+                info.removeHostBlockedWaittime(host);
             }
         }
     }
 
-    public void resetIPBlockWaittime(final String host, boolean onlyLocal) {
-        none.resetIPBlockWaittime(host);
+    public void removeIPBlockTimeout(final String host, boolean onlyLocal) {
+        none.removeHostIPBlockTimeout(host);
         ArrayList<ProxyInfo> ldirects = directs;
         for (ProxyInfo info : ldirects) {
-            info.resetIPBlockWaittime(host);
+            info.removeHostIPBlockTimeout(host);
         }
         if (!onlyLocal) {
             ArrayList<ProxyInfo> lproxies = proxies;
             for (ProxyInfo info : lproxies) {
-                // if (onlyLocal && info.getProxy().isRemote()) continue;
-                info.resetIPBlockWaittime(host);
+                info.removeHostIPBlockTimeout(host);
             }
         }
     }
 
-    public ArrayList<ProxyInfo> getListForRotation() {
-        ArrayList<ProxyInfo> ret = new ArrayList<ProxyInfo>();
-        if (none.isProxyRotationEnabled()) ret.add(none);
+    public boolean hasRotation() {
+        if (none.isProxyRotationEnabled()) return true;
         ArrayList<ProxyInfo> ldirects = directs;
         for (ProxyInfo pi : ldirects) {
-            if (pi.isProxyRotationEnabled()) ret.add(pi);
+            if (pi.isProxyRotationEnabled()) return true;
         }
         ArrayList<ProxyInfo> lproxies = proxies;
         for (ProxyInfo pi : lproxies) {
-            if (pi.isProxyRotationEnabled()) ret.add(pi);
+            if (pi.isProxyRotationEnabled()) return true;
         }
-        return ret;
+        return false;
     }
 
     public ProxyInfo getNone() {
