@@ -16,19 +16,9 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Pattern;
 
-import javax.script.Invocable;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -55,26 +45,6 @@ public class TwoSharedCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("/(audio|video|photo|document)/", "/file/"));
     }
 
-    public String decrypt(final int a, final List<String> param) throws Exception {
-        Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        final Invocable inv = (Invocable) engine;
-        try {
-            if (a == 0) {
-                engine.eval("function charalgo(M){" + param.get(0) + "return (M);}");
-                result = inv.invokeFunction("charalgo", param.get(1));
-            } else {
-                engine.eval(param.get(0) + param.get(1));
-                result = inv.invokeFunction("decode", param.get(2));
-            }
-        } catch (final ScriptException e) {
-            e.printStackTrace();
-        }
-        if (result == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        return result.toString();
-    }
-
     @Override
     public String getAGBLink() {
         return "http://www.2shared.com/terms.jsp";
@@ -88,23 +58,6 @@ public class TwoSharedCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final Form pwform = br.getForm(0);
-        if (pwform != null && !pwform.getAction().contains("paypal")) {
-            String passCode;
-            if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput(null, downloadLink);
-            } else {
-                passCode = downloadLink.getStringProperty("pass", null);
-            }
-            pwform.put("userPass2", passCode);
-            br.submitForm(pwform);
-            if (br.containsHTML("passError\\(\\);")) {
-                downloadLink.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("plugins.hoster.2sharedcom.errors.wrongcaptcha", "Wrong captcha"));
-            } else {
-                downloadLink.setProperty("pass", passCode);
-            }
-        }
         String finallink = null;
         String link = br.getRegex(Pattern.compile("\\$\\.get\\(\\'(.*?)\\'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         // special handling for picture-links
@@ -112,32 +65,9 @@ public class TwoSharedCom extends PluginForHost {
             br.getPage(MAINPAGE + link);
             finallink = br.toString();
         }
-        link = br.getRegex("<div style=\"display:none\" id=\"\\w+\">(.*?)</div>").getMatch(0);
-        if (finallink == null) {
-            if (link != null && !link.contains("2shared")) {
-                final List<String> param = new ArrayList<String>();
-                final Browser fn = br.cloneBrowser();
-                if (!link.contains("\\d+")) {
-                    // Function Decode
-                    param.add(new Regex(fn.toString().replaceAll("\n|\t", ""), "function decode(.*?)\\}.*?\\}").getMatch(-1));
-                    // var em
-                    param.add(br.getRegex("var em='(.*?)';").getMatch(-1));
-                    // var key
-                    param.add(br.getRegex("var key='(.*?)';").getMatch(0));
-                    link += decrypt(1, param);
-                }
-                final String jsquery = fn.getPage(MAINPAGE + br.getRegex("src=\"(.*?)\"").getMatch(0, 1));
-                final String charalgo = new Regex(jsquery, "var viw(.*)l2surl;\\}").getMatch(-1).replaceAll("M\\.url", "M");
-                if (link == null || jsquery == null || charalgo == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-                param.clear();
-                param.add(charalgo);
-                param.add(link);
-                finallink = decrypt(0, param);
-            } else {
-                finallink = br.getRegex("window\\.location ='(.*?)';").getMatch(0);
-                finallink = finallink == null ? link : finallink;
-            }
-        }
+        link = link == null ? br.getRegex("<div style=\"display:none\" id=\"\\w+\">(.*?)</div>").getMatch(0) : link;
+        finallink = finallink == null ? link : finallink;
+        finallink = finallink == null ? br.getRegex("window\\.location ='(.*?)';").getMatch(0) : finallink;
         if (finallink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         finallink = finallink.trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
@@ -162,23 +92,40 @@ public class TwoSharedCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        final Form pwform = br.getForm(0);
-        if (pwform != null && !pwform.getAction().contains("paypal")) {
-            final String filename = br.getRegex("<td class=\"header\" align=\"center\">Download (.*?)</td>").getMatch(0);
-            if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            downloadLink.setName(filename.trim());
-            return AvailableStatus.TRUE;
+        Form pwform = br.getForm(0);
+        if (pwform != null && pwform.containsHTML("password") && !pwform.getAction().contains("paypal")) {
+            String passCode = downloadLink.getStringProperty("pass", null);
+            for (int i = 0; i <= 3; i++) {
+                passCode = passCode == null ? Plugin.getUserInput(null, downloadLink) : passCode;
+                pwform.put("userPass2", passCode);
+                br.submitForm(pwform);
+                pwform = br.getForm(0);
+                if (br.containsHTML("The password you have entered is not valid")) {
+                    logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                    passCode = null;
+                } else {
+                    downloadLink.setProperty("pass", passCode);
+                    break;
+                }
+            }
+            if (br.containsHTML("The password you have entered is not valid")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Wrong password entered"); }
+        }
+        String filename = br.getRegex("<h1>(.*?)</h1>\\s?download").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h2>(.*?)\\sdownload</h2>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?)\\s2shared\\s\\-\\sdownload</title>").getMatch(0);
+            }
         }
         String filesize = br.getRegex(Pattern.compile("<span class=.*?>File size:</span>(.*?)&nbsp; &nbsp;", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         // filesize regex for picturelinks
         if (filesize == null) {
             filesize = br.getRegex("class=\"bodytitle\">Loading image \\((.*?)\\)\\.\\.\\. Please wait").getMatch(0);
         }
-        final String filename = br.getRegex("<title>(2shared - download)?(.*?)(2shared - download)?</title>").getMatch(1);
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",|\\.", "")));

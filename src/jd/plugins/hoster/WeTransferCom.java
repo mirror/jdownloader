@@ -100,7 +100,7 @@ public class WeTransferCom extends PluginForHost {
         // successfully request?
         final int rC = br.getHttpConnection().getResponseCode();
         if (rC != 200) {
-            logger.warning("Video not found! Link: " + dlink);
+            logger.warning("File not found! Link: " + dlink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
