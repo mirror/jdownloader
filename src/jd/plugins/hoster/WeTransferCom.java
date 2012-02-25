@@ -97,6 +97,9 @@ public class WeTransferCom extends PluginForHost {
         br.getHeaders().put("Referer", "https://www.wetransfer.com/index.swf?nocache=" + String.valueOf(System.currentTimeMillis() / 1000));
         br.postPageRaw("https://v1.wetransfer.com/amfphp/gateway.php", getAMFRequest());
 
+        /* TODO: remove me after 0.9xx public */
+        br.getHeaders().put("Content-Type", null);
+
         // successfully request?
         final int rC = br.getHttpConnection().getResponseCode();
         if (rC != 200) {
