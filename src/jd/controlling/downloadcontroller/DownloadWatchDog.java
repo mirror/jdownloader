@@ -54,6 +54,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -76,6 +77,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         public DownloadLink link;
         public ProxyInfo    proxy;
         public Account      account;
+
+        public String toString() {
+            return "Proxy: " + proxy + ", Account " + account + " link: " + link + " bypasssim: " + byPassSimultanDownloadNum;
+        }
     }
 
     public static final State IDLE_STATE     = new State("IDLE");
@@ -804,6 +809,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 /* no next possible download found */
                 return ret;
             }
+            Log.L.info("Start " + dci);
             DownloadLink dlLink = dci.link;
             if (!this.checkFreeDiskSpace(new File(dlLink.getFileOutput()), (dlLink.getDownloadSize() - dlLink.getDownloadCurrent()))) {
                 dci.link.getLinkStatus().setStatus(LinkStatus.NOT_ENOUGH_HARDDISK_SPACE);
