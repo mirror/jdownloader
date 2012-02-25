@@ -686,9 +686,6 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void handle(final DownloadLink downloadLink, final Account account) throws Exception {
-        final TransferStatus transferStatus = downloadLink.getTransferStatus();
-        transferStatus.usePremium(false);
-        transferStatus.setResumeSupport(false);
         try {
             while (waitForNextStartAllowed(downloadLink)) {
             }
@@ -702,7 +699,6 @@ public abstract class PluginForHost extends Plugin {
             final long before = downloadLink.getDownloadCurrent();
             boolean blockAccount = false;
             try {
-                transferStatus.usePremium(true);
                 handlePremium(downloadLink, account);
             } catch (PluginException e) {
                 e.fillLinkStatus(downloadLink.getLinkStatus());

@@ -779,6 +779,8 @@ abstract public class DownloadInterface {
     /** normal stop of download (eg manually or reconnect request) */
     private volatile boolean       externalStop                     = false;
 
+    private boolean                resumable                        = false;
+
     public void setFilenameFix(boolean b) {
         this.fixWrongContentDispositionHeader = b;
     }
@@ -1204,12 +1206,16 @@ abstract public class DownloadInterface {
      * File soll resumed werden
      */
     public void setResume(boolean value) {
-        downloadLink.getTransferStatus().setResumeSupport(value);
+        this.resumable = value;
         if (checkResumabled()) {
             resume = value;
         } else {
             logger.warning("Resumepoint not valid");
         }
+    }
+
+    public boolean isResumable() {
+        return this.resumable;
     }
 
     /**

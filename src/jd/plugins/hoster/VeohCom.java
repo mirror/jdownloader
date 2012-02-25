@@ -145,7 +145,6 @@ public class VeohCom extends PluginForHost {
         if (fHash == null || fHash.length() < 32 || sTime == null || videoId == null || fileSize == null || ext == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
         downloadLink.setName(downloadLink.getName() + ext);
-        downloadLink.getTransferStatus().setResumeSupport(true);
         br.setFollowRedirects(true);
 
         // prepareBrowser("veohplugin-1.3.6 service (NT 6.1; IE 7.0; en-US Windows)");
@@ -277,7 +276,12 @@ public class VeohCom extends PluginForHost {
                         } else {
                             downloadLink.setProperty("parts_finished", Long.valueOf(T[3]));
                         }
-                        if (isExternalyAborted() && downloadLink.getTransferStatus().supportsResume()) {
+                        boolean resumable = false;
+                        try {
+                            resumable = dl.isResumable();
+                        } catch (final Throwable e) {
+                        }
+                        if (isExternalyAborted() && resumable) {
                             downloadLink.setProperty("bytes_loaded", Long.valueOf(BYTESLOADED));
                             downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
                             break;

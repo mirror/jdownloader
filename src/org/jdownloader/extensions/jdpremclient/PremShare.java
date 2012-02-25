@@ -18,7 +18,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
@@ -89,9 +88,6 @@ public class PremShare extends PluginForHost implements JDPremInterface {
         }
         proxyused = false;
         /* copied from PluginForHost */
-        final TransferStatus transferStatus = downloadLink.getTransferStatus();
-        transferStatus.usePremium(false);
-        transferStatus.setResumeSupport(false);
         try {
             while (waitForNextStartAllowed(downloadLink)) {
             }
@@ -211,7 +207,6 @@ public class PremShare extends PluginForHost implements JDPremInterface {
             }
             if (status.contains("OK: 100")) {
                 /* download complete */
-                link.getTransferStatus().usePremium(true);
                 break;
             }
             if (status.contains("OK: 0")) {
@@ -222,7 +217,6 @@ public class PremShare extends PluginForHost implements JDPremInterface {
                 boolean premium = status.contains("OK: 1");
                 /* download in progress */
                 /* update premium flag */
-                link.getTransferStatus().usePremium(premium);
                 String ints[] = new Regex(status, "(\\d+)/(\\d+)/(\\d+)").getRow(0);
                 Long size = Long.parseLong(ints[1]);
                 Long current = Long.parseLong(ints[0]);

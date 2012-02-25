@@ -17,7 +17,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.formatter.TimeFormatter;
@@ -84,9 +83,6 @@ public class Zevera extends PluginForHost implements JDPremInterface {
         }
         proxyused = false;
         /* copied from PluginForHost */
-        final TransferStatus transferStatus = downloadLink.getTransferStatus();
-        transferStatus.usePremium(false);
-        transferStatus.setResumeSupport(false);
         try {
             while (waitForNextStartAllowed(downloadLink)) {
             }

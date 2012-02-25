@@ -121,6 +121,7 @@ public class DepositFiles extends PluginForHost {
         try {
             login(account);
         } catch (final PluginException e) {
+            logger.info(br.toString());
             ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
             account.setValid(false);
             return ai;

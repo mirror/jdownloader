@@ -17,7 +17,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Hash;
@@ -99,9 +98,6 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
         }
         proxyused = false;
         /* copied from PluginForHost */
-        final TransferStatus transferStatus = downloadLink.getTransferStatus();
-        transferStatus.usePremium(false);
-        transferStatus.setResumeSupport(false);
         try {
             while (waitForNextStartAllowed(downloadLink)) {
             }
@@ -192,7 +188,6 @@ public class TwojLimit extends PluginForHost implements JDPremInterface {
         br.setFollowRedirects(true);
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 1);
-        link.getTransferStatus().usePremium(true);
         /*
          * I realy wanted to use Content Disposition below, but it just don't
          * work for resume at hotfile

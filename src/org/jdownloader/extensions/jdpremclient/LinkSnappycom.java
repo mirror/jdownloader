@@ -21,7 +21,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
@@ -90,9 +89,6 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
         }
         proxyused = false;
         /* copied from PluginForHost */
-        final TransferStatus transferStatus = downloadLink.getTransferStatus();
-        transferStatus.usePremium(false);
-        transferStatus.setResumeSupport(false);
         try {
             while (waitForNextStartAllowed(downloadLink)) {
             }
@@ -238,7 +234,6 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
         }
         /* save generated link */
         link.setProperty("genLink", genlink);
-        link.getTransferStatus().usePremium(true);
         dl.startDownload();
         return true;
 

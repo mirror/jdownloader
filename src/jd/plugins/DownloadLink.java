@@ -451,13 +451,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return linkStatus;
     }
 
-    public TransferStatus getTransferStatus() {
-        if (transferstatus == null) {
-            transferstatus = new TransferStatus();
-        }
-        return transferstatus;
-    }
-
     public int getLinkType() {
         return linkType;
     }
@@ -677,8 +670,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         linkStatus.reset();
         this.availableStatus = AvailableStatus.UNCHECKED;
         this.setEnabled(true);
-        this.getTransferStatus().usePremium(false);
-        this.getTransferStatus().setResumeSupport(false);
         deleteFile(true, true);
         setFinalFileName(null);
         PluginForHost plg = liveplugin;

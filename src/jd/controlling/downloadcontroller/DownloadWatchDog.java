@@ -19,7 +19,6 @@ package jd.controlling.downloadcontroller;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,8 +38,10 @@ import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.swing.jdgui.components.toolbar.actions.PauseDownloadsAction;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.download.DownloadInterface;
 
 import org.appwork.controlling.State;
 import org.appwork.controlling.StateMachine;
@@ -376,7 +377,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (forcedLinks.size() > 0) link = forcedLinks.removeFirst();
         }
         if (link == null) return null;
-        if (link.getDefaultPlugin() == null || link.getLinkStatus().isPluginActive()) {
+        if (link.getDefaultPlugin() == null || link.getLinkStatus().isPluginActive() || link.getLinkStatus().hasStatus(LinkStatus.NOT_ENOUGH_HARDDISK_SPACE)) {
             /* no plugin available or plugin already active */
             return null;
         }
@@ -411,7 +412,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * 
      * @return
      */
-    public DownloadControlInfo getNextDownloadLink() {
+    public DownloadControlInfo getNextDownloadLink(List<DownloadLink> possibleLinks) {
         /* we first check if there is a forced download waiting to get started */
         DownloadControlInfo ret = getNextForcedDownloadLink();
         if (ret != null) {
@@ -420,58 +421,52 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             ret = new DownloadControlInfo();
         }
         final boolean tryAcc = org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled();
-        DownloadLink nextDownloadLink = null;
         Account acc = null;
         String accHost = null;
         final int maxPerHost = this.getSimultanDownloadNumPerHost();
         try {
-            for (final FilePackage filePackage : this.dlc.getPackages()) {
-                for (final Iterator<DownloadLink> it2 = filePackage.getChildren().iterator(); it2.hasNext();) {
-                    nextDownloadLink = it2.next();
-                    if (nextDownloadLink.getDefaultPlugin() == null || !nextDownloadLink.isEnabled() || nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
+            for (DownloadLink nextDownloadLink : possibleLinks) {
+                if (nextDownloadLink.getDefaultPlugin() == null || !nextDownloadLink.isEnabled() || nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) || nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.NOT_ENOUGH_HARDDISK_SPACE)) {
+                    /*
+                     * no plugin available, download not enabled,link temp
+                     * unavailable
+                     */
+                    continue;
+                }
+                if (nextDownloadLink.getLinkStatus().isPluginActive() || (!nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO) && !nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED))) {
+                    /* download is already in progress or not todo */
+                    continue;
+                }
+                if (activeDownloadsbyHosts(nextDownloadLink.getHost()) >= maxPerHost) {
+                    /* max downloads per host reached */
+                    continue;
+                }
+                /* Account Handling */
+                if (tryAcc) {
+                    if (accHost == null || !accHost.equalsIgnoreCase(nextDownloadLink.getHost())) {
                         /*
-                         * no plugin available, download not enabled,link temp
-                         * unavailable
+                         * in case there is no current account or account host
+                         * does not match download host, get new account
                          */
-                        continue;
-                    }
-                    if (nextDownloadLink.getLinkStatus().isPluginActive() || (!nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO) && !nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED))) {
-                        /* download is already in progress or not todo */
-                        continue;
-                    }
-                    if (activeDownloadsbyHosts(nextDownloadLink.getHost()) >= maxPerHost) {
-                        /* max downloads per host reached */
-                        continue;
-                    }
-                    /* Account Handling */
-                    if (tryAcc) {
-                        if (accHost == null || !accHost.equalsIgnoreCase(nextDownloadLink.getHost())) {
-                            /*
-                             * in case there is no current account or account
-                             * host does not match download host, get new
-                             * account
-                             */
-                            acc = AccountController.getInstance().getValidAccount(nextDownloadLink.getDefaultPlugin());
-                            if (acc != null) {
-                                accHost = nextDownloadLink.getHost();
-                            }
+                        acc = AccountController.getInstance().getValidAccount(nextDownloadLink.getDefaultPlugin());
+                        if (acc != null) {
+                            accHost = nextDownloadLink.getHost();
                         }
                     }
-                    /* search next possible proxy for this download */
-                    boolean byPassMaxSimultanDownload = nextDownloadLink.getDefaultPlugin().bypassMaxSimultanDownloadNum(nextDownloadLink, acc);
-                    ProxyInfo proxy = ProxyController.getInstance().getProxyForDownload(nextDownloadLink, acc, byPassMaxSimultanDownload);
-                    if (proxy != null) {
-                        /* possible proxy found */
-                        if (ret.link == null || nextDownloadLink.getPriority() > ret.link.getPriority()) {
-                            /*
-                             * next download found or download with higher
-                             * priority
-                             */
-                            ret.byPassSimultanDownloadNum = byPassMaxSimultanDownload;
-                            ret.proxy = proxy;
-                            ret.link = nextDownloadLink;
-                            ret.account = acc;
-                        }
+                }
+                /* search next possible proxy for this download */
+                boolean byPassMaxSimultanDownload = nextDownloadLink.getDefaultPlugin().bypassMaxSimultanDownloadNum(nextDownloadLink, acc);
+                ProxyInfo proxy = ProxyController.getInstance().getProxyForDownload(nextDownloadLink, acc, byPassMaxSimultanDownload);
+                if (proxy != null) {
+                    /* possible proxy found */
+                    if (ret.link == null || nextDownloadLink.getPriority() > ret.link.getPriority()) {
+                        /*
+                         * next download found or download with higher priority
+                         */
+                        ret.byPassSimultanDownloadNum = byPassMaxSimultanDownload;
+                        ret.proxy = proxy;
+                        ret.link = nextDownloadLink;
+                        ret.account = acc;
                     }
                 }
             }
@@ -499,7 +494,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             for (final SingleDownloadController con : DownloadControllers) {
                 DownloadLink link = con.getDownloadLink();
                 if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                    if (!(link.getTransferStatus().supportsResume() && allowinterrupt)) ret++;
+                    DownloadInterface dl = link.getDownloadInstance();
+                    if (!(dl != null && dl.isResumable() && allowinterrupt)) ret++;
                 }
             }
         }
@@ -795,14 +791,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * 
      * @return
      **/
-    private int setDownloadActive() {
+    private int setDownloadActive(List<DownloadLink> possibleLinks) {
         DownloadControlInfo dci = null;
         int ret = 0;
         int maxDownloads = config.getMaxSimultaneDownloads();
-        while ((this.forcedLinksWaiting() || this.activeDownloads.get() < maxDownloads)) {
+        int maxLoops = possibleLinks.size();
+        while ((this.forcedLinksWaiting() || this.activeDownloads.get() < maxDownloads) && maxLoops >= 0) {
             if (!this.newDLStartAllowed()) { return ret; }
             if (this.isStopMarkReached()) { return ret; }
-            dci = this.getNextDownloadLink();
+            dci = this.getNextDownloadLink(possibleLinks);
             if (dci == null) {
                 /* no next possible download found */
                 return ret;
@@ -810,10 +807,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             DownloadLink dlLink = dci.link;
             if (!this.checkFreeDiskSpace(new File(dlLink.getFileOutput()), (dlLink.getDownloadSize() - dlLink.getDownloadCurrent()))) {
                 dci.link.getLinkStatus().setStatus(LinkStatus.NOT_ENOUGH_HARDDISK_SPACE);
-                continue;
+            } else {
+                this.activateSingleDownloadController(dci);
+                ret++;
             }
-            this.activateSingleDownloadController(dci);
-            ret++;
+            maxLoops--;
         }
         return ret;
     }
@@ -846,27 +844,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                 }
                 DownloadWatchDog.this.currentstopMark = entry;
-                // final ToolBarAction stopMark =
-                // ActionController.getToolBarAction("toolbar.control.stopmark");
-                /* set new stopmark */
-                // if (entry instanceof DownloadLink) {
-                // stopMark.setSelected(true);
-                // stopMark.setEnabled(true);
-                // stopMark.setToolTipText(_JDT._.jd_controlling_DownloadWatchDog_stopmark_downloadlink(((DownloadLink)
-                // entry).getName()));
-                // } else if (entry instanceof FilePackage) {
-                // stopMark.setSelected(true);
-                // stopMark.setEnabled(true);
-                // stopMark.setToolTipText(_JDT._.jd_controlling_DownloadWatchDog_stopmark_filepackage(((FilePackage)
-                // entry).getName()));
-                // } else if (entry == STOPMARK.HIDDEN) {
-                // stopMark.setSelected(true);
-                // stopMark.setEnabled(true);
-                // stopMark.setToolTipText(_JDT._.jd_controlling_DownloadWatchDog_stopmark_set());
-                // } else if (entry == STOPMARK.NONE) {
-                // stopMark.setSelected(false);
-                // stopMark.setToolTipText(_JDT._.jd_gui_swing_jdgui_actions_actioncontroller_toolbar_control_stopmark_tooltip());
-                // }
             }
         }, true);
     }
@@ -947,16 +924,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 public void run() {
                     this.setName("DownloadWatchDog");
                     try {
-                        List<DownloadLink> links;
-                        final ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
-                        DownloadLink link;
+                        List<DownloadLink> links = new ArrayList<DownloadLink>();
                         LinkStatus linkStatus;
                         boolean hasInProgressLinks;
                         boolean hasTempDisabledLinks;
                         boolean waitingNewIP;
                         boolean resetWaitingNewIP;
                         int stopCounter = 2;
-                        long lastChange = -1;
+                        long lastStructureChange = -1;
+                        long lastContentChange = -1;
                         while (DownloadWatchDog.this.stateMachine.isState(DownloadWatchDog.RUNNING_STATE)) {
                             /* start new download while we are in running state */
                             hasInProgressLinks = false;
@@ -969,28 +945,35 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 ProxyController.getInstance().removeIPBlockTimeout(null, true);
                                 resetWaitingNewIP = true;
                             }
-                            if (lastChange != DownloadController.getInstance().getPackageControllerChanges()) {
-                                fps.clear();
-                                final boolean readL = DownloadController.getInstance().readLock();
-                                try {
-                                    fps.addAll(DownloadController.getInstance().getPackages());
-                                    lastChange = DownloadController.getInstance().getPackageControllerChanges();
-                                } finally {
-                                    DownloadController.getInstance().readUnlock(readL);
+                            final boolean readL = DownloadController.getInstance().readLock();
+                            try {
+                                long currentStructure = DownloadController.getInstance().getPackageControllerChanges();
+                                long currentContent = DownloadController.getInstance().getContentChanges();
+                                if (currentStructure != lastStructureChange || currentContent != lastContentChange) {
+                                    /*
+                                     * changes in DownloadController available,
+                                     * refresh DownloadList
+                                     */
+                                    links.clear();
+                                    for (FilePackage fp : DownloadController.getInstance().getPackages()) {
+                                        synchronized (fp) {
+                                            for (DownloadLink fpLink : fp.getChildren()) {
+                                                if (fpLink.getDefaultPlugin() == null || !fpLink.isEnabled() || (fpLink.isAvailabilityStatusChecked() && fpLink.getAvailableStatusInfo() == AvailableStatus.FALSE) || fpLink.getLinkStatus().isFinished() || fpLink.getLinkStatus().hasStatus(LinkStatus.NOT_ENOUGH_HARDDISK_SPACE)) continue;
+                                                links.add(fpLink);
+                                            }
+                                        }
+                                    }
+                                    lastStructureChange = currentStructure;
+                                    lastContentChange = currentContent;
                                 }
-
+                            } finally {
+                                DownloadController.getInstance().readUnlock(readL);
                             }
                             try {
-                                for (final FilePackage filePackage : fps) {
-                                    links = filePackage.getChildren();
-                                    for (int i = 0; i < links.size(); i++) {
-                                        link = links.get(i);
-                                        if (link.getDefaultPlugin() == null) {
-                                            /* download does not have a plugin?! */
-                                            continue;
-                                        }
-                                        linkStatus = link.getLinkStatus();
-                                        if (link.isEnabled() && !linkStatus.isPluginActive()) {
+                                for (DownloadLink link : links) {
+                                    linkStatus = link.getLinkStatus();
+                                    if (link.isEnabled()) {
+                                        if (!linkStatus.isPluginActive()) {
                                             /* enabled and not in progress */
                                             if (linkStatus.hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) || linkStatus.hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE)) {
                                                 /*
@@ -1007,7 +990,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                     }
                                                     /* reset if waittime is over */
                                                     linkStatus.reset(false);
-                                                } else if (linkStatus.getRemainingWaittime() > 0) {
+                                                } else {
                                                     /*
                                                      * we have temp. unavail
                                                      * links in list
@@ -1024,7 +1007,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                      * for this host
                                                      */
                                                     AccountController.getInstance().removeAccountBlocked(link.getHost());
-                                                } else if (linkStatus.getRemainingWaittime() > 0) {
+                                                } else if (!resetWaitingNewIP) {
                                                     /*
                                                      * we request a reconnect if
                                                      * possible
@@ -1069,16 +1052,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                     IPController.getInstance().invalidate();
                                                 }
                                             }
-                                        } else if (link.isEnabled()) {
-                                            /* enabled links */
-                                            if (linkStatus.isPluginActive()) {
-                                                /* we have active links in list */
-                                                hasInProgressLinks = true;
-                                            }
+                                        } else {
+                                            /* we have active links in list */
+                                            hasInProgressLinks = true;
                                         }
                                     }
                                 }
-                                int ret = DownloadWatchDog.this.setDownloadActive();
+                                int ret = DownloadWatchDog.this.setDownloadActive(links);
                                 /* request a reconnect if allowed and needed */
                                 Reconnecter.getInstance().run();
                                 if (ret == 0) {

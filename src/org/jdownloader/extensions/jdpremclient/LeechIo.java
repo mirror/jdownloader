@@ -16,7 +16,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.TransferStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
@@ -83,9 +82,6 @@ public class LeechIo extends PluginForHost implements JDPremInterface {
         }
         proxyused = false;
         /* copied from PluginForHost */
-        final TransferStatus transferStatus = downloadLink.getTransferStatus();
-        transferStatus.usePremium(false);
-        transferStatus.setResumeSupport(false);
         try {
             while (waitForNextStartAllowed(downloadLink)) {
             }
@@ -206,8 +202,6 @@ public class LeechIo extends PluginForHost implements JDPremInterface {
                 String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + getMaxRetries() + ")";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
             }
-
-            link.getTransferStatus().usePremium(true);
             dl.startDownload();
         } finally {
             br.setFollowRedirects(dofollow);

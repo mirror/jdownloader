@@ -52,21 +52,16 @@ public class JDController {
 
     private class EventSender extends Eventsender<ControlListener, ControlEvent> {
 
-        protected static final long MAX_EVENT_TIME = 10000;
-        private ControlListener     currentListener;
-        private ControlEvent        event;
-        private long                eventStart     = 0;
-        public boolean              waitFlag       = true;
-        private Thread              watchDog;
-        private Thread              runDog;
-        private final Object        LOCK           = new Object();
+        private ControlEvent event;
+        public boolean       waitFlag = true;
+        private Thread       runDog;
+        private final Object LOCK     = new Object();
 
         public Object getLOCK() {
             return LOCK;
         }
 
         public void handleEvent(final ControlEvent event) {
-            currentListener = null;
             try {
                 fireEvent(event);
             } catch (final Throwable e) {
@@ -78,7 +73,6 @@ public class JDController {
             runDog = new Thread("EventSender:runDog") {
                 @Override
                 public void run() {
-                    eventStart = 0;
                     while (true) {
                         synchronized (LOCK) {
                             while (waitFlag) {
@@ -94,7 +88,6 @@ public class JDController {
                                 if (eventQueue.size() > 0) {
                                     event = eventQueue.remove(0);
                                 } else {
-                                    eventStart = 0;
                                     event = null;
                                     waitFlag = true;
                                 }
@@ -103,47 +96,23 @@ public class JDController {
                             handleEvent(event);
                         } catch (final Exception e) {
                             JDLogger.exception(e);
-                            eventStart = 0;
                         }
                     }
                 }
             };
             runDog.start();
-            watchDog = new Thread("EventSender:watchDog") {
-                @Override
-                public void run() {
-                    while (true) {
-                        if (eventStart > 0 && System.currentTimeMillis() - eventStart > MAX_EVENT_TIME) {
-                            LOGGER.finer("WATCHDOG: Execution Limit reached");
-                            LOGGER.finer("ControlListener: " + currentListener);
-                            LOGGER.finer("Event: " + event);
-                        }
-                        try {
-                            Thread.sleep(1000);
-                        } catch (final InterruptedException e) {
-                            JDLogger.exception(e);
-                            return;
-                        }
-                    }
-                }
-
-            };
-            watchDog.start();
         }
 
         @Override
         protected void fireEvent(final ControlListener listener, final ControlEvent event) {
             if (Thread.currentThread() == runDog) {
                 /* only runDog should be watched by watchDog :p */
-                eventStart = System.currentTimeMillis();
                 try {
-                    currentListener = listener;
                     this.event = event;
                     listener.controlEvent(event);
                 } catch (final Exception e) {
                     JDLogger.exception(e);
                 }
-                eventStart = 0;
             } else {
                 try {
                     listener.controlEvent(event);

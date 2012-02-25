@@ -309,7 +309,7 @@ public class ShareOnlineBiz extends PluginForHost {
                 }
             }
             br.postPage("http://www.share-online.biz/dl/" + ID + "/free/captcha/" + System.currentTimeMillis(), "dl_free=1&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
-            url = br.getRegex("([a-zA-Z0-9=]+)").getMatch(0);
+            url = br.getRegex("([a-zA-Z0-9/=]+)").getMatch(0);
             if ("0".equals(url)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             url = Encoding.Base64Decode(url);
             if (url == null || !url.startsWith("http")) url = null;
