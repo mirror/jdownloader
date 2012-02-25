@@ -124,7 +124,7 @@ public class XaxTubeCom extends PluginForHost {
         if (br.getURL().equals("http://xaxtube.com/") || br.containsHTML("<title>Free Porn Videos, Sex Tube Clips, XXX Porn Movies \\- XaXTube\\.com</title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("<h1>([^<>\"\\'/]+)</h1>").getMatch(0);
         br.getPage("http://xaxtube.com/data/" + new Regex(downloadLink.getDownloadURL(), "xaxtube\\.com/(\\d+)/").getMatch(0));
-        DLLINK = new Regex(decodeExtendedBase64(br.toString()), "vid=\'(.*?)\'").getMatch(0);
+        DLLINK = new Regex(decodeExtendedBase64(br.toString().trim()), "vid=\'(.*?)\'").getMatch(0);
         if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
