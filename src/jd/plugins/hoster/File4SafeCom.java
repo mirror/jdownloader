@@ -510,11 +510,12 @@ public class File4SafeCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(COOKIE_HOST + "/?op=login");
         Form loginform = br.getFormbyProperty("name", "FL");
         if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        loginform.remove(null);
         loginform.put("login", Encoding.urlEncode(account.getUser()));
         loginform.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(loginform);

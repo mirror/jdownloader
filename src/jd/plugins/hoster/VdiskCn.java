@@ -98,7 +98,7 @@ public class VdiskCn extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://vdisk.cn/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("文件已删除,无法下载\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(文件已删除,无法下载\\.|>此文件涉嫌有害信息不允许下载\\!<|>找不到您需要的页面\\!<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("(?i)文件名称: <b>(.*?)</b><br>").getMatch(0);
         if (filename == null) filename = br.getRegex("(?i)<META content=\"(.*?)\" name=\"description\">").getMatch(0);
         String filesize = br.getRegex("(?i)文件大小: ([\\d\\.]+ ?(MB|GB))").getMatch(0);
