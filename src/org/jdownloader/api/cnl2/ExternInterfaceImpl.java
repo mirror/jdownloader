@@ -31,6 +31,7 @@ import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.images.IconIO;
@@ -304,14 +305,17 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
              */
             LinkCollectingJob job = new LinkCollectingJob(null);
             job.setPackageName(HttpRequest.getParameterbyKey(request, "package"));
-            job.setOutputFolder(new File(HttpRequest.getParameterbyKey(request, "dir")));
+            String dir = HttpRequest.getParameterbyKey(request, "dir");
+            if (!StringUtils.isEmpty(dir)) {
+                job.setOutputFolder(new File(dir));
+            }
             job.setAutoStart("1".equalsIgnoreCase(HttpRequest.getParameterbyKey(request, "autostart")));
 
             LazyHostPlugin lazyp = HostPluginController.getInstance().get("DirectHTTP");
             final PluginForHost defaultplg = lazyp.getPrototype();
 
             ArrayList<CrawledLink> links = new ArrayList<CrawledLink>();
-            for (int index = 0; index < urls.length - 1; index++) {
+            for (int index = 0; index <= urls.length - 1; index++) {
                 CrawledLink link = new CrawledLink(urls[index]);
                 final int index2 = index;
                 link.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
@@ -357,6 +361,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             LinkCollector.getInstance().addCrawlerJob(links);
             writeString(response, request, sb.toString(), true);
         } catch (final Throwable e) {
+            e.printStackTrace();
             throw new RemoteAPIException(e);
         }
     }
