@@ -83,7 +83,6 @@ public class U115Com extends PluginForHost {
                     linkToDownload = findWorkingLink(br.toString().replace("\\", ""));
                 }
                 /** Second way: For logged in freeusers */
-                // http://115.com/?ct=download&ac=get&h=69abbBr6J2rMc5sDOO3IXPWOQ0CdnzZ7qFipi5OseRca9AbOmzPepEcMWCytxwHvScxJWNdGCg8BkanDUF3Lrs648Sdpz&s=group149%2FM00%2F09%2F22%2FtzydJU6bmJIAAAAAFeJwAGPIxm84089798&c=0&u=10651972&p=e6amdrsr&n=Oz.S03E02.DVDRip.XviD-VFUA.avi&r=1330099829&t=f68cb6adc18089c3a6a0a187f03443e7b9b5e96c
                 pickLink = br.getRegex("GetMyDownloadAddress\\(\\'(h=[^<>\"\\']+)\\'").getMatch(0);
                 if (pickLink != null) {
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");

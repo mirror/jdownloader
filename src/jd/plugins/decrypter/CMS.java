@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class CMS extends PluginForDecrypt {
-    public static final String[] ANNOTATION_NAMES = new String[] { "pdfs.us", "romhood.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "hardcoremetal.bz", "saugking.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "sceneload.to", "serienfreaks.to", "warez-load.com", "ddl-scene.com", "ddl.byte.to", "dream-team.bz/cms", "ebook-hell.to" };
+    public static final String[] ANNOTATION_NAMES = new String[] { "pdfs.us", "romhood.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "hardcoremetal.bz", "saugking.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "sceneload.to", "serienfreaks.to", "warez-load.com", "ddl-scene.com", "ddl.byte.to", "dream-team.bz/cms", "ebook-hell.to", "pirate-loads.to" };
 
     /**
      * Returns the annotations flags array

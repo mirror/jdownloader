@@ -133,7 +133,7 @@ public class JumboFilesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override
@@ -171,7 +171,7 @@ public class JumboFilesCom extends PluginForHost {
             dllink = new Regex(BRBEFORE, "\'(http://(www\\d+|[a-z0-9]+)\\.jumbofiles\\.com:\\d+/d/[a-z0-9]+/.*?)'\"").getMatch(0);
         }
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
         dl.startDownload();
     }
 

@@ -54,7 +54,7 @@ public class IFileIt extends PluginForHost {
     private static final String RECAPTCHAIMAGEPART  = "image?c=";
     private boolean             showDialog          = false;
     private boolean             RESUMING            = false;
-    private int                 MAXSIMDOWNLOADS     = 1;
+    private int                 MAXFREECHUNKS        = 0;
 
     public IFileIt(final PluginWrapper wrapper) {
         super(wrapper);
@@ -161,7 +161,7 @@ public class IFileIt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, RESUMING, MAXSIMDOWNLOADS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, RESUMING, MAXFREECHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
             br.followConnection();
@@ -215,7 +215,7 @@ public class IFileIt extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override
@@ -236,7 +236,6 @@ public class IFileIt extends PluginForHost {
         showDialog = false;
         loginAPI(account, null);
         if (account.getProperty("typ", null).equals("free")) {
-            MAXSIMDOWNLOADS = 2;
             RESUMING = true;
             doFree(downloadLink);
         } else {

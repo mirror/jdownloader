@@ -104,7 +104,7 @@ public class SaveTv extends PluginForHost {
                         dl.setAvailable(true);
                         String filesize = br.getRegex("title=\"H\\.264 High Quality\"( )?/>[\t\n\r ]+</a>[\t\n\r ]+<p>[\t\n\r ]+<a class=\"archive-detail-link\" href=\"javascript:STV\\.Archive\\.Download\\.openWindow\\(\\d+, \\d+, \\d+, \\d+\\);\">Download</a>[\t\n\r ]+\\(ca\\.[ ]+(.*?)\\)").getMatch(1);
                         if (preferMobileVids) filesize = br.getRegex("title=\"H\\.264 Mobile\"( )?/>[\t\n\r ]+</a>[\t\n\r ]+<p>[\t\n\r ]+<a class=\"archive-detail-link\" href=\"javascript:STV\\.Archive\\.Download\\.openWindow\\(\\d+, \\d+, \\d+, \\d+\\);\">Download</a>[\t\n\r ]+\\(ca\\.[ ]+(.*?)\\)").getMatch(1);
-                        if (filesize != null) dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                        if (filesize != null) dl.setDownloadSize(SizeFormatter.getSize(filesize.replace(".", "")));
                     } else {
                         dl.setAvailable(false);
                     }
@@ -192,14 +192,14 @@ public class SaveTv extends PluginForHost {
         if (preferAdsFree) downloadWithoutAds = "true";
         String postThat = "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + new Regex(addedlink, "TelecastID=(\\d+)").getMatch(0) + "&" + preferMobileVideos + "&c0-param2=boolean:" + downloadWithoutAds + "&xml=true&";
         br.postPage("http://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?null.GetDownloadUrl", postThat);
-        String dllink = br.getRegex("\\[ \\'OK\\',\\'(http://.*?)\\',\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\\'(http://.*?/\\?m=dl)\\'").getMatch(0);
+        String dllink = br.getRegex("\\'OK\\',\\'(http://[^<>\"\\']+)\\'").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\\'(http://[^<>\"\\']+/\\?m=dl)\\'").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (dllink) is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         logger.info("Final downloadlink = " + dllink + " starting download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -74,7 +74,7 @@ public class SpeedyShareCom extends PluginForHost {
         String finallink = null;
         if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYTEXT);
         if (!br.containsHTML(CAPTCHATEXT)) {
-            finallink = br.getRegex("class=downloadfilename href='(.*?)'").getMatch(0);
+            finallink = br.getRegex("class=downloadfilename href=\\'(.*?)\\'").getMatch(0);
             if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (finallink == null) {
@@ -112,6 +112,7 @@ public class SpeedyShareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        br.setCookie("http://speedyshare.com/", "trans", "en");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(class=sizetagtext>not found<|File not found|It has been deleted<|>or it never existed at all)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("property=\"og:title\" content=\"(.*?) \\- download at SpeedyShare\"").getMatch(0);
