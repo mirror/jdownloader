@@ -85,7 +85,9 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
                 case HTTP:
                     return _GUI._.gui_column_proxytype_http_tt();
                 case SOCKS5:
-                    return _GUI._.gui_column_proxytype_socks_tt();
+                    return _GUI._.gui_column_proxytype_socks5_tt();
+                case SOCKS4:
+                    return _GUI._.gui_column_proxytype_socks4_tt();
                 default:
                     throw new RuntimeException("Unknown Proxy Type");
                 }

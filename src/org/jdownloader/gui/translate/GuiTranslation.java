@@ -1368,6 +1368,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Socks5" })
     String jd_gui_swing_dialog_ProxyDialog_socks5();
 
+    @Default(lngs = { "en" }, values = { "Socks4" })
+    String jd_gui_swing_dialog_ProxyDialog_socks4();
+
     @Default(lngs = { "en" }, values = { "Add new Proxy" })
     String jd_gui_swing_dialog_ProxyDialog_title();
 
@@ -1906,7 +1909,10 @@ public interface GuiTranslation extends TranslateInterface {
     String gui_column_proxytype_http_tt();
 
     @Default(lngs = { "en" }, values = { "SOCKS-5-Protocol Proxy Server " })
-    String gui_column_proxytype_socks_tt();
+    String gui_column_proxytype_socks5_tt();
+
+    @Default(lngs = { "en" }, values = { "SOCKS-4-Protocol Proxy Server " })
+    String gui_column_proxytype_socks4_tt();
 
     @Default(lngs = { "en" }, values = { "Proxy Rotation requires at least one active entry." })
     String proxytablemodel_atleast_one_rotate_required();

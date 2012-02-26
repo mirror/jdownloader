@@ -28,7 +28,7 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
     private JTextField     txtUser;
     private JTextField     txtPass;
 
-    private final String[] types = new String[] { _GUI._.jd_gui_swing_dialog_ProxyDialog_http(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks5() };
+    private final String[] types = new String[] { _GUI._.jd_gui_swing_dialog_ProxyDialog_http(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks4() };
     private JLabel         lblUser;
     private JLabel         lblPass;
     private JLabel         lblPort;
@@ -64,20 +64,13 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
     @Override
     public void actionPerformed(final ActionEvent e) {
         if (e.getSource() == cmbType) {
-            boolean setVisible = false;
             if (cmbType.getSelectedIndex() == 2) {
-                setVisible = false;
-                lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostip());
+                txtPass.setVisible(false);
+                lblPass.setVisible(false);
             } else {
-                setVisible = true;
-                lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostport());
+                txtPass.setVisible(true);
+                lblPass.setVisible(true);
             }
-            txtPort.setVisible(setVisible);
-            lblPort.setVisible(setVisible);
-            txtUser.setVisible(setVisible);
-            lblUser.setVisible(setVisible);
-            txtPass.setVisible(setVisible);
-            lblPass.setVisible(setVisible);
         } else {
             super.actionPerformed(e);
         }
@@ -98,6 +91,8 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
                 type = HTTPProxy.TYPE.HTTP;
             } else if (cmbType.getSelectedIndex() == 1) {
                 type = HTTPProxy.TYPE.SOCKS5;
+            } else if (cmbType.getSelectedIndex() == 2) {
+                type = HTTPProxy.TYPE.SOCKS4;
             } else {
                 return null;
             }

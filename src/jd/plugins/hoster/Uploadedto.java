@@ -416,6 +416,7 @@ public class Uploadedto extends PluginForHost {
                 if (form.getAction() != null && form.getAction().contains("register")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (form.getAction() == null || form.getAction().contains("access")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 logger.info("Download from:" + form.getAction());
+                form.setMethod(MethodType.GET);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 0);
                 dl.setFileSizeVerified(true);
             } else {
