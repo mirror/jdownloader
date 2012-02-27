@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -29,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fakku.net" }, urls = { "http://(www\\.)?fakku\\.net/(viewmanga\\.php\\?id=\\d+|redirect\\.php\\?type=m\\&id=[A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fakku.net" }, urls = { "http://(www\\.)?fakku\\.net/((viewmanga|viewonline)\\.php\\?id=\\d+|redirect\\.php\\?type=m\\&id=[A-Za-z0-9]+)" }, flags = { 0 })
 public class FakkuNet extends PluginForDecrypt {
 
     public FakkuNet(PluginWrapper wrapper) {
@@ -61,6 +62,39 @@ public class FakkuNet extends PluginForDecrypt {
                     fp.addLinks(decryptedLinks);
                 }
             }
+        } else if (new Regex(parameter, "http://(www\\.)?fakku\\.net/viewonline\\.php\\?id=\\d+").matches()) {
+            br.getPage(parameter);
+            String fpName = br.getRegex("\",\"name\":\"([^<>\"\\']+)\"").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("<title>([^<>\"\\']+) \\| Read Online</title>").getMatch(0);
+            final String importantID = br.getRegex("cdn\\.fakku\\.net/([A-Z0-9]+)/").getMatch(0);
+            if (importantID == null || fpName == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            fpName = Encoding.htmlDecode(fpName.trim());
+            final String correctedBR = br.toString().replace("\\", "");
+            final DecimalFormat df = new DecimalFormat("000");
+            String dir = "n";
+            String allThumbs[] = new Regex(correctedBR, "\"manga/n/([^<>\"\\'/]+)/thumbs/").getColumn(0);
+            if (allThumbs == null || allThumbs.length == 0) {
+                allThumbs = new Regex(correctedBR, "\"manga/f/([^<>\"\\'/]+)/thumbs/").getColumn(0);
+                dir = "f";
+            }
+            if (allThumbs == null || allThumbs.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            int counter = 1;
+            for (String thumb : allThumbs) {
+                DownloadLink dl = createDownloadlink("directhttp://http://cdn.fakku.net/" + importantID + "/c/manga/" + dir + "/" + thumb + "/images/" + df.format(counter) + ".jpg");
+                dl.setFinalFileName(fpName + " - " + df.format(counter) + ".jpg");
+                decryptedLinks.add(dl);
+                counter++;
+                if (counter == allThumbs.length) break;
+            }
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
         } else {
             final String finallink = decryptSingleLink(parameter);
             if (finallink == null) {

@@ -41,7 +41,13 @@ public class MgfpCm extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
-        if (!parameter.contains("view=2") && !new Regex(parameter, "imagefap\\.com/gallery\\.php\\?pgid=").matches()) parameter += "?view=2";
+        if (new Regex(parameter, "imagefap\\.com/gallery\\.php\\?pgid=").matches()) {
+            /**
+             * Workaround to get all images on one page for private galleries
+             * (site buggy)
+             */
+            br.getPage("http://www.imagefap.com/gallery.php?view=2");
+        } else if (!parameter.contains("view=2")) parameter += "?view=2";
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().contains("/pictures/")) {
