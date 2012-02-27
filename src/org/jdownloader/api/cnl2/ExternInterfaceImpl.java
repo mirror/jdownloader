@@ -345,7 +345,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                         direct.setProperty("cookies", cookies);
                         direct.setProperty("post", post);
                         direct.setProperty("referer", referer);
-                        direct.setProperty("fixName", fnames[index2]);
+                        if (index2 < desc.length) direct.setProperty("fixName", fnames[index2]);
                         try {
                             defaultplg.correctDownloadLink(direct);
                         } catch (final Throwable e) {

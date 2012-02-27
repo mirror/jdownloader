@@ -1,6 +1,7 @@
 package jd.controlling.proxy;
 
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.plugins.DownloadLink;
 
@@ -8,7 +9,9 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 public class ProxyInfo extends HTTPProxy {
 
+    final private static AtomicLong           IDs                  = new AtomicLong(0);
     private boolean                           proxyRotationEnabled = true;
+    private String                            ID                   = null;
 
     private final HashMap<String, Integer>    activeHosts          = new HashMap<String, Integer>();
 
@@ -34,16 +37,30 @@ public class ProxyInfo extends HTTPProxy {
         ProxyData ret = new ProxyData();
         ret.setProxyRotationEnabled(this.isProxyRotationEnabled());
         ret.setProxy(HTTPProxy.getStorable(this));
+        ret.setID(this.ID);
         return ret;
     }
 
     public ProxyInfo(ProxyData proxyData) {
         this.cloneProxy(HTTPProxy.getHTTPProxy(proxyData.getProxy()));
         this.proxyRotationEnabled = proxyData.isProxyRotationEnabled();
+        this.ID = proxyData.getID();
+        if (ID == null) {
+            if (isNone()) {
+                this.ID = "NONE";
+            } else {
+                this.ID = getType().name() + IDs.incrementAndGet() + "_" + System.currentTimeMillis();
+            }
+        }
     }
 
     public ProxyInfo(HTTPProxy proxy) {
         cloneProxy(proxy);
+        if (proxy.isNone()) {
+            this.ID = "NONE";
+        } else {
+            this.ID = proxy.getType().name() + IDs.incrementAndGet() + "_" + System.currentTimeMillis();
+        }
     }
 
     protected ProxyBlock getHostIPBlockTimeout(final String host) {

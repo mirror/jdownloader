@@ -1031,14 +1031,6 @@ public class Rapidshare extends PluginForHost {
     }
 
     private boolean useSSL() {
-        try {
-            if (Browser.getGlobalProxy() != null) {
-                /* workaround for ssl proxy bug in 09581 stable */
-                return false;
-            }
-        } catch (final Throwable e) {
-            /* catch not found in old nightly */
-        }
         return this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, true) || this.getPluginConfig().getBooleanProperty(Rapidshare.HTTPS_WORKAROUND, false);
     }
 

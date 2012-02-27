@@ -214,7 +214,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                 }
             }
         }
-
         final JButton link = new JButton(NewTheme.I().getIcon("money", 16));
         link.setToolTipText(_GUI._.gui_menu_action_premium_buy_name());
         link.addActionListener(new ActionListener() {

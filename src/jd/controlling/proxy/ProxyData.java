@@ -10,31 +10,18 @@ public class ProxyData implements Storable {
         // required by Storable
     }
 
-    public static enum StatusID {
-        OK,
-        OFFLINE,
-        INVALIDAUTH
-    }
-
-    /**
-     * @return the status
-     */
-    public StatusID getStatus() {
-        return status;
-    }
-
-    /**
-     * @param status
-     *            the status to set
-     */
-    public void setStatus(StatusID status) {
-        this.status = status;
-    }
-
-    private StatusID          status               = StatusID.OK;
     private boolean           proxyRotationEnabled = true;
-    private boolean           defaultProxy;
+    private boolean           defaultProxy         = false;
     private HTTPProxyStorable proxy                = null;
+    private String            ID                   = null;
+
+    public String getID() {
+        return ID;
+    }
+
+    public void setID(String iD) {
+        ID = iD;
+    }
 
     public boolean isDefaultProxy() {
         return defaultProxy;
