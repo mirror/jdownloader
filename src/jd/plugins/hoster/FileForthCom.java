@@ -50,22 +50,23 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 15797 $", interfaceVersion = 2, names = { "rarefile.net" }, urls = { "https?://(www\\.)?rarefile\\.net/[a-z0-9]{12}" }, flags = { 2 })
-public class RareFileNet extends PluginForHost {
+@HostPlugin(revision = "$Revision: 16002 $", interfaceVersion = 2, names = { "fileforth.com" }, urls = { "https?://(www\\.)?fileforth\\.com/[a-z0-9]{12}" }, flags = { 2 })
+public class FileForthCom extends PluginForHost {
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://rarefile.net";
+    private static final String COOKIE_HOST         = "http://fileforth.com";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static final Object LOCK                = new Object();
 
-    // DEV NOTES:
-    // XfileSharingProBasic Version 2.5.2.0
-    // mods: filename, filesize
-    // free: Allows 1 chunk (no resume) + 2? maxsimdl (45min waits)
-    // protocol: Has https cert but httpd not setup correctly
+    // DEV NOTES
+    // XfileSharingProBasic Version 2.5.2.4
+    // mods: null
+    // free: no resume, no chunks, maxdl 4. (could be more...)
+    // premium: tested with 20chunk * 5 maxdl
+    // protocol: no https
     // captchatype: 4dignum
 
     @Override
@@ -78,7 +79,7 @@ public class RareFileNet extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public RareFileNet(PluginWrapper wrapper) {
+    public FileForthCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -111,27 +112,15 @@ public class RareFileNet extends PluginForHost {
             if (filename == null) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = new Regex(correctedBR, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
-                    if (filename == null) {
-                        filename = new Regex(correctedBR, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
-                        if (filename == null) {
-                            filename = new Regex(correctedBR, "File Name.*?nowrap>(.*?)</td").getMatch(0);
-                            if (filename == null) {
-                                filename = new Regex(correctedBR, "<td><font color=\"red\">([^<>]+)</font></td>").getMatch(0);
-                            }
-                        }
-                    }
+                    filename = new Regex(correctedBR, "(?i)(File)?name ?:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(2);
                 }
             }
         }
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
-            filesize = new Regex(correctedBR, "<small>\\((.*?)\\)</small>").getMatch(0);
+            filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
-                filesize = new Regex(correctedBR, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
-                if (filesize == null) {
-                    filesize = new Regex(correctedBR, "([\\d\\.]+ ?(GB|MB))").getMatch(0);
-                }
+                filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(GB|MB))").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
@@ -196,7 +185,7 @@ public class RareFileNet extends PluginForHost {
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
-                br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replaceAll("https?://", "") + "/" + "([A-Za-z0-9]{12})").getMatch(0) + "&fname=" + downloadLink.getName() + "&referer=&method_free=Free+Download");
+                br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replaceAll("https?://", "") + "/" + "([A-Za-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Free+Download");
                 doSomething();
                 checkErrors(downloadLink, false, passCode);
             }
@@ -205,6 +194,7 @@ public class RareFileNet extends PluginForHost {
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dlForm.remove(null);
             final long timeBefore = System.currentTimeMillis();
             boolean password = false;
             boolean skipWaittime = false;
@@ -303,7 +293,7 @@ public class RareFileNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 4;
     }
 
     /** This removes fake messages which can kill the plugin */
@@ -497,7 +487,7 @@ public class RareFileNet extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             br.getPage(link.getDownloadURL());
             doSomething();
-            doFree(link, true, 0, false);
+            doFree(link, false, 1, true);
         } else {
             dllink = link.getStringProperty("premlink");
             if (dllink != null) {
@@ -598,7 +588,7 @@ public class RareFileNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 5;
     }
 
     @Override

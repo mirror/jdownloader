@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15797 $", interfaceVersion = 2, names = { "upchi.co.il" }, urls = { "http://(www\\.)?upchi\\.co\\.il/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 15797 $", interfaceVersion = 2, names = { "upchi.co.il" }, urls = { "https?://(www\\.)?upchi\\.co\\.il/[a-z0-9]{12}" }, flags = { 0 })
 public class UpchiCoIl extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -58,7 +58,12 @@ public class UpchiCoIl extends PluginForHost {
     // mods: filename, filesize,
     // protocol: has https cert, but httpd not setup correctly.
     // free: 1 chunk, unlimited maxsim (tested 12), no resume, dllink lives.
-    // captchatype: nill
+    // captchatype: null
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
 
     @Override
     public String getAGBLink() {

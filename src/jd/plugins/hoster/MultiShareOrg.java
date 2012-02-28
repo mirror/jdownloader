@@ -50,7 +50,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.org" }, urls = { "http://(www\\.)?multishare\\.org/file/[a-z0-9]{12}/.*?\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.org" }, urls = { "https?://(www\\.)?multishare\\.org/file/[a-z0-9]{12}/.*?\\.html" }, flags = { 2 })
 public class MultiShareOrg extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -68,6 +68,11 @@ public class MultiShareOrg extends PluginForHost {
     // premium: 10 socket connections total, set to 10chunk * 1maxdl
     // protocol: no https
     // captchatype: recaptcha
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
 
     @Override
     public String getAGBLink() {

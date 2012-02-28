@@ -50,7 +50,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 15969 $", interfaceVersion = 2, names = { "kupload.org" }, urls = { "http://(www\\.)?kupload\\.org/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 15969 $", interfaceVersion = 2, names = { "kupload.org" }, urls = { "https://(www\\.)?kupload\\.org/[a-z0-9]{12}" }, flags = { 2 })
 public class KUploadOrg extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -66,6 +66,11 @@ public class KUploadOrg extends PluginForHost {
     // premium: Tested up to 100 connections.
     // protocol: has https cert, but httpd isn't setup correctly
     // captchatype: recaptcha
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
 
     @Override
     public String getAGBLink() {

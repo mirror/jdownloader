@@ -47,13 +47,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepost.com" }, urls = { "https?://(www\\.)?(filepost\\.com/files|fp\\.io)/[a-z0-9]+" }, flags = { 2 })
 public class FilePostCom extends PluginForHost {
+
     private static final String ua                 = "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.18) Gecko/20110628 Ubuntu/10.10 (maverick) Firefox/3.6.18";
     private boolean             showAccountCaptcha = false;
-
     private static final String FILEIDREGEX        = "filepost\\.com/files/(.+)";
-
     private static final String MAINPAGE           = "https://filepost.com/";
-
     private static final Object LOCK               = new Object();
 
     public FilePostCom(PluginWrapper wrapper) {
@@ -145,7 +143,7 @@ public class FilePostCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space = br.getRegex("<li>Used storage: <span.*?>(.*?)</span></li>").getMatch(0);
+        String space = br.getRegex("(?i)<li>(Used )?storage: <span.*?>([\\d\\.]+ ?(MB|GB))</span>").getMatch(1);
         if (space != null) ai.setUsedSpace(space.trim());
         String filesNum = br.getRegex("<li>Active files: <span.*?>(\\d+)</span>").getMatch(0);
         if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));

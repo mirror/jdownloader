@@ -57,7 +57,7 @@ public class IdUpIn extends PluginForHost {
     // XfileSharingProBasic Version 2.5.2.0
     // free: Allows total of 20 chunk + maxsimdl upper limit not tested
     // protocol: has https
-    // captchatype: nill
+    // captchatype: null
 
     @Override
     public String getAGBLink() {

@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15797 $", interfaceVersion = 2, names = { "fooget.com" }, urls = { "http://(www\\.)?fooget\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 15797 $", interfaceVersion = 2, names = { "fooget.com" }, urls = { "https?://(www\\.)?fooget\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class FooGetCom extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -58,6 +58,11 @@ public class FooGetCom extends PluginForHost {
     // free: Allows total of 20 chunk + maxsimdl upper limit not tested
     // protocol: No https
     // captchatype: recaptcha
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
 
     @Override
     public String getAGBLink() {

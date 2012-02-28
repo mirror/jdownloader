@@ -50,7 +50,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 15960 $", interfaceVersion = 2, names = { "cloudcache.cc" }, urls = { "http://(www\\.)?cloudcache\\.cc/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 15960 $", interfaceVersion = 2, names = { "cloudcache.cc" }, urls = { "https?://(www\\.)?cloudcache\\.cc/[a-z0-9]{12}" }, flags = { 2 })
 public class CloudCacheCc extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -68,6 +68,11 @@ public class CloudCacheCc extends PluginForHost {
     // premium: tested with 5max * (20chunk)
     // protocol: no https
     // captchatype: 4dignum
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
 
     @Override
     public String getAGBLink() {

@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15976 $", interfaceVersion = 2, names = { "180upload.com" }, urls = { "http://(www\\.)?180upload\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 15976 $", interfaceVersion = 2, names = { "180upload.com" }, urls = { "https?://(www\\.)?180upload\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class OneEightZeroUploadCom extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -58,7 +58,12 @@ public class OneEightZeroUploadCom extends PluginForHost {
     // mods: filename, filesize, dllink
     // free: 20chunk, max dl tested 5
     // protocol: no https
-    // captchatype: nill
+    // captchatype: null
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
 
     @Override
     public String getAGBLink() {

@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15797 $", interfaceVersion = 2, names = { "ddlanime.com" }, urls = { "http://(www\\.)?ddlanime\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 15797 $", interfaceVersion = 2, names = { "ddlanime.com" }, urls = { "https?://(www\\.)?ddlanime\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class DdlAnimeCom extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -58,6 +58,11 @@ public class DdlAnimeCom extends PluginForHost {
     // free: Allows total of 20 chunk + maxsimdl upper limit not tested
     // protocol: no https
     // captchatype: 4dignum
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
 
     @Override
     public String getAGBLink() {
