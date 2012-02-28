@@ -121,6 +121,10 @@ public class DepositFiles extends PluginForHost {
         try {
             login(account);
         } catch (final PluginException e) {
+            try {
+                logger.info(br.getHttpConnection().toString());
+            } catch (final Throwable e2) {
+            }
             logger.info(br.toString());
             ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
             account.setValid(false);
@@ -134,6 +138,10 @@ public class DepositFiles extends PluginForHost {
         final String expire = br.getRegex("noch den Gold-Zugriff: <b>(.*?)</b></div>").getMatch(0);
         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
         if (expire == null) {
+            try {
+                logger.info(br.getHttpConnection().toString());
+            } catch (final Throwable e) {
+            }
             logger.info(br.toString());
             ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
             account.setValid(false);
