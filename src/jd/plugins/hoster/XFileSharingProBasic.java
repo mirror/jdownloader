@@ -68,6 +68,11 @@ public class XFileSharingProBasic extends PluginForHost {
      * xfilesharing.net)!
      */
     @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
+
+    @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }

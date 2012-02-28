@@ -89,7 +89,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 final String[] allLinks = HTMLParser.getHttpLinks(linkTextarea, "");
                 if (allLinks != null) {
                     for (final String singleLink : allLinks) {
-                        decryptedLinks.add(createDownloadlink(singleLink));
+                        if (!singleLink.contains("filespart.com/")) decryptedLinks.add(createDownloadlink(singleLink));
                     }
                     return decryptedLinks;
                 }

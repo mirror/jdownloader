@@ -74,22 +74,18 @@ public class FakkuNet extends PluginForDecrypt {
             fpName = Encoding.htmlDecode(fpName.trim());
             final String correctedBR = br.toString().replace("\\", "");
             final DecimalFormat df = new DecimalFormat("000");
-            String dir = "n";
-            String allThumbs[] = new Regex(correctedBR, "\"manga/n/([^<>\"\\'/]+)/thumbs/").getColumn(0);
-            if (allThumbs == null || allThumbs.length == 0) {
-                allThumbs = new Regex(correctedBR, "\"manga/f/([^<>\"\\'/]+)/thumbs/").getColumn(0);
-                dir = "f";
-            }
+            String allThumbs[] = new Regex(correctedBR, "\"manga/((n|f)/[^<>\"\\'/]+)/thumbs/").getColumn(0);
             if (allThumbs == null || allThumbs.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             int counter = 1;
             for (String thumb : allThumbs) {
-                DownloadLink dl = createDownloadlink("directhttp://http://cdn.fakku.net/" + importantID + "/c/manga/" + dir + "/" + thumb + "/images/" + df.format(counter) + ".jpg");
+                DownloadLink dl = createDownloadlink("directhttp://http://cdn.fakku.net/" + importantID + "/c/manga/" + thumb + "/images/" + df.format(counter) + ".jpg");
                 dl.setFinalFileName(fpName + " - " + df.format(counter) + ".jpg");
                 decryptedLinks.add(dl);
                 counter++;
+                /** Skip last or we have too many [always 1 offline file] */
                 if (counter == allThumbs.length) break;
             }
             FilePackage fp = FilePackage.getInstance();

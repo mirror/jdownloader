@@ -143,7 +143,7 @@ public class FooGetCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, true);
+        doFree(downloadLink, true, -2, true);
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean getLinkWithoutLogin) throws Exception, PluginException {
@@ -296,7 +296,7 @@ public class FooGetCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        return 1;
     }
 
     /** This removes fake messages which can kill the plugin */

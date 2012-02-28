@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -36,6 +37,8 @@ public class GigaBaseCom extends PluginForHost {
     public GigaBaseCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static String AGENT = RandomUserAgent.generate();
 
     @Override
     public String getAGBLink() {
@@ -65,6 +68,7 @@ public class GigaBaseCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", AGENT);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>File not found or removed<|<title>Gigabase\\.com</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex fileInfo = br.getRegex("<div id=\"fileName\" style=\"[^<>\"]+\">(.*?)</div>[\t\n\r ]+\\(([^<>\"\\']+)\\)[\t\n\r ]+<a href=\"");
