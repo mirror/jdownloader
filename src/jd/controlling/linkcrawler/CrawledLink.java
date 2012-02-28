@@ -247,24 +247,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return name != null;
     }
 
-    public ImageIcon getHosterIcon() {
-        if (dlLink != null) return dlLink.getHosterIcon();
-        return null;
-    }
-
     public String getHost() {
         if (dlLink != null) return dlLink.getHost();
         return null;
-    }
-
-    public String getRealHost() {
-        if (realHost != null) return realHost;
-        if (dlLink != null) {
-            /* causes creation of iconHost in DownloadLink */
-            dlLink.getHosterIcon();
-            realHost = dlLink.getIconHost();
-        }
-        return realHost;
     }
 
     public ImageIcon getIcon() {
@@ -302,10 +287,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public boolean isEnabled() {
         return enabledState;
-    }
-
-    public static enum Property {
-        ENABLED,
     }
 
     public void setEnabled(boolean b) {
@@ -391,11 +372,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      * @return
      */
     public boolean hasAutoCaptcha() {
-        if (gethPlugin() != null) {
-
-        return gethPlugin().hasAutoCaptcha();
-
-        }
+        if (gethPlugin() != null) { return gethPlugin().hasAutoCaptcha(); }
         return true;
     }
 
@@ -405,7 +382,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public DomainInfo getDomainInfo() {
-        // TODO: improve speed
+        if (dlLink != null) { return dlLink.getDomainInfo(); }
         return DomainInfo.getInstance(Browser.getHost(getURL(), false));
     }
 

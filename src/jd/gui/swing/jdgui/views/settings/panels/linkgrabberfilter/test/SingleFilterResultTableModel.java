@@ -8,7 +8,6 @@ import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtFileSizeColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.Files;
-import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -230,13 +229,12 @@ public class SingleFilterResultTableModel extends ExtTableModel<CrawledLink> {
             }
 
             protected Icon getIcon(final CrawledLink value) {
-                return DomainInfo.getInstance(value.getRealHost()).getFavIcon();
+                return value.getDomainInfo().getFavIcon();
             }
 
             @Override
             public String getStringValue(CrawledLink value) {
-
-                return value.getRealHost();
+                return value.getDomainInfo().getTld();
             }
         });
 

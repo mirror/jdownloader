@@ -27,7 +27,6 @@ import javax.swing.JTextField;
 
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForHost;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -35,6 +34,7 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -188,9 +188,9 @@ public class PackagePropertiesDialog extends AbstractDialog<Object> {
 
         p.add(head(_GUI._.LinkPropertiesDialog_layoutDialogContent_size(SizeFormatter.formatBytes(pkg.getTotalEstimatedPackageSize())), NewTheme.I().getIcon("batch", 16)), "spanx,newline,skip");
 
-        for (PluginForHost host : pkg.getFilePackageInfo().getIcons()) {
-            ImageIcon icon = host.getHosterIcon();
-            p.add(head(_GUI._.LinkPropertiesDialog_layoutDialogContent_hoster(host.getHost()), icon), "spanx,newline,skip");
+        for (DomainInfo host : pkg.getFilePackageInfo().getDomainInfos()) {
+            ImageIcon icon = host.getFavIcon();
+            p.add(head(_GUI._.LinkPropertiesDialog_layoutDialogContent_hoster(host.getName()), icon), "spanx,newline,skip");
         }
 
         return p;

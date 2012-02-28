@@ -23,7 +23,7 @@ public class LinkStatus implements Storable {
     }
 
     public String getHost() {
-        return link.getRealHost();
+        return link.getDomainInfo().getTld();
     }
 
     public long getSize() {

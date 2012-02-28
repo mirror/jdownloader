@@ -930,6 +930,10 @@ public abstract class PluginForHost extends Plugin {
         return DomainInfo.getInstance(host).getFavIcon();
     }
 
+    public DomainInfo getDomainInfo() {
+        return null;
+    }
+
     public boolean hasCaptcha() {
         return false;
     }

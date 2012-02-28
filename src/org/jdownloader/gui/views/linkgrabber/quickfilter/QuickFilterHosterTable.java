@@ -45,7 +45,7 @@ public class QuickFilterHosterTable extends FilterTable {
         /* update filter list */
         List<CrawledLink> links = getVisibleLinks();
         for (CrawledLink link : links) {
-            final String hoster = link.getRealHost();
+            final String hoster = link.getDomainInfo().getTld();
             map.add(link);
             if (hoster != null) {
                 Filter filter = null;
@@ -75,7 +75,7 @@ public class QuickFilterHosterTable extends FilterTable {
                         if (map.add(link)) {
                             filteredLinks.add(link);
                         }
-                        String hoster = link.getRealHost();
+                        String hoster = link.getDomainInfo().getTld();
                         if (hoster != null) {
                             Filter filter = null;
                             filter = filterMap.get(hoster);
@@ -127,7 +127,7 @@ public class QuickFilterHosterTable extends FilterTable {
 
             @Override
             public boolean isFiltered(CrawledLink link) {
-                if (name.equals(link.getRealHost())) return true;
+                if (name.equals(link.getDomainInfo().getTld())) return true;
                 return false;
             }
 

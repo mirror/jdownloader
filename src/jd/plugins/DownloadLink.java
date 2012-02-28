@@ -169,8 +169,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private long                                         created                 = -1l;
 
     private transient UniqueSessionID                    uniqueID                = null;
-    private transient String                             iconHost                = null;
     transient private AbstractNodeNotifier<DownloadLink> propertyListener;
+    transient DomainInfo                                 domainInfo              = null;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -1066,46 +1066,28 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return icon;
     }
 
-    /**
-     * returns the current set Icon for this DownloadLink
-     * 
-     * @param scaled
-     * @return
-     */
-    public ImageIcon getHosterIcon() {
+    public DomainInfo getDomainInfo() {
         PluginForHost plugin = this.liveplugin;
         if (plugin != null) {
-            /* live plugin available, lets use its icon */
-            return plugin.getHosterIcon();
+            /* live plugin available, lets use it */
+            return plugin.getDomainInfo();
         } else {
-            if (iconHost != null) {
-                if (iconHost == host) {
-                    /* iconHost equals host, lets use default plugin icon */
-                    return this.defaultplugin.getHosterIcon();
-                } else {
+            if (domainInfo == null) {
+                if ("ftp".equalsIgnoreCase(getHost()) || "DirectHTTP".equalsIgnoreCase(getHost()) || "http links".equalsIgnoreCase(getHost())) {
                     /* custom iconHost */
-                    return DomainInfo.getInstance(iconHost).getFavIcon();
+                    try {
+                        String url = Browser.getHost(new URL(getDownloadURL()));
+                        domainInfo = DomainInfo.getInstance(url);
+                    } catch (final Throwable e) {
+                        e.printStackTrace();
+                    }
                 }
-            } else if ("DirectHTTP".equals(defaultplugin.getHost()) || "http links".equals(defaultplugin.getHost())) {
-                /* custom iconHost */
-                try {
-                    iconHost = Browser.getHost(new URL(getDownloadURL()));
-                    return DomainInfo.getInstance(iconHost).getFavIcon();
-                } catch (final Throwable e) {
+                if (domainInfo == null) {
+                    domainInfo = DomainInfo.getInstance(getHost());
                 }
             }
-            /* fallback, use default plugin icon */
-            iconHost = host;
-            return this.defaultplugin.getHosterIcon();
         }
-    }
-
-    public String getIconHost() {
-        return iconHost;
-    }
-
-    public void setIconHost(String iconHost) {
-        this.iconHost = iconHost;
+        return domainInfo;
     }
 
     /**

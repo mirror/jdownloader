@@ -1,7 +1,8 @@
 package jd.plugins;
 
 import java.util.HashSet;
-import java.util.Iterator;
+
+import org.jdownloader.DomainInfo;
 
 public class FilePackageInfo {
 
@@ -16,28 +17,28 @@ public class FilePackageInfo {
         this.fp = fp;
     }
 
-    private PluginForHost[] icons = new PluginForHost[0];
-    private long            size  = 0;
+    private DomainInfo[] infos = new DomainInfo[0];
+    private long         size  = 0;
 
-    public PluginForHost[] getIcons() {
-        if (lastIconVersion == structureVersion) return icons;
+    public DomainInfo[] getDomainInfos() {
+        if (lastIconVersion == structureVersion) return infos;
         synchronized (this) {
-            if (lastIconVersion == structureVersion) return icons;
-            HashSet<PluginForHost> hosts = new HashSet<PluginForHost>();
+            if (lastIconVersion == structureVersion) return infos;
+            HashSet<DomainInfo> infos = new HashSet<DomainInfo>();
             synchronized (fp) {
                 for (DownloadLink link : fp.getChildren()) {
-                    hosts.add(link.getDefaultPlugin());
+                    infos.add(link.getDomainInfo());
                 }
             }
-            icons = new PluginForHost[hosts.size()];
-            Iterator<PluginForHost> it = hosts.iterator();
-            int i = 0;
-            while (it.hasNext()) {
-                icons[i++] = it.next();
+            DomainInfo[] newinfos = new DomainInfo[infos.size()];
+            int index = 0;
+            for (DomainInfo info : infos) {
+                newinfos[index++] = info;
             }
+            this.infos = newinfos;
             lastIconVersion = structureVersion;
         }
-        return icons;
+        return infos;
     }
 
     public void changeStructure() {
