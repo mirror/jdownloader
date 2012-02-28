@@ -181,7 +181,8 @@ public class LetitBitNet extends PluginForHost {
         if (url == null) url = br2.getRegex("\\[\"(http:[^<>\"\\']+)\"").getMatch(0);
         if (url == null || url.length() > 1000 || !url.startsWith("http")) {
             logger.warning("url couldn't be found!");
-            logger.severe(br.toString());
+            logger.severe(url);
+            logger.severe(br2.toString());
             debugSwitch = true;
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

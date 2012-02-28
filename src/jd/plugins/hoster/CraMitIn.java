@@ -487,7 +487,16 @@ public class CraMitIn extends PluginForHost {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
                 Form DLForm = br.getFormbyProperty("name", "F1");
-                if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (DLForm == null) {
+                    if (br.containsHTML(">PREMIUM MEMBER BENEFITS<")) {
+                        logger.info("Login cookie outdated? Refresh");
+                        synchronized (LOCK) {
+                            account.setProperty("cookies", null);
+                        }
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 DLForm.put("op", "download2");
                 if (br.containsHTML(passwordText)) {
                     passCode = handlePassword(passCode, DLForm, link);
@@ -501,6 +510,9 @@ public class CraMitIn extends PluginForHost {
             }
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                synchronized (LOCK) {
+                    account.setProperty("cookies", null);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.setFollowRedirects(true);
@@ -523,6 +535,9 @@ public class CraMitIn extends PluginForHost {
                 if (br.containsHTML("File Not Found") || br.containsHTML("404 Not Found")) {
                     logger.warning("Server says link offline, please recheck that!");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                synchronized (LOCK) {
+                    account.setProperty("cookies", null);
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -547,18 +562,21 @@ public class CraMitIn extends PluginForHost {
             try {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
-                nopremium = account.getBooleanProperty("nopremium", false);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
+                Object noPrem = account.getProperty("nopremium", (Boolean) null);
+                if (noPrem != null) {
+                    nopremium = (Boolean) noPrem;
+                    boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                    if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                    if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                        final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                        if (account.isValid()) {
+                            for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                                final String key = cookieEntry.getKey();
+                                final String value = cookieEntry.getValue();
+                                this.br.setCookie(COOKIE_HOST, key, value);
+                            }
+                            return;
                         }
-                        return;
                     }
                 }
                 nopremium = false;
