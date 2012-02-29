@@ -23,6 +23,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -30,6 +31,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.LnkCrptWs;
+import jd.utils.JDHexUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -38,6 +41,11 @@ public class OneThousandEbCom extends PluginForHost {
 
     public OneThousandEbCom(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private String fortyTwo(String s) {
+        s = Encoding.Base64Decode(s);
+        return JDHexUtils.toString(LnkCrptWs.IMAGEREGEX(s));
     }
 
     @Override
@@ -53,7 +61,8 @@ public class OneThousandEbCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = requestDownloadLink();
+        final String js = br.getRegex(fortyTwo("RkM4QkZBRjFGQTAwQzhCMjFGOTZCMjk1REU1RDQzRkMyODkwNzBCRjBEMEFEQzk4MUU0QzVFMzgxNDY4ODY4NTU4OEZGQzMzODgwQUUxNkYyNTQ2NTVCREVBNzUxQzI2RTE3NzJEOUNDNUNDNjU2MkE4NzREMkU1NkY1QTM2Njg1RUExQ0Q3OTVDNzlGQjk5MjRGODJBRUY1MjNFQ0ZCMzQyRkE4QkRFNkJBRDlGRkQ5Q0Q4MkI5MjJDMzU3QzRFQzcyMDNFNTc2RkQ5ODUzNzNBMTMwNEZDMTg2NTEyN0UwMEU2OEE3MjMxRkE3M0M2ODA5NzYwN0E0QTZGNThDNDhCMzI=")).getMatch(0);
+        final String dllink = requestDownloadLink(js);
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -71,9 +80,9 @@ public class OneThousandEbCom extends PluginForHost {
         try {
             engine.eval(fun);
             if (b) {
-                result = engine.get("servURL");
+                result = engine.get(fortyTwo("RkM4QkZCRjZGQjAxQ0NFMDE4OTFCNTlGREMwNg=="));
             } else {
-                result = inv.invokeFunction("getDownLink", engine.get("srv"));
+                result = inv.invokeFunction(fortyTwo("RkQ4RkZCRjZGQjA3Q0ZFMjFCQzJCNzlBREUwMDQwQUIyOTlENzFFQTA4MDk="), engine.get("srv"));
             }
         } catch (final Throwable e) {
             return null;
@@ -81,24 +90,26 @@ public class OneThousandEbCom extends PluginForHost {
         return result.toString();
     }
 
-    private String requestDownloadLink() throws IOException {
+    private String requestDownloadLink(final String js) throws IOException {
+        if (js == null) { return null; }
+        final Browser jsBr = br.cloneBrowser();
         // js Funktion vorbereiten. Leider recht statisch.
-        String servUrl = br.getRegex("(var servURL.*?;)").getMatch(0);
-        String dlUrl = br.getRegex("(function getDownLink[^<>]+\\})").getMatch(0);
-        if (servUrl == null || dlUrl == null) { return null; }
-        servUrl = servUrl.replaceAll("(\\$U\\.environment\\.file\\.|\\$ds\\.thunder\\.)", "");
-        dlUrl = dlUrl.replaceAll("(\\$U\\.environment\\.file\\.|downloadSettings\\.)", "");
         final StringBuilder sb = new StringBuilder();
-        sb.append("var fid=" + br.getRegex("fid\\s?:\\s?(\'[^<>,]+\')").getMatch(0) + ";");
-        String fid = sb.toString();
-        sb.append("var fname=" + br.getRegex("fname\\s?:\\s?(\'[^<>,]+\')").getMatch(0) + ";");
-        sb.append("var dxservers=" + br.getRegex("dxservers\\s?:\\s?(\'[^<>\n]+\')").getMatch(0) + ";");
-        sb.append("var ltservers=" + br.getRegex("ltservers\\s?:\\s?(\'[^<>\n]+\')").getMatch(0) + ";");
-        sb.append("var downDelay=" + br.getRegex("downDelay\\s?:\\s?(\\d+)").getMatch(0) + ";");
-        sb.append(br.getRegex("(var screctTime.*?;)").getMatch(0));
-        sb.append(br.getRegex("(var acdos.*?;)").getMatch(0));
-        sb.append(servUrl);
+        sb.append(br.getRegex(fortyTwo("Rjk4MEZBRjVGQTAyQ0NFNDFGOTRCNUNCREY1NjQyRkIyODk2NzFCQTA4NThEOUNBMTkxRTVGMzIxNTM4ODY4MTVEREVGODZCOEQ1RkU3NkUyNTFB")).getMatch(0));
+        sb.append(br.getRegex(fortyTwo("Rjk4MEZBRjVGQTAyQ0NFNDFGOTRCNjk5REUwMzQzRkYyOUMxNzFFQzA4MEREOENGMUExRTVDMzgxNTY5ODc4MDU4OEZGQzMzODg1Q0UyM0IyMDEwNTVFOEVCMjAxRDc3RTEyMTI4Q0JDMUM3")).getMatch(0));
+        jsBr.getPage(js);
+        String dlUrl = jsBr.getRegex(fortyTwo("Rjk4MEZCRjVGQjA2Q0RCMzFCOTdCNzk5REU1QzQyQUUyOUMxNzVCRjA4NUNEOENCMUIxRTVEM0YxNTNBODc4MzU5REVGRTY5ODgwMEUyNjkyMTQxNTNFRUVDMjAxQzc1RTEyMjJFQ0RDMTlDNjU2MkFENzVENkVG")).getMatch(0);
+        String servUrl = jsBr.getRegex(fortyTwo("Rjk4MEZBRjVGQTAyQ0NFNDFGOTRCNzlFREU1MDQzRkEyODkyNzJCQTBCNTlEQTlEMUU0RjVCNkExMDNBODNENjVEODI=")).getMatch(0);
+        if (servUrl == null || dlUrl == null) { return null; }
+        dlUrl = dlUrl.replaceAll(fortyTwo("RkVEQkZGRjdGOTA2Q0VCNTFGQzFCNjk4REUwMDQzRkUyOTlENzBCRDA4MEREODlCMUE0RTVGM0UxNTM5ODc4MDVBRDhGODZGODgwRkUyMzUyMTQwNTBCOUVDMjYxRDcz"), "");
+        servUrl = servUrl.replaceAll(fortyTwo("RkVEQkZGRjdGOTA2Q0VCNTFGQzFCNjk4REUwMDQzRkUyOTlENzBCRDA4MEREODlCMUE0RTVGM0UxNTM5ODc4MDVBRDhGODZGODgwRkUyMzUyMTQwNTBCOUVDMjYxRDcz"), "");
+        servUrl = servUrl.replaceAll(fortyTwo("RkVEQkZGRjdGQTA3Q0NFNQ=="), fortyTwo("RkQ4Q0ZCQTVGQjA0Q0RCMzFCQzdCNkNCREU1NDQyRkMyQTk3NzFCQTA5NUZEOUNBMUExMzVGNkUxNTZCODc4Nw=="));
         sb.append(dlUrl + ";");
+        sb.append(jsBr.getRegex(fortyTwo("Rjk4MEZBRjVGQTAyQ0NFNDFGOTRCNzlFREU1NjQzRkEyOTkxNzFCQzA5NUZEQkNBMUExMzVGNkYxNTY5ODJEMTVEREFGOTZDOEQ1QkU2MzU=")).getMatch(0));
+        sb.append(jsBr.getRegex(fortyTwo("Rjk4MEZBRjVGQTAyQ0NFNDFGOTRCNjlDREU1NjQyRkMyOUMyNzBCQzBDMEVEQzlGMUY0QzVBNjkxMTY1")).getMatch(0));
+        sb.append(fortyTwo("RkM4RUZCRjJGQjAxQzlFNjFCOTJCNjk0REU1MTQ3QUMyOTkyNzFCNjA4MDhEOENCMTgxMzVGNkUxNTZBODZEMjVCOERGQzMzODg1QUUyMzkyMjEwNTBCNEVGMjMxODI0RTU3MzI5Q0FDNUM4NjY2NEFDMjBEMkIyNkYwOTMzNjg1QUYxQ0Q3MzVDN0NGQkM4MjZGMzJBRUM1NjZFQ0NCNzQzQTk4RTg0NkVBQjlDQUM5QURGMkZDNTJDNjc3QzQyQzMyMDNGNTE2QzgzODAzMzNBNDcwMEFCMUEzNjE2NzkwMkIyOEE3NTM0QUI3MjlDODBDNjY1MkM0QTZFNUNDMDhFNkU0OEI3QzkzMERBQ0UzMjFBMDhENDcyNTlDMUI0RDgzODAzNEI1N0M3QjJBOTFERDgzOUY1NkQ2QjcyOUYxQzcw"));
+        sb.append(servUrl);
+        final String bleistift = br.getRegex(fortyTwo("RkVEQkZGRjVGQjAwQ0RFMjFFQzBCMjk1REEwMDQ2QTkyQ0MyNzVCNjBDNUM=")).getMatch(0);
 
         // und ausführen ...
         final String result = jsExecute(sb.toString(), true);
@@ -106,15 +117,17 @@ public class OneThousandEbCom extends PluginForHost {
         br.getPage(result);
 
         // ohne diesen Keks kein dl
-        fid = fid.split("\'")[1];
-        br.setCookie(br.getHost(), "co_AllowedDown", fid);
+        br.setCookie(br.getHost(), fortyTwo("RkQ4QkZCQTVGOTU1Q0ZFNzFCQzdCNkNFREUwMzQzRkYyOTkxNzFCQjBBNUZEODk4MUIxRDVGNkU="), bleistift);
 
         // weitere Zutaten ...
-        final String query = br.getRegex("queryString:\\s?(\'.*?\'),").getMatch(0);
-        final String domain = br.getRegex("\'domain\':\\s?'(\\w+)',").getMatch(0);
-        if (query == null || domain == null) { return null; }
+        final String query = br.getRegex(fortyTwo("RkM4OUZBRjZGQTA2Q0NFNDFBOURCNTlFREY1MTQzRkEyOTlENzFFQTA4NUNERDlGMTk0OTVFMzgxMDNBODI4QzVEOENGODZGOEM1OEU3NkEyNTE0NTRCNUVCMjY=")).getMatch(0);
+        String kugelschreiber = br.getRegex(fortyTwo("Rjk4RkZCRjdGQTU1Q0RCMjFCOTVCNjk0REUwMDQ2RkYyQ0M1NzJFQzA5NThERDk4MUUxRDVCMzMxNjNGODc4MzVERDlGODMzOEMwRUU2NkY=")).getMatch(0);
+        final String[] ks = br.getRegex(fortyTwo("Rjk4RkZCRjdGQTU1Q0RCMjFCOTVCNjk0REUwMDQ2RkYyQUM3NzBCQzBEMERERDlGMTk0OTVFMzgxMDNBODI4MzVEODNGRjY5ODkwRUU2NkUyNTFBNTRCQkVCMjY=")).getColumn(0);
+        kugelschreiber = ks[ks.length - 1];
+        if (kugelschreiber == null) { return null; }
         sb.append("var queryString=" + query + ";");
-        sb.append("var srv ='" + domain + ".big';");
+        sb.append(fortyTwo("RkM4RUZCRjJGQjAxQzlFNjFBOTdCNzlGREY1MzQ2RjgyQ0MwNzVCOA==") + kugelschreiber + "\';");
+        sb.append(fortyTwo("RkQ4MUZCRjVGRTBCQ0NFNTFCOURCN0NDREU1MDQ3QUQyOTkwNzFFOTA5NUNEODlCMUE0OTVGNkQxNTZEODY4MDVBODhGQzNGODkwREUzMzgyMTFBNTBFOUVGNzIxODI1RTAyMjJDOURDNUM2NjczNEFDNzREMkUyNkYwOTM3M0U1RUEyQ0Q3QzVDMjZGQjlFMjRGRjJCQkE1NjYxQ0RCMDQxQUE4QURDNkJGOTk5QTk5RDg4MkFDMDI4M0E3RDE1QzY3MDNGNTA2RDhDODQzNjNCNDEwNEZEMUEzMDEyMkEwN0IyOEYyMzM0QUM3MDlDODA5NDYwMkE0QjM0NUQ5MjhCMzU="));
 
         // finalen Link bauen
         return jsExecute(sb.toString(), false);
@@ -122,6 +135,7 @@ public class OneThousandEbCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String REGEX = JDHexUtils.getHexString("getDownLink");
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());

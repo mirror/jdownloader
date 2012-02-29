@@ -182,7 +182,7 @@ public class TurboBitNet extends PluginForHost {
             final String captchaUrl = br.getRegex(CAPTCHAREGEX).getMatch(0);
             if (captchaUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             for (int i = 1; i <= 3; i++) {
-                final String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
+                final String captchaCode = getCaptchaCode(null, captchaUrl, downloadLink);
                 captchaform.put("captcha_response", captchaCode);
                 br.submitForm(captchaform);
                 if (br.getRegex(CAPTCHAREGEX).getMatch(0) == null) {
@@ -218,6 +218,7 @@ public class TurboBitNet extends PluginForHost {
         }
         if (downloadUrl == null) {
             if (br.containsHTML("Error: ") || res == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!", 10 * 60 * 60 * 1000l); }
+            if (br.containsHTML("The file is not avaliable now because of technical problems")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
@@ -327,7 +328,7 @@ public class TurboBitNet extends PluginForHost {
         if (fun == null) { return null; }
         if (!NULL) {
             final String[] next = fun.split(parseImage("ff88"));
-            if (next == null || next.length != 2) { return new Regex(fun, parseImage("fedbfff7f950c9ee1f9cb29fdf0646ff2d9d74e90c58db9c19495e3c163f82d05adff8688c01e63e204054bbeb7c1c70e7242990c69d6264ac72d2b06f0d363859a4c972582dfe9b20f22eec5239c9b745a68a8f6bae9ffa9c83")).getMatch(2); }
+            if (next == null || next.length != 2) { return new Regex(fun, parseImage("fedbfffbfe0bc9e41ac7b29ada5c47ae2d9772ed0b08d9c919495b6f163882d65d83f838895ae63b251a55eaec261d2fe72429ccc59d6667ac20d2e26c5f32345ef5c82c5827ff9820ab2fef5261c8e344f98dde6af1")).getMatch(2); }
             Object result = new Object();
             final ScriptEngineManager manager = new ScriptEngineManager();
             final ScriptEngine engine = manager.getEngineByName("javascript");

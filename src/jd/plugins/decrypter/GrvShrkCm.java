@@ -87,7 +87,7 @@ public class GrvShrkCm extends PluginForDecrypt {
             gsProxy(false);
         } catch (final Throwable e) {
         }
-        if (!GrooveShark.getClientVersion(br)) {
+        if (!GrooveShark.getFileVersion(br)) {
             logger.warning("Failed parsing!");
             return null;
         }
