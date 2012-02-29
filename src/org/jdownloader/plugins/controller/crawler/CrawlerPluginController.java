@@ -122,7 +122,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                             ap.setPattern(patterns[i]);
                             ap.setVersion(revision);
                             LazyCrawlerPlugin l = new LazyCrawlerPlugin(ap);
-                            l.getPrototype();
+                            // l.getPrototype();
                             ret.add(l);
                             save.add(ap);
                             Log.L.finest("@CrawlerPlugin ok:" + simpleName + " " + names[i]);

@@ -236,6 +236,9 @@ public class JDUpdater extends Updater implements Runnable {
                 }
 
             }
+
+            public void onLog(String parameter) {
+            }
         });
 
     }

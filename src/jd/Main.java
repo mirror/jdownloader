@@ -245,7 +245,7 @@ public class Main {
                 }
             }
         });
-        PARAMETERS.parse();
+        PARAMETERS.parse(null);
         if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
             JDInitFlags.SWITCH_DEBUG = true;
         }

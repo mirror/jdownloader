@@ -354,4 +354,7 @@ public class UpdaterGUI extends JFrame implements ActionListener, UpdaterListene
     public void onDirectInstalls(ArrayList<File> parameter) {
     }
 
+    public void onLog(String parameter) {
+    }
+
 }

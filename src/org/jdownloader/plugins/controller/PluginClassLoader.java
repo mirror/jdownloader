@@ -1,11 +1,13 @@
 package org.jdownloader.plugins.controller;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 
 public class PluginClassLoader extends URLClassLoader {
 
@@ -55,6 +57,25 @@ public class PluginClassLoader extends URLClassLoader {
         } catch (Throwable e) {
             e.printStackTrace();
         }
+    }
+
+    public URLClassLoader getChild() {
+        return new URLClassLoader(new URL[] { Application.getRootUrlByClass(jd.Main.class, null) }, this) {
+            public Class loadClass(String name) throws ClassNotFoundException {
+                try {
+                    if (!name.startsWith("jd.plugins.hoster") && !name.startsWith("jd.plugins.decrypter")) { return super.loadClass(name); }
+
+                    System.out.println(name);
+                    URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
+                    byte[] data;
+                    data = IO.readURL(myUrl);
+                    return defineClass(name, data, 0, data.length);
+                } catch (IOException e) {
+                    throw new ClassNotFoundException(e.getMessage(), e);
+                }
+
+            }
+        };
     }
 
     public boolean isClassLoaded(String string) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {

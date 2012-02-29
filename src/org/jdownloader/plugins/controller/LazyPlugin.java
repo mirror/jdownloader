@@ -58,9 +58,18 @@ public abstract class LazyPlugin<T extends Plugin> {
         return prototypeInstance;
     }
 
+    public T newInstance(Class<T> clazz) {
+        try {
+            getConstructor(clazz);
+            return constructor.newInstance(constructorParameters);
+        } catch (final Throwable e) {
+            throw new WTFException(e);
+        }
+    }
+
     public T newInstance() {
         try {
-            getConstructor();
+            getConstructor(getPluginClass());
             return constructor.newInstance(constructorParameters);
         } catch (final Throwable e) {
             throw new WTFException(e);
@@ -68,16 +77,16 @@ public abstract class LazyPlugin<T extends Plugin> {
 
     }
 
-    private Constructor<T> getConstructor() {
+    private Constructor<T> getConstructor(Class<T> clazz) {
         if (constructor != null) return constructor;
         synchronized (this) {
             if (constructor != null) return constructor;
             try {
-                constructor = getPluginClass().getConstructor(new Class[] {});
+                constructor = clazz.getConstructor(new Class[] {});
                 constructorParameters = EMPTY;
             } catch (Throwable e) {
                 try {
-                    constructor = getPluginClass().getConstructor(new Class[] { PluginWrapper.class });
+                    constructor = clazz.getConstructor(new Class[] { PluginWrapper.class });
                     constructorParameters = new Object[] { new PluginWrapper(this) {
                         /* workaround for old plugin system */
                     } };

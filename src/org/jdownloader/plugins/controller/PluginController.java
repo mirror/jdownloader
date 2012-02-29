@@ -18,7 +18,7 @@ public class PluginController<T extends Plugin> {
         URLClassLoader cl = null;
 
         path = Application.getRootByClass(jd.Main.class, hosterpath);
-        cl = PluginClassLoader.getInstance();
+        cl = PluginClassLoader.getInstance().getChild();
 
         final File[] files = path.listFiles(new FilenameFilter() {
             public boolean accept(final File dir, final String name) {

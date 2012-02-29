@@ -133,7 +133,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             ap.setPattern(patterns[i]);
                             ap.setVersion(revision);
                             LazyHostPlugin l = new LazyHostPlugin(ap);
-                            PluginForHost plg = l.getPrototype();
+                            PluginForHost plg = l.newInstance(c.getClazz());
                             ap.setPremium(plg.isPremiumEnabled());
 
                             String purl = plg.getBuyPremiumUrl();
@@ -146,7 +146,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             l.setHasConfig(plg.hasConfig());
                             l.setPremium(ap.isPremium());
                             l.setPremiumUrl(purl);
-                            ret.add(l);
+                            ret.add(new LazyHostPlugin(ap));
                             save.add(ap);
                             Log.L.finer("@HostPlugin ok:" + simpleName + " " + names[i]);
                         } catch (Throwable e) {
