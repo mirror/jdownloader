@@ -71,6 +71,13 @@ public class AccountData implements Storable {
         ret.properties = a.getProperties();
         if (a.getAccountInfo() != null) {
             ret.infoProperties = a.getAccountInfo().getProperties();
+            if (ret.infoProperties == null) {
+                /*
+                 * we need at least an empty hashmap, so account restore also
+                 * restores account info
+                 */
+                ret.infoProperties = new HashMap<String, Object>();
+            }
             ret.createTime = a.getAccountInfo().getCreateTime();
             ret.trafficLeft = a.getAccountInfo().getTrafficLeft();
             ret.trafficMax = a.getAccountInfo().getTrafficMax();

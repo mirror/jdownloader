@@ -270,8 +270,13 @@ public class Property implements Serializable {
      * @param properties
      */
     public void setProperties(final HashMap<String, Object> properties) {
-        this.properties = properties;
-        propertiesHashes = new HashMap<String, Integer>();
+        if (properties != null && properties.isEmpty()) {
+            this.properties = null;
+            propertiesHashes = null;
+        } else {
+            this.properties = properties;
+            propertiesHashes = new HashMap<String, Integer>();
+        }
     }
 
     /**

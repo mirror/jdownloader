@@ -143,7 +143,6 @@ public class AccountController implements AccountControllerListener {
                     ArrayList<AccountData> list = new ArrayList<AccountData>();
                     ret.put(next.getKey(), list);
                     for (Account a : next.getValue()) {
-
                         list.add(AccountData.create(a));
                     }
                 }

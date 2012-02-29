@@ -317,6 +317,7 @@ public class FourSharedCom extends PluginForHost {
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;

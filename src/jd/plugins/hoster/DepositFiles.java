@@ -21,10 +21,15 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -60,6 +65,7 @@ public class DepositFiles extends PluginForHost {
     private final Pattern       FILE_INFO_SIZE           = Pattern.compile("Dateigr.*?: <b>(.*?)</b>");
 
     private static final Object PREMLOCK                 = new Object();
+    private static final Object LOCK                     = new Object();
 
     private static int          simultanpremium          = 1;
 
@@ -117,44 +123,46 @@ public class DepositFiles extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         setBrowserExclusive();
-        br.setDebug(true);
-        try {
-            login(account);
-        } catch (final PluginException e) {
+        synchronized (LOCK) {
             try {
-                logger.info(br.getHttpConnection().toString());
-            } catch (final Throwable e2) {
+                login(account, true);
+            } catch (final PluginException e) {
+                ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
+                account.setValid(false);
+                return ai;
             }
-            logger.info(br.toString());
-            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
-            account.setValid(false);
-            return ai;
-        }
-        if (isFreeAccount()) {
-            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountokfree", "Account is OK.(Free User)"));
+            if (isFreeAccount(account, true)) {
+                try {
+                    account.setMaxSimultanDownloads(1);
+                } catch (final Throwable e) {
+                }
+                ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountokfree", "Account is OK.(Free User)"));
+                account.setValid(true);
+                return ai;
+            } else {
+                try {
+                    account.setMaxSimultanDownloads(-1);
+                } catch (final Throwable e) {
+                }
+            }
+            final String expire = br.getRegex("noch den Gold-Zugriff: <b>(.*?)</b></div>").getMatch(0);
+            final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
+            if (expire == null) {
+                ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
+                account.setProperty("premium", Property.NULL);
+                account.setProperty("cookies", Property.NULL);
+                account.setValid(false);
+                return ai;
+            }
+            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountok", "Account is OK."));
+            Date date;
             account.setValid(true);
-            return ai;
-        }
-        final String expire = br.getRegex("noch den Gold-Zugriff: <b>(.*?)</b></div>").getMatch(0);
-        final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
-        if (expire == null) {
             try {
-                logger.info(br.getHttpConnection().toString());
-            } catch (final Throwable e) {
+                date = dateFormat.parse(expire);
+                ai.setValidUntil(date.getTime());
+            } catch (final ParseException e) {
+                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             }
-            logger.info(br.toString());
-            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
-            account.setValid(false);
-            return ai;
-        }
-        ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountok", "Account is OK."));
-        Date date;
-        account.setValid(true);
-        try {
-            date = dateFormat.parse(expire);
-            ai.setValidUntil(date.getTime());
-        } catch (final ParseException e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
         return ai;
     }
@@ -357,10 +365,10 @@ public class DepositFiles extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         boolean free = false;
+        requestFileInformation(downloadLink);
         synchronized (PREMLOCK) {
-            requestFileInformation(downloadLink);
-            login(account);
-            if (isFreeAccount()) {
+            login(account, false);
+            if (isFreeAccount(account, false)) {
                 simultanpremium = 1;
                 free = true;
             } else {
@@ -377,16 +385,19 @@ public class DepositFiles extends PluginForHost {
         }
         String link = downloadLink.getDownloadURL();
         br.getPage(link);
-
         if (br.getRedirectLocation() != null) {
             link = br.getRedirectLocation().replaceAll("/\\w{2}/files/", "/de/files/");
             br.getPage(link);
         }
-
         checkErrors();
         link = br.getRegex(PATTERN_PREMIUM_FINALURL).getMatch(0);
-        if (link == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        br.setDebug(true);
+        if (link == null) {
+            synchronized (LOCK) {
+                account.setProperty("cookies", null);
+                account.setProperty("premium", (Boolean) null);
+            }
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
         final URLConnectionAdapter con = dl.getConnection();
         if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
@@ -418,28 +429,80 @@ public class DepositFiles extends PluginForHost {
         return true;
     }
 
-    public boolean isFreeAccount() throws IOException {
-        setLangtoGer();
-        br.getPage(MAINPAGE + "/de/gold/");
-        if (br.containsHTML("Ihre aktuelle Status: Frei - Mitglied</div>")) { return true; }
-        if (br.containsHTML("So lange haben Sie noch den Gold-Zugriff")) { return false; }
-        if (br.containsHTML(">Goldmitgliedschaft<")) { return false; }
-        if (br.containsHTML("noch den Gold-Zugriff")) { return false; }
-        return true;
+    public boolean isFreeAccount(Account acc, boolean force) throws IOException {
+        synchronized (LOCK) {
+            Object premium = acc.getProperty("premium", (Boolean) null);
+            if (premium != null && premium instanceof Boolean && !force) return (Boolean) premium;
+            setLangtoGer();
+            br.getPage(MAINPAGE + "/de/gold/");
+            boolean ret = false;
+            if (br.containsHTML("Ihre aktuelle Status: Frei - Mitglied</div>")) {
+                ret = true;
+            } else if (br.containsHTML("So lange haben Sie noch den Gold-Zugriff")) {
+                ret = false;
+            } else if (br.containsHTML(">Goldmitgliedschaft<")) {
+                ret = false;
+            } else if (br.containsHTML("noch den Gold-Zugriff")) {
+                ret = false;
+            } else {
+                ret = true;
+            }
+            acc.setProperty("premium", ret);
+            return ret;
+        }
     }
 
-    public void login(final Account account) throws Exception {
-        br.setDebug(true);
-        br.setFollowRedirects(true);
-        setLangtoGer();
-        br.getPage(MAINPAGE + "/de/gold/payment.php");
-        final Form login = br.getFormBySubmitvalue("Anmelden");
-        login.put("login", Encoding.urlEncode(account.getUser()));
-        login.put("password", Encoding.urlEncode(account.getPass()));
-        br.submitForm(login);
-        br.setFollowRedirects(false);
-        final String cookie = br.getCookie(MAINPAGE, "autologin");
-        if (cookie == null || br.containsHTML("Benutzername-Passwort-Kombination")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+    @SuppressWarnings("unchecked")
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                br.setCookiesExclusive(true);
+                setLangtoGer();
+                final Object ret = account.getProperty("cookies", null);
+                final Object premium = account.getProperty("premium", (Boolean) null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (premium != null && acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(MAINPAGE, key, value);
+                        }
+                        return;
+                    }
+                }
+                br.setReadTimeout(3 * 60 * 1000);
+                br.setFollowRedirects(true);
+                br.getPage(MAINPAGE + "/de/gold/payment.php");
+                final Form login = br.getFormBySubmitvalue("Anmelden");
+                if (login == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                login.put("login", Encoding.urlEncode(account.getUser()));
+                login.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(login);
+                br.setFollowRedirects(false);
+                final String cookie = br.getCookie(MAINPAGE, "autologin");
+                if (cookie == null || br.containsHTML("Benutzername-Passwort-Kombination")) {
+                    int i = 1;
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(MAINPAGE);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("premium", Property.NULL);
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
     }
 
     @Override
