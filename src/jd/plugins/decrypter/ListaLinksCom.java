@@ -20,38 +20,43 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "saugstube.to" }, urls = { "http://[\\w\\.]*?saugstube\\.to/ddl/\\d+/.*?\\.html" }, flags = { 0 })
-public class SagStbeToDl extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "listalinks.com" }, urls = { "http://(www\\.)?listalinks\\.com/\\?L=[a-z0-9]+" }, flags = { 0 })
+public class ListaLinksCom extends PluginForDecrypt {
 
-    public SagStbeToDl(PluginWrapper wrapper) {
+    public ListaLinksCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.getPage("http://saugstube.to");
         br.getPage(parameter);
-        String fpName = br.getRegex("/\\?Module=ExtendedSearch\\&amp;SearchString=(.*?)\"").getMatch(0);
-        if (fpName == null) {
-            fpName = br.getRegex("action=\"\\?Module=Details\\&ID=\\d+\\&Title=(.*?)\\&\"").getMatch(0);
-            if (fpName == null) {
-                fpName = br.getRegex("<title>(.*?) - DDL</title>").getMatch(0);
-            }
+        final Regex info = br.getRegex("<FONT CLASS=\"result\">([^<>\"\\']+)<br />[\t\n\r ]+<br />(.*?)<DIV ID=\"secundario\">");
+        final String fpName = info.getMatch(0);
+        final String linktext = info.getMatch(1);
+        if (linktext == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
-        String[] links = br.getRegex("class=\"Link\"><a href=\"(.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
+        String[] links = HTMLParser.getHttpLinks(linktext);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        for (String singleLink : links)
+            if (!singleLink.contains("listalinks.com/")) decryptedLinks.add(createDownloadlink(singleLink));
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
