@@ -63,9 +63,16 @@ public class DopeShareCom extends PluginForHost {
 
     // DEV NOTES:
     // XfileSharingProBasic Version 2.5.2.0
-    // Tested free 20(dl) * 1(ch) = 20 total
-    // Tested prem 10(dl) * 20(ch) = 200 total
-    // Stock standard xfileshare, no adjustments needed.
+    // mods: standard xfileshare, no adjustments needed.
+    // free: 20(dl) * 1(ch) = 20 total
+    // prem: 10(dl) * 20(ch) = 200 total
+    // protocol: no https
+    // captchatype: null
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
 
     @Override
     public String getAGBLink() {

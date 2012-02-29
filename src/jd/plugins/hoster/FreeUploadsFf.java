@@ -22,38 +22,53 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15600 $", interfaceVersion = 2, names = { "upload.ee" }, urls = { "https?://(www\\.)?upload\\.ee/files/\\d+/[^ ]+" }, flags = { 0 })
-public class UploadEe extends PluginForHost {
+@HostPlugin(revision = "$Revision: 15600 $", interfaceVersion = 2, names = { "freeuploads.fr" }, urls = { "https?://(www\\.)?(freeuploads\\.fr|uploa\\.dk)/\\?(v|d)=\\d+" }, flags = { 0 })
+public class FreeUploadsFf extends PluginForHost {
 
     // DEV NOTES:
-    // other: urls can work without *.html, but it has to be
-    // domain/files/\d+/validfilename
-    // free: unlimited connections
     // protocol: no https
+    // free: resumes, one chunk, unlimited connections?
     // captchatype: null
 
-    public UploadEe(PluginWrapper wrapper) {
+    public FreeUploadsFf(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("s?://upload", "://www.upload"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("s?://(freeuploads\\.fr|uploa\\.dk)/\\?(v|d)=", "://www.freeuploads.fr/?d="));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.upload.ee/rules.html";
+        return "http://www.freeuploads.fr";
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.setCookie("http://www.freeuploads.fr/", "lang", "en");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(?i)>This video may have been deleted or you\\'re using an invalid link\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("(?i)id=\"download\">[\r\n\t ]+<h2>([^<>\"]+)</h2>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filesize = br.getRegex("(?i)Size:?</b> ([\\d\\.]+ ?(GB|MB))").getMatch(0);
+        link.setName(filename.trim());
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -64,7 +79,7 @@ public class UploadEe extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String uid = new Regex(br.getURL(), "upload\\.ee/files/(\\d+)/").getMatch(0);
+        String passCode = null;
         String dllink = downloadLink.getStringProperty("freelink");
         if (dllink != null) {
             try {
@@ -80,37 +95,31 @@ public class UploadEe extends PluginForHost {
                 dllink = null;
             }
         }
+        Form passForm = br.getFormbyProperty("name", "filepassword");
+        if (passForm != null) {
+            logger.info("FreeUploads: Download seems to be password protected!");
+            for (int i = 0; i <= 5; i++) {
+                passCode = downloadLink.getStringProperty("pass", null);
+                if (passCode == null) passCode = Plugin.getUserInput("FreeUploads.fr: Download password protected!", downloadLink);
+                passForm.put("pass", Encoding.urlEncode(passCode));
+                br.submitForm(passForm);
+                if (br.containsHTML(">Wrong Password<"))
+                    continue;
+                else
+                    break;
+            }
+        }
         if (dllink == null) {
-            dllink = br.getRegex("(?i)\"(https?://[\\w\\-\\.]+upload\\.ee/download/" + uid + "/\\w+/[^\"> ]+)\"").getMatch(0);
+            dllink = br.getRegex("(?i)(https?://[\\w\\-\\.]+freeuploads\\.fr/download/\\w+/[^\">]+)").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("freelink", dllink);
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.setCookie("http://www.upload.ee/", "lang", "en");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(?i)(>[\r\n\t]+There is no such file\\.[\r\n\t]+<|<title>UPLOAD\\.EE \\- File does not exist</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("(?i)File: <b>(.*?)</b>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("(?i)<title>UPLOAD.EE \\- Download (.*?)</title>").getMatch(0);
-            if (filename == null) {
-                if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        String filesize = br.getRegex("(?i)Size: (.*?)<br />").getMatch(0);
-        link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override

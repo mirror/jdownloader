@@ -50,13 +50,8 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 15651 $", interfaceVersion = 2, names = { "filevelocity.com" }, urls = { "http://(www\\.)?filevelocity\\.com/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 15651 $", interfaceVersion = 2, names = { "filevelocity.com" }, urls = { "https?://(www\\.)?filevelocity\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class FileVelocityCom extends PluginForHost {
-
-    /*
-     * DEV NOTES: - no https. - allows total number of 200 connections for
-     * premium. - free resumes though they say it doesn't.
-     */
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
@@ -66,11 +61,16 @@ public class FileVelocityCom extends PluginForHost {
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static final Object LOCK                = new Object();
 
+    // DEV NOTES
     // XfileSharingProBasic Version 2.5.2.0
+    // free: resumes though they say it doesn't.
+    // premium: allows total number of 200 connections
+    // protocol: no https.
+    // captchatype: recaptcha
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replace("http://filevelocity", "http://www.filevelocity"));
+        link.setUrlDownload(link.getDownloadURL().replace("https:", "http:").replaceAll("//filevelocity", "//www.filevelocity"));
     }
 
     @Override

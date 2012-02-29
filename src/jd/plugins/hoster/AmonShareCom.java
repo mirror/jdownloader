@@ -43,13 +43,8 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15668 $", interfaceVersion = 2, names = { "amonshare.com" }, urls = { "http://(www\\.)?amonshare\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 15668 $", interfaceVersion = 2, names = { "amonshare.com" }, urls = { "https?://(www\\.)?amonshare\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class AmonShareCom extends PluginForHost {
-
-    // DEV NOTES:
-    // - Tested with 80 connections with free
-    // - Doesn't have https
-    // - Doesn't use captcha
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
@@ -58,7 +53,16 @@ public class AmonShareCom extends PluginForHost {
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
 
+    // DEV NOTES:
     // XfileSharingProBasic Version 2.5.2.0
+    // free: tested 80 connections
+    // protocol: Doesn't have https
+    // captchatype: null
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
 
     @Override
     public String getAGBLink() {

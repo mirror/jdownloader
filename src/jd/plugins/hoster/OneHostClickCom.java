@@ -53,10 +53,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision: 15668 $", interfaceVersion = 2, names = { "1hostclick.com" }, urls = { "https?://(www\\.)?1hostclick\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class OneHostClickCom extends PluginForHost {
 
-    /*
-     * DEV NOTES: - has https. - allows total number of 20 connections for free.
-     * == win
-     */
+    // DEV NOTES
+    // free: allows total number of 20 connections for free. == win
+    // premium: unlimited
+    // protocol: has https.
+    // captchatype: recaptcha
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";

@@ -50,14 +50,15 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendmyway.com" }, urls = { "http://(www\\.)?sendmyway\\.com/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendmyway.com" }, urls = { "https?://(www\\.)?sendmyway\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class SendMyWayCom extends PluginForHost {
 
     // DEV NOTES
-    // - has recaptcha
-    // - only allows 10 connections for premium
-    // - only allows 1 connection for free, seems to have resume support
-    // - doesn't have https
+    // XfileSharingProBasic Version 2.5.2.0
+    // premium: only allows 10 connections for premium
+    // free: only allows 1 connection, seems to have resume support
+    // protocol: doesn't have https
+    // captchatype: has recaptcha
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
@@ -66,8 +67,6 @@ public class SendMyWayCom extends PluginForHost {
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static final Object LOCK                = new Object();
-
-    // XfileSharingProBasic Version 2.5.2.0
 
     @Override
     public String getAGBLink() {

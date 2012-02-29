@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15797 $", interfaceVersion = 2, names = { "xfileshare.com" }, urls = { "http://(www\\.)?xfileshare\\.eu/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 15797 $", interfaceVersion = 2, names = { "xfileshare.com" }, urls = { "https?://(www\\.)?xfileshare\\.eu/[a-z0-9]{12}" }, flags = { 0 })
 public class XFileShareEu extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -56,8 +56,12 @@ public class XFileShareEu extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.2.0
     // free: no chunking, 1 sim dl, seems to allow multiple simdl with wait
-    // times
-    // between.
+    // times between.
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
 
     @Override
     public String getAGBLink() {

@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,43 +28,52 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share4web.com" }, urls = { "http://(www\\.)?share4web\\.com/get/[\\w\\.\\-]{32}" }, flags = { 0 })
-public class Share4WebCom extends PluginForHost {
+@HostPlugin(revision = "$Revision: 15600 $", interfaceVersion = 2, names = { "nekaka.com" }, urls = { "https?://(www\\.)?nekaka\\.com/d/\\w{10}" }, flags = { 0 })
+public class NekakaCom extends PluginForHost {
 
-    public Share4WebCom(PluginWrapper wrapper) {
+    // DEV NOTES:
+    // protocol: http & https
+    // free: resumes, one chunk, maxdl unlimited
+    // captchatype: null
+
+    public NekakaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.share4web.com/page/terms";
+        return "http://www.nekaka.com";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCookie("http://www.share4web.com/", "lang", "en");
+        br.setFollowRedirects(false);
+        br.setCookie("http://www.nekaka.com/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">File not found or removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fileInfo = br.getRegex("<span id=\"fileName\" style=\"font\\-weight: normal;\">([^<>\"\\']+)</span>[\t\n\r ]+\\(([^<>\"\\']+)\\)[\t\n\r ]+<script>");
-        String filename = fileInfo.getMatch(0);
-        String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.containsHTML("(?i)invalid file link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("(?i)<nobr>([^<>]+) ?</nobr>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("(?i)Download File  \\- ([^<>]+)</title>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String filesize = br.getRegex("(?i)([\\d\\.]+ ?(GB|MB))").getMatch(0);
+        link.setName(filename.trim());
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
-        br.postPage(downloadLink.getDownloadURL() + "/timer", "step=timer&referer=&ad=");
-        if (br.containsHTML("(>Somebody else is already downloading using your IP-address|Try to download file later)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
-        String dllink = br.getRedirectLocation();
+        String dllink = br.getRegex("(?i)(https?://([\\w\\-\\.]+)?nekaka\\.com/files/download/\\d+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -76,11 +83,6 @@ public class Share4WebCom extends PluginForHost {
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     @Override

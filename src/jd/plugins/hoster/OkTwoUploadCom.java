@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15797 $", interfaceVersion = 2, names = { "ok2upload.com" }, urls = { "http://(www\\.)?ok2upload\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 15797 $", interfaceVersion = 2, names = { "ok2upload.com" }, urls = { "https?://(www\\.)?ok2upload\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class OkTwoUploadCom extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -54,9 +54,16 @@ public class OkTwoUploadCom extends PluginForHost {
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.5.2.0 - Stock standard no mods
-    // No https
-    // Allows total of 2 dl connections for free
+    // XfileSharingProBasic Version 2.5.2.0
+    // mods: null
+    // free: Allows total of 2 dl connections
+    // protocol: No https
+    // captchatype: 4dignum
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
 
     @Override
     public String getAGBLink() {

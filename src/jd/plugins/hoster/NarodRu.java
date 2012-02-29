@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "narod.ru" }, urls = { "http://(www\\.)?narod(\\.yandex)?\\.ru/disk/([^<>\"\\']+\\.html|start/[0-9]+\\.[0-9a-z]+\\-narod\\.yandex\\.ru/[0-9]{6,15}/[0-9a-z]+/[a-zA-Z0-9%.]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "narod.ru" }, urls = { "http://(www\\.)?narod(\\.yandex)?\\.ru/disk/[^<>\"\\']+" }, flags = { 0 })
 public class NarodRu extends PluginForHost {
 
     public NarodRu(PluginWrapper wrapper) {
@@ -41,13 +41,12 @@ public class NarodRu extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         // Correct added links because some guys are spreading narod direct
-        // links
-        // which only causes problems so correcting the link is the best
-        // solution here
+        // links, which only causes problems! So correcting the link is the best
+        // solution here.
         link.setUrlDownload(link.getDownloadURL().replace("narod.yandex.ru/", "narod.ru/"));
         if (link.getDownloadURL().contains("/start/")) {
-            String linkid = new Regex(link.getDownloadURL(), "/start/[0-9]+\\.[0-9a-z]+-narod\\.yandex\\.ru/([0-9]{6,15})/[0-9a-z]+/[a-zA-Z0-9%.]+").getMatch(0);
-            String filename = new Regex(link.getDownloadURL(), "/start/[0-9]+\\.[0-9a-z]+-narod\\.yandex\\.ru/[0-9]{6,15}/[0-9a-z]+/([a-zA-Z0-9%.]+)").getMatch(0);
+            String linkid = new Regex(link.getDownloadURL(), "/start/[0-9]+\\.[0-9a-z]+\\-narod(\\.yandex)?\\.ru/([0-9]{6,15})/[0-9a-z]+/[^<>\\'\"/&=]+").getMatch(1);
+            String filename = new Regex(link.getDownloadURL(), "/start/[0-9]+\\.[0-9a-z]+\\-narod(\\.yandex)?\\.ru/[0-9]{6,15}/[0-9a-z]+/([^<>\\'\"/&=]+)").getMatch(1);
             String finallink = "http://narod.ru/disk/" + linkid + "/" + filename;
             link.setUrlDownload(finallink);
         }
@@ -135,7 +134,6 @@ public class NarodRu extends PluginForHost {
         if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String md5Hash = br.getRegex(Pattern.compile("<dt class=\"size\">md5:</dt>.*<dd class=\"size\">(.*?)</dd>", Pattern.DOTALL)).getMatch(0);
         String fileSize = br.getRegex(Pattern.compile("<td class=\"l-download-info-right\">.*?<dl class=\"b-download-item g-line\">.*?<dt class=\"size\">.*?</dt>.*?<dd class=\"size\">(.*?).</dd>", Pattern.DOTALL)).getMatch(0);
-        if (fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         fileSize = fileSize.replaceAll("Г", "G");
         fileSize = fileSize.replaceAll("М", "M");
         fileSize = fileSize.replaceAll("к", "k");

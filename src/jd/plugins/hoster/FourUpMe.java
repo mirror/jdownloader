@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15705 $", interfaceVersion = 2, names = { "4up.me" }, urls = { "http://(www\\.)?4up\\.me/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 15705 $", interfaceVersion = 2, names = { "4up.me" }, urls = { "https?://(www\\.)?4up\\.me/[a-z0-9]{12}" }, flags = { 0 })
 public class FourUpMe extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -53,11 +53,16 @@ public class FourUpMe extends PluginForHost {
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
 
-    // DEV NOTES:
+    // DEV NOTES
     // XfileSharingProBasic Version 2.5.2.0
-    // doesn't resume
-    // doesn't have https
-    // free tested: up to 80 connects.
+    // free: doesn't resume, tested: up to 80 connects.
+    // protocol: doesn't have https
+    // captchatype: null
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
 
     @Override
     public String getAGBLink() {

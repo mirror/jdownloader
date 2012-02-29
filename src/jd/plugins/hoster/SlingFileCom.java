@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -38,8 +39,12 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slingfile.com" }, urls = { "http://(www\\.)?slingfile\\.com/((file|audio|video)/.+|dl/[a-z0-9]+/.*?\\.html)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slingfile.com" }, urls = { "https?://(www\\.)?slingfile\\.com/((file|audio|video)/.+|dl/[a-z0-9]+/.*?\\.html)" }, flags = { 2 })
 public class SlingFileCom extends PluginForHost {
+
+    // DEV NOTES
+    // free: directlink doesn't allow chunking or resume.
+    // premium: directlinks not tested.
 
     public SlingFileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,9 +59,7 @@ public class SlingFileCom extends PluginForHost {
     private static final String MAINPAGE = "http://slingfile.com/";
 
     public void correctDownloadLink(DownloadLink link) {
-        String theLink = link.getDownloadURL();
-        theLink = theLink.replaceAll("/(audio|video|dl)/", "file");
-        link.setUrlDownload(theLink);
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://").replaceAll("/(audio|video|dl)/", "file"));
     }
 
     public String getAGBLink() {
@@ -76,47 +79,74 @@ public class SlingFileCom extends PluginForHost {
         // error!
         if (br.containsHTML(">Please enable cookies to use this website")) br.getPage(downloadLink.getDownloadURL());
         if ("http://www.slingfile.com/".equals(br.getRedirectLocation())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h3>Downloading <span>(.*?)</span></h3>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?) \\- SlingFile \\- Free File Hosting \\& Online Storage</title>").getMatch(0);
+        if (br.getRedirectLocation() == null) {
+            downloadLink.setProperty("directlink", "FALSE");
+            String filename = br.getRegex("<h3>Downloading <span>(.*?)</span></h3>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?) \\- SlingFile \\- Free File Hosting \\& Online Storage</title>").getMatch(0);
+                if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String filesize = br.getRegex("<td>(.{2,20}) \\| Uploaded").getMatch(0);
+            if (filesize == null) {
+                logger.info("SlingFile: Couldn't find filesize info. Please report this bug to JDownloader Development Team!");
+                logger.info("SlingFile: Continuing...");
+            }
+            downloadLink.setName(filename.trim());
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+            return AvailableStatus.TRUE;
+        } else if (br.getRedirectLocation() != null) {
+            downloadLink.setProperty("directlink", "TRUE");
+            URLConnectionAdapter con = br.openGetConnection(br.getRedirectLocation());
+            downloadLink.setFinalFileName(getFileNameFromHeader(con));
+            downloadLink.setDownloadSize(con.getLongContentLength());
+            return AvailableStatus.TRUE;
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String filesize = br.getRegex("<td>(.{2,20}) \\| Uploaded").getMatch(0);
-        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        String dllink = null;
         requestFileInformation(downloadLink);
-        String waitthat = br.getRegex("Please wait for another (\\d+) minutes to download another file").getMatch(0);
-        if (waitthat != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waitthat) * 60 * 1001l);
-        // int wait = 30;
-        // String waittime =
-        // br.getRegex("\\)\\.innerHTML=\\'(\\d+)\\'").getMatch(0);
-        // if (waittime == null) waittime =
-        // br.getRegex("id=\"dltimer\">(\\d+)</span><br>").getMatch(0);
-        // if (waittime != null) wait = Integer.parseInt(waittime);
-        // sleep(wait * 1001l, downloadLink);
-        if (br.containsHTML("Please wait until the download is complete")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
-        /**
-         * TODO: Not sure if this will always work, maybe its different if
-         * captcha appears after this step
-         */
-        br.postPage(downloadLink.getDownloadURL(), "download=yes");
-        if (br.containsHTML("(api\\.recaptcha\\.net|g>Invalid captcha entered\\. Please try again\\.<)")) {
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.parse();
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
-            rc.setCode(c);
-            if (br.containsHTML("(api\\.recaptcha\\.net|g>Invalid captcha entered\\. Please try again\\.<)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        // traditional downloading
+        if (downloadLink.getStringProperty("directlink") == "FALSE") {
+            String waitthat = br.getRegex("Please wait for another (\\d+) minutes to download another file").getMatch(0);
+            if (waitthat != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waitthat) * 60 * 1001l);
+            // int wait = 30;
+            // String waittime =
+            // br.getRegex("\\)\\.innerHTML=\\'(\\d+)\\'").getMatch(0);
+            // if (waittime == null) waittime =
+            // br.getRegex("id=\"dltimer\">(\\d+)</span><br>").getMatch(0);
+            // if (waittime != null) wait = Integer.parseInt(waittime);
+            // sleep(wait * 1001l, downloadLink);
+            if (br.containsHTML("Please wait until the download is complete")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
+            /**
+             * TODO: Not sure if this will always work, maybe its different if
+             * captcha appears after this step
+             */
+            br.postPage(downloadLink.getDownloadURL(), "download=yes");
+            if (br.containsHTML("(api\\.recaptcha\\.net|g>Invalid captcha entered\\. Please try again\\.<)")) {
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.parse();
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                rc.setCode(c);
+                if (br.containsHTML("(api\\.recaptcha\\.net|g>Invalid captcha entered\\. Please try again\\.<)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            dllink = br.getRegex("(http://sf[0-9\\-].*?.slingfile\\.com/gdl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)('|\")").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("<td valign=\\'middle\\' align=\\'center\\' colspan=\\'2\\'>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String dllink = br.getRegex("(http://sf[0-9\\-].*?.slingfile\\.com/gdl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)('|\")").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("<td valign=\\'middle\\' align=\\'center\\' colspan=\\'2\\'>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // direct link support
+        else if (downloadLink.getStringProperty("directlink") == "TRUE") {
+            dllink = br.getURL();
+        }
+        // error?
+        else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -203,10 +233,22 @@ public class SlingFileCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("<td valign=\\'middle\\' align=\\'center\\' colspan=\\'2\\'>[\t\n\r ]+<a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://sf\\d+\\-\\d+\\.slingfile\\.com/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+        String dllink = null;
+        // traditional downloading
+        if (link.getStringProperty("directlink") == "FALSE") {
+            dllink = br.getRegex("<td valign=\\'middle\\' align=\\'center\\' colspan=\\'2\\'>[\t\n\r ]+<a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://sf\\d+\\-\\d+\\.slingfile\\.com/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        // direct link support
+        else if (link.getStringProperty("directlink") == "TRUE") {
+            dllink = br.getURL();
+        }
+        // error?
+        else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setReadTimeout(2 * 60 * 1000);
