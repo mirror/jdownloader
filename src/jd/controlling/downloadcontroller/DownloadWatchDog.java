@@ -913,7 +913,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     dci.proxy.decreaseActiveDownloads(dci.link.getHost());
                 }
                 unregisterSingleDownloadController(download);
-
             }
 
         }, SingleDownloadController.FINAL_STATE);

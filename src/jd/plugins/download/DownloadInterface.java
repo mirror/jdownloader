@@ -873,6 +873,8 @@ abstract public class DownloadInterface {
 
     public URLConnectionAdapter connect(Browser br) throws Exception {
         /* reset timeouts here, because it can be they got not set yet */
+        setReadTimeout(br.getReadTimeout());
+        setRequestTimeout(br.getConnectTimeout());
         request.setConnectTimeout(getRequestTimeout());
         request.setReadTimeout(getReadTimeout());
         br.setRequest(request);

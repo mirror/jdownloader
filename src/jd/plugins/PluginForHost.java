@@ -710,11 +710,11 @@ public abstract class PluginForHost extends Plugin {
             } finally {
                 try {
                     dl.getConnection().disconnect();
-                } catch (Exception e) {
+                } catch (Throwable e) {
                 }
                 try {
                     br.getHttpConnection().disconnect();
-                } catch (Exception e) {
+                } catch (Throwable e) {
                 }
                 setDownloadInterface(null);
             }
@@ -777,7 +777,7 @@ public abstract class PluginForHost extends Plugin {
                 }
                 try {
                     br.getHttpConnection().disconnect();
-                } catch (Exception e) {
+                } catch (Throwable e) {
                 }
                 setDownloadInterface(null);
             }
@@ -924,14 +924,10 @@ public abstract class PluginForHost extends Plugin {
         return ioPermission;
     }
 
-    public ImageIcon getHosterIcon() {
+    public DomainInfo getDomainInfo() {
         String host = getCustomFavIconURL();
         if (host == null) host = getHost();
-        return DomainInfo.getInstance(host).getFavIcon();
-    }
-
-    public DomainInfo getDomainInfo() {
-        return null;
+        return DomainInfo.getInstance(host);
     }
 
     public boolean hasCaptcha() {

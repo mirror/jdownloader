@@ -163,7 +163,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
 
             @Override
             protected Icon getIcon(Account value) {
-                return JDUtilities.getPluginForHost(value.getHoster()).getHosterIcon();
+                return JDUtilities.getPluginForHost(value.getHoster()).getDomainInfo().getFavIcon();
             }
 
             @Override

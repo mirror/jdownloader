@@ -127,7 +127,7 @@ public class LinkPropertiesDialog extends AbstractDialog<Object> implements Focu
 
         p.add(head(_GUI._.LinkPropertiesDialog_layoutDialogContent_size(SizeFormatter.formatBytes(link.getDownloadSize())), NewTheme.I().getIcon("batch", 16)), "spanx,newline,skip");
 
-        p.add(head(_GUI._.LinkPropertiesDialog_layoutDialogContent_hoster(link.getHost()), link.getDefaultPlugin().getHosterIcon()), "spanx,newline,skip");
+        p.add(head(_GUI._.LinkPropertiesDialog_layoutDialogContent_hoster(link.getHost()), link.getDomainInfo().getFavIcon()), "spanx,newline,skip");
         if (!link.isAvailabilityStatusChecked()) {
             p.add(head(_GUI._.LinkPropertiesDialog_layoutDialogContent_unchecked(), NewTheme.I().getIcon("help", 16)), "spanx,newline,skip");
 

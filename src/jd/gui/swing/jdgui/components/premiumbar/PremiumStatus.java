@@ -239,7 +239,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
                                 continue;
                             }
                             bars[ii].setVisible(true);
-                            bars[ii].setIcon(plugin.getHosterIcon());
+                            bars[ii].setIcon(plugin.getDomainInfo().getFavIcon());
                             bars[ii].setPlugin(plugin);
 
                             if (left == 0) {
