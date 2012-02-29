@@ -81,6 +81,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private static final String                          PROPERTY_ENABLED        = "ENABLED";
     private static final String                          PROPERTY_PWLIST         = "PWLIST";
     private static final String                          PROPERTY_LINKDUPEID     = "LINKDUPEID";
+    private static final String                          PROPERTY_SPEEDLIMIT     = "SPEEDLIMIT";
 
     public static final int                              LINKTYPE_CONTAINER      = 1;
 
@@ -283,6 +284,21 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
     }
 
+    public void setCustomSpeedLimit(int limit) {
+        if (limit == 0) {
+            setProperty(PROPERTY_SPEEDLIMIT, Property.NULL);
+        } else {
+            if (limit < 0) limit = 1;
+            setProperty(PROPERTY_SPEEDLIMIT, limit);
+        }
+        DownloadInterface dli = downloadInstance;
+        if (dli != null) dli.manageCustomSpeed(null);
+    }
+
+    public int getCustomSpeedLimit() {
+        return this.getIntegerProperty(PROPERTY_SPEEDLIMIT, 0);
+    }
+
     public void setPriority(int pr) {
         int priority = 0;
         if (pr >= -1 && pr < 4) {
@@ -331,6 +347,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Anzahl der heruntergeladenen Bytes
      */
     public long getDownloadCurrent() {
+        DownloadInterface dli = downloadInstance;
+        if (dli != null) return dli.getTotaleLinkBytesLoaded();
         return downloadCurrent;
     }
 
@@ -973,8 +991,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return
      */
     public int getPercent() {
-        if (Math.min(downloadCurrent, downloadMax) <= 0) return 0;
-        return (int) (10000 * downloadCurrent / Math.max(1, Math.max(downloadCurrent, downloadMax)));
+        long current = getDownloadCurrent();
+        if (Math.min(current, downloadMax) <= 0) return 0;
+        return (int) (10000 * current / Math.max(1, Math.max(current, downloadMax)));
     }
 
     /**

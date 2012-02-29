@@ -23,6 +23,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedByInterruptException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Vector;
@@ -286,6 +287,7 @@ abstract public class DownloadInterface {
                 connection.setConnectTimeout(getRequestTimeout());
                 ThrottledConnectionManager manager = downloadLink.getDownloadLinkController().getConnectionManager();
                 inputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10));
+                dl.manageCustomSpeed(this);
                 if (manager != null) {
                     manager.addManagedThrottledInputStream(inputStream);
                 }
@@ -429,6 +431,7 @@ abstract public class DownloadInterface {
                 } finally {
                     inputStream = null;
                 }
+                dl.manageCustomSpeed(this);
                 try {
                     if (this.clonedconnection) {
                         /* cloned connection, we can disconnect now */
@@ -470,7 +473,9 @@ abstract public class DownloadInterface {
 
         public int getID() {
             if (id < 0) {
-                id = chunks.indexOf(this);
+                synchronized (chunks) {
+                    id = chunks.indexOf(this);
+                }
             }
             return id;
         }
@@ -613,7 +618,7 @@ abstract public class DownloadInterface {
                             return;
                         }
                         error(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.download_error_message_connectioncopyerror());
-                        if (!this.isExternalyAborted()) logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
+                        if (!this.isExternalyAborted()) logger.severe("ERROR Chunk (connection copy failed) " + getID());
                         return;
                     }
                 } else if (startByte > 0) {
@@ -626,13 +631,13 @@ abstract public class DownloadInterface {
                     }
                     if (connection == null) {
                         error(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.download_error_message_connectioncopyerror());
-                        if (!this.isExternalyAborted()) logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
+                        if (!this.isExternalyAborted()) logger.severe("ERROR Chunk (connection copy failed) " + getID());
                         return;
                     }
 
                     if (startByte > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
                         error(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.download_error_message_rangeheaders());
-                        logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this) + connection.toString());
+                        logger.severe("ERROR Chunk (no range header response)" + getID() + connection.toString());
                         // logger.finest(connection.toString());
                         return;
                     }
@@ -651,7 +656,7 @@ abstract public class DownloadInterface {
                              */
                             return;
                         }
-                        logger.severe("ERROR Chunk (range header parse error)" + chunks.indexOf(this) + connection.toString());
+                        logger.severe("ERROR Chunk (range header parse error)" + getID() + connection.toString());
                         error(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.download_error_message_rangeheaderparseerror() + connection.getHeaderField("Content-Range"));
                         return;
                     } else {
@@ -674,7 +679,7 @@ abstract public class DownloadInterface {
                 setChunkStartet();
                 download();
                 addChunksDownloading(-1);
-                logger.finer("Chunk finished " + chunks.indexOf(this) + " " + getBytesLoaded() + " bytes");
+                logger.finer("Chunk finished " + getID() + " " + getBytesLoaded() + " bytes");
             } finally {
                 setChunkStartet();
                 try {
@@ -719,6 +724,10 @@ abstract public class DownloadInterface {
             }
         }
 
+        public MeteredThrottledInputStream getInputStream() {
+            return inputStream;
+        }
+
     }
 
     public static final int        ERROR_REDIRECTED                 = -1;
@@ -758,28 +767,58 @@ abstract public class DownloadInterface {
 
     protected long                 totaleLinkBytesLoaded            = 0;
 
-    private boolean                waitFlag                         = true;
+    public long getTotaleLinkBytesLoaded() {
+        return totaleLinkBytesLoaded;
+    }
 
-    private boolean                fatalErrorOccured                = false;
+    public void manageCustomSpeed(Chunk chunk) {
+        int customSpeed = this.downloadLink.getCustomSpeedLimit();
+        int chunksInProgress = 0;
+        synchronized (chunks) {
+            for (Chunk c : chunks) {
+                MeteredThrottledInputStream is;
+                if ((is = c.getInputStream()) != null) {
+                    chunksInProgress++;
+                    if (customSpeed <= 0) {
+                        /* no speedlimit or use managed speed */
+                        is.setCustomLimit(customSpeed);
+                    }
+                }
+            }
+            if (customSpeed > 0) {
+                /* use custom */
+                for (Chunk c : chunks) {
+                    MeteredThrottledInputStream is;
+                    if ((is = c.getInputStream()) != null) {
+                        is.setCustomLimit(customSpeed / chunksInProgress);
+                    }
+                }
+            }
+        }
+    }
 
-    private boolean                doFileSizeCheck                  = true;
+    private boolean          waitFlag          = true;
 
-    private Request                request                          = null;
+    private boolean          fatalErrorOccured = false;
 
-    private boolean                fileSizeVerified                 = false;
+    private boolean          doFileSizeCheck   = true;
 
-    private boolean                connected;
+    private Request          request           = null;
 
-    private boolean                firstChunkRangeless;
+    private boolean          fileSizeVerified  = false;
 
-    private int                    chunksStarted                    = 0;
+    private boolean          connected;
 
-    private Browser                browser;
+    private boolean          firstChunkRangeless;
+
+    private int              chunksStarted     = 0;
+
+    private Browser          browser;
 
     /** normal stop of download (eg manually or reconnect request) */
-    private volatile boolean       externalStop                     = false;
+    private volatile boolean externalStop      = false;
 
-    private boolean                resumable                        = false;
+    private boolean          resumable         = false;
 
     public void setFilenameFix(boolean b) {
         this.fixWrongContentDispositionHeader = b;
@@ -984,7 +1023,9 @@ abstract public class DownloadInterface {
      * @param chunk
      */
     protected void addChunk(Chunk chunk) {
-        chunks.add(chunk);
+        synchronized (chunks) {
+            chunks.add(chunk);
+        }
         chunk.startChunk();
     }
 
@@ -1338,41 +1379,55 @@ abstract public class DownloadInterface {
      */
     private void terminate() {
         if (!externalDownloadStop()) logger.severe("A critical Downloaderror occured. Terminate...");
-        synchronized (chunks) {
-            for (Chunk ch : chunks) {
+        int oldSize = -1;
+        ArrayList<Chunk> stopChunks = new ArrayList<Chunk>();
+        while (true) {
+            oldSize = stopChunks.size();
+            synchronized (chunks) {
+                stopChunks = new ArrayList<Chunk>(chunks);
+            }
+            boolean allClosed = true;
+            if (stopChunks.size() != oldSize) {
+                /* new Chunks found in this loop */
+                allClosed = false;
+            }
+            for (Chunk ch : stopChunks) {
                 try {
-                    ch.connection.disconnect();
+                    if (ch.getInputStream() != null) allClosed = false;
+                    ch.closeConnections();
                 } catch (final Throwable e) {
+                    e.printStackTrace();
                 }
                 ch.interrupt();
+            }
+            if (allClosed) break;
+            try {
+                Thread.sleep(200);
+            } catch (final InterruptedException e) {
+                break;
             }
         }
     }
 
     private void waitForChunks() {
         try {
-            int i = 0;
             logger.finer("Wait for chunks");
-            int interval = 150;
             while (chunksInProgress > 0) {
                 synchronized (this) {
                     if (waitFlag) {
                         try {
-                            this.wait(interval);
+                            this.wait();
+                        } catch (final InterruptedException e) {
                         } catch (Exception e) {
                             // logger.log(Level.SEVERE,"Exception occurred",e);
-                            for (Chunk ch : chunks) {
-                                ch.interrupt();
-                            }
+                            terminate();
                             return;
                         }
                     }
                 }
-                i++;
                 waitFlag = true;
-                // checkChunkParts();
-                downloadLink.setDownloadCurrent(totaleLinkBytesLoaded);
             }
+            downloadLink.setDownloadCurrent(totaleLinkBytesLoaded);
         } catch (Throwable e) {
             JDLogger.exception(e);
         }

@@ -229,14 +229,10 @@ public class JDUpdater extends Updater implements Runnable {
                     }
                 }
                 if (hasHostPlugins) {
-
                     HostPluginController.getInstance().init(true);
-
                 }
                 if (hasCrawlPlugins) {
-
                     CrawlerPluginController.getInstance().init(true);
-
                 }
 
             }
