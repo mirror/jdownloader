@@ -179,7 +179,7 @@ public class Rapidshare extends PluginForHost {
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
 
-        Dialog.getInstance().showMessageDialog("Debug 2");
+        Dialog.getInstance().showMessageDialog("Debug 3");
         if (urls == null || urls.length == 0) { return false; }
         try {
             if (Rapidshare.RS_API_WAIT > System.currentTimeMillis()) {
