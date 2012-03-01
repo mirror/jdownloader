@@ -44,10 +44,10 @@ public class OneThousandEbComFolder extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleLink : links)
+        for (final String singleLink : links)
             decryptedLinks.add(createDownloadlink(singleLink));
         if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
+            final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }

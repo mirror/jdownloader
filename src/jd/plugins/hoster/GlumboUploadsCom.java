@@ -429,7 +429,7 @@ public class GlumboUploadsCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             br.getPage(link.getDownloadURL());
             doSomething();
-            doFree(link, true, 0, false);
+            doFree(link, true, -2, false);
         } else {
             dllink = link.getStringProperty("premlink");
             if (dllink != null) {
@@ -531,7 +531,7 @@ public class GlumboUploadsCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1, true);
+        doFree(downloadLink, true, -2, true);
     }
 
     public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
@@ -578,12 +578,9 @@ public class GlumboUploadsCom extends PluginForHost {
                     if (filename == null) {
                         filename = new Regex(BRBEFORE, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
                         if (filename == null) {
-                            filename = new Regex(BRBEFORE, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
+                            filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
                             if (filename == null) {
-                                filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
-                                if (filename == null) {
-                                    filename = new Regex(BRBEFORE, "\\.html\\(\\) \\+ \\'<span>(.*?)</span>").getMatch(0);
-                                }
+                                filename = new Regex(BRBEFORE, "\\.html_code\\'\\)\\.html\\(\\'<a href=\"http://glumbouploads\\.com/[a-z0-9]{12}\">([^<>\"/]+) \\- \\d+").getMatch(0);
                             }
                         }
                     }

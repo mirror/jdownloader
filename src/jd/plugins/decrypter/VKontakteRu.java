@@ -233,7 +233,8 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptPhotoAlbums(ArrayList<DownloadLink> decryptedLinks, String parameter, ProgressController progress) throws IOException {
         br.getPage(parameter);
-        final String[] regexes = { "class=\"photo_album_row\" id=\"(album\\d+_\\d+)\"", "<div class=\\\\\"photo_album_row\\\\\" id=\\\\\"album(\\d+_\\d+)\\\\\"" };
+        /** Photo regexes, last regex is for albums */
+        final String[] regexes = { "class=\"photo_album_row\" id=\"(album\\d+_\\d+)\"", "<div class=\\\\\"photo_album_row\\\\\" id=\\\\\"album(\\d+_\\d+)\\\\\"", "nodrag=\"1\"><div class=\"cont\">[\t\n\r ]+<a href=\"(/album\\d+_\\d+)\"" };
         for (String regex : regexes) {
             String[] photoAlbums = br.getRegex(regex).getColumn(0);
             if (photoAlbums == null || photoAlbums.length == 0) continue;
@@ -269,7 +270,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     offset += 12;
                     br.postPage(postPage, "al=1&offset=" + offset + "&part=1");
                 }
-                String[] photoAlbums = br.getRegex("class=\"photo_album_row\" id=\"album(\\d+_\\d+)\"").getColumn(0);
+                String[] photoAlbums = br.getRegex("class=\"photo(_album)?_row\" id=\"album(\\d+_\\d+)\"").getColumn(1);
                 if (photoAlbums == null || photoAlbums.length == 0) continue;
                 for (String photoAlbum : photoAlbums) {
                     decryptedLinks.add(createDownloadlink("http://vk.com/album" + photoAlbum));

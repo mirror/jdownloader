@@ -139,6 +139,7 @@ public class JumboFilesCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
         // Form um auf "Datei herunterladen" zu klicken
         final Form dlForm = br.getFormbyProperty("name", "F1");
@@ -171,7 +172,7 @@ public class JumboFilesCom extends PluginForHost {
             dllink = new Regex(BRBEFORE, "\'(http://(www\\d+|[a-z0-9]+)\\.jumbofiles\\.com:\\d+/d/[a-z0-9]+/.*?)'\"").getMatch(0);
         }
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
         dl.startDownload();
     }
 
