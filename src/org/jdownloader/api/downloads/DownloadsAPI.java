@@ -10,8 +10,6 @@ public interface DownloadsAPI extends RemoteAPIInterface {
 
     public List<FilePackageAPIStorable> list();
 
-    public DownloadStatusAPIStorable status();
-
     public boolean stop();
 
     public boolean start();

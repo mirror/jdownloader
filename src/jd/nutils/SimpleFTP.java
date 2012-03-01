@@ -55,7 +55,7 @@ import jd.controlling.JDLogger;
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
-import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
+import org.appwork.utils.net.throttledconnection.ThrottledConnectionHandler;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 
 /**
@@ -74,13 +74,13 @@ public class SimpleFTP {
     private String                             dir        = "/";
     private String                             host;
     private Eventsender<FtpListener, FtpEvent> broadcaster;
-    private static ThrottledConnectionManager  cmanager   = null;
+    private static ThrottledConnectionHandler  cmanager   = null;
 
-    public static ThrottledConnectionManager getCmanager() {
+    public static ThrottledConnectionHandler getCmanager() {
         return cmanager;
     }
 
-    public static void setCmanager(ThrottledConnectionManager cmanager) {
+    public static void setCmanager(ThrottledConnectionHandler cmanager) {
         SimpleFTP.cmanager = cmanager;
     }
 
@@ -691,8 +691,8 @@ public class SimpleFTP {
                 /* in case we do resume, reposition the writepointer */
                 fos.seek(resumePosition);
             }
-            ThrottledConnectionManager lcmanager = cmanager;
-            if (lcmanager != null) lcmanager.addManagedThrottledInputStream(input);
+            ThrottledConnectionHandler lcmanager = cmanager;
+            if (lcmanager != null) lcmanager.addThrottledConnection(input);
 
             String response = readLines(new int[] { 150, 125 }, null);
             byte[] buffer = new byte[32767];

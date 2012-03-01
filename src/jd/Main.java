@@ -94,6 +94,7 @@ public class Main {
     static {
         statics();
     }
+
     private static Logger              LOG;
     private static boolean             instanceStarted            = false;
     public static SingleAppInstance    SINGLE_INSTANCE_CONTROLLER = null;
@@ -465,7 +466,7 @@ public class Main {
                         }
                         /* start downloadwatchdog */
                         DownloadWatchDog.getInstance();
-                        SimpleFTP.setCmanager(DownloadWatchDog.getInstance().getConnectionManager());
+                        SimpleFTP.setCmanager(DownloadWatchDog.getInstance().getConnectionHandler());
 
                         boolean doRestartRunninfDownloads = JsonConfig.create(GeneralSettings.class).isAutoRestartDownloadsIfExitWithRunningDownloads() && JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads();
                         if (JsonConfig.create(GeneralSettings.class).isAutoStartDownloadsOnStartupEnabled() || doRestartRunninfDownloads) {
@@ -489,7 +490,6 @@ public class Main {
                             }
                             // Dialog.getInstance().showConfirmDialog(Dialog,
                             // title, message, tmpicon, okOption, cancelOption)
-
                         }
                     }
                 }.start();

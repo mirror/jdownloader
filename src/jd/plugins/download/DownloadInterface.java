@@ -50,7 +50,7 @@ import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
-import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
+import org.appwork.utils.net.throttledconnection.ThrottledConnectionHandler;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
@@ -285,11 +285,11 @@ abstract public class DownloadInterface {
                 chunkinprogress = true;
                 connection.setReadTimeout(getReadTimeout());
                 connection.setConnectTimeout(getRequestTimeout());
-                ThrottledConnectionManager manager = downloadLink.getDownloadLinkController().getConnectionManager();
+                ThrottledConnectionHandler handler = downloadLink.getDownloadLinkController().getConnectionHandler();
                 inputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10));
                 dl.manageCustomSpeed(this);
-                if (manager != null) {
-                    manager.addManagedThrottledInputStream(inputStream);
+                if (handler != null) {
+                    handler.addThrottledConnection(inputStream);
                 }
 
                 int towrite = 0;

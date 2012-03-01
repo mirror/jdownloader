@@ -93,7 +93,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         if (running == 0) {
             ret.put("speed", 0);
         } else {
-            ret.put("speed", DownloadWatchDog.getInstance().getConnectionManager().getIncommingSpeedMeter().getSpeedMeter());
+            ret.put("speed", DownloadWatchDog.getInstance().getConnectionHandler().getSpeedMeter().getSpeedMeter());
         }
         ret.put("pause", DownloadWatchDog.getInstance().isPaused());
 

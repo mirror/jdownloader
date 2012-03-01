@@ -55,7 +55,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
-import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
+import org.appwork.utils.net.throttledconnection.SimpleThrottledConnectionHandler;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -122,7 +122,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private AtomicInteger                                              activeDownloads       = new AtomicInteger(0);
 
     private StateMachine                                               stateMachine          = null;
-    private final ThrottledConnectionManager                           connectionManager;
+    private SimpleThrottledConnectionHandler                           connectionHandler     = null;
     private int                                                        lastReconnectCounter  = 0;
     private GeneralSettings                                            config;
 
@@ -139,12 +139,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private DownloadWatchDog() {
         config = JsonConfig.create(GeneralSettings.class);
 
-        this.connectionManager = new ThrottledConnectionManager();
-        this.connectionManager.setIncommingBandwidthLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
+        this.connectionHandler = new SimpleThrottledConnectionHandler();
+        this.connectionHandler.setLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
         org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
 
             public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
-                connectionManager.setIncommingBandwidthLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
+                connectionHandler.setLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
             }
 
             public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
@@ -156,7 +156,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
 
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                connectionManager.setIncommingBandwidthLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
+                connectionHandler.setLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
             }
         }, false);
 
@@ -356,8 +356,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * 
      * @return
      */
-    public ThrottledConnectionManager getConnectionManager() {
-        return this.connectionManager;
+    public SimpleThrottledConnectionHandler getConnectionHandler() {
+        return this.connectionHandler;
     }
 
     /**
@@ -881,8 +881,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 /* throw start event */
                 DownloadWatchDog.LOG.info("DownloadWatchDog: start");
                 /* start watchdogthread */
-                connectionManager.getIncommingSpeedMeter().resetSpeedMeter();
-                connectionManager.getOutgoingSpeedMeter().resetSpeedMeter();
                 startWatchDogThread();
             }
         }, true);
@@ -896,7 +894,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      */
     private void activateSingleDownloadController(final DownloadControlInfo dci) {
         DownloadWatchDog.LOG.info("Start new Download: " + dci.link.getHost() + ":" + dci.link.getName() + ":" + dci.proxy);
-        final SingleDownloadController download = new SingleDownloadController(dci.link, dci.account, dci.proxy, this.connectionManager);
+        final SingleDownloadController download = new SingleDownloadController(dci.link, dci.account, dci.proxy, this.connectionHandler);
         if (dci.byPassSimultanDownloadNum == false && dci.proxy != null) {
             /*
              * increase Counter for this Host only in case it is handled by

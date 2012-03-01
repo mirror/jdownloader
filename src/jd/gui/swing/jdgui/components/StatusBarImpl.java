@@ -204,7 +204,7 @@ public class StatusBarImpl extends JPanel {
         Timer timer = new Timer(1000, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                statusLabel.setText(_GUI._.BottomBar_actionPerformed_running_downloads(DownloadWatchDog.getInstance().getActiveDownloads(), DownloadWatchDog.getInstance().getConnectionManager().getIncommingConnections()));
+                statusLabel.setText(_GUI._.BottomBar_actionPerformed_running_downloads(DownloadWatchDog.getInstance().getActiveDownloads(), DownloadWatchDog.getInstance().getConnectionHandler().size()));
 
             }
         });

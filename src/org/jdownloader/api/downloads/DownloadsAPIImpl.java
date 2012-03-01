@@ -9,8 +9,6 @@ import jd.controlling.reconnect.ReconnectPluginController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.settings.GeneralSettings;
-
 public class DownloadsAPIImpl implements DownloadsAPI {
 
     public List<FilePackageAPIStorable> list() {
@@ -33,10 +31,6 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         } finally {
             dlc.readUnlock(b);
         }
-    }
-
-    public DownloadStatusAPIStorable status() {
-        return new DownloadStatusAPIStorable();
     }
 
     public boolean stop() {

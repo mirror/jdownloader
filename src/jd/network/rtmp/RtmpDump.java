@@ -19,7 +19,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.throttledconnection.ThrottledConnection;
-import org.appwork.utils.net.throttledconnection.ThrottledConnectionManager;
+import org.appwork.utils.net.throttledconnection.ThrottledConnectionHandler;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.nativ.NativeProcess;
 import org.jdownloader.translate._JDT;
@@ -79,20 +79,8 @@ public class RtmpDump extends RTMPDownload {
         }
         if (!new File(RTMPDUMP).exists()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " not found!"); }
         final ThrottledConnection tcon = new ThrottledConnection() {
-            private long last = 0l;
-
-            public int getCustomLimit() {
-                return 0;
-            }
-
-            public void setCustomLimit(final int kpsLimit) {
-            }
-
-            public void setManagedLimit(final int kpsLimit) {
-            }
-
-            public void setManager(final ThrottledConnectionManager manager) {
-            }
+            private long                       last = 0l;
+            private ThrottledConnectionHandler handler;
 
             public long transferedSinceLastCall() {
                 final long ret = BYTESLOADED - last;
@@ -104,13 +92,28 @@ public class RtmpDump extends RTMPDownload {
                 return BYTESLOADED;
             }
 
+            public ThrottledConnectionHandler getHandler() {
+                return handler;
+            }
+
+            public int getLimit() {
+                return 0;
+            }
+
+            public void setHandler(ThrottledConnectionHandler handler) {
+                this.handler = handler;
+            }
+
+            public void setLimit(int kpsLimit) {
+            }
+
             public int getManagedLimit() {
                 return 0;
             }
 
         };
         try {
-            DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputConnection(tcon);
+            DownloadWatchDog.getInstance().getConnectionHandler().addThrottledConnection(tcon);
             addChunksDownloading(1);
             CHUNK = new Chunk(0, 0, null, null) {
                 @Override
@@ -239,7 +242,7 @@ public class RtmpDump extends RTMPDownload {
             downloadLink.setDownloadInstance(null);
             downloadLink.getLinkStatus().setStatusText(null);
             CHUNK.setInProgress(false);
-            DownloadWatchDog.getInstance().getConnectionManager().removeManagedThrottledInputConnection(tcon);
+            DownloadWatchDog.getInstance().getConnectionHandler().removeThrottledConnection(tcon);
         }
     }
 }

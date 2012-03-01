@@ -16,7 +16,6 @@
 
 package jd.controlling.downloadcontroller;
 
-
 /**
  * Contains all needful information about the downloads
  * 
@@ -30,17 +29,17 @@ public class DownloadInformations {
         return INSTANCE;
     }
 
-    private final Object UPDATELOCK = new Object();
-    private long lastUpdate = 0;
+    private final Object UPDATELOCK          = new Object();
+    private long         lastUpdate          = 0;
 
-    private long totalDownloadSize = 0;
-    private long currentDownloadSize = 0;
-    private int packages = 0;
-    private int downloadLinks = 0;
-    private int disabledDownloads = 0;
-    private int runningDownloads = 0;
-    private int finishedDownloads = 0;
-    private int duplicateDownloads = 0;
+    private long         totalDownloadSize   = 0;
+    private long         currentDownloadSize = 0;
+    private int          packages            = 0;
+    private int          downloadLinks       = 0;
+    private int          disabledDownloads   = 0;
+    private int          runningDownloads    = 0;
+    private int          finishedDownloads   = 0;
+    private int          duplicateDownloads  = 0;
 
     private DownloadInformations() {
     }
@@ -146,7 +145,7 @@ public class DownloadInformations {
 
     public long getETA() {
         long etanum = 0;
-        if (DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage() > 1024) etanum = (getTotalDownloadSize() - getCurrentDownloadSize()) / DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage();
+        if (DownloadWatchDog.getInstance().getConnectionHandler().getSpeed() > 1024) etanum = (getTotalDownloadSize() - getCurrentDownloadSize()) / DownloadWatchDog.getInstance().getConnectionHandler().getSpeed();
         return etanum;
     }
 

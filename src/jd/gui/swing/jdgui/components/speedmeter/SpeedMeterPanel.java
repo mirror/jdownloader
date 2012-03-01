@@ -104,7 +104,7 @@ public class SpeedMeterPanel extends Graph {
 
     @Override
     public int getValue() {
-        return DownloadWatchDog.getInstance().getConnectionManager().getIncommingBandwidthUsage();
+        return DownloadWatchDog.getInstance().getConnectionHandler().getSpeed();
     }
 
 }
