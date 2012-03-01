@@ -50,6 +50,8 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.swing.dialog.Dialog;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "https?://[\\w\\.]*?rapidshare\\.com/(files/\\d+/[^\"\r\n ]+|\\#\\!download(\\||%7C)\\d+.*?(\\||%7C)\\d+(\\||%7C).+?($|(\\||%7C)\\d+))" }, flags = { 2 })
 public class Rapidshare extends PluginForHost {
 
@@ -176,6 +178,8 @@ public class Rapidshare extends PluginForHost {
      */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
+
+        Dialog.getInstance().showMessageDialog("Debug 1");
         if (urls == null || urls.length == 0) { return false; }
         try {
             if (Rapidshare.RS_API_WAIT > System.currentTimeMillis()) {
