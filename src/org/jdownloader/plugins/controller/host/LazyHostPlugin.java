@@ -43,8 +43,8 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
     private boolean premium;
 
-    public LazyHostPlugin(AbstractHostPlugin ap) {
-        super(ap.getPattern(), JD_PLUGINS_HOSTER + ap.getClassname(), ap.getDisplayName(), ap.getVersion());
+    public LazyHostPlugin(AbstractHostPlugin ap, Class<PluginForHost> class1) {
+        super(ap.getPattern(), JD_PLUGINS_HOSTER + ap.getClassname(), ap.getDisplayName(), ap.getVersion(), class1);
         premiumUrl = ap.getPremiumUrl();
         premium = ap.isPremium();
         hasConfig = ap.isHasConfig();

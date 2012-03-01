@@ -90,7 +90,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         }, new ArrayList<AbstractCrawlerPlugin>());
         List<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>(l.size());
         for (AbstractCrawlerPlugin ap : l) {
-            ret.add(new LazyCrawlerPlugin(ap));
+            ret.add(new LazyCrawlerPlugin(ap, null));
         }
         return ret;
     }
@@ -121,8 +121,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                             ap.setDisplayName(names[i]);
                             ap.setPattern(patterns[i]);
                             ap.setVersion(revision);
-                            LazyCrawlerPlugin l = new LazyCrawlerPlugin(ap);
-                            // l.getPrototype();
+                            LazyCrawlerPlugin l = new LazyCrawlerPlugin(ap, c.getClazz());
+                            l.getPrototype();
                             ret.add(l);
                             save.add(ap);
                             Log.L.finest("@CrawlerPlugin ok:" + simpleName + " " + names[i]);

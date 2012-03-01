@@ -20,8 +20,9 @@ public abstract class LazyPlugin<T extends Plugin> {
     private Object[]              constructorParameters;
     protected T                   prototypeInstance;
 
-    public LazyPlugin(String patternString, String classname, String displayName, long version) {
+    public LazyPlugin(String patternString, String classname, String displayName, long version, Class<T> class1) {
         pattern = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE);
+        pluginClass = class1;
         this.classname = classname;
         this.displayName = displayName;
         this.version = version;
@@ -58,14 +59,16 @@ public abstract class LazyPlugin<T extends Plugin> {
         return prototypeInstance;
     }
 
-    public T newInstance(Class<T> clazz) {
-        try {
-            getConstructor(clazz);
-            return constructor.newInstance(constructorParameters);
-        } catch (final Throwable e) {
-            throw new WTFException(e);
-        }
-    }
+    // public T newInstance(Class<T> clazz) {
+    // try {
+    // getConstructor(clazz);
+    // T inst = constructor.newInstance(constructorParameters);
+    //
+    // return inst;
+    // } catch (final Throwable e) {
+    // throw new WTFException(e);
+    // }
+    // }
 
     public T newInstance() {
         try {
@@ -104,7 +107,7 @@ public abstract class LazyPlugin<T extends Plugin> {
         synchronized (this) {
             if (pluginClass != null) return pluginClass;
             try {
-                pluginClass = (Class<T>) PluginClassLoader.getInstance().loadClass(classname);
+                pluginClass = (Class<T>) PluginClassLoader.getInstance().getChild().loadClass(classname);
 
             } catch (Throwable e) {
                 e.printStackTrace();

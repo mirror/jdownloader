@@ -8,8 +8,8 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
 
     private static final String JD_PLUGINS_DECRYPTER = "jd.plugins.decrypter.";
 
-    public LazyCrawlerPlugin(AbstractCrawlerPlugin ap) {
-        super(ap.getPattern(), JD_PLUGINS_DECRYPTER + ap.getClassname(), ap.getDisplayName(), ap.getVersion());
+    public LazyCrawlerPlugin(AbstractCrawlerPlugin ap, Class<PluginForDecrypt> class1) {
+        super(ap.getPattern(), JD_PLUGINS_DECRYPTER + ap.getClassname(), ap.getDisplayName(), ap.getVersion(), class1);
     }
 
     @Override
