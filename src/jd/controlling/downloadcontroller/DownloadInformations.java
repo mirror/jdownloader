@@ -145,7 +145,7 @@ public class DownloadInformations {
 
     public long getETA() {
         long etanum = 0;
-        if (DownloadWatchDog.getInstance().getConnectionHandler().getSpeed() > 1024) etanum = (getTotalDownloadSize() - getCurrentDownloadSize()) / DownloadWatchDog.getInstance().getConnectionHandler().getSpeed();
+        if (DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed() > 1024) etanum = (getTotalDownloadSize() - getCurrentDownloadSize()) / DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed();
         return etanum;
     }
 

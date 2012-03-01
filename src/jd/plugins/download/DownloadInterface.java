@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 
 import jd.controlling.GarbageController;
 import jd.controlling.JDLogger;
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -50,7 +51,6 @@ import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
-import org.appwork.utils.net.throttledconnection.ThrottledConnectionHandler;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
@@ -149,11 +149,6 @@ abstract public class DownloadInterface {
 
         public void setInProgress(boolean b) {
             chunkinprogress = b;
-        }
-
-        public long getSpeed() {
-            if (inputStream == null) return 0;
-            return inputStream.getSpeedMeter();
         }
 
         private void setChunkStartet() {
@@ -285,13 +280,8 @@ abstract public class DownloadInterface {
                 chunkinprogress = true;
                 connection.setReadTimeout(getReadTimeout());
                 connection.setConnectTimeout(getRequestTimeout());
-                ThrottledConnectionHandler handler = downloadLink.getDownloadLinkController().getConnectionHandler();
                 inputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10));
-                dl.manageCustomSpeed(this);
-                if (handler != null) {
-                    handler.addThrottledConnection(inputStream);
-                }
-
+                connectionHandler.addThrottledConnection(inputStream);
                 int towrite = 0;
                 int read = 0;
                 boolean reachedEOF = false;
@@ -431,7 +421,6 @@ abstract public class DownloadInterface {
                 } finally {
                     inputStream = null;
                 }
-                dl.manageCustomSpeed(this);
                 try {
                     if (this.clonedconnection) {
                         /* cloned connection, we can disconnect now */
@@ -730,71 +719,46 @@ abstract public class DownloadInterface {
 
     }
 
-    public static final int        ERROR_REDIRECTED                 = -1;
+    public static final int                   ERROR_REDIRECTED                 = -1;
 
-    public Logger                  logger                           = null;
+    public Logger                             logger                           = null;
 
-    protected int                  chunkNum                         = 1;
+    protected int                             chunkNum                         = 1;
 
-    private Vector<Chunk>          chunks                           = new Vector<Chunk>();
+    private Vector<Chunk>                     chunks                           = new Vector<Chunk>();
+    private ManagedThrottledConnectionHandler connectionHandler                = null;
 
-    private int                    chunksDownloading                = 0;
+    private int                               chunksDownloading                = 0;
 
-    private int                    chunksInProgress                 = 0;
+    private int                               chunksInProgress                 = 0;
 
-    protected URLConnectionAdapter connection;
+    protected URLConnectionAdapter            connection;
 
-    protected DownloadLink         downloadLink;
+    protected DownloadLink                    downloadLink;
 
-    private Vector<Integer>        errors                           = new Vector<Integer>();
+    private Vector<Integer>                   errors                           = new Vector<Integer>();
 
-    private Vector<Exception>      exceptions                       = null;
+    private Vector<Exception>                 exceptions                       = null;
 
-    protected long                 fileSize                         = -1;
+    protected long                            fileSize                         = -1;
 
-    protected LinkStatus           linkStatus;
+    protected LinkStatus                      linkStatus;
 
-    protected PluginForHost        plugin;
+    protected PluginForHost                   plugin;
 
-    private int                    readTimeout                      = 100000;
-    private int                    requestTimeout                   = 100000;
+    private int                               readTimeout                      = 100000;
+    private int                               requestTimeout                   = 100000;
 
-    private boolean                resume                           = false;
+    private boolean                           resume                           = false;
 
-    private boolean                fixWrongContentDispositionHeader = false;
+    private boolean                           fixWrongContentDispositionHeader = false;
 
-    private boolean                allowFilenameFromURL             = false;
+    private boolean                           allowFilenameFromURL             = false;
 
-    protected long                 totaleLinkBytesLoaded            = 0;
+    protected long                            totaleLinkBytesLoaded            = 0;
 
     public long getTotaleLinkBytesLoaded() {
         return totaleLinkBytesLoaded;
-    }
-
-    public void manageCustomSpeed(Chunk chunk) {
-        int customSpeed = this.downloadLink.getCustomSpeedLimit();
-        int chunksInProgress = 0;
-        synchronized (chunks) {
-            for (Chunk c : chunks) {
-                MeteredThrottledInputStream is;
-                if ((is = c.getInputStream()) != null) {
-                    chunksInProgress++;
-                    if (customSpeed <= 0) {
-                        /* no speedlimit or use managed speed */
-                        // is.setCustomLimit(customSpeed);
-                    }
-                }
-            }
-            if (customSpeed > 0) {
-                /* use custom */
-                for (Chunk c : chunks) {
-                    MeteredThrottledInputStream is;
-                    if ((is = c.getInputStream()) != null) {
-                        // is.setCustomLimit(customSpeed / chunksInProgress);
-                    }
-                }
-            }
-        }
     }
 
     private boolean          waitFlag          = true;
@@ -846,6 +810,15 @@ abstract public class DownloadInterface {
         downloadLink.setDownloadInstance(this);
         requestTimeout = JsonConfig.create(GeneralSettings.class).getHttpConnectTimeout();
         readTimeout = JsonConfig.create(GeneralSettings.class).getHttpReadTimeout();
+        connectionHandler = new ManagedThrottledConnectionHandler(downloadLink);
+    }
+
+    public ManagedThrottledConnectionHandler getManagedConnetionHandler() {
+        return connectionHandler;
+    }
+
+    public int getSpeed() {
+        return connectionHandler.getSpeed();
     }
 
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
@@ -1349,6 +1322,7 @@ abstract public class DownloadInterface {
                 return false;
             }
             if (preDownloadCheckFailed(downloadLink)) return false;
+            downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(connectionHandler);
             setupChunks();
             waitForChunks();
             onChunksReady();
@@ -1362,6 +1336,7 @@ abstract public class DownloadInterface {
             handleErrors();
             return false;
         } finally {
+            downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(connectionHandler);
             linkStatus.removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
                 this.connection.disconnect();

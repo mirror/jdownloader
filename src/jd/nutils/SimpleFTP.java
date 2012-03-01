@@ -74,14 +74,14 @@ public class SimpleFTP {
     private String                             dir        = "/";
     private String                             host;
     private Eventsender<FtpListener, FtpEvent> broadcaster;
-    private static ThrottledConnectionHandler  cmanager   = null;
+    private ThrottledConnectionHandler         cmanager   = null;
 
-    public static ThrottledConnectionHandler getCmanager() {
+    public ThrottledConnectionHandler getCmanager() {
         return cmanager;
     }
 
-    public static void setCmanager(ThrottledConnectionHandler cmanager) {
-        SimpleFTP.cmanager = cmanager;
+    public void setCmanager(ThrottledConnectionHandler cmanager) {
+        this.cmanager = cmanager;
     }
 
     public Eventsender<FtpListener, FtpEvent> getBroadcaster() {

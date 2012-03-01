@@ -70,7 +70,7 @@ public class TrayIconTooltip extends JWindowTooltip {
         lblDlRunning.setText(String.valueOf(ds.getRunningDownloads()));
         lblDlFinished.setText(String.valueOf(ds.getFinishedDownloads()));
         lblDlTotal.setText(String.valueOf(ds.getDownloadCount()));
-        lblSpeed.setText(Formatter.formatReadable(DownloadWatchDog.getInstance().getConnectionHandler().getSpeed()) + "/s");
+        lblSpeed.setText(Formatter.formatReadable(DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeed()) + "/s");
 
         lblProgress.setText(Formatter.formatFilesize(ds.getCurrentDownloadSize(), 0) + " / " + Formatter.formatFilesize(ds.getTotalDownloadSize(), 0));
         prgTotal.setMaximum(ds.getTotalDownloadSize());

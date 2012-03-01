@@ -155,13 +155,13 @@ public class Ftp extends PluginForHost {
             downloadLink.setDownloadInstance(dl);
             dl.addChunksDownloading(1);
             Chunk ch = dl.new Chunk(0, 0, null, null) {
-                @Override
-                public long getSpeed() {
-                    return speed;
-                }
             };
             ch.setInProgress(true);
             dl.getChunks().add(ch);
+            try {
+                ftp.setCmanager(dl.getManagedConnetionHandler());
+            } catch (final Throwable e) {
+            }
             downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
                 if (oldStyle()) {

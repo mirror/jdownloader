@@ -46,7 +46,6 @@ import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.ext.security.JSPermissionRestricter;
-import jd.nutils.SimpleFTP;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -466,7 +465,6 @@ public class Main {
                         }
                         /* start downloadwatchdog */
                         DownloadWatchDog.getInstance();
-                        SimpleFTP.setCmanager(DownloadWatchDog.getInstance().getConnectionHandler());
 
                         boolean doRestartRunninfDownloads = JsonConfig.create(GeneralSettings.class).isAutoRestartDownloadsIfExitWithRunningDownloads() && JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads();
                         if (JsonConfig.create(GeneralSettings.class).isAutoStartDownloadsOnStartupEnabled() || doRestartRunninfDownloads) {

@@ -41,7 +41,6 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.http.Browser;
 import jd.nutils.io.JDIO;
 import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
@@ -375,16 +374,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @return Downloadgeschwindigkeit in bytes/sekunde
      */
     public long getDownloadSpeed() {
-        if (!getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) return 0;
-        long currspeed = 0;
         DownloadInterface dli = getDownloadInstance();
-        if (dli == null) return 0;
-        synchronized (dli.getChunks()) {
-            for (Chunk ch : dli.getChunks()) {
-                if (ch.inProgress()) currspeed += ch.getSpeed();
-            }
-        }
-        return currspeed;
+        if (dli == null || !getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) return 0;
+        return dli.getSpeed();
     }
 
     /**

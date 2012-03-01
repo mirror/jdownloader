@@ -47,7 +47,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.throttledconnection.ThrottledConnectionHandler;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
@@ -80,10 +79,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
 
     private IOPermission                    ioP               = null;
 
-    private ThrottledConnectionHandler      connectionManager = null;
+    private DownloadSpeedManager            connectionHandler = null;
 
-    public ThrottledConnectionHandler getConnectionHandler() {
-        return connectionManager;
+    public DownloadSpeedManager getConnectionHandler() {
+        return connectionHandler;
     }
 
     public static final org.appwork.controlling.State IDLE_STATE    = new org.appwork.controlling.State("IDLE");
@@ -114,13 +113,13 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         this(dlink, account, null, null);
     }
 
-    public SingleDownloadController(DownloadLink dlink, Account account, ThrottledConnectionHandler cmanager) {
+    public SingleDownloadController(DownloadLink dlink, Account account, DownloadSpeedManager cmanager) {
         this(dlink, account, null, cmanager);
     }
 
-    public SingleDownloadController(DownloadLink dlink, Account account, ProxyInfo proxy, ThrottledConnectionHandler manager) {
+    public SingleDownloadController(DownloadLink dlink, Account account, ProxyInfo proxy, DownloadSpeedManager manager) {
         super("JD-StartDownloads");
-        this.connectionManager = manager;
+        this.connectionHandler = manager;
         stateMachine = new StateMachine(this, IDLE_STATE, FINAL_STATE);
         stateMonitor = new StateMonitor(stateMachine);
         downloadLink = dlink;

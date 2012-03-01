@@ -206,10 +206,6 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
     public void waitForDownloadToFinish() throws Exception {
         jdds.getDownloadInterface().addChunksDownloading(1);
         Chunk ch = jdds.getDownloadInterface().new Chunk(0, 0, null, null) {
-            @Override
-            public long getSpeed() {
-                return (long) jdds.getWatchAsYouDownloadSession().getSeekableConnectionFile().getTotalFileReadStatistics().getTotalAverageDownloadSpeedProvider().getDownloadSpeed_KiBps() * 1024;
-            }
 
             /*
              * @Override public long getBytesLoaded() { return totalDownload; }

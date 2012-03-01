@@ -7,7 +7,6 @@ import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
 import java.lang.reflect.Field;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -28,7 +27,6 @@ public class RtmpDump extends RTMPDownload {
 
     private Chunk             CHUNK;
     private long              BYTESLOADED = 0l;
-    private long              SPEED       = 0l;
     private int               PID         = -1;
     private String            RTMPDUMP;
     private NativeProcess     NP;
@@ -79,14 +77,8 @@ public class RtmpDump extends RTMPDownload {
         }
         if (!new File(RTMPDUMP).exists()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " not found!"); }
         final ThrottledConnection tcon = new ThrottledConnection() {
-            private long                       last = 0l;
-            private ThrottledConnectionHandler handler;
 
-            public long transferedSinceLastCall() {
-                final long ret = BYTESLOADED - last;
-                last = BYTESLOADED;
-                return ret;
-            }
+            private ThrottledConnectionHandler handler;
 
             public long transfered() {
                 return BYTESLOADED;
@@ -107,19 +99,12 @@ public class RtmpDump extends RTMPDownload {
             public void setLimit(int kpsLimit) {
             }
 
-            public int getManagedLimit() {
-                return 0;
-            }
-
         };
         try {
-            DownloadWatchDog.getInstance().getConnectionHandler().addThrottledConnection(tcon);
+            getManagedConnetionHandler().addThrottledConnection(tcon);
             addChunksDownloading(1);
             CHUNK = new Chunk(0, 0, null, null) {
-                @Override
-                public long getSpeed() {
-                    return SPEED;
-                }
+
             };
             CHUNK.setInProgress(true);
             getChunks().add(CHUNK);
@@ -133,7 +118,6 @@ public class RtmpDump extends RTMPDownload {
             }
             String line = "", error = "";
             long iSize = 0;
-            long before = 0;
             long lastTime = System.currentTimeMillis();
 
             String cmd = rtmpConnection.getCommandLineParameter();
@@ -197,9 +181,6 @@ public class RtmpDump extends RTMPDownload {
                                 sizeCalulateBuffer++;
                             }
                             if (System.currentTimeMillis() - lastTime > 1000) {
-                                SPEED = (BYTESLOADED - before) / (System.currentTimeMillis() - lastTime) * 1000l;
-                                lastTime = System.currentTimeMillis();
-                                before = BYTESLOADED;
                                 downloadLink.setChunksProgress(new long[] { BYTESLOADED });
                             }
                         }
@@ -242,7 +223,7 @@ public class RtmpDump extends RTMPDownload {
             downloadLink.setDownloadInstance(null);
             downloadLink.getLinkStatus().setStatusText(null);
             CHUNK.setInProgress(false);
-            DownloadWatchDog.getInstance().getConnectionHandler().removeThrottledConnection(tcon);
+            getManagedConnetionHandler().removeThrottledConnection(tcon);
         }
     }
 }

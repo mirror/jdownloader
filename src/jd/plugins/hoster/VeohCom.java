@@ -20,6 +20,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.SocketException;
 import java.net.URL;
 import java.nio.channels.AsynchronousCloseException;
@@ -50,20 +51,19 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veoh.com" }, urls = { "http://(www\\.)?veoh.com/(browse/videos/category/.*?/)?watch/[A-Za-z0-9]+" }, flags = { 0 })
 public class VeohCom extends PluginForHost {
-    private static final String         APIKEY          = "NEQzRTQyRUMtRjEwQy00MTcyLUExNzYtRDMwQjQ2OEE2OTcy";
-    private URLConnectionAdapter        DL;
-    private byte[]                      IV;
-    private MeteredThrottledInputStream INPUTSTREAM;
-    private byte[]                      BUFFER;
-    private long                        BYTESLOADED;
-    private long                        BYTES2DO        = -1;
-    private BufferedOutputStream        FILEOUT;
-    private boolean                     CONNECTIONCLOSE = false;
-    private int                         FAILCOUNTER     = 0;
+    private static final String  APIKEY          = "NEQzRTQyRUMtRjEwQy00MTcyLUExNzYtRDMwQjQ2OEE2OTcy";
+    private URLConnectionAdapter DL;
+    private byte[]               IV;
+    private InputStream          INPUTSTREAM;
+    private byte[]               BUFFER;
+    private long                 BYTESLOADED;
+    private long                 BYTES2DO        = -1;
+    private BufferedOutputStream FILEOUT;
+    private boolean              CONNECTIONCLOSE = false;
+    private int                  FAILCOUNTER     = 0;
 
     public VeohCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -224,8 +224,10 @@ public class VeohCom extends PluginForHost {
                     long partSize = DL.getLongContentLength();
                     try {
                         INPUTSTREAM = new org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream(DL.getInputStream(), new org.appwork.utils.speedmeter.AverageSpeedMeter(10));
-                        /* add inputstream to connectionmanager */
-                        downloadLink.getDownloadLinkController().getConnectionHandler().addThrottledConnection(INPUTSTREAM);
+                        /*
+                         * TODO: add this inputstream to this downloads
+                         * ManagedThrottledConnectionManager
+                         */
                     } catch (final Throwable e) {
                         /* 0.95xx comp */
                     }
@@ -291,12 +293,6 @@ public class VeohCom extends PluginForHost {
                         try {
                             INPUTSTREAM.close();
                         } catch (final Throwable e) {
-                        }
-                        try {
-                            /* remove inputstream from connectionmanager */
-                            downloadLink.getDownloadLinkController().getConnectionHandler().removeThrottledConnection(INPUTSTREAM);
-                        } catch (final Throwable e) {
-                            /* 0.95xx comp */
                         }
                     }
                 }
