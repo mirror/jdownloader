@@ -303,7 +303,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
 
         if (classLoader == null) {
             if (jarPath == null || !jarPath.endsWith(".jar")) {
-                Log.L.info("Use Sys Classloader");
+
                 classLoader = LazyExtension.class.getClassLoader();
             } else {
                 // jared cache loader

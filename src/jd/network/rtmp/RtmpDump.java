@@ -104,6 +104,10 @@ public class RtmpDump extends RTMPDownload {
                 return BYTESLOADED;
             }
 
+            public int getManagedLimit() {
+                return 0;
+            }
+
         };
         try {
             DownloadWatchDog.getInstance().getConnectionManager().addManagedThrottledInputConnection(tcon);
