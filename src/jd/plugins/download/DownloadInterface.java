@@ -781,7 +781,7 @@ abstract public class DownloadInterface {
                     chunksInProgress++;
                     if (customSpeed <= 0) {
                         /* no speedlimit or use managed speed */
-                        is.setCustomLimit(customSpeed);
+                        // is.setCustomLimit(customSpeed);
                     }
                 }
             }
@@ -790,7 +790,7 @@ abstract public class DownloadInterface {
                 for (Chunk c : chunks) {
                     MeteredThrottledInputStream is;
                     if ((is = c.getInputStream()) != null) {
-                        is.setCustomLimit(customSpeed / chunksInProgress);
+                        // is.setCustomLimit(customSpeed / chunksInProgress);
                     }
                 }
             }

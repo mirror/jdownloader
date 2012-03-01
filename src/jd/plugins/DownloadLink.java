@@ -61,7 +61,7 @@ import org.jdownloader.settings.GeneralSettings;
  * 
  * @author astaldo
  */
-public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink>, AbstractPackageChildrenNode<FilePackage>, CheckableLink {
+public class DownloadLink extends Property implements Serializable, AbstractPackageChildrenNode<FilePackage>, CheckableLink {
 
     public static enum AvailableStatus {
         UNCHECKED,
@@ -291,8 +291,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             if (limit < 0) limit = 1;
             setProperty(PROPERTY_SPEEDLIMIT, limit);
         }
-        DownloadInterface dli = downloadInstance;
-        if (dli != null) dli.manageCustomSpeed(null);
+        // DownloadInterface dli = downloadInstance;
+        // if (dli != null) dli.manageCustomSpeed(null);
     }
 
     public int getCustomSpeedLimit() {
@@ -309,10 +309,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         } else {
             this.setProperty(PROPERTY_PRIORITY, priority);
         }
-    }
-
-    public int compareTo(DownloadLink o) {
-        return this.getDownloadURL().compareTo(o.getDownloadURL());
     }
 
     /**
@@ -827,7 +823,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         if (!isEnabled) {
             setAborted(true);
         }
-
         if (isEnabled == true) {
             setProperty(PROPERTY_ENABLED, Property.NULL);
         } else {

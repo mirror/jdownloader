@@ -108,7 +108,6 @@ public abstract class LazyPlugin<T extends Plugin> {
             if (pluginClass != null) return pluginClass;
             try {
                 pluginClass = (Class<T>) PluginClassLoader.getInstance().getChild().loadClass(classname);
-
             } catch (Throwable e) {
                 e.printStackTrace();
                 throw new WTFException(e);
