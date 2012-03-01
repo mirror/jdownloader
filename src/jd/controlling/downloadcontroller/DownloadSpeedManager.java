@@ -149,7 +149,7 @@ public class DownloadSpeedManager {
                              * connections
                              */
                             left--;
-                            System.out.println(helper.currentLimit);
+                            // System.out.println(helper.currentLimit);
                             limitLeft -= helper.currentLimit;
                         }
                         /* assign new speed limits to each connection */

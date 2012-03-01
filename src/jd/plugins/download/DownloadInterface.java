@@ -1322,7 +1322,10 @@ abstract public class DownloadInterface {
                 return false;
             }
             if (preDownloadCheckFailed(downloadLink)) return false;
-            downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(connectionHandler);
+            try {
+                downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(connectionHandler);
+            } catch (final Throwable e) {
+            }
             setupChunks();
             waitForChunks();
             onChunksReady();
@@ -1336,7 +1339,10 @@ abstract public class DownloadInterface {
             handleErrors();
             return false;
         } finally {
-            downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(connectionHandler);
+            try {
+                downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(connectionHandler);
+            } catch (final Throwable e) {
+            }
             linkStatus.removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
                 this.connection.disconnect();

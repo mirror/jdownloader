@@ -716,6 +716,10 @@ public abstract class PluginForHost extends Plugin {
                     br.getHttpConnection().disconnect();
                 } catch (Throwable e) {
                 }
+                try {
+                    downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(dl.getManagedConnetionHandler());
+                } catch (final Throwable e) {
+                }
                 setDownloadInterface(null);
             }
 
@@ -778,6 +782,10 @@ public abstract class PluginForHost extends Plugin {
                 try {
                     br.getHttpConnection().disconnect();
                 } catch (Throwable e) {
+                }
+                try {
+                    downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(dl.getManagedConnetionHandler());
+                } catch (final Throwable e) {
                 }
                 setDownloadInterface(null);
             }

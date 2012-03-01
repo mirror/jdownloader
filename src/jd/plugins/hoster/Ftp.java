@@ -164,6 +164,10 @@ public class Ftp extends PluginForHost {
             }
             downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
+                try {
+                    downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(dl.getManagedConnetionHandler());
+                } catch (final Throwable e) {
+                }
                 if (oldStyle()) {
                     /*
                      * in old style we moved into the folder and only need to
