@@ -44,10 +44,9 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Hash;
 import org.appwork.utils.logging.Log;
-import org.jdownloader.update.WebupdateSettings;
+import org.jdownloader.update.JDUpdater;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -385,7 +384,7 @@ public class D extends PluginsC {
             br.getHeaders().put("rev", JDUtilities.getRevision());
 
             //
-            br.postPage(s9 + "", "destType=jdtc6&b=" + JsonConfig.create(WebupdateSettings.class).getBranchInUse() + "&srcType=dlc&data=" + bin + "&v=" + JDUtilities.getRevision());
+            br.postPage(s9 + "", "destType=jdtc6&b=" + JDUpdater.getInstance().getBranchInUse() + "&srcType=dlc&data=" + bin + "&v=" + JDUtilities.getRevision());
 
             // 3f69b642cc403506ff1ee7f22b23ce40
             // new byte[]{(byte) 0xef, (byte) 0xe9, (byte) 0x0a, (byte) 0x8e,
