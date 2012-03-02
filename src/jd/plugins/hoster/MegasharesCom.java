@@ -131,7 +131,13 @@ public class MegasharesCom extends PluginForHost {
                 account.setValid(true);
                 ai.setStatus("Account ok");
                 /* the whole day valid? */
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil.trim(), "MMM dd, yyyy", null) + (1000l * 60 * 60 * 24));
+                validUntil = validUntil.trim();
+                if ("Lifetime".equals(validUntil)) {
+                    ai.setValidUntil(-1);
+                    ai.setStatus("Lifetime account");
+                } else {
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "MMM dd, yyyy", null) + (1000l * 60 * 60 * 24));
+                }
             }
             /* TODO: there can be many different kind of linkcards */
             return ai;
