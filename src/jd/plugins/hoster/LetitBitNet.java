@@ -147,9 +147,32 @@ public class LetitBitNet extends PluginForHost {
         String captchaId = down.getVarsMap().get("uid");
         down.setMethod(Form.MethodType.POST);
         if (captchaId != null) down.put("uid2", captchaId);
+        br.submitForm(down);
+        if ("RU".equals(br.getCookie("http://letitbit.net", "country"))) {
+            /*
+             * special handling for RU,seems they get an extra *do you want to
+             * buy or download for free* page
+             */
+            allforms = br.getForms();
+            if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            skipfirst = true;
+            for (Form singleform : allforms) {
+                if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && singleform.getAction().contains("download")) {
+                    if (skipfirst == false) {
+                        skipfirst = true;
+                        continue;
+                    }
+                    down = singleform;
+                    break;
+                }
+            }
+            if (down != null) {
+                down.setMethod(Form.MethodType.POST);
+                br.submitForm(down);
+            }
+        }
         final String serverPart = new Regex(down.getAction(), "(http://s\\d+\\.letitbit\\.net)/.*?").getMatch(0);
         if (serverPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.submitForm(down);
         int wait = 60;
         String waittime = br.getRegex("id=\"seconds\" style=\"font\\-size:18px\">(\\d+)</span>").getMatch(0);
         if (waittime != null) {
@@ -162,7 +185,9 @@ public class LetitBitNet extends PluginForHost {
          * this causes issues in 09580 stable, no workaround known, please
          * update to latest jd version
          */
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage(serverPart + "/ajax/download3.php", "");
+        br.getHeaders().put("X-Requested-With", null);
         /* we need to remove the newline in old browser */
         String resp = br.toString().replaceAll("%0D%0A", "").trim();
         if (!"1".equals(resp)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
