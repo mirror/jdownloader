@@ -180,7 +180,6 @@ public class Ftp extends PluginForHost {
                      * path
                      */
                     try {
-
                         ftp.download(Encoding.urlDecode(filePath, false), tmp = new File(downloadLink.getFileOutput() + ".part"), downloadLink.getBooleanProperty("RESUME", true));
                     } catch (IOException e) {
                         if (e.getMessage() != null && e.getMessage().contains("Resume not supported")) {

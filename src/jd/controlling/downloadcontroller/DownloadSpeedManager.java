@@ -34,6 +34,7 @@ public class DownloadSpeedManager {
         synchronized (this) {
             final ArrayList<ManagedThrottledConnectionHandler> newConnectionHandlers = new ArrayList<ManagedThrottledConnectionHandler>(connectionHandlers);
             newConnectionHandlers.add(handler);
+            handler.setManagedBy(this);
             this.connectionHandlers = newConnectionHandlers;
         }
         /*
@@ -48,6 +49,7 @@ public class DownloadSpeedManager {
         synchronized (this) {
             final ArrayList<ManagedThrottledConnectionHandler> newConnectionHandlers = new ArrayList<ManagedThrottledConnectionHandler>(connectionHandlers);
             newConnectionHandlers.remove(handler);
+            handler.setManagedBy(null);
             this.connectionHandlers = newConnectionHandlers;
         }
     }

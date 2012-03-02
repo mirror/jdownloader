@@ -15,6 +15,7 @@ public class ManagedThrottledConnectionHandler implements ThrottledConnectionHan
     private int                            limit       = 0;
     private volatile long                  traffic     = 0;
     final private DownloadLink             link;
+    private DownloadSpeedManager           managedBy   = null;
 
     public ManagedThrottledConnectionHandler(DownloadLink link) {
         this.link = link;
@@ -31,7 +32,8 @@ public class ManagedThrottledConnectionHandler implements ThrottledConnectionHan
             newConnections.add(con);
             connections = newConnections;
         }
-        con.setLimit(10);
+        DownloadSpeedManager lmanagedBy = managedBy;
+        if (lmanagedBy != null && lmanagedBy.getLimit() > 0 || getLimit() > 0) con.setLimit(10);
         con.setHandler(this);
     }
 
@@ -82,6 +84,10 @@ public class ManagedThrottledConnectionHandler implements ThrottledConnectionHan
 
     public int size() {
         return connections.size();
+    }
+
+    protected void setManagedBy(DownloadSpeedManager downloadSpeedManager) {
+        this.managedBy = downloadSpeedManager;
     }
 
 }

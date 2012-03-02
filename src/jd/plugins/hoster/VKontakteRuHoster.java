@@ -136,7 +136,8 @@ public class VKontakteRuHoster extends PluginForHost {
             /* large image */
             if (FINALLINK == null || (FINALLINK != null && !linkOk(link))) {
                 String base = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"(http://.*?)\"").getMatch(0);
-                if (base != null) FINALLINK = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"" + base + "\".*?\"" + q + "src\":\"(" + base + ".*?)\"").getMatch(0);
+                String section = new Regex(correctedBR, "(\\{\"id\":\"" + photoID + "\",\"base\":\"" + base + ".*?)((,\\{)|$)").getMatch(0);
+                if (base != null) FINALLINK = new Regex(section, "\"id\":\"" + photoID + "\",\"base\":\"" + base + "\".*?\"" + q + "src\":\"(" + base + ".*?)\"").getMatch(0);
             } else {
                 break;
             }
