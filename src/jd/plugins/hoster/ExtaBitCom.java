@@ -37,7 +37,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extabit.com" }, urls = { "http://(www\\.)?(u\\d+\\.extabit\\.com/go/[a-z0-9]+|extabit\\.com/file/[a-z0-9]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extabit.com" }, urls = { "http://(www\\.)?(u\\d+\\.extabit\\.com/go/[a-z0-9]+|extabit\\.com/(file/[a-z0-9]+|file_[a-z0-9]{13}/[a-z0-9]{13}))" }, flags = { 2 })
 public class ExtaBitCom extends PluginForHost {
 
     private static final String NOTAVAILABLETEXT = "(>File is temporary unavailable<|temporary unavailable<br/>)";
@@ -76,7 +76,7 @@ public class ExtaBitCom extends PluginForHost {
         br.getPage("http://extabit.com/");
         // old + new
         String expire = br.getRegex("Premium is active till <span class=\"green\"><strong>(.*?)</strong>").getMatch(0);
-        if (expire == null) expire = br.getRegex("Premium is active till (.*?) ").getMatch(0);
+        if (expire == null) expire = br.getRegex("Premium is active till ([\\d\\.]+) ").getMatch(0);
         // new, now tested.
         String downloadsLeft = br.getRegex("You have <strong>(\\d+)</strong> downloads").getMatch(0);
         if (downloadsLeft != null) {
@@ -260,11 +260,11 @@ public class ExtaBitCom extends PluginForHost {
             filename = br.getRegex("download_filename\".*?>(.*?)</div").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("extabit\\.com/file/.*?'>(.*?)</a>").getMatch(0);
+                if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
         String filesize = br.getRegex("class=\"download_filesize(_en)\">.*?\\[(.*?)\\]").getMatch(1);
         if (filesize == null) filesize = br.getRegex("Size:.*?class=\"col-fileinfo\">(.*?)</").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         if (br.containsHTML(PREMIUMONLY))

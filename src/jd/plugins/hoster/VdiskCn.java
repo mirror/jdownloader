@@ -77,8 +77,8 @@ public class VdiskCn extends PluginForHost {
             }
         }
         if (dllink == null) {
-            dllink = br.getRegex("<div class=\"btn\"><a href=\"(http://[\\w\\.]+?vdisk\\.cn/down/[0-9A-Z]{2}/" + downloadLink.getMD5Hash() + "\\?key=[a-z0-9]{32}&tt=\\d+&filename=" + downloadLink.getName() + ")\">").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("(http://[\\w\\.]+?vdisk\\.cn/down/[0-9A-Z]{2}/[A-Z0-9]{32}\\?key=[a-z0-9]{32}&tt=\\d+&filename=[^\">]+)").getMatch(0);
+            dllink = br.getRegex("<div class=\"btn\"><a href=\"(http://[\\w\\.]+?vdisk\\.cn/down/[0-9A-Z]{2}/" + downloadLink.getMD5Hash() + "\\?key=[a-z0-9]{32}&tt=\\d+&st=\\w+&filename=" + downloadLink.getName() + ")\">").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("(http://[\\w\\.]+?vdisk\\.cn/down/[0-9A-Z]{2}/[A-Z0-9]{32}\\?key=[a-z0-9]{32}[^\"\\>]+)").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -4);
@@ -101,9 +101,17 @@ public class VdiskCn extends PluginForHost {
         if (br.containsHTML("(文件已删除,无法下载\\.|>此文件涉嫌有害信息不允许下载\\!<|>找不到您需要的页面\\!<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("(?i)文件名称: <b>(.*?)</b><br>").getMatch(0);
         if (filename == null) filename = br.getRegex("(?i)<META content=\"(.*?)\" name=\"description\">").getMatch(0);
-        String filesize = br.getRegex("(?i)文件大小: ([\\d\\.]+ ?(MB|GB))").getMatch(0);
+        String filesize = br.getRegex("(?i)文件大小: ([\\d\\.]+ ?(GB|MB|KB|B))").getMatch(0);
+        if (filesize == null) {
+            logger.warning("Vdisk: Can't find filesize, Please report issue to JDownloader Development!");
+            logger.warning("Vdisk: Continuing...");
+        }
         String MD5sum = br.getRegex("(?i)文件校验: ([A-Z0-9]{32})").getMatch(0);
-        if (filename == null || (filesize == null && MD5sum == null)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (MD5sum == null) {
+            logger.warning("Vdisk: Can't find MD5sum, Please report issue to JDownloader Development!");
+            logger.warning("Vdisk: Continuing...");
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         if (MD5sum != null) link.setMD5Hash(MD5sum);

@@ -36,11 +36,12 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixturecloud.com" }, urls = { "http://[\\w\\.]*?mixture(cloud|audio|doc|file|image|video)\\.com/(audio|doc|download|image|video)=[A-Za-z0-9]+" }, flags = { 0 })
 public class MixtureCloudCom extends PluginForHost {
 
-    // They have HTTPS certificate but the site has problems returning valid
-    // pages, no HTTPS support possible at this stage.
-    // Multiple domains all redirect back to 'sub.mixturecloud.com/' uids are
-    // transferable between each (sub)?domain & section.
-    // All links have recaptcha with this one size fits all download method.
+    // free: 1maxdl * 1 chunk
+    // protocol: They have HTTPS certificate but httpd not setup correctly
+    // captchatype: recaptcha
+    // other: Multiple domains all redirect back to 'sub.mixturecloud.com/' uids
+    // are transferable between each (sub)?domain & section. All links have
+    // recaptcha with this one size fits all download method.
 
     public MixtureCloudCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,6 +55,16 @@ public class MixtureCloudCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://file.mixturecloud.com/terms";
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return false;
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     @Override
@@ -70,14 +81,19 @@ public class MixtureCloudCom extends PluginForHost {
         if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 1001l);
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        for (int i = 0; i <= 5; i++) {
-            rc.parse();
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
-            rc.setCode(c);
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) continue;
-            break;
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            for (int i = 0; i <= 5; i++) {
+                rc.parse();
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                rc.setCode(c);
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) continue;
+                break;
+            }
+        } else {
+            logger.warning("MixtureCloud: Couldn't find captchatype. If this causes problems, please report this to the JDownloader Development Team.");
+            logger.warning("MixtureCloud: Continuing...");
         }
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new DecrypterException(DecrypterException.CAPTCHA);
         String dllink = new Regex(br.toString().replace("\\", ""), "download icon blue \" href=\"(.*?)\"").getMatch(0);
@@ -111,11 +127,19 @@ public class MixtureCloudCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("(?i)<title>(.*?) - mixturecloud\\.com</title>").getMatch(0);
             if (filename == null) filename = br.getRegex("<h2>[\r\n\t]+(.*?)[\r\n\t]+</h2>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String filesize = br.getRegex("Originalgröße : <span style=\"font\\-weight:bold\">(.*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null) {
+            filesize = br.getRegex("(?i)([\\d\\.]+ (MB|GB))").getMatch(0);
+            if (filesize == null) {
+                logger.warning("MixtureCloud: Couldn't find filesize. Please report this to the JDownloader Development Team.");
+                logger.warning("MixtureCloud: Continuing...");
+            }
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.containsHTML("/buy\">Access only to Premium or register user\\.</a>")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium or registered users!");
         return AvailableStatus.TRUE;
     }
 
