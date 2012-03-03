@@ -1,6 +1,5 @@
 package org.jdownloader.plugins.controller;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -8,6 +7,7 @@ import java.net.URLClassLoader;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.logging.Log;
 
 public class PluginClassLoader extends URLClassLoader {
 
@@ -65,12 +65,13 @@ public class PluginClassLoader extends URLClassLoader {
                 try {
                     if (!name.startsWith("jd.plugins.hoster") && !name.startsWith("jd.plugins.decrypter")) { return super.loadClass(name); }
 
-                    System.out.println(name);
+                    Log.L.info(name.replace(".", "/") + ".class");
                     URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
                     byte[] data;
                     data = IO.readURL(myUrl);
                     return defineClass(name, data, 0, data.length);
-                } catch (IOException e) {
+                } catch (Exception e) {
+                    Log.exception(e);
                     throw new ClassNotFoundException(e.getMessage(), e);
                 }
 
