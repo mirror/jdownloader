@@ -44,6 +44,7 @@ public class ChoMikujPl extends PluginForDecrypt {
     private static final String PASSWORDWRONG = ">Nieprawidłowe hasło<";
     private static final String PASSWORDTEXT  = "Ten folder jest <b>zabezpieczony oddzielnym hasłem";
     private static final String VIDEOTEXT     = "GalPage";
+    private ArrayList<Integer>  REGEXSORT     = new ArrayList<Integer>();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -88,19 +89,26 @@ public class ChoMikujPl extends PluginForDecrypt {
                 fpName = br.getRegex("<span id=\"ctl00_CT_FW_SelectedFolderLabel\" style=\"font\\-weight:bold;\">(.*?)</span>").getMatch(0);
             }
         }
-        String viewState = br.getRegex("id=\"__VIEWSTATE\" value=\"(.*?)\"").getMatch(0);
-        String chomikId = br.getRegex("id=\"ctl00_CT_ChomikID\" value=\"(.*?)\"").getMatch(0);
-        String subFolderID = br.getRegex("id=\"ctl00_CT_FW_SubfolderID\" value=\"(.*?)\"").getMatch(0);
-        String treeExpandLog = br.getRegex("RefreshTreeAfterOptionsChange\\',\\'\\'\\)\" style=\"display: none\"></a>[\t\n\r ]+<input type=\"hidden\" value=\"(.*?)\" id=\"treeExpandLog\"").getMatch(0);
-        if (subFolderID == null) subFolderID = br.getRegex("name=\"ChomikSubfolderId\" type=\"hidden\" value=\"(.*?)\"").getMatch(0);
-        if (subFolderID == null || fpName == null || chomikId == null || viewState == null || treeExpandLog == null) {
+        String chomikID = br.getRegex("name=\"chomikId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+        if (chomikID == null) {
+            chomikID = br.getRegex("id=\"__accno\" name=\"__accno\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+            if (chomikID == null) {
+                chomikID = br.getRegex("name=\"friendId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+                if (chomikID == null) {
+                    chomikID = br.getRegex("\\&amp;chomikId=(\\d+)\"").getMatch(0);
+                }
+            }
+        }
+        String folderID = br.getRegex("type=\"hidden\" name=\"FolderId\" value=\"(\\d+)\"").getMatch(0);
+        if (folderID == null) folderID = br.getRegex("name=\"folderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+        final String requestVerificationToken = br.getRegex("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"\\']+)\"").getMatch(0);
+        if (folderID == null || fpName == null || requestVerificationToken == null || requestVerificationToken == null) {
             logger.warning(error);
             return null;
         }
         fpName = fpName.trim();
-        subFolderID = subFolderID.trim();
         // Alle Haupt-POSTdaten
-        String postdata = "ctl00%24SM=ctl00%24CT%24FW%24FoldersUp%7Cctl00%24CT%24FW%24RefreshButton&__EVENTTARGET=ctl00%24CT%24FW%24RefreshButton&__EVENTARGUMENT=&__VIEWSTATE=" + Encoding.urlEncode(viewState) + "&PageCmd=&PageArg=undefined&ctl00%24LoginTop%24LoginChomikName=&ctl00%24LoginTop%24LoginChomikPassword=&ctl00%24SearchInputBox=nazwa%20lub%20e-mail&ctl00%24SearchFileBox=nazwa%20pliku&ctl00%24SearchType=all&SType=0&ctl00%24CT%24ChomikID=" + chomikId + "&ctl00%24CT%24PermW%24LoginCtrl%24PF=&treeExpandLog=&" + Encoding.urlEncode(treeExpandLog) + "&ChomikSubfolderId=" + subFolderID + "&tl00%24CT%24TW%24TreeExpandLog=" + "&ctl00%24CT%24FW%24SubfolderID=" + subFolderID + "&FVSortType=1&FVSortDir=1&FVSortChange=&FVPage=%jdownloaderpage%&ctl00%24CT%24FW%24inpFolderAddress=" + Encoding.urlEncode(parameter) + "&ctl00%24CT%24FrW%24FrPage=0&FrGroupId=0&__ASYNCPOST=true&";
+        String postdata = "chomikId=" + chomikID + "&folderId=" + folderID + "&sortType=Name&ascending=True&pageNr=%jdownloaderpage%&isGallery=True&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken);
         // Needed for page-change for videolinks
         if (br.containsHTML(VIDEOTEXT)) postdata = postdata.replace("&FVPage=", "&GalPage=");
         // Passwort Handling
@@ -125,31 +133,32 @@ public class ChoMikujPl extends PluginForDecrypt {
         if (pageCount == -1) {
             logger.warning("Error, couldn't successfully find the number of pages for link: " + parameter);
             return null;
-        }
+        } else if (pageCount == 0) pageCount = 1;
         logger.info("Found " + pageCount + " pages. Starting to decrypt them now.");
         progress.setRange(pageCount);
         final String linkPart = new Regex(parameter, "chomikuj\\.pl(/.+)").getMatch(0);
-        // Alle Seiten decrypten
-        for (int i = 0; i <= pageCount; ++i) {
+        /** Decrypt all pages, start with 1 (not 0 as it was before) */
+        for (int i = 1; i <= pageCount; ++i) {
             logger.info("Decrypting page " + i + " of link: " + parameter);
-            String postThatData = postdata.replace("%jdownloaderpage%", Integer.toString(i));
             prepareBrowser(parameter, br);
-            br.postPage(parameter, postThatData);
+            accessPage(postdata, br, i);
             // Every full page has 30 links (pictures)
             boolean filenameIncluded = true;
-            String[][] fileIds = br.getRegex("class=\"FileName\" onclick=\"return ch\\.Download\\.dnFile\\((.*?)\\);\"><b>(.{1,300})</b>(.{1,300})</a>[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+<table cellpadding=\"0\" cellspacing=\"3\" class=\"fInfoTable\">[\t\n\r ]+<tr>[\t\n\r ]+<td><div class=\"fInfoDiv\">(.{1,20})</div></td>").getMatches();
+            /** For photos */
+            String[][] fileIds = br.getRegex("<div class=\"left\">[\t\n\r ]+<p class=\"filename\">[\t\n\r ]+<a class=\"downloadAction\" href=\"[^<>\"\\']+\"> +<span class=\"bold\">(.{1,300})</span>(\\..{1,20})</a>[\t\n\r ]+</p>[\t\n\r ]+<div class=\"thumbnail\">.*?</div>[\t\n\r ]+<div class=\"smallTab\">[\t\n\r ]+<ul class=\"tabGradientBg borderRadius\">[\t\n\r ]+<li>([^<>\"\\'/]+)</li>.*?class=\"galeryActionButtons visibleOpt fileIdContainer\" rel=\"(\\d+)\"").getMatches();
+            addRegexInt(0, 1, 2, 3);
             if (fileIds == null || fileIds.length == 0) {
-                filenameIncluded = false;
-                fileIds = br.getRegex("class=\"FileName\" onclick=\"return ch\\.Download\\.dnFile\\((.*?)\\);\"").getMatches();
+                /** Specified for videos */
+                fileIds = br.getRegex("<ul class=\"borderRadius tabGradientBg\">[\t\n\r ]+<li><span>([^<>\"\\']+)</span></li>[\t\n\r ]+<li><span class=\"date\">[^<>\"\\']+</span></li>[\t\n\r ]+</ul>[\t\n\r ]+</div>[\t\n\r ]+<div class=\"fileActionsButtons clear visibleButtons  fileIdContainer\" rel=\"(\\d+)\" style=\"visibility: hidden;\">.*?class=\"expanderHeader downloadAction\" href=\"[^<>\"\\']+\" title=\"[^<>\"\\']+\">[\t\n\r ]+<span class=\"bold\">([^<>\"\\']+)</span>([^<>\"\\']+)</a>[\t\n\r ]+<img alt=\"pobierz\" class=\"downloadArrow visibleArrow\" src=\"").getMatches();
+                addRegexInt(2, 3, 0, 1);
+                /** Last attempt, only get IDs (no pre-available-check possible) */
                 if (fileIds == null || fileIds.length == 0) {
-                    fileIds = br.getRegex("class=\"fileItemProp getFile\" onclick=\"return ch\\.Download\\.dnFile\\((\\d+)\\);\"").getMatches();
+                    filenameIncluded = false;
+                    fileIds = br.getRegex("fileIdContainer\" rel=\"(\\d+)\"").getMatches();
                 }
             }
+            /** Broken at the moment */
             String[][] allFolders = br.getRegex("<td><a href=\"(/[^<>\"/]+/[^<>\"]+)\" onclick=\"return Ts\\(\\'\\d+\\'\\)\">([^<>\"]+)</span></td></tr>").getMatches();
-            /**
-             * Old regex to get video IDs (IDs only): videoIDs =
-             * br.getRegex("ShowVideo\\.aspx\\?id=(\\d+)\\'").getMatches();
-             */
             if ((fileIds == null || fileIds.length == 0) && (allFolders == null || allFolders.length == 0)) {
                 // If the last page only contains a file or fileS the regexes
                 // don't work but the decrypter isn't broken so the user should
@@ -163,17 +172,17 @@ public class ChoMikujPl extends PluginForDecrypt {
             }
             if (fileIds != null && fileIds.length != 0) {
                 for (String[] id : fileIds) {
-                    String finalLink = String.format("&id=%s&gallerylink=%s&", id[0], param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
+                    String finalLink = String.format("&id=%s&gallerylink=%s&", id[REGEXSORT.get(3)], param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
                     DownloadLink dl = createDownloadlink(finalLink);
                     if (filenameIncluded) {
-                        dl.setName(id[1].trim() + id[2].trim());
-                        dl.setDownloadSize(SizeFormatter.getSize(id[3].replace(",", ".")));
+                        dl.setName(id[REGEXSORT.get(0)].trim() + id[REGEXSORT.get(1)].trim());
+                        dl.setDownloadSize(SizeFormatter.getSize(id[REGEXSORT.get(2)].replace(",", ".")));
                         dl.setAvailable(true);
                         /**
                          * If the link is a video it needs other
                          * downloadhandling
                          */
-                        if (id[2].trim().matches("\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)")) dl.setProperty("video", "true");
+                        if (id[REGEXSORT.get(1)].trim().matches("\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)")) dl.setProperty("video", "true");
                     } else {
                         dl.setName(String.valueOf(new Random().nextInt(1000000)));
                     }
@@ -183,6 +192,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                         // Not needed yet but might me useful in the future
                         dl.setProperty("password", password);
                     }
+                    dl.setProperty("requestverificationtoken", requestVerificationToken);
                     decryptedLinks.add(dl);
                 }
             }
@@ -203,53 +213,65 @@ public class ChoMikujPl extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private void addRegexInt(int filename, int filenameExt, int filesize, int fileid) {
+        REGEXSORT.clear();
+        REGEXSORT.add(filename);
+        REGEXSORT.add(filenameExt);
+        REGEXSORT.add(filesize);
+        REGEXSORT.add(fileid);
+    }
+
     public int getPageCount(String postdata, String theParameter) throws NumberFormatException, DecrypterException, IOException {
         Browser br2 = br.cloneBrowser();
         prepareBrowser(theParameter, br2);
-        br2.getPage(theParameter);
+        accessPage(postdata, br2, 1);
         int pageCount = 0;
         int tempint = 0;
         // Loop limited to 20 in case something goes seriously wrong
         for (int i = 0; i <= 20; i++) {
             // Find number of pages
-            String pagePiece = br2.getRegex("class=\"navigation\"><table id=\"ctl00_CT_FW_FV_NavTop_NavTable\" border=\"0\">(.*?)</table></div>").getMatch(0);
-            if (pagePiece == null) pagePiece = br2.getRegex("id=\"ctl00_CT_FW_FGNavBottom_NavTable\" border=\"0\">[\t\n\r ]+<tr>[\t\n\r ]+<td><span class=\"na\">\\&laquo; <b>poprzednia</b> strona</span></td><td style=\"width:\\d+%;\"></td><td><span>1</span></td><td><a (onclick=.*?</tr>[\t\n\r ]+</table></div>)").getMatch(0);
+            String pagePiece = br2.getRegex("(class=\"current\">1</li><li><a .*?) class=\"clear\"></div></div>").getMatch(0);
+            /** This changes after accessing a page */
+            if (pagePiece == null) pagePiece = br2.getRegex("class=\"paginator clear fileListPage\">(<a href=\".*?)class=\"clear\">").getMatch(0);
             if (pagePiece == null) {
                 logger.info("pagePiece is null so we should only have one page for this link...");
                 pageCount = 0;
                 break;
             }
             String[] lolpages = null;
-            if (pagePiece != null) lolpages = new Regex(pagePiece, "(ch\\.changeFilesPage|changeGalPageBottom)\\((\\d+)\\)").getColumn(1);
+            if (pagePiece != null) lolpages = new Regex(pagePiece, "title=\"\\d+\">(\\d+)</a>").getColumn(0);
             if (lolpages == null || lolpages.length == 0) return -1;
             // Find highest number of page
             for (String page : lolpages) {
                 if (Integer.parseInt(page) > tempint) tempint = Integer.parseInt(page);
             }
             if (tempint == pageCount) break;
-            // If we find less than 6-7 pages there are no more so we have to
+            // If we find less than 8 pages there are no more so we have to
             // stop this here before getting an error!
-            if (tempint < 7) {
+            if (tempint < 8) {
                 pageCount = tempint;
                 break;
             }
-            String postThoseData = postdata + tempint;
-            br2.postPage(theParameter, postThoseData);
+            accessPage(postdata, br2, tempint);
             pageCount = tempint;
         }
         return pageCount;
     }
 
+    private void accessPage(String postData, Browser pageBR, int pageNum) throws IOException {
+        pageBR.postPage("http://chomikuj.pl/action/Files/FilesList", postData.replace("%jdownloaderpage%", Integer.toString(pageNum)));
+    }
+
     private void prepareBrowser(String parameter, Browser bro) {
         // Not needed but has been implemented so lets use it
         bro.getHeaders().put("Referer", parameter);
-        bro.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        bro.getHeaders().put("Accept", "*/*");
         bro.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
         bro.getHeaders().put("Accept-Encoding", "gzip,deflate");
         bro.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-        bro.getHeaders().put("Cache-Control", "no-cache, no-cache");
-        bro.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=utf-8r ");
-        bro.getHeaders().put("X-MicrosoftAjax", "Delta=true");
+        bro.getHeaders().put("Cache-Control", "no-cache");
+        bro.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+        bro.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         bro.getHeaders().put("Pragma", "no-cache");
     }
 }
