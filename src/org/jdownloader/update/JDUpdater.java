@@ -39,6 +39,8 @@ public class JDUpdater extends AppUpdater {
 
     @Override
     public boolean canInstallDirect(File next, UpdateFile uf) {
+
+        // try to install plugins without restart
         String p = next.getAbsolutePath();
         String[] matches = new Regex(p, ".*[\\\\/]jd[\\\\/]plugins[\\\\/](.*?)[\\\\/](.+?)\\.class").getRow(0);
         if (matches != null && "hoster".equalsIgnoreCase(matches[0])) {
