@@ -16,12 +16,12 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -49,15 +49,44 @@ public class OnlineNoLifeTvCom extends PluginForHost {
     private boolean             notDownloadable     = false;
     private static final Object LOCK                = new Object();
     private static final String MAINPAGE            = "http://online.nolife-tv.com/";
+    private static final String SKEY                = "9fJhXtl%5D%7CFR%3FN%7D%5B%3A%5Fd%22%5F";
 
-    public OnlineNoLifeTvCom(PluginWrapper wrapper) {
+    public OnlineNoLifeTvCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.nolife-tv.com/souscription");
     }
 
-    public void correctDownloadLink(DownloadLink link) {
+    public void correctDownloadLink(final DownloadLink link) {
         /** Videos come from a decrypter */
         link.setUrlDownload(link.getDownloadURL().replace("online.nolife-tvdecrypted.com/", "online.nolife-tv.com/"));
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (final PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage(MAINPAGE);
+        if (!br.containsHTML("Type d'abonnement : <strong>Archives<")) {
+            ai.setStatus("No premium account?!");
+            account.setValid(false);
+            return ai;
+        }
+        ai.setUnlimitedTraffic();
+        final String expire = br.getRegex(">Valable jusqu'au : <strong>(\\d{2}/\\d{2}/\\d{4})</strong>").getMatch(0);
+        if (expire == null) {
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy", null));
+        }
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
     }
 
     @Override
@@ -71,9 +100,14 @@ public class OnlineNoLifeTvCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (notDownloadable) throw new PluginException(LinkStatus.ERROR_FATAL, ONLYPREMIUMUSERTEXT);
+        if (notDownloadable) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLYPREMIUMUSERTEXT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -82,81 +116,37 @@ public class OnlineNoLifeTvCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String nolifeDecode(final String input) {
-        String result = "";
-        final String key = "s8_dg2x-5sd1";
-        int i = 0;
-        int j = 0;
-        while (j < input.length()) {
-            i = input.codePointAt(j) ^ key.codePointAt(j % key.length());
-            result += String.valueOf((char) i);
-            j += 1;
-        }
-        return result;
-    }
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://online.nolife-tv.com/index.php") || br.containsHTML("<title>Nolife Online</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div id=\"ligne_titre_big\" style=\"margin\\-top:10px;\">(.*?)</div><div").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Nolife Online \\- (.*?)( \\- [A-Za-z]+ \\d+)?</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = Encoding.htmlDecode(filename);
-        if (!br.containsHTML("flashvars")) {
-            notDownloadable = true;
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onlinenolifetvcom.only4premium", ONLYPREMIUMUSERTEXT));
-            downloadLink.setName(filename + ".mp4");
-            return AvailableStatus.TRUE;
-        } else {
-            br.postPage("http://online.nolife-tv.com/_info.php", "identity=null&hq=0&id%5Fnlshow=" + new Regex(downloadLink.getDownloadURL(), "online\\.nolife\\-tv\\.com/index\\.php\\?id=(\\d+)").getMatch(0));
-            DLLINK = br.getRegex("url=(.*?)\\&hq=0\\&preview").getMatch(0);
-            if (DLLINK == null || DLLINK.equals("")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            DLLINK = nolifeDecode(Encoding.htmlDecode(DLLINK));
-            if (DLLINK == null || !DLLINK.startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            DLLINK = Encoding.htmlDecode(DLLINK);
-            filename = filename.trim();
-            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-            if (ext == null) ext = ".mp4";
-            downloadLink.setFinalFileName(filename + ext);
-            Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
-                con = br2.openGetConnection(DLLINK);
-                if (!con.getContentType().contains("html"))
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                else
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                return AvailableStatus.TRUE;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        login(account, false);
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(DLLINK), true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.startDownload();
     }
 
     @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
+    private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
+                            br.setCookie(MAINPAGE, key, value);
                         }
                         return;
                     }
@@ -164,10 +154,10 @@ public class OnlineNoLifeTvCom extends PluginForHost {
                 br.setFollowRedirects(false);
                 final String pwhash = Hash.getMD5(account.getPass());
                 br.postPage("http://forum.nolife-tv.com/login.php?do=login", "vb_login_username=" + Encoding.urlEncode(account.getUser()) + "&cookieuser=1&vb_login_password=&s=&securitytoken=guest&do=login&vb_login_md5password=" + pwhash + "&vb_login_md5password_utf=" + pwhash);
-                if (br.getCookie(MAINPAGE, "bbuserid") == null || br.getCookie(MAINPAGE, "bbpassword") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "bbuserid") == null || br.getCookie(MAINPAGE, "bbpassword") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
+                final Cookies add = br.getCookies(MAINPAGE);
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -182,56 +172,62 @@ public class OnlineNoLifeTvCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        br.setFollowRedirects(true);
+        /* Richtige Dateigröße bezogen auf den Accounttyp erhalten */
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa != null && br.getCookie(MAINPAGE, "bbpassword") == null) {
+            login(aa, false);
         }
-        br.getPage(MAINPAGE);
-        if (!br.containsHTML("Type d'abonnement : <strong>Archives<")) {
-            ai.setStatus("No premium account?!");
-            account.setValid(false);
-            return ai;
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getURL().equals("http://online.nolife-tv.com/index.php") || br.containsHTML("<title>Nolife Online</title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = br.getRegex("<div id=\"ligne_titre_big\" style=\"margin\\-top:10px;\">(.*?)</div><div").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>Nolife Online \\- (.*?)( \\- [A-Za-z]+ \\d+)?</title>").getMatch(0);
         }
-        ai.setUnlimitedTraffic();
-        String expire = br.getRegex(">Valable jusqu'au : <strong>(\\d{2}/\\d{2}/\\d{4})</strong>").getMatch(0);
-        if (expire == null) {
-            account.setValid(false);
-            return ai;
+        if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        filename = Encoding.htmlDecode(filename);
+        if (!br.containsHTML("flashvars")) {
+            notDownloadable = true;
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onlinenolifetvcom.only4premium", ONLYPREMIUMUSERTEXT));
+            downloadLink.setName(filename + ".mp4");
+            return AvailableStatus.TRUE;
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy", null));
+            /*
+             * Hier wird über die Kekse(Premium/Free) bestimmt welche
+             * Videoqualität man bekommt. Spart oben in den dlmethoden einige
+             * Zeilen an Code. Die Methode "setBrowserExclusive()" muss dabei
+             * deaktiviert sein.
+             */
+            br.postPage("/_newplayer/api/api_player.php", "skey=" + SKEY + "&connect=1&a=US");
+            br.postPage("/_newplayer/api/api_player.php", "quality=0&skey=" + SKEY + "&a=UEM%7CSEM&id%5Fnlshow=" + new Regex(downloadLink.getDownloadURL(), "online\\.nolife\\-tv\\.com/index\\.php\\?id=(\\d+)").getMatch(0));
+            DLLINK = br.getRegex("\\&url=(http://[^<>\"\\'\\&]+\\.mp4)\\&").getMatch(0);
+            if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            filename = filename.trim();
+            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            if (ext == null) {
+                ext = ".mp4";
+            }
+            downloadLink.setFinalFileName(filename + ext);
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                con = br2.openGetConnection(DLLINK);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
         }
-        account.setValid(true);
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
-        br.postPage("http://online.nolife-tv.com/_newplayer/api/api_player.php", "skey=9fJhXtl%5D%7CFR%3FN%7D%5B%3A%5Fd%22%5F&a=UEM%7CSEM&id%5Fnlshow=" + new Regex(link.getDownloadURL(), "online\\.nolife\\-tv\\.com/index\\.php\\?id=(\\d+)").getMatch(0) + "&quality=0");
-        String dllink = br.getRegex("\\&url=(http://[^<>\"\\']+\\.mp4)\\&id_nlshow=").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
     }
 
     @Override
@@ -239,7 +235,7 @@ public class OnlineNoLifeTvCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     @Override
