@@ -128,7 +128,10 @@ public class RtmpDump extends RTMPDownload {
             CHUNK.setInProgress(true);
             getChunks().add(CHUNK);
             downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
-
+            try {
+                downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(getManagedConnetionHandler());
+            } catch (final Throwable e) {
+            }
             rtmpConnection.connect();
 
             File tmpFile = new File(downloadLink.getFileOutput() + ".part");
@@ -243,6 +246,10 @@ public class RtmpDump extends RTMPDownload {
             downloadLink.getLinkStatus().setStatusText(null);
             CHUNK.setInProgress(false);
             getManagedConnetionHandler().removeThrottledConnection(tcon);
+            try {
+                downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(getManagedConnetionHandler());
+            } catch (final Throwable e) {
+            }
         }
     }
 }
