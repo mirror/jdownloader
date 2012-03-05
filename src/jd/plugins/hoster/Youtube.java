@@ -162,10 +162,14 @@ public class Youtube extends PluginForHost {
             this.dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        org.jdownloader.extensions.neembuu.DownloadSession downloadSession = new org.jdownloader.extensions.neembuu.DownloadSession(downloadLink, this.dl, this, this.dl.getConnection(), this.br.cloneBrowser());
-        if (org.jdownloader.extensions.neembuu.NeembuuExtension.tryHandle(downloadSession)) {
-            org.jdownloader.extensions.neembuu.WatchAsYouDownloadSession watchAsYouDownloadSession = downloadSession.getWatchAsYouDownloadSession();
-            watchAsYouDownloadSession.waitForDownloadToFinish();
+        try {
+            org.jdownloader.extensions.neembuu.DownloadSession downloadSession = new org.jdownloader.extensions.neembuu.DownloadSession(downloadLink, this.dl, this, this.dl.getConnection(), this.br.cloneBrowser());
+            if (org.jdownloader.extensions.neembuu.NeembuuExtension.tryHandle(downloadSession)) {
+                org.jdownloader.extensions.neembuu.WatchAsYouDownloadSession watchAsYouDownloadSession = downloadSession.getWatchAsYouDownloadSession();
+                watchAsYouDownloadSession.waitForDownloadToFinish();
+            }
+        } catch (Throwable e) {
+            // Neembuu extension is not installed
         }
         logger.severe("Neembuu could not handle this link/filehost. Using default download system.");
         if (this.dl.startDownload()) {
