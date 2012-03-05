@@ -27,7 +27,7 @@ import org.jdownloader.translate._JDT;
 public class RtmpDump extends RTMPDownload {
 
     private Chunk             CHUNK;
-    private long              BYTESLOADED = 0l;
+    private volatile long     BYTESLOADED = 0l;
     private int               PID         = -1;
     private String            RTMPDUMP;
     private NativeProcess     NP;
@@ -122,7 +122,7 @@ public class RtmpDump extends RTMPDownload {
         try {
             getManagedConnetionHandler().addThrottledConnection(tcon);
             addChunksDownloading(1);
-            CHUNK = new Chunk(0, 0, null, null) {
+            CHUNK = new Chunk(0, 0, null, downloadLink.getDownloadInstance()) {
 
             };
             CHUNK.setInProgress(true);
