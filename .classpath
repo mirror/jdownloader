@@ -64,8 +64,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-swing-1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-swing-1.2-sources.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-swing-junit-4.5-1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-swing-junit-4.5-1.2-sources.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-util-1.1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-util-1.1.2-sources.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/jackson-core.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/jackson-mapper.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/svnkit.jar" sourcepath="ressourcen/code-ressourcen/svnkitsrc.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/trident.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/junit-4.8.2.jar" sourcepath="ressourcen/code-ressourcen/junit-4.8.2-src.jar"/>
@@ -135,5 +133,7 @@
 	<classpathentry kind="lib" path="ressourcen/libs/neembuu/org-netbeans-lib-profiler-ui.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/neembuu/org-openide-util.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/neembuu/org-openide-util-lookup.jar"/>
+	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-core.jar"/>
+	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-mapper.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
