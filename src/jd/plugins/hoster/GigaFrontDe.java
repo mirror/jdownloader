@@ -68,10 +68,10 @@ public class GigaFrontDe extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(Das angeforderte Dokument konnte nicht gefunden werden\\!</td>|<title>GIGAFRONT\\.de \\| Information</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"title\"><b class=\"titlelink\">(.*?)( Download)?</b></div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>GIGAFRONT\\.de Games, Mods, Maps, Downloads  -  Downloads: (.*?)( Download)?</title>").getMatch(0);
-        String filesize = br.getRegex(">Dateigröße:</div>[\t\n\r ]+<div class=\"line02\">(.*?)</div>").getMatch(0);
+        if (br.containsHTML("(Das angeforderte Dokument konnte nicht gefunden werden|<title>apexx \\- CMS \\&amp; Portalsystem \\| Information</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("class=\"download_detail_title\">Name:</div>[\t\n\r ]+<div class=\"download_detail_value\">[\t\n\r ]+<span class=\"download_detail_blue_text\">([^<>\"\\'/]+)</span>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title> Download: ([^<>\"\\'/]+) \\- GIGAFRONT</title>").getMatch(0);
+        String filesize = br.getRegex("class=\"download_detail_title\">Dateigröße:</div>[\t\n\r ]+<div class=\"download_detail_value\">[\t\n\r ]+<span class=\"download_detail_span\">([^<>\"\\'/]+)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));

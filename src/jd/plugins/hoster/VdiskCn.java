@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15600 $", interfaceVersion = 2, names = { "vdisk.cn" }, urls = { "http://((www|yun|temp(\\d+))\\.)?vdisk\\.cn/down/index/[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 15600 $", interfaceVersion = 2, names = { "vdisk.cn" }, urls = { "http://(www\\.)?([a-z0-9]+\\.)?vdisk\\.cn/down/index/[A-Z0-9]+" }, flags = { 0 })
 public class VdiskCn extends PluginForHost {
 
     // No HTTPS
@@ -45,7 +45,8 @@ public class VdiskCn extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("(yun|www)\\.", "temp.").replace("://vdisk", "://temp."));
+        /** We only use the main domain */
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(www\\.)?([a-z0-9]+\\.)?vdisk\\.cn/down", "vdisk.cn/down"));
     }
 
     @Override

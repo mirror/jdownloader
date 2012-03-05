@@ -96,7 +96,7 @@ public class Vipfilecom extends PluginForHost {
         if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Form premiumform = null;
         for (Form singleForm : allForms) {
-            if (singleForm.containsHTML("pass")) {
+            if (singleForm.containsHTML("pass") && singleForm.containsHTML("sms/check2.php")) {
                 premiumform = singleForm;
                 break;
             }
@@ -104,17 +104,12 @@ public class Vipfilecom extends PluginForHost {
         if (premiumform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         premiumform.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(premiumform);
-        // Try to find the remaining traffic
-        String trafficLeft = br.getRegex("You can download another: (.*?) with current password").getMatch(0);
-        if (trafficLeft == null) {
-            /** 1 point = 1 Gigabyte */
-            trafficLeft = br.getRegex("\">Points:</acronym> (.*?)</li>").getMatch(0);
-            if (trafficLeft != null && !trafficLeft.equals("")) trafficLeft += "GB";
-        }
+        // Try to find the remaining traffic, 1 Point = 1 GB
+        String trafficLeft = br.getRegex("\">Points:</acronym> ([0-9\\.]+)</li>").getMatch(0);
         if (trafficLeft != null && !trafficLeft.equals("")) {
             AccountInfo ai = account.getAccountInfo();
             if (ai == null) ai = new AccountInfo();
-            ai.setTrafficLeft(trafficLeft);
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficLeft + "GB"));
             ai.setStatus("Premium User");
             account.setAccountInfo(ai);
         }
@@ -126,18 +121,9 @@ public class Vipfilecom extends PluginForHost {
             ai.setStatus("Premium User");
             account.setAccountInfo(ai);
         }
-        String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("Your link to file download\" href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("title=\"Link to the file download\" href=\"(http://[^<>\"\\']+)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (url == null) {
-            url = br.getRegex("Mirror for file download\" href=\"(http://[0-9\\.]+/.*?)\"").getMatch(0);
-            if (url == null) {
-                url = br.getRegex("\"(http://[0-9\\.]+/(s)?downloadp\\d+/.*?/vip-file\\.com/[0-9\\.]+/.*?)\"").getMatch(0);
-            }
-            if (url == null) {
-                url = br.getRegex("\"(http://[0-9\\.]+/[^/].*?download[^/].*?\\d+/.*?/vip-file\\.com/[0-9\\.]+/.*?)\"").getMatch(0);
-                if (url == null) {
-                    url = br.getRegex("\"(http://[0-9\\.]+/(s)?downloadp\\d+/vip\\d+/.*?)\"").getMatch(0);
-                }
-            }
+            url = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/f/[a-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
         }
         if (url == null && br.containsHTML("(Wrong password|>This password expired<)")) {
             logger.info("Downloadpassword seems to be wrong, disabeling account now!");

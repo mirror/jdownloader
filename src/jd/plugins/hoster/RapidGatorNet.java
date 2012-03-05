@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -59,12 +60,14 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
+        // See line 68
         return -1;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("(You can`t download not more than 1 file at a time in free mode\\.<|>Wish to remove the restrictions\\?)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
         final String freedlsizelimit = br.getRegex("(?i)\\'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
         if (freedlsizelimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.rapidgatornet.only4premium", "No free download link for this file"));
         final String reconnectWait = br.getRegex("Delay between downloads must be not less than (\\d+) min\\.<br>Don`t want to wait\\? <a style=\"").getMatch(0);
@@ -84,6 +87,13 @@ public class RapidGatorNet extends PluginForHost {
         sleep(wait * 1001l, downloadLink);
         br2.getPage("http://rapidgator.net/download/AjaxGetDownloadLink?sid=" + sid);
         if (!br2.containsHTML("\"state\":\"done\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        URLConnectionAdapter con = br.openGetConnection("http://rapidgator.net/download/captcha");
+        if (con.getResponseCode() == 500) {
+            con.disconnect();
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
+        }
+        br.followConnection();
+        con.disconnect();
         br.getPage("http://rapidgator.net/download/captcha");
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
