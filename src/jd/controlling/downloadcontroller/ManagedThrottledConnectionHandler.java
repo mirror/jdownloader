@@ -5,9 +5,9 @@ import java.util.List;
 
 import jd.plugins.DownloadLink;
 
-import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.net.throttledconnection.ThrottledConnection;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionHandler;
+import org.appwork.utils.speedmeter.SpeedMeterInterface;
 
 public class ManagedThrottledConnectionHandler implements ThrottledConnectionHandler {
 
@@ -49,7 +49,7 @@ public class ManagedThrottledConnectionHandler implements ThrottledConnectionHan
         ArrayList<ThrottledConnection> lconnections = connections;
         int ret = 0;
         for (ThrottledConnection con : lconnections) {
-            ret += ((MeteredThrottledInputStream) con).getSpeedMeter();
+            ret += ((SpeedMeterInterface) con).getSpeedMeter();
         }
         return ret;
     }

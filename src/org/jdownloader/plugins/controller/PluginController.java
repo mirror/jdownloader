@@ -22,7 +22,7 @@ public class PluginController<T extends Plugin> {
          * each scan uses a new PluginClassLoaderChild, so we can reload on the
          * fly
          */
-        cl = PluginClassLoader.getInstance().getChild();
+        cl = PluginClassLoader.getInstance().getScanChild();
 
         final File[] files = path.listFiles(new FilenameFilter() {
             public boolean accept(final File dir, final String name) {
@@ -37,7 +37,7 @@ public class PluginController<T extends Plugin> {
 
                 try {
                     String classFileName = f.getName().substring(0, f.getName().length() - 6);
-                    ret.add(new PluginInfo<T>(f, (Class<T>) cl.loadClass(pkg + "." + classFileName), cl));
+                    ret.add(new PluginInfo<T>(f, (Class<T>) cl.loadClass(pkg + "." + classFileName)));
                     Log.L.finer("Loaded from: " + cl.getResource(hosterpath + "/" + f.getName()));
                 } catch (Throwable e) {
                     Log.exception(e);

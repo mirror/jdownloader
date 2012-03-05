@@ -20,6 +20,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.throttledconnection.ThrottledConnection;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionHandler;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.speedmeter.SpeedMeterInterface;
 import org.jdownloader.nativ.NativeProcess;
 import org.jdownloader.translate._JDT;
 
@@ -32,6 +33,41 @@ public class RtmpDump extends RTMPDownload {
     private NativeProcess     NP;
     private Process           P;
     private InputStreamReader R;
+
+    private static class RTMPCon implements SpeedMeterInterface, ThrottledConnection {
+
+        private ThrottledConnectionHandler handler;
+
+        public ThrottledConnectionHandler getHandler() {
+            return handler;
+        }
+
+        public int getLimit() {
+            return 0;
+        }
+
+        public void setHandler(ThrottledConnectionHandler manager) {
+            this.handler = manager;
+        }
+
+        public void setLimit(int kpsLimit) {
+        }
+
+        public long transfered() {
+            return 0;
+        }
+
+        public void resetSpeedMeter() {
+        }
+
+        public long getSpeedMeter() {
+            return 0;
+        }
+
+        public void putSpeedMeter(long bytes, long time) {
+        }
+
+    }
 
     public RtmpDump(final PluginForHost plugin, final DownloadLink downloadLink, final String rtmpURL) throws IOException, PluginException {
         super(plugin, downloadLink, rtmpURL);
@@ -76,27 +112,10 @@ public class RtmpDump extends RTMPDownload {
             }
         }
         if (!new File(RTMPDUMP).exists()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " not found!"); }
-        final ThrottledConnection tcon = new ThrottledConnection() {
-
-            private ThrottledConnectionHandler handler;
-
+        final ThrottledConnection tcon = new RTMPCon() {
+            @Override
             public long transfered() {
                 return BYTESLOADED;
-            }
-
-            public ThrottledConnectionHandler getHandler() {
-                return handler;
-            }
-
-            public int getLimit() {
-                return 0;
-            }
-
-            public void setHandler(ThrottledConnectionHandler handler) {
-                this.handler = handler;
-            }
-
-            public void setLimit(int kpsLimit) {
             }
 
         };

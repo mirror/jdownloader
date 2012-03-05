@@ -2,7 +2,6 @@ package org.jdownloader.plugins.controller.crawler;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import jd.JDInitFlags;
@@ -84,7 +83,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         if (plugins.size() == 0) {
             Log.L.severe("@CrawlerPluginController: WTF, no plugins!");
         }
-        list = Collections.unmodifiableList(plugins);
+        list = plugins;
+        System.gc();
     }
 
     private List<LazyCrawlerPlugin> loadFromCache() {
@@ -104,6 +104,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     private List<LazyCrawlerPlugin> update() throws MalformedURLException {
         List<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>();
         ArrayList<AbstractCrawlerPlugin> save = new ArrayList<AbstractCrawlerPlugin>();
+        PluginClassLoaderChild classLoader = PluginClassLoader.getInstance().getChild();
         for (PluginInfo<PluginForDecrypt> c : scan("jd/plugins/decrypter")) {
             String simpleName = c.getClazz().getSimpleName();
             DecrypterPlugin a = c.getClazz().getAnnotation(DecrypterPlugin.class);
@@ -121,11 +122,11 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                     if (names.length == 0) { throw new WTFException("names.length=0"); }
                     for (int i = 0; i < names.length; i++) {
                         try {
-                            AbstractCrawlerPlugin ap = new AbstractCrawlerPlugin(c.getClazz().getSimpleName());
-                            ap.setDisplayName(names[i]);
-                            ap.setPattern(patterns[i]);
+                            AbstractCrawlerPlugin ap = new AbstractCrawlerPlugin(new String(c.getClazz().getSimpleName()));
+                            ap.setDisplayName(new String(names[i]));
+                            ap.setPattern(new String(patterns[i]));
                             ap.setVersion(revision);
-                            LazyCrawlerPlugin l = new LazyCrawlerPlugin(ap, c.getClazz(), c.getClassLoader());
+                            LazyCrawlerPlugin l = new LazyCrawlerPlugin(ap, c.getClazz(), classLoader);
                             // l.getPrototype();
                             ret.add(l);
                             save.add(ap);

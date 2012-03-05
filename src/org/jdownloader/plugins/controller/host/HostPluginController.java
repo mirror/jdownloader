@@ -97,7 +97,8 @@ public class HostPluginController extends PluginController<PluginForHost> {
         } catch (final Throwable e) {
             Log.exception(e);
         }
-        list = Collections.unmodifiableList(plugins);
+        list = plugins;
+        System.gc();
     }
 
     private List<LazyHostPlugin> loadFromCache() {
@@ -115,6 +116,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
     private List<LazyHostPlugin> update() throws MalformedURLException {
         List<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>();
         ArrayList<AbstractHostPlugin> save = new ArrayList<AbstractHostPlugin>();
+        PluginClassLoaderChild classLoader = PluginClassLoader.getInstance().getChild();
         for (PluginInfo<PluginForHost> c : scan("jd/plugins/hoster")) {
             String simpleName = c.getClazz().getSimpleName();
             HostPlugin a = c.getClazz().getAnnotation(HostPlugin.class);
@@ -132,14 +134,15 @@ public class HostPluginController extends PluginController<PluginForHost> {
                     if (names.length == 0) { throw new WTFException("names.length=0"); }
                     for (int i = 0; i < names.length; i++) {
                         try {
-                            AbstractHostPlugin ap = new AbstractHostPlugin(c.getClazz().getSimpleName());
-                            ap.setDisplayName(names[i]);
-                            ap.setPattern(patterns[i]);
+                            AbstractHostPlugin ap = new AbstractHostPlugin(new String(c.getClazz().getSimpleName()));
+                            ap.setDisplayName(new String(names[i]));
+                            ap.setPattern(new String(patterns[i]));
                             ap.setVersion(revision);
-                            LazyHostPlugin l = new LazyHostPlugin(ap, c.getClazz(), c.getClassLoader());
+                            LazyHostPlugin l = new LazyHostPlugin(ap, c.getClazz(), classLoader);
                             PluginForHost plg = l.newInstance();
                             ap.setPremium(plg.isPremiumEnabled());
                             String purl = plg.getBuyPremiumUrl();
+                            if (purl != null) purl = new String(purl);
                             if (purl != null && purl.startsWith(HTTP_JDOWNLOADER_ORG_R_PHP_U)) {
                                 /* need to modify buy url */
                                 purl = Encoding.urlDecode(purl.substring(HTTP_JDOWNLOADER_ORG_R_PHP_U.length()), false);
@@ -165,12 +168,6 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 Log.L.severe("@HostPlugin missing:" + simpleName);
             }
         }
-        /* sort after displayName */
-        Collections.sort(ret, new Comparator<LazyHostPlugin>() {
-            public int compare(final LazyHostPlugin a, final LazyHostPlugin b) {
-                return a.getDisplayName().compareToIgnoreCase(b.getDisplayName());
-            }
-        });
         save(save);
         return ret;
     }

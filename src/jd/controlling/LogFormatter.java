@@ -29,20 +29,19 @@ import java.util.logging.SimpleFormatter;
  */
 public class LogFormatter extends SimpleFormatter {
 
-    private final Date dat = new Date();
+    private final Date       dat           = new Date();
     private final DateFormat longTimestamp = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
     /**
      * Line separator string. This is the value of the line.separator property
      * at the moment that the SimpleFormatter was created.
      */
-    private final String lineSeparator = System.getProperty("line.separator");
-    private final StringBuilder sb = new StringBuilder();
-    private int lastThreadID;
+    private final String     lineSeparator = System.getProperty("line.separator");
+    private int              lastThreadID;
 
     @Override
     public synchronized String format(LogRecord record) {
         /* clear StringBuilder buffer */
-        sb.delete(0, sb.capacity());
+        final StringBuilder sb = new StringBuilder();
 
         // Minimize memory allocations here.
         dat.setTime(record.getMillis());
