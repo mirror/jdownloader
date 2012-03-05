@@ -97,13 +97,8 @@ public class PluginClassLoader extends URLClassLoader {
             @Override
             public Class loadClass(String name) throws ClassNotFoundException {
                 try {
-                    if (name.startsWith("java.") || name.startsWith("sun.")) { return super.loadClass(name); }
+                    if (!name.startsWith("jd.") && !name.startsWith("org.appwork") && !name.startsWith("org.jdownloader")) { return super.loadClass(name); }
                     if (name.startsWith("jd.plugins.hoster.RTMPDownload")) { return super.loadClass(name); }
-                    // if (!name.startsWith("jd.") &&
-                    // !name.startsWith("org.appwork") &&
-                    // !name.startsWith("org.jdownloader")) { return
-                    // super.loadClass(name); }
-
                     Class<?> c = findLoadedClass(name);
                     if (c != null) {
                         // System.out.println("Class has already been loaded by this PluginClassLoaderChild");
