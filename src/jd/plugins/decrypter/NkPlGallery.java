@@ -121,6 +121,7 @@ public class NkPlGallery extends PluginForDecrypt {
                         decryptedLinks.add(dl);
                         progress.increase(1);
                     }
+                    sleep(1000l, param);
                 }
 
                 final FilePackage fp = FilePackage.getInstance();

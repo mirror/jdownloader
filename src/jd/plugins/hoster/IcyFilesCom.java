@@ -49,14 +49,18 @@ public class IcyFilesCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+
+        String waittime = br.getRegex("Sorry dude, you have downloaded too much\\. Please wait (\\d+) seconds").getMatch(0);
+        int waitThis = waittime != null ? Integer.parseInt(waittime) : 30;
+        if (waitThis > 30) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitThis * 1001l); }
+
         final String dllink = "http://icyfiles.com" + br.getRegex("id=\"downloadBtn\" rel=\"(.*?)\"").getMatch(0);
         if (dllink.contains("null")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        final String regexedwaittime = br.getRegex("class=\"counter\">(\\d+)</div>").getMatch(0);
-        int waitThis = 30;
-        if (regexedwaittime != null) {
-            waitThis = Integer.parseInt(regexedwaittime);
-        }
+
+        waittime = br.getRegex("class=\"counter\">(\\d+)</div>").getMatch(0);
+        waitThis = waittime != null ? Integer.parseInt(waittime) : waitThis;
         sleep((waitThis + 2) * 1001l, downloadLink);
+
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

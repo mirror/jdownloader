@@ -1160,7 +1160,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                                             } catch (final Throwable e) {
                                                 /* does not exist in 09581 */
                                             }
-                                            decryptedLinks.add(createDownloadlink(versch));
+                                            decryptedLinks.add(dl);
                                         }
                                     }
                                 }
