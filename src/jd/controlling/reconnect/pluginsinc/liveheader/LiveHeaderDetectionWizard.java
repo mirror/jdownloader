@@ -61,7 +61,7 @@ public class LiveHeaderDetectionWizard {
     // ;
     static String                   UPDATE3_JDOWNLOADER_ORG_RECOLL = "update3.jdownloader.org/recoll"; // "update3.jdownloader.org/recoll";
     static {
-        // UPDATE3_JDOWNLOADER_ORG_RECOLL = "192.168.2.250/ces";
+        // UPDATE3_JDOWNLOADER_ORG_RECOLL = "192.168.2.250/thomas/fcgi";
     }
     private String                  mac;
 
@@ -628,6 +628,7 @@ public class LiveHeaderDetectionWizard {
         RouterData rd = getRouterData();
         // debug
         // rd.setMac(null);
+
         ArrayList<RouterData> scripts = recoll.findRouter(rd, null);
 
         final ArrayList<RouterData> unique = toUnique(scripts);
