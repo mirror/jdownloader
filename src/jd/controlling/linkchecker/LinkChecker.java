@@ -280,6 +280,12 @@ public class LinkChecker<E extends CheckableLink> {
                                         plg.setLogger(new JDPluginLogger(lazyp.getDisplayName() + ":LinkCheck"));
                                         plg.init();
                                     }
+                                    /*
+                                     * make sure the current Thread uses the
+                                     * PluginClassLoaderChild of the Plugin in
+                                     * use
+                                     */
+                                    Thread.currentThread().setContextClassLoader(plg.getLazyP().getClassLoader());
                                     try {
                                         /* try mass link check */
                                         plg.checkLinks(massLinkCheck.toArray(new DownloadLink[massLinkCheck.size()]));

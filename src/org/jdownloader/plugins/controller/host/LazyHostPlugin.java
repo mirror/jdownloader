@@ -6,6 +6,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.DomainInfo;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
@@ -43,8 +44,8 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
 
     private boolean premium;
 
-    public LazyHostPlugin(AbstractHostPlugin ap, Class<PluginForHost> class1) {
-        super(ap.getPattern(), JD_PLUGINS_HOSTER + ap.getClassname(), ap.getDisplayName(), ap.getVersion(), class1);
+    public LazyHostPlugin(AbstractHostPlugin ap, Class<PluginForHost> class1, PluginClassLoaderChild classLoaderChild) {
+        super(ap.getPattern(), JD_PLUGINS_HOSTER + ap.getClassname(), ap.getDisplayName(), ap.getVersion(), class1, classLoaderChild);
         premiumUrl = ap.getPremiumUrl();
         premium = ap.isPremium();
         hasConfig = ap.isHasConfig();

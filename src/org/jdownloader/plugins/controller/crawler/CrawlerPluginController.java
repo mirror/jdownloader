@@ -15,6 +15,8 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
 import org.jdownloader.plugins.controller.PluginInfo;
 
@@ -89,8 +91,10 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         ArrayList<AbstractCrawlerPlugin> l = JSonStorage.restoreFrom(Application.getResource(getCache()), false, KEY, new TypeRef<ArrayList<AbstractCrawlerPlugin>>() {
         }, new ArrayList<AbstractCrawlerPlugin>());
         List<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>(l.size());
+        PluginClassLoaderChild classLoader = PluginClassLoader.getInstance().getChild();
+        /* use this classLoader for all cached plugins to load */
         for (AbstractCrawlerPlugin ap : l) {
-            ret.add(new LazyCrawlerPlugin(ap, null));
+            ret.add(new LazyCrawlerPlugin(ap, null, classLoader));
         }
         return ret;
     }
@@ -121,7 +125,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                             ap.setDisplayName(names[i]);
                             ap.setPattern(patterns[i]);
                             ap.setVersion(revision);
-                            LazyCrawlerPlugin l = new LazyCrawlerPlugin(ap, c.getClazz());
+                            LazyCrawlerPlugin l = new LazyCrawlerPlugin(ap, c.getClazz(), c.getClassLoader());
                             // l.getPrototype();
                             ret.add(l);
                             save.add(ap);

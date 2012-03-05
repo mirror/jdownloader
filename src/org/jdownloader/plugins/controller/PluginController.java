@@ -2,22 +2,26 @@ package org.jdownloader.plugins.controller;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 
 import jd.plugins.Plugin;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public class PluginController<T extends Plugin> {
 
     @SuppressWarnings("unchecked")
     public ArrayList<PluginInfo<T>> scan(String hosterpath) {
         File path = null;
-        URLClassLoader cl = null;
+        PluginClassLoaderChild cl = null;
 
         path = Application.getRootByClass(jd.Main.class, hosterpath);
+        /*
+         * each scan uses a new PluginClassLoaderChild, so we can reload on the
+         * fly
+         */
         cl = PluginClassLoader.getInstance().getChild();
 
         final File[] files = path.listFiles(new FilenameFilter() {
@@ -33,7 +37,7 @@ public class PluginController<T extends Plugin> {
 
                 try {
                     String classFileName = f.getName().substring(0, f.getName().length() - 6);
-                    ret.add(new PluginInfo<T>(f, (Class<T>) cl.loadClass(pkg + "." + classFileName)));
+                    ret.add(new PluginInfo<T>(f, (Class<T>) cl.loadClass(pkg + "." + classFileName), cl));
                     Log.L.finer("Loaded from: " + cl.getResource(hosterpath + "/" + f.getName()));
                 } catch (Throwable e) {
                     Log.exception(e);

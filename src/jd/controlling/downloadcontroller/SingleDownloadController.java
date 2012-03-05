@@ -158,6 +158,11 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             if ((downloadLink.getLinkStatus().getRetryCount()) <= currentPlugin.getMaxRetries()) {
                 try {
                     try {
+                        /*
+                         * make sure the current Thread uses the
+                         * PluginClassLoaderChild of the Plugin in use
+                         */
+                        this.setContextClassLoader(currentPlugin.getLazyP().getClassLoader());
                         currentPlugin.handle(downloadLink, account);
                     } catch (jd.http.Browser.BrowserException e) {
                         /* damit browserexceptions korrekt weitergereicht werden */

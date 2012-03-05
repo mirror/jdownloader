@@ -25,7 +25,6 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
 import java.text.DecimalFormat;
-import java.util.Locale;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -227,10 +226,8 @@ public class JDUtilities {
      * @return Ein passendes Plugin oder null
      */
     public static PluginForDecrypt getPluginForDecrypt(final String host) {
-
-        for (LazyCrawlerPlugin l : CrawlerPluginController.getInstance().list()) {
-            if (l.getDisplayName().equals(host.toLowerCase(Locale.getDefault()))) return l.getPrototype();
-        }
+        LazyCrawlerPlugin l = CrawlerPluginController.getInstance().get(host);
+        if (l != null) return l.getPrototype();
         return null;
     }
 
@@ -238,19 +235,7 @@ public class JDUtilities {
         LazyHostPlugin lplugin = HostPluginController.getInstance().get(host);
         if (lplugin != null) return lplugin.getPrototype();
         return null;
-
     }
-
-    // public static PluginForHost replacePluginForHost(final DownloadLink link)
-    // {
-    //
-    // for (final LazyHostPlugin pHost :
-    // HostPluginController.getInstance().list()) {
-    // if (pHost.getPlugin().rewriteHost(link)) return pHost.getPlugin();
-    // }
-    //
-    // return null;
-    // }
 
     public static PluginForHost getNewPluginForHostInstance(final String host) {
         LazyHostPlugin lplugin = HostPluginController.getInstance().get(host);

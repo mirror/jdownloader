@@ -11,6 +11,35 @@ import org.appwork.utils.logging.Log;
 
 public class PluginClassLoader extends URLClassLoader {
 
+    public static class PluginClassLoaderChild extends URLClassLoader {
+
+        public PluginClassLoaderChild(ClassLoader parent) {
+            super(new URL[] { Application.getRootUrlByClass(jd.Main.class, null) }, parent);
+        }
+
+        @Override
+        public Class loadClass(String name) throws ClassNotFoundException {
+            try {
+                if (!name.startsWith("jd.plugins.hoster") && !name.startsWith("jd.plugins.decrypter")) { return super.loadClass(name); }
+                Class<?> c = findLoadedClass(name);
+                if (c != null) {
+                    System.out.println("Class has already been loaded by this PluginClassLoaderChild");
+                    return c;
+                }
+                Log.L.info(name.replace(".", "/") + ".class");
+                URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
+                byte[] data;
+                data = IO.readURL(myUrl);
+                return defineClass(name, data, 0, data.length);
+            } catch (Exception e) {
+                Log.exception(e);
+                throw new ClassNotFoundException(e.getMessage(), e);
+            }
+
+        }
+
+    }
+
     // private ClassLoader parentClassLoader;
     //
     // @Override
@@ -59,24 +88,8 @@ public class PluginClassLoader extends URLClassLoader {
         }
     }
 
-    public URLClassLoader getChild() {
-        return new URLClassLoader(new URL[] { Application.getRootUrlByClass(jd.Main.class, null) }, this) {
-            public Class loadClass(String name) throws ClassNotFoundException {
-                try {
-                    if (!name.startsWith("jd.plugins.hoster") && !name.startsWith("jd.plugins.decrypter")) { return super.loadClass(name); }
-
-                    Log.L.info(name.replace(".", "/") + ".class");
-                    URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
-                    byte[] data;
-                    data = IO.readURL(myUrl);
-                    return defineClass(name, data, 0, data.length);
-                } catch (Exception e) {
-                    Log.exception(e);
-                    throw new ClassNotFoundException(e.getMessage(), e);
-                }
-
-            }
-        };
+    public PluginClassLoaderChild getChild() {
+        return new PluginClassLoaderChild(this);
     }
 
     public boolean isClassLoaded(String string) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {

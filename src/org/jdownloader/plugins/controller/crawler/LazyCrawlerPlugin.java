@@ -3,13 +3,14 @@ package org.jdownloader.plugins.controller.crawler;
 import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
 
     private static final String JD_PLUGINS_DECRYPTER = "jd.plugins.decrypter.";
 
-    public LazyCrawlerPlugin(AbstractCrawlerPlugin ap, Class<PluginForDecrypt> class1) {
-        super(ap.getPattern(), JD_PLUGINS_DECRYPTER + ap.getClassname(), ap.getDisplayName(), ap.getVersion(), class1);
+    public LazyCrawlerPlugin(AbstractCrawlerPlugin ap, Class<PluginForDecrypt> class1, PluginClassLoaderChild classLoader) {
+        super(ap.getPattern(), JD_PLUGINS_DECRYPTER + ap.getClassname(), ap.getDisplayName(), ap.getVersion(), class1, classLoader);
     }
 
     @Override

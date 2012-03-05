@@ -17,6 +17,8 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
 import org.jdownloader.plugins.controller.PluginInfo;
 
@@ -102,8 +104,10 @@ public class HostPluginController extends PluginController<PluginForHost> {
         ArrayList<AbstractHostPlugin> l = JSonStorage.restoreFrom(Application.getResource(getCache()), true, null, new TypeRef<ArrayList<AbstractHostPlugin>>() {
         }, new ArrayList<AbstractHostPlugin>());
         List<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>(l.size());
+        PluginClassLoaderChild classLoader = PluginClassLoader.getInstance().getChild();
+        /* use this classLoader for all cached plugins to load */
         for (AbstractHostPlugin ap : l) {
-            ret.add(new LazyHostPlugin(ap, null));
+            ret.add(new LazyHostPlugin(ap, null, classLoader));
         }
         return ret;
     }
@@ -132,7 +136,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             ap.setDisplayName(names[i]);
                             ap.setPattern(patterns[i]);
                             ap.setVersion(revision);
-                            LazyHostPlugin l = new LazyHostPlugin(ap, c.getClazz());
+                            LazyHostPlugin l = new LazyHostPlugin(ap, c.getClazz(), c.getClassLoader());
                             PluginForHost plg = l.newInstance();
                             ap.setPremium(plg.isPremiumEnabled());
                             String purl = plg.getBuyPremiumUrl();
@@ -210,16 +214,6 @@ public class HostPluginController extends PluginController<PluginForHost> {
             if (p.getDisplayName().equalsIgnoreCase(displayName)) return p;
         }
         return null;
-    }
-
-    public LazyHostPlugin getByClassName(String string) {
-        ensureLoaded();
-        List<LazyHostPlugin> llist = list;
-        for (LazyHostPlugin p : llist) {
-            if (p.getClassname().endsWith("." + string)) return p;
-        }
-        return null;
-
     }
 
 }

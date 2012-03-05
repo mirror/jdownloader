@@ -1,7 +1,6 @@
 package org.jdownloader.update;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 
 import jd.gui.swing.SwingGui;
@@ -18,7 +17,6 @@ import org.appwork.update.updateclient.event.UpdaterEvent;
 import org.appwork.update.updateclient.event.UpdaterListener;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
@@ -44,50 +42,8 @@ public class JDUpdater extends AppUpdater {
         String p = next.getAbsolutePath();
         String[] matches = new Regex(p, ".*[\\\\/]jd[\\\\/]plugins[\\\\/](.*?)[\\\\/](.+?)\\.class").getRow(0);
         if (matches != null && "hoster".equalsIgnoreCase(matches[0])) {
-            try {
-                String name = matches[1];
-
-                boolean loaded;
-
-                loaded = PluginClassLoader.getInstance().isClassLoaded("jd.plugins.hoster." + name);
-
-                // int index;
-                // while ((index = name.indexOf("$")) > 0) {
-                // name = name.substring(0, index);
-                // loaded |=
-                // PluginClassLoader.getInstance().isClassLoaded("jd.plugins.hoster."
-                // + name);
-                // }
-
-                //
-                return !loaded;
-            } catch (IllegalAccessException e) {
-            } catch (IllegalArgumentException e) {
-            } catch (InvocationTargetException e) {
-            }
-        } else if (matches != null && "decrypter".equalsIgnoreCase(matches[0])) {
-            try {
-                String name = matches[1];
-
-                boolean loaded;
-
-                loaded = PluginClassLoader.getInstance().isClassLoaded("jd.plugins.decrypter." + name);
-
-                // int index;
-                // while ((index = name.indexOf("$")) > 0) {
-                // name = name.substring(0, index);
-                // loaded |=
-                // PluginClassLoader.getInstance().isClassLoaded("jd.plugins.hoster."
-                // + name);
-                // }
-
-                //
-                return !loaded;
-            } catch (IllegalAccessException e) {
-            } catch (IllegalArgumentException e) {
-            } catch (InvocationTargetException e) {
-            }
-        }
+            return true;
+        } else if (matches != null && "decrypter".equalsIgnoreCase(matches[0])) { return true; }
         return super.canInstallDirect(next, uf);
     }
 

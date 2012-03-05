@@ -830,6 +830,7 @@ public class LinkCrawler implements IOPermission {
     protected void crawl(final CrawledLink cryptedLink) {
         final int generation = this.getCrawlerGeneration(true);
         if (!checkStartNotify()) return;
+        ClassLoader oldClassLoader = null;
         try {
             synchronized (duplicateFinderCrawler) {
                 /* did we already decrypt this crypted link? */
@@ -902,6 +903,12 @@ public class LinkCrawler implements IOPermission {
                     lct.setCurrentLinkCrawler(this);
                 }
                 long startTime = System.currentTimeMillis();
+                oldClassLoader = Thread.currentThread().getContextClassLoader();
+                /*
+                 * make sure the current Thread uses the PluginClassLoaderChild
+                 * of the Plugin in use
+                 */
+                Thread.currentThread().setContextClassLoader(oplg.getLazyC().getClassLoader());
                 decryptedPossibleLinks = wplg.decryptLink(cryptedLink);
                 long endTime = System.currentTimeMillis() - startTime;
                 oplg.getLazyC().updateCrawlRuntime(endTime);
@@ -913,6 +920,8 @@ public class LinkCrawler implements IOPermission {
                 }
                 /* remove distributer from plugin */
                 wplg.setDistributer(null);
+                /* restore old ClassLoader for current Thread */
+                Thread.currentThread().setContextClassLoader(oldClassLoader);
             }
             BrokenCrawlerHandler brokenCrawler = cryptedLink.getBrokenCrawlerHandler();
             cryptedLink.setBrokenCrawlerHandler(null);
