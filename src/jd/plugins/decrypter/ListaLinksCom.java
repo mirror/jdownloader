@@ -47,7 +47,7 @@ public class ListaLinksCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        String[] links = HTMLParser.getHttpLinks(linktext);
+        String[] links = HTMLParser.getHttpLinks(linktext, null);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

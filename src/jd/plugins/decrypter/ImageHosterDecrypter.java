@@ -214,6 +214,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             finallink = brc.getRegex("onclick=\"scale\\(this\\);\" src=\"(http://.*?)\"").getMatch(0);
         }
         if (finallink == null) return null;
+        finallink = finallink.replaceAll("&amp;", "&");
         DownloadLink dl = createDownloadlink("directhttp://" + finallink);
         return dl;
     }

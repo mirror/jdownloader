@@ -64,7 +64,7 @@ public class FilesPartCom extends PluginForDecrypt {
             }
             final String linkTextarea = br.getRegex("onclick=\"this\\.select\\(\\);\">(.*?)</textarea>").getMatch(0);
             if (linkTextarea == null) { return null; }
-            final String[] allLinks = HTMLParser.getHttpLinks(linkTextarea);
+            final String[] allLinks = HTMLParser.getHttpLinks(linkTextarea, null);
             if (allLinks == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

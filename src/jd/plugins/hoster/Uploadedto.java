@@ -337,6 +337,7 @@ public class Uploadedto extends PluginForHost {
         if (br.containsHTML("No connection to database")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
         if (br.containsHTML("err\":\"Ticket kann nicht")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
         if (br.containsHTML("\"?err\"?:\"captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("err\":\"Keine weiteren Downloadslots")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free Downloadslots available", 10 * 60 * 1000l);
         if (br.containsHTML("limit-dl")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         if (br.containsHTML("limit-parallel")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You're already downloading", 60 * 60 * 1000l);
         if (br.containsHTML("limit-size")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only Premiumusers are allowed to download files lager than 1,00 GB.");
