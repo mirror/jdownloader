@@ -84,6 +84,7 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
+import org.jdownloader.update.RestartController;
 import org.jdownloader.update.WebupdateSettings;
 
 /**
@@ -91,7 +92,13 @@ import org.jdownloader.update.WebupdateSettings;
  */
 public class Main {
     static {
-        statics();
+        try {
+            statics();
+        } catch (Throwable e) {
+            e.printStackTrace();
+            RestartController.getInstance().restartViaUpdater();
+            // TODO: call Updater.jar
+        }
     }
 
     private static Logger              LOG;
@@ -148,6 +155,7 @@ public class Main {
             Dynamic.runPreStatic();
         } catch (Throwable e) {
             e.printStackTrace();
+
         }
         Application.setApplication(".jd_home");
         Application.getRoot(Main.class);
@@ -183,174 +191,179 @@ public class Main {
 
     public static void main(final String args[]) {
         try {
-            Dynamic.runMain(args);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        Main.LOG = JDLogger.getLogger();
-        // Mac OS specific
-        if (CrossSystem.isMac()) {
-            // Set MacApplicationName
-            // Must be in Main
-            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
-            Main.initMACProperties();
-        }
-        /* hack for ftp plugin to use new ftp style */
-        System.setProperty("ftpStyle", "new");
-        /* random number: eg used for cnl2 without asking dialog */
-        System.setProperty("jd.randomNumber", "" + (System.currentTimeMillis() + new Random().nextLong()));
-        System.setProperty("file.encoding", "UTF-8");
-        System.setProperty("sun.swing.enableImprovedDragGesture", "true");
-        // only use ipv4, because debian changed default stack to ipv6
-        System.setProperty("java.net.preferIPv4Stack", "true");
-        // Disable the GUI rendering on the graphic card
-        System.setProperty("sun.java2d.d3d", "false");
-        final Properties pr = System.getProperties();
-        final TreeSet<Object> propKeys = new TreeSet<Object>(pr.keySet());
-        for (final Object it : propKeys) {
-            final String key = it.toString();
-            Main.LOG.finer(key + "=" + pr.get(key));
-        }
-        Main.LOG.info("Start JDownloader");
-        PARAMETERS = new ParameterParser(args);
-        PARAMETERS.getEventSender().addListener(new CommandSwitchListener() {
-
-            @Override
-            public void executeCommandSwitch(CommandSwitch event) {
-
-                if (event.getSwitchCommand().equalsIgnoreCase("forcelog")) {
-                    JDInitFlags.SWITCH_FORCELOG = true;
-                    Main.LOG.info("FORCED LOGGING Modus aktiv");
-                }
-                if (event.getSwitchCommand().equalsIgnoreCase("debug")) {
-                    JDInitFlags.SWITCH_DEBUG = true;
-                    Main.LOG.info("DEBUG Modus aktiv");
-                }
-
-                if (event.getSwitchCommand().equalsIgnoreCase("brdebug")) {
-                    JDInitFlags.SWITCH_DEBUG = true;
-                    Browser.setGlobalVerbose(true);
-                    Main.LOG.info("Browser DEBUG Modus aktiv");
-
-                }
-                if (event.getSwitchCommand().equalsIgnoreCase("scan") || event.getSwitchCommand().equalsIgnoreCase("rfu")) {
-                    JDInitFlags.REFRESH_CACHE = true;
-                }
-                if (event.getSwitchCommand().equalsIgnoreCase("trdebug")) {
-                    JDL.DEBUG = true;
-                    Main.LOG.info("Translation DEBUG Modus aktiv");
-                }
-                if (event.getSwitchCommand().equalsIgnoreCase("rfu")) {
-                    JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
-                }
+            try {
+                Dynamic.runMain(args);
+            } catch (Throwable e) {
+                e.printStackTrace();
             }
-        });
-        PARAMETERS.parse(null);
-        if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
-            JDInitFlags.SWITCH_DEBUG = true;
-        }
-
-        Main.preInitChecks();
-
-        for (int i = 0; i < args.length; i++) {
-
-            if (args[i].equalsIgnoreCase("-branch")) {
-
-                if (args[i + 1].equalsIgnoreCase("reset")) {
-                    JDUpdater.getInstance().setBranchInUse(null);
-
-                    Main.LOG.info("Switching back to default JDownloader branch");
-
-                } else {
-                    JDUpdater.getInstance().setBranchInUse(args[i + 1]);
-
-                    Main.LOG.info("Switching to " + args[i + 1] + " JDownloader branch");
-
-                }
-
-                i++;
-            } else if (args[i].equals("-prot")) {
-
-                Main.LOG.finer(args[i] + " " + args[i + 1]);
-                i++;
-            } else if (args[i].equals("-lng")) {
-
-                Main.LOG.finer(args[i] + " " + args[i + 1]);
-                if (new File(args[i + 1]).exists() && args[i + 1].trim().endsWith(".loc")) {
-                    Main.LOG.info("Use custom languagefile: " + args[i + 1]);
-                    JDL.setStaticLocale(args[i + 1]);
-                }
-                i++;
-
-            } else if (args[i].equals("--new-instance") || args[i].equals("-n")) {
-
-                Main.LOG.finer(args[i] + " parameter");
-                JDInitFlags.SWITCH_NEW_INSTANCE = true;
-
-            } else if (args[i].equals("--help") || args[i].equals("-h")) {
-
-                ParameterManager.showCmdHelp();
-                System.exit(0);
-
-            } else if (args[i].equals("--captcha") || args[i].equals("-c")) {
-
-                if (args.length > i + 2) {
-
-                    Main.LOG.setLevel(Level.OFF);
-                    final String captchaValue = JAntiCaptcha.getCaptcha(args[i + 1], args[i + 2]);
-                    System.out.println(captchaValue);
-                    System.exit(0);
-
-                } else {
-
-                    System.out.println("Error: Please define filepath and JAC method");
-                    System.out.println("Usage: java -jar JDownloader.jar --captcha /path/file.png example.com");
-                    System.exit(0);
-
-                }
-
-            } else if (args[i].equals("--show") || args[i].equals("-s")) {
-
-                JACController.showDialog(false);
-                JDInitFlags.STOP = true;
-
-            } else if (args[i].equals("--train") || args[i].equals("-t")) {
-
-                JACController.showDialog(true);
-                JDInitFlags.STOP = true;
-
+            Main.LOG = JDLogger.getLogger();
+            // Mac OS specific
+            if (CrossSystem.isMac()) {
+                // Set MacApplicationName
+                // Must be in Main
+                System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
+                Main.initMACProperties();
             }
+            /* hack for ftp plugin to use new ftp style */
+            System.setProperty("ftpStyle", "new");
+            /* random number: eg used for cnl2 without asking dialog */
+            System.setProperty("jd.randomNumber", "" + (System.currentTimeMillis() + new Random().nextLong()));
+            System.setProperty("file.encoding", "UTF-8");
+            System.setProperty("sun.swing.enableImprovedDragGesture", "true");
+            // only use ipv4, because debian changed default stack to ipv6
+            System.setProperty("java.net.preferIPv4Stack", "true");
+            // Disable the GUI rendering on the graphic card
+            System.setProperty("sun.java2d.d3d", "false");
+            final Properties pr = System.getProperties();
+            final TreeSet<Object> propKeys = new TreeSet<Object>(pr.keySet());
+            for (final Object it : propKeys) {
+                final String key = it.toString();
+                Main.LOG.finer(key + "=" + pr.get(key));
+            }
+            Main.LOG.info("Start JDownloader");
+            PARAMETERS = new ParameterParser(args);
+            PARAMETERS.getEventSender().addListener(new CommandSwitchListener() {
 
-        }
-        try {
-            Main.SINGLE_INSTANCE_CONTROLLER = new SingleAppInstance("JD", JDUtilities.getJDHomeDirectoryFromEnvironment());
-            Main.SINGLE_INSTANCE_CONTROLLER.setInstanceMessageListener(new InstanceMessageListener() {
-                public void parseMessage(final String[] args) {
-                    ParameterManager.processParameters(args);
+                @Override
+                public void executeCommandSwitch(CommandSwitch event) {
+
+                    if (event.getSwitchCommand().equalsIgnoreCase("forcelog")) {
+                        JDInitFlags.SWITCH_FORCELOG = true;
+                        Main.LOG.info("FORCED LOGGING Modus aktiv");
+                    }
+                    if (event.getSwitchCommand().equalsIgnoreCase("debug")) {
+                        JDInitFlags.SWITCH_DEBUG = true;
+                        Main.LOG.info("DEBUG Modus aktiv");
+                    }
+
+                    if (event.getSwitchCommand().equalsIgnoreCase("brdebug")) {
+                        JDInitFlags.SWITCH_DEBUG = true;
+                        Browser.setGlobalVerbose(true);
+                        Main.LOG.info("Browser DEBUG Modus aktiv");
+
+                    }
+                    if (event.getSwitchCommand().equalsIgnoreCase("scan") || event.getSwitchCommand().equalsIgnoreCase("rfu")) {
+                        JDInitFlags.REFRESH_CACHE = true;
+                    }
+                    if (event.getSwitchCommand().equalsIgnoreCase("trdebug")) {
+                        JDL.DEBUG = true;
+                        Main.LOG.info("Translation DEBUG Modus aktiv");
+                    }
+                    if (event.getSwitchCommand().equalsIgnoreCase("rfu")) {
+                        JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
+                    }
                 }
             });
-            Main.SINGLE_INSTANCE_CONTROLLER.start();
-            Main.instanceStarted = true;
-        } catch (final AnotherInstanceRunningException e) {
-            Main.LOG.info("existing jD instance found!");
-            Main.instanceStarted = false;
-        } catch (final Exception e) {
-            JDLogger.exception(e);
-            Main.LOG.severe("Instance Handling not possible!");
-            Main.instanceStarted = true;
-        }
-
-        if (Main.instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
-            Main.start(args);
-        } else {
-            if (args.length > 0) {
-                Main.LOG.info("Send parameters to existing jD instance and exit");
-                Main.SINGLE_INSTANCE_CONTROLLER.sendToRunningInstance(args);
-            } else {
-                Main.LOG.info("There is already a running jD instance");
-                Main.SINGLE_INSTANCE_CONTROLLER.sendToRunningInstance(new String[] { "--focus" });
+            PARAMETERS.parse(null);
+            if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
+                JDInitFlags.SWITCH_DEBUG = true;
             }
-            System.exit(0);
+
+            Main.preInitChecks();
+
+            for (int i = 0; i < args.length; i++) {
+
+                if (args[i].equalsIgnoreCase("-branch")) {
+
+                    if (args[i + 1].equalsIgnoreCase("reset")) {
+                        JDUpdater.getInstance().setBranchInUse(null);
+
+                        Main.LOG.info("Switching back to default JDownloader branch");
+
+                    } else {
+                        JDUpdater.getInstance().setBranchInUse(args[i + 1]);
+
+                        Main.LOG.info("Switching to " + args[i + 1] + " JDownloader branch");
+
+                    }
+
+                    i++;
+                } else if (args[i].equals("-prot")) {
+
+                    Main.LOG.finer(args[i] + " " + args[i + 1]);
+                    i++;
+                } else if (args[i].equals("-lng")) {
+
+                    Main.LOG.finer(args[i] + " " + args[i + 1]);
+                    if (new File(args[i + 1]).exists() && args[i + 1].trim().endsWith(".loc")) {
+                        Main.LOG.info("Use custom languagefile: " + args[i + 1]);
+                        JDL.setStaticLocale(args[i + 1]);
+                    }
+                    i++;
+
+                } else if (args[i].equals("--new-instance") || args[i].equals("-n")) {
+
+                    Main.LOG.finer(args[i] + " parameter");
+                    JDInitFlags.SWITCH_NEW_INSTANCE = true;
+
+                } else if (args[i].equals("--help") || args[i].equals("-h")) {
+
+                    ParameterManager.showCmdHelp();
+                    System.exit(0);
+
+                } else if (args[i].equals("--captcha") || args[i].equals("-c")) {
+
+                    if (args.length > i + 2) {
+
+                        Main.LOG.setLevel(Level.OFF);
+                        final String captchaValue = JAntiCaptcha.getCaptcha(args[i + 1], args[i + 2]);
+                        System.out.println(captchaValue);
+                        System.exit(0);
+
+                    } else {
+
+                        System.out.println("Error: Please define filepath and JAC method");
+                        System.out.println("Usage: java -jar JDownloader.jar --captcha /path/file.png example.com");
+                        System.exit(0);
+
+                    }
+
+                } else if (args[i].equals("--show") || args[i].equals("-s")) {
+
+                    JACController.showDialog(false);
+                    JDInitFlags.STOP = true;
+
+                } else if (args[i].equals("--train") || args[i].equals("-t")) {
+
+                    JACController.showDialog(true);
+                    JDInitFlags.STOP = true;
+
+                }
+
+            }
+            try {
+                Main.SINGLE_INSTANCE_CONTROLLER = new SingleAppInstance("JD", JDUtilities.getJDHomeDirectoryFromEnvironment());
+                Main.SINGLE_INSTANCE_CONTROLLER.setInstanceMessageListener(new InstanceMessageListener() {
+                    public void parseMessage(final String[] args) {
+                        ParameterManager.processParameters(args);
+                    }
+                });
+                Main.SINGLE_INSTANCE_CONTROLLER.start();
+                Main.instanceStarted = true;
+            } catch (final AnotherInstanceRunningException e) {
+                Main.LOG.info("existing jD instance found!");
+                Main.instanceStarted = false;
+            } catch (final Exception e) {
+                JDLogger.exception(e);
+                Main.LOG.severe("Instance Handling not possible!");
+                Main.instanceStarted = true;
+            }
+
+            if (Main.instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
+                Main.start(args);
+            } else {
+                if (args.length > 0) {
+                    Main.LOG.info("Send parameters to existing jD instance and exit");
+                    Main.SINGLE_INSTANCE_CONTROLLER.sendToRunningInstance(args);
+                } else {
+                    Main.LOG.info("There is already a running jD instance");
+                    Main.SINGLE_INSTANCE_CONTROLLER.sendToRunningInstance(new String[] { "--focus" });
+                }
+                System.exit(0);
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+            RestartController.getInstance().restartViaUpdater();
         }
     }
 

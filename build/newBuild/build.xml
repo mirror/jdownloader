@@ -9,7 +9,7 @@
 
 
 	<property name="working" value="update" />
-	
+
 	<property name="cls" value="${working}/bin" />
 	<property name="dist" value="${working}/dist" />
 	<property name="res" value="ressourcen" />
@@ -22,7 +22,7 @@
 		<!-- Dependencies -->
 		<fileset dir="${dep.awu}/libs" includes="**/*.jar" />
 		<fileset dir="${dep.browser}/libs" includes="**/*.jar" />
-	
+
 		<fileset dir="${dep.updateclient}/libs" includes="**/*.jar" />
 
 
@@ -46,7 +46,7 @@
 
 		<!-- Build dependencies -->
 
-		<javac srcdir="${dep.awu}/src" excludes="**/test/**" debug="${debug}" destdir="${cls}"  encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac srcdir="${dep.awu}/src" excludes="**/test/**" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
@@ -56,13 +56,13 @@
 
 		</javac>
 
-	
+
 
 		<javac srcdir="${dep.updateclient}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
-	
+
 
 		<javac srcdir="src" debug="${debug}" excludes="jd/utils/dev/*,org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/neembuu/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
@@ -82,9 +82,13 @@
 		<copy todir="${dist}/libs">
 			<fileset dir="${res}/libs" includes="**/*" />
 		</copy>
+		<copy todir="${dist}/libs">
+			<fileset dir="${dep.awu}/libs" includes="**/*.jar" />
+		</copy>
+
 		<copy todir="${dist}">
-				<fileset dir="themes" includes="**/*" />
-			</copy>
+			<fileset dir="themes" includes="**/*" />
+		</copy>
 		<copy todir="${dist}/licenses">
 			<fileset dir="${res}/licenses" includes="**/*" />
 		</copy>
@@ -97,23 +101,23 @@
 		</copy>
 		<mkdir dir="${dist}/java" />
 		<mkdir dir="${dist}/tmp" />
-		
+
 		<loadfile property="svn.revision" srcFile=".svn/entries">
 			<filterchain>
 				<headfilter lines="1" skip="3" />
 				<striplinebreaks />
 			</filterchain>
 		</loadfile>
-	
+
 		<loadfile property="updateclient.revision" srcFile="${dep.updateclient}/.svn/entries">
-				<filterchain>
-					<headfilter lines="1" skip="3" />
-					<striplinebreaks />
-				</filterchain>
+			<filterchain>
+				<headfilter lines="1" skip="3" />
+				<striplinebreaks />
+			</filterchain>
 		</loadfile>
 		<echo file="${working}/version.nfo">${svn.revision}.${updateclient.revision}</echo>
 
-		
+
 	</target>
 
 	<!-- Make the default jar -->
@@ -126,23 +130,23 @@
 			<fileset dir="${working}">
 				<include name="version.nfo" />
 			</fileset>
-		
+
 			<fileset dir="${cls}">
 				<include name="jd/http/**/*" />
 			</fileset>
 		</jar>
 		<jar file="${dist}/libs/JDGUI.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${working}">
-							<include name="version.nfo" />
-						</fileset>
+				<include name="version.nfo" />
+			</fileset>
 			<fileset dir="${cls}">
 				<include name="jd/gui/**" />
 			</fileset>
 		</jar>
 		<jar file="${dist}/libs/JAntiCaptcha.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${working}">
-							<include name="version.nfo" />
-						</fileset>
+				<include name="version.nfo" />
+			</fileset>
 			<fileset dir="${cls}">
 				<include name="jd/captcha/**" />
 				<exclude name="jd/captcha/methods/**" />
@@ -150,8 +154,8 @@
 		</jar>
 		<jar file="${dist}/libs/JDUtils.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${working}">
-							<include name="version.nfo" />
-						</fileset>
+				<include name="version.nfo" />
+			</fileset>
 			<fileset dir="${cls}">
 				<include name="jd/nutils/**" />
 			</fileset>
@@ -159,26 +163,26 @@
 
 		<jar file="${dist}/libs/Dynamics.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${working}">
-							<include name="version.nfo" />
-						</fileset>
-				<fileset dir="${cls}">
-					<include name="org/jdownloader/dynamic/**/*" />
-				</fileset>
+				<include name="version.nfo" />
+			</fileset>
+			<fileset dir="${cls}">
+				<include name="org/jdownloader/dynamic/**/*" />
+			</fileset>
 		</jar>
-		
+
 		<jar file="${dist}/libs/cons.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${working}">
-							<include name="version.nfo" />
-						</fileset>
-					<fileset dir="${cls}">
-						<include name="org/jdownloader/container/**/*" />
-					</fileset>
+				<include name="version.nfo" />
+			</fileset>
+			<fileset dir="${cls}">
+				<include name="org/jdownloader/container/**/*" />
+			</fileset>
 		</jar>
-	
+
 		<jar file="${dist}/libs/AppWorkUtilities.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${working}">
-							<include name="version.nfo" />
-						</fileset>
+				<include name="version.nfo" />
+			</fileset>
 			<fileset dir="${cls}">
 				<include name="org/appwork/**/*" />
 				<exclude name="org/appwork/update/server/**/*" />
@@ -204,8 +208,8 @@
 		</manifest>
 		<jar file="${dist}/JDownloader.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${working}">
-							<include name="version.nfo" />
-						</fileset>
+				<include name="version.nfo" />
+			</fileset>
 			<fileset dir="${cls}">
 				<include name="**/*.class" />
 
@@ -217,8 +221,8 @@
 				<exclude name="jd/gui/**" />
 				<exclude name="com/fastcgi/**" />
 				<exclude name="org/jdownloader/container/**/*" />
-			
-			
+
+
 				<exclude name="jd/http/**" />
 				<exclude name="jd/nutils/**" />
 				<exclude name="jd/plugins/hoster/**" />
@@ -232,8 +236,8 @@
 				<include name="**/*.lng" />
 				<include name="**/*.png" />
 			</fileset>
-	
-	
+
+
 
 			<fileset dir="${res}">
 				<include name="*.properties" />
@@ -259,7 +263,7 @@
 				<include name="**/*" />
 			</fileset>
 		</copy>
-		
+
 	</target>
 
 	<!-- Use this to build an addon -->
@@ -355,9 +359,9 @@
 		<echo message="Finished." />
 	</target>
 	<target name="withoutsign" depends="clean,compile,copy_res,jarMain,copy_compiled,jarReconnectOptionals,jarOptionals">
-			<echo message="Finished." />
-		</target>
+		<echo message="Finished." />
+	</target>
 	<target name="updater" depends="clean,compile,copy_compiled">
-			<echo message="Finished." />
-		</target>
+		<echo message="Finished." />
+	</target>
 </project>
