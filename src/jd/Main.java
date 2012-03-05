@@ -531,6 +531,8 @@ public class Main {
         Main.LOG.info("Revision: " + JDUtilities.getRevision());
         Main.LOG.info("Runtype: " + JDUtilities.getRunType());
         Main.INIT_COMPLETE.setReached();
+
+        // init statsmanager
         StatsManager.I();
     }
 }
