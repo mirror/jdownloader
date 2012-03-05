@@ -18,11 +18,8 @@ public class PluginController<T extends Plugin> {
         PluginClassLoaderChild cl = null;
 
         path = Application.getRootByClass(jd.Main.class, hosterpath);
-        /*
-         * each scan uses a new PluginClassLoaderChild, so we can reload on the
-         * fly
-         */
-        cl = PluginClassLoader.getInstance().getScanChild();
+
+        cl = PluginClassLoader.getInstance().getChild();
 
         final File[] files = path.listFiles(new FilenameFilter() {
             public boolean accept(final File dir, final String name) {

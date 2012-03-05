@@ -92,32 +92,6 @@ public class PluginClassLoader extends URLClassLoader {
         return new PluginClassLoaderChild(this);
     }
 
-    public PluginClassLoaderChild getScanChild() {
-        return new PluginClassLoaderChild(this) {
-            @Override
-            public Class loadClass(String name) throws ClassNotFoundException {
-                try {
-                    if (!name.startsWith("jd.") && !name.startsWith("org.appwork") && !name.startsWith("org.jdownloader")) { return super.loadClass(name); }
-                    if (name.startsWith("jd.plugins.hoster.RTMPDownload")) { return super.loadClass(name); }
-                    Class<?> c = findLoadedClass(name);
-                    if (c != null) {
-                        // System.out.println("Class has already been loaded by this PluginClassLoaderChild");
-                        return c;
-                    }
-                    // Log.L.info(name.replace(".", "/") + ".class");
-                    URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
-                    byte[] data;
-                    data = IO.readURL(myUrl);
-                    return defineClass(name, data, 0, data.length);
-                } catch (Exception e) {
-                    Log.exception(e);
-                    throw new ClassNotFoundException(e.getMessage(), e);
-                }
-
-            }
-        };
-    }
-
     public boolean isClassLoaded(String string) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         boolean ret = this.findLoadedClass(string) != null;
         ClassLoader p;
