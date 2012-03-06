@@ -233,7 +233,11 @@ public class UploadStationCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
             }
         }
-        if (br.containsHTML("To remove download restriction, please choose your suitable plan as below</h1>")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l); }
+        if (br2.containsHTML("To remove download restriction, please choose your suitable plan as below</h1>")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l); }
+        if (br2.containsHTML("<h1>File is Protected</h1><b>The file access is protected, please login if you are file owner\\.")) {
+            logger.info("The file access is protected");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     @Override
