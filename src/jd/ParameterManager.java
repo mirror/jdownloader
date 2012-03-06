@@ -35,7 +35,7 @@ public class ParameterManager {
 
     private static final Logger LOG = jd.controlling.JDLogger.getLogger();
 
-    public static void processParameters(final String[] input) {
+    public static void processParameters(final String[] input, boolean currentInstance) {
 
         boolean addLinksSwitch = false;
         boolean addContainersSwitch = false;
@@ -46,7 +46,7 @@ public class ParameterManager {
 
         for (final String currentArg : input) {
 
-            if (currentArg.equals("--scan") || currentArg.equals("-scan")) {
+            if (currentInstance == false && (currentArg.equals("--scan") || currentArg.equals("-scan"))) {
                 HostPluginController.getInstance().init(true);
                 CrawlerPluginController.getInstance().init(true);
             } else if (currentArg.equals("--help") || currentArg.equals("-h")) {

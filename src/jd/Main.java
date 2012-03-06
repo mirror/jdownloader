@@ -335,7 +335,7 @@ public class Main {
                 Main.SINGLE_INSTANCE_CONTROLLER = new SingleAppInstance("JD", JDUtilities.getJDHomeDirectoryFromEnvironment());
                 Main.SINGLE_INSTANCE_CONTROLLER.setInstanceMessageListener(new InstanceMessageListener() {
                     public void parseMessage(final String[] args) {
-                        ParameterManager.processParameters(args);
+                        ParameterManager.processParameters(args, false);
                     }
                 });
                 Main.SINGLE_INSTANCE_CONTROLLER.start();
@@ -381,7 +381,7 @@ public class Main {
             for (final String p : args) {
                 Main.LOG.finest("Param: " + p);
             }
-            ParameterManager.processParameters(args);
+            ParameterManager.processParameters(args, true);
         }
     }
 
