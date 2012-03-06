@@ -133,7 +133,7 @@ public class FsxHu extends PluginForHost {
                 break;
             }
         }
-        String url = br.getRegex("<div class=\"gombbefoglalo\" style=\"text\\-align:center;float:left;\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+        String url = br.getRegex("<div class=\"gombbefoglalo\" style=\"text\\-align:center;float:left;\">[\t\n\r ]+<a [^>]+? href=\"(http://.*?)\"").getMatch(0);
         if (url == null) url = br.getRegex("\"(http://s\\d+\\.fsx\\.hu/[a-z0-9]+/\\d+/[^\"<>]+)\"").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
