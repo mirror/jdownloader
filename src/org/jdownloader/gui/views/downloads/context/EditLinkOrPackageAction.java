@@ -46,7 +46,6 @@ public class EditLinkOrPackageAction extends ContextMenuAction {
             link.setDownloadPassword(d.getDownloadPassword());
             link.setMD5Hash(d.getMd5());
             link.setSha1Hash(d.getSha1());
-
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {

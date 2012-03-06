@@ -27,8 +27,6 @@ public class ControlEvent extends DefaultIntEvent {
 
     private static final long serialVersionUID                 = 1639354503246054870L;
 
-    public static final int   CONTROL_DOWNLOAD_FINISHED        = 4;
-
     /**
      * Gibt an dass ein plugin, eine INteraction etc. einen Forschritt gemacht
      * haben. Das entsprechende Event wird aus der ProgressController klasse
@@ -40,8 +38,6 @@ public class ControlEvent extends DefaultIntEvent {
      * Wird vom Controller vor dem beeenden des Programms aufgerufen
      */
     public static final int   CONTROL_SYSTEM_EXIT              = 26;
-
-    public static final int   CONTROL_JDPROPERTY_CHANGED       = 27;
 
     /**
      * Wird verwendet wenn eine datei verarbeitet wurde.z.B. eine datei entpackt

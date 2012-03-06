@@ -15,15 +15,15 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEvent;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
+import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
 import org.jdownloader.gui.views.downloads.context.CheckStatusAction;
 import org.jdownloader.gui.views.downloads.context.CopyPasswordAction;
 import org.jdownloader.gui.views.downloads.context.CopyURLAction;
 import org.jdownloader.gui.views.downloads.context.CreateDLCAction;
+import org.jdownloader.gui.views.downloads.context.CustomSpeed;
 import org.jdownloader.gui.views.downloads.context.DeleteAction;
 import org.jdownloader.gui.views.downloads.context.DeleteFromDiskAction;
-import org.jdownloader.gui.views.downloads.context.DisableAction;
 import org.jdownloader.gui.views.downloads.context.EditLinkOrPackageAction;
-import org.jdownloader.gui.views.downloads.context.EnableAction;
 import org.jdownloader.gui.views.downloads.context.ForceDownloadAction;
 import org.jdownloader.gui.views.downloads.context.NewPackageAction;
 import org.jdownloader.gui.views.downloads.context.OpenDirectoryAction;
@@ -94,8 +94,7 @@ public class DownloadTableContextMenuFactory {
         // }
 
         popup.add(new StopsignAction(contextObject));
-        popup.add(new EnableAction(links));
-        popup.add(new DisableAction(links));
+        popup.add(new EnabledAction(selection));
         popup.add(new ForceDownloadAction(links));
         popup.add(new ResumeAction(links));
         popup.add(new ResetAction(links));
@@ -115,6 +114,7 @@ public class DownloadTableContextMenuFactory {
             popup.add(new PackageNameAction(fps));
             popup.add(new PackageDirectoryAction(fps));
         } else if (contextObject instanceof DownloadLink) {
+            popup.add(new CustomSpeed((DownloadLink) contextObject));
             popup.add(new OpenDirectoryAction(new File(((DownloadLink) contextObject).getFileOutput()).getParentFile()));
             popup.add(new OpenInBrowserAction(links));
             popup.add(new OpenInBrowserAction(links));

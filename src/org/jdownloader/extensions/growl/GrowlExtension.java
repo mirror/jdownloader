@@ -25,14 +25,9 @@ import java.util.Date;
 import javax.swing.JMenuItem;
 
 import jd.Main;
-import jd.controlling.JDController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.nutils.Executer;
 import jd.plugins.AddonPanel;
-import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 
 import org.appwork.controlling.StateEvent;
@@ -46,13 +41,12 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.growl.translate.T;
 
-public class GrowlExtension extends AbstractExtension<GrowlConfig> implements ControlListener, StateEventListener {
+public class GrowlExtension extends AbstractExtension<GrowlConfig> implements StateEventListener {
 
     private static final String TMP_GROWL_NOTIFICATION_SCPT = "tmp/growlNotification.scpt";
 
     @Override
     protected void stop() throws StopException {
-        JDController.getInstance().removeControlListener(this);
         DownloadWatchDog.getInstance().getStateMachine().removeListener(this);
     }
 
@@ -75,7 +69,6 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig> implements Co
             }
 
         });
-        JDController.getInstance().addControlListener(this);
         DownloadWatchDog.getInstance().getStateMachine().addListener(this);
     }
 
@@ -124,17 +117,6 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig> implements Co
 
     public GrowlExtension() throws StartException {
         super(T._.jd_plugins_optional_jdgrowlnotification());
-    }
-
-    public void controlEvent(ControlEvent event) {
-        switch (event.getEventID()) {
-        case ControlEvent.CONTROL_DOWNLOAD_FINISHED:
-            if (event.getCaller() instanceof SingleDownloadController) {
-                DownloadLink lastLink = (DownloadLink) event.getParameter();
-                growlNotification(T._.jd_plugins_optional_JDGrowlNotification_finished(), lastLink.getName(), "Download complete");
-            }
-            break;
-        }
     }
 
     private void growlNotification(String headline, String message, String title) {

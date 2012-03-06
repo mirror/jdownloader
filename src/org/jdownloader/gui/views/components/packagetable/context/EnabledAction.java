@@ -1,19 +1,16 @@
-package org.jdownloader.gui.views.linkgrabber.contextmenu;
+package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.IOEQ;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 
 public class EnabledAction extends AppAction {
     /**
@@ -27,11 +24,11 @@ public class EnabledAction extends AppAction {
         MIXED;
     }
 
-    private ArrayList<CrawledLink> selection;
-    private State                  state = State.MIXED;
+    private ArrayList<AbstractNode> selection;
+    private State                   state = State.MIXED;
 
     public EnabledAction(ArrayList<AbstractNode> selection) {
-        this.selection = LinkTreeUtils.getSelectedChildren(selection);
+        this.selection = selection;
         setName(_GUI._.EnabledAction_EnabledAction_object_());
         switch (state = getState(selection)) {
         case MIXED:
@@ -79,19 +76,19 @@ public class EnabledAction extends AppAction {
                 boolean enable = state.equals(State.ALL_DISABLED);
                 for (AbstractNode a : selection) {
                     if (a instanceof AbstractPackageNode) {
+                        List<AbstractPackageChildrenNode<?>> children = null;
                         synchronized (a) {
                             @SuppressWarnings("unchecked")
                             AbstractPackageNode<AbstractPackageChildrenNode<?>, ?> pkg = (AbstractPackageNode<AbstractPackageChildrenNode<?>, ?>) a;
-                            List<AbstractPackageChildrenNode<?>> children = pkg.getChildren();
-                            for (AbstractPackageChildrenNode<?> child : children) {
-                                child.setEnabled(enable);
-                            }
+                            children = new ArrayList<AbstractPackageChildrenNode<?>>(pkg.getChildren());
+                        }
+                        for (AbstractPackageChildrenNode<?> child : children) {
+                            child.setEnabled(enable);
                         }
                     } else {
                         a.setEnabled(enable);
                     }
                 }
-                LinkCollector.getInstance().refreshData();
             }
         }, true);
     }

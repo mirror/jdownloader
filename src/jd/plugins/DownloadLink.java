@@ -23,10 +23,7 @@ import java.io.Serializable;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -97,15 +94,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     private long[]                                       chunksProgress          = null;
 
-    /** Containername */
-    private String                                       container;
-
-    /** Dateiname des Containers */
-    private String                                       containerFile           = null;
-
-    /** Index dieses DownloadLinks innerhalb der Containerdatei */
-    private int                                          containerIndex          = -1;
-
     /** Aktuell heruntergeladene Bytes der Datei */
     private long                                         downloadCurrent         = 0;
 
@@ -128,8 +116,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     private LinkStatus                                   linkStatus;
 
-    private TransferStatus                               transferstatus;
-
     private int                                          linkType                = LINKTYPE_NORMAL;
 
     /** Beschreibung des Downloads */
@@ -139,12 +125,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient PluginForHost                      defaultplugin;
 
     private transient PluginForHost                      liveplugin;
-
-    /**
-     * Falls vorhanden, das Plugin fuer den Container, aus der dieser Download
-     * geladen wurde
-     */
-    private transient PluginsC                           pluginForContainer;
 
     /*
      * we need to keep this some time to perfom conversion from variable to
@@ -320,22 +300,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return chunksProgress;
     }
 
-    public String getContainer() {
-        return container;
-    }
-
-    public String getContainerFile() {
-        if (containerFile == null) return null;
-        if (new File(containerFile).isAbsolute()) {
-            containerFile = "container/" + new File(containerFile).getName();
-        }
-        return containerFile;
-    }
-
-    public int getContainerIndex() {
-        return containerIndex;
-    }
-
     /**
      * Liefert die bisher heruntergeladenen Bytes zurueck
      * 
@@ -379,25 +343,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return dli.getSpeed();
     }
 
-    /**
-     * Liefert die URL zurueck, unter der dieser Download stattfinden soll
-     * 
-     * @return Die Download URL
-     */
     public String getDownloadURL() {
-        if (linkType == LINKTYPE_CONTAINER) {
-            if (urlDownload != null) { return urlDownload; }
-            if (pluginForContainer != null) {
-                urlDownload = pluginForContainer.extractDownloadURL(this);
-                if (urlDownload == null) {
-                    logger.severe(this + " is a containerlink. Container could not be extracted. Is your JD Version up2date?");
-                }
-                return urlDownload;
-            } else {
-                logger.severe(this + " is a containerlink, but no plugin could be found");
-                return null;
-            }
-        }
         return urlDownload;
     }
 
@@ -431,10 +377,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public FilePackage getFilePackage() {
         if (filePackage == null) return FilePackage.getDefaultFilePackage();
         return filePackage;
-    }
-
-    public boolean isDefaultFilePackage() {
-        return (getFilePackage() == FilePackage.getDefaultFilePackage());
     }
 
     /**
@@ -493,10 +435,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return liveplugin;
     }
 
-    public PluginsC getPluginForContainer() {
-        return pluginForContainer;
-    }
-
     public String getComment() {
         return this.getStringProperty(PROPERTY_COMMENT, null);
     }
@@ -547,6 +485,17 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         DownloadInterface dli = this.getDownloadInstance();
         if (dli != null) return dli.externalDownloadStop();
         return false;
+    }
+
+    /**
+     * this will abort an ongoing download of this DownloadLink, the
+     * abortDownload method of the SingleDownloadController will start a new
+     * Thread for terminating of the download, so you will have to check
+     * manually when the download finally has stopped
+     */
+    public void abort() {
+        SingleDownloadController dlc = getDownloadLinkController();
+        if (dlc != null) dlc.abortDownload();
     }
 
     /**
@@ -728,19 +677,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return new File(this.getFileOutput()).exists() || new File(this.getFileOutput() + ".part").exists();
     }
 
-    /**
-     * Kann mit setAborted(true) den Download abbrechen
-     * 
-     * @param aborted
-     */
-    public void setAborted(boolean aborted) {
-        if (!aborted) return;
-        SingleDownloadController dlc = this.getDownloadLinkController();
-        if (dlc != null) {
-            dlc.abortDownload();
-        }
-    }
-
     public void setAvailable(boolean available) {
         this.availableStatus = available ? AvailableStatus.TRUE : AvailableStatus.FALSE;
         notifyChanges();
@@ -754,23 +690,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setChunksProgress(long[] is) {
         chunksProgress = is;
-    }
-
-    public void setContainerFile(String containerFile) {
-        if (containerFile == null) {
-            this.containerFile = null;
-            return;
-        }
-        containerFile = containerFile.replace("\\", "/");
-
-        int index = containerFile.indexOf("/container/");
-        if (index > 0) containerFile = containerFile.substring(index + 1);
-
-        this.containerFile = containerFile;
-    }
-
-    public void setContainerIndex(int containerIndex) {
-        this.containerIndex = containerIndex;
     }
 
     /**
@@ -803,17 +722,15 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         notifyChanges();
     }
 
-    /**
-     * Veraendert den Aktiviert-Status s ERROR_TEMPORARILY_UNAVAILABLE!!
-     * 
-     * @param isEnabled
-     *            Soll dieser DownloadLink aktiviert sein oder nicht
+    /*
+     * changes the enabled status of this DownloadLink, aborts download if its
+     * currently running
      */
     public void setEnabled(boolean isEnabled) {
         this.getLinkStatus().removeStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         this.isEnabled = isEnabled;
-        if (!isEnabled) {
-            setAborted(true);
+        if (isEnabled == false) {
+            abort();
         }
         if (isEnabled == true) {
             setProperty(PROPERTY_ENABLED, Property.NULL);
@@ -863,11 +780,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
-    public void setLoadedPluginForContainer(PluginsC pluginForContainer) {
-        this.pluginForContainer = pluginForContainer;
-        container = pluginForContainer.getName();
-    }
-
     /**
      * Setzt den Namen des Downloads neu
      * 
@@ -879,7 +791,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
         }
         this.setIcon(null);
-
     }
 
     /*
@@ -889,9 +800,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (name == null) {
             this.setProperty(PROPERTY_FORCEDFILENAME, Property.NULL);
         } else {
-            setFinalFileName(name);
             this.setProperty(PROPERTY_FORCEDFILENAME, name);
         }
+        setIcon(null);
     }
 
     private void setIcon(ImageIcon icon) {
@@ -946,6 +857,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             this.setProperty(PROPERTY_FINALFILENAME, Property.NULL);
         }
         finalFileName = null;
+        setIcon(null);
     }
 
     /**
@@ -970,17 +882,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     @Override
     public String toString() {
         return getName();
-    }
-
-    /**
-     * Gibt Fortschritt in % an (10000 entspricht 100%))
-     * 
-     * @return
-     */
-    public int getPercent() {
-        long current = getDownloadCurrent();
-        if (Math.min(current, downloadMax) <= 0) return 0;
-        return (int) (10000 * current / Math.max(1, Math.max(current, downloadMax)));
     }
 
     /**
@@ -1094,22 +995,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             }
         }
         return domainInfo;
-    }
-
-    /**
-     * return a Set of all Hoster of the given DownloadLinks
-     * 
-     * @param links
-     * @return
-     */
-    public static Set<String> getHosterList(List<DownloadLink> links) {
-        HashMap<String, Object> hosters = new HashMap<String, Object>();
-        for (DownloadLink dl : links) {
-            if (!hosters.containsKey(dl.getHost())) {
-                hosters.put(dl.getHost(), null);
-            }
-        }
-        return hosters.keySet();
     }
 
     public FilePackage getParentNode() {

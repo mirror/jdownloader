@@ -1309,12 +1309,19 @@ abstract public class DownloadInterface {
             // mehrfachAufruf von connect entstehen kann
             if (this.downloadLink.getFinalFileName() == null && ((connection != null && connection.isContentDisposition()) || this.allowFilenameFromURL)) {
                 String name = Plugin.getFileNameFromHeader(connection);
-                this.downloadLink.setFinalFileName(name);
-                if (this.fixWrongContentDispositionHeader) this.downloadLink.setFinalFileName(Encoding.htmlDecode(name));
+                if (this.fixWrongContentDispositionHeader) {
+                    this.downloadLink.setFinalFileName(Encoding.htmlDecode(name));
+                } else {
+                    this.downloadLink.setFinalFileName(name);
+                }
             }
             downloadLink.getLinkStatus().setStatusText(null);
             if (connection == null || !connection.isOK()) {
                 if (connection != null) logger.finest(connection.toString());
+                try {
+                    connection.disconnect();
+                } catch (final Throwable e) {
+                }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
             if (connection.getHeaderField("Location") != null) {

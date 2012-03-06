@@ -159,10 +159,13 @@ public class RTLnowDe extends PluginForHost {
         if (folge.endsWith(".")) {
             folge = folge.substring(0, folge.length() - 1);
         }
-        if (downloadLink.isDefaultFilePackage()) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(filename.replaceAll(folge, ""));
-            fp.add(downloadLink);
+        try {
+            if (FilePackage.isDefaultFilePackage(downloadLink.getFilePackage())) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(filename.replaceAll(folge, ""));
+                fp.add(downloadLink);
+            }
+        } catch (final Throwable e) {
         }
         downloadLink.setName(folge + ".flv");
         return AvailableStatus.TRUE;

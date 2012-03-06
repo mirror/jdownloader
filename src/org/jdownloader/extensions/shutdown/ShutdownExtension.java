@@ -187,7 +187,6 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
     private void prepareHibernateOrStandby() {
         logger.info("Stop all running downloads");
         DownloadWatchDog.getInstance().stopDownloads();
-        JDController.getInstance().syncDatabase();
         /* reset enabled flag */
         menuAction.setSelected(false);
     }

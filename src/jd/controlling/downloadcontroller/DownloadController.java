@@ -134,12 +134,12 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     @Override
-    protected void _controllerParentlessLinks(List<DownloadLink> links, QueuePriority priority) {
+    protected void _controllerParentlessLinks(final List<DownloadLink> links, QueuePriority priority) {
         broadcaster.fireEvent(new DownloadControllerEvent(DownloadController.this, DownloadControllerEvent.TYPE.REMOVE_CONTENT, links));
         if (links != null) {
-            /* we stop all parentless downloads */
             for (DownloadLink link : links) {
-                link.setAborted(true);
+                /* disabling the link will also abort an ongoing download */
+                link.setEnabled(false);
             }
         }
     }
@@ -411,7 +411,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     private LinkedList<FilePackage> load(File file) {
         synchronized (SAVELOADLOCK) {
             LinkedList<FilePackage> ret = null;
-            if (file != null) {
+            if (file != null && file.exists()) {
                 ZipIOReader zip = null;
                 try {
                     zip = new ZipIOReader(file);
@@ -519,7 +519,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      */
     private LinkedList<FilePackage> loadDownloadLinks() throws Exception {
         final Object obj = JDUtilities.getDatabaseConnector().getLinks();
-        if (obj != null && obj instanceof ArrayList && (((ArrayList<?>) obj).size() == 0 || ((ArrayList<?>) obj).size() > 0 && ((ArrayList<?>) obj).get(0) instanceof FilePackage)) { return new LinkedList<FilePackage>(packages); }
+        if (obj != null && obj instanceof ArrayList && (((ArrayList<?>) obj).size() == 0 || ((ArrayList<?>) obj).size() > 0 && ((ArrayList<?>) obj).get(0) instanceof FilePackage)) { return new LinkedList<FilePackage>((ArrayList<FilePackage>) obj); }
         throw new Exception("Linklist incompatible");
     }
 

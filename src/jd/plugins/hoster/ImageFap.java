@@ -181,7 +181,7 @@ public class ImageFap extends PluginForHost {
             }
             /* only set filepackage if not set yet */
             try {
-                if (downloadLink.isDefaultFilePackage()) {
+                if (FilePackage.isDefaultFilePackage(downloadLink.getFilePackage())) {
                     final FilePackage fp = FilePackage.getInstance();
                     fp.setName(authorsName + " - " + galleryName);
                     fp.add(downloadLink);

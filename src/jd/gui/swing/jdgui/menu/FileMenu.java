@@ -20,9 +20,6 @@ public class FileMenu extends JMenu {
         Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
-                add(new SaveMenu());
-
-                addSeparator();
 
                 add(new RestartAction());
 

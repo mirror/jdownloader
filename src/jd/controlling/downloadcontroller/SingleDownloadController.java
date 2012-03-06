@@ -25,11 +25,9 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.controlling.IOPermission;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.proxy.ProxyInfo;
-import jd.event.ControlEvent;
 import jd.http.Browser;
 import jd.http.BrowserSettingsThread;
 import jd.nutils.io.JDIO;
@@ -46,6 +44,7 @@ import org.appwork.controlling.StateMonitor;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationEvent;
@@ -118,10 +117,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     }
 
     public SingleDownloadController(DownloadLink dlink, Account account, ProxyInfo proxy, DownloadSpeedManager manager) {
-        super("JD-StartDownloads");
+        super("Download: " + dlink.getName() + "_" + dlink.getHost());
         this.connectionHandler = manager;
         stateMachine = new StateMachine(this, IDLE_STATE, FINAL_STATE);
-        stateMonitor = new StateMonitor(stateMachine);
         downloadLink = dlink;
         linkStatus = downloadLink.getLinkStatus();
         /* mark link plugin active */
@@ -136,15 +134,34 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
      * Bricht den Downloadvorgang ab.
      */
     public SingleDownloadController abortDownload() {
+        if (aborted == true) return this;
+        if (downloadLink.getLinkStatus().isPluginActive() == false) return this;
         aborted = true;
-        DownloadInterface dli = downloadLink.getDownloadInstance();
-        if (dli != null) dli.stopDownload();
+        Thread abortThread = new Thread() {
+
+            @Override
+            public void run() {
+                while (downloadLink.getLinkStatus().isPluginActive()) {
+                    DownloadInterface dli = downloadLink.getDownloadInstance();
+                    if (dli != null && downloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                        /* finally a downloadInterface available to abort */
+                        dli.stopDownload();
+                        break;
+                    }
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        Log.exception(e);
+                    }
+                }
+            }
+
+        };
+        abortThread.setDaemon(true);
+        abortThread.setName("Abort: " + downloadLink.getName() + "_" + downloadLink.getHost());
+        abortThread.start();
         interrupt();
         return this;
-    }
-
-    private void fireControlEvent(ControlEvent controlEvent) {
-        JDController.getInstance().fireControlEvent(controlEvent);
     }
 
     public DownloadLink getDownloadLink() {
@@ -700,7 +717,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     llogger.clear();
                     llogger.finest("\r\nFinished- " + downloadLink.getLinkStatus());
                     llogger.info("\r\nFinished- " + downloadLink.getName() + "->" + downloadLink.getFileOutput());
-                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_FINISHED, downloadLink));
                     FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.NEW_FILES, new File[] { new File(downloadLink.getFileOutput()) }));
                 }
                 /* move download log into global log */
@@ -718,6 +734,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     currentPlugin.setBrowser(null);
                     /* clear log history for this download */
                     currentPlugin.getLogger().clear();
+                    currentPlugin.setDownloadLink(null);
                     currentPlugin = null;
                 }
                 downloadLink.setLivePlugin(null);
@@ -733,22 +750,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         /* we dont allow external changes */
     }
 
-    /**
-     * returns StateMonitor for this SingleDownloadController
-     * 
-     * @return
-     */
-    public StateMonitor getStateMonitor() {
-        return stateMonitor;
-    }
-
-    /**
-     * throws an UnsupportedOperationException, only needed for the internal
-     * StateMachine, use getStateMonitor() instead
-     */
-    @Deprecated
     public StateMachine getStateMachine() {
-        throw new UnsupportedOperationException("statemachine not accessible");
+        return stateMachine;
     }
 
     public void setIOPermission(IOPermission ioP) {

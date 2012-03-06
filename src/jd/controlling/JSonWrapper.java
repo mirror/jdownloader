@@ -8,7 +8,6 @@ import java.util.Vector;
 
 import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.event.ControlEvent;
 import jd.gui.swing.laf.LookAndFeelWrapper;
 
 import org.appwork.storage.JSonStorage;
@@ -260,15 +259,14 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
     public void onEvent(StorageEvent<?> event) {
         // delegate events
         if (event instanceof StorageKeyAddedEvent) {
-            JDController.getInstance().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, event.getKey()));
+
         } else if (event instanceof StorageValueChangeEvent) {
             if (((StorageValueChangeEvent<?>) event).hasChanged()) {
                 changes = true;
-                JDController.getInstance().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, event.getKey()));
+
             }
         } else if (event instanceof StorageKeyRemovedEvent) {
             changes = true;
-            JDController.getInstance().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, event.getKey()));
 
         }
     }

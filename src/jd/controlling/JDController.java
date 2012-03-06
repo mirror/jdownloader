@@ -255,16 +255,6 @@ public class JDController {
         }
     }
 
-    /** syncs all data to database */
-    public void syncDatabase() {
-        if (DatabaseConnector.isDatabaseShutdown()) return;
-        LOGGER.info("Sync Downloadlist");
-        JDUtilities.getDownloadController().saveDownloadLinks();
-        LOGGER.info("Sync Passwordlist");
-        PasswordListController.getInstance().saveSync();
-
-    }
-
     /**
      * hiermit kann ein Thread den Exit von JD verzögern (zb. speichern von db
      * sachen) gibt eine ID zurück, mit welcher wieder der request freigegeben
@@ -314,39 +304,12 @@ public class JDController {
         LOGGER.severe("Unable to satisfy all delayExit requests! " + delayMap);
     }
 
-    /**
-     * Verteilt Ein Event an alle Listener
-     * 
-     * @param controlEvent
-     *            ein abzuschickendes Event
-     */
-    public void fireControlEvent(final ControlEvent controlEvent) {
-        if (controlEvent == null) return;
-        try {
-            synchronized (eventQueue) {
-                eventQueue.add(controlEvent);
-                synchronized (eventSender.getLOCK()) {
-                    if (eventSender.waitFlag) {
-                        eventSender.waitFlag = false;
-                        eventSender.getLOCK().notify();
-                    }
-                }
-            }
-        } catch (final Exception e) {
-        }
-    }
-
     public void fireControlEventDirect(final ControlEvent controlEvent) {
         if (controlEvent == null) return;
         try {
             eventSender.handleEvent(controlEvent);
         } catch (final Exception e) {
         }
-    }
-
-    public void fireControlEvent(final int controlID, final Object param) {
-        final ControlEvent c = new ControlEvent(this, controlID, param);
-        fireControlEvent(c);
     }
 
     public ArrayList<DownloadLink> getContainerLinks(final File file) {

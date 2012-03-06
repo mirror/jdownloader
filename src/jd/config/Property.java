@@ -23,7 +23,6 @@ import java.util.HashMap;
 
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.event.ControlEvent;
 import jd.utils.JDUtilities;
 
 /**
@@ -292,7 +291,6 @@ public class Property implements Serializable {
             if (properties != null && properties.containsKey(key)) {
                 properties.remove(key);
                 propertiesHashes.remove(key);
-                controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
                 this.changes = true;
             }
             return;
@@ -321,21 +319,17 @@ public class Property implements Serializable {
         if (controller != null) {
             try {
                 if (old == null && value != null) {
-                    controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
                     this.changes = true;
                 } else if (value instanceof Comparable) {
                     if (((Comparable<Comparable<?>>) value).compareTo((Comparable<?>) old) != 0) {
-                        controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
                         this.changes = true;
                     }
                 } else {
                     if (!value.equals(old) || oldHash != value.hashCode()) {
-                        controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
                         this.changes = true;
                     }
                 }
             } catch (final Exception e) {
-                controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
                 this.changes = true;
             }
         }

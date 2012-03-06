@@ -669,7 +669,7 @@ public class LinkCrawler implements IOPermission {
     }
 
     private PackageInfo convertFilePackageInfos(CrawledLink link) {
-        if (link.getDownloadLink() != null && !link.getDownloadLink().isDefaultFilePackage()) {
+        if (link.getDownloadLink() != null && !FilePackage.isDefaultFilePackage(link.getDownloadLink().getFilePackage())) {
             PackageInfo fpi = link.getDesiredPackageInfo();
             if (fpi == null) fpi = new PackageInfo();
             FilePackage dp = link.getDownloadLink().getFilePackage();

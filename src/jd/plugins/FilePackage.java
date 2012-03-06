@@ -124,6 +124,10 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         return FP;
     }
 
+    public static boolean isDefaultFilePackage(FilePackage fp) {
+        return FP == fp;
+    }
+
     private int                                                    linksFailed;
 
     private int                                                    linksFinished;

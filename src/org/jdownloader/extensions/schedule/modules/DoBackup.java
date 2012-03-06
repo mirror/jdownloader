@@ -1,8 +1,5 @@
 package org.jdownloader.extensions.schedule.modules;
 
-import jd.controlling.JDController;
-import jd.update.JDUpdateUtils;
-
 import org.jdownloader.extensions.schedule.SchedulerModule;
 import org.jdownloader.extensions.schedule.SchedulerModuleInterface;
 import org.jdownloader.extensions.schedule.translate.T;
@@ -17,8 +14,7 @@ public class DoBackup implements SchedulerModuleInterface {
     }
 
     public void execute(String parameter) {
-        JDController.getInstance().syncDatabase();
-        JDUpdateUtils.backupDataBase();
+
     }
 
     public String getTranslation() {

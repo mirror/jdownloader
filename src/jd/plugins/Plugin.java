@@ -31,7 +31,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
 import jd.controlling.JDPluginLogger;
-import jd.event.ControlEvent;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -173,16 +172,6 @@ public abstract class Plugin implements ActionListener {
 
     public void clean() {
         br = null;
-    }
-
-    /**
-     * Verwendet den JDController um ein ControlEvent zu broadcasten
-     * 
-     * @param controlID
-     * @param param
-     */
-    public void fireControlEvent(final int controlID, final Object param) {
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, controlID, param));
     }
 
     /**

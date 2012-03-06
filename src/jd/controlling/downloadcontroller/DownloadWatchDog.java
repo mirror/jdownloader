@@ -771,7 +771,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         IOEQ.add(new Runnable() {
             public void run() {
                 final DownloadLink link = con.getDownloadLink();
-                con.getStateMonitor().executeOnceOnState(new Runnable() {
+                con.getStateMachine().executeOnceOnState(new Runnable() {
 
                     public void run() {
                         /* reset waittimes when controller reached final state */
@@ -903,7 +903,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         download.setIOPermission(this);
         registerSingleDownloadController(download);
-        download.getStateMonitor().executeOnceOnState(new Runnable() {
+        download.getStateMachine().executeOnceOnState(new Runnable() {
 
             public void run() {
                 if (dci.byPassSimultanDownloadNum == false && dci.proxy != null) {
@@ -1105,7 +1105,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 int round = 0;
                                 while (DownloadWatchDog.this.stateMachine.isState(DownloadWatchDog.RUNNING_STATE)) {
                                     sleep(1000);
-                                    if (++round == 5) break;
+                                    if (++round == 5 || links.size() == 0) break;
                                 }
                             } catch (final InterruptedException e) {
                             }
@@ -1118,23 +1118,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                         DownloadWatchDog.LOG.info("DownloadWatchDog: stopping");
                         /* stop all remaining downloads */
-                        synchronized (DownloadControllers) {
-                            for (SingleDownloadController con : DownloadControllers) {
-                                con.abortDownload();
-                            }
-                        }
-                        /* wait till all downloads are stopped */
-                        int waitStop = DownloadWatchDog.this.activeDownloads.get();
-                        if (waitStop > 0) {
-                            while (true) {
-                                if ((waitStop = DownloadWatchDog.this.activeDownloads.get()) == 0) break;
-                                try {
-                                    sleep(1000);
-                                } catch (InterruptedException e) {
-                                    JDLogger.exception(e);
-                                }
-                            }
-                        }
+                        abortAllSingleDownloadControllers();
                         /* clear sessionHistory */
                         synchronized (sessionHistory) {
                             sessionHistory.clear();
