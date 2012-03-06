@@ -126,7 +126,7 @@ public class ShareOnlineBiz extends PluginForHost {
         if (hideID) link.setName("download.php");
     }
 
-    private void errorHandling(Browser br, DownloadLink downloadLink) throws PluginException {
+    private void errorHandling(Browser br, DownloadLink downloadLink, Account acc) throws PluginException {
         /* file is offline */
         if (br.containsHTML("The requested file is not available")) {
             logger.info("The following link was marked as online by the API but is offline: " + downloadLink.getDownloadURL());
@@ -172,6 +172,7 @@ public class ShareOnlineBiz extends PluginForHost {
         if (br.getURL().contains("failure/ip")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already loading", 15 * 60 * 1000l); }
         if (br.getURL().contains("failure/size")) { throw new PluginException(LinkStatus.ERROR_FATAL, "File too big. Premium needed!"); }
         if (br.getURL().contains("failure/expired") || br.getURL().contains("failure/session")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait for new ticket", 60 * 1000l); }
+        if (br.getURL().contains("failure/cookie")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "CookieError", 1 * 60 * 1000l); }
     }
 
     @Override
@@ -275,11 +276,11 @@ public class ShareOnlineBiz extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        errorHandling(br, downloadLink);
+        errorHandling(br, downloadLink, null);
         if (!br.containsHTML(">>> continue for free <<<")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String ID = getID(downloadLink);
         br.postPage("http://www.share-online.biz/dl/" + ID + "/free/", "dl_free=1");
-        errorHandling(br, downloadLink);
+        errorHandling(br, downloadLink, null);
         String wait = br.getRegex("var wait=(\\d+)").getMatch(0);
         boolean captcha = br.containsHTML("RECAPTCHA active");
         long startWait = 0;
@@ -324,7 +325,7 @@ public class ShareOnlineBiz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            errorHandling(br, downloadLink);
+            errorHandling(br, downloadLink, null);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -370,7 +371,7 @@ public class ShareOnlineBiz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlURL, true, maxChunksnew.get());
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            errorHandling(br, parameter);
+            errorHandling(br, parameter, account);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

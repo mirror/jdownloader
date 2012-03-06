@@ -28,6 +28,9 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.gui.UIConstants;
 import jd.gui.UserIF;
 
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+
 public class ParameterManager {
 
     private static final Logger LOG = jd.controlling.JDLogger.getLogger();
@@ -43,7 +46,10 @@ public class ParameterManager {
 
         for (final String currentArg : input) {
 
-            if (currentArg.equals("--help") || currentArg.equals("-h")) {
+            if (currentArg.equals("--scan") || currentArg.equals("-scan")) {
+                HostPluginController.getInstance().init(true);
+                CrawlerPluginController.getInstance().init(true);
+            } else if (currentArg.equals("--help") || currentArg.equals("-h")) {
 
                 addLinksSwitch = false;
                 addContainersSwitch = false;

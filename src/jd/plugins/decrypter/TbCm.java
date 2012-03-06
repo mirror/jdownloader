@@ -52,7 +52,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(watch.*?v=|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(embed/|watch.*?v=|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
     private static boolean PLUGIN_DISABLED;
 
@@ -208,6 +208,7 @@ public class TbCm extends PluginForDecrypt {
         if (PLUGIN_DISABLED) return decryptedLinks;
         String parameter = param.toString().replace("watch#!v", "watch?v");
         parameter = parameter.replaceFirst("(watch\\?.*?v)", "watch?v");
+        parameter = parameter.replaceFirst("/embed/", "/watch?v=");
         parameter = parameter.replaceFirst("https", "http");
         this.br.setFollowRedirects(true);
         this.br.setCookiesExclusive(true);
