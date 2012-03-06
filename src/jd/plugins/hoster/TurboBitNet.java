@@ -328,7 +328,7 @@ public class TurboBitNet extends PluginForHost {
         if (fun == null) { return null; }
         if (!NULL) {
             final String[] next = fun.split(parseImage("ff88"));
-            if (next == null || next.length != 2) { return new Regex(fun, parseImage("fedbfffbfe0bc9e41ac7b29ada5c47ae2d9772ed0b08d9c919495b6f163882d65d83f838895ae63b251a55eaec261d2fe72429ccc59d6667ac20d2e26c5f32345ef5c82c5827ff9820ab2fef5261c8e344f98dde6af1")).getMatch(2); }
+            if (next == null || next.length != 2) { return new Regex(fun, parseImage("fedbfffbfe0bc9e41ac7b29ada5c47ae2d9772ed0b08d9c919495b6f163882d65d83f83d895ae63e251a55eaec261d2fe72429ccc59d6667ac20d2e26c5f32345effc9785d7cffca20f32fef5260c8b445fe8bdb6af198a19c8d2e972831784ec2253a5a68d98031391101f61f3f")).getMatch(3); }
             Object result = new Object();
             final ScriptEngineManager manager = new ScriptEngineManager();
             final ScriptEngine engine = manager.getEngineByName("javascript");
