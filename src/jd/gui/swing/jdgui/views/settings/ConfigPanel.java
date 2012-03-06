@@ -36,9 +36,9 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.update.inapp.RestartController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.update.RestartController;
 
 public abstract class ConfigPanel extends SwitchPanel {
 

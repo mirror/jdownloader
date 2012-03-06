@@ -34,10 +34,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 
+import org.appwork.update.inapp.RestartController;
 import org.appwork.utils.event.Eventsender;
 import org.jdownloader.container.D;
 import org.jdownloader.controlling.filter.LinkFilterController;
-import org.jdownloader.update.RestartController;
 
 /**
  * Im JDController wird das ganze App gesteuert. Events werden deligiert.

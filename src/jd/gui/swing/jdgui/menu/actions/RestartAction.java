@@ -21,8 +21,8 @@ import java.awt.event.ActionEvent;
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
 
+import org.appwork.update.inapp.RestartController;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.update.RestartController;
 
 public class RestartAction extends ActionAdapter {
 
