@@ -10,6 +10,7 @@ import jd.utils.JDUtilities;
 import org.appwork.storage.JSonStorage;
 import org.appwork.update.exchange.UpdateFile;
 import org.appwork.update.inapp.AppUpdater;
+import org.appwork.update.inapp.RestartController;
 import org.appwork.update.inapp.UpdaterGUI;
 import org.appwork.update.updateclient.InstalledFile;
 import org.appwork.update.updateclient.UpdaterState;
@@ -59,7 +60,7 @@ public class JDUpdater extends AppUpdater {
      */
     private JDUpdater() {
         super();
-
+        RestartController.getInstance().setUpdater(this);
         this.getEventSender().addListener(new UpdaterListener() {
 
             public void onUpdaterModuleStart(UpdaterEvent arg0) {
