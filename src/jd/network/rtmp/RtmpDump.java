@@ -26,14 +26,6 @@ import org.jdownloader.translate._JDT;
 
 public class RtmpDump extends RTMPDownload {
 
-    private Chunk             CHUNK;
-    private volatile long     BYTESLOADED = 0l;
-    private int               PID         = -1;
-    private String            RTMPDUMP;
-    private NativeProcess     NP;
-    private Process           P;
-    private InputStreamReader R;
-
     private static class RTMPCon implements SpeedMeterInterface, ThrottledConnection {
 
         private ThrottledConnectionHandler handler;
@@ -46,28 +38,38 @@ public class RtmpDump extends RTMPDownload {
             return 0;
         }
 
-        public void setHandler(ThrottledConnectionHandler manager) {
-            this.handler = manager;
+        public long getSpeedMeter() {
+            return 0;
         }
 
-        public void setLimit(int kpsLimit) {
+        public void putSpeedMeter(final long bytes, final long time) {
+        }
+
+        public void resetSpeedMeter() {
+        }
+
+        public void setHandler(final ThrottledConnectionHandler manager) {
+            handler = manager;
+        }
+
+        public void setLimit(final int kpsLimit) {
         }
 
         public long transfered() {
             return 0;
         }
 
-        public void resetSpeedMeter() {
-        }
-
-        public long getSpeedMeter() {
-            return 0;
-        }
-
-        public void putSpeedMeter(long bytes, long time) {
-        }
-
     }
+
+    private Chunk             CHUNK;
+    private volatile long     BYTESLOADED = 0l;
+    private long              SPEED       = 0l;
+    private int               PID         = -1;
+    private String            RTMPDUMP;
+    private NativeProcess     NP;
+    private Process           P;
+
+    private InputStreamReader R;
 
     public RtmpDump(final PluginForHost plugin, final DownloadLink downloadLink, final String rtmpURL) throws IOException, PluginException {
         super(plugin, downloadLink, rtmpURL);
@@ -114,10 +116,14 @@ public class RtmpDump extends RTMPDownload {
         if (!new File(RTMPDUMP).exists()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " not found!"); }
         final ThrottledConnection tcon = new RTMPCon() {
             @Override
+            public long getSpeedMeter() {
+                return SPEED;
+            }
+
+            @Override
             public long transfered() {
                 return BYTESLOADED;
             }
-
         };
         try {
             getManagedConnetionHandler().addThrottledConnection(tcon);
@@ -140,6 +146,7 @@ public class RtmpDump extends RTMPDownload {
             }
             String line = "", error = "";
             long iSize = 0;
+            long before = 0;
             long lastTime = System.currentTimeMillis();
 
             String cmd = rtmpConnection.getCommandLineParameter();
@@ -203,6 +210,10 @@ public class RtmpDump extends RTMPDownload {
                                 sizeCalulateBuffer++;
                             }
                             if (System.currentTimeMillis() - lastTime > 1000) {
+                                SPEED = (BYTESLOADED - before) / (System.currentTimeMillis() - lastTime) * 1000l;
+                                lastTime = System.currentTimeMillis();
+                                before = BYTESLOADED;
+                                // downloadLink.requestGuiUpdate();
                                 downloadLink.setChunksProgress(new long[] { BYTESLOADED });
                             }
                         }
