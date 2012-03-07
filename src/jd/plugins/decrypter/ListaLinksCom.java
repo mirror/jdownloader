@@ -40,9 +40,9 @@ public class ListaLinksCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        final Regex info = br.getRegex("<FONT CLASS=\"result\">([^<>\"\\']+)<br />[\t\n\r ]+<br />(.*?)<DIV ID=\"secundario\">");
-        final String fpName = info.getMatch(0);
-        final String linktext = info.getMatch(1);
+        final Regex info = br.getRegex("<FONT CLASS=\"result\">(<b>)?([^<>\"]+)(</b>)?<br />(.*?)<DIV ID=\"secundario\">");
+        final String fpName = info.getMatch(1);
+        final String linktext = info.getMatch(3);
         if (linktext == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

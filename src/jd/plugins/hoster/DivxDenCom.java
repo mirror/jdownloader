@@ -152,7 +152,7 @@ public class DivxDenCom extends PluginForHost {
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         if (brbefore.contains(INMAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode, try again later.");
         boolean resumable = true;
-        int maxchunks = -2;
+        int maxchunks = 1;
         // If the filesize regex above doesn't match you can copy this part into
         // the available status (and delete it here)
         Form[] allForms = br.getForms();
@@ -241,8 +241,7 @@ public class DivxDenCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        // 7 * 2 = Max connections at all
-        return 7;
+        return -1;
     }
 
     @Override
@@ -272,6 +271,8 @@ public class DivxDenCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        br.setReadTimeout(3 * 60 * 1000);
+
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
@@ -316,7 +317,7 @@ public class DivxDenCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(filename.trim());
+        link.setFinalFileName(filename.trim());
         if (filesize != null && !filesize.equals("")) {
             logger.info("Filesize found, filesize = " + filesize);
             link.setDownloadSize(SizeFormatter.getSize(filesize));
