@@ -70,6 +70,7 @@ import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.inapp.RestartController;
 import org.appwork.utils.Application;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -203,6 +204,12 @@ public class JDGui extends SwingGui {
                             @Override
                             public Object edtRun() {
                                 JDGui.this.mainTabbedPane.onClose();
+                                try {
+                                    GUIUtils.saveLastLocation(mainFrame);
+                                    GUIUtils.saveLastDimension(mainFrame);
+                                } catch (final Throwable e) {
+                                    Log.exception(e);
+                                }
                                 JDGui.this.getMainFrame().setVisible(false);
                                 JDGui.this.getMainFrame().dispose();
                                 return null;

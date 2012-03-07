@@ -33,7 +33,6 @@ import javax.swing.Timer;
 import jd.JDInitFlags;
 import jd.controlling.JDLogger;
 import jd.gui.UserIF;
-import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.interfaces.View;
 
 import org.appwork.app.gui.ActiveDialogException;
@@ -130,17 +129,6 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
                 disableAlwaysonTop.setInitialDelay(1000);
                 disableAlwaysonTop.setRepeats(false);
                 disableAlwaysonTop.start();
-            }
-
-            @Override
-            public void dispose() {
-                try {
-                    GUIUtils.saveLastLocation(this);
-                    GUIUtils.saveLastDimension(this);
-                } catch (final Throwable e) {
-                    Log.exception(e);
-                }
-                super.dispose();
             }
 
             public void setVisible(boolean b) {
