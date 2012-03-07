@@ -50,15 +50,12 @@ public class RestartAction extends ActionAdapter {
                 }, JDUpdater.getInstance());
                 try {
                     Dialog.getInstance().showDialog(dialog);
-
+                    return;
                 } catch (DialogNoAnswerException e1) {
-                    RestartController.getInstance().directRestart(true);
+
                 }
-
-            } else {
-                RestartController.getInstance().directRestart(true);
             }
-
+            RestartController.getInstance().directRestart(true);
         }
     }
 

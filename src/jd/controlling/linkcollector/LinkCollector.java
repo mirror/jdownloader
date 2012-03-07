@@ -36,6 +36,8 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
@@ -46,6 +48,8 @@ import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.controlling.UniqueSessionID;
@@ -55,6 +59,8 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.uiserio.NewUIO;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.translate._JDT;
@@ -100,10 +106,54 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private HashMap<String, ArrayList<CrawledLink>> variousMap    = new HashMap<String, ArrayList<CrawledLink>>();
 
     private LinkCollector() {
+        ShutdownController.getInstance().addShutdownVetoListener(new ShutdownVetoListener() {
+
+            @Override
+            public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
+            }
+
+            @Override
+            public void onShutdownRequest(int vetos) throws ShutdownVetoException {
+                if (vetos > 0) {
+                    /* we already abort shutdown, no need to ask again */
+                    return;
+                }
+                if (LinkChecker.isChecking() || LinkCrawler.isCrawling()) {
+                    try {
+                        NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.LinkCollector_onShutdownRequest_(), _JDT._.LinkCollector_onShutdownRequest_msg(), NewTheme.I().getIcon("linkgrabber", 32), _JDT._.literally_yes(), null);
+                        return;
+                    } catch (DialogNoAnswerException e) {
+                        e.printStackTrace();
+                    }
+                    throw new ShutdownVetoException("LinkCollector is still running");
+                }
+            }
+
+            @Override
+            public void onShutdown() {
+            }
+        });
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
             public void run() {
+                LinkCollector.this.abort();
+                int retry = 10;
+                while (retry > 0) {
+                    if (!LinkChecker.isChecking() && !LinkCrawler.isCrawling()) {
+                        /*
+                         * we wait till the LinkCollector is finished or max 10
+                         * secs
+                         */
+                        break;
+                    }
+                    try {
+                        Thread.sleep(1000);
+                    } catch (final InterruptedException e) {
+                        break;
+                    }
+                    retry--;
+                }
                 IOEQ.getQueue().addWait(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
 
                     @Override

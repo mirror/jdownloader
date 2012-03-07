@@ -38,9 +38,14 @@ import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
@@ -59,8 +64,11 @@ import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.menu.MenuContext;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
+import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.gui.views.downloads.table.DownloadTableContext;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.translate._JDT;
 
 public class ExtractionExtension extends AbstractExtension<ExtractionConfig> implements FileCreationListener, MenuFactoryListener {
 
@@ -81,6 +89,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     private AbstractToolbarAction        extractFileAction;
 
     private AppAction                    menuAction;
+
+    private ShutdownVetoListener         listener          = null;
 
     public ExtractionExtension() throws StartException {
         super(T._.name());
@@ -362,6 +372,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
     @Override
     protected void stop() throws StopException {
+        ShutdownController.getInstance().removeShutdownVetoListener(listener);
         MenuFactoryEventSender.getInstance().removeListener(this);
         FileCreationManager.getInstance().getEventSender().removeListener(this);
         Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
@@ -397,6 +408,33 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                         addListener(statusbarListener = new ExtractionListenerIcon(ExtractionExtension.this));
                     }
                 };
+            }
+        });
+        ShutdownController.getInstance().addShutdownVetoListener(listener = new ShutdownVetoListener() {
+
+            @Override
+            public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
+            }
+
+            @Override
+            public void onShutdownRequest(int vetos) throws ShutdownVetoException {
+                if (vetos > 0) {
+                    /* we already abort shutdown, no need to ask again */
+                    return;
+                }
+                if (!extractionQueue.isEmpty() || extractionQueue.getCurrentQueueEntry() != null) {
+                    try {
+                        NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.Extraction_onShutdownRequest_(), _JDT._.Extraction_onShutdownRequest_msg(), NewTheme.I().getIcon("unpack", 32), _JDT._.literally_yes(), null);
+                        return;
+                    } catch (DialogNoAnswerException e) {
+                        e.printStackTrace();
+                    }
+                    throw new ShutdownVetoException("ExtractionExtension is still running");
+                }
+            }
+
+            @Override
+            public void onShutdown() {
             }
         });
     }
@@ -497,7 +535,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         };
 
         configPanel = new ExtractionConfigPanel(this);
-
     }
 
     @Override

@@ -773,6 +773,18 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do you want to stop running downloads to exit JDownloader?" })
     String DownloadWatchDog_onShutdownRequest_msg();
 
+    @Default(lngs = { "en" }, values = { "LinkCollector is still in progress!" })
+    String LinkCollector_onShutdownRequest_();
+
+    @Default(lngs = { "en" }, values = { "Extraction is still in progress!" })
+    String Extraction_onShutdownRequest_();
+
+    @Default(lngs = { "en" }, values = { "Abort Extraction?" })
+    String Extraction_onShutdownRequest_msg();
+
+    @Default(lngs = { "en" }, values = { "Do you want to stop LinkCollector?" })
+    String LinkCollector_onShutdownRequest_msg();
+
     @Default(lngs = { "en" }, values = { "Yes" })
     String literally_yes();
 

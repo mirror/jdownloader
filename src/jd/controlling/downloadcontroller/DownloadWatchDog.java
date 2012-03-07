@@ -56,8 +56,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.uiserio.NewUIO;
@@ -1227,12 +1226,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         if (this.stateMachine.isState(RUNNING_STATE, STOPPING_STATE)) {
 
             try {
-                NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.DownloadWatchDog_onShutdownRequest_(), _JDT._.DownloadWatchDog_onShutdownRequest_msg(), NewTheme.I().getIcon("download", 32), _JDT._.literally_yes(), null);
+                NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.DownloadWatchDog_onShutdownRequest_(), _JDT._.DownloadWatchDog_onShutdownRequest_msg(), NewTheme.I().getIcon("download", 32), _JDT._.literally_yes(), null);
                 config.setClosedWithRunningDownloads(true);
                 return;
-            } catch (DialogClosedException e) {
-                e.printStackTrace();
-            } catch (DialogCanceledException e) {
+            } catch (DialogNoAnswerException e) {
                 e.printStackTrace();
             }
             throw new ShutdownVetoException("DownloadWatchDog is still running");

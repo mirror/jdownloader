@@ -101,8 +101,6 @@ public class ExtractionListenerIcon implements ExtractionListener {
     }
 
     public void cleanup() {
-
         JDGui.getInstance().getStatusBar().remove(icon);
-
     }
 }
