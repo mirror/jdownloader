@@ -181,7 +181,11 @@ public class JDGui extends SwingGui {
                     }
 
                     @Override
-                    public void onShutdownRequest() throws ShutdownVetoException {
+                    public void onShutdownRequest(int vetos) throws ShutdownVetoException {
+                        if (vetos > 0) {
+                            /* we already abort shutdown, no need to ask again */
+                            return;
+                        }
                         if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.sys_ask_rlyclose()), UserIO.RETURN_OK)) { return; }
                         throw new ShutdownVetoException("User aborted!");
                     }

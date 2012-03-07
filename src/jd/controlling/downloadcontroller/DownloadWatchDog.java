@@ -1219,7 +1219,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     }
 
-    public void onShutdownRequest() throws ShutdownVetoException {
+    public void onShutdownRequest(final int vetos) throws ShutdownVetoException {
+        if (vetos > 0) {
+            /* we already abort shutdown, no need to ask again */
+            return;
+        }
         if (this.stateMachine.isState(RUNNING_STATE, STOPPING_STATE)) {
 
             try {
