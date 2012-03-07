@@ -170,7 +170,7 @@ public class SflnkgNt extends PluginForDecrypt {
                     captchaBr.postPage("http://safelinking.net/includes/captcha_factory/Qaptcha.jquery.php?hash=" + new Regex(parameter, "safelinking\\.net/p/(.+)").getMatch(0), "action=qaptcha");
                     if (!captchaBr.containsHTML("\"error\":false")) {
                         logger.warning("Decrypter broken for link: " + parameter + "\n");
-                        logger.warning("CAPTCHATEXT4 errorhandling broken");
+                        logger.warning("Qaptcha handling broken");
                         return null;
                     }
                     data += "&iQapTcha=";
@@ -186,7 +186,7 @@ public class SflnkgNt extends PluginForDecrypt {
                 case cats:
                     break;
                 case solvemedia:
-                    String chid = br.getRegex("src=\"(http://api\\.solvemedia\\.com/papi/challenge\\.(no)?script\\?k=[\\w\\-\\.]+)\"").getMatch(0);
+                    String chid = br.getRegex("src=\"(http://api\\.solvemedia\\.com/papi/challenge\\.script\\?k=[\\w\\-\\.]+)\"").getMatch(0);
                     if (chid == null) { return null; }
                     chid = chid.replace("challenge.script", "_challenge.js");
                     final boolean skipcaptcha = getPluginConfig().getBooleanProperty("SKIP_CAPTCHA", false);
@@ -202,6 +202,9 @@ public class SflnkgNt extends PluginForDecrypt {
                         try {
                             ImageIO.write(ImageIO.read(captchaFile), "jpg", captchaFile);
                         } catch (final Throwable e) {
+                            logger.warning("Decrypter broken for link: " + parameter + "\n");
+                            logger.warning("Solvemedia handling broken");
+                            return null;
                         }
                         code = getCaptchaCode(null, captchaFile, param);
                     } else {

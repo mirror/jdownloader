@@ -55,7 +55,8 @@ public class WeTransferCom extends PluginForHost {
     }
 
     private String getHexLength(final String s) {
-        return Integer.toHexString(s.length());
+        String result = Integer.toHexString(s.length());
+        return result.length() % 2 > 0 ? "0" + result : result;
     }
 
     @Override
