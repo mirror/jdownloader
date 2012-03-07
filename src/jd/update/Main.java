@@ -44,8 +44,6 @@ import javax.swing.border.EmptyBorder;
 
 import jd.config.SubConfiguration;
 import jd.controlling.JSonWrapper;
-import jd.event.MessageEvent;
-import jd.event.MessageListener;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.Formatter;
@@ -192,49 +190,7 @@ public class Main {
             }
             final WebUpdater updater = new WebUpdater();
             updater.setOSFilter(OSFilter);
-            updater.getBroadcaster().addListener(new MessageListener() {
 
-                private String msg0 = "";
-                private String msg1 = "";
-                private String msg2 = "";
-
-                public void onMessage(MessageEvent event) {
-
-                    if (updater.getErrors() > 0) {
-
-                        if (!GUILESS) JOptionPane.showConfirmDialog(frame, "Update Server are too busy.\r\n Please try again later or download update at http://jdownloader.org/download!", "UPDATE WARNINGS", JOptionPane.YES_OPTION, JOptionPane.WARNING_MESSAGE);
-                        Main.log(log, "Abort due to errors ");
-
-                        Main.log(log, "Local: " + new File("").getAbsolutePath());
-                        Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
-
-                        if (!NORESTART) JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
-
-                        if (!GUILESS) logWindow.setText(log.toString());
-                        JDIO.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
-                        System.exit(0);
-                        return;
-
-                    }
-                    if (event.getEventID() == WebUpdater.DO_UPDATE_FAILED || event.getEventID() == FileUpdate.ERROR) {
-
-                        msg2 = msg1;
-                        msg1 = msg0;
-                        msg0 = event.getMessage();
-
-                        if (!GUILESS) warnings.setText(msg2 + "\r\n" + msg1 + "\r\n" + msg0 + "\r\n               Download latest Version no at http://jdownloader.org/download");
-
-                    }
-
-                    if (event.getEventID() == WebUpdater.DO_UPDATE_SUCCESS) {
-                        if (!GUILESS) warnings.setText("Update is too slow and takes too much time?\r\n\r\n\r\nDownload latest Version at http://jdownloader.org/download");
-
-                    }
-                    Main.log(log, event.getMessage() + "\r\n");
-
-                }
-
-            });
             Main.log(log, "Current Date:" + new Date() + "\r\n");
             if (!GUILESS) checkBackup();
             updater.ignorePlugins(false);

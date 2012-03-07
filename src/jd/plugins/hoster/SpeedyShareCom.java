@@ -30,7 +30,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedyshare.com" }, urls = { "http://(www\\.)?speedyshare\\.com/files?/[A-Za-z0-9]+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedyshare.com" }, urls = { "http://(www\\.)?(speedyshare\\.com/files?/|speedy.sh/)[A-Za-z0-9]+/.+" }, flags = { 0 })
 public class SpeedyShareCom extends PluginForHost {
 
     private static final String PREMIUMONLY     = "(>This paraticular file can only be downloaded after you purchase|this file can only be downloaded with SpeedyShare Premium)";
@@ -41,6 +41,11 @@ public class SpeedyShareCom extends PluginForHost {
     public SpeedyShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(2000l);
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+
     }
 
     @Override
@@ -114,6 +119,7 @@ public class SpeedyShareCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie("http://speedyshare.com/", "trans", "en");
         br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("(class=sizetagtext>not found<|File not found|It has been deleted<|>or it never existed at all)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("property=\"og:title\" content=\"(.*?) \\- download at SpeedyShare\"").getMatch(0);
         if (filename == null) filename = br.getRegex("itemprop=\"name\" content=\"(.*?) \\- download at SpeedyShare\"").getMatch(0);

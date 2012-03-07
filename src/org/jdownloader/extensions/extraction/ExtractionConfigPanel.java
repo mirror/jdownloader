@@ -3,7 +3,6 @@ package org.jdownloader.extensions.extraction;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.controlling.PasswordListController;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
@@ -84,14 +83,17 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
 
                 StringBuilder sb = new StringBuilder();
                 for (String line : s.getBlacklistPatterns()) {
-                    sb.append(line + System.getProperty("line.separator"));
+                    if (sb.length() > 0) sb.append(System.getProperty("line.separator"));
+                    sb.append(line);
                 }
                 blacklist.getComponent().setText(sb.toString());
                 sb = new StringBuilder();
-                for (String line : PasswordListController.getInstance().getPasswordList()) {
-                    sb.append(line + System.getProperty("line.separator"));
+                ArrayList<String> pwList = s.getPasswordList();
+                if (pwList == null) pwList = new ArrayList<String>();
+                for (String line : pwList) {
+                    if (sb.length() > 0) sb.append(System.getProperty("line.separator"));
+                    sb.append(line);
                 }
-
                 passwordlist.getComponent().setText(sb.toString());
                 if (s.getCPUPriority() == CPUPriority.HIGH) {
                     cpupriority.getComponent().setValue(T._.settings_cpupriority_high());
@@ -125,9 +127,10 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         String[] list = passwordlist.getComponent().getText().split(System.getProperty("line.separator"));
         ArrayList<String> passwords = new ArrayList<String>(list.length);
         for (String ss : list) {
+            if (passwords.contains(ss)) continue;
             passwords.add(ss);
         }
-        PasswordListController.getInstance().setPasswordList(passwords);
+        s.setPasswordList(passwords);
         if (cpupriority.getComponent().getValue().equals(T._.settings_cpupriority_high())) {
             s.setCPUPriority(CPUPriority.HIGH);
         } else if (cpupriority.getComponent().getValue().equals(T._.settings_cpupriority_middle())) {

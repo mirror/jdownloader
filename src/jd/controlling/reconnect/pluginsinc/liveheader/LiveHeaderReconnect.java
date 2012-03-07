@@ -14,7 +14,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectInvoker;
@@ -25,8 +24,6 @@ import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.pluginsinc.liveheader.recorder.Gui;
 import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
 import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.UserIO;
 import net.miginfocom.swing.MigLayout;
 
@@ -50,7 +47,7 @@ import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
-public class LiveHeaderReconnect extends RouterPlugin implements ControlListener, ConfigEventListener {
+public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventListener {
 
     private ExtTextField     txtUser;
     private ExtPasswordField txtPassword;
@@ -75,43 +72,12 @@ public class LiveHeaderReconnect extends RouterPlugin implements ControlListener
         this.icon = NewTheme.I().getIcon("modem", 16);
 
         // only listen to system to autosend script
-        JDController.getInstance().addControlListener(this);
         // Send routerscript if there were 3 successful recoinnects in a row
         JsonConfig.create(ReconnectConfig.class).getStorageHandler().getEventSender().addListener(this);
         settings = JsonConfig.create(LiveHeaderReconnectSettings.class);
         settings.getStorageHandler().getEventSender().addListener(this);
         AdvancedConfigManager.getInstance().register(JsonConfig.create(LiveHeaderReconnectSettings.class));
 
-    }
-
-    public void controlEvent(final ControlEvent event) {
-        // if (event.getEventID() == ControlEvent.CONTROL_AFTER_RECONNECT &&
-        // ReconnectPluginController.getInstance().getActivePlugin() == this &&
-        // !this.getStorage().get("SENT", false)) {
-        // final boolean rcOK =
-        // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RECONNECT_OKAY,
-        // true);
-        // final int failCount =
-        // JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_RECONNECT_FAILED_COUNTER,
-        // 0);
-        // if (failCount == 0 && rcOK) {
-        // final int count = this.getStorage().get("SUCCESSCOUNT", 0) + 1;
-        // this.getStorage().put("SUCCESSCOUNT", count);
-        // if (count > 2) {
-        // try {
-        // RouterSender.getInstance().run();
-        //
-        // this.getStorage().put("SENT", true);
-        //
-        // } catch (final Exception e) {
-        // e.printStackTrace();
-        // }
-        // }
-        // } else {
-        // this.getStorage().put("SUCCESSCOUNT", 0);
-        // }
-        //
-        // }
     }
 
     void editScript() {

@@ -7,16 +7,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import jd.event.MessageEvent;
-import jd.event.MessageListener;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 
-public class Converter implements MessageListener {
+public class Converter {
     static {
         // USe Jacksonmapper in this project
         JSonStorage.setMapper(new JacksonMapper());
@@ -51,7 +48,6 @@ public class Converter implements MessageListener {
 
     private void start() throws IOException {
         sourceParser = new SrcParser(new File("src/"));
-        sourceParser.getBroadcaster().addListener(this);
         sourceParser.parse();
 
         convert();
@@ -267,7 +263,4 @@ public class Converter implements MessageListener {
         return null;
     }
 
-    public void onMessage(MessageEvent event) {
-        System.out.println(event.getMessage());
-    }
 }

@@ -22,19 +22,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.controlling.JDLogger;
-import jd.event.MessageEvent;
-import jd.event.MessageListener;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
-import org.appwork.utils.event.Eventsender;
 
 public class SrcParser {
 
-    private final File                                 root;
-    private final int                                  rootLen;
-    private Eventsender<MessageListener, MessageEvent> broadcaster;
+    private final File root;
+    private final int  rootLen;
 
     public static void deleteCache() {
         File dir = JDUtilities.getResourceFile("tmp/lfe/cache/");
@@ -51,20 +47,7 @@ public class SrcParser {
         this.rootLen = root.getAbsolutePath().length() + 1;
         this.entries = new ArrayList<LngEntry>();
 
-        this.broadcaster = new Eventsender<MessageListener, MessageEvent>() {
-
-            @Override
-            protected void fireEvent(MessageListener listener, MessageEvent event) {
-                listener.onMessage(event);
-            }
-
-        };
-
         pattern.add("sys\\.warning\\.dlcerror\\.(.+?)");
-    }
-
-    public Eventsender<MessageListener, MessageEvent> getBroadcaster() {
-        return broadcaster;
     }
 
     public ArrayList<LngEntry> getEntries() {
@@ -95,8 +78,6 @@ public class SrcParser {
         this.currentFile = file;
         this.currentFileName = file.getName();
         this.currentFileName = this.currentFileName.substring(0, this.currentFileName.length() - 5);
-
-        broadcaster.fireEvent(new MessageEvent(this, 0, "Parse " + file.getAbsolutePath().substring(rootLen)));
 
         /* Dont parse the code of the SrcParser. */
         if (currentFileName.equals("SrcParser")) return;

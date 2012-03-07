@@ -26,7 +26,6 @@ import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 
-import jd.gui.swing.SwingGui;
 import jd.nutils.Screen;
 
 import org.appwork.storage.JSonStorage;
@@ -97,26 +96,6 @@ public class GUIUtils {
 
         }
         return null;
-    }
-
-    public static void restoreWindow(JFrame parent, Component component) {
-        if (parent == null) parent = SwingGui.getInstance().getMainFrame();
-
-        component.setLocation(getLastLocation(parent, component));
-        Dimension dim = getLastDimension(component);
-        if (dim != null) {
-            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-
-            dim.width = Math.min(dim.width, screenSize.width);
-            dim.height = Math.min(dim.height, screenSize.height);
-            component.setSize(dim);
-            if (component instanceof JFrame) {
-                ((JFrame) component).setExtendedState(STORAGE.get("extendedstate." + component.getName(), JFrame.NORMAL));
-            }
-        } else {
-            component.validate();
-        }
-
     }
 
     public static void saveLastDimension(Component child) {

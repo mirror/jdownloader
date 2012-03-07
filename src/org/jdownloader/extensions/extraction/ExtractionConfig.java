@@ -1,11 +1,14 @@
 package org.jdownloader.extensions.extraction;
 
+import java.util.ArrayList;
+
 import jd.plugins.ExtensionConfigInterface;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DefaultStringArrayValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.Description;
@@ -29,6 +32,13 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     @DefaultStringValue("%PACKAGENAME%")
     @Description("A Blacklist is a list of regular expressions. Use a blacklist to avoid extracting certain filetypes.")
     String getSubPath();
+
+    @DefaultJsonObject("[]")
+    @AboutConfig
+    @Description("A List of passwords for automatic extraction of password protected archives.")
+    ArrayList<String> getPasswordList();
+
+    void setPasswordList(ArrayList<String> list);
 
     /**
      * Only use subpath if archive conatins more than X files

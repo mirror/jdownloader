@@ -30,7 +30,6 @@ import javax.swing.JMenuItem;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.controlling.JDController;
 import jd.controlling.JSonWrapper;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.UserIO;
@@ -41,6 +40,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
+import org.appwork.update.inapp.RestartController;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
@@ -79,12 +79,11 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
 
     private void closejd() {
         logger.info("close jd");
-        JDUtilities.getController().exit();
+        RestartController.getInstance().exit(true);
     }
 
     private void shutdown() {
         logger.info("shutdown");
-        JDController.getInstance().prepareShutdown(false);
         int id = 0;
         switch (id = CrossSystem.getID()) {
         case CrossSystem.OS_WINDOWS_2003:

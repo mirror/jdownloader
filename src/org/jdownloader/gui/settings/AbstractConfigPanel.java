@@ -12,13 +12,13 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 
-import jd.controlling.JDController;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.components.ExtCheckBox;
+import org.appwork.update.inapp.RestartController;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -64,7 +64,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
     protected void showRestartRequiredMessage() {
         try {
             Dialog.getInstance().showConfirmDialog(0, _JDT._.dialog_optional_showRestartRequiredMessage_title(), _JDT._.dialog_optional_showRestartRequiredMessage_msg(), null, _JDT._.basics_yes(), _JDT._.basics_no());
-            JDController.getInstance().exit();
+            RestartController.getInstance().exit(true);
         } catch (DialogClosedException e) {
         } catch (DialogCanceledException e) {
         }

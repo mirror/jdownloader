@@ -31,8 +31,6 @@ import javax.swing.JProgressBar;
 
 import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
-import jd.event.MessageEvent;
-import jd.event.MessageListener;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -40,7 +38,6 @@ import jd.nutils.zip.UnZip;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
-import org.appwork.utils.event.Eventsender;
 
 /**
  * Webupdater lädt pfad und hash infos von einem server und vergleicht sie mit
@@ -108,30 +105,28 @@ public class WebUpdater implements Serializable {
         }
     }
 
-    private final Browser                                        br;
-    private String[]                                             branches;
+    private final Browser            br;
+    private String[]                 branches;
 
-    private transient Eventsender<MessageListener, MessageEvent> broadcaster;
+    private final AtomicInteger      errorCount;
 
-    private final AtomicInteger                                  errorCount;
+    private boolean                  ignorePlugins = true;
 
-    private boolean                                              ignorePlugins = true;
+    private StringBuilder            logger;
 
-    private StringBuilder                                        logger;
+    private boolean                  OSFilter      = true;
+    private JProgressBar             progressload  = null;
+    public byte[]                    sum;
+    private File                     workingdir;
 
-    private boolean                                              OSFilter      = true;
-    private JProgressBar                                         progressload  = null;
-    public byte[]                                                sum;
-    private File                                                 workingdir;
-
-    private String                                               betaBranch;
+    private String                   betaBranch;
 
     /**
      * if this field !=null, the updater uses this branch and ignores any other
      * branch settings
      */
-    private String                                               branch;
-    private static ArrayList<Server>                             SERVER_LIST;
+    private String                   branch;
+    private static ArrayList<Server> SERVER_LIST;
 
     /**
      * @param path
@@ -144,7 +139,7 @@ public class WebUpdater implements Serializable {
         this.br.setReadTimeout(20 * 1000);
         this.br.setConnectTimeout(10 * 1000);
         this.errorCount = new AtomicInteger(0);
-        this.initBroadcaster();
+
     }
 
     public void cleanUp() {
@@ -152,7 +147,7 @@ public class WebUpdater implements Serializable {
 
     private void errorWait() {
         try {
-            this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, "Server Busy. Wait 10 Seconds"));
+
             Thread.sleep(10000);
         } catch (final InterruptedException e) {
             e.printStackTrace();
@@ -175,11 +170,9 @@ public class WebUpdater implements Serializable {
                 it.remove();
             } else {
                 if (!file.exists()) {
-                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.NEW_FILE, "New: " + WebUpdater.formatPathReadable(file.getLocalPath())));
+
                     continue;
                 } else if (!file.equals()) {
-
-                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.UPDATE_FILE, "Update: " + WebUpdater.formatPathReadable(file.getLocalPath())));
 
                     continue;
                 } else {
@@ -299,10 +292,6 @@ public class WebUpdater implements Serializable {
         return this.branches = new String[] {};
     }
 
-    public Eventsender<MessageListener, MessageEvent> getBroadcaster() {
-        return this.broadcaster;
-    }
-
     /**
      * Return the internal browser object
      * 
@@ -368,18 +357,6 @@ public class WebUpdater implements Serializable {
         this.ignorePlugins = b;
     }
 
-    private void initBroadcaster() {
-        this.broadcaster = new Eventsender<MessageListener, MessageEvent>() {
-
-            @Override
-            protected void fireEvent(final MessageListener listener, final MessageEvent event) {
-                listener.onMessage(event);
-
-            }
-
-        };
-    }
-
     public boolean isIgnorePlugins() {
         return this.ignorePlugins;
     }
@@ -442,8 +419,6 @@ public class WebUpdater implements Serializable {
             } else {
                 entry = new FileUpdate(m[0], m[1]);
             }
-
-            entry.getBroadcaster().addAllListener(this.broadcaster.getListener());
 
             sum.add((byte) entry.getRemoteHash().charAt(0));
 
@@ -543,7 +518,6 @@ public class WebUpdater implements Serializable {
         boolean fnf = true;
         for (int trycount = 0; trycount < 10; trycount++) {
             try {
-                this.broadcaster.fireEvent(new MessageEvent(this, 0, "Update Downloadmirrors"));
 
                 final String path = this.getListPath(trycount);
                 if (path == null) {
@@ -578,7 +552,6 @@ public class WebUpdater implements Serializable {
                     } else {
                         s.setPercent(s.getPercent() * 100 / total);
                     }
-                    this.broadcaster.fireEvent(new MessageEvent(this, 0, "Updateserver: " + s));
 
                 }
                 if (servers.size() > 0) {
@@ -609,8 +582,6 @@ public class WebUpdater implements Serializable {
 
         final String[] tmp = file.elementAt(0).split("\\?");
 
-        this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FILE, String.format("Download %s to %s", WebUpdater.formatPathReadable(tmp[1]), WebUpdater.formatPathReadable(JDUtilities.getResourceFile(tmp[0]).getAbsolutePath()))));
-
         Browser.download(JDUtilities.getResourceFile(tmp[0]), tmp[0]);
 
     }
@@ -631,13 +602,9 @@ public class WebUpdater implements Serializable {
         int i = 0;
         for (final FileUpdate file : files) {
             try {
-                this.broadcaster.fireEvent(new MessageEvent(this, 0, String.format("Update %s", WebUpdater.formatPathReadable(file.getLocalPath()))));
+
                 if (this.updateUpdatefile(file)) {
-                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_SUCCESS, WebUpdater.formatPathReadable(file.toString())));
-                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_SUCCESS, "Successful"));
                 } else {
-                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, WebUpdater.formatPathReadable(file.toString())));
-                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, "Failed"));
                     if (this.progressload != null) {
                         this.progressload.setForeground(Color.RED);
                     }
@@ -645,9 +612,6 @@ public class WebUpdater implements Serializable {
 
             } catch (final Exception e) {
                 e.printStackTrace();
-                this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, e.getLocalizedMessage()));
-                this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, WebUpdater.formatPathReadable(file.toString())));
-                this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, "Failed"));
                 if (this.progressload != null) {
                     this.progressload.setForeground(Color.RED);
                 }
@@ -673,10 +637,8 @@ public class WebUpdater implements Serializable {
                 File[] efiles;
                 try {
                     efiles = u.extract();
-                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_SUCCESS, "Extracted " + file.getLocalTmpFile().getName() + ": " + efiles.length + " files"));
+
                 } catch (final Exception e) {
-                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, e.getLocalizedMessage()));
-                    this.broadcaster.fireEvent(new MessageEvent(this, WebUpdater.DO_UPDATE_FAILED, "Extracting " + file.getLocalTmpFile().getAbsolutePath() + " failed"));
                     e.printStackTrace();
                     file.getLocalTmpFile().delete();
                     file.getLocalTmpFile().deleteOnExit();

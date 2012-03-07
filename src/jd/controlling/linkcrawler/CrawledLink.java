@@ -76,7 +76,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private LinkCollectingJob sourceJob          = null;
     private long              created            = -1;
 
-    private String            realHost           = null;
     boolean                   enabledState       = true;
     private PackageInfo       desiredPackageInfo = null;
 

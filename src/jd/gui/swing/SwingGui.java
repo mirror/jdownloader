@@ -32,14 +32,14 @@ import javax.swing.Timer;
 
 import jd.JDInitFlags;
 import jd.controlling.JDLogger;
-import jd.event.ControlListener;
 import jd.gui.UserIF;
+import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.interfaces.View;
 
 import org.appwork.app.gui.ActiveDialogException;
 import org.appwork.utils.logging.Log;
 
-public abstract class SwingGui extends UserIF implements ControlListener, WindowListener, WindowStateListener, WindowFocusListener {
+public abstract class SwingGui extends UserIF implements WindowListener, WindowStateListener, WindowFocusListener {
     protected JFrame mainFrame;
 
     /**
@@ -132,6 +132,17 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
                 disableAlwaysonTop.start();
             }
 
+            @Override
+            public void dispose() {
+                try {
+                    GUIUtils.saveLastLocation(this);
+                    GUIUtils.saveLastDimension(this);
+                } catch (final Throwable e) {
+                    Log.exception(e);
+                }
+                super.dispose();
+            }
+
             public void setVisible(boolean b) {
 
                 // if we hide a frame which is locked by an active modal dialog,
@@ -189,7 +200,8 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
 
     abstract public void setWaiting(boolean b);
 
-    abstract public void closeWindow();
+    public void closeWindow() {
+    }
 
     abstract public void setContent(View view, boolean setActive);
 

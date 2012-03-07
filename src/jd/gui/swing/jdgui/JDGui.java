@@ -47,9 +47,8 @@ import javax.swing.WindowConstants;
 
 import jd.Main;
 import jd.config.ConfigContainer;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.event.ControlEvent;
+import jd.controlling.JSonWrapper;
 import jd.gui.UIConstants;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
@@ -62,10 +61,14 @@ import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.nutils.JDFlags;
 import jd.nutils.Screen;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.update.inapp.RestartController;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
@@ -75,6 +78,8 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.OffScreenException;
 import org.appwork.utils.swing.dialog.SimpleTextBallon;
+import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
@@ -169,46 +174,49 @@ public class JDGui extends SwingGui {
                         JDGui.this.mainFrame.setEnabled(true);
                     }
                 };
+                ShutdownController.getInstance().addShutdownVetoListener(new ShutdownVetoListener() {
+
+                    @Override
+                    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
+                    }
+
+                    @Override
+                    public void onShutdownRequest() throws ShutdownVetoException {
+                        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.sys_ask_rlyclose()), UserIO.RETURN_OK)) { return; }
+                        throw new ShutdownVetoException("User aborted!");
+                    }
+
+                    @Override
+                    public void onShutdown() {
+                    }
+                });
+                ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+                    @Override
+                    public void run() {
+                        new EDTHelper<Object>() {
+
+                            @Override
+                            public Object edtRun() {
+                                JDGui.this.mainTabbedPane.onClose();
+                                JDGui.this.getMainFrame().setVisible(false);
+                                JDGui.this.getMainFrame().dispose();
+                                return null;
+
+                            }
+                        }.getReturnValue();
+                    }
+                });
             }
 
         });
     }
 
     @Override
-    public void closeWindow() {
-        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.sys_ask_rlyclose()), UserIO.RETURN_OK)) {
-            JDUtilities.getController().exit();
-        }
-    }
-
-    public void controlEvent(final ControlEvent event) {
-        switch (event.getEventID()) {
-        case ControlEvent.CONTROL_SYSTEM_EXIT:
-            this.exitRequested = true;
-            final String id = JDController.requestDelayExit("JDGUI");
-
-            new EDTHelper<Object>() {
-
-                @Override
-                public Object edtRun() {
-                    JDGui.this.mainTabbedPane.onClose();
-                    GUIUtils.saveLastLocation(JDGui.this.getMainFrame());
-                    GUIUtils.saveLastDimension(JDGui.this.getMainFrame());
-
-                    JDController.releaseDelayExit(id);
-                    JDGui.this.getMainFrame().setVisible(false);
-                    JDGui.this.getMainFrame().dispose();
-                    return null;
-
-                }
-            }.getReturnValue();
-            break;
-        }
-    }
-
-    @Override
     public void disposeView(View view) {
+        if (view == null) return;
         view = this.mainTabbedPane.getComponentEquals(view);
+        if (view == null) return;
         this.mainTabbedPane.remove(view);
     }
 
@@ -349,15 +357,6 @@ public class JDGui extends SwingGui {
                 return null;
             }
         }.waitForEDT();
-    }
-
-    /**
-     * returns true, if the user requested the app to close
-     * 
-     * @return
-     */
-    public boolean isExitRequested() {
-        return this.exitRequested;
     }
 
     private void layoutComponents() {
@@ -538,20 +537,18 @@ public class JDGui extends SwingGui {
     @Override
     public void windowClosing(final WindowEvent e) {
         if (e.getComponent() == this.getMainFrame()) {
-            /* dont close/exit if trayicon minimizing is enabled */
-            // final OptionalPluginWrapper addon =
-            // JDUtilities.getOptionalPlugin("trayicon");
-            // if (addon != null && addon.isEnabled() &&
-            // addon.getPlugin().isRunning()) {
-            // if ((Boolean) addon.getPlugin().interact("closetotray", null) ==
-            // true) {
-            // UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN
-            // | UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION,
-            // JDL.L("sys.warning.noclose",
-            // "JDownloader will be minimized to tray!"));
-            // return;
-            // }
-            // }
+            ArrayList<AbstractExtension<?>> allExt = ExtensionController.getInstance().getEnabledExtensions();
+            for (AbstractExtension<?> ext : allExt) {
+                if ("trayicon".equals(ext.getConfigID())) {
+                    if (JSonWrapper.get("ADDONS_JDLIGHTTRAY").getBooleanProperty("PROPERTY_CLOSE_TO_TRAY", true)) {
+                        /*
+                         * avoid exit if trayicon addon is enabled and close to
+                         * tray active
+                         */
+                        return;
+                    }
+                }
+            }
             /*
              * without trayicon also dont close/exit for macos
              */
@@ -566,7 +563,7 @@ public class JDGui extends SwingGui {
                 }.start();
                 return;
             }
-            this.closeWindow();
+            RestartController.getInstance().exit(true);
         }
     }
 

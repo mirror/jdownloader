@@ -32,10 +32,10 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
-import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.shutdown.ShutdownController;
 import org.appwork.update.inapp.RestartController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -169,11 +169,10 @@ public abstract class ConfigPanel extends SwitchPanel {
         PropertyType changes = hasChanges();
         this.save();
         if (changes == PropertyType.NEEDS_RESTART) {
-            if (!JDGui.getInstance().isExitRequested()) {
+            if (!ShutdownController.getInstance().isShutDownRequested()) {
                 int answer = UserIO.getInstance().requestConfirmDialog(0, _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_title(), _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion(), null, _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_ok(), null);
-
                 if (UserIO.isOK(answer)) {
-                    RestartController.getInstance().directRestart();
+                    RestartController.getInstance().directRestart(true);
                 }
             }
         }

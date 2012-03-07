@@ -18,8 +18,6 @@ package jd.utils;
 
 import java.io.File;
 
-import jd.event.MessageEvent;
-import jd.event.MessageListener;
 import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
 
@@ -38,14 +36,6 @@ public class UpdateDevWorkspace {
             e.printStackTrace();
         }
 
-        svn.getBroadcaster().addListener(new MessageListener() {
-
-            public void onMessage(MessageEvent event) {
-                System.out.println(event.getMessage());
-            }
-
-        });
-
         try {
             svn.update(dir, null);
             svn.revert(dir);
@@ -57,9 +47,9 @@ public class UpdateDevWorkspace {
     }
 
     public static void main(String[] args) {
-        /*this sets correct homedirectory*/
+        /* this sets correct homedirectory */
         JDUtilities.getJDHomeDirectoryFromEnvironment();
-        System.out.println("Update resources at " +  Application.getResource(""));
+        System.out.println("Update resources at " + Application.getResource(""));
 
         try {
             updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/libs/", "libs");

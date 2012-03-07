@@ -21,34 +21,30 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import jd.event.MessageEvent;
-import jd.event.MessageListener;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
-import org.appwork.utils.event.Eventsender;
 
 public class FileUpdate {
 
-    public static final int                            DOWNLOAD_SOURCE   = 1;
-    public static final int                            ERROR             = 2;
-    public static final int                            SERVER_STATS      = 3;
-    public static final int                            SUCCESS           = 4;
-    public static long                                 WAITTIME_ON_ERROR = 15000;
+    public static final int         DOWNLOAD_SOURCE   = 1;
+    public static final int         ERROR             = 2;
+    public static final int         SERVER_STATS      = 3;
+    public static final int         SUCCESS           = 4;
+    public static long              WAITTIME_ON_ERROR = 15000;
 
-    private final String                               localPath;
-    private String                                     url;
-    private final String                               hash;
-    private final ArrayList<Server>                    serverList        = new ArrayList<Server>();
+    private final String            localPath;
+    private String                  url;
+    private final String            hash;
+    private final ArrayList<Server> serverList        = new ArrayList<Server>();
 
-    private Server                                     currentServer;
+    private Server                  currentServer;
 
-    private String                                     relURL;
-    private File                                       workingDir;
-    private Eventsender<MessageListener, MessageEvent> broadcaster;
+    private String                  relURL;
+    private File                    workingDir;
 
     public FileUpdate(String serverString, final String hash) {
         this.hash = hash;
@@ -61,29 +57,14 @@ public class FileUpdate {
             localPath = dat[0];
             this.url = dat[1];
         }
-        initBroadcaster();
+
     }
 
     public FileUpdate(final String serverString, final String hash, final File workingdir) {
         this(serverString, hash);
         this.workingDir = workingdir;
         relURL = serverString;
-        initBroadcaster();
-    }
 
-    private void initBroadcaster() {
-        this.broadcaster = new Eventsender<MessageListener, MessageEvent>() {
-
-            @Override
-            protected void fireEvent(final MessageListener listener, final MessageEvent event) {
-                listener.onMessage(event);
-            }
-
-        };
-    }
-
-    public Eventsender<MessageListener, MessageEvent> getBroadcaster() {
-        return broadcaster;
     }
 
     public String toString() {
@@ -181,8 +162,6 @@ public class FileUpdate {
                         url += "?r=" + System.currentTimeMillis();
                     }
 
-                    broadcaster.fireEvent(new MessageEvent(this, DOWNLOAD_SOURCE, "Downloadsource: " + url));
-
                     startTime = System.currentTimeMillis();
                     URLConnectionAdapter con = null;
                     int response = -1;
@@ -194,7 +173,7 @@ public class FileUpdate {
                         currentServer.setRequestTime(endTime - startTime);
                     } catch (Exception e) {
                         // Failed connection.retry next server
-                        broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Connection error"));
+
                         currentServer.setRequestTime(100000l);
                         try {
                             con.disconnect();
@@ -206,7 +185,7 @@ public class FileUpdate {
                     // connection estabilished
                     if (response != 200) {
                         // responscode has errors. Try next server
-                        broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Connection error " + response + ""));
+
                         currentServer.setRequestTime(500000l);
                         try {
                             con.disconnect();
@@ -221,7 +200,7 @@ public class FileUpdate {
                         Browser.download(tmpFile, con);
                     } catch (Exception e) {
                         // DOwnload failed. try next server
-                        broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Connection broken"));
+
                         currentServer.setRequestTime(100000l);
                         try {
                             con.disconnect();
@@ -235,13 +214,13 @@ public class FileUpdate {
                         con.disconnect();
                     } catch (Exception e) {
                     }
-                    broadcaster.fireEvent(new MessageEvent(this, SERVER_STATS, currentServer + " requesttimeAVG=" + currentServer.getRequestTime()));
+
                 }
 
                 final String downloadedHash = JDHash.getMD5(tmpFile);
                 if (downloadedHash != null && downloadedHash.equalsIgnoreCase(hash)) {
                     // hash of fresh downloaded file is ok
-                    broadcaster.fireEvent(new MessageEvent(this, SUCCESS, "Hash OK"));
+
                     // move to update folder
                     this.getLocalTmpFile().delete();
                     // tinyupdate has to be updated directly
@@ -263,7 +242,7 @@ public class FileUpdate {
                         ret = tmpFile.renameTo(getLocalTmpFile());
                         if (!ret) {
                             // rename failed finally
-                            broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Rename failed"));
+
                             errorWait();
                         } else {
                             // rename succeeded
@@ -272,12 +251,12 @@ public class FileUpdate {
                     }
                 } else {
                     // Download failed. delete tmp file and exit
-                    broadcaster.fireEvent(new MessageEvent(this, ERROR, "Hash Failed"));
+
                     currentServer.setRequestTime(100000l);
                     if (hasServer()) {
-                        broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Retry"));
+
                     } else {
-                        broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Updateserver down"));
+
                     }
                     tmpFile.delete();
                     errorWait();
@@ -296,7 +275,7 @@ public class FileUpdate {
 
     private void errorWait() {
         try {
-            broadcaster.fireEvent(new MessageEvent(this, ERROR, "Server Busy. Wait " + (WAITTIME_ON_ERROR / 1000) + " Seconds"));
+
             Thread.sleep(WAITTIME_ON_ERROR);
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block

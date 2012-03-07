@@ -34,9 +34,6 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.controlling.JDController;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
@@ -58,7 +55,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.translate._JDT;
 
-public class ConfigSidebar extends JPanel implements ControlListener, MouseMotionListener, MouseListener, ConfigEventListener {
+public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseListener, ConfigEventListener {
 
     private static final long    serialVersionUID = 6456662020047832983L;
 
@@ -70,7 +67,6 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
 
     public ConfigSidebar() {
         super(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
-        JDController.getInstance().addControlListener(this);
         list = new JList() {
             /**
              * 
@@ -206,12 +202,6 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
     // return true;
     // }
 
-    public void controlEvent(ControlEvent event) {
-        if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
-            saveCurrentState();
-        }
-    }
-
     public void setSelectedTreeEntry(Class<?> class1) {
         for (int i = 0; i < list.getModel().getSize(); i++) {
             Object el = list.getModel().getElementAt(i);
@@ -229,19 +219,6 @@ public class ConfigSidebar extends JPanel implements ControlListener, MouseMotio
             }
         }
         list.setSelectedIndex(0);
-    }
-
-    /**
-     * Saves the selected ConfigPanel
-     */
-    private void saveCurrentState() {
-        /* getPanel is null in case the user selected a rootnode */
-        // SwitchPanel panel = ((TreeEntry)
-        // tree.getLastSelectedPathComponent()).getPanel();
-        // if (panel == null) return;
-        // GUIUtils.getConfig().setProperty(PROPERTY_LAST_PANEL,
-        // panel.getClass().getName());
-        // GUIUtils.getConfig().save();
     }
 
     /**

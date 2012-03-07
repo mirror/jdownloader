@@ -30,7 +30,6 @@ import java.util.logging.Logger;
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
 import jd.controlling.ClipboardMonitoring;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -96,7 +95,7 @@ public class Main {
             statics();
         } catch (Throwable e) {
             e.printStackTrace();
-            RestartController.getInstance().restartViaUpdater();
+            RestartController.getInstance().restartViaUpdater(false);
             // TODO: call Updater.jar
         }
     }
@@ -363,7 +362,7 @@ public class Main {
             }
         } catch (Throwable e) {
             e.printStackTrace();
-            RestartController.getInstance().restartViaUpdater();
+            RestartController.getInstance().restartViaUpdater(false);
         }
     }
 
@@ -520,7 +519,6 @@ public class Main {
         /* this stuff can happen outside edt */
         SwingGui.setInstance(JDGui.getInstance());
         UserIF.setInstance(SwingGui.getInstance());
-        JDController.getInstance().addControlListener(SwingGui.getInstance());
         try {
             /* thread should be finished here */
             thread.join(10000);

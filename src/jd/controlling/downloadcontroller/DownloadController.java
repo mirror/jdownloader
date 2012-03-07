@@ -98,6 +98,22 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
             @Override
             public void run() {
+                int retry = 10;
+                while (retry > 0) {
+                    if (DownloadWatchDog.getInstance().getStateMachine().isFinal() || DownloadWatchDog.getInstance().getStateMachine().isStartState()) {
+                        /*
+                         * we wait till the DownloadWatchDog is finished or max
+                         * 10 secs
+                         */
+                        break;
+                    }
+                    try {
+                        Thread.sleep(1000);
+                    } catch (final InterruptedException e) {
+                        break;
+                    }
+                    retry--;
+                }
                 saveDownloadLinks();
             }
 

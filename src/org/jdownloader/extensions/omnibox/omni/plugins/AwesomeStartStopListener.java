@@ -6,8 +6,8 @@ import java.util.List;
 import javax.swing.JLabel;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.swing.SwingGui;
 
+import org.appwork.update.inapp.RestartController;
 import org.jdownloader.extensions.omnibox.omni.Action;
 import org.jdownloader.extensions.omnibox.omni.Proposal;
 import org.jdownloader.extensions.omnibox.omni.ProposalRequest;
@@ -31,7 +31,7 @@ public class AwesomeStartStopListener implements ProposalRequestListener {
             break;
         case STOPJD:
             DownloadWatchDog.getInstance().stopDownloads();
-            SwingGui.getInstance().closeWindow();
+            RestartController.getInstance().exit(true);
             break;
         }
     }

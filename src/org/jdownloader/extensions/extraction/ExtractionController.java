@@ -17,6 +17,7 @@
 package org.jdownloader.extensions.extraction;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -24,7 +25,6 @@ import java.util.logging.Logger;
 
 import jd.controlling.IOEQ;
 import jd.controlling.JDLogger;
-import jd.controlling.PasswordListController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 import org.appwork.utils.event.queue.QueueAction;
@@ -134,10 +134,12 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
                 if (archive.isProtected() && archive.getPassword().equals("")) {
                     passwordList.addAll(archive.getFactory().getPasswordList(archive));
-                    passwordList.addAll(PasswordListController.getInstance().getPasswordList());
+                    ArrayList<String> pwList = extractor.config.getPasswordList();
+                    if (pwList == null) pwList = new ArrayList<String>();
+                    passwordList.addAll(pwList);
                     passwordList.add(archive.getName());
 
-                    passwordListSize = passwordList.size() + PasswordListController.getInstance().getPasswordList().size() + 2;
+                    passwordListSize = passwordList.size() + pwList.size() + 2;
 
                     fireEvent(ExtractionEvent.Type.START_CRACK_PASSWORD);
                     logger.info("Start password finding for " + archive);
@@ -149,7 +151,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     }
 
                     if (archive.getPassword().equals("")) {
-                        for (String password : PasswordListController.getInstance().getPasswordList()) {
+                        for (String password : pwList) {
                             if (checkPassword(password)) {
                                 break;
                             }
@@ -178,7 +180,10 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                             extractor.close();
                             return null;
                         }
-                        PasswordListController.getInstance().addPassword(archive.getPassword(), true);
+                        /* avoid duplicates */
+                        pwList.remove(archive.getPassword());
+                        pwList.add(0, archive.getPassword());
+                        extractor.config.setPasswordList(pwList);
                     }
 
                     fireEvent(ExtractionEvent.Type.PASSWORD_FOUND);

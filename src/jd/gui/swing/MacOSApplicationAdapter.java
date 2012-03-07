@@ -22,12 +22,9 @@ import java.util.logging.Logger;
 import javax.swing.JFrame;
 
 import jd.Main;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.swing.dialog.AboutDialog;
 import jd.gui.swing.jdgui.components.toolbar.actions.ShowSettingsAction;
 
@@ -49,7 +46,7 @@ import com.apple.eawt.PreferencesHandler;
 import com.apple.eawt.QuitHandler;
 import com.apple.eawt.QuitResponse;
 
-public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, PreferencesHandler, AppReOpenedListener, ControlListener, OpenFilesHandler, OpenURIHandler {
+public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, PreferencesHandler, AppReOpenedListener, OpenFilesHandler, OpenURIHandler {
 
     public static void enableMacSpecial() {
         Application macApplication = Application.getApplication();
@@ -81,9 +78,9 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
     }
 
     public void handleQuitRequestWith(QuitEvent e, QuitResponse response) {
-        JDController.getInstance().addControlListener(this);
+        // JDController.getInstance().addControlListener(this);
         quitResponse = response; // we will respond in controlEvent
-        JDController.getInstance().exit();
+        // JDController.getInstance().exit();
     }
 
     public void handlePreferences(PreferencesEvent e) {
@@ -108,12 +105,13 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         }
     }
 
-    public void controlEvent(ControlEvent event) {
-        if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED) {
-            JDController.getInstance().removeControlListener(this);
-            quitResponse.performQuit();
-        }
-    }
+    // public void controlEvent(ControlEvent event) {
+    // //if (event.getEventID() ==
+    // ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED) {
+    // // JDController.getInstance().removeControlListener(this);
+    // quitResponse.performQuit();
+    // //}
+    // }
 
     public void openFiles(OpenFilesEvent e) {
         appReOpened(null);
@@ -138,7 +136,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
             LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(links));
         } else {
             openURIlinks = links;
-            JDController.getInstance().addControlListener(this);
+            // JDController.getInstance().addControlListener(this);
         }
     }
 }

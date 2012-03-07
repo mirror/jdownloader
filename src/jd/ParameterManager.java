@@ -21,7 +21,6 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JACController;
-import jd.controlling.PasswordListController;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.reconnect.Reconnecter;
@@ -135,12 +134,6 @@ public class ParameterManager {
                 } else {
                     ParameterManager.LOG.warning("Container does not exist");
                 }
-
-            } else if (addPasswordsSwitch && !(currentArg.charAt(0) == '-')) {
-
-                ParameterManager.LOG.info("Add password: " + currentArg);
-
-                PasswordListController.getInstance().addPassword(currentArg, false);
 
             } else if (currentArg.contains("http://") && !(currentArg.charAt(0) == '-')) {
 

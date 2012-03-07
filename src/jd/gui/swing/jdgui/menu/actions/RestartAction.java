@@ -35,7 +35,7 @@ public class RestartAction extends ActionAdapter {
     @Override
     public void onAction(ActionEvent e) {
         if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, _GUI._.sys_ask_rlyrestart()), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
-            RestartController.getInstance().directRestart();
+            RestartController.getInstance().directRestart(true);
         }
     }
 

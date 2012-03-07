@@ -41,15 +41,12 @@ import jd.Main;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
@@ -68,7 +65,7 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
 import org.jdownloader.images.NewTheme;
 
-public class TrayExtension extends AbstractExtension<TrayConfig> implements MouseListener, MouseMotionListener, WindowListener, WindowStateListener, ActionListener, ControlListener, LinkCollectorListener {
+public class TrayExtension extends AbstractExtension<TrayConfig> implements MouseListener, MouseMotionListener, WindowListener, WindowStateListener, ActionListener, LinkCollectorListener {
 
     @Override
     protected void stop() throws StopException {
@@ -76,12 +73,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         if (guiFrame != null) {
             guiFrame.removeWindowListener(this);
             guiFrame.removeWindowStateListener(this);
-            if (!shutdown) miniIt(false);
+            miniIt(false, false);
             guiFrame.setAlwaysOnTop(false);
             guiFrame = null;
         }
         LinkCollector.getInstance().getEventsender().removeListener(this);
-        JDController.getInstance().removeControlListener(this);
     }
 
     @Override
@@ -111,7 +107,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                                     guiFrame.addWindowStateListener(TrayExtension.this);
                                     logger.info("Systemtray OK");
                                     initGUI();
-                                    JDController.getInstance().addControlListener(TrayExtension.this);
                                     LinkCollector.getInstance().getEventsender().addListener(TrayExtension.this);
                                 }
                             }
@@ -205,10 +200,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
 
     private TrayMouseAdapter                    ma;
 
-    private Thread                              updateThread;
-
-    private boolean                             shutdown                   = false;
-
     private boolean                             iconified                  = false;
 
     private Timer                               disableAlwaysonTop;
@@ -237,12 +228,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
             if (guiFrame != null) guiFrame.setAlwaysOnTop(false);
         }
         return;
-    }
-
-    public void controlEvent(ControlEvent event) {
-        if (event.getEventID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
-            shutdown = true;
-        }
     }
 
     private void initGUI() {
@@ -279,7 +264,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                     guiFrame.addWindowStateListener(TrayExtension.this);
                 }
                 if (subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) {
-                    miniIt(true);
+                    miniIt(true, true);
                 }
             }
 
@@ -302,7 +287,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         if (e.getSource() instanceof TrayIcon) {
             if (!CrossSystem.isMac()) {
                 if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
-                    miniIt(guiFrame.isVisible());
+                    miniIt(guiFrame.isVisible(), true);
                 } else {
                     if (trayIconPopup != null && trayIconPopup.isShowing()) {
                         trayIconPopup.dispose();
@@ -317,7 +302,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                 }
             } else {
                 if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isLeftMouseButton(e)) {
-                    miniIt(guiFrame.isVisible() & guiFrame.getState() != Frame.ICONIFIED);
+                    miniIt(guiFrame.isVisible() & guiFrame.getState() != Frame.ICONIFIED, true);
                 } else if (SwingUtilities.isLeftMouseButton(e)) {
                     if (trayIconPopup != null && trayIconPopup.isShowing()) {
                         trayIconPopup.dispose();
@@ -394,9 +379,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         }.waitForEDT();
     }
 
-    private void miniIt(final boolean minimize) {
+    private void miniIt(final boolean minimize, boolean checkPW) {
         if (!minimize) {
-            if (!checkPassword()) return;
+            if (checkPW && !checkPassword()) return;
 
         }
         new EDTHelper<Object>() {
@@ -472,7 +457,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
 
     public void windowClosing(WindowEvent e) {
         if (subConfig.getBooleanProperty(PROPERTY_CLOSE_TO_TRAY, true)) {
-            miniIt(true);
+            miniIt(true, true);
         }
     }
 
