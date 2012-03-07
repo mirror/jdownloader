@@ -81,6 +81,7 @@ import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.jdserv.stats.StatsManager;
 import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.settings.AutoDownloadStartOption;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
@@ -478,8 +479,9 @@ public class Main {
                         /* start downloadwatchdog */
                         DownloadWatchDog.getInstance();
 
-                        boolean doRestartRunninfDownloads = JsonConfig.create(GeneralSettings.class).isAutoRestartDownloadsIfExitWithRunningDownloads() && JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads();
-                        if (JsonConfig.create(GeneralSettings.class).isAutoStartDownloadsOnStartupEnabled() || doRestartRunninfDownloads) {
+                        AutoDownloadStartOption doRestartRunninfDownloads = JsonConfig.create(GeneralSettings.class).getAutoStartDownloadOption();
+                        boolean closedRunning = JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads();
+                        if (doRestartRunninfDownloads == AutoDownloadStartOption.ALWAYS || (closedRunning && doRestartRunninfDownloads == AutoDownloadStartOption.ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS)) {
                             /* autostart downloads when no autoupdate is enabled */
                             Log.exception(new WTFException("REIMPLEMENT ME:autostart on startup"));
 

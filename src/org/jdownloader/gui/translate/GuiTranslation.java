@@ -3508,4 +3508,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Chunks Progress:" })
     String ProgressColumn_createToolTip_object_();
 
+    @Default(lngs = { "en" }, values = { "Always" })
+    String gui_config_general_AutoDownloadStartOption_always();
+
+    @Default(lngs = { "en" }, values = { "If downloading at last exit time" })
+    String gui_config_general_AutoDownloadStartOption_only_if_closed_running();
+
+    @Default(lngs = { "en" }, values = { "Never" })
+    String gui_config_general_AutoDownloadStartOption_never();
+
+    @Default(lngs = { "en" }, values = { "Autostart Downloads at launch" })
+    String system_download_autostart();
+
 }

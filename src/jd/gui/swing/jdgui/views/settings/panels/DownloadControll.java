@@ -23,13 +23,16 @@ import javax.swing.event.ChangeListener;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.swing.models.ConfigIntSpinnerModel;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.AutoDownloadStartOption;
 import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 
 public class DownloadControll extends AbstractConfigPanel implements ChangeListener {
@@ -41,11 +44,13 @@ public class DownloadControll extends AbstractConfigPanel implements ChangeListe
     private Spinner                            maxSim;
     private GeneralSettings                    config;
     private Spinner                            maxchunks;
+    private ComboBox<AutoDownloadStartOption>  startDownloadsAfterAppStart;
 
     public String getTitle() {
         return _JDT._.gui_settings_downloadcontroll_title();
     }
 
+    @SuppressWarnings("unchecked")
     public DownloadControll() {
         super();
 
@@ -61,7 +66,7 @@ public class DownloadControll extends AbstractConfigPanel implements ChangeListe
         String[] removeDownloads = new String[] { _GUI._.gui_config_general_toDoWithDownloads_immediate(), _GUI._.gui_config_general_toDoWithDownloads_atstart(), _GUI._.gui_config_general_toDoWithDownloads_packageready(), _GUI._.gui_config_general_toDoWithDownloads_never() };
 
         remove = new ComboBox<CleanAfterDownloadAction>(CleanAfterDownloadAction.values(), removeDownloads);
-
+        startDownloadsAfterAppStart = new ComboBox<AutoDownloadStartOption>(CFG_GENERAL.SH.getKeyHandler("AutoStartDownloadOption", KeyHandler.class), AutoDownloadStartOption.values(), new String[] { _GUI._.gui_config_general_AutoDownloadStartOption_always(), _GUI._.gui_config_general_AutoDownloadStartOption_only_if_closed_running(), _GUI._.gui_config_general_AutoDownloadStartOption_never() });
         String[] fileExists = new String[] { _GUI._.system_download_triggerfileexists_overwrite(), _GUI._.system_download_triggerfileexists_skip(), _GUI._.system_download_triggerfileexists_rename(), _GUI._.system_download_triggerfileexists_ask(), _GUI._.system_download_triggerfileexists_ask() };
         ifFileExists = new ComboBox<IfFileExistsAction>(IfFileExistsAction.values(), fileExists);
         this.addPair(_GUI._.gui_config_download_simultan_downloads(), null, maxSim);
@@ -70,6 +75,7 @@ public class DownloadControll extends AbstractConfigPanel implements ChangeListe
 
         this.addPair(_GUI._.gui_config_general_todowithdownloads(), null, remove);
         this.addPair(_GUI._.system_download_triggerfileexists(), null, ifFileExists);
+        addPair(_GUI._.system_download_autostart(), null, startDownloadsAfterAppStart);
         config = org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG;
 
     }

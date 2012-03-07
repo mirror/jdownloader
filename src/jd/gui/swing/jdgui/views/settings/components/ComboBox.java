@@ -8,6 +8,8 @@ import javax.swing.JComboBox;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
+import org.appwork.storage.config.handler.KeyHandler;
+
 public class ComboBox<ContentType> extends JComboBox implements SettingsComponent {
 
     private static final long                             serialVersionUID = -1580999899097054630L;
@@ -15,13 +17,19 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
     private String[]                                      translations;
     private StateUpdateEventSender<ComboBox<ContentType>> eventSender;
     private boolean                                       setting;
+    private KeyHandler<ContentType>                       keyHandler;
     {
         eventSender = new StateUpdateEventSender<ComboBox<ContentType>>();
         this.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 // do not throw events of changed programmatically
-                if (!setting) eventSender.fireEvent(new StateUpdateEvent<ComboBox<ContentType>>(ComboBox.this));
+                if (!setting) {
+                    eventSender.fireEvent(new StateUpdateEvent<ComboBox<ContentType>>(ComboBox.this));
+                    if (keyHandler != null) {
+                        keyHandler.setValue((ContentType) getSelectedItem());
+                    }
+                }
             }
         });
     }
@@ -58,6 +66,13 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
         });
     }
 
+    public ComboBox(org.appwork.storage.config.handler.KeyHandler<ContentType> keyHandler, ContentType[] values, String[] strings) {
+        this(values, strings);
+        this.keyHandler = keyHandler;
+        setSelectedItem(keyHandler.getValue());
+
+    }
+
     public String getConstraints() {
         return "height 26!";
     }
@@ -68,5 +83,6 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
 
     public void addStateUpdateListener(StateUpdateListener listener) {
         eventSender.addListener(listener);
+
     }
 }

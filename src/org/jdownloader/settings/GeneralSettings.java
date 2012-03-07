@@ -156,8 +156,6 @@ public interface GeneralSettings extends ConfigInterface {
     @Description("AutoReconnect enabled?")
     boolean isAutoReconnectEnabled();
 
-    boolean isAutoStartDownloadsOnStartupEnabled();
-
     @AboutConfig
     @DefaultBooleanValue(true)
     boolean isCleanUpFilenames();
@@ -208,8 +206,6 @@ public interface GeneralSettings extends ConfigInterface {
     void setAutoOpenContainerAfterDownload(boolean b);
 
     void setAutoReconnectEnabled(boolean b);
-
-    void setAutoStartDownloadsOnStartupEnabled(boolean b);
 
     void setCleanupAfterDownloadAction(CleanAfterDownloadAction action);
 
@@ -272,13 +268,6 @@ public interface GeneralSettings extends ConfigInterface {
 
     boolean isClosedWithRunningDownloads();
 
-    @Description("If JDownloader got closed with running downloads, Downloads will be autostarted on next start. ")
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    void setAutoRestartDownloadsIfExitWithRunningDownloads(boolean b);
-
-    boolean isAutoRestartDownloadsIfExitWithRunningDownloads();
-
     @DefaultIntValue(10)
     @Description("AutoStart Downloads will show a Countdown Dialog after Startup. Set the countdown time to 0 to remove this dialog")
     int getAutoStartCountdownSeconds();
@@ -286,4 +275,10 @@ public interface GeneralSettings extends ConfigInterface {
     void setAutoStartCountdownSeconds(int seconds);
 
     void setNetworkIssuesTimeout(int timeout);
+
+    @AboutConfig
+    @DefaultEnumValue("ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS")
+    void setAutoStartDownloadOption(AutoDownloadStartOption option);
+
+    AutoDownloadStartOption getAutoStartDownloadOption();
 }
