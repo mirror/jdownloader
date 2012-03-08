@@ -36,9 +36,6 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.DynByteBuffer;
 import jd.nutils.Executer;
 import jd.nutils.ProcessListener;
-import jd.nutils.Threader;
-import jd.nutils.Threader.WorkerListener;
-import jd.nutils.jobber.JDRunnable;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
@@ -49,7 +46,7 @@ public class RouterUtils {
 
     private static final String PATTERN_WIN_ARP = "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?";
 
-    private static class WebServerChecker implements JDRunnable {
+    private static class WebServerChecker {
 
         private final String host;
         private InetAddress  address = null;
@@ -71,92 +68,7 @@ public class RouterUtils {
         }
     }
 
-    public final static ArrayList<String> HOST_NAMES = new ArrayList<String>();
-
-    private static InetAddress            ADDRESS_CACHE;
-
-    static {
-        RouterUtils.HOST_NAMES.add("fritz.fonwlan.box");
-        RouterUtils.HOST_NAMES.add("speedport.ip");
-        RouterUtils.HOST_NAMES.add("fritz.box");
-        RouterUtils.HOST_NAMES.add("dsldevice.lan");
-        RouterUtils.HOST_NAMES.add("speedtouch.lan");
-        RouterUtils.HOST_NAMES.add("mygateway1.ar7");
-        RouterUtils.HOST_NAMES.add("fritz.fon.box");
-        RouterUtils.HOST_NAMES.add("home");
-        RouterUtils.HOST_NAMES.add("arcor.easybox");
-        RouterUtils.HOST_NAMES.add("fritz.slwlan.box");
-        RouterUtils.HOST_NAMES.add("eumex.ip");
-        RouterUtils.HOST_NAMES.add("easy.box");
-        RouterUtils.HOST_NAMES.add("my.router");
-        RouterUtils.HOST_NAMES.add("fritz.fon");
-        RouterUtils.HOST_NAMES.add("router");
-        RouterUtils.HOST_NAMES.add("mygateway.ar7");
-        RouterUtils.HOST_NAMES.add("login.router");
-        RouterUtils.HOST_NAMES.add("SX541");
-        RouterUtils.HOST_NAMES.add("SE515.home");
-        RouterUtils.HOST_NAMES.add("sinus.ip");
-        RouterUtils.HOST_NAMES.add("fritz.wlan.box");
-        RouterUtils.HOST_NAMES.add("my.siemens");
-        RouterUtils.HOST_NAMES.add("local.gateway");
-        RouterUtils.HOST_NAMES.add("congstar.box");
-        RouterUtils.HOST_NAMES.add("login.modem");
-        RouterUtils.HOST_NAMES.add("homegate.homenet.telecomitalia.it");
-        RouterUtils.HOST_NAMES.add("SE551");
-        RouterUtils.HOST_NAMES.add("home.gateway");
-        RouterUtils.HOST_NAMES.add("alice.box");
-        RouterUtils.HOST_NAMES.add("www.brntech.com.tw");
-        RouterUtils.HOST_NAMES.add("buffalo.setup");
-        RouterUtils.HOST_NAMES.add("vood.lan");
-        RouterUtils.HOST_NAMES.add("DD-WRT");
-        RouterUtils.HOST_NAMES.add("versatel.modem");
-        RouterUtils.HOST_NAMES.add("myrouter.home");
-        RouterUtils.HOST_NAMES.add("MyDslModem.local.lan");
-        RouterUtils.HOST_NAMES.add("alicebox");
-        RouterUtils.HOST_NAMES.add("HSIB.home");
-        RouterUtils.HOST_NAMES.add("AolynkDslRouter.local.lan");
-        RouterUtils.HOST_NAMES.add("SL2141I.home");
-        RouterUtils.HOST_NAMES.add("e.home");
-        RouterUtils.HOST_NAMES.add("dsldevice.domain.name");
-        RouterUtils.HOST_NAMES.add("192.168.1.1");
-        RouterUtils.HOST_NAMES.add("192.168.2.1");
-        RouterUtils.HOST_NAMES.add("192.168.0.1");
-        RouterUtils.HOST_NAMES.add("192.168.178.1");
-        RouterUtils.HOST_NAMES.add("192.168.1.254");
-        RouterUtils.HOST_NAMES.add("10.0.0.138");
-        RouterUtils.HOST_NAMES.add("10.0.0.2");
-        RouterUtils.HOST_NAMES.add("192.168.123.254");
-        RouterUtils.HOST_NAMES.add("192.168.1.2");
-        RouterUtils.HOST_NAMES.add("192.168.0.254");
-        RouterUtils.HOST_NAMES.add("10.0.0.1");
-        RouterUtils.HOST_NAMES.add("192.168.10.1");
-        RouterUtils.HOST_NAMES.add("192.168.220.1");
-        RouterUtils.HOST_NAMES.add("192.168.254.254");
-        RouterUtils.HOST_NAMES.add("192.168.0.2");
-        RouterUtils.HOST_NAMES.add("192.168.100.1");
-        RouterUtils.HOST_NAMES.add("192.168.1.100");
-        RouterUtils.HOST_NAMES.add("10.1.1.1");
-        RouterUtils.HOST_NAMES.add("192.168.0.100");
-        RouterUtils.HOST_NAMES.add("192.168.3.1");
-        RouterUtils.HOST_NAMES.add("192.168.5.1");
-        RouterUtils.HOST_NAMES.add("192.168.2.2");
-        RouterUtils.HOST_NAMES.add("192.168.11.1");
-        RouterUtils.HOST_NAMES.add("192.168.1.10");
-        RouterUtils.HOST_NAMES.add("192.168.0.10");
-        RouterUtils.HOST_NAMES.add("192.168.0.253");
-        RouterUtils.HOST_NAMES.add("192.168.7.1");
-        RouterUtils.HOST_NAMES.add("192.168.182.1");
-        RouterUtils.HOST_NAMES.add("192.168.2.254");
-        RouterUtils.HOST_NAMES.add("192.168.178.2");
-        RouterUtils.HOST_NAMES.add("192.168.15.1");
-        RouterUtils.HOST_NAMES.add("192.168.1.5");
-        RouterUtils.HOST_NAMES.add("192.168.0.3");
-        RouterUtils.HOST_NAMES.add("192.168.123.1");
-        RouterUtils.HOST_NAMES.add("192.168.1.253");
-        RouterUtils.HOST_NAMES.add("192.168.0.99");
-        RouterUtils.HOST_NAMES.add("172.16.0.1");
-        RouterUtils.HOST_NAMES.add("192.168.4.1");
-    }
+    private static InetAddress ADDRESS_CACHE;
 
     /**
      * Runs throw a predefined Host Table (multithreaded) and checks if there is
@@ -165,7 +77,7 @@ public class RouterUtils {
      * 
      * @return
      */
-    private static InetAddress            ASYNCH_RETURN;
+    private static InetAddress ASYNCH_RETURN;
 
     private static String callArpTool(final String ipAddress) throws IOException, InterruptedException {
 
@@ -327,30 +239,34 @@ public class RouterUtils {
     public static InetAddress getIpFormHostTable() throws InterruptedException {
         RouterUtils.updateHostTable();
         RouterUtils.ASYNCH_RETURN = null;
-        final int size = RouterUtils.HOST_NAMES.size();
-        final Threader threader = new Threader();
-        for (int i = 0; i < size; i++) {
-            threader.add(new WebServerChecker(RouterUtils.HOST_NAMES.get(i)));
-        }
-
-        threader.addWorkerListener(new WorkerListener() {
-
-            public void onThreadException(final Threader th, final JDRunnable job, final Throwable e) {
-            }
-
-            public void onThreadFinished(final Threader th, final JDRunnable runnable) {
-                if (((WebServerChecker) runnable).getAddress() != null) {
-                    th.interrupt();
-                    RouterUtils.ASYNCH_RETURN = ((WebServerChecker) runnable).getAddress();
-                }
-
-            }
-
-            public void onThreadStarts(final Threader threader, final JDRunnable runnable) {
-            }
-
-        });
-        threader.startAndWait();
+        // final int size = RouterUtils.HOST_NAMES.size();
+        // final Threader threader = new Threader();
+        // for (int i = 0; i < size; i++) {
+        // threader.add(new WebServerChecker(RouterUtils.HOST_NAMES.get(i)));
+        // }
+        //
+        // threader.addWorkerListener(new WorkerListener() {
+        //
+        // public void onThreadException(final Threader th, final JDRunnable
+        // job, final Throwable e) {
+        // }
+        //
+        // public void onThreadFinished(final Threader th, final JDRunnable
+        // runnable) {
+        // if (((WebServerChecker) runnable).getAddress() != null) {
+        // th.interrupt();
+        // RouterUtils.ASYNCH_RETURN = ((WebServerChecker)
+        // runnable).getAddress();
+        // }
+        //
+        // }
+        //
+        // public void onThreadStarts(final Threader threader, final JDRunnable
+        // runnable) {
+        // }
+        //
+        // });
+        // threader.startAndWait();
         return RouterUtils.ASYNCH_RETURN;
     }
 
@@ -633,27 +549,28 @@ public class RouterUtils {
         String ip;
 
         for (final InetAddress ia : RouterUtils.getNetworkDeviceAdresses()) {
-            try {
-
-                if (RouterUtils.validateIP(ia.getHostAddress() + "")) {
-                    ip = ia.getHostAddress();
-
-                    if (ip != null && ip.lastIndexOf(".") != -1) {
-                        final String host = ip.substring(0, ip.lastIndexOf(".")) + ".";
-                        for (int i = 0; i < 255; i++) {
-                            final String lhost = host + i;
-                            if (!lhost.equals(ip) && !RouterUtils.HOST_NAMES.contains(lhost)) {
-                                RouterUtils.HOST_NAMES.add(lhost);
-                            }
-
-                        }
-                    }
-                }
-                RouterUtils.HOST_NAMES.remove(ia.getHostName());
-                RouterUtils.HOST_NAMES.remove(ia.getHostAddress());
-            } catch (final Exception exc) {
-                JDLogger.exception(exc);
-            }
+            // try {
+            //
+            // if (RouterUtils.validateIP(ia.getHostAddress() + "")) {
+            // ip = ia.getHostAddress();
+            //
+            // if (ip != null && ip.lastIndexOf(".") != -1) {
+            // final String host = ip.substring(0, ip.lastIndexOf(".")) + ".";
+            // for (int i = 0; i < 255; i++) {
+            // final String lhost = host + i;
+            // if (!lhost.equals(ip) && !RouterUtils.HOST_NAMES.contains(lhost))
+            // {
+            // RouterUtils.HOST_NAMES.add(lhost);
+            // }
+            //
+            // }
+            // }
+            // }
+            // RouterUtils.HOST_NAMES.remove(ia.getHostName());
+            // RouterUtils.HOST_NAMES.remove(ia.getHostAddress());
+            // } catch (final Exception exc) {
+            // JDLogger.exception(exc);
+            // }
         }
     }
 

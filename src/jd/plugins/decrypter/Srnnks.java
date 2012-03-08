@@ -29,7 +29,6 @@ import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
-import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -40,7 +39,7 @@ import jd.utils.EditDistance;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "dokujunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/.*?/(df|st|so|hf|fs|mu|rc|rs|nl|u[tl]|ff|fc|wu)[_-].*", "http://[\\w\\.]*?dokujunkies\\.org/[\\w\\-/]+.*\\.html" }, flags = { 0, 0 })
 public class Srnnks extends PluginForDecrypt {
-    class DecryptRunnable implements JDRunnable {
+    class DecryptRunnable implements Runnable {
 
         private final String                  action;
         private final Browser                 br;
@@ -52,40 +51,43 @@ public class Srnnks extends PluginForDecrypt {
             this.results = results;
         }
 
-        public void go() throws Exception {
+        public void run() {
 
             // sj heuristic detection.
 
             // this makes the jobber useless... but we have to use the 300 ms to
             // work around sj's firewall
-
-            Thread.sleep(Srnnks.FW_WAIT);
-            this.br.getPage(this.action);
-            if (this.br.getRedirectLocation() != null) {
-                this.results.add(Srnnks.this.createDownloadlink(this.br.getRedirectLocation()));
-            } else {
-                // not sure if there are stil pages that use this old system
-
-                final String link = this.br.getRegex("SRC=\"(http://download\\.serienjunkies\\.org.*?)\"").getMatch(0);
-
-                if (link != null) {
-                    Thread.sleep(Srnnks.FW_WAIT);
-                    this.br.getPage(link);
-                    final String loc = this.br.getRedirectLocation();
-                    if (loc != null) {
-                        this.results.add(Srnnks.this.createDownloadlink(loc));
-                        return;
-                    } else {
-                        throw new Exception("no Redirect found");
-                    }
+            try {
+                Thread.sleep(Srnnks.FW_WAIT);
+                this.br.getPage(this.action);
+                if (this.br.getRedirectLocation() != null) {
+                    this.results.add(Srnnks.this.createDownloadlink(this.br.getRedirectLocation()));
                 } else {
+                    // not sure if there are stil pages that use this old system
 
-                    throw new Exception("no Frame found");
+                    final String link = this.br.getRegex("SRC=\"(http://download\\.serienjunkies\\.org.*?)\"").getMatch(0);
 
+                    if (link != null) {
+                        Thread.sleep(Srnnks.FW_WAIT);
+                        this.br.getPage(link);
+                        final String loc = this.br.getRedirectLocation();
+                        if (loc != null) {
+                            this.results.add(Srnnks.this.createDownloadlink(loc));
+                            return;
+                        } else {
+                            throw new Exception("no Redirect found");
+                        }
+                    } else {
+
+                        throw new Exception("no Frame found");
+
+                    }
                 }
+
+            } catch (final Throwable e) {
+                e.printStackTrace();
             }
         }
-
     }
 
     private final static String[] passwords           = { "serienjunkies.dl.am", "serienjunkies.org", "dokujunkies.org" };
@@ -362,7 +364,7 @@ public class Srnnks extends PluginForDecrypt {
                         progress.setStatus(10);
                         synchronized (Srnnks.GLOBAL_LOCK) {
                             for (int d = 0; d < actions.size(); d++) {
-                                this.new DecryptRunnable(actions.get(d), this.br.cloneBrowser(), ret).go();
+                                this.new DecryptRunnable(actions.get(d), this.br.cloneBrowser(), ret).run();
                                 progress.increase(1);
                             }
 

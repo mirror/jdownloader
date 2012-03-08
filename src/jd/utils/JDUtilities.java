@@ -40,7 +40,6 @@ import jd.config.Configuration;
 import jd.config.DatabaseConnector;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.gui.UserIO;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
@@ -322,10 +321,6 @@ public class JDUtilities {
      */
     public static void setConfiguration(final Configuration configuration) {
         JDUtilities.CONFIGURATION = configuration;
-    }
-
-    public static DownloadController getDownloadController() {
-        return DownloadController.getInstance();
     }
 
     public static String removeEndingPoints(final String name) {

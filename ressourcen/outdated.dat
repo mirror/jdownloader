@@ -700,3 +700,4 @@ jd/plugins/hoster/TenUploadCom.class
 jd/plugins/decrypter/SagStbeToDl.class
 jd/plugins/decrypter/LixkMe.class
 jd/plugins/decrypter/FilkeHookComFolder.class
+jd/plugins/decrypter/FcTv.class

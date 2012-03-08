@@ -38,10 +38,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.apache.commons.lang.StringUtils;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;

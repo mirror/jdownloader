@@ -79,20 +79,6 @@ public class DownloadTableContextMenuFactory {
             }
         }
 
-        // final RatedMenuController items = this.createMenuItems(contextObject,
-        // 0, links, fps);
-        // items.init(10);
-        // while (items.getMain().size() > 0) {
-        // items.getMain().remove(0).addToPopup(popup);
-        // }
-        // final JMenu pop = new JMenu(_GUI._.gui_table_contextmenu_more());
-        // popup.add(pop);
-
-        // pop.setIcon(NewTheme.I().getIcon("settings", 16));
-        // while (items.getSub().size() > 0) {
-        // items.getSub().remove(0).addToPopup(pop);
-        // }
-
         popup.add(new StopsignAction(contextObject));
         popup.add(new EnabledAction(selection));
         popup.add(new ForceDownloadAction(links));
@@ -102,7 +88,7 @@ public class DownloadTableContextMenuFactory {
         popup.add(new NewPackageAction(links));
         popup.add(new CheckStatusAction(links));
         popup.add(new CreateDLCAction(links));
-        popup.add(new CopyURLAction(links));
+        popup.add(new CopyURLAction(selection));
         popup.add(new JSeparator());
         popup.add(new SetPasswordAction(links));
         popup.add(new CopyPasswordAction(links));
@@ -116,7 +102,6 @@ public class DownloadTableContextMenuFactory {
         } else if (contextObject instanceof DownloadLink) {
             popup.add(new CustomSpeed((DownloadLink) contextObject));
             popup.add(new OpenDirectoryAction(new File(((DownloadLink) contextObject).getFileOutput()).getParentFile()));
-            popup.add(new OpenInBrowserAction(links));
             popup.add(new OpenInBrowserAction(links));
             if (CrossSystem.isOpenFileSupported()) {
                 popup.add(new OpenFileAction(new File(((DownloadLink) contextObject).getFileOutput())));

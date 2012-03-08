@@ -50,13 +50,11 @@ public class PrioritySubMenu extends ContextMenuAction {
     public static JMenu createPrioMenu(final ArrayList<DownloadLink> links) {
         final JMenu prioPopup = new JMenu(_GUI._.gui_table_contextmenu_priority() + " (" + links.size() + ")");
         prioPopup.setIcon(NewTheme.I().getIcon("prio_0", 16));
-
         prioPopup.add(new PrioritySubMenu(links, 3));
         prioPopup.add(new PrioritySubMenu(links, 2));
         prioPopup.add(new PrioritySubMenu(links, 1));
         prioPopup.add(new PrioritySubMenu(links, 0));
         prioPopup.add(new PrioritySubMenu(links, -1));
-
         return prioPopup;
     }
 

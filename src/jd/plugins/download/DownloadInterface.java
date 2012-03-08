@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 
 import jd.controlling.GarbageController;
 import jd.controlling.JDLogger;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
 import jd.http.Request;
@@ -42,7 +43,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
@@ -1250,7 +1250,7 @@ abstract public class DownloadInterface {
             return false;
         }
         DownloadLink downloadLink = link;
-        DownloadLink block = JDUtilities.getDownloadController().getFirstLinkThatBlocks(downloadLink);
+        DownloadLink block = DownloadController.getInstance().getFirstLinkThatBlocks(downloadLink);
         LinkStatus linkstatus = link.getLinkStatus();
         if (block != null) {
             linkstatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
