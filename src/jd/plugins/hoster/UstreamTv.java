@@ -17,11 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
-import jd.controlling.JDLogger;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.parser.Regex;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
@@ -30,9 +31,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDHexUtils;
 
 @HostPlugin(revision = "$Revision: 12299 $", interfaceVersion = 2, names = { "ustream.tv" }, urls = { "http://(www\\.)?ustream.tv/recorded/\\d+(/highlight/\\d+)?" }, flags = { 0 })
 public class UstreamTv extends PluginForHost {
+
+    private String  DLLINK       = null;
+
+    private boolean NOTFORSTABLE = false;
 
     public UstreamTv(final PluginWrapper wrapper) {
         super(wrapper);
@@ -48,59 +54,48 @@ public class UstreamTv extends PluginForHost {
         return -1;
     }
 
+    private String beautifierString(final Browser amf) {
+        final StringBuffer sb = new StringBuffer();
+        for (final byte element : amf.toString().getBytes()) {
+            if (element < 127) {
+                if (element > 31) {
+                    sb.append((char) element);
+                } else {
+                    sb.append("#");
+                }
+            }
+        }
+        if (sb == null || sb.length() == 0) { return null; }
+        return sb.toString().replaceAll("#+", "#");
+    }
+
+    private byte[] createAMFRequest(String url, String vid) {
+        if (vid == null) return null;
+        String rpin = "rpin" + String.valueOf(Math.random() * Math.random()).substring(1);
+        String data = "0A000000010300077061676555726C0200";
+        data += getHexLength(url) + JDHexUtils.getHexString(url);
+        data += "00086175746F706C617901010007766964656F49640200";
+        data += getHexLength(vid) + JDHexUtils.getHexString(vid);
+        data += "00066C6F63616C65020005656E5F555300047270696E0200";
+        data += getHexLength(rpin) + JDHexUtils.getHexString(rpin);
+        data += "00076272616E64496402000131000009";
+        return JDHexUtils.getByteArray("000000000001000F5669657765722E676574566964656F00022F31000000" + getHexLength(JDHexUtils.toString(data)) + data);
+    }
+
+    private String getHexLength(final String s) {
+        String result = Integer.toHexString(s.length());
+        return result.length() % 2 > 0 ? "0" + result : result;
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        // Setup Gateway
-        final String url = "http://rgw.ustream.tv/gateway.php";
-        // Generate Parameter
-        final Date rpin = new Date();
-        final String pageUrl = downloadLink.getDownloadURL();
-        final String videoId = new Regex(pageUrl, "recorded/(\\d+)").getMatch(0);
-        final HashMap<String, String> parameter = new HashMap<String, String>();
-        parameter.put("brandId", "1");
-        parameter.put("videoId", videoId);
-        parameter.put("rpin", "rpin.0." + rpin.getTime());
-        parameter.put("autoplay", "");
-        parameter.put("pageUrl", pageUrl);
-        // ActionMessageFormat
-        try {
-            flex.messaging.io.amf.ASObject result;
-            final flex.messaging.io.amf.client.AMFConnection amfConnection = new flex.messaging.io.amf.client.AMFConnection();
-            try {
-                amfConnection.connect(url);
-                amfConnection.addHttpRequestHeader("Content-type", "application/x-amf");
-                amfConnection.addHttpRequestHeader("Referer", "http://cdn1.ustream.tv/swf/4/viewer.rsl.465.swf?");
-                amfConnection.addHttpRequestHeader("x-flash-version", "10,1,85,3");
-                result = (flex.messaging.io.amf.ASObject) amfConnection.call("Viewer.getVideo", parameter);
-            } catch (final Exception e) {
-                JDLogger.exception(e);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            amfConnection.close();
-            int chunk = 0;
-            String dllink = "";
-            // mp4,flv Selection
-            if (result.containsKey("liveHttpUrl")) {
-                dllink = result.get("liveHttpUrl").toString();
-                chunk = 1;
-            } else if (result.containsKey("flv")) {
-                if (pageUrl.contains("highlight")) {
-                    downloadLink.setName(downloadLink.getName().replace("mp4", "flv"));
-                }
-                dllink = result.get("flv").toString();
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporary offline!");
-            }
-            dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunk);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
-        } catch (final NoClassDefFoundError e) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Nightly Version of JD needed!");
+        dl = BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.startDownload();
     }
 
     @Override
@@ -108,20 +103,59 @@ public class UstreamTv extends PluginForHost {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("We\\'re sorry, the page you requested cannot be found\\.")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?), Recorded on ").getMatch(0);
+        final String pageUrl = downloadLink.getDownloadURL();
+        final String videoId = new Regex(pageUrl, "recorded/(\\d+)").getMatch(0);
+
+        Browser amf = new Browser();
+        getAMFRequest(amf, createAMFRequest(pageUrl, videoId));
+        String result = beautifierString(amf);
+        HashMap<String, String> values = new HashMap<String, String>();
+        for (String[] s : new Regex(result == null ? "" : result, "#(title|flv|liveHttpUrl|smoothStreamingUrl)#.([^<>#]+)").getMatches()) {
+            values.put(s[0], s[1]);
+        }
+
+        String ext = ".mp4";
+        String filename = values.get("title");
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?),.*?</title>").getMatch(0);
+            filename = br.getRegex("<meta name=\"title\" content=\"(.*?), Recorded on ").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?), Recorded on ").getMatch(0);
+                filename = br.getRegex("<title>(.*?),.*?</title>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?), Recorded on ").getMatch(0);
+                }
             }
         }
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        if (downloadLink.getDownloadURL().contains("highlight")) {
-            downloadLink.setName(filename.trim() + ".mp4");
-        } else {
-            downloadLink.setName(filename.trim() + ".flv");
+
+        DLLINK = values.get("liveHttpUrl");
+        if (DLLINK == null) {
+            DLLINK = values.get("smoothStreamingUrl");
+            if (DLLINK == null) {
+                DLLINK = values.get("flv");
+                ext = ".flv";
+            }
         }
-        return AvailableStatus.TRUE;
+        if (NOTFORSTABLE) throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD needed!");
+        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+
+        downloadLink.setName(filename.trim() + ext);
+
+        // In case the link redirects to the finallink
+        amf.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = amf.openGetConnection(DLLINK);
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     @Override
@@ -135,4 +169,18 @@ public class UstreamTv extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
+    private void getAMFRequest(final Browser amf, final byte[] b) {
+        amf.getHeaders().put("Content-Type", "application/x-amf");
+        try {
+            PostRequest request = (PostRequest) amf.createPostRequest("http://rgw.ustream.tv/gateway.php", (String) null);
+            request.setPostBytes(b);
+            amf.openRequestConnection(request);
+            amf.loadConnection(null);
+        } catch (Throwable e) {
+            /* does not exist in 09581 */
+            NOTFORSTABLE = true;
+        }
+    }
+
 }

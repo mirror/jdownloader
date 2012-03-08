@@ -61,8 +61,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/svnkit.jar" sourcepath="ressourcen/code-ressourcen/svnkitsrc.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/trident.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/junit-4.8.2.jar" sourcepath="ressourcen/code-ressourcen/junit-4.8.2-src.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/flex-messaging-common.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/flex-messaging-core.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbinding.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/jpathwatch-0-93-rc1.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/AppleJavaExtensions.jar"/>
