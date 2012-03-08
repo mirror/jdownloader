@@ -799,4 +799,5 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Start Downloads" })
     String StartDownloadsAction_createTooltip_();
+
 }

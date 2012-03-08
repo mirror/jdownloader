@@ -65,6 +65,7 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
                             MouseEvent me;
                             me = new MouseEvent(dummy, 0, System.currentTimeMillis(), 0, point.x, point.y, 0, false);
                             me.setSource(lastEvent.getSource());
+
                             mouseExited(me);
 
                             return;
@@ -75,6 +76,7 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
                                 MouseEvent me;
                                 me = new MouseEvent(dummy, 0, System.currentTimeMillis(), 0, point.x, point.y, 0, false);
                                 me.setSource(TrayMouseAdapter.this);
+
                                 deligate.mouseStay(me);
                             }
                         }

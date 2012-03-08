@@ -81,11 +81,17 @@ public class CFG_GENERAL {
     // 10
     /**
      * AutoStart Downloads will show a Countdown Dialog after Startup. Set the
-     * countdown time to 0 to remove this dialog
+     * countdown time to 0 to remove this dialog. @see
+     * showCountdownonAutoStartDownloads
      **/
     public static final IntegerKeyHandler               AUTO_START_COUNTDOWN_SECONDS                  = SH.getKeyHandler("AutoStartCountdownSeconds", IntegerKeyHandler.class);
     // false
     public static final BooleanKeyHandler               MAX_DOWNLOADS_PER_HOST_ENABLED                = SH.getKeyHandler("MaxDownloadsPerHostEnabled", BooleanKeyHandler.class);
+    // true
+    /**
+     * @see AutoStartCountdownSeconds
+     **/
+    public static final BooleanKeyHandler               SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS         = SH.getKeyHandler("ShowCountdownonAutoStartDownloads", BooleanKeyHandler.class);
     // 500
     /**
      * max buffer size for write operations in kb

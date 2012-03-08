@@ -1,10 +1,12 @@
 package jd.gui.swing.jdgui.views.settings.components;
 
-import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-public class TextInput extends JTextField implements SettingsComponent {
+import org.appwork.storage.config.handler.StringKeyHandler;
+import org.appwork.swing.components.ExtTextField;
+
+public class TextInput extends ExtTextField implements SettingsComponent {
 
     /**
      * 
@@ -12,6 +14,7 @@ public class TextInput extends JTextField implements SettingsComponent {
     private static final long                 serialVersionUID = 1L;
     private StateUpdateEventSender<TextInput> eventSender;
     private boolean                           setting;
+    private StringKeyHandler                  keyhandler;
     {
         eventSender = new StateUpdateEventSender<TextInput>();
         this.getDocument().addDocumentListener(new DocumentListener() {
@@ -31,7 +34,8 @@ public class TextInput extends JTextField implements SettingsComponent {
     }
 
     public TextInput(String nick) {
-        super(nick);
+        super();
+        setText(nick);
 
     }
 
@@ -47,6 +51,19 @@ public class TextInput extends JTextField implements SettingsComponent {
 
     public TextInput() {
         super();
+    }
+
+    @Override
+    public void onChanged() {
+        super.onChanged();
+        keyhandler.setValue(getText());
+    }
+
+    public TextInput(StringKeyHandler keyhandler) {
+        super();
+        this.keyhandler = keyhandler;
+        setText(keyhandler.getValue());
+
     }
 
     public String getConstraints() {

@@ -45,6 +45,7 @@ public class DownloadControll extends AbstractConfigPanel implements ChangeListe
     private GeneralSettings                    config;
     private Spinner                            maxchunks;
     private ComboBox<AutoDownloadStartOption>  startDownloadsAfterAppStart;
+    private Spinner                            startDownloadTimeout;
 
     public String getTitle() {
         return _JDT._.gui_settings_downloadcontroll_title();
@@ -62,7 +63,7 @@ public class DownloadControll extends AbstractConfigPanel implements ChangeListe
         maxSim = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS));
 
         maxchunks = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_CHUNKS_PER_FILE));
-
+        startDownloadTimeout = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_START_COUNTDOWN_SECONDS));
         String[] removeDownloads = new String[] { _GUI._.gui_config_general_toDoWithDownloads_immediate(), _GUI._.gui_config_general_toDoWithDownloads_atstart(), _GUI._.gui_config_general_toDoWithDownloads_packageready(), _GUI._.gui_config_general_toDoWithDownloads_never() };
 
         remove = new ComboBox<CleanAfterDownloadAction>(CleanAfterDownloadAction.values(), removeDownloads);
@@ -75,7 +76,11 @@ public class DownloadControll extends AbstractConfigPanel implements ChangeListe
 
         this.addPair(_GUI._.gui_config_general_todowithdownloads(), null, remove);
         this.addPair(_GUI._.system_download_triggerfileexists(), null, ifFileExists);
+
+        this.addHeader(_GUI._.gui_config_download_autostart(), NewTheme.I().getIcon("resume", 32));
+        this.addDescription(_GUI._.gui_config_download_autostart_desc());
         addPair(_GUI._.system_download_autostart(), null, startDownloadsAfterAppStart);
+        addPair(_GUI._.system_download_autostart_countdown(), CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS, startDownloadTimeout);
         config = org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG;
 
     }

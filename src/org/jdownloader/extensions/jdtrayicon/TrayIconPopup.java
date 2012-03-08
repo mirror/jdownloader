@@ -28,9 +28,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
-import javax.swing.Action;
+import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
-import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -61,32 +60,33 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 
 //final, because the constructor calls Thread.start(),
 //see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
 public final class TrayIconPopup extends JWindow implements MouseListener, ChangeListener {
 
-    private static final long        serialVersionUID  = 2623190748929934409L;
+    private static final long         serialVersionUID  = 2623190748929934409L;
 
-    private JPanel                   entryPanel;
-    private JPanel                   quickConfigPanel;
-    private JPanel                   bottomPanel;
-    private boolean                  enteredPopup;
-    private JDSpinner                spMaxSpeed;
-    private JDSpinner                spMaxDls;
-    private JDSpinner                spMaxChunks;
-    private boolean                  hideThreadrunning = false;
+    private JPanel                    entryPanel;
+    private JPanel                    quickConfigPanel;
+    private JPanel                    bottomPanel;
+    private boolean                   enteredPopup;
+    private JDSpinner                 spMaxSpeed;
+    private JDSpinner                 spMaxDls;
+    private JDSpinner                 spMaxChunks;
+    private boolean                   hideThreadrunning = false;
 
-    private JPanel                   exitPanel;
-    private ArrayList<JToggleButton> resizecomps;
+    private JPanel                    exitPanel;
+    private ArrayList<AbstractButton> resizecomps;
 
-    private transient Thread         hideThread;
+    private transient Thread          hideThread;
 
     public TrayIconPopup() {
         // required. JWindow needs a parent to grant a nested Component focus
         super(JDGui.getInstance().getMainFrame());
-        resizecomps = new ArrayList<JToggleButton>();
+        resizecomps = new ArrayList<AbstractButton>();
         setVisible(false);
         setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
         addMouseListener(this);
@@ -107,7 +107,7 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
         content.add(exitPanel);
         content.setBorder(BorderFactory.createLineBorder(content.getBackground().darker()));
         Dimension size = new Dimension(getPreferredSize().width, resizecomps.get(0).getPreferredSize().height);
-        for (JToggleButton c : resizecomps) {
+        for (AbstractButton c : resizecomps) {
             c.setPreferredSize(size);
             c.setMinimumSize(size);
             c.setMaximumSize(size);
@@ -171,30 +171,30 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
     private void initEntryPanel() {
         entryPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]0[]0[]0[]0[]"));
         if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.RUNNING_STATE)) {
-            addMenuEntry(entryPanel, StopDownloadsAction.getInstance().init());
-            addMenuEntry(entryPanel, PauseDownloadsAction.getInstance().init());
+            addMenuEntry(entryPanel, new TrayAction(StopDownloadsAction.getInstance().init()));
+            addMenuEntry(entryPanel, new TrayAction(PauseDownloadsAction.getInstance().init(), T._.popup_pause()));
         } else if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE, DownloadWatchDog.STOPPED_STATE)) {
-            addMenuEntry(entryPanel, StartDownloadsAction.getInstance().init());
-            addMenuEntry(entryPanel, PauseDownloadsAction.getInstance().init());
+            addMenuEntry(entryPanel, new TrayAction(StartDownloadsAction.getInstance().init()));
+            addMenuEntry(entryPanel, new TrayAction(PauseDownloadsAction.getInstance().init(), T._.popup_pause()));
         }
 
         // addMenuEntry(entryPanel, "action.addurl");
         // addMenuEntry(entryPanel, "action.load");
-        addMenuEntry(entryPanel, UpdateAction.getInstance().init());
-        addMenuEntry(entryPanel, ReconnectAction.getInstance().init());
-        addMenuEntry(entryPanel, OpenDefaultDownloadFolderAction.getInstance().init());
+        addMenuEntry(entryPanel, new TrayAction(UpdateAction.getInstance().init(), T._.popup_update()));
+        addMenuEntry(entryPanel, new TrayAction(ReconnectAction.getInstance().init(), T._.popup_reconnect()));
+        addMenuEntry(entryPanel, new TrayAction(OpenDefaultDownloadFolderAction.getInstance().init(), T._.popup_downloadfolder()));
     }
 
     private void initQuickConfigPanel() {
         quickConfigPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]"));
-        addMenuEntry(quickConfigPanel, GlobalPremiumSwitchToggleAction.getInstance().init());
-        addMenuEntry(quickConfigPanel, ClipBoardToggleAction.getInstance().init());
-        addMenuEntry(quickConfigPanel, AutoReconnectToggleAction.getInstance().init());
+        addMenuEntry(quickConfigPanel, new TrayAction(GlobalPremiumSwitchToggleAction.getInstance().init(), T._.popup_premiumtoggle()));
+        addMenuEntry(quickConfigPanel, new TrayAction(ClipBoardToggleAction.getInstance().init(), T._.popup_clipboardtoggle()));
+        addMenuEntry(quickConfigPanel, new TrayAction(AutoReconnectToggleAction.getInstance().init(), T._.popup_reconnecttoggle()));
     }
 
     private void initExitPanel() {
         exitPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]"));
-        addMenuEntry(exitPanel, ExitToolbarAction.getInstance().init());
+        addMenuEntry(exitPanel, new TrayAction(ExitToolbarAction.getInstance().init(), T._.popup_exit()));
     }
 
     private void initBottomPanel() {
@@ -222,14 +222,14 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
     }
 
     private void addMenuEntry(JPanel panel, AppAction actionId) {
-        JToggleButton ret = getMenuEntry(actionId);
+        AbstractButton ret = getMenuEntry(actionId);
         if (ret == null) return;
         panel.add(ret, "growx, pushx");
     }
 
-    private JToggleButton getMenuEntry(AppAction action) {
+    private AbstractButton getMenuEntry(AppAction action) {
 
-        JToggleButton b = createButton(action);
+        AbstractButton b = createButton(action);
         if (action == ExitToolbarAction.getInstance()) {
             b.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
@@ -242,25 +242,46 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
         return b;
     }
 
-    private JToggleButton createButton(AppAction action) {
+    private AbstractButton createButton(AppAction action) {
+        if (action.isToggle()) {
+            JToggleButton bt = new JToggleButton(action);
+            bt.setOpaque(false);
+            bt.setContentAreaFilled(false);
+            bt.setBorderPainted(false);
 
-        JToggleButton bt = new JToggleButton(action);
-        bt.setOpaque(false);
-        bt.setContentAreaFilled(false);
-        bt.setBorderPainted(false);
-        bt.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                hideThreadrunning = false;
-                TrayIconPopup.this.dispose();
-            }
-        });
-        bt.setIcon((Icon) action.getValue(Action.SMALL_ICON));
-        bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        bt.setFocusPainted(false);
-        bt.setHorizontalAlignment(JButton.LEFT);
-        bt.setIconTextGap(5);
-        bt.addMouseListener(new HoverEffect(bt));
-        return bt;
+            bt.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    hideThreadrunning = false;
+                    TrayIconPopup.this.dispose();
+                }
+            });
+            bt.setIcon(NewTheme.I().getCheckBoxImage(action.getIconKey(), false, 24));
+            bt.setSelectedIcon(NewTheme.I().getCheckBoxImage(action.getIconKey(), true, 24));
+            bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            bt.setFocusPainted(false);
+            bt.setHorizontalAlignment(JButton.LEFT);
+            bt.setIconTextGap(5);
+            bt.addMouseListener(new HoverEffect(bt));
+            return bt;
+        } else {
+            JToggleButton bt = new JToggleButton(action);
+            bt.setOpaque(false);
+            bt.setContentAreaFilled(false);
+            bt.setBorderPainted(false);
+            bt.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    hideThreadrunning = false;
+                    TrayIconPopup.this.dispose();
+                }
+            });
+
+            bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            bt.setFocusPainted(false);
+            bt.setHorizontalAlignment(JButton.LEFT);
+            bt.setIconTextGap(5);
+            bt.addMouseListener(new HoverEffect(bt));
+            return bt;
+        }
     }
 
     public void mouseClicked(MouseEvent e) {

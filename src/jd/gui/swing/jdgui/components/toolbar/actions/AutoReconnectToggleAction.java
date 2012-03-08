@@ -25,7 +25,7 @@ public class AutoReconnectToggleAction extends AbstractToolbarToggleAction {
 
     @Override
     public String createIconKey() {
-        return "reconnect";
+        return "auto-reconnect";
     }
 
     @Override

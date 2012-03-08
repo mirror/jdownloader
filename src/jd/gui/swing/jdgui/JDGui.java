@@ -556,7 +556,15 @@ public class JDGui extends SwingGui {
                          * avoid exit if trayicon addon is enabled and close to
                          * tray active
                          */
-                        return;
+                        try {
+                            Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.JDGui_windowClosing_try_title_(), _GUI._.JDGui_windowClosing_try_msg_(), null, _GUI._.JDGui_windowClosing_try_answer_tray(), _GUI._.JDGui_windowClosing_try_asnwer_close());
+                            return;
+                        } catch (DialogClosedException e1) {
+                            e1.printStackTrace();
+                        } catch (DialogCanceledException e1) {
+                            e1.printStackTrace();
+                        }
+
                     }
                 }
             }

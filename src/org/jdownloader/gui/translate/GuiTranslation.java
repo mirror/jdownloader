@@ -3511,13 +3511,34 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Always" })
     String gui_config_general_AutoDownloadStartOption_always();
 
-    @Default(lngs = { "en" }, values = { "If downloading at last exit time" })
+    @Default(lngs = { "en" }, values = { "Only if downloads were running at last Session's end" })
     String gui_config_general_AutoDownloadStartOption_only_if_closed_running();
 
     @Default(lngs = { "en" }, values = { "Never" })
     String gui_config_general_AutoDownloadStartOption_never();
 
-    @Default(lngs = { "en" }, values = { "Autostart Downloads at launch" })
+    @Default(lngs = { "en" }, values = { "Autostart Downloads at Application Start" })
     String system_download_autostart();
+
+    @Default(lngs = { "en" }, values = { "Show Countdown (seconds)" })
+    String system_download_autostart_countdown();
+
+    @Default(lngs = { "en" }, values = { "Autostart Downloads" })
+    String gui_config_download_autostart();
+
+    @Default(lngs = { "en" }, values = { "Choose if, and when JDownloader should start pending downloads without user interaction..." })
+    String gui_config_download_autostart_desc();
+
+    @Default(lngs = { "en" }, values = { "Close to Tray" })
+    String JDGui_windowClosing_try_title_();
+
+    @Default(lngs = { "en" }, values = { "JDownloader will be closed to your System tray now and will continue it's job in the background.\r\nDo you want to hide JDownloader in the tray, or exit the Application completely?" })
+    String JDGui_windowClosing_try_msg_();
+
+    @Default(lngs = { "en" }, values = { "Hide to Tray" })
+    String JDGui_windowClosing_try_answer_tray();
+
+    @Default(lngs = { "en" }, values = { "Exit JDownloader" })
+    String JDGui_windowClosing_try_asnwer_close();
 
 }

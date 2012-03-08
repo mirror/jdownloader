@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 
+import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -82,9 +83,10 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
     public <T extends SettingsComponent> Pair<T> addPair(String name, BooleanKeyHandler enabled, T comp) {
 
         JLabel lbl;
-        add(lbl = createLabel(name), (enabled == null ? "" : "split 2,") + "gapleft 37,aligny " + (comp.isMultiline() ? "top" : "center"));
+        add(lbl = createLabel(name), (enabled == null ? "" : "split 3,") + "gapleft 37,aligny " + (comp.isMultiline() ? "top" : "center"));
         if (enabled != null) {
             ExtCheckBox cb = new ExtCheckBox(enabled, lbl, (JComponent) comp);
+            add(Box.createHorizontalGlue(), "pushx,growx");
             add(cb, "width " + cb.getPreferredSize().width + "!,aligny " + (comp.isMultiline() ? "top" : "center"));
             cb.setToolTipText(_GUI._.AbstractConfigPanel_addPair_enabled());
         }

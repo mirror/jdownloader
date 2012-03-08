@@ -52,7 +52,6 @@ import org.appwork.app.launcher.parameterparser.CommandSwitch;
 import org.appwork.app.launcher.parameterparser.CommandSwitchListener;
 import org.appwork.app.launcher.parameterparser.ParameterParser;
 import org.appwork.controlling.SingleReachableState;
-import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
@@ -83,13 +82,11 @@ import org.jdownloader.jdserv.stats.StatsManager;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.AutoDownloadStartOption;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
 import org.jdownloader.update.WebupdateSettings;
 
-/**
- * @author JD-Team
- */
 public class Main {
     static {
         try {
@@ -483,9 +480,8 @@ public class Main {
                         boolean closedRunning = JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads();
                         if (doRestartRunninfDownloads == AutoDownloadStartOption.ALWAYS || (closedRunning && doRestartRunninfDownloads == AutoDownloadStartOption.ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS)) {
                             /* autostart downloads when no autoupdate is enabled */
-                            Log.exception(new WTFException("REIMPLEMENT ME:autostart on startup"));
 
-                            if (JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() > 0) {
+                            if (JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() > 0 && CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS.isEnabled()) {
                                 ConfirmDialog d = new ConfirmDialog(Dialog.LOGIC_COUNTDOWN, _JDT._.Main_run_autostart_(), _JDT._.Main_run_autostart_msg(), NewTheme.I().getIcon("start", 32), _JDT._.Mainstart_now(), null);
                                 d.setCountdownTime(JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds());
                                 try {

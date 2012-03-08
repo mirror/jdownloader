@@ -38,11 +38,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import jd.Main;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.config.ConfigGroup;
 import jd.controlling.JDLogger;
-import jd.controlling.JSonWrapper;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
@@ -53,6 +49,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.AddonPanel;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
@@ -120,23 +117,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         });
     }
 
-    protected void initSettings(ConfigContainer config) {
-        ConfigEntry ce, cond;
-        config.setGroup(new ConfigGroup(getName(), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_CLOSE_TO_TRAY, T._.plugins_optional_JDLightTray_closetotray()).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_START_MINIMIZED, T._.plugins_optional_JDLightTray_startMinimized()).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SINGLE_CLICK, T._.plugins_optional_JDLightTray_singleClick()).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_TOOLTIP, T._.plugins_optional_JDLightTray_tooltip()).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_ON_LINKGRAB, T._.plugins_optional_JDLightTray_linkgrabber_intray()).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_ON_LINKGRAB2, T._.plugins_optional_JDLightTray_linkgrabber_always()).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_PASSWORD_REQUIRED, T._.plugins_optional_JDLightTray_passwordRequired()).setDefaultValue(false));
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_PASSWORD, T._.plugins_optional_JDLightTray_password()));
-        ce.setEnabledCondidtion(cond, true);
-    }
-
     @Override
     public String getConfigID() {
         return "trayicon";
@@ -172,24 +152,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         return null;
     }
 
-    private JSonWrapper                         subConfig                  = null;
-
-    private static final String                 PROPERTY_START_MINIMIZED   = "PROPERTY_START_MINIMIZED";
-
-    private static final String                 PROPERTY_CLOSE_TO_TRAY     = "PROPERTY_CLOSE_TO_TRAY";
-
-    private static final String                 PROPERTY_SINGLE_CLICK      = "PROPERTY_SINGLE_CLICK";
-
-    private static final String                 PROPERTY_TOOLTIP           = "PROPERTY_TOOLTIP";
-
-    private static final String                 PROPERTY_SHOW_ON_LINKGRAB  = "PROPERTY_SHOW_ON_LINKGRAB";
-
-    private static final String                 PROPERTY_SHOW_ON_LINKGRAB2 = "PROPERTY_SHOW_ON_LINKGRAB2";
-
-    private static final String                 PROPERTY_PASSWORD_REQUIRED = "PROPERTY_PASSWORD_REQUIRED";
-
-    private static final String                 PROPERTY_PASSWORD          = "PROPERTY_PASSWORD";
-
     private TrayIconPopup                       trayIconPopup;
 
     private TrayIcon                            trayIcon;
@@ -200,7 +162,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
 
     private TrayMouseAdapter                    ma;
 
-    private boolean                             iconified                  = false;
+    private boolean                             iconified = false;
 
     private Timer                               disableAlwaysonTop;
 
@@ -216,7 +178,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
 
     public TrayExtension() throws StartException {
         super(T._.jd_plugins_optional_jdtrayicon_jdlighttray());
-        subConfig = JSonWrapper.get("ADDONS_JDLIGHTTRAY");
 
         disableAlwaysonTop = new Timer(2000, this);
         disableAlwaysonTop.setInitialDelay(2000);
@@ -263,7 +224,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                     guiFrame.removeWindowStateListener(TrayExtension.this);
                     guiFrame.addWindowStateListener(TrayExtension.this);
                 }
-                if (subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) {
+
+                if (getSettings().isStartMinimizedEnabled()) {
                     miniIt(true, true);
                 }
             }
@@ -286,7 +248,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         trayIconTooltip.hideTooltip();
         if (e.getSource() instanceof TrayIcon) {
             if (!CrossSystem.isMac()) {
-                if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
+                if (e.getClickCount() >= (getSettings().isToogleWindowStatusWithSingleClickEnabled() ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
                     miniIt(guiFrame.isVisible(), true);
                 } else {
                     if (trayIconPopup != null && trayIconPopup.isShowing()) {
@@ -301,7 +263,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                     }
                 }
             } else {
-                if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isLeftMouseButton(e)) {
+                if (e.getClickCount() >= (getSettings().isToogleWindowStatusWithSingleClickEnabled() ? 1 : 2) && !SwingUtilities.isLeftMouseButton(e)) {
                     miniIt(guiFrame.isVisible() & guiFrame.getState() != Frame.ICONIFIED, true);
                 } else if (SwingUtilities.isLeftMouseButton(e)) {
                     if (trayIconPopup != null && trayIconPopup.isShowing()) {
@@ -322,9 +284,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     private boolean checkPassword() {
-        if (subConfig.getBooleanProperty(PROPERTY_PASSWORD_REQUIRED, false) && !subConfig.getStringProperty(PROPERTY_PASSWORD, "").equals("")) {
+        if (getSettings().isPasswordProtectionEnabled() && !StringUtils.isEmpty(getSettings().getPassword())) {
             String password = UserIO.getInstance().requestInputDialog(UserIO.STYLE_PASSWORD, T._.plugins_optional_JDLightTray_enterPassword(), null);
-            if (password == null || !password.equals(subConfig.getStringProperty(PROPERTY_PASSWORD, ""))) {
+            if (!getSettings().getPassword().equals(password)) {
                 UserIO.getInstance().requestMessageDialog(T._.plugins_optional_JDLightTray_enterPassword_wrong());
                 return false;
             }
@@ -411,7 +373,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
      * {@link TrayMouseAdapter}
      */
     public void mouseStay(MouseEvent e) {
-        if (!subConfig.getBooleanProperty(PROPERTY_TOOLTIP, true)) return;
+        if (!getSettings().isToolTipEnabled()) return;
         if (trayIconPopup != null && trayIconPopup.isVisible()) return;
         trayIconTooltip.showTooltip(((TrayMouseAdapter) e.getSource()).getEstimatedTopLeft());
     }
@@ -456,7 +418,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     public void windowClosing(WindowEvent e) {
-        if (subConfig.getBooleanProperty(PROPERTY_CLOSE_TO_TRAY, true)) {
+        if (getSettings().isCloseToTrayEnabled()) {
             miniIt(true, true);
         }
     }
@@ -490,9 +452,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
 
     @Override
     protected void initExtension() throws StartException {
-        ConfigContainer cc = new ConfigContainer(getName());
-        initSettings(cc);
-        configPanel = createPanelFromContainer(cc);
+
+        configPanel = new TrayConfigPanel(this);
+
     }
 
     public void onLinkCollectorAbort(LinkCollectorEvent event) {
@@ -508,9 +470,10 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
-        if ((!guiFrame.isVisible() && subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB, true)) || subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB2, false)) {
+        LinkgrabberResultsOption option = getSettings().getShowLinkgrabbingResultsOption();
+        if ((!guiFrame.isVisible() && option == LinkgrabberResultsOption.ONLY_IF_MINIMIZED) || option == LinkgrabberResultsOption.ALWAYS) {
             /* dont try to restore jd if password required */
-            if (subConfig.getBooleanProperty(PROPERTY_PASSWORD_REQUIRED, false)) return;
+            if (getSettings().isPasswordProtectionEnabled()) return;
             if (!guiFrame.isVisible()) {
                 /* set visible */
                 new EDTHelper<Object>() {
