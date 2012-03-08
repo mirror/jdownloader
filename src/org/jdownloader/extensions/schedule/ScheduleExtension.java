@@ -24,14 +24,33 @@ import java.util.Comparator;
 import java.util.Date;
 
 import jd.controlling.JDLogger;
-import jd.nutils.ClassFinder;
-import jd.pluginloader.VirtualClass;
 
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.schedule.modules.DisableClipboard;
+import org.jdownloader.extensions.schedule.modules.DisablePremium;
+import org.jdownloader.extensions.schedule.modules.DisablePremiumForHost;
+import org.jdownloader.extensions.schedule.modules.DisableReconnect;
+import org.jdownloader.extensions.schedule.modules.DoHibernate;
+import org.jdownloader.extensions.schedule.modules.DoReconnect;
+import org.jdownloader.extensions.schedule.modules.DoShutdown;
+import org.jdownloader.extensions.schedule.modules.DoSleep;
+import org.jdownloader.extensions.schedule.modules.EnableClipboard;
+import org.jdownloader.extensions.schedule.modules.EnablePremium;
+import org.jdownloader.extensions.schedule.modules.EnablePremiumForHost;
+import org.jdownloader.extensions.schedule.modules.EnableReconnect;
+import org.jdownloader.extensions.schedule.modules.PauseDownloads;
+import org.jdownloader.extensions.schedule.modules.SetChunk;
+import org.jdownloader.extensions.schedule.modules.SetMaxDownloads;
+import org.jdownloader.extensions.schedule.modules.SetSpeed;
+import org.jdownloader.extensions.schedule.modules.SetStopMark;
+import org.jdownloader.extensions.schedule.modules.StartDownloads;
+import org.jdownloader.extensions.schedule.modules.StopDownloads;
+import org.jdownloader.extensions.schedule.modules.UnPauseDownloads;
+import org.jdownloader.extensions.schedule.modules.UnSetStopMark;
 import org.jdownloader.extensions.schedule.translate.T;
 
 public class ScheduleExtension extends AbstractExtension<ScheduleConfig> {
@@ -65,27 +84,27 @@ public class ScheduleExtension extends AbstractExtension<ScheduleConfig> {
     private void initModules() {
         modules = new ArrayList<SchedulerModuleInterface>();
         try {
-            ArrayList<String> added = new ArrayList<String>();
-            for (final VirtualClass vc : ClassFinder.getClasses("jd.plugins.optional.schedule.modules", getClass().getClassLoader())) {
-                try {
-                    // uncached plugin loading
-                    Class<?> c = vc.loadClass();
-
-                    final SchedulerModule help = c.getAnnotation(SchedulerModule.class);
-                    if (help == null) {
-                        logger.info("Scheduler: Skipped " + c + " due to missing annotation!");
-                        continue;
-                    } else if (added.contains(c.toString())) {
-                        logger.info("Scheduler: Skipped " + c + " because its already loaded!");
-                        continue;
-                    }
-                    added.add(c.toString());
-
-                    modules.add((SchedulerModuleInterface) c.getConstructor().newInstance());
-                } catch (Throwable e) {
-                    JDLogger.exception(e);
-                }
-            }
+            modules.add(new DisableClipboard());
+            modules.add(new DisablePremium());
+            modules.add(new DisablePremiumForHost());
+            modules.add(new DisableReconnect());
+            modules.add(new DoHibernate());
+            modules.add(new DoReconnect());
+            modules.add(new DoShutdown());
+            modules.add(new DoSleep());
+            modules.add(new EnableClipboard());
+            modules.add(new EnablePremium());
+            modules.add(new EnablePremiumForHost());
+            modules.add(new EnableReconnect());
+            modules.add(new PauseDownloads());
+            modules.add(new SetChunk());
+            modules.add(new SetMaxDownloads());
+            modules.add(new SetSpeed());
+            modules.add(new SetStopMark());
+            modules.add(new StartDownloads());
+            modules.add(new StopDownloads());
+            modules.add(new UnPauseDownloads());
+            modules.add(new UnSetStopMark());
             Collections.sort(modules, new Comparator<SchedulerModuleInterface>() {
                 public int compare(SchedulerModuleInterface o1, SchedulerModuleInterface o2) {
                     return o1.getTranslation().compareToIgnoreCase(o2.getTranslation());
