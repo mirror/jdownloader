@@ -16,7 +16,6 @@ public class RenewAction extends TableBarAction {
     private static final long serialVersionUID = 8346982706972553448L;
 
     public RenewAction() {
-
         this.putValue(NAME, _GUI._.settings_accountmanager_renew());
         this.putValue(AbstractAction.SMALL_ICON, NewTheme.I().getIcon("renew", ActionColumn.SIZE));
     }

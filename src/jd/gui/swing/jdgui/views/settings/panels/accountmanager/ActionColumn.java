@@ -20,16 +20,17 @@ public class ActionColumn extends ExtComponentColumn<Account> {
     private JPanel            renderer;
     private JPanel            editor;
     private RenewAction       renew;
-    private InfoAction        info;
-    private PremiumzoneAction premzone;
+
+    // private InfoAction info;
+    // private PremiumzoneAction premzone;
 
     public ActionColumn() {
         super(_GUI._.premiumaccounttablemodel_column_actions());
         renderer = new RendererMigPanel("ins 2", "[]", "[]");
         editor = new RendererMigPanel("ins 2", "[]", "[]");
         renew = new RenewAction();
-        info = new InfoAction();
-        premzone = new PremiumzoneAction();
+        // info = new InfoAction();
+        // premzone = new PremiumzoneAction();
         // add(premzone);
         // add(info);
         add(renew);
@@ -82,7 +83,6 @@ public class ActionColumn extends ExtComponentColumn<Account> {
 
     @Override
     protected JComponent getInternalEditorComponent(Account value, boolean isSelected, int row, int column) {
-
         return editor;
     }
 
@@ -97,7 +97,6 @@ public class ActionColumn extends ExtComponentColumn<Account> {
     }
 
     private void setAccount(Account value) {
-
         renew.setAccount(value);
     }
 
@@ -108,7 +107,6 @@ public class ActionColumn extends ExtComponentColumn<Account> {
 
     @Override
     public void resetEditor() {
-
         editor.setBackground(null);
         editor.setOpaque(false);
     }
