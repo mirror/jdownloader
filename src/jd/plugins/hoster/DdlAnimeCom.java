@@ -43,12 +43,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15797 $", interfaceVersion = 2, names = { "ddlanime.com" }, urls = { "https?://(www\\.)?ddlanime\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 15797 $", interfaceVersion = 2, names = { "ddlanime.com" }, urls = { "https?://(www\\.)?(ddlanime\\.com|ddlani\\.me)/[a-z0-9]{12}" }, flags = { 0 })
 public class DdlAnimeCom extends PluginForHost {
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://ddlanime.com";
+    private static final String COOKIE_HOST         = "http://ddlani.me";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
@@ -61,7 +61,7 @@ public class DdlAnimeCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("https?://(www\\.)?", "http://").replace("ddlanime.com", "ddlani.me"));
     }
 
     @Override
@@ -184,7 +184,7 @@ public class DdlAnimeCom extends PluginForHost {
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
-                br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replaceAll("https?://", "") + "/" + "([A-Za-z0-9]{12})").getMatch(0) + "&fname=" + downloadLink.getName() + "&referer=&method_free=Free+Download");
+                br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replaceAll("https?://", "") + "/" + "([A-Za-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Free+Download");
                 doSomething();
                 checkErrors(downloadLink, false, passCode);
             }
