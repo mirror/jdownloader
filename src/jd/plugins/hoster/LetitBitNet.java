@@ -24,7 +24,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -134,7 +133,7 @@ public class LetitBitNet extends PluginForHost {
         if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         boolean skipfirst = true;
         for (Form singleform : allforms) {
-            if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && singleform.getAction().contains("download")) {
+            if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && singleform.getAction().contains("iframe")) {
                 if (skipfirst == false) {
                     skipfirst = true;
                     continue;
@@ -157,7 +156,7 @@ public class LetitBitNet extends PluginForHost {
             if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             skipfirst = true;
             for (Form singleform : allforms) {
-                if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && singleform.getAction().contains("download")) {
+                if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && singleform.getAction().contains("iframe")) {
                     if (skipfirst == false) {
                         skipfirst = true;
                         continue;
@@ -171,13 +170,19 @@ public class LetitBitNet extends PluginForHost {
                 br.submitForm(down);
             }
         }
-        final String serverPart = new Regex(down.getAction(), "(http://s\\d+\\.letitbit\\.net)/.*?").getMatch(0);
+        final Form freeContinue = br.getFormbyProperty("id", "d3_form");
+        if (freeContinue == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        freeContinue.remove("uid2");
+        br.submitForm(freeContinue);
+        final String serverPart = br.getRegex("\\$\\.post\\(\"(/ajax/download\\d+\\.php)\"").getMatch(0);
         if (serverPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         int wait = 60;
         String waittime = br.getRegex("id=\"seconds\" style=\"font\\-size:18px\">(\\d+)</span>").getMatch(0);
         if (waittime != null) {
             logger.info("Waittime found, waittime is " + waittime + " seconds.");
             wait = Integer.parseInt(waittime);
+        } else {
+            logger.info("No waittime found, continuing...");
         }
         sleep((wait + 5) * 1001l, downloadLink);
         prepareBrowser(br);
@@ -189,15 +194,15 @@ public class LetitBitNet extends PluginForHost {
         br.postPage(serverPart + "/ajax/download3.php", "");
         br.getHeaders().put("X-Requested-With", null);
         /* we need to remove the newline in old browser */
-        String resp = br.toString().replaceAll("%0D%0A", "").trim();
+        final String resp = br.toString().replaceAll("%0D%0A", "").trim();
         if (!"1".equals(resp)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DecimalFormat df = new DecimalFormat("0000");
         Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         for (int i = 0; i <= 5; i++) {
-            String code = getCaptchaCode("letitbitnew", serverPart + "/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
+            String code = getCaptchaCode("letitbitnew", "http://letitbit.net/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
             sleep(2000, downloadLink);
-            br2.postPage(serverPart + "/ajax/check_captcha.php", "code=" + Encoding.urlEncode(code));
+            br2.postPage("http://letitbit.net/ajax/check_captcha.php", "code=" + Encoding.urlEncode(code));
             if (br2.toString().length() < 2 || br2.toString().contains("No htmlCode read")) continue;
             break;
         }
