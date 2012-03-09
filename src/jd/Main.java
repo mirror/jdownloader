@@ -18,6 +18,12 @@
 package jd;
 
 public class Main {
+
+    static {
+        org.appwork.utils.Application.setApplication(".jd_home");
+        org.appwork.utils.Application.getRoot(Launcher.class);
+    }
+
     public static void main(String[] args) {
         try {
             jd.Launcher.main(args);

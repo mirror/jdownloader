@@ -155,8 +155,7 @@ public class Launcher {
             e.printStackTrace();
 
         }
-        Application.setApplication(".jd_home");
-        Application.getRoot(Launcher.class);
+
         // USe Jacksonmapper in this project
         JSonStorage.setMapper(new JacksonMapper());
         // do this call to keep the correct root in Application Cache
