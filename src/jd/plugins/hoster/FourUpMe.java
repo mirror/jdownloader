@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -52,12 +53,14 @@ public class FourUpMe extends PluginForHost {
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
+    private static final String UA                  = RandomUserAgent.generate();
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.2.0
-    // free: doesn't resume, tested: up to 80 connects.
+    // free: tested: up to 20 connects.
     // protocol: doesn't have https
-    // captchatype: null
+    // captchatype: 4dignum
+    // other: linkcheck requires going into the second page.
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -76,36 +79,41 @@ public class FourUpMe extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return false;
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
-        return false;
+        return true;
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", UA);
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
+        if (correctedBR.contains("\"download1\"")) {
+            br.postPage(link.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(link.getDownloadURL(), COOKIE_HOST.replaceAll("https?://", "") + "/" + "([A-Za-z0-9]{12})").getMatch(0) + "&fname=&referer=&method_free=Free+Download");
+            doSomething();
+        }
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
-        if (filename == null) {
+        if (filename == null || filename == "") {
             filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-            if (filename == null) {
+            if (filename == null || filename == "") {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                if (filename == null) {
+                if (filename == null || filename == "") {
                     filename = new Regex(correctedBR, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
-                    if (filename == null) {
+                    if (filename == null || filename == "") {
                         filename = new Regex(correctedBR, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
-                        if (filename == null) {
+                        if (filename == null || filename == "") {
                             filename = new Regex(correctedBR, "File Name.*?nowrap>(.*?)</td").getMatch(0);
                         }
                     }
@@ -288,7 +296,7 @@ public class FourUpMe extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 4;
+        return 1;
     }
 
     /** This removes fake messages which can kill the plugin */
