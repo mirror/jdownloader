@@ -53,9 +53,5 @@
 "literally_exit":"Finished Updatecheck - Exit",
 "UpdateException_socket":"No Internet connection to updateserver: %s1",
 "udpates_found":"Update(s) found!",
-"restart_title":"Restart!",
-
-
-
-
+"restart_title":"Restart!"
 }
