@@ -118,14 +118,14 @@ public class JumboFilesCom extends PluginForHost {
     }
 
     private String getDllink() {
-        String linkurl = br.getRegex("\"(http://[a-zA-Z0-9]+\\.jumbofiles\\.com/files/.*?/.*?/.*?)\"").getMatch(0);
+        String linkurl = br.getRegex("\"(http://[a-zA-Z0-9]+\\.jumbofiles\\.com(:\\d+)?/files/.*?/.*?/.*?)\"").getMatch(0);
         if (linkurl == null) {
             linkurl = br.getRegex("href=\"(http://[0-9]+\\..*?:[0-9]+/d/.*?/.*?)\"").getMatch(0);
             if (linkurl == null) {
                 linkurl = br.getRegex("</td></tr></table>[\t\n\r ]+<br>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
             }
             if (linkurl == null) {
-                linkurl = br.getRegex("\'(http://(www\\d+|[a-z0-9]+)\\.jumbofiles\\.com:\\d+/d/[a-z0-9]+/.*?)'\"").getMatch(0);
+                linkurl = br.getRegex("('|\")(http://(www\\d+|[a-z0-9]+)\\.jumbofiles\\.com(:\\d+)?/d/[a-z0-9]+/.*?)('|\")").getMatch(1);
             }
         }
         return linkurl;
@@ -164,15 +164,9 @@ public class JumboFilesCom extends PluginForHost {
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
-        String dllink = new Regex(BRBEFORE, "SRC=\"http://jumbofiles\\.com/images/dd\\.gif\" WIDTH=\"5\" HEIGHT=\"5\"><BR> <form name=\".*?\" action=\"(.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = new Regex(BRBEFORE, "\"(http://(www\\d+|[a-z0-9]+)\\.jumbofiles\\.com:\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
-        }
-        if (dllink == null) {
-            dllink = new Regex(BRBEFORE, "\'(http://(www\\d+|[a-z0-9]+)\\.jumbofiles\\.com:\\d+/d/[a-z0-9]+/.*?)'\"").getMatch(0);
-        }
+        String dllink = getDllink();
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
 
