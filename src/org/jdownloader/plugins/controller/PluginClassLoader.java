@@ -14,7 +14,7 @@ public class PluginClassLoader extends URLClassLoader {
     public static class PluginClassLoaderChild extends URLClassLoader {
 
         public PluginClassLoaderChild(ClassLoader parent) {
-            super(new URL[] { Application.getRootUrlByClass(jd.Main.class, null) }, parent);
+            super(new URL[] { Application.getRootUrlByClass(jd.Launcher.class, null) }, parent);
         }
 
         @Override
@@ -79,7 +79,7 @@ public class PluginClassLoader extends URLClassLoader {
     private Method findLoadedClass;
 
     private PluginClassLoader() {
-        super(new URL[] { Application.getRootUrlByClass(jd.Main.class, null) }, PluginClassLoader.class.getClassLoader());
+        super(new URL[] { Application.getRootUrlByClass(jd.Launcher.class, null) }, PluginClassLoader.class.getClassLoader());
         try {
             findLoadedClass = ClassLoader.class.getDeclaredMethod("findLoadedClass", new Class[] { String.class });
             findLoadedClass.setAccessible(true);

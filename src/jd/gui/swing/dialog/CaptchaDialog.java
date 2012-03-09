@@ -39,7 +39,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.Main;
+import jd.Launcher;
 import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.Plugin;
@@ -95,7 +95,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         CaptchaDialog cp;
         try {
             Application.setApplication(".jd_home");
-            Main.statics();
+            Launcher.statics();
             cp = new CaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), IconIO.getImageIcon(new File("C:/Users/Thomas/.jd_home/captchas/filesonic.com_29.09.2011_11.49.01.653.jpg").toURI().toURL()), null, "Enter both words...");
 
             cp.setMethodName("filesonic.com");

@@ -30,7 +30,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
-import jd.Main;
+import jd.Launcher;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerEvent;
@@ -59,7 +59,7 @@ public class StatusBarImpl extends JPanel {
     private JLabel                 statusLabel;
 
     public StatusBarImpl() {
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 new EDTRunner() {
@@ -92,7 +92,7 @@ public class StatusBarImpl extends JPanel {
         reconnectIndicator.setTitle(_GUI._.StatusBarImpl_initGUI_reconnect());
         reconnectIndicator.setIndeterminate(false);
         reconnectIndicator.setEnabled(false);
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 Reconnecter.getInstance().getStateMachine().addListener(new StateEventListener() {
@@ -167,7 +167,7 @@ public class StatusBarImpl extends JPanel {
             public void mouseClicked(MouseEvent e) {
             }
         });
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 LinkCrawler.getEventSender().addListener(new LinkCrawlerListener() {

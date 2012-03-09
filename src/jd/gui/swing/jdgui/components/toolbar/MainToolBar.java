@@ -32,7 +32,7 @@ import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 
-import jd.Main;
+import jd.Launcher;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
@@ -66,7 +66,7 @@ public class MainToolBar extends JToolBar {
         this.setRollover(true);
         this.setFloatable(false);
         setPreferredSize(new Dimension(-1, 38));
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 new EDTRunner() {
@@ -130,7 +130,7 @@ public class MainToolBar extends JToolBar {
      * Updates the toolbar
      */
     public final void updateToolbar() {
-        if (!Main.GUI_COMPLETE.isReached()) return;
+        if (!Launcher.GUI_COMPLETE.isReached()) return;
         synchronized (this) {
             new EDTRunner() {
 

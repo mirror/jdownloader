@@ -7,7 +7,7 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.Main;
+import jd.Launcher;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
@@ -53,7 +53,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
 
     @Override
     protected void onShow() {
-        if (Main.GUI_COMPLETE.isReached() && sidebar.treeInitiated() == false) {
+        if (Launcher.GUI_COMPLETE.isReached() && sidebar.treeInitiated() == false) {
             sidebar.updateAddons();
         }
         if (sidebar.getSelectedPanel() == null) {

@@ -10,7 +10,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.Main;
+import jd.Launcher;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.MigPanel;
@@ -29,7 +29,7 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
     public static void main(String[] args) {
         PremiumInfoDialog cp;
         try {
-            Main.statics();
+            Launcher.statics();
 
             cp = new PremiumInfoDialog(DomainInfo.getInstance("wupload.com"));
 

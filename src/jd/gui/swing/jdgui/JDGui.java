@@ -45,7 +45,7 @@ import javax.swing.Timer;
 import javax.swing.ToolTipManager;
 import javax.swing.WindowConstants;
 
-import jd.Main;
+import jd.Launcher;
 import jd.config.ConfigContainer;
 import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
@@ -161,7 +161,7 @@ public class JDGui extends SwingGui {
                 return false;
             }
         });
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 new EDTRunner() {
@@ -458,7 +458,7 @@ public class JDGui extends SwingGui {
      * {@link JFrame#setIconImage(Image)}
      */
     private void setWindowIcon() {
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 if (Application.getJavaVersion() >= 16000000) {

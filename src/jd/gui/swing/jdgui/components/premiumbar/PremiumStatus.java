@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.swing.JPanel;
 
-import jd.Main;
+import jd.Launcher;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
@@ -84,7 +84,7 @@ public class PremiumStatus extends JPanel implements MouseListener {
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         });
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 new Thread() {

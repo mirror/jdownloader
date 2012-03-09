@@ -24,7 +24,7 @@ import java.util.Date;
 
 import javax.swing.JMenuItem;
 
-import jd.Main;
+import jd.Launcher;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.nutils.Executer;
 import jd.plugins.AddonPanel;
@@ -62,7 +62,7 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig> implements St
             throw new StartException(e);
         }
 
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 growlNotification(T._.jd_plugins_optional_JDGrowlNotification_started(), getDateAndTime(), "Programstart");

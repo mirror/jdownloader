@@ -21,7 +21,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.JDInitFlags;
-import jd.Main;
+import jd.Launcher;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -111,7 +111,7 @@ public class ExtensionController {
                 Log.exception(e);
             }
             list = Collections.unmodifiableList(ret);
-            Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+            Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
                 public void run() {
                     List<LazyExtension> llist = list;

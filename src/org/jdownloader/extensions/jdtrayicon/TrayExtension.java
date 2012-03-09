@@ -38,7 +38,7 @@ import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
-import jd.Main;
+import jd.Launcher;
 import jd.controlling.JDLogger;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
@@ -91,7 +91,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
             logger.severe("Error initializing SystemTray: Tray isn't supported jet");
             throw new StartException("Tray isn't supported!");
         }
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 new EDTRunner() {
@@ -218,7 +218,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         } catch (Exception e) {
             JDLogger.exception(e);
         }
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 logger.info("JDLightTrayIcon Init complete");

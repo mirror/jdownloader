@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 
 import javax.swing.JFrame;
 
-import jd.Main;
+import jd.Launcher;
 import jd.controlling.JDLogger;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
@@ -60,7 +60,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         macApplication.addAppEventListener(adapter);
         macApplication.setOpenFileHandler(adapter);
         macApplication.setOpenURIHandler(adapter);
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 if (adapter.openURIlinks != null) {
@@ -131,7 +131,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         appReOpened(null);
         LOG.info("Handle open uri from Dock " + e.getURI().toString());
         String links = e.getURI().toString();
-        if (Main.GUI_COMPLETE.isReached()) {
+        if (Launcher.GUI_COMPLETE.isReached()) {
             LOG.info("Distribute links: " + links);
             LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(links));
         } else {

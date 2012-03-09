@@ -2,7 +2,7 @@ package org.jdownloader.gui.views.linkgrabber;
 
 import javax.swing.Icon;
 
-import jd.Main;
+import jd.Launcher;
 import jd.gui.swing.jdgui.interfaces.View;
 
 import org.appwork.utils.swing.EDTRunner;
@@ -12,7 +12,7 @@ import org.jdownloader.images.NewTheme;
 public class LinkGrabberView extends View {
     public LinkGrabberView() {
         super();
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 new EDTRunner() {

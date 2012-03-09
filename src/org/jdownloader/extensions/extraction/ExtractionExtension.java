@@ -28,7 +28,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 import javax.swing.filechooser.FileFilter;
 
-import jd.Main;
+import jd.Launcher;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -375,7 +375,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         ShutdownController.getInstance().removeShutdownVetoListener(listener);
         MenuFactoryEventSender.getInstance().removeListener(this);
         FileCreationManager.getInstance().getEventSender().removeListener(this);
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
                 new EDTRunner() {
@@ -398,7 +398,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     protected void start() throws StartException {
         MenuFactoryEventSender.getInstance().addListener(this);
         FileCreationManager.getInstance().getEventSender().addListener(this);
-        Main.GUI_COMPLETE.executeWhenReached(new Runnable() {
+        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
             public void run() {
                 new EDTRunner() {
 
