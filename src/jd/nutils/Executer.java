@@ -415,8 +415,9 @@ public class Executer extends Thread implements Runnable {
             this.sbeObserver.start();
             this.sboObserver.start();
 
+            Thread timeoutThread = null;
             if (this.waitTimeout > 0) {
-                final Thread timeoutThread = new Thread() {
+                timeoutThread = new Thread() {
                     @Override
                     public void run() {
                         try {
@@ -482,6 +483,7 @@ public class Executer extends Thread implements Runnable {
 
                 }
             }
+            if (timeoutThread != null) timeoutThread.interrupt();
             if (this.logger != null) {
                 this.logger.finer("Stream observer closed");
             }

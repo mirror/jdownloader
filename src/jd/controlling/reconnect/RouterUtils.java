@@ -20,12 +20,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
 import java.net.Socket;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Enumeration;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,36 +39,16 @@ import jd.nutils.ProcessListener;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.appwork.utils.os.CrossSystem;
 
 public class RouterUtils {
 
     private static final String PATTERN_WIN_ARP = "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?";
 
-    private static class WebServerChecker {
-
-        private final String host;
-        private InetAddress  address = null;
-
-        public WebServerChecker(final String host) {
-            this.host = host;
-        }
-
-        public InetAddress getAddress() {
-            return this.address;
-        }
-
-        public void go() throws Exception {
-
-            if (RouterUtils.checkPort(this.host)) {
-                address = InetAddress.getByName(this.host);
-            }
-
-        }
-    }
-
-    private static InetAddress ADDRESS_CACHE;
+    private static InetAddress  ADDRESS_CACHE;
 
     /**
      * Runs throw a predefined Host Table (multithreaded) and checks if there is
@@ -77,7 +57,7 @@ public class RouterUtils {
      * 
      * @return
      */
-    private static InetAddress ASYNCH_RETURN;
+    private static InetAddress  ASYNCH_RETURN;
 
     private static String callArpTool(final String ipAddress) throws IOException, InterruptedException {
 
@@ -237,36 +217,35 @@ public class RouterUtils {
      * @throws InterruptedException
      */
     public static InetAddress getIpFormHostTable() throws InterruptedException {
-        RouterUtils.updateHostTable();
+        ArrayList<String> hostNames = RouterUtils.getHostTable();
         RouterUtils.ASYNCH_RETURN = null;
-        // final int size = RouterUtils.HOST_NAMES.size();
-        // final Threader threader = new Threader();
-        // for (int i = 0; i < size; i++) {
-        // threader.add(new WebServerChecker(RouterUtils.HOST_NAMES.get(i)));
-        // }
-        //
-        // threader.addWorkerListener(new WorkerListener() {
-        //
-        // public void onThreadException(final Threader th, final JDRunnable
-        // job, final Throwable e) {
-        // }
-        //
-        // public void onThreadFinished(final Threader th, final JDRunnable
-        // runnable) {
-        // if (((WebServerChecker) runnable).getAddress() != null) {
-        // th.interrupt();
-        // RouterUtils.ASYNCH_RETURN = ((WebServerChecker)
-        // runnable).getAddress();
-        // }
-        //
-        // }
-        //
-        // public void onThreadStarts(final Threader threader, final JDRunnable
-        // runnable) {
-        // }
-        //
-        // });
-        // threader.startAndWait();
+        final Object LOCK = new Object();
+        final ThreadPoolExecutor threadPool = new ThreadPoolExecutor(4, 4, 2000, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+        threadPool.allowCoreThreadTimeOut(true);
+        for (final String host : hostNames) {
+            try {
+                if (ASYNCH_RETURN != null) break;
+                threadPool.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (ASYNCH_RETURN != null) return;
+                            if (RouterUtils.checkPort(host)) {
+                                if (ASYNCH_RETURN != null) return;
+                                synchronized (LOCK) {
+                                    if (ASYNCH_RETURN != null) return;
+                                    RouterUtils.ASYNCH_RETURN = InetAddress.getByName(host);
+                                    threadPool.shutdown();
+                                }
+                            }
+                        } catch (final Throwable e) {
+                        }
+                    }
+                });
+            } catch (final Throwable e) {
+            }
+        }
+        threadPool.awaitTermination(5000, TimeUnit.MILLISECONDS);
         return RouterUtils.ASYNCH_RETURN;
     }
 
@@ -283,7 +262,7 @@ public class RouterUtils {
         final Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)).*");
         final Executer exec = new Executer("netstat");
         exec.addParameter("-rn");
-        exec.setWaitTimeout(5000);
+        exec.setWaitTimeout(5);
         System.out.println(0);
         exec.start();
         exec.waitTimeout();
@@ -315,7 +294,7 @@ public class RouterUtils {
                 final Executer exec = new Executer("/sbin/route");
                 exec.addParameters(new String[] { "-n", "get", "default" });
                 exec.setRunin("/");
-                exec.setWaitTimeout(1000);
+                exec.setWaitTimeout(5);
                 exec.start();
                 exec.waitTimeout();
                 final String routingt = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
@@ -344,7 +323,7 @@ public class RouterUtils {
                 final Executer exec = new Executer("/sbin/route");
                 exec.addParameters(new String[] { "-n" });
                 exec.setRunin("/");
-                exec.setWaitTimeout(1000);
+                exec.setWaitTimeout(5);
                 exec.start();
                 exec.waitTimeout();
                 String routingt = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
@@ -409,10 +388,6 @@ public class RouterUtils {
         return ret;
     }
 
-    public static void main(String[] args) throws SocketException {
-        System.out.println(getWindowsGateway());
-    }
-
     /**
      * USes windows tracert command to find the gateway
      * 
@@ -452,7 +427,7 @@ public class RouterUtils {
             }, Executer.LISTENER_STDSTREAM);
             exec.addParameters(new String[] { "-d", "-h", "10", "-4", "jdownloader.org" });
             exec.setRunin("/");
-            exec.setWaitTimeout(15000);
+            exec.setWaitTimeout(15);
             exec.start();
             exec.waitTimeout();
             try {
@@ -480,7 +455,7 @@ public class RouterUtils {
             final Executer exec = new Executer("tracert ");
             exec.addParameters(new String[] { "-d", "-h", "1", "-4", "-w", "500", "jdownloader.org" });
             exec.setRunin("/");
-            exec.setWaitTimeout(5000);
+            exec.setWaitTimeout(5);
             exec.start();
             exec.waitTimeout();
             String routingt = exec.getOutputStream();
@@ -510,89 +485,71 @@ public class RouterUtils {
     }
 
     /**
-     * Returns all InetAddresses of the local Network devices.
-     * 
-     * @return
-     */
-    public static ArrayList<InetAddress> getNetworkDeviceAdresses() {
-        final ArrayList<InetAddress> ret = new ArrayList<InetAddress>();
-        try {
-
-            final Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
-
-            while (e.hasMoreElements()) {
-                final NetworkInterface ni = e.nextElement();
-
-                final Enumeration<InetAddress> e2 = ni.getInetAddresses();
-
-                while (e2.hasMoreElements()) {
-                    final InetAddress ip = e2.nextElement();
-                    if (ip.isLoopbackAddress()) {
-                        break;
-                    }
-                    if (ip.getHostAddress().matches("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}")) {
-                        ret.add(ip);
-                    }
-                }
-            }
-        } catch (final Exception e) {
-            JDLogger.exception(e);
-        }
-        return ret;
-    }
-
-    /**
      * Updates the host table and adds the full ip range (0-255) of the local
      * devices to the table.
      */
-    private static void updateHostTable() {
-        String ip;
-
-        for (final InetAddress ia : RouterUtils.getNetworkDeviceAdresses()) {
-            // try {
-            //
-            // if (RouterUtils.validateIP(ia.getHostAddress() + "")) {
-            // ip = ia.getHostAddress();
-            //
-            // if (ip != null && ip.lastIndexOf(".") != -1) {
-            // final String host = ip.substring(0, ip.lastIndexOf(".")) + ".";
-            // for (int i = 0; i < 255; i++) {
-            // final String lhost = host + i;
-            // if (!lhost.equals(ip) && !RouterUtils.HOST_NAMES.contains(lhost))
-            // {
-            // RouterUtils.HOST_NAMES.add(lhost);
-            // }
-            //
-            // }
-            // }
-            // }
-            // RouterUtils.HOST_NAMES.remove(ia.getHostName());
-            // RouterUtils.HOST_NAMES.remove(ia.getHostAddress());
-            // } catch (final Exception exc) {
-            // JDLogger.exception(exc);
-            // }
-        }
-    }
-
-    /**
-     * Validates the givvei ip. a) checks if it is a valid IP adress (regex) b)
-     * checks if it is available within a timeout of 1500 ms
-     * 
-     * @param iPaddress
-     * @return
-     */
-    public static boolean validateIP(final String iPaddress) {
-        final Pattern IP_PATTERN = Pattern.compile("\\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
-        if (IP_PATTERN.matcher(iPaddress).matches()) {
-            return true;
-        } else {
+    private static ArrayList<String> getHostTable() {
+        ArrayList<String> ret = new ArrayList<String>();
+        ret.add("fritz.fonwlan.box");
+        ret.add("speedport.ip");
+        ret.add("fritz.box");
+        ret.add("dsldevice.lan");
+        ret.add("speedtouch.lan");
+        ret.add("mygateway1.ar7");
+        ret.add("fritz.fon.box");
+        ret.add("home");
+        ret.add("arcor.easybox");
+        ret.add("fritz.slwlan.box");
+        ret.add("eumex.ip");
+        ret.add("easy.box");
+        ret.add("my.router");
+        ret.add("fritz.fon");
+        ret.add("router");
+        ret.add("mygateway.ar7");
+        ret.add("login.router");
+        ret.add("SX541");
+        ret.add("SE515.home");
+        ret.add("sinus.ip");
+        ret.add("fritz.wlan.box");
+        ret.add("my.siemens");
+        ret.add("local.gateway");
+        ret.add("congstar.box");
+        ret.add("login.modem");
+        ret.add("homegate.homenet.telecomitalia.it");
+        ret.add("SE551");
+        ret.add("home.gateway");
+        ret.add("alice.box");
+        ret.add("buffalo.setup");
+        ret.add("vood.lan");
+        ret.add("DD-WRT");
+        ret.add("versatel.modem");
+        ret.add("myrouter.home");
+        ret.add("MyDslModem.local.lan");
+        ret.add("alicebox");
+        ret.add("HSIB.home");
+        ret.add("AolynkDslRouter.local.lan");
+        ret.add("SL2141I.home");
+        ret.add("e.home");
+        ret.add("dsldevice.domain.name");
+        for (final InetAddress ia : HTTPProxyUtils.getLocalIPs()) {
             try {
-                if (InetAddress.getByName(iPaddress).isReachable(1500)) { return true; }
-            } catch (final Exception e) {
-                JDLogger.exception(e);
+                String ip = ia.getHostAddress();
+                if (ip != null && ip.lastIndexOf(".") != -1) {
+                    final String host = ip.substring(0, ip.lastIndexOf(".")) + ".";
+                    for (int i = 0; i < 255; i++) {
+                        final String lhost = host + i;
+                        if (!lhost.equals(ip) && !ret.contains(lhost)) {
+                            ret.add(lhost);
+                        }
+                    }
+                }
+                ret.remove(ia.getHostName());
+                ret.remove(ia.getHostAddress());
+            } catch (final Exception exc) {
+                Log.exception(exc);
             }
         }
-        return false;
+        return ret;
     }
 
 }
