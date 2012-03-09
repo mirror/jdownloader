@@ -542,7 +542,7 @@ public class JDGui extends SwingGui {
 
                         }
                         // NO need to ask again
-                        ShutdownController.getInstance().removeShutdownVetoListener(RlyExitListener.getInstance());
+                        if (!CrossSystem.isMac()) ShutdownController.getInstance().removeShutdownVetoListener(RlyExitListener.getInstance());
 
                     }
                 }
