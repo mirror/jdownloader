@@ -3541,4 +3541,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Exit JDownloader" })
     String JDGui_windowClosing_try_asnwer_close();
 
+    @Default(lngs = { "en" }, values = { "Checking for Updates" })
+    String JDUpdater_JDUpdater_object_icon();
+
 }

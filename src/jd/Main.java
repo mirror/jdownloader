@@ -59,6 +59,8 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.update.inapp.RestartController;
+import org.appwork.update.inapp.RlyExitListener;
+import org.appwork.update.inapp.WebupdateSettings;
 import org.appwork.utils.Application;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.logging.Log;
@@ -85,7 +87,6 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
-import org.jdownloader.update.WebupdateSettings;
 
 public class Main {
     static {
@@ -470,12 +471,12 @@ public class Main {
                         });
                         /* check for available updates */
                         // activate auto checker only if we are in jared mode
-                        if (JsonConfig.create(WebupdateSettings.class).isAutoUpdateCheckEnabled() && Application.isJared(Main.class)) {
+                        if (JsonConfig.create(WebupdateSettings.class).isAutoUpdateCheckEnabled()) {
                             JDUpdater.getInstance().startChecker();
                         }
                         /* start downloadwatchdog */
                         DownloadWatchDog.getInstance();
-
+                        RlyExitListener.getInstance().setEnabled(true);
                         AutoDownloadStartOption doRestartRunninfDownloads = JsonConfig.create(GeneralSettings.class).getAutoStartDownloadOption();
                         boolean closedRunning = JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads();
                         if (doRestartRunninfDownloads == AutoDownloadStartOption.ALWAYS || (closedRunning && doRestartRunninfDownloads == AutoDownloadStartOption.ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS)) {

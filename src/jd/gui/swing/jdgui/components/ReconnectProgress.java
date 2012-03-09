@@ -9,7 +9,7 @@ public class ReconnectProgress extends IconedProcessIndicator {
     private static final long serialVersionUID = 3717078119913109215L;
 
     public ReconnectProgress() {
-        super(NewTheme.I().getIcon("reconnect", 16));
+        super(NewTheme.I().getIcon("auto-reconnect", 16));
     }
 
 }

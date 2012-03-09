@@ -50,7 +50,6 @@ import jd.config.ConfigContainer;
 import jd.controlling.JDLogger;
 import jd.controlling.JSonWrapper;
 import jd.gui.UIConstants;
-import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.components.StatusBarImpl;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
@@ -59,16 +58,14 @@ import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.JDMenuBar;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
-import jd.nutils.JDFlags;
 import jd.nutils.Screen;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
-import org.appwork.shutdown.ShutdownVetoException;
-import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.inapp.RestartController;
+import org.appwork.update.inapp.RlyExitListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
@@ -77,6 +74,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.OffScreenException;
 import org.appwork.utils.swing.dialog.SimpleTextBallon;
 import org.jdownloader.extensions.AbstractExtension;
@@ -123,8 +121,6 @@ public class JDGui extends SwingGui {
     private LinkGrabberView linkgrabberView;
     private MainToolBar     toolBar;
     private JPanel          waitingPane;
-
-    private boolean         exitRequested = false;
 
     private JDGui() {
         super("");
@@ -175,26 +171,7 @@ public class JDGui extends SwingGui {
                         JDGui.this.mainFrame.setEnabled(true);
                     }
                 };
-                ShutdownController.getInstance().addShutdownVetoListener(new ShutdownVetoListener() {
 
-                    @Override
-                    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
-                    }
-
-                    @Override
-                    public void onShutdownRequest(int vetos) throws ShutdownVetoException {
-                        if (vetos > 0) {
-                            /* we already abort shutdown, no need to ask again */
-                            return;
-                        }
-                        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.sys_ask_rlyclose()), UserIO.RETURN_OK)) { return; }
-                        throw new ShutdownVetoException("User aborted!");
-                    }
-
-                    @Override
-                    public void onShutdown() {
-                    }
-                });
                 ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
                     @Override
@@ -558,12 +535,14 @@ public class JDGui extends SwingGui {
                          */
                         try {
                             Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.JDGui_windowClosing_try_title_(), _GUI._.JDGui_windowClosing_try_msg_(), null, _GUI._.JDGui_windowClosing_try_answer_tray(), _GUI._.JDGui_windowClosing_try_asnwer_close());
+
                             return;
-                        } catch (DialogClosedException e1) {
+                        } catch (DialogNoAnswerException e1) {
                             e1.printStackTrace();
-                        } catch (DialogCanceledException e1) {
-                            e1.printStackTrace();
+
                         }
+                        // NO need to ask again
+                        ShutdownController.getInstance().removeShutdownVetoListener(RlyExitListener.getInstance());
 
                     }
                 }

@@ -31,6 +31,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.event.WindowStateListener;
+import java.util.ArrayList;
 
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
@@ -48,6 +49,9 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.AddonPanel;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
@@ -62,7 +66,7 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
 import org.jdownloader.images.NewTheme;
 
-public class TrayExtension extends AbstractExtension<TrayConfig> implements MouseListener, MouseMotionListener, WindowListener, WindowStateListener, ActionListener, LinkCollectorListener {
+public class TrayExtension extends AbstractExtension<TrayConfig> implements MouseListener, MouseMotionListener, WindowListener, WindowStateListener, ActionListener, LinkCollectorListener, ShutdownVetoListener {
 
     @Override
     protected void stop() throws StopException {
@@ -107,10 +111,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                                     LinkCollector.getInstance().getEventsender().addListener(TrayExtension.this);
                                 }
                             }
-
+                            ShutdownController.getInstance().addShutdownVetoListener(TrayExtension.this);
                         } catch (Exception e) {
                             Log.exception(e);
                         }
+
                     }
                 };
             }
@@ -510,6 +515,19 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+    }
+
+    @Override
+    public void onShutdown() {
+    }
+
+    @Override
+    public void onShutdownRequest(int vetos) throws ShutdownVetoException {
+
+    }
+
+    @Override
+    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
     }
 
 }
