@@ -289,4 +289,11 @@ public interface GeneralSettings extends ConfigInterface {
 
     boolean isShowCountdownonAutoStartDownloads();
 
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    @Description("True if JDownloader tries to autoupdate without user interaction plugins and theme related things")
+    boolean isDirectUpdateEnabled();
+
+    void setDirectUpdateEnabled(boolean b);
+
 }

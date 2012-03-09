@@ -8,6 +8,7 @@ import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.exchange.UpdateFile;
 import org.appwork.update.inapp.AppUpdater;
 import org.appwork.update.inapp.RestartController;
@@ -17,9 +18,9 @@ import org.appwork.update.updateclient.UpdaterState;
 import org.appwork.update.updateclient.event.UpdaterEvent;
 import org.appwork.update.updateclient.event.UpdaterListener;
 import org.appwork.utils.logging.Log;
-import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.settings.GeneralSettings;
 
 public class JDUpdater extends AppUpdater {
     private static final JDUpdater INSTANCE = new JDUpdater();
@@ -51,7 +52,7 @@ public class JDUpdater extends AppUpdater {
     }
 
     public boolean installDirectFilesEnabled() {
-        return true;
+        return JsonConfig.create(GeneralSettings.class).isDirectUpdateEnabled();
     }
 
     /**
@@ -90,6 +91,9 @@ public class JDUpdater extends AppUpdater {
                     // Exception exc = getException();
 
                 }
+                int size = getTotalTodoCount();
+
+                SwingGui.getInstance().getMainFrame().setTitle(JDUtilities.getJDTitle(size));
 
             }
 
@@ -123,24 +127,6 @@ public class JDUpdater extends AppUpdater {
             }
         });
 
-    }
-
-    protected void setWaitingUpdates(final int size) {
-        if (size == waitingUpdates) return;
-        waitingUpdates = size;
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-
-                SwingGui.getInstance().getMainFrame().setTitle(JDUtilities.getJDTitle(size));
-
-            }
-        };
-    }
-
-    public boolean hasWaitingUpdates() {
-        return getUpdates().size() > 0 || getFilesToInstall().size() > 0 || getFilesToRemove().size() > 0;
     }
 
     @Override
