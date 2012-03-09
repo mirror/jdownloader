@@ -53,4 +53,6 @@
 "literally_exit":"Updateprüfung abgeschlossen - Exit",
 "UpdateException_socket":"Keine Internetverbindung zum Updateserver: %s1",
 "udpates_found":"Update(s) gefunden!",
-"restart_title":"Neustart"}
+"restart_title":"Neustart",
+
+}
