@@ -509,9 +509,15 @@ public class Main {
             @Override
             public Void edtRun() {
                 /* init gui here */
-                JDGui.getInstance();
-                EDTEventQueue.initEventQueue();
-                Log.L.info("GUIDONE->" + (System.currentTimeMillis() - Main.startup));
+                try {
+                    JDGui.getInstance();
+                    EDTEventQueue.initEventQueue();
+                    Log.L.info("GUIDONE->" + (System.currentTimeMillis() - Main.startup));
+                } catch (Throwable e) {
+                    Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
+
+                    RestartController.getInstance().restartViaUpdater(false);
+                }
                 return null;
             }
         }.waitForEDT();
