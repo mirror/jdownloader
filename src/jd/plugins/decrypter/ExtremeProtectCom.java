@@ -39,7 +39,7 @@ public class ExtremeProtectCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String RECAPTCHATEXT = "api\\.recaptcha\\.net";
+    private static final String RECAPTCHATEXT  = "api\\.recaptcha\\.net";
     private static final String RECAPTCHATEXT2 = "google\\.com/recaptcha/api/challenge";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -56,7 +56,7 @@ public class ExtremeProtectCom extends PluginForDecrypt {
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, param);
             rc.setCode(c);
-            if (br.containsHTML("(The security code is <font color='red'>incorrect</font>|The CAPTCHA wasn't entered correctly)")) {
+            if (br.containsHTML("(The security code is <font color=\\'red\\'>incorrect</font>|The CAPTCHA wasn\\'t entered correctly)")) {
                 br.getPage(parameter);
                 continue;
             }
@@ -65,7 +65,7 @@ public class ExtremeProtectCom extends PluginForDecrypt {
         }
         if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
         if (!br.containsHTML("Title:")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String fpName = br.getRegex("<td style='border:1px;font-weight:bold;font-size:90%;font-family:Arial,Helvetica,sans-serif;'>(.*?)</td>").getMatch(0);
+        String fpName = br.getRegex("<td style=\\'border:1px;font\\-weight:bold;font\\-size:90%;font\\-family:Arial,Helvetica,sans-serif;\\'>(.*?)</td>").getMatch(0);
         String[] links = br.getRegex("target=_blank>(.*?)</a>").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String dl : links)
