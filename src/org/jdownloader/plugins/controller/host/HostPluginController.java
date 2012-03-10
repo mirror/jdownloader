@@ -138,7 +138,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             ap.setDisplayName(new String(names[i]));
                             ap.setPattern(new String(patterns[i]));
                             ap.setVersion(revision);
-                            LazyHostPlugin l = new LazyHostPlugin(ap, c.getClazz(), classLoader);
+                            LazyHostPlugin l = new LazyHostPlugin(ap, null, classLoader);
                             PluginForHost plg = l.newInstance();
                             ap.setPremium(plg.isPremiumEnabled());
                             String purl = plg.getBuyPremiumUrl();
