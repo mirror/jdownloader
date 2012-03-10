@@ -56,14 +56,13 @@ public class TextInput extends ExtTextField implements SettingsComponent {
     @Override
     public void onChanged() {
         super.onChanged();
-        keyhandler.setValue(getText());
+        if (keyhandler != null) keyhandler.setValue(getText());
     }
 
     public TextInput(StringKeyHandler keyhandler) {
         super();
         this.keyhandler = keyhandler;
         setText(keyhandler.getValue());
-
     }
 
     public String getConstraints() {

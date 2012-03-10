@@ -118,7 +118,6 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     // I know that this is not a proper cleanup....feel free to
                     // do it better ;-P
                     newJobMap.clear();
-
                 }
             }
 
