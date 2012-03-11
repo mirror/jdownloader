@@ -60,8 +60,7 @@ public class DlFreeFr extends PluginForHost {
             String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)soit", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             String dlLink = br.getRegex("window\\.location\\.href = \\'(http://.*?)\\'").getMatch(0);
-            if (dlLink == null) dlLink = br.getRegex("style=\"text\\-decoration: underline\" id=\"link\" href=\"(http[^<>\"\\']+)\">").getMatch(0);
-            if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dlLink == null) dlLink = br.getRegex("style=\"text\\-decoration: underline\" id=\"link\" href=\"(http[^<>\"]+)").getMatch(0);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, 1);
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);

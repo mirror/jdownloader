@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -56,20 +56,31 @@ public class EmbedUploadCom extends PluginForDecrypt {
             for (String singleLink : redirectLinks) {
                 if (!singleLink.contains("&urlkey=")) {
                     br.getPage(singleLink);
-                    if (br.getRedirectLocation() == null) {
-                        logger.warning("Decrypter broken for link: " + parameter);
+                    // redirects
+                    if (br.getRedirectLocation() != null) {
+                        decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+                    }
+                    // some links are not provided by redirect.
+                    else if (br.getHttpConnection().getContentType().contains("html")) {
+                        String link = br.getRegex("<b>[\r\n\t ]+(https?://[^\t ]+)").getMatch(0);
+                        if (link != null && link.length() != 0) {
+                            decryptedLinks.add(createDownloadlink(link));
+                        }
+                    }
+                    // spew out something here
+                    else {
+                        logger.warning("EmbededUpload Decrypter can't find links: " + parameter);
                         return null;
                     }
-                    decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
                 }
                 progress.increase(1);
             }
-        } else {
+        }
+        // redirects within the non ?d= links
+        else {
             if (br.getRedirectLocation() == null) return null;
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
         }
-
         return decryptedLinks;
     }
-
 }
