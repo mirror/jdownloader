@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -126,7 +126,7 @@ public class LetitBitNet extends PluginForHost {
         skymonk.getHeaders().put("Referer", null);
         skymonk.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         skymonk.postPage("http://api.letitbit.net/internal/", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&appid=" + JDHash.getMD5(String.valueOf(Math.random())) + "&version=1.63");
-        String[] result = skymonk.getRegex("([^\n]+)").getColumn(0);
+        String[] result = skymonk.getRegex("([^\r?\n]+)").getColumn(0);
         if (result == null || result.length == 0) return null;
         ArrayList<String> res = new ArrayList<String>();
         for (String r : result) {
@@ -151,28 +151,16 @@ public class LetitBitNet extends PluginForHost {
         url = url == null ? handleFreeFallback(downloadLink) : url;
         if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
-        // URLConnectionAdapter con = null;
-        // try {
-        // con = dl.getConnection();
-        // if (con.getResponseCode() == 404) { throw new
-        // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, 5 *
-        // 60 * 1001); }
-        // if (!con.isOK()) { throw new
-        // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
-        // if (con.getContentType().contains("html")) {
-        // br.followConnection();
-        // if (br.containsHTML("<title>Error</title>") ||
-        // br.containsHTML("Error")) throw new
-        // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
-        // "Server error");
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
-        // } finally {
-        // try {
-        // con.disconnect();
-        // } catch (final Throwable e) {
-        // }
-        // }
+        if (!dl.getConnection().isOK()) {
+            dl.getConnection().disconnect();
+            if (dl.getConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, 5 * 60 * 1001); }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        }
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            if (br.containsHTML("<title>Error</title>") || br.containsHTML("Error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
