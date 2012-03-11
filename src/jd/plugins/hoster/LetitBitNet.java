@@ -18,11 +18,13 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -47,7 +49,7 @@ public class LetitBitNet extends PluginForHost {
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
         this.setAccountwithoutUsername(true);
-        this.setStartIntervall(90 * 1000l);
+        // this.setStartIntervall(90 * 1000l);
         enablePremium("http://letitbit.net/page/premium.php");
     }
 
@@ -113,6 +115,31 @@ public class LetitBitNet extends PluginForHost {
         return url;
     }
 
+    private String getFinalLink(String s) throws IOException {
+        Browser skymonk = new Browser();
+        skymonk.getHeaders().put("Pragma", null);
+        skymonk.getHeaders().put("Cache-Control", null);
+        skymonk.getHeaders().put("Accept-Charset", null);
+        skymonk.getHeaders().put("Accept-Encoding", null);
+        skymonk.getHeaders().put("Accept", null);
+        skymonk.getHeaders().put("Accept-Language", null);
+        skymonk.getHeaders().put("User-Agent", null);
+        skymonk.getHeaders().put("Referer", null);
+        skymonk.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        skymonk.postPage("http://api.letitbit.net/internal/", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&appid=" + JDHash.getMD5(String.valueOf(Math.random())) + "&version=1.63");
+        String[] result = skymonk.getRegex("([^\n]+)").getColumn(0);
+        if (result == null || result.length == 0) return null;
+        ArrayList<String> res = new ArrayList<String>();
+        for (String r : result) {
+            if (r.startsWith("http")) {
+                res.add(r);
+            }
+        }
+        if (res.isEmpty()) return null;
+        if (res.size() > 1) return res.get(1);
+        return res.get(0);
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         try {
@@ -121,13 +148,36 @@ public class LetitBitNet extends PluginForHost {
             /* only available after 0.9xx version */
         }
         requestFileInformation(downloadLink);
+        String url = getFinalLink(downloadLink.getDownloadURL());
+        url = url == null ? handleFreeFallback(downloadLink) : url;
+        if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
+        URLConnectionAdapter con = null;
+        try {
+            con = dl.getConnection();
+            if (con.getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, 5 * 60 * 1001); }
+            if (!con.isOK()) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
+            if (con.getContentType().contains("html")) {
+                br.followConnection();
+                if (br.containsHTML("<title>Error</title>") || br.containsHTML("Error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        dl.startDownload();
+    }
+
+    private String handleFreeFallback(DownloadLink downloadLink) throws Exception {
         Form freeForm = br.getFormbyProperty("id", "ifree_form");
         if (freeForm == null) {
             logger.info("Found did not found freeForm!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.submitForm(freeForm);
-        String url = null;
         Form down = null;
         Form[] allforms = br.getForms();
         if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -207,7 +257,7 @@ public class LetitBitNet extends PluginForHost {
             break;
         }
         if (br2.toString().length() < 2 || br2.toString().contains("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        url = br2.getRegex("\\[\"http:[^<>\"\\']+\",\"(http:[^<>\"\\']+)\"\\]").getMatch(0);
+        String url = br2.getRegex("\\[\"http:[^<>\"\\']+\",\"(http:[^<>\"\\']+)\"\\]").getMatch(0);
         if (url == null) url = br2.getRegex("\\[\"(http:[^<>\"\\']+)\"").getMatch(0);
         if (url == null || url.length() > 1000 || !url.startsWith("http")) {
             logger.warning("url couldn't be found!");
@@ -219,23 +269,7 @@ public class LetitBitNet extends PluginForHost {
         /* we have to wait little because server too buggy */
         sleep(2000, downloadLink);
         /* remove newline */
-        url = url.replaceAll("%0D%0A", "").trim().replace("\\", "");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
-        URLConnectionAdapter con = dl.getConnection();
-        if (con.getResponseCode() == 404) {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, 5 * 60 * 1001);
-        }
-        if (!con.isOK()) {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        }
-        if (con.getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("<title>Error</title>") || br.containsHTML("Error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+        return url.replaceAll("%0D%0A", "").trim().replace("\\", "");
     }
 
     @Override
