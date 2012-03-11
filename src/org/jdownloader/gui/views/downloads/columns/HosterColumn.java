@@ -7,11 +7,10 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.app.gui.MigPanel;
@@ -147,9 +146,9 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     public void configureRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         int width = getTableColumn().getWidth();
         int count = ((width - 6) / 19);
-        if (value instanceof FilePackage) {
+        if (value instanceof AbstractPackageNode) {
             int i = 0;
-            DomainInfo[] icons = ((FilePackage) value).getFilePackageInfo().getDomainInfos();
+            DomainInfo[] icons = ((AbstractPackageNode<?, ?>) value).getView().getDomainInfos();
             for (DomainInfo link : icons) {
                 if (i == maxIcons || i == count) {
                     labels[i].setIcon(moreIcon);
@@ -163,30 +162,8 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
                     i++;
                 }
             }
-
-        } else if (value instanceof CrawledPackage) {
-            int i = 0;
-            for (DomainInfo link : ((CrawledPackage) value).getView().getDomainInfos()) {
-                if (i == maxIcons || i == count) {
-                    labels[i].setIcon(moreIcon);
-                    labels[i].setVisible(true);
-                    break;
-                }
-                ImageIcon icon = link.getFavIcon();
-                if (icon != null) {
-                    labels[i].setVisible(true);
-                    labels[i].setIcon(icon);
-                    i++;
-                }
-            }
-        } else if (value instanceof DownloadLink) {
-            DomainInfo dl = ((DownloadLink) value).getDomainInfo();
-            if (dl != null && dl.getFavIcon() != null) {
-                labels[0].setVisible(true);
-                labels[0].setIcon(dl.getFavIcon());
-            }
-        } else if (value instanceof CrawledLink) {
-            DomainInfo dl = ((CrawledLink) value).getDomainInfo();
+        } else if (value instanceof AbstractPackageChildrenNode) {
+            DomainInfo dl = ((AbstractPackageChildrenNode<?>) value).getDomainInfo();
             if (dl != null && dl.getFavIcon() != null) {
                 labels[0].setVisible(true);
                 labels[0].setIcon(dl.getFavIcon());
@@ -197,10 +174,8 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     @Override
     protected void onDoubleClick(MouseEvent e, AbstractNode value) {
         DomainInfo[] infos = null;
-        if (value instanceof FilePackage) {
-            infos = ((FilePackage) value).getFilePackageInfo().getDomainInfos();
-        } else if (value instanceof CrawledPackage) {
-            infos = ((CrawledPackage) value).getView().getDomainInfos();
+        if (value instanceof AbstractPackageNode) {
+            infos = ((AbstractPackageNode<?, ?>) value).getView().getDomainInfos();
         }
         if (infos != null && infos.length > 0) {
             int width = getTableColumn().getWidth();
@@ -229,15 +204,10 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public ExtTooltip createToolTip(Point position, AbstractNode obj) {
-        if (obj instanceof DownloadLink) {
-            DomainInfo di = ((DownloadLink) obj).getDomainInfo();
+        if (obj instanceof AbstractPackageChildrenNode) {
+            DomainInfo di = ((AbstractPackageChildrenNode<?>) obj).getDomainInfo();
             return new IconLabelToolTip(di.getTld(), di.getFavIcon());
-        } else if (obj instanceof CrawledLink) {
-            DomainInfo di = ((CrawledLink) obj).getDomainInfo();
-            return new IconLabelToolTip(di.getTld(), di.getFavIcon());
-        } else if (obj instanceof CrawledPackage) {
-            return new HosterToolTip(((CrawledPackage) obj).getView().getDomainInfos());
-        } else if (obj instanceof FilePackage) { return new HosterToolTip(((FilePackage) obj).getFilePackageInfo().getDomainInfos()); }
+        } else if (obj instanceof AbstractPackageNode) { return new HosterToolTip(((AbstractPackageNode<?, ?>) obj).getView().getDomainInfos()); }
         return null;
     }
 
@@ -269,9 +239,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     }
 
     private int getHosterCounter(AbstractNode value) {
-        if (value instanceof FilePackage) {
-            return ((FilePackage) value).getFilePackageInfo().getDomainInfos().length;
-        } else if (value instanceof CrawledPackage) { return ((CrawledPackage) value).getView().getDomainInfos().length; }
+        if (value instanceof AbstractPackageNode) { return ((AbstractPackageNode<?, ?>) value).getView().getDomainInfos().length; }
         return 1;
     }
 

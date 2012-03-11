@@ -132,8 +132,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     private int                                                    linksFinished;
 
-    private int                                                    linksInProgress;
-
     private String                                                 name                = null;
 
     private long                                                   totalBytesLoaded_v2;
@@ -172,9 +170,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         return uniqueID;
     }
 
-    private transient FilePackageInfo fpInfo = null;
-
-    private transient FilePackageView view;
+    private transient FilePackageView fpInfo = null;
 
     /*
      * (non-Javadoc)
@@ -214,7 +210,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      */
     private FilePackage() {
         uniqueID = new UniqueSessionID();
-        view = new FilePackageView();
         downloadDirectory = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         created = System.currentTimeMillis();
         /* till refactoring is complete */
@@ -235,24 +230,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         stream.defaultReadObject();
         isExpanded = getBooleanProperty(PROPERTY_EXPANDED, false);
         uniqueID = new UniqueSessionID();
-        view = new FilePackageView();
-    }
-
-    /*
-     * fpInfo is null by default, will get created on first use
-     */
-    public FilePackageInfo getFilePackageInfo() {
-        if (fpInfo != null) return fpInfo;
-        synchronized (this) {
-            if (fpInfo == null) {
-                fpInfo = new FilePackageInfo(this);
-            }
-        }
-        return fpInfo;
-    }
-
-    public boolean isFilePackageInfoAvailable() {
-        return fpInfo != null;
     }
 
     /**
@@ -472,8 +449,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * @return
      */
     public long getTotalEstimatedPackageSize() {
-        FilePackageInfo fpi = this.getFilePackageInfo();
-        return Math.max(totalBytesLoaded_v2, fpi.getSize());
+        return Math.max(totalBytesLoaded_v2, this.getView().getSize());
     }
 
     /**
@@ -598,7 +574,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         synchronized (downloadLinkList) {
             totalEstimatedPackageSize_v2 = 0;
             linksFinished = 0;
-            linksInProgress = 0;
             linksFailed = 0;
             totalBytesLoaded_v2 = 0;
             long avg = 0;
@@ -627,7 +602,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
                 if (next.isEnabled()) {
                     totalBytesLoaded_v2 += next.getDownloadCurrent();
                 }
-                linksInProgress += next.getLinkStatus().isPluginActive() ? 1 : 0;
+
                 if (next.getLinkStatus().isFinished()) {
                     linksFinished += 1;
                 }
@@ -644,8 +619,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * disabledLinks
      */
     public boolean isEnabled() {
-        // if (controlledLinks.size() <= disabledLinks.get()) return false;
-        return true;
+        return this.getView().isEnabled();
     }
 
     private ArrayList<String> passwordList = null;
@@ -687,13 +661,11 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     public void setEnabled(boolean b) {
-    }
-
-    public void notifyPropertyChanges() {
-    }
-
-    public FilePackageView getView() {
-        return view;
+        synchronized (this) {
+            for (DownloadLink link : getChildren()) {
+                link.setEnabled(b);
+            }
+        }
     }
 
     public void nodeUpdated(DownloadLink source) {
@@ -702,13 +674,29 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     private void notifyChanges() {
         PackageController<FilePackage, DownloadLink> n = getControlledBy();
-        if (n != null) n.nodeUpdated(this);
+        if (n != null) {
+            n.nodeUpdated(this);
+        }
+        if (fpInfo != null) {
+            synchronized (fpInfo) {
+                fpInfo.changeVersion();
+            }
+        }
     }
 
     public int indexOf(DownloadLink child) {
         synchronized (this) {
             return downloadLinkList.indexOf(child);
         }
+    }
+
+    @Override
+    public FilePackageView getView() {
+        if (fpInfo != null) return fpInfo;
+        synchronized (this) {
+            if (fpInfo == null) fpInfo = new FilePackageView(this);
+        }
+        return fpInfo;
     }
 
 }

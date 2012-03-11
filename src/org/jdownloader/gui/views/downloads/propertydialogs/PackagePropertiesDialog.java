@@ -188,7 +188,7 @@ public class PackagePropertiesDialog extends AbstractDialog<Object> {
 
         p.add(head(_GUI._.LinkPropertiesDialog_layoutDialogContent_size(SizeFormatter.formatBytes(pkg.getTotalEstimatedPackageSize())), NewTheme.I().getIcon("batch", 16)), "spanx,newline,skip");
 
-        for (DomainInfo host : pkg.getFilePackageInfo().getDomainInfos()) {
+        for (DomainInfo host : pkg.getView().getDomainInfos()) {
             ImageIcon icon = host.getFavIcon();
             p.add(head(_GUI._.LinkPropertiesDialog_layoutDialogContent_hoster(host.getName()), icon), "spanx,newline,skip");
         }
