@@ -23,7 +23,6 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -152,22 +151,28 @@ public class LetitBitNet extends PluginForHost {
         url = url == null ? handleFreeFallback(downloadLink) : url;
         if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
-        URLConnectionAdapter con = null;
-        try {
-            con = dl.getConnection();
-            if (con.getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, 5 * 60 * 1001); }
-            if (!con.isOK()) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
-            if (con.getContentType().contains("html")) {
-                br.followConnection();
-                if (br.containsHTML("<title>Error</title>") || br.containsHTML("Error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
+        // URLConnectionAdapter con = null;
+        // try {
+        // con = dl.getConnection();
+        // if (con.getResponseCode() == 404) { throw new
+        // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, 5 *
+        // 60 * 1001); }
+        // if (!con.isOK()) { throw new
+        // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
+        // if (con.getContentType().contains("html")) {
+        // br.followConnection();
+        // if (br.containsHTML("<title>Error</title>") ||
+        // br.containsHTML("Error")) throw new
+        // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
+        // "Server error");
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // }
+        // } finally {
+        // try {
+        // con.disconnect();
+        // } catch (final Throwable e) {
+        // }
+        // }
         dl.startDownload();
     }
 
