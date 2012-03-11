@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -73,6 +73,7 @@ public class HowFileCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
+        br.setReadTimeout(3 * 60 * 1000);
         br.setCookie(MAINPAGE, "language", "en_us");
         // If exception file offline
         try {
@@ -84,7 +85,14 @@ public class HowFileCom extends PluginForHost {
         String filename = br.getRegex("File Name: <b>(.*?) </b><br>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) \\- howfile\\.com \\- Free File Hosting and Sharing, Unlimit Download </title>").getMatch(0);
         String filesize = br.getRegex("File Size: <b>(.*?) </b><br>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null) {
+            filesize = br.getRegex("(?i)([\\d\\.]+ ?(GB|MB))").getMatch(0);
+            if (filesize == null) {
+                logger.warning("Can not find filesize, please report this issue to JDownloader Development Team!");
+                logger.warning("Continuing... (filesize will get updated once the download starts)");
+            }
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
