@@ -40,9 +40,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class ShareFlareNet extends PluginForHost {
 
     private static final String NEXTPAGE             = "http://shareflare.net/tmpl/tmpl_frame_top.php?link=";
-
     private static final String LINKFRAMEPART        = "tmpl/tmpl_frame_top\\.php\\?link=";
-
     private static final String FREEDOWNLOADPOSSIBLE = "download4";
     private static final Object LOCK                 = new Object();
 
@@ -89,8 +87,8 @@ public class ShareFlareNet extends PluginForHost {
     }
 
     private String getDllink() {
-        String dllink = br.getRegex("DownloadClick\\(\\);\" href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://[0-9]+\\.[0-9]+\\..*?/.*?download.*?[0-9]+/.*?/.*?/shareflare\\.net/.*?)\"").getMatch(0);
+        String dllink = br.getRegex("var direct_links = \\{[\t\n\r ]+\"(http://[^<>\"\\']+)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/f/[a-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
         return dllink;
     }
 
@@ -149,8 +147,8 @@ public class ShareFlareNet extends PluginForHost {
         }
         br.getPage(NEXTPAGE);
         String dllink = getDllink();
-        String wait = br.getRegex("y =[ ]+(\\d+);").getMatch(0);
         if (dllink == null) {
+            String wait = br.getRegex("y =[ ]+(\\d+);").getMatch(0);
             int tt = 45;
             if (wait != null) {
                 logger.info("Regexed waittime is found...(" + wait + " seconds)");
