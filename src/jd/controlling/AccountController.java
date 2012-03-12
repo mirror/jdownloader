@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import jd.config.SubConfiguration;
@@ -43,6 +42,7 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
+import org.appwork.utils.logging.Log;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
 
@@ -65,15 +65,11 @@ public class AccountController implements AccountControllerListener {
 
                                                                                                            };
 
-    private long                                                                 lastballoon               = 0;
-
     private long                                                                 waittimeAccountInfoUpdate = 15 * 60 * 1000l;
 
     private Logger                                                               logger                    = JDLogger.getLogger();
 
     private AccountSettings                                                      config;
-
-    private static final long                                                    BALLOON_INTERVAL          = 30 * 60 * 1000l;
 
     public static final Object                                                   ACCOUNT_LOCK              = new Object();
 
@@ -298,7 +294,12 @@ public class AccountController implements AccountControllerListener {
     private synchronized HashMap<String, ArrayList<Account>> loadAccounts() {
         HashMap<String, ArrayList<AccountData>> dat = config.getAccounts();
         if (dat == null) {
-            dat = restore();
+            try {
+                dat = restore();
+            } catch (final Throwable e) {
+                Log.exception(e);
+                dat = new HashMap<String, ArrayList<AccountData>>();
+            }
         }
         HashMap<String, ArrayList<Account>> ret = new HashMap<String, ArrayList<Account>>();
 
@@ -327,19 +328,22 @@ public class AccountController implements AccountControllerListener {
      */
     private HashMap<String, ArrayList<AccountData>> restore() {
         SubConfiguration sub = SubConfiguration.getConfig("AccountController");
-        TreeMap<String, ArrayList<Account>> tree = sub.getGenericProperty("accountlist", new TreeMap<String, ArrayList<Account>>());
+        HashMap<String, ArrayList<HashMap<String, Object>>> tree = sub.getGenericProperty("accountlist", new HashMap<String, ArrayList<HashMap<String, Object>>>());
         HashMap<String, ArrayList<AccountData>> ret = new HashMap<String, ArrayList<AccountData>>();
 
-        for (Iterator<Entry<String, ArrayList<Account>>> it = tree.entrySet().iterator(); it.hasNext();) {
-            Entry<String, ArrayList<Account>> next = it.next();
+        for (Iterator<Entry<String, ArrayList<HashMap<String, Object>>>> it = tree.entrySet().iterator(); it.hasNext();) {
+            Entry<String, ArrayList<HashMap<String, Object>>> next = it.next();
             if (next.getValue().size() > 0) {
                 ArrayList<AccountData> list = new ArrayList<AccountData>();
                 ret.put(next.getKey(), list);
-                for (Account a : next.getValue()) {
-                    list.add(AccountData.create(a));
+                for (HashMap<String, Object> a : next.getValue()) {
+                    AccountData ac;
+                    list.add(ac = new AccountData());
+                    ac.setUser((String) a.get("user"));
+                    ac.setPassword((String) a.get("pass"));
+                    ac.setEnabled("true".equals(a.containsKey("enabled")));
                 }
             }
-
         }
         config.setAccounts(ret);
         return ret;

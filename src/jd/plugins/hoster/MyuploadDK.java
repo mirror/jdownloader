@@ -24,11 +24,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myupload.dk" }, urls = { "http://[\\w\\.]*?myupload\\.dk/showfile/[0-9a-fA-F]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myupload.dk" }, urls = { "http://[\\w\\.]*?myupload\\.(dk|uk)/showfile/[0-9a-fA-F]+" }, flags = { 0 })
 public class MyuploadDK extends PluginForHost {
 
     public MyuploadDK(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("myupload\\.uk", "myupload.dk"));
     }
 
     @Override

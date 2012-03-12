@@ -255,7 +255,7 @@ public class MediafireCom extends PluginForHost {
             // we enable css evaluation, because we need this to find invisible
             // links
             // internal css is enough.
-            eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*?googleapis.com.+", ".*?master_.+", ".*?connect.facebook.net.+", ".*?encoder.*?", ".*?google.+", ".*facebook.+", ".*pmsrvr.com.+", ".*yahoo.com.+", ".*templates/linkto.+", ".*cdn.mediafire.com/css/.+", ".*/blank.html" }, null) {
+            eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*?googleapis.com.+", ".*?master_.+", ".*?connect.facebook.net.+", ".*?encoder.*?", ".*?google.+", ".*facebook.+", ".*pmsrvr.com.+", ".*yahoo.com.+", ".*templates/linkto.+", ".*cdn.mediafire.com/css/.+", ".*/blank.html", ".*twitter.com.+" }, null) {
 
                 @Override
                 public boolean doLoadContent(Request request) {
@@ -375,6 +375,7 @@ public class MediafireCom extends PluginForHost {
             }
 
         }
+        if (br.containsHTML("No servers are currently available with the requested data on them.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No servers are currently available with the requested data on them", 30 * 60 * 1000l);
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
@@ -675,7 +676,26 @@ public class MediafireCom extends PluginForHost {
                         }
                     }
 
-                    br.getPage(redirectURL);
+                    URLConnectionAdapter con = null;
+                    try {
+                        /* here we also can have direct link */
+                        con = br.cloneBrowser().openGetConnection(redirectURL);
+                        if (con.isContentDisposition()) {
+                            downloadLink.setProperty("type", "direct");
+                            dlURL = redirectURL;
+                            downloadLink.setDownloadSize(con.getLongContentLength());
+                            downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(con));
+                            return AvailableStatus.TRUE;
+                        } else {
+                            br.followConnection();
+                        }
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (final Throwable e) {
+                        }
+                    }
+
                     redirectURL = this.br.getRedirectLocation();
                     if (redirectURL != null && redirectURL.indexOf(MediafireCom.ERROR_PAGE) > 0) {
                         /* check for offline status */
@@ -697,7 +717,7 @@ public class MediafireCom extends PluginForHost {
                     if (!downloadLink.getStringProperty("origin", "").equalsIgnoreCase("decrypter")) {
                         downloadLink.setName(Plugin.extractFileNameFromURL(redirectURL));
                     }
-                    URLConnectionAdapter con = null;
+                    con = null;
                     try {
                         con = br.cloneBrowser().openGetConnection(redirectURL);
                         if (con.isContentDisposition()) {
