@@ -45,11 +45,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class CZShareCom extends PluginForHost {
 
     private final static int    SIMULTANEOUS_PREMIUM = -1;
-
     private static final Object LOCK                 = new Object();
-
     private static final String MAINPAGE             = "http://czshare.com/";
-
     private static final String CAPTCHATEXT          = "captcha\\.php";
 
     public CZShareCom(PluginWrapper wrapper) {
@@ -211,8 +208,12 @@ public class CZShareCom extends PluginForHost {
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("/error.php?co=4") || br.containsHTML("Omluvte, prosím, výpadek databáze\\. Na opravě pracujeme")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("<div class=\"left\\-col\">[\t\n\r ]+<h1>(.*?)<span>\\&nbsp;</span></h1>").getMatch(0));
-        if (filename == null) filename = Encoding.htmlDecode(br.getRegex("<title>(.*?) CZshare\\.com download</title>").getMatch(0));
+        /** First regex is only for video links */
+        String filename = br.getRegex("onmouseover=\"video_thumb_start\\(this,\\'http://www\\d+\\.czshare\\.com/images_velke\\',\\'\\d+\\'\\)\" title=\"([^<>\"/]+)\"").getMatch(0);
+        if (filename == null) {
+            filename = Encoding.htmlDecode(br.getRegex("<div class=\"left\\-col\">[\t\n\r ]+<h1>(.*?)<span>\\&nbsp;</span></h1>").getMatch(0));
+            if (filename == null) filename = Encoding.htmlDecode(br.getRegex("<title>(.*?) CZshare\\.com download</title>").getMatch(0));
+        }
         String filesize = br.getRegex("Velikost: (.*?)<").getMatch(0);
         if (filename == null || filesize == null || "0 B".equals(filesize)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Set final filename here because server sends html encoded filenames

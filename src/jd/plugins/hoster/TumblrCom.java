@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -33,11 +32,10 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tumblr.com" }, urls = { "http://[\\w\\.]*?tumblr\\.com/post/\\d+" }, flags = { 0 })
 public class TumblrCom extends PluginForHost {
 
-    private String              dllink         = null;
+    private String dllink = null;
 
-    private static final String FINALLINKREGEX = "audio_file=(http://.*?)\\&";
-
-    private static final String AUTH           = "P3BsZWFkPXBsZWFzZS1kb250LWRvd25sb2FkLXRoaXMtb3Itb3VyLWxhd3llcnMtd29udC1sZXQtdXMtaG9zdC1hdWRpbw==";
+    // private static final String AUTH =
+    // "P3BsZWFkPXBsZWFzZS1kb250LWRvd25sb2FkLXRoaXMtb3Itb3VyLWxhd3llcnMtd29udC1sZXQtdXMtaG9zdC1hdWRpbw==";
 
     public TumblrCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,11 +48,7 @@ public class TumblrCom extends PluginForHost {
 
     private void getDllink() throws IOException {
         br.setFollowRedirects(false);
-        dllink = br.getRegex(FINALLINKREGEX).getMatch(0);
-        if (dllink != null) {
-            br.getPage(dllink + Encoding.Base64Decode(AUTH));
-            dllink = br.getRedirectLocation();
-        }
+        dllink = br.getRegex("<img class=\"photo\" src=\"(http://[^<>\"\\']+)\"").getMatch(0);
     }
 
     @Override
@@ -80,10 +74,13 @@ public class TumblrCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("The URL you requested could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = new Regex(br.getURL(), "tumblr\\.com/post/\\d+/(.+)").getMatch(0);
+        if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), "tumblr\\.com/post/(\\d+)").getMatch(0);
         getDllink();
-        if (dllink == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename + ".mp3");
+        String ext = dllink.substring(dllink.lastIndexOf("."));
+        if (ext == null || ext.length() > 5) ext = ".mp3";
+        downloadLink.setFinalFileName(filename + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

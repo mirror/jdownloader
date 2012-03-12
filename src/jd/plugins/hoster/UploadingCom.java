@@ -111,7 +111,7 @@ public class UploadingCom extends PluginForHost {
                 br.setCookie("http://uploading.com/", "setlang", "en");
                 br.setCookie("http://uploading.com/", "_lang", "en");
                 br.setDebug(true);
-                br.postPage("http://uploading.com/files/checker/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", sb.toString());
+                br.postPage("http://uploading.com/files/checker/?ajax", sb.toString());
                 String correctedHTML = br.toString().replace("\\", "");
                 for (DownloadLink dl : links) {
                     String fileid = new Regex(dl.getDownloadURL(), "uploading\\.com/files/(get/)?(.+)").getMatch(1);
@@ -256,8 +256,8 @@ public class UploadingCom extends PluginForHost {
         if (starttimer != null) {
             sleep((Long.parseLong(starttimer) + 2) * 1000l, downloadLink);
         }
-        br.getHeaders().put("Content-Type", "application/octet-stream; charset=UTF-8");
-        br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "action=get_link&code=" + code + "&pass=" + captcha);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage("http://uploading.com/files/get/?ajax", "action=get_link&code=" + code + "&pass=" + captcha);
         redirect = br.getRegex("link\":( )?\"(http.*?)\"").getMatch(1);
         if (redirect != null) {
             redirect = redirect.replaceAll("\\\\/", "/");
@@ -328,8 +328,9 @@ public class UploadingCom extends PluginForHost {
         String passCode = link.getStringProperty("pass", null);
         String fileID = br.getRegex(FILEIDREGEX).getMatch(0);
         String code = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
+        String purse = br.getRegex("type=\"hidden\" name=\"LMI_PAYEE_PURSE\" value=\"([^<>\"\\']+)\"").getMatch(0);
         if (br.containsHTML("that only premium members are")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only for premium members"); }
-        if (fileID == null || code == null) {
+        if (fileID == null || code == null || purse == null) {
             logger.warning("The first form equals null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -341,7 +342,7 @@ public class UploadingCom extends PluginForHost {
         logger.info("Submitting form");
         try {
             // POSTing to the wrong link causes MAJOR issues...
-            String postData = "action=second_page&file_id=" + fileID + "&code=" + code + "&choose_payment_method=payment&LMI_PAYMENT_AMOUNT=%23amount%23&LMI_PAYMENT_DESC=Uploading.com+Premuim+Membership&LMI_PAYEE_PURSE=&LMI_SIM_MODE=0&user_id=%23user_id%23&proceed_without_registration=on";
+            String postData = "action=second_page&file_id=" + fileID + "&code=" + code + "&LMI_PAYMENT_AMOUNT=%23amount%23&LMI_PAYMENT_DESC=Uploading.com+Premuim+Membership&LMI_PAYEE_PURSE=" + purse + "&LMI_SIM_MODE=0&user_id=%23user_id%23&proceed_without_registration=on";
             if (br.containsHTML(PASSWORDTEXT)) {
                 if (passCode == null) passCode = Plugin.getUserInput("Password?", link);
                 passCode = Encoding.urlEncode(passCode);
