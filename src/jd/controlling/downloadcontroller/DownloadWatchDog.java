@@ -728,6 +728,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         return ret;
     }
 
+    public boolean hasRunningDownloads(FilePackage pkg) {
+        synchronized (DownloadControllers) {
+            for (SingleDownloadController con : DownloadControllers) {
+                if (con.getDownloadLink().getFilePackage() == pkg) return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * aborts all running SingleDownloadControllers, NOTE: DownloadWatchDog is
      * still running, new Downloads will can started after this call
@@ -959,7 +968,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     for (FilePackage fp : DownloadController.getInstance().getPackages()) {
                                         synchronized (fp) {
                                             for (DownloadLink fpLink : fp.getChildren()) {
-                                                if (fpLink.getDefaultPlugin() == null || !fpLink.isEnabled() || (fpLink.isAvailabilityStatusChecked() && fpLink.getAvailableStatusInfo() == AvailableStatus.FALSE) || fpLink.getLinkStatus().isFinished() || fpLink.getLinkStatus().hasStatus(LinkStatus.NOT_ENOUGH_HARDDISK_SPACE)) continue;
+                                                if (fpLink.getDefaultPlugin() == null || !fpLink.isEnabled() || (fpLink.getAvailableStatus() == AvailableStatus.FALSE) || fpLink.getLinkStatus().isFinished() || fpLink.getLinkStatus().hasStatus(LinkStatus.NOT_ENOUGH_HARDDISK_SPACE)) continue;
                                                 links.add(fpLink);
                                             }
                                         }

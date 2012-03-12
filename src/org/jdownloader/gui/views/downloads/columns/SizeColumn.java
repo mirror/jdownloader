@@ -50,7 +50,7 @@ public class SizeColumn extends ExtFileSizeColumn<AbstractNode> {
         } else if (o2 instanceof DownloadLink) {
             return ((DownloadLink) o2).getDownloadSize();
         } else if (o2 instanceof FilePackage) {
-            return ((FilePackage) o2).getTotalEstimatedPackageSize();
+            return ((FilePackage) o2).getView().getSize();
         } else
             return -1;
     }

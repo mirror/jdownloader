@@ -64,7 +64,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                 return NewTheme.I().getIcon("false", 16);
             }
         } else if (value instanceof FilePackage) {
-            if (((FilePackage) value).isFinished()) { return NewTheme.I().getIcon("true", 16); }
+            if (((FilePackage) value).getView().isFinished()) { return NewTheme.I().getIcon("true", 16); }
         }
         return null;
     }
@@ -92,7 +92,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             return ((DownloadLink) value).getLinkStatus().getStatusString();
 
         } else if (value instanceof FilePackage) {
-            if (((FilePackage) value).isFinished()) { return "Finished"; }
+            if (((FilePackage) value).getView().isFinished()) { return "Finished"; }
         }
         return "";
     }

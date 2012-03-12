@@ -107,10 +107,11 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         if (value <= 0 && max <= 0) {
             getDownloadLink().setPluginProgress(null);
         } else {
-            if (getDownloadLink().getPluginProgress() != null) {
-                getDownloadLink().getPluginProgress().setCurrent(value);
-                getDownloadLink().getPluginProgress().setColor(color);
-                getDownloadLink().getPluginProgress().setTotal(max);
+            PluginProgress progress = getDownloadLink().getPluginProgress();
+            if (progress != null) {
+                progress.setCurrent(value);
+                progress.setColor(color);
+                progress.setTotal(max);
             } else {
                 getDownloadLink().setPluginProgress(new PluginProgress(value, max, color));
             }

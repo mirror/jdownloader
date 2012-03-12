@@ -2,6 +2,7 @@ package jd.plugins;
 
 import java.util.HashSet;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.ChildrenView;
 
 import org.jdownloader.DomainInfo;
@@ -11,15 +12,17 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     /**
 	 * 
 	 */
-    private static final long serialVersionUID  = -7310026158976695034L;
+    private static final long   serialVersionUID  = -7310026158976695034L;
 
-    private FilePackage       fp                = null;
-    protected long            structureVersion  = 0;
-    protected long            lastIconVersion   = -1;
+    private FilePackage         fp                = null;
+    protected long              structureVersion  = 0;
+    protected long              lastIconVersion   = -1;
 
-    protected long            statusVersion     = 0;
-    protected long            lastStatusVersion = -1;
-    protected boolean         isEnabled         = false;
+    protected long              statusVersion     = 0;
+    protected long              lastStatusVersion = -1;
+    protected boolean           isEnabled         = false;
+    protected long              lastGUIUpdate     = -1;
+    protected static final long GUIUPDATETIMEOUT  = 500;
 
     public boolean isEnabled() {
         if (lastStatusVersion == statusVersion) return isEnabled;
@@ -36,6 +39,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     private DomainInfo[] infos = new DomainInfo[0];
     private long         size  = 0;
+    private long         done  = 0;
 
     public DomainInfo[] getDomainInfos() {
         if (lastIconVersion == structureVersion) return infos;
@@ -72,27 +76,50 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     public long getSize() {
-        if (lastStatusVersion == statusVersion) return size;
+        if (lastStatusVersion == statusVersion) return Math.max(done, size);
         synchronized (this) {
-            if (lastStatusVersion == statusVersion) return size;
+            if (lastStatusVersion == statusVersion) return Math.max(done, size);
             updateStatus();
         }
-        return size;
+        return Math.max(done, size);
+    }
+
+    public long getDone() {
+        boolean guiUpdate = false;
+        if (fp.isEnabled() && System.currentTimeMillis() - lastGUIUpdate > GUIUPDATETIMEOUT) {
+            guiUpdate = DownloadWatchDog.getInstance().hasRunningDownloads(fp);
+        }
+        if (lastStatusVersion == statusVersion && !guiUpdate) return done;
+        synchronized (this) {
+            if (lastStatusVersion == statusVersion && !guiUpdate) return done;
+            updateStatus();
+        }
+        return done;
     }
 
     private synchronized void updateStatus() {
         long newSize = 0;
+        long newDone = 0;
         boolean newEnabled = false;
         lastStatusVersion = statusVersion;
+        lastGUIUpdate = System.currentTimeMillis();
+        HashSet<String> names = new HashSet<String>();
         synchronized (fp) {
             for (DownloadLink link : fp.getChildren()) {
                 if (!link.isEnabled()) continue;
-                newSize += link.getDownloadSize();
                 newEnabled = true;
+                if (names.add(link.getName())) {
+                    newSize += link.getDownloadSize();
+                    newDone += link.getDownloadCurrent();
+                }
             }
         }
         size = newSize;
+        done = newDone;
         isEnabled = newEnabled;
     }
 
+    public boolean isFinished() {
+        return false;
+    }
 }

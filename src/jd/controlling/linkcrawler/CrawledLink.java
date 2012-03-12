@@ -336,7 +336,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public LinkState getLinkState() {
         if (dlLink != null) {
-            switch (dlLink.getAvailableStatusInfo()) {
+            switch (dlLink.getAvailableStatus()) {
             case FALSE:
                 return LinkState.OFFLINE;
             case TRUE:

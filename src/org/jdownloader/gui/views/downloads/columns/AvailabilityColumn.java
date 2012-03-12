@@ -48,7 +48,7 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
         DownloadLink dl = null;
         if (value instanceof DownloadLink) {
             dl = (DownloadLink) value;
-            status = dl.getAvailableStatusInfo();
+            status = dl.getAvailableStatus();
             if (status == null) return unknown;
             switch (status) {
             case TRUE:
@@ -62,7 +62,7 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
             CrawledLink cl = (CrawledLink) value;
             dl = cl.getDownloadLink();
             if (dl != null) {
-                status = dl.getAvailableStatusInfo();
+                status = dl.getAvailableStatus();
                 if (status == null) return unknown;
                 switch (status) {
                 case TRUE:
@@ -92,12 +92,12 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
         DownloadLink dl = null;
         if (value instanceof DownloadLink) {
             dl = (DownloadLink) value;
-            status = dl.getAvailableStatusInfo();
+            status = dl.getAvailableStatus();
         } else if (value instanceof CrawledLink) {
             CrawledLink cl = (CrawledLink) value;
             dl = cl.getDownloadLink();
             if (dl != null) {
-                status = dl.getAvailableStatusInfo();
+                status = dl.getAvailableStatus();
             }
         }
         if (dl != null) {

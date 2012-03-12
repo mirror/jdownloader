@@ -19,6 +19,7 @@ import jd.controlling.proxy.ProxyController;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginProgress;
 
 import org.appwork.swing.components.multiprogressbar.MultiProgressBar;
 import org.appwork.swing.components.multiprogressbar.Range;
@@ -32,227 +33,200 @@ import org.jdownloader.gui.translate._GUI;
 
 public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
 
-	/**
+    /**
      * 
      */
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	private ProxyBlock block = null;
+    private ProxyBlock        block            = null;
 
-	public ProgressColumn() {
-		super(_GUI._.ProgressColumn_ProgressColumn());
+    public ProgressColumn() {
+        super(_GUI._.ProgressColumn_ProgressColumn());
 
-	}
+    }
 
-	@Override
-	public boolean isEnabled(AbstractNode obj) {
+    @Override
+    public boolean isEnabled(AbstractNode obj) {
 
-		return obj.isEnabled();
-	}
+        return obj.isEnabled();
+    }
 
-	protected void onDoubleClick(final MouseEvent e, final AbstractNode obj) {
-		SwingUtilities.invokeLater(new Runnable() {
+    protected void onDoubleClick(final MouseEvent e, final AbstractNode obj) {
+        SwingUtilities.invokeLater(new Runnable() {
 
-			public void run() {
-				ToolTipController.getInstance().show(
-						getModel().getTable().createExtTooltip(null));
-			}
-		});
+            public void run() {
+                ToolTipController.getInstance().show(getModel().getTable().createExtTooltip(null));
+            }
+        });
 
-	}
+    }
 
-	public ExtTooltip createToolTip(final Point position, final AbstractNode obj) {
-		TooltipPanel panel = new TooltipPanel("ins 0,wrap 1", "[grow,fill]",
-				"[][grow,fill]");
-		final MultiProgressBar mpb = new MultiProgressBar(1000);
-		mpb.setForeground(new Color(LookAndFeelController.getInstance()
-				.getLAFOptions().getTooltipForegroundColor()));
+    public ExtTooltip createToolTip(final Point position, final AbstractNode obj) {
+        TooltipPanel panel = new TooltipPanel("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]");
+        final MultiProgressBar mpb = new MultiProgressBar(1000);
+        mpb.setForeground(new Color(LookAndFeelController.getInstance().getLAFOptions().getTooltipForegroundColor()));
 
-		updateRanges(obj, mpb);
+        updateRanges(obj, mpb);
 
-		JLabel lbl = new JLabel(_GUI._.ProgressColumn_createToolTip_object_());
-		lbl.setForeground(new Color(LookAndFeelController.getInstance()
-				.getLAFOptions().getTooltipForegroundColor()));
-		SwingUtils.toBold(lbl);
-		panel.add(lbl);
-		mpb.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, new Color(
-				LookAndFeelController.getInstance().getLAFOptions()
-						.getTooltipForegroundColor())));
-		panel.add(mpb, "width 300!,height 24!");
+        JLabel lbl = new JLabel(_GUI._.ProgressColumn_createToolTip_object_());
+        lbl.setForeground(new Color(LookAndFeelController.getInstance().getLAFOptions().getTooltipForegroundColor()));
+        SwingUtils.toBold(lbl);
+        panel.add(lbl);
+        mpb.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, new Color(LookAndFeelController.getInstance().getLAFOptions().getTooltipForegroundColor())));
+        panel.add(mpb, "width 300!,height 24!");
 
-		return new PanelToolTip(panel) {
-			private ActionListener listener;
-			private Timer timer;
-
-			/**
+        return new PanelToolTip(panel) {
+            /**
              * 
              */
-			public void onShow() {
-				this.timer = new Timer(1000, listener = new ActionListener() {
+            private static final long serialVersionUID = 1036923322222455495L;
+            private Timer             timer;
 
-					public void actionPerformed(ActionEvent e) {
-						updateRanges(obj, mpb);
-						repaint();
-					}
-
-				});
-				timer.start();
-			}
-
-			/**
+            /**
              * 
              */
-			public void onHide() {
-				timer.stop();
-			}
-		};
-	}
+            public void onShow() {
+                this.timer = new Timer(1000, new ActionListener() {
 
-	public void updateRanges(final AbstractNode obj, final MultiProgressBar mpb) {
-		if (obj instanceof DownloadLink) {
-			mpb.getModel().setMaximum(((DownloadLink) obj).getDownloadMax());
-			ArrayList<Range> ranges = new ArrayList<Range>();
+                    public void actionPerformed(ActionEvent e) {
+                        updateRanges(obj, mpb);
+                        repaint();
+                    }
 
-			long[] chunks = ((DownloadLink) obj).getChunksProgress();
-			long part = ((DownloadLink) obj).getDownloadMax() / chunks.length;
-			for (int i = 0; i < chunks.length; i++) {
-				ranges.add(new Range(i * part, chunks[i]));
-			}
-			mpb.getModel().setRanges(ranges.toArray(new Range[] {}));
-		} else if (obj instanceof FilePackage) {
-			synchronized (obj) {
-				long size = ((FilePackage) obj).getView().getSize();
-				mpb.getModel().setMaximum(size);
-				ArrayList<Range> ranges = new ArrayList<Range>();
+                });
+                timer.start();
+            }
 
-				List<DownloadLink> children = ((FilePackage) obj).getChildren();
-				int count = children.size();
+            /**
+             * 
+             */
+            public void onHide() {
+                timer.stop();
+            }
+        };
+    }
 
-				long all = 0;
-				for (int i = 0; i < count; i++) {
-					ranges.add(new Range(all, all
-							+ children.get(i).getDownloadCurrent()));
-					all += children.get(i).getDownloadSize();
-				}
-				mpb.getModel().setRanges(ranges.toArray(new Range[] {}));
-			}
-		}
-	}
+    public void updateRanges(final AbstractNode obj, final MultiProgressBar mpb) {
+        if (obj instanceof DownloadLink) {
+            mpb.getModel().setMaximum(((DownloadLink) obj).getDownloadMax());
+            ArrayList<Range> ranges = new ArrayList<Range>();
 
-	@Override
-	public int getMinWidth() {
+            long[] chunks = ((DownloadLink) obj).getChunksProgress();
+            long part = ((DownloadLink) obj).getDownloadMax() / chunks.length;
+            for (int i = 0; i < chunks.length; i++) {
+                ranges.add(new Range(i * part, chunks[i]));
+            }
+            mpb.getModel().setRanges(ranges.toArray(new Range[] {}));
+        } else if (obj instanceof FilePackage) {
+            synchronized (obj) {
+                long size = ((FilePackage) obj).getView().getSize();
+                mpb.getModel().setMaximum(size);
+                ArrayList<Range> ranges = new ArrayList<Range>();
 
-		return 30;
-	}
+                List<DownloadLink> children = ((FilePackage) obj).getChildren();
+                int count = children.size();
 
-	public boolean isPaintWidthLockIcon() {
-		return false;
-	}
+                long all = 0;
+                for (int i = 0; i < count; i++) {
+                    ranges.add(new Range(all, all + children.get(i).getDownloadCurrent()));
+                    all += children.get(i).getDownloadSize();
+                }
+                mpb.getModel().setRanges(ranges.toArray(new Range[] {}));
+            }
+        }
+    }
 
-	@Override
-	public int getDefaultWidth() {
-		return 100;
-	}
+    @Override
+    public int getMinWidth() {
 
-	@Override
-	protected String getString(AbstractNode value) {
-		if (value instanceof FilePackage) {
-			FilePackage fp = (FilePackage) value;
+        return 30;
+    }
 
-			return null;
-		} else {
-			DownloadLink dLink = (DownloadLink) value;
-			if (dLink.getDefaultPlugin() == null) {
+    public boolean isPaintWidthLockIcon() {
+        return false;
+    }
 
-				return _GUI._.gui_treetable_error_plugin();
-			} else if (dLink.getPluginProgress() != null) {
-				return (dLink.getPluginProgress().getPercent() + " %");
-			} else if (block != null) {
-				return null;
-			} else if (dLink.getLinkStatus().isFinished()) {
-				return null;
-			} else if (dLink.getDownloadCurrent() > 0
-					|| dLink.getDownloadSize() > 0) {
-				return null;
-			}
-		}
-		return null;
-	}
+    @Override
+    public int getDefaultWidth() {
+        return 100;
+    }
 
-	@Override
-	protected long getMax(AbstractNode value) {
-		if (value instanceof FilePackage) {
-			FilePackage fp = (FilePackage) value;
-			if (fp.isFinished()) {
+    @Override
+    protected String getString(AbstractNode value) {
+        if (value instanceof FilePackage) {
+            return null;
+        } else {
+            DownloadLink dLink = (DownloadLink) value;
+            if (dLink.getDefaultPlugin() == null) {
+                return _GUI._.gui_treetable_error_plugin();
+            } else if (dLink.getPluginProgress() != null) { return (dLink.getPluginProgress().getPercent() + " %"); }
+        }
+        return null;
+    }
 
-				return 100;
-			} else {
-				return (Math.max(1, fp.getTotalEstimatedPackageSize()));
+    @Override
+    protected long getMax(AbstractNode value) {
+        if (value instanceof FilePackage) {
+            FilePackage fp = (FilePackage) value;
+            if (fp.getView().isFinished()) {
+                return 100;
+            } else {
+                return (Math.max(1, fp.getView().getSize()));
+            }
 
-			}
+        } else {
+            DownloadLink dLink = (DownloadLink) value;
+            PluginProgress progress = null;
+            if (dLink.getDefaultPlugin() == null) {
+                return 100;
+            } else if ((progress = dLink.getPluginProgress()) != null) {
+                return (progress.getTotal());
+            } else if (block != null) {
+                return block.getBlockedUntil();
+            } else if (dLink.getLinkStatus().isFinished()) {
+                return 100;
+            } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) { return (dLink.getDownloadSize());
 
-		} else {
-			DownloadLink dLink = (DownloadLink) value;
-			if (dLink.getDefaultPlugin() == null) {
-				return 100;
-			} else if (dLink.getPluginProgress() != null) {
-				return (dLink.getPluginProgress().getTotal());
+            }
+        }
+        return 100;
+    }
 
-			} else if (block != null) {
-				return block.getBlockedUntil();
-			} else if (dLink.getLinkStatus().isFinished()) {
-				return 100;
-			} else if (dLink.getDownloadCurrent() > 0
-					|| dLink.getDownloadSize() > 0) {
-				return (dLink.getDownloadSize());
+    @Override
+    protected void prepareGetter(AbstractNode value) {
+        if (value instanceof DownloadLink) {
+            DownloadLink dLink = (DownloadLink) value;
+            block = ProxyController.getInstance().getHostIPBlockTimeout(dLink.getHost());
+            if (block == null) block = ProxyController.getInstance().getHostBlockedTimeout(dLink.getHost());
+        } else {
+            block = null;
+        }
+    }
 
-			}
-		}
-		return 100;
-	}
+    @Override
+    protected long getValue(AbstractNode value) {
+        if (value instanceof FilePackage) {
+            FilePackage fp = (FilePackage) value;
+            if (fp.getView().isFinished()) {
+                return 100;
+            } else {
+                return (fp.getView().getDone());
+            }
 
-	@Override
-	protected void prepareGetter(AbstractNode value) {
-		if (value instanceof DownloadLink) {
-			DownloadLink dLink = (DownloadLink) value;
-			block = ProxyController.getInstance().getHostIPBlockTimeout(
-					dLink.getHost());
-			if (block == null)
-				block = ProxyController.getInstance().getHostBlockedTimeout(
-						dLink.getHost());
-		} else {
-			block = null;
-		}
-	}
-
-	@Override
-	protected long getValue(AbstractNode value) {
-		if (value instanceof FilePackage) {
-			FilePackage fp = (FilePackage) value;
-			if (fp.isFinished()) {
-
-				return 100;
-			} else {
-				return (fp.getTotalKBLoaded());
-			}
-
-		} else {
-			DownloadLink dLink = (DownloadLink) value;
-			if (dLink.getDefaultPlugin() == null) {
-				return -1;
-			} else if (dLink.getPluginProgress() != null) {
-				return (dLink.getPluginProgress().getCurrent());
-
-			} else if (block != null) {
-				return block.getBlockedTimeout();
-			} else if (dLink.getLinkStatus().isFinished()) {
-				return (100);
-			} else if (dLink.getDownloadCurrent() > 0
-					|| dLink.getDownloadSize() > 0) {
-				return (dLink.getDownloadCurrent());
-			}
-		}
-		return -1;
-	}
+        } else {
+            DownloadLink dLink = (DownloadLink) value;
+            PluginProgress progress = null;
+            if (dLink.getDefaultPlugin() == null) {
+                return -1;
+            } else if ((progress = dLink.getPluginProgress()) != null) {
+                return (progress.getCurrent());
+            } else if (block != null) {
+                return block.getBlockedTimeout();
+            } else if (dLink.getLinkStatus().isFinished()) {
+                return (100);
+            } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) { return (dLink.getDownloadCurrent()); }
+        }
+        return -1;
+    }
 
 }

@@ -202,8 +202,6 @@ public class RtmpDump extends RTMPDownload {
                                 }
                                 throw new InterruptedIOException();
                             }
-
-                            downloadLink.setDownloadCurrent(BYTESLOADED);
                             if (sizeCalulateBuffer > 6) {
                                 downloadLink.setDownloadSize((long) (BYTESLOADED * 100.0F / progressFloat));
                             } else {
@@ -252,6 +250,7 @@ public class RtmpDump extends RTMPDownload {
             }
             return true;
         } finally {
+            downloadLink.setDownloadCurrent(BYTESLOADED);
             downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             downloadLink.setDownloadInstance(null);
             downloadLink.getLinkStatus().setStatusText(null);

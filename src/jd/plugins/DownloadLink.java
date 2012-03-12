@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.logging.Logger;
@@ -47,8 +46,6 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.UniqueSessionID;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 
 /**
@@ -517,83 +514,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @return true/false
      */
     public boolean isAvailable() {
-        return getAvailableStatus() != AvailableStatus.FALSE;
+        return availableStatus != AvailableStatus.FALSE;
     }
 
     public AvailableStatus getAvailableStatus() {
-        return getAvailableStatus(null);
-    }
-
-    /**
-     * this function does not initiate any available check!
-     * 
-     * @return
-     */
-    public AvailableStatus getAvailableStatusInfo() {
         return availableStatus;
-    }
-
-    public AvailableStatus getAvailableStatus(PluginForHost plgToUse) {
-        if (availableStatus != AvailableStatus.UNCHECKED) return availableStatus;
-        try {
-            int wait = 0;
-            if (getDefaultPlugin() != null) {
-                PluginForHost plg = plgToUse;
-                /* we need extra plugin instance and browser instance too here */
-                if (plg == null) {
-                    LazyHostPlugin lazyp = HostPluginController.getInstance().get(getHost());
-                    plg = lazyp.newInstance();
-                }
-                if (plg.getBrowser() == null) {
-                    plg.setBrowser(new Browser());
-                }
-                plg.init();
-                for (int retry = 0; retry < 5; retry++) {
-                    try {
-                        availableStatus = plg.requestFileInformation(this);
-                        try {
-                            plg.getBrowser().getHttpConnection().disconnect();
-                        } catch (Exception e) {
-                        }
-                        break;
-                    } catch (UnknownHostException e) {
-                        availableStatus = AvailableStatus.UNCHECKABLE;
-                        break;
-                    } catch (PluginException e) {
-                        e.fillLinkStatus(this.getLinkStatus());
-                        if (this.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) || this.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) || this.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
-                            availableStatus = AvailableStatus.UNCHECKABLE;
-                        } else {
-                            availableStatus = AvailableStatus.FALSE;
-                        }
-                        break;
-                    } catch (IOException e) {
-                        if (e.getMessage().contains("code: 500")) {
-                            try {
-                                wait += 500;
-                                JDLogger.getLogger().finer("500 Error Code, retrying in " + wait);
-                                Thread.sleep(wait);
-                            } catch (InterruptedException e1) {
-                                availableStatus = AvailableStatus.UNCHECKABLE;
-                                break;
-                            }
-                            continue;
-                        } else {
-                            break;
-                        }
-
-                    } catch (Throwable e) {
-                        JDLogger.exception(e);
-                        availableStatus = AvailableStatus.UNCHECKABLE;
-                        break;
-                    }
-                }
-            }
-            if (availableStatus == null || getDefaultPlugin() == null) availableStatus = AvailableStatus.UNCHECKABLE;
-            return availableStatus;
-        } finally {
-            notifyChanges();
-        }
     }
 
     public void setAvailableStatus(AvailableStatus availableStatus) {
@@ -701,6 +626,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setDownloadCurrent(long downloadedCurrent) {
         downloadCurrent = downloadedCurrent;
+        if (this.getDownloadInstance() == null) notifyChanges();
     }
 
     public void setDownloadInstance(DownloadInterface downloadInterface) {
@@ -719,7 +645,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setDownloadSize(long downloadMax) {
         this.downloadMax = downloadMax;
-        notifyChanges();
+        if (this.getDownloadInstance() == null) notifyChanges();
     }
 
     /*
@@ -791,6 +717,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
         }
         this.setIcon(null);
+        notifyChanges();
     }
 
     /*
@@ -803,6 +730,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             this.setProperty(PROPERTY_FORCEDFILENAME, name);
         }
         setIcon(null);
+        notifyChanges();
     }
 
     private void setIcon(ImageIcon icon) {
@@ -858,6 +786,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
         finalFileName = null;
         setIcon(null);
+        notifyChanges();
     }
 
     /**

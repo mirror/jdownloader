@@ -14,6 +14,7 @@ public abstract class Filter implements FavIconRequestor {
     private ImageIcon      icon    = null;
     protected int          counter = 0;
     private FilterSettings config;
+    private boolean        enabled = false;
 
     public int getCounter() {
         return counter;
@@ -36,17 +37,17 @@ public abstract class Filter implements FavIconRequestor {
         this.name = string;
         if (icon != null) this.icon = NewTheme.I().getScaledInstance(icon, 16);
         config = JsonConfig.create(Application.getResource("cfg/quickfilter_" + getID()), FilterSettings.class);
-
+        enabled = config.isEnabled();
     }
 
     abstract protected String getID();
 
     public boolean isEnabled() {
-        return config.isEnabled();
+        return enabled;
     }
 
     public void setEnabled(boolean enabled) {
-
+        this.enabled = enabled;
         config.setEnabled(enabled);
     }
 

@@ -9,13 +9,16 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.http.Browser;
 import jd.http.BrowserSettingsThread;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.JsonConfig;
@@ -300,7 +303,7 @@ public class LinkChecker<E extends CheckableLink> {
                                              * this will check the link, if not
                                              * already checked
                                              */
-                                            link.getCheckableLink().getDownloadLink().getAvailableStatus(plg);
+                                            LinkChecker.updateAvailableStatus(plg, link.getCheckableLink().getDownloadLink());
                                         }
                                         link.getLinkChecker().linkChecked(link);
                                     }
@@ -356,5 +359,30 @@ public class LinkChecker<E extends CheckableLink> {
                 }
             }
         }
+    }
+
+    private static void updateAvailableStatus(PluginForHost plgToUse, DownloadLink link) {
+        if (link.getAvailableStatus() != AvailableStatus.UNCHECKED) return;
+        AvailableStatus availableStatus = null;
+        try {
+            plgToUse.reset();
+            availableStatus = plgToUse.requestFileInformation(link);
+            try {
+                plgToUse.getBrowser().getHttpConnection().disconnect();
+            } catch (Throwable e) {
+            }
+        } catch (PluginException e) {
+            e.fillLinkStatus(link.getLinkStatus());
+            if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
+                availableStatus = AvailableStatus.UNCHECKABLE;
+            } else {
+                availableStatus = AvailableStatus.FALSE;
+            }
+        } catch (Throwable e) {
+            JDLogger.exception(e);
+            availableStatus = AvailableStatus.UNCHECKABLE;
+        }
+        if (availableStatus == null) availableStatus = AvailableStatus.UNCHECKABLE;
+        link.setAvailableStatus(availableStatus);
     }
 }

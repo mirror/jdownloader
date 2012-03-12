@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.downloads.columns;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
 
 import org.appwork.swing.exttable.columns.ExtFileSizeColumn;
 import org.jdownloader.gui.translate._GUI;
@@ -42,7 +43,8 @@ public class RemainingColumn extends ExtFileSizeColumn<AbstractNode> {
         if (o2 instanceof DownloadLink) {
             return ((DownloadLink) o2).getRemainingKB();
         } else if (o2 instanceof FilePackage) {
-            return ((FilePackage) o2).getRemainingKB();
+            FilePackageView view = ((FilePackage) o2).getView();
+            return Math.max(0, view.getSize() - view.getDone());
         } else
             return -1l;
 

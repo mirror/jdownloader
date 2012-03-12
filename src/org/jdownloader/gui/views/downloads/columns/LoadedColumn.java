@@ -43,7 +43,7 @@ public class LoadedColumn extends ExtFileSizeColumn<AbstractNode> {
         if (o2 instanceof DownloadLink) {
             return ((DownloadLink) o2).getDownloadCurrent();
         } else {
-            return ((FilePackage) o2).getTotalKBLoaded();
+            return ((FilePackage) o2).getView().getDone();
         }
     }
 

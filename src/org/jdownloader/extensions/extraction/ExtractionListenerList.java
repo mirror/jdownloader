@@ -59,9 +59,7 @@ public class ExtractionListenerList implements ExtractionListener {
 
         switch (event.getType()) {
         case QUEUED:
-
             controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_queued());
-
             break;
         case EXTRACTION_FAILED:
             for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
@@ -200,6 +198,8 @@ public class ExtractionListenerList implements ExtractionListener {
             ex.onFinished(controller);
             break;
         case CLEANUP:
+            controller.getArchiv().setActive(false);
+            controller.getArchiv().getFirstArchiveFile().setProgress(0, 0, null);
             ex.removeArchive(controller.getArchiv());
             break;
         case FILE_NOT_FOUND:
@@ -207,7 +207,6 @@ public class ExtractionListenerList implements ExtractionListener {
                 for (ArchiveFile link : controller.getArchiv().getCrcError()) {
                     if (link == null) continue;
                     link.setStatus(ArchiveFile.Status.ERRROR_FILE_NOT_FOUND);
-
                 }
             } else {
                 for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
@@ -216,7 +215,6 @@ public class ExtractionListenerList implements ExtractionListener {
 
                 }
             }
-
             controller.getArchiv().setActive(false);
             ex.onFinished(controller);
             break;

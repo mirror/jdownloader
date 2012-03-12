@@ -46,8 +46,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     private static final long            serialVersionUID = -8859842964299890820L;
 
-    private static final long            UPDATE_INTERVAL  = 2000;
-
     private String                       downloadDirectory;
 
     private ArrayList<DownloadLink>      downloadLinkList;
@@ -128,29 +126,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         return FP == fp;
     }
 
-    private int                                                    linksFailed;
-
-    private int                                                    linksFinished;
-
     private String                                                 name                = null;
-
-    private long                                                   totalBytesLoaded_v2;
-
-    private long                                                   totalDownloadSpeed_v2;
-
-    private long                                                   totalEstimatedPackageSize_v2;
-
-    private long                                                   updateTime;
-
-    private long                                                   updateTime1;
-
-    private boolean                                                isFinished;
-    /* no longer in use, pay attention when removing */
-    @Deprecated
-    private Integer                                                links_Disabled;
-    /* no longer in use, pay attention when removing */
-    @Deprecated
-    private String                                                 ListHoster          = null;
 
     private long                                                   created             = -1l;
 
@@ -338,60 +314,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     /**
-     * Gibt die vorraussichtlich verbleibende Downloadzeit für dieses paket
-     * zurück
-     * 
-     * @return
-     */
-    public long getETA() {
-        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
-            updateCollectives();
-        }
-        if (totalDownloadSpeed_v2 / 1024 == 0) { return -1; }
-        return (Math.max(totalBytesLoaded_v2, totalEstimatedPackageSize_v2) - totalBytesLoaded_v2) / (totalDownloadSpeed_v2);
-    }
-
-    /**
-     * Gibt die Anzahl der fehlerhaften Links zurück
-     * 
-     * @return
-     */
-    public int getLinksFailed() {
-        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
-            updateCollectives();
-        }
-
-        return linksFailed;
-    }
-
-    public boolean isFinished() {
-        if (System.currentTimeMillis() - updateTime1 > UPDATE_INTERVAL) {
-            updateTime1 = System.currentTimeMillis();
-            boolean value = true;
-            long lastfinished = 0;
-            if (linksFinished > 0) {
-                synchronized (downloadLinkList) {
-                    for (DownloadLink lk : downloadLinkList) {
-                        if (!lk.getLinkStatus().isFinished() && lk.isEnabled()) {
-                            value = false;
-                            break;
-                        } else {
-                            if (lk.getFinishedDate() != -1) lastfinished = lastfinished >= lk.getFinishedDate() ? lastfinished : lk.getFinishedDate();
-                        }
-                    }
-                }
-            } else {
-                value = false;
-            }
-            isFinished = value;
-            if (!isFinished) {
-                this.setFinishedDate(-1);
-            } else if (isFinished && getFinishedDate() == -1) this.setFinishedDate(lastfinished);
-        }
-        return isFinished;
-    }
-
-    /**
      * return the name of this FilePackage
      * 
      * @return
@@ -419,53 +341,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             }
         }
         return pwList;
-    }
-
-    /**
-     * Gibt den Fortschritt des pakets in prozent zurück
-     */
-    public double getPercent() {
-        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
-            updateCollectives();
-        }
-        return 100.0 * totalBytesLoaded_v2 / Math.max(1, Math.max(totalBytesLoaded_v2, totalEstimatedPackageSize_v2));
-    }
-
-    /**
-     * Gibt die Anzahl der Verbleibenden Links zurück. Wurden alle Links bereits
-     * abgearbeitet gibt diese Methode 0 zurück Da die Methode alle Links
-     * durchläuft sollte sie aus Performancegründen mit bedacht eingesetzt
-     * werden
-     */
-    public int getRemainingLinks() {
-        updateCollectives();
-        return size() - linksFinished;
-
-    }
-
-    /**
-     * Gibt die geschätzte Gesamtgröße des Pakets zurück
-     * 
-     * @return
-     */
-    public long getTotalEstimatedPackageSize() {
-        return Math.max(totalBytesLoaded_v2, this.getView().getSize());
-    }
-
-    /**
-     * Gibt zurück wieviele Bytes ingesamt schon in diesem Paket geladen wurden
-     * 
-     * @return
-     */
-    public long getTotalKBLoaded() {
-        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
-            updateCollectives();
-        }
-        return totalBytesLoaded_v2;
-    }
-
-    public long getRemainingKB() {
-        return getTotalEstimatedPackageSize() - getTotalKBLoaded();
     }
 
     /**
@@ -570,54 +445,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         }
     }
 
-    public void updateCollectives() {
-        synchronized (downloadLinkList) {
-            totalEstimatedPackageSize_v2 = 0;
-            linksFinished = 0;
-            linksFailed = 0;
-            totalBytesLoaded_v2 = 0;
-            long avg = 0;
-            DownloadLink next;
-            int i = 0;
-            for (Iterator<DownloadLink> it = downloadLinkList.iterator(); it.hasNext();) {
-                next = it.next();
-
-                if (next.getDownloadSize() > 0) {
-                    if (next.isEnabled()) {
-                        totalEstimatedPackageSize_v2 += next.getDownloadSize();
-                    }
-                    avg = (i * avg + next.getDownloadSize()) / (i + 1);
-                    i++;
-                } else {
-                    if (it.hasNext()) {
-                        if (next.isEnabled()) {
-                            totalEstimatedPackageSize_v2 += avg;
-                        }
-                    } else {
-                        if (next.isEnabled()) {
-                            totalEstimatedPackageSize_v2 += avg / 2;
-                        }
-                    }
-                }
-                if (next.isEnabled()) {
-                    totalBytesLoaded_v2 += next.getDownloadCurrent();
-                }
-
-                if (next.getLinkStatus().isFinished()) {
-                    linksFinished += 1;
-                }
-                if (next.getLinkStatus().isFailed() && next.isEnabled()) {
-                    linksFailed++;
-                }
-            }
-        }
-        updateTime = System.currentTimeMillis();
-    }
-
-    /**
-     * return enabled/disabled state of this FilePackage, compares size to
-     * disabledLinks
-     */
     public boolean isEnabled() {
         return this.getView().isEnabled();
     }
@@ -654,9 +481,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     public void notifyStructureChanges() {
         if (fpInfo != null) {
-            synchronized (fpInfo) {
-                fpInfo.changeStructure();
-            }
+            fpInfo.changeStructure();
         }
     }
 
@@ -678,9 +503,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             n.nodeUpdated(this);
         }
         if (fpInfo != null) {
-            synchronized (fpInfo) {
-                fpInfo.changeVersion();
-            }
+            fpInfo.changeVersion();
         }
     }
 

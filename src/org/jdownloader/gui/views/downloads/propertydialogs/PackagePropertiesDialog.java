@@ -186,7 +186,7 @@ public class PackagePropertiesDialog extends AbstractDialog<Object> {
         p.add(btAdd, "width 20!,height 20!");
         p.add(btRemove, "width 20!,height 20!");
 
-        p.add(head(_GUI._.LinkPropertiesDialog_layoutDialogContent_size(SizeFormatter.formatBytes(pkg.getTotalEstimatedPackageSize())), NewTheme.I().getIcon("batch", 16)), "spanx,newline,skip");
+        p.add(head(_GUI._.LinkPropertiesDialog_layoutDialogContent_size(SizeFormatter.formatBytes(pkg.getView().getSize())), NewTheme.I().getIcon("batch", 16)), "spanx,newline,skip");
 
         for (DomainInfo host : pkg.getView().getDomainInfos()) {
             ImageIcon icon = host.getFavIcon();
