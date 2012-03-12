@@ -18,15 +18,8 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.UserIO;
-import jd.nutils.JDFlags;
-
 import org.appwork.update.inapp.RestartController;
-import org.appwork.update.standalone.gui.UpdateFoundDialog;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.update.JDUpdater;
 
 public class RestartAction extends ActionAdapter {
 
@@ -38,25 +31,29 @@ public class RestartAction extends ActionAdapter {
 
     @Override
     public void onAction(ActionEvent e) {
-        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, _GUI._.sys_ask_rlyrestart()), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
-
-            if (JDUpdater.getInstance().hasWaitingUpdates()) {
-                UpdateFoundDialog dialog = new UpdateFoundDialog(null, new Runnable() {
-
-                    public void run() {
-                        RestartController.getInstance().restartViaUpdater(true);
-                    }
-
-                }, JDUpdater.getInstance());
-                try {
-                    Dialog.getInstance().showDialog(dialog);
-                    return;
-                } catch (DialogNoAnswerException e1) {
-
-                }
-            }
-            RestartController.getInstance().directRestart(true);
-        }
+        // ShutdownController.getInstance().hasShutdownEvent(SilentUpdaterEvent)
+        // if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0,
+        // _GUI._.sys_ask_rlyrestart()), UserIO.RETURN_OK,
+        // UserIO.RETURN_DONT_SHOW_AGAIN)) {
+        //
+        // if (JDUpdater.getInstance().hasWaitingUpdates()) {
+        // UpdateFoundDialog dialog = new UpdateFoundDialog(null, new Runnable()
+        // {
+        //
+        // public void run() {
+        // RestartController.getInstance().restartViaUpdater(true);
+        // }
+        //
+        // }, JDUpdater.getInstance());
+        // try {
+        // Dialog.getInstance().showDialog(dialog);
+        // return;
+        // } catch (DialogNoAnswerException e1) {
+        //
+        // }
+        // }
+        RestartController.getInstance().directRestart(true);
+        // }
     }
 
     @Override
