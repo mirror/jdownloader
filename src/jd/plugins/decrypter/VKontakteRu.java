@@ -50,7 +50,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private static final String  FILEOFFLINE  = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
     private static final String  DOMAIN       = "vk.com";
-    private static final Integer MAXCOOKIEUSE = 50;
+    private static final Integer MAXCOOKIEUSE = 500;
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -405,9 +405,9 @@ public class VKontakteRu extends PluginForDecrypt {
                 password = this.getPluginConfig().getStringProperty("pass", null);
                 for (int i = 0; i < 3; i++) {
                     if (username == null || password == null) {
-                        username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
+                        username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + this.getHost() + " :");
                         if (username == null) return false;
-                        password = UserIO.getInstance().requestInputDialog("Enter password for " + DOMAIN + " :");
+                        password = UserIO.getInstance().requestInputDialog("Enter password for " + this.getHost() + " :");
                         if (password == null) return false;
                     }
                     if (!loginSite(username, password)) {
@@ -451,7 +451,7 @@ public class VKontakteRu extends PluginForDecrypt {
         this.getPluginConfig().setProperty("logincounter", "-1");
         this.getPluginConfig().setProperty("cookies", Property.NULL);
         this.getPluginConfig().save();
-        throw new DecrypterException("Login or/and password for " + DOMAIN + " is wrong!");
+        throw new DecrypterException("Login or/and password for " + this.getHost() + " is wrong!");
     }
 
     private boolean loginSite(String username, String password) throws Exception {

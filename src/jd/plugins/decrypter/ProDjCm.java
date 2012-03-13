@@ -54,7 +54,7 @@ public class ProDjCm extends PluginForDecrypt {
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("(<title>404 &ndash; Инфинити</title>|<h1>Page not found :\\(</h1>)")) {
+        if (br.containsHTML("(<title>404 \\&ndash; Инфинити</title>|<h1>Page not found :\\(</h1>)")) {
             logger.warning("Invalid URL: " + parameter);
             return decryptedLinks;
         }
@@ -87,7 +87,7 @@ public class ProDjCm extends PluginForDecrypt {
         // Entire photo albums
         else if (parameter.matches(".*(foto#(list|biglist|middlelist)|/foto/(all|\\d+)/?)")) {
             // set fpName
-            String fp1 = br.getRegex("&ndash; (.+)</title>").getMatch(0);
+            String fp1 = br.getRegex("\\&ndash; (.+)</title>").getMatch(0);
             if (fp1 == null) fp1 = br.getRegex("").getMatch(0);
             String fp2 = br.getRegex("<meta name=\"title\" content=\"([^\"]+)").getMatch(0);
             if (fp2 == null) fp2 = br.getRegex("<title>(.+) \\&ndash;").getMatch(0);
@@ -120,7 +120,7 @@ public class ProDjCm extends PluginForDecrypt {
         else if (parameter.matches(".*/groups/\\d+")) {
             HashSet<String> filter = new HashSet<String>();
             String frame = br.getRegex("(<div class=\"dj_bblock\">.*</div>[\r\n ]+</div>)").getMatch(0);
-            String fp1 = br.getRegex("&ndash; (.*?)</title>").getMatch(0);
+            String fp1 = br.getRegex("\\&ndash; (.*?)</title>").getMatch(0);
             String fp2 = new Regex(frame, ">([^<]+)</span>[\r\n ]+</h2>").getMatch(0);
             if (fp1 != null || fp2 != null)
                 fpName = fp1 + " - " + fp2;
