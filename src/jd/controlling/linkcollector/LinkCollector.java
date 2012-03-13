@@ -432,7 +432,20 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         eventsender.addListener(lc, true);
         lc.setFilter(crawlerFilter);
         lc.setHandler(this);
-        lc.crawl(new ArrayList<CrawledLink>(links));
+        ArrayList<CrawledLink> jobs = new ArrayList<CrawledLink>(links);
+        LinkCollectingJob newJob = new LinkCollectingJob();
+        newJob.setLinkCrawler(lc);
+        for (CrawledLink job : jobs) {
+            LinkCollectingJob sourceJob = job.getSourceJob();
+            if (sourceJob != null) {
+                /* we set weak reference to linkcrawler for this job */
+                sourceJob.setLinkCrawler(lc);
+            } else {
+                /* no job set yet, we set new one */
+                job.setSourceJob(newJob);
+            }
+        }
+        lc.crawl(jobs);
         return lc;
     }
 
@@ -440,6 +453,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         if (job == null) throw new IllegalArgumentException("job is null");
         lazyInit();
         final LinkCollectorCrawler lc = new LinkCollectorCrawler() {
+            @Override
+            protected CrawledLink crawledLinkFactorybyURL(String url) {
+                CrawledLink ret = new CrawledLink(url);
+                ret.setSourceJob(job);
+                return ret;
+            }
 
             @Override
             protected void generalCrawledLinkModifier(CrawledLink link) {
@@ -466,6 +485,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         eventsender.addListener(lc, true);
         lc.setFilter(crawlerFilter);
         lc.setHandler(this);
+        /* we set weak reference to linkcrawler for this job */
+        job.setLinkCrawler(lc);
         String jobText = job.getText();
         /*
          * we don't want to keep reference on text during the whole link
@@ -632,7 +653,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public void linkCheckDone(CrawledLink link) {
         if (crawlerFilter.dropByFileProperties(link)) {
             addFilteredStuff(link);
-
         } else {
             PackagizerInterface pc;
             if ((pc = getPackagizer()) != null) {

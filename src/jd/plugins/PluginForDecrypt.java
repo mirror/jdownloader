@@ -239,6 +239,14 @@ public abstract class PluginForDecrypt extends Plugin {
         dist.distribute(links);
     }
 
+    public int getDistributeDelayerMinimum() {
+        return 1000;
+    }
+
+    public int getDistributeDelayerMaximum() {
+        return 5000;
+    }
+
     protected String getCaptchaCode(String captchaAddress, CryptedLink param) throws IOException, DecrypterException {
         return getCaptchaCode(getHost(), captchaAddress, param);
     }

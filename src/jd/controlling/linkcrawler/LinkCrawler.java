@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.config.Property;
+import jd.controlling.IOEQ;
 import jd.controlling.IOPermission;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.linkcollector.LinknameCleaner;
@@ -24,6 +25,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -855,7 +857,32 @@ public class LinkCrawler implements IOPermission {
             LinkCrawlerDistributer dist = null;
             LinkCrawler previousCrawler = null;
             ArrayList<DownloadLink> decryptedPossibleLinks = null;
+
             try {
+                final ArrayList<CrawledLink> distributedLinks = new ArrayList<CrawledLink>();
+                final DelayedRunnable distributeLinksDelayer = new DelayedRunnable(IOEQ.TIMINGQUEUE, wplg.getDistributeDelayerMinimum(), wplg.getDistributeDelayerMaximum()) {
+
+                    @Override
+                    public void delayedrun() {
+                        synchronized (distributedLinks) {
+                            if (distributedLinks.size() == 0) return;
+                            if (!checkStartNotify()) {
+                                distributedLinks.clear();
+                                return;
+                            }
+                            final ArrayList<CrawledLink> distributeThis = new ArrayList<CrawledLink>(distributedLinks);
+                            distributedLinks.clear();
+                            /* enqueue distributing of the links */
+                            threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+
+                                @Override
+                                void crawling() {
+                                    LinkCrawler.this.distribute(distributeThis);
+                                }
+                            });
+                        }
+                    }
+                };
                 /*
                  * set LinkCrawlerDistributer in case the plugin wants to add
                  * links in realtime
@@ -884,15 +911,12 @@ public class LinkCrawler implements IOPermission {
                             ret.setCustomCrawledLinkModifier(lm);
                             forwardCrawledLinkInfos(cryptedLink, ret);
                         }
-                        if (!checkStartNotify()) return;
-                        /* enqueue distributing of the links */
-                        threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
-
-                            @Override
-                            void crawling() {
-                                LinkCrawler.this.distribute(possibleCryptedLinks);
-                            }
-                        });
+                        synchronized (distributedLinks) {
+                            /* synchronized adding */
+                            distributedLinks.addAll(possibleCryptedLinks);
+                        }
+                        /* restart delayer to distribute links */
+                        distributeLinksDelayer.run();
                     }
                 });
                 if (lct != null) {
@@ -909,7 +933,13 @@ public class LinkCrawler implements IOPermission {
                  * of the Plugin in use
                  */
                 Thread.currentThread().setContextClassLoader(oplg.getLazyC().getClassLoader());
-                decryptedPossibleLinks = wplg.decryptLink(cryptedLink);
+                try {
+                    decryptedPossibleLinks = wplg.decryptLink(cryptedLink);
+                } finally {
+                    distributeLinksDelayer.stop();
+                    /* make sure we dont have any unprocessed delayed Links */
+                    distributeLinksDelayer.delayedrun();
+                }
                 long endTime = System.currentTimeMillis() - startTime;
                 oplg.getLazyC().updateCrawlRuntime(endTime);
             } finally {

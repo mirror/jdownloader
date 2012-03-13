@@ -40,10 +40,12 @@ import javax.swing.Timer;
 
 import jd.Launcher;
 import jd.controlling.JDLogger;
+import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.AddonPanel;
@@ -464,9 +466,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
 
     @Override
     protected void initExtension() throws StartException {
-
         configPanel = new TrayConfigPanel(this);
-
     }
 
     public void onLinkCollectorAbort(LinkCollectorEvent event) {
@@ -482,6 +482,16 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+
+    }
+
+    public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
+    }
+
+    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+        LinkCollectingJob sourceJob = parameter.getSourceJob();
+        LinkCrawler lc = null;
+        if (sourceJob == null || ((lc = sourceJob.getLinkCrawler()) != null && lc.isRunning())) { return; }
         LinkgrabberResultsOption option = getSettings().getShowLinkgrabbingResultsOption();
         if ((!guiFrame.isVisible() && option == LinkgrabberResultsOption.ONLY_IF_MINIMIZED) || option == LinkgrabberResultsOption.ALWAYS) {
             /* dont try to restore jd if password required */
@@ -516,12 +526,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                 }.start();
             }
         }
-    }
-
-    public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
-    }
-
-    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
     }
 
     @Override

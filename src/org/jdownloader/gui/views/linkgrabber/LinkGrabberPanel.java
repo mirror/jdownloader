@@ -20,6 +20,7 @@ import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.gui.UIConstants;
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
@@ -123,6 +124,9 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
                 if (org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberAutoTabSwitchEnabled()) {
+                    LinkCollectingJob sourceJob = parameter.getSourceJob();
+                    LinkCrawler lc = null;
+                    if (sourceJob == null || ((lc = sourceJob.getLinkCrawler()) != null && lc.isRunning())) { return; }
                     if (newJobMap.add(parameter.getSourceJob())) {
                         // new job arrived
                         new EDTRunner() {

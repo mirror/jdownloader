@@ -9,8 +9,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-import javax.swing.JFrame;
-
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkchecker.LinkChecker;
@@ -24,9 +22,6 @@ import jd.controlling.linkcrawler.LinkCrawlerFilter;
 import jd.controlling.linkcrawler.LinkCrawlerHandler;
 import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.gui.UIConstants;
-import jd.gui.UserIF;
-import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.PluginForHost;
@@ -38,7 +33,6 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
-import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -204,20 +198,6 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                 ArrayList<CrawledLink> links = new ArrayList<CrawledLink>();
                 links.add(link);
                 LinkCollector.getInstance().addCrawlerJob(links);
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        try {
-                            JDGui.getInstance().requestPanel(UserIF.Panels.LINKGRABBER, null);
-                            if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) {
-                                JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
-                            }
-                        } catch (Throwable e) {
-
-                        }
-                    }
-                };
             }
             ret.put("status", true);
             ret.put("msg", (Object) null);

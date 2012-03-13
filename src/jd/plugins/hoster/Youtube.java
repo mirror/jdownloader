@@ -168,10 +168,10 @@ public class Youtube extends PluginForHost {
                 org.jdownloader.extensions.neembuu.WatchAsYouDownloadSession watchAsYouDownloadSession = downloadSession.getWatchAsYouDownloadSession();
                 watchAsYouDownloadSession.waitForDownloadToFinish();
             }
+            logger.severe("Neembuu could not handle this link/filehost. Using default download system.");
         } catch (Throwable e) {
             // Neembuu extension is not installed
         }
-        logger.severe("Neembuu could not handle this link/filehost. Using default download system.");
         if (this.dl.startDownload()) {
             this.postprocess(downloadLink);
         }

@@ -456,10 +456,11 @@ public class MediafireCom extends PluginForHost {
                 watchAsYouDownloadSession.waitForDownloadToFinish();
                 return;
             }
+            logger.severe("Neembuu could not handle this link/filehost. Using default download system.");
         } catch (Throwable e) {
             // Neembuu extension is not installed
         }
-        logger.severe("Neembuu could not handle this link/filehost. Using default download system.");
+
         this.dl.startDownload();
     }
 
