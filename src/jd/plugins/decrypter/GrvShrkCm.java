@@ -349,7 +349,11 @@ public class GrvShrkCm extends PluginForDecrypt {
     }
 
     private String getSecretKey(final Browser ajax, final String token, final String sid) throws IOException {
-        ajax.postPageRaw("https://grooveshark.com/" + "more.php?getCommunicationToken", "{\"parameters\":{\"secretKey\":\"" + token + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + GrooveShark.CLIENTREVISION + "\",\"session\":\"" + sid + "\",\"uuid\":\"" + USERUID + "\"},\"method\":\"getCommunicationToken\"}");
+        try {
+            ajax.postPageRaw("https://grooveshark.com/" + "more.php?getCommunicationToken", "{\"parameters\":{\"secretKey\":\"" + token + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + GrooveShark.CLIENTREVISION + "\",\"session\":\"" + sid + "\",\"uuid\":\"" + USERUID + "\"},\"method\":\"getCommunicationToken\"}");
+        } catch (Throwable e) {
+            logger.severe("Proxy + https requests not work in stable version! " + e);
+        }
         return ajax.getRegex("result\":\"(.*?)\"").getMatch(0);
     }
 

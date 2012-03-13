@@ -59,7 +59,7 @@ public class EightTracksCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.setReadTimeout(90 * 1000);
         /* nachfolgender UA sorgt für bessere Audioqualität */
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (webOS/2.1.0; U; en-US) AppleWebKit/532.2 (KHTML, like Gecko) Version/1.0 Safari/532.2 Pre/1.2 ");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (webOS/2.1.0; U; en-US) AppleWebKit/532.2 (KHTML, like Gecko) Version/1.0 Safari/532.2 Pre/1.2");
         br.getPage(parameter);
 
         String mixId = br.getRegex("mix_id=(\\d+)\"").getMatch(0);
@@ -104,7 +104,7 @@ public class EightTracksCom extends PluginForDecrypt {
             if (dllink != null && filename != null) {
                 sameLink = dllink;
                 ext = dllink.substring(dllink.lastIndexOf(".") + 1);
-                ext = ext.equals("m4a") || ext.length() > 5 ? "mp4" : ext;
+                ext = ext.equals("m4a") || ext.length() > 5 ? "m4a" : ext;
                 if (!dllink.startsWith("http://([0-9a-z]+\\.)?8tracks")) {
                     dllink = "directhttp://" + dllink;
                 }

@@ -282,12 +282,17 @@ public class GrooveShark extends PluginForHost {
         return -1;
     }
 
-    private String getPostParameterString(final Browser ajax, final String method, final String sid) throws IOException {
+    private String getPostParameterString(final Browser ajax, final String method, final String sid) throws IOException, PluginException {
         return "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"privacy\":0," + COUNTRY + ",\"uuid\":\"" + USERUID + "\",\"session\":\"" + sid + "\",\"token\":\"" + getToken(method, getSecretKey(ajax, JDHash.getMD5(sid), sid)) + "\"},\"method\":\"" + method + "\",";
     }
 
-    private String getSecretKey(final Browser ajax, final String token, final String sid) throws IOException {
-        ajax.postPageRaw("https://grooveshark.com/" + "more.php?getCommunicationToken", "{\"parameters\":{\"secretKey\":\"" + token + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"session\":\"" + sid + "\",\"uuid\":\"" + USERUID + "\"},\"method\":\"getCommunicationToken\"}");
+    private String getSecretKey(final Browser ajax, final String token, final String sid) throws IOException, PluginException {
+        try {
+            ajax.postPageRaw("https://grooveshark.com/" + "more.php?getCommunicationToken", "{\"parameters\":{\"secretKey\":\"" + token + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"session\":\"" + sid + "\",\"uuid\":\"" + USERUID + "\"},\"method\":\"getCommunicationToken\"}");
+        } catch (Throwable e) {
+            logger.severe("Proxy + https requests not work in stable version! " + e);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Proxy + https requests not work in stable version!");
+        }
         return ajax.getRegex("result\":\"(.*?)\"").getMatch(0);
     }
 
