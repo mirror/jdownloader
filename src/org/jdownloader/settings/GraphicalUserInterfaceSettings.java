@@ -7,6 +7,7 @@ import org.appwork.storage.config.annotations.AbstractValidator;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.RequiresRestart;
@@ -271,5 +272,14 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     public boolean isPasswordProtectionEnabled();
 
     public void setPasswordProtectionEnabled(boolean b);
+
+    @AboutConfig
+    @Description("Refreshrate in ms for the DownloadView")
+    @DefaultLongValue(500)
+    @SpinnerValidator(min = 50, max = 5000, step = 25)
+    @RequiresRestart
+    public long getDownloadViewRefresh();
+
+    public void setDownloadViewRefresh(long t);
 
 }

@@ -126,18 +126,17 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         return FP == fp;
     }
 
-    private String                                                 name                = null;
+    private String                                                 name              = null;
 
-    private long                                                   created             = -1l;
+    private long                                                   created           = -1l;
 
-    private transient boolean                                      isExpanded          = false;
+    private transient boolean                                      isExpanded        = false;
 
-    private transient PackageController<FilePackage, DownloadLink> controlledby        = null;
-    private transient UniqueSessionID                              uniqueID            = null;
-    public static final String                                     PROPERTY_EXPANDED   = "EXPANDED";
-    private static final String                                    PROPERTY_COMMENT    = "COMMENT";
-    private static final String                                    PROPERTY_EXTRACT    = "EXTRACT";
-    private static final String                                    PROPERTY_FINISHTIME = "FINISHTIME";
+    private transient PackageController<FilePackage, DownloadLink> controlledby      = null;
+    private transient UniqueSessionID                              uniqueID          = null;
+    public static final String                                     PROPERTY_EXPANDED = "EXPANDED";
+    private static final String                                    PROPERTY_COMMENT  = "COMMENT";
+    private static final String                                    PROPERTY_EXTRACT  = "EXTRACT";
 
     /**
      * @return the uniqueID
@@ -224,18 +223,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      */
     public void setCreated(long created) {
         this.created = created;
-    }
-
-    public long getFinishedDate() {
-        return this.getLongProperty(PROPERTY_FINISHTIME, -1l);
-    }
-
-    public void setFinishedDate(long finishedDate) {
-        if (finishedDate <= 0) {
-            this.setProperty(PROPERTY_FINISHTIME, Property.NULL);
-        } else {
-            this.setProperty(PROPERTY_FINISHTIME, finishedDate);
-        }
     }
 
     /**
@@ -520,6 +507,11 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             if (fpInfo == null) fpInfo = new FilePackageView(this);
         }
         return fpInfo;
+    }
+
+    @Override
+    public long getFinishedDate() {
+        return this.getView().getFinishedDate();
     }
 
 }

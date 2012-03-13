@@ -52,14 +52,6 @@ public class FilePackageStorable implements Storable {
         filePackage.setCreated(time);
     }
 
-    public long getFinished() {
-        return filePackage.getFinishedDate();
-    }
-
-    public void setFinished(long time) {
-        filePackage.setFinishedDate(time);
-    }
-
     public String getDownloadFolder() {
         return filePackage.getDownloadDirectory();
     }

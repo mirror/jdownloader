@@ -58,10 +58,8 @@ public class FinishedDateColumn extends ExtDateColumn<AbstractNode> {
 
     @Override
     protected Date getDate(AbstractNode node, Date date) {
-
         if (node.getFinishedDate() <= 0) return null;
         date.setTime(node.getFinishedDate());
-
         return date;
     }
 

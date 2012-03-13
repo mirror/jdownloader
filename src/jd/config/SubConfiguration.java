@@ -29,7 +29,6 @@ import org.appwork.storage.Storage;
 public class SubConfiguration extends Property implements Serializable {
 
     private static final long                                  serialVersionUID = 7803718581558607222L;
-    transient private static boolean                           SUBCONFIG_LOCK   = false;
     protected String                                           name;
     transient boolean                                          valid            = false;
     private Storage                                            json             = null;
@@ -74,50 +73,26 @@ public class SubConfiguration extends Property implements Serializable {
     }
 
     public synchronized static boolean hasConfig(final String name) {
-        if (SUBCONFIG_LOCK) {
-            JDLogger.exception(new Exception("Static Database init error!!"));
-        }
-        SUBCONFIG_LOCK = true;
-        try {
-            if (SUB_CONFIGS.containsKey(name)) {
-                return true;
-            } else {
-                return JDUtilities.getDatabaseConnector().hasData(name);
-            }
-        } finally {
-            SubConfiguration.SUBCONFIG_LOCK = false;
+        if (SUB_CONFIGS.containsKey(name)) {
+            return true;
+        } else {
+            return JDUtilities.getDatabaseConnector().hasData(name);
         }
     }
 
     public synchronized static SubConfiguration getConfig(final String name) {
-        if (SUBCONFIG_LOCK) {
-            JDLogger.exception(new Exception("Static Database init error!!"));
-        }
-        SUBCONFIG_LOCK = true;
-        try {
-            if (SUB_CONFIGS.containsKey(name)) {
-                return SUB_CONFIGS.get(name);
-            } else {
-                final SubConfiguration cfg = new SubConfiguration(name);
-                SUB_CONFIGS.put(name, cfg);
-                cfg.save();
-                return cfg;
-            }
-        } finally {
-            SubConfiguration.SUBCONFIG_LOCK = false;
+        if (SUB_CONFIGS.containsKey(name)) {
+            return SUB_CONFIGS.get(name);
+        } else {
+            final SubConfiguration cfg = new SubConfiguration(name);
+            SUB_CONFIGS.put(name, cfg);
+            cfg.save();
+            return cfg;
         }
     }
 
     public synchronized static void removeConfig(final String name) {
-        if (SUBCONFIG_LOCK) {
-            JDLogger.exception(new Exception("Static Database init error!!"));
-        }
-        SUBCONFIG_LOCK = true;
-        try {
-            SUB_CONFIGS.remove(name);
-            JDUtilities.getDatabaseConnector().removeData(name);
-        } finally {
-            SubConfiguration.SUBCONFIG_LOCK = false;
-        }
+        SUB_CONFIGS.remove(name);
+        JDUtilities.getDatabaseConnector().removeData(name);
     }
 }
