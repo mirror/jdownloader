@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 16030 $", interfaceVersion = 2, names = { "fiberupload.com" }, urls = { "https?://(www\\.)?fiberupload\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 16030 $", interfaceVersion = 2, names = { "bulletupload.com", "fiberupload.com" }, urls = { "https://(www\\.)?dgegfhet938560r0thjbo043zblablaUNUSED_REGEX", "https?://(www\\.)?(fiberupload|bulletupload)\\.com/[a-z0-9]{12}" }, flags = { 0, 0 })
 public class FiberUploadCom extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -63,7 +63,7 @@ public class FiberUploadCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("bulletupload.com/", "fiberupload.com/"));
     }
 
     @Override
@@ -89,6 +89,8 @@ public class FiberUploadCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        /** Correct old bulletupload.com links */
+        correctDownloadLink(link);
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());

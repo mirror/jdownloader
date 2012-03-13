@@ -19,7 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,9 +27,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "min.us", "minus.com" }, urls = { "cvj84ezu45gj0wojgHZiF238ß3üpj5uUNUSED_REGEX", "http://(www\\.)?(minus\\.com|min\\.us)/[A-Za-z0-9]+(#[A-Za-z0-9]+)?" }, flags = { 0, 0 })
+/** Links always come rom a decrypter */
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "min.us", "minus.com" }, urls = { "cvj84ezu45gj0wojgHZiF238ß3üpj5uUNUSED_REGEX", "http://(www\\.)?i\\.minusdecrypted\\.com/\\d+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\.[A-Za-z0-9]{1,7}" }, flags = { 0, 0 })
 public class MinUs extends PluginForHost {
 
     public MinUs(final PluginWrapper wrapper) {
@@ -38,7 +37,7 @@ public class MinUs extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("min\\.us", "minus.com"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("minusdecrypted.com/", "minus.com/"));
     }
 
     @Override
@@ -48,48 +47,32 @@ public class MinUs extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        /**
+         * More will work fine for pictures but will cause server errors for
+         * other links
+         */
+        return 2;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
-        // Get internal filename
-        final String partA = br.getRegex("\"secure_prefix\":\\s?\"(.*?)\"").getMatch(0);
-        final String partB = br.getRegex("\"id\":\\s?\"(.*?)\"").getMatch(0);
-        if (partA == null || partB == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://i.minus.com" + partA + "/d" + partB, false, 1);
+        /**
+         * Resume/Chunks depends on link and/or fileserver so to prevent errors
+         * we deactivate it
+         */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (downloadLink.getFinalFileName() == null) {
-            downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
-        }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         setBrowserExclusive();
-        br.setDebug(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<h2>Not found\\.</h2>|<p>Our records indicate that the gallery/image you are referencing has been deleted or does not exist|The page you requested does not exist)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("\\{\"name\":\\s?\"(.*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta name=\"description\" content=\".*?, (.*?)\"").getMatch(0);
-        }
-        final String filesize = br.getRegex("\"filesize\": \"(.*?)\"").getMatch(0);
-        if (filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        // Set the final filename here because servers send other/internal or
-        // wrong names
-        if (filename != null) {
-            link.setFinalFileName(filename.trim());
-        } else {
-            link.setName(new Regex(link.getDownloadURL(), "minus\\.com/(.+)").getMatch(0));
-        }
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (link.getDownloadURL().endsWith(".offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return AvailableStatus.TRUE;
     }
 
