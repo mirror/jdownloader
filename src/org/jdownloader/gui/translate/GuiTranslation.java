@@ -3544,4 +3544,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Checking for Updates" })
     String JDUpdater_JDUpdater_object_icon();
 
+    @Default(lngs = { "en" }, values = { "Password required" })
+    String SwingGui_setVisible_password_();
+
+    @Default(lngs = { "en" }, values = { "Enter the Password to open JDownloader:" })
+    String SwingGui_setVisible_password_msg();
+
+    @Default(lngs = { "en" }, values = { "The entered Password was wrong!" })
+    String SwingGui_setVisible_password_wrong();
+
 }

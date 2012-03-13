@@ -7,6 +7,7 @@ import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class TrayConfigPanel extends ExtensionConfigPanel<TrayExtension> {
 
@@ -17,7 +18,7 @@ public class TrayConfigPanel extends ExtensionConfigPanel<TrayExtension> {
         addPair(T._.plugins_optional_JDLightTray_singleClick(), null, new Checkbox(CFG_TRAY_CONFIG.TOOGLE_WINDOW_STATUS_WITH_SINGLE_CLICK_ENABLED));
         addPair(T._.plugins_optional_JDLightTray_tooltip(), null, new Checkbox(CFG_TRAY_CONFIG.TOOL_TIP_ENABLED));
         addPair(T._.plugins_optional_JDLightTray_linkgrabberresults(), null, new ComboBox<LinkgrabberResultsOption>(CFG_TRAY_CONFIG.SH.getKeyHandler("ShowLinkgrabbingResultsOption", KeyHandler.class), LinkgrabberResultsOption.values(), new String[] { T._.plugins_optional_JDLightTray_minimized(), T._.plugins_optional_JDLightTray_always(), T._.plugins_optional_JDLightTray_never() }));
-        addPair(T._.plugins_optional_JDLightTray_passwordRequired(), CFG_TRAY_CONFIG.PASSWORD_PROTECTION_ENABLED, new PasswordInput(CFG_TRAY_CONFIG.PASSWORD));
+        addPair(T._.plugins_optional_JDLightTray_passwordRequired(), CFG_GUI.PASSWORD_PROTECTION_ENABLED, new PasswordInput(CFG_GUI.PASSWORD));
 
     }
 

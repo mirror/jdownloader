@@ -44,7 +44,6 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.AddonPanel;
@@ -59,12 +58,16 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class TrayExtension extends AbstractExtension<TrayConfig> implements MouseListener, MouseMotionListener, WindowListener, WindowStateListener, ActionListener, LinkCollectorListener, ShutdownVetoListener {
 
@@ -74,7 +77,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         if (guiFrame != null) {
             guiFrame.removeWindowListener(this);
             guiFrame.removeWindowStateListener(this);
-            miniIt(false, false);
+            miniIt(false);
             guiFrame.setAlwaysOnTop(false);
             guiFrame = null;
         }
@@ -231,7 +234,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                 }
 
                 if (getSettings().isStartMinimizedEnabled()) {
-                    miniIt(true, true);
+                    miniIt(true);
                 }
             }
 
@@ -254,7 +257,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         if (e.getSource() instanceof TrayIcon) {
             if (!CrossSystem.isMac()) {
                 if (e.getClickCount() >= (getSettings().isToogleWindowStatusWithSingleClickEnabled() ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
-                    miniIt(guiFrame.isVisible(), true);
+                    miniIt(guiFrame.isVisible());
                 } else {
                     if (trayIconPopup != null && trayIconPopup.isShowing()) {
                         trayIconPopup.dispose();
@@ -269,7 +272,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                 }
             } else {
                 if (e.getClickCount() >= (getSettings().isToogleWindowStatusWithSingleClickEnabled() ? 1 : 2) && !SwingUtilities.isLeftMouseButton(e)) {
-                    miniIt(guiFrame.isVisible() & guiFrame.getState() != Frame.ICONIFIED, true);
+                    miniIt(guiFrame.isVisible() & guiFrame.getState() != Frame.ICONIFIED);
                 } else if (SwingUtilities.isLeftMouseButton(e)) {
                     if (trayIconPopup != null && trayIconPopup.isShowing()) {
                         trayIconPopup.dispose();
@@ -289,10 +292,17 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     private boolean checkPassword() {
-        if (getSettings().isPasswordProtectionEnabled() && !StringUtils.isEmpty(getSettings().getPassword())) {
-            String password = UserIO.getInstance().requestInputDialog(UserIO.STYLE_PASSWORD, T._.plugins_optional_JDLightTray_enterPassword(), null);
-            if (!getSettings().getPassword().equals(password)) {
-                UserIO.getInstance().requestMessageDialog(T._.plugins_optional_JDLightTray_enterPassword_wrong());
+        if (!JDGui.getInstance().getMainFrame().isVisible() && CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled() && !StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue())) {
+            String password;
+            try {
+                password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI._.SwingGui_setVisible_password_(), _GUI._.SwingGui_setVisible_password_msg(), null, NewTheme.I().getIcon("lock", 32), null, null);
+
+                if (!CFG_GUI.PASSWORD.getValue().equals(password)) {
+                    Dialog.getInstance().showMessageDialog(_GUI._.SwingGui_setVisible_password_wrong());
+
+                    return false;
+                }
+            } catch (DialogNoAnswerException e) {
                 return false;
             }
         }
@@ -346,11 +356,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         }.waitForEDT();
     }
 
-    private void miniIt(final boolean minimize, boolean checkPW) {
-        if (!minimize) {
-            if (checkPW && !checkPassword()) return;
+    private void miniIt(final boolean minimize) {
 
-        }
         new EDTHelper<Object>() {
             @Override
             public Object edtRun() {
@@ -424,7 +431,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
 
     public void windowClosing(WindowEvent e) {
         if (getSettings().isCloseToTrayEnabled()) {
-            miniIt(true, true);
+            miniIt(true);
         }
     }
 
@@ -478,7 +485,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         LinkgrabberResultsOption option = getSettings().getShowLinkgrabbingResultsOption();
         if ((!guiFrame.isVisible() && option == LinkgrabberResultsOption.ONLY_IF_MINIMIZED) || option == LinkgrabberResultsOption.ALWAYS) {
             /* dont try to restore jd if password required */
-            if (getSettings().isPasswordProtectionEnabled()) return;
+
             if (!guiFrame.isVisible()) {
                 /* set visible */
                 new EDTHelper<Object>() {

@@ -36,7 +36,13 @@ import jd.gui.UserIF;
 import jd.gui.swing.jdgui.interfaces.View;
 
 import org.appwork.app.gui.ActiveDialogException;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public abstract class SwingGui extends UserIF implements WindowListener, WindowStateListener, WindowFocusListener {
     protected JFrame mainFrame;
@@ -118,6 +124,7 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
             private static final long serialVersionUID = -4218493713632551975L;
 
             public void toFront() {
+                if (!isVisible()) return;
                 super.toFront();
                 setAlwaysOnTop(true);
                 Timer disableAlwaysonTop = new Timer(1000, new ActionListener() {
@@ -132,7 +139,22 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
             }
 
             public void setVisible(boolean b) {
+                if (b && !isVisible()) {
+                    if (CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled() && !StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue())) {
+                        String password;
+                        try {
+                            password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI._.SwingGui_setVisible_password_(), _GUI._.SwingGui_setVisible_password_msg(), null, NewTheme.I().getIcon("lock", 32), null, null);
+                            String internPw = CFG_GUI.PASSWORD.getValue();
+                            if (!internPw.equals(password)) {
 
+                                Dialog.getInstance().showMessageDialog(_GUI._.SwingGui_setVisible_password_wrong());
+                                return;
+                            }
+                        } catch (DialogNoAnswerException e) {
+                            return;
+                        }
+                    }
+                }
                 // if we hide a frame which is locked by an active modal dialog,
                 // we get in problems. avoid this!
                 if (!b) {

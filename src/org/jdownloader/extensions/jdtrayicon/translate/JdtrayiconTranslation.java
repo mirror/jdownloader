@@ -19,9 +19,6 @@ public interface JdtrayiconTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Progress:" })
     String plugins_optional_trayIcon_progress();
 
-    @Default(lngs = { "en" }, values = { "Enter the Password to open JD:" })
-    String plugins_optional_JDLightTray_enterPassword();
-
     @Default(lngs = { "en" }, values = { "Speed:" })
     String plugins_optional_trayIcon_speed();
 
@@ -45,9 +42,6 @@ public interface JdtrayiconTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Light Tray" })
     String jd_plugins_optional_jdtrayicon_jdlighttray();
-
-    @Default(lngs = { "en" }, values = { "The entered Password was wrong!" })
-    String plugins_optional_JDLightTray_enterPassword_wrong();
 
     @Default(lngs = { "en" }, values = { "Password:" })
     String plugins_optional_JDLightTray_password();

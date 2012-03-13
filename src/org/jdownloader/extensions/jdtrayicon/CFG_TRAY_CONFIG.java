@@ -5,7 +5,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
-import org.appwork.storage.config.handler.StringKeyHandler;
 import org.appwork.utils.Application;
 
 public class CFG_TRAY_CONFIG {
@@ -27,11 +26,7 @@ public class CFG_TRAY_CONFIG {
     public static final EnumKeyHandler             SHOW_LINKGRABBING_RESULTS_OPTION               = SH.getKeyHandler("ShowLinkgrabbingResultsOption", EnumKeyHandler.class);
     // false
     public static final BooleanKeyHandler          TOOGLE_WINDOW_STATUS_WITH_SINGLE_CLICK_ENABLED = SH.getKeyHandler("ToogleWindowStatusWithSingleClickEnabled", BooleanKeyHandler.class);
-    // false
-    public static final BooleanKeyHandler          PASSWORD_PROTECTION_ENABLED                    = SH.getKeyHandler("PasswordProtectionEnabled", BooleanKeyHandler.class);
-    // null
-    public static final StringKeyHandler           PASSWORD                                       = SH.getKeyHandler("Password", StringKeyHandler.class);
-    // false
+
     public static final BooleanKeyHandler          ENABLED                                        = SH.getKeyHandler("Enabled", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler          CLOSE_TO_TRAY_ENABLED                          = SH.getKeyHandler("CloseToTrayEnabled", BooleanKeyHandler.class);

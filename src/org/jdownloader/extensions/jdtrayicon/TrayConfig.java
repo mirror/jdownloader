@@ -25,12 +25,6 @@ public interface TrayConfig extends ExtensionConfigInterface {
 
     public void setToogleWindowStatusWithSingleClickEnabled(boolean b);
 
-    @DefaultBooleanValue(false)
-    @AboutConfig
-    public boolean isPasswordProtectionEnabled();
-
-    public void setPasswordProtectionEnabled(boolean b);
-
     @DefaultBooleanValue(true)
     @AboutConfig
     public boolean isToolTipEnabled();
@@ -43,8 +37,4 @@ public interface TrayConfig extends ExtensionConfigInterface {
 
     public void setShowLinkgrabbingResultsOption(LinkgrabberResultsOption option);
 
-    @AboutConfig
-    public String getPassword();
-
-    public void setPassword(String password);
 }

@@ -260,4 +260,16 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isSaveDownloadViewCrossSessionEnabled();
 
     void setSaveDownloadViewCrossSessionEnabled(boolean b);
+
+    @AboutConfig
+    public String getPassword();
+
+    public void setPassword(String password);
+
+    @DefaultBooleanValue(false)
+    @AboutConfig
+    public boolean isPasswordProtectionEnabled();
+
+    public void setPasswordProtectionEnabled(boolean b);
+
 }
