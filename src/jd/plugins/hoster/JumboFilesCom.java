@@ -141,31 +141,40 @@ public class JumboFilesCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
+        String dllink = null;
         // Form um auf "Datei herunterladen" zu klicken
-        final Form dlForm = br.getFormbyProperty("name", "F1");
+        Form dlForm = br.getFormbyProperty("name", "F1");
         if (dlForm == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        String passCode = null;
-        if (BRBEFORE.contains("<b>Password:</b>")) {
-            if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = getUserInput(null, downloadLink);
-            } else {
-                /* gespeicherten PassCode holen */
-                passCode = downloadLink.getStringProperty("pass", null);
+        for (int i = 0; i <= 5; i++) {
+            String passCode = null;
+            if (BRBEFORE.contains("<b>Password:</b>")) {
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = getUserInput(null, downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                dlForm.put("password", passCode);
             }
-            dlForm.put("password", passCode);
+            br.submitForm(dlForm);
+            doSomething();
+            if (BRBEFORE.contains("Wrong password")) {
+                logger.warning("Wrong password!");
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (passCode != null) {
+                downloadLink.setProperty("pass", passCode);
+            }
+            dllink = getDllink();
+            if (dllink == null && br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\"")) {
+                dlForm = br.getFormbyProperty("name", "F1");
+                continue;
+            } else if (dllink == null && !br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\""))
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            else
+                break;
         }
-        br.submitForm(dlForm);
-        doSomething();
-        if (BRBEFORE.contains("Wrong password")) {
-            logger.warning("Wrong password!");
-            downloadLink.setProperty("pass", null);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
-        }
-        String dllink = getDllink();
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
