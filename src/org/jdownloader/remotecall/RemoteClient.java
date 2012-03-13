@@ -23,8 +23,8 @@ public class RemoteClient extends RemoteCallClient {
     public RemoteClient(String host) {
         this.host = host;
         br = new Browser();
-        br.setConnectTimeout(25000);
-        br.setReadTimeout(25000);
+        br.setConnectTimeout(125000);
+        br.setReadTimeout(125000);
         br.setAllowedResponseCodes(new int[] { 500 });
     }
 

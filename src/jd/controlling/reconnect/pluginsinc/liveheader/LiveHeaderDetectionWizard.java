@@ -477,6 +477,9 @@ public class LiveHeaderDetectionWizard {
 
             }
 
+        } else if ("fritz.box".equalsIgnoreCase(gatewayAdressHost)) {
+            // upnp should do the job
+
         }
     }
 
@@ -776,10 +779,7 @@ public class LiveHeaderDetectionWizard {
         if (myUpnpDevice != null && myUpnpDevice.getManufactor() != null) {
             manufactor = myUpnpDevice.getManufactor();
         }
-        try {
-            routerName = JsonConfig.create(LiveHeaderReconnectSettings.class).getRouterData().getRouterName();
-        } catch (Exception e) {
-        }
+
         if (routerName == null || routerName.trim().length() == 0 || "unknown".equalsIgnoreCase(routerName)) {
             // try to convert domain to routername
             if (!gatewayAdressHost.equals(gatewayAdressIP)) {

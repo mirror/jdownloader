@@ -66,9 +66,7 @@ public class AutoSetupAction extends BasicAction {
                     final ArrayList<ReconnectResult> scripts = ReconnectPluginController.getInstance().autoFind(new ProcessCallBackAdapter() {
 
                         public void setStatusString(Object caller, String string) {
-                            if (caller instanceof RouterPlugin) {
-                                setSubStatusHeader(((RouterPlugin) caller).getName());
-                            }
+
                             setBarText(string);
                         }
 
@@ -77,6 +75,9 @@ public class AutoSetupAction extends BasicAction {
                         }
 
                         public void setStatus(Object caller, Object statusObject) {
+                            if (caller instanceof RouterPlugin) {
+                                setSubStatusHeader(_GUI._.ReconnectDialog_layoutDialogContent_header(((RouterPlugin) caller).getName()));
+                            }
                             if (statusObject instanceof ArrayList) {
                                 try {
                                     @SuppressWarnings("unchecked")
@@ -94,6 +95,7 @@ public class AutoSetupAction extends BasicAction {
                     if (scripts != null && scripts.size() > 0) {
 
                         System.out.println("Scripts " + scripts);
+                        ReconnectPluginController.getInstance().setActivePlugin(scripts.get(0).getInvoker().getPlugin());
                         scripts.get(0).getInvoker().getPlugin().setSetup(scripts.get(0));
 
                     } else {

@@ -15,7 +15,6 @@ import javax.swing.JProgressBar;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
-import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.ipcheck.IPConnectionState;
 import jd.controlling.reconnect.ipcheck.IPController;
@@ -124,14 +123,13 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
         ((ImagePainter) circle.getNonvalueClipPainter()).setForeground(Color.GREEN);
         MigPanel sp = new MigPanel("ins 0", "[fill][fill][grow,fill][fill][fill]", "[fill][grow,fill]");
         sp.add(circle, "spany 2,gapright 10,height 42!,width 42!");
-        sp.add(header = new JLabel(), "spanx 3");
+        sp.add(header = new JLabel(), "spanx 4,width 350:n:n");
         SwingUtils.toBold(header);
         sp.add(state = new JLabel(), "spanx,alignx right");
         state.setHorizontalTextPosition(SwingConstants.LEFT);
         SwingUtils.toBold(header);
         state.setHorizontalAlignment(SwingConstants.RIGHT);
         circle.setIndeterminate(true);
-        header.setText(_GUI._.ReconnectDialog_layoutDialogContent_header(ReconnectPluginController.getInstance().getActivePlugin().getName()));
         sp.add(label(_GUI._.ReconnectDialog_layoutDialogContent_duration()));
 
         sp.add(duration = new JLabel());

@@ -81,8 +81,11 @@ public class ReconnectPluginController {
         for (final RouterPlugin plg : ReconnectPluginController.this.plugins) {
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             try {
+
+                feedback.setStatus(plg, null);
                 ArrayList<ReconnectResult> founds = plg.runDetectionWizard(feedback);
                 if (founds != null) scripts.addAll(founds);
+                if (scripts.size() > 0) break;
             } catch (InterruptedException e) {
                 throw e;
             } catch (Exception e) {
@@ -297,8 +300,9 @@ public class ReconnectPluginController {
             this.plugins.add(DummyRouterPlugin.getInstance());
             plugins.add(new ExternBatchReconnectPlugin());
             plugins.add(new ExternReconnectPlugin());
-            plugins.add(new LiveHeaderReconnect());
             plugins.add(new UPNPRouterPlugin());
+            plugins.add(new LiveHeaderReconnect());
+
             final ArrayList<URL> urls = new ArrayList<URL>();
             if (files != null) {
                 final int length = files.length;

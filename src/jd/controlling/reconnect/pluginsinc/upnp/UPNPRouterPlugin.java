@@ -68,21 +68,22 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
     public ArrayList<ReconnectResult> runDetectionWizard(ProcessCallBack processCallBack) throws InterruptedException {
 
         ArrayList<ReconnectResult> ret = new ArrayList<ReconnectResult>();
-
-        for (int i = 0; i < getDevices().size(); i++) {
-            UpnpRouterDevice device = getDevices().get(i);
+        ArrayList<UpnpRouterDevice> devices = getDevices();
+        for (int i = 0; i < devices.size(); i++) {
+            UpnpRouterDevice device = devices.get(i);
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
 
             ReconnectResult res;
             try {
+                processCallBack.setStatusString(this, T._.try_reconnect(device.getFriendlyname() == null ? device.getModelname() : device.getFriendlyname()));
                 res = new UPNPReconnectInvoker(this, device.getServiceType(), device.getControlURL()).validate();
                 if (res != null && res.isSuccess()) {
                     ret.add(res);
                     processCallBack.setStatus(this, ret);
-                    if (i < getDevices().size() - 1) {
+                    if (i < devices.size() - 1) {
 
                         if (ret.size() == 1) Dialog.getInstance().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use());
-                        return ret;
+
                     }
                 }
 
@@ -91,7 +92,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
             } catch (DialogClosedException e) {
 
             } catch (DialogCanceledException e) {
-
+                return ret;
             }
 
         }
@@ -276,7 +277,9 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
     }
 
     public synchronized ArrayList<UpnpRouterDevice> getDevices() throws InterruptedException {
-        if (devices == null) {
+        if (devices == null || devices.size() == 0) {
+            // upnp somtimes works, sometimes not - no idea why. that's why we
+            // do a scan if we have no responses
             devices = UPNPScanner.scanDevices();
         }
         return devices;

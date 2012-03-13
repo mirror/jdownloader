@@ -70,4 +70,7 @@ public interface UpnpTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Tries to find all UPNP Reconnect Devices in your Network, \r\nand lets you choose which one to use for Reconnet" })
     String UPNPScannerAction_UPNPScannerAction_tt();
 
+    @Default(lngs = { "en" }, values = { "Try Upnp Reconnect: %s1" })
+    String try_reconnect(String friendlyname);
+
 }

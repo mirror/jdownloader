@@ -4,12 +4,15 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.Locale;
 
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPConnection;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
@@ -55,8 +58,23 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
             rd = new BufferedReader(new InputStreamReader(con.getInputStream()));
             String xmlstr = "";
             String nextln;
-            while ((nextln = rd.readLine()) != null) {
-                xmlstr += nextln.trim();
+            try {
+                // missing eof fpor some routers? fritz box?
+                while ((nextln = rd.readLine()) != null) {
+                    xmlstr += nextln.trim();
+                    System.out.println(nextln);
+                    if (nextln.toLowerCase(Locale.ENGLISH).contains("</s:body>")) {
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                Log.exception(e);
+                if (!StringUtils.isEmpty(xmlstr)) {
+                    return xmlstr;
+
+                } else {
+                    throw e;
+                }
             }
             return xmlstr;
         } finally {

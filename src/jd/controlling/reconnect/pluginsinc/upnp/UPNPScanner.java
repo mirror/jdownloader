@@ -9,6 +9,7 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,6 +19,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 import org.w3c.dom.Document;
@@ -233,12 +235,22 @@ public class UPNPScanner implements Runnable {
                 }
             }
         } catch (IOException e) {
-            // e.printStackTrace();
+            Log.exception(e);
         } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {
             close();
         }
+    }
+
+    public static void main(String[] args) {
+        try {
+            Log.L.setLevel(Level.ALL);
+            System.out.println(JSonStorage.toString(INSTANCE.scan()));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private static UPNPScanner INSTANCE = new UPNPScanner();
