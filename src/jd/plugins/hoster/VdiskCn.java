@@ -78,9 +78,7 @@ public class VdiskCn extends PluginForHost {
             }
         }
         if (dllink == null) {
-            dllink = br.getRegex("<div class=\"btn\"><a href=\"(http://[\\w\\.]+?vdisk\\.cn/down/[0-9A-Z]{2}/" + downloadLink.getMD5Hash() + "\\?key=[a-z0-9]{32}&tt=\\d+&st=\\w+&filename=" + downloadLink.getName() + ")\">").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("(http://[\\w\\.]+?vdisk\\.cn/down/[0-9A-Z]{2}/[A-Z0-9]{32}\\?key=[a-z0-9]{32}[^\"\\>]+)").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("(http://[\\w\\.]+?vdisk\\.cn/downfile/[0-9A-Z]{2}/[A-Z0-9]{32}\\?key=[a-z0-9]{32}[^\"\\>]+)").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("(http://[\\w\\.]+?vdisk\\.cn/down(file)?/[0-9A-Z]{2}/[A-Z0-9]{32}\\?key=[a-z0-9]{32}[^\"\\>]+)").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -4);
