@@ -27,6 +27,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videozer.com" }, urls = { "http://(www\\.)?videozer\\.com/(video|embed)/[A-Za-z0-9]+" }, flags = { 0 })
 public class VideozerCom extends PluginForHost {
@@ -51,8 +52,11 @@ public class VideozerCom extends PluginForHost {
     /* See jd.plugin.hoster.VideoBbCom */
     private String getFinalLink(final DownloadLink downloadLink, final String token) {
         try {
-            return new VideoBbCom.getFinallinkValue(internalKeys, token, br).DLLINK;
+            /* you have to make sure the plugin is loaded! */
+            JDUtilities.getPluginForHost("videobb.com");
+            return new jd.plugins.hoster.VideoBbCom.getFinallinkValue(internalKeys, token, br).DLLINK;
         } catch (final Throwable e) {
+            logger.severe(e.getMessage());
             return null;
         }
     }

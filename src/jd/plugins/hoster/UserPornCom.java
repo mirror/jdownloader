@@ -26,6 +26,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "userporn.com" }, urls = { "http://(www\\.)?userporn\\.com/(video/|watch_video\\.php\\?v=|e/)\\w+" }, flags = { 0 })
 public class UserPornCom extends PluginForHost {
@@ -53,7 +54,9 @@ public class UserPornCom extends PluginForHost {
         if (setting == null || !setting.startsWith("http://")) { return null; }
         br.getPage(setting);
         try {
-            return new VideoBbCom.getFinallinkValue(internalKeys, token, br).DLLINK;
+            /* you have to make sure the plugin is loaded! */
+            JDUtilities.getPluginForHost("videobb.com");
+            return new jd.plugins.hoster.VideoBbCom.getFinallinkValue(internalKeys, token, br).DLLINK;
         } catch (final Throwable e) {
             return null;
         }

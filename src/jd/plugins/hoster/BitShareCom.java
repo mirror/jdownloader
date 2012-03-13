@@ -251,6 +251,7 @@ public class BitShareCom extends PluginForHost {
                 dllink = br.getRegex(DLLINKREGEX).getMatch(0);
             }
             if (dllink == null) {
+                if (br.containsHTML("Your Traffic is used up for today.")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
