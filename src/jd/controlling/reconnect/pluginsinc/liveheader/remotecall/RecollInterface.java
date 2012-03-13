@@ -21,4 +21,6 @@ public interface RecollInterface extends RemoteCallInterface {
     public String getIsp(Requestor request);
 
     public boolean isReconnectPossible(Requestor request);
+
+    public String getManufactor(String mac);
 }

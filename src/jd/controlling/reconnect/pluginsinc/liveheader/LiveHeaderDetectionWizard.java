@@ -1,13 +1,8 @@
 package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -25,7 +20,6 @@ import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ReconnectResult;
-import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.RouterUtils;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.ipcheck.IPController;
@@ -738,45 +732,6 @@ public class LiveHeaderDetectionWizard {
 
     private String           gatewayAdressIP;
 
-    static String getManufactor(String mc) {
-        if (mc == null) { return null; }
-        // do not use IO.readFile to save mem
-        mc = mc.substring(0, 6);
-        BufferedReader f = null;
-        InputStreamReader isr = null;
-        InputStream fis = null;
-        try {
-
-            f = new BufferedReader(isr = new InputStreamReader(fis = Reconnecter.class.getResource("manlist.txt").openStream(), "UTF8"));
-            String line;
-
-            while ((line = f.readLine()) != null) {
-                if (line.startsWith(mc)) { return line.substring(7); }
-            }
-
-        } catch (final UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (final FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (final IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                f.close();
-            } catch (final Throwable e) {
-            }
-            try {
-                isr.close();
-            } catch (final Throwable e) {
-            }
-            try {
-                fis.close();
-            } catch (final Throwable e) {
-            }
-        }
-        return null;
-    }
-
     private void collectInfo() throws UnknownHostException, InterruptedException {
         final UPNPRouterPlugin upnp = (UPNPRouterPlugin) ReconnectPluginController.getInstance().getPluginByID(UPNPRouterPlugin.ID);
 
@@ -798,7 +753,7 @@ public class LiveHeaderDetectionWizard {
         try {
             mac = RouterUtils.getMacAddress(gatewayAdress).replace(":", "").toUpperCase(Locale.ENGLISH);
 
-            manufactor = getManufactor(mac);
+            manufactor = recoll.getManufactor(mac);
         } catch (final InterruptedException e) {
             throw e;
         } catch (final Exception e) {
