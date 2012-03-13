@@ -167,8 +167,11 @@ public class DailyMotionCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             } else {
                 // Prefer HD videos
-                dllink = new Regex(allLinks, "hqURL\":\"(http:.*?)\"").getMatch(0);
-                if (dllink == null) dllink = new Regex(allLinks, "sdURL\":\"(http:.*?)\"").getMatch(0);
+                getQuality("hd720URL", allLinks);
+                if (dllink == null) {
+                    getQuality("hqURL", allLinks);
+                    if (dllink == null) getQuality("sdURL", allLinks);
+                }
             }
         }
         if (dllink == null) {
@@ -194,6 +197,10 @@ public class DailyMotionCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private void getQuality(String quality, String allLinks) {
+        dllink = new Regex(allLinks, "\"" + quality + "\":\"(http:[^<>\"\\']+)\"").getMatch(0);
     }
 
     @Override

@@ -382,7 +382,7 @@ public class FileServeCom extends PluginForHost {
         if (br2.containsHTML("li>This file was either in breach of a copyright holder or deleted by the uploader")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br2.containsHTML("The file could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br2.containsHTML("File not available, please register as <a href=\"/login\\.php\">Premium</a> Member to download<br")) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.FileServeCom.errors.only4premium", "This file is only downloadable for premium users")); }
-        if (br2.containsHTML(">Your download link has expired")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download link expired, contact fileserve support", 10 * 60 * 1000l); }
+        if (br.getURL().contains("landing-error.php?error_code=1702") || br2.containsHTML("(>Your download link has expired|/landing\\-error\\.php\\?error_code=1702)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FileServeCom.errors.dllinkexpired", "Download link expired, contact the fileserve support"), 10 * 60 * 1000l); }
         if (br2.containsHTML("Captcha error") || this.br.containsHTML("incorrect-captcha")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         final String wait = br2.getRegex("You (have to|need to) wait (\\d+) seconds to start another download").getMatch(1);
         if (wait != null) {
@@ -407,7 +407,7 @@ public class FileServeCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "YOUR IP IS BANNED BY FILESERVE, PLEASE CONTACT THE FILESERVE SUPPORT!");
             }
         }
-        if (br2.containsHTML("landing\\-error\\.php") || br.getURL().contains("landing-")) {
+        if (br2.containsHTML("landing\\-error\\.php") || br2.getURL().contains("landing-")) {
             logger.warning("Unknown landing error!");
             logger.warning("Url = " + br2.getURL());
             logger.warning("html code = " + br2.toString());
