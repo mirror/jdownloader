@@ -860,18 +860,21 @@ public class LinkCrawler implements IOPermission {
 
             try {
                 final ArrayList<CrawledLink> distributedLinks = new ArrayList<CrawledLink>();
-                final DelayedRunnable distributeLinksDelayer = new DelayedRunnable(IOEQ.TIMINGQUEUE, wplg.getDistributeDelayerMinimum(), wplg.getDistributeDelayerMaximum()) {
+                final boolean useDelay = wplg.getDistributeDelayerMinimum() > 0;
+                int minimumDelay = Math.max(10, wplg.getDistributeDelayerMinimum());
+                int maximumDelay = wplg.getDistributeDelayerMaximum();
+                if (maximumDelay == 0) {
+                    maximumDelay = -1;
+                }
+                final DelayedRunnable distributeLinksDelayer = new DelayedRunnable(IOEQ.TIMINGQUEUE, minimumDelay, maximumDelay) {
 
                     @Override
                     public void delayedrun() {
                         synchronized (distributedLinks) {
                             if (distributedLinks.size() == 0) return;
-                            if (!checkStartNotify()) {
-                                distributedLinks.clear();
-                                return;
-                            }
                             final ArrayList<CrawledLink> distributeThis = new ArrayList<CrawledLink>(distributedLinks);
                             distributedLinks.clear();
+                            if (!checkStartNotify()) { return; }
                             /* enqueue distributing of the links */
                             threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
 
@@ -911,12 +914,26 @@ public class LinkCrawler implements IOPermission {
                             ret.setCustomCrawledLinkModifier(lm);
                             forwardCrawledLinkInfos(cryptedLink, ret);
                         }
-                        synchronized (distributedLinks) {
-                            /* synchronized adding */
-                            distributedLinks.addAll(possibleCryptedLinks);
+                        if (useDelay) {
+                            /* we delay the distribute */
+                            synchronized (distributedLinks) {
+                                /* synchronized adding */
+                                distributedLinks.addAll(possibleCryptedLinks);
+                            }
+                            /* restart delayer to distribute links */
+                            distributeLinksDelayer.run();
+                        } else {
+                            /* we do not delay the distribute */
+                            if (!checkStartNotify()) { return; }
+                            /* enqueue distributing of the links */
+                            threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+
+                                @Override
+                                void crawling() {
+                                    LinkCrawler.this.distribute(possibleCryptedLinks);
+                                }
+                            });
                         }
-                        /* restart delayer to distribute links */
-                        distributeLinksDelayer.run();
                     }
                 });
                 if (lct != null) {
