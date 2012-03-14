@@ -97,8 +97,11 @@ public class U115Com extends PluginForHost {
     /**
      * Here we got mirrors, sometimes a mirror does not work so we'll check
      * until we find a working one here
+     * 
+     * @throws PluginException
      */
-    private String findWorkingLink(String correctedBR) throws IOException {
+    private String findWorkingLink(String correctedBR) throws IOException, PluginException {
+        if (correctedBR.contains("\"msg_code\":50027")) throw new PluginException(LinkStatus.ERROR_FATAL, ACCOUNTNEEDEDUSERTEXT);
         String linksToDownload[] = new Regex(correctedBR, "\"url\":\"(http:.*?)\"").getColumn(0);
         if (linksToDownload == null || linksToDownload.length == 0) linksToDownload = new Regex(correctedBR, EXACTLINKREGEX).getColumn(0);
         if (linksToDownload == null || linksToDownload.length == 0) return null;
@@ -134,41 +137,6 @@ public class U115Com extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        requestFileInformation(link);
-        doFree(link, false);
-    }
-
-    public void doFree(DownloadLink link, boolean accountActive) throws Exception {
-        if (UNDERMAINTENANCEURL.equals(br.getRedirectLocation())) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
-        if (br.containsHTML(NOFREESLOTS)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment");
-        /**
-         * I don't know what this text means (google couldn't help) so i handle
-         * it like that
-         */
-        if ((!accountActive && br.containsHTML(ACCOUNTNEEDED)) || (!accountActive && !br.containsHTML("class=\"download\\-box\" id=\"js_download_"))) {
-            logger.warning("Only downloadable via account: " + link.getDownloadURL());
-            throw new PluginException(LinkStatus.ERROR_FATAL, ACCOUNTNEEDEDUSERTEXT);
-        }
-        String dllink = findLink(link);
-        if (dllink == null) {
-            logger.warning("dllink is null, seems like the regexes are defect!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        parseSHA1(link, br);
-        /** Don't do html decode, it can make the dllink invalid */
-        // dllink = Encoding.htmlDecode(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("(help_down.html|onclick=\"WaittingManager|action=submit_feedback|\"report_box\"|UploadErrorMsg)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     private void parseSHA1(DownloadLink link, Browser br) {
@@ -233,6 +201,33 @@ public class U115Com extends PluginForHost {
         parseSHA1(link, br);
         if (br.containsHTML(ACCOUNTNEEDED)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.u115com.only4registered", ACCOUNTNEEDEDUSERTEXT));
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink link) throws Exception {
+        this.setBrowserExclusive();
+        requestFileInformation(link);
+        doFree(link, false);
+    }
+
+    public void doFree(DownloadLink link, boolean accountActive) throws Exception {
+        if (UNDERMAINTENANCEURL.equals(br.getRedirectLocation())) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
+        if (br.containsHTML(NOFREESLOTS)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment");
+        String dllink = findLink(link);
+        if (dllink == null) {
+            logger.warning("dllink is null, seems like the regexes are defect!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        parseSHA1(link, br);
+        /** Don't do html decode, it can make the dllink invalid */
+        // dllink = Encoding.htmlDecode(dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("(help_down.html|onclick=\"WaittingManager|action=submit_feedback|\"report_box\"|UploadErrorMsg)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @SuppressWarnings("unchecked")

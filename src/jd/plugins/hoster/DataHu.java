@@ -91,6 +91,11 @@ public class DataHu extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 2;
+    }
+
+    @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
