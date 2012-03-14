@@ -58,6 +58,7 @@ public class TurboBitNet extends PluginForHost {
     private static String       MAINPAGE      = "http://turbobit.net";
 
     private static final Object LOCK          = new Object();
+
     private static final String COOKIE_HOST   = "http://turbobit.net";
 
     public TurboBitNet(final PluginWrapper wrapper) {
@@ -132,8 +133,8 @@ public class TurboBitNet extends PluginForHost {
         }
         if (id == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.getPage("/download/free/" + id);
-        if (br.containsHTML(parseImage("FE8CFBFAFA57CDE31BC2B798DF5141AB2DC171EC0852D89A1A135E3F116C83D15D8BF93A"))) {
-            waittime = br.getRegex(parseImage("FDDBFBFAFA57CDEF1A90B5CEDF5647AE2CC572EC0958DD981E125C68156882D65D82F869")).getMatch(0);
+        if (br.containsHTML(tb(0))) {
+            waittime = br.getRegex(tb(1)).getMatch(0);
             final int wait = waittime != null ? Integer.parseInt(waittime) : -1;
 
             if (wait > 31) {
@@ -143,7 +144,7 @@ public class TurboBitNet extends PluginForHost {
                 sleep(wait * 1000l, downloadLink);
             }
         }
-        waittime = br.getRegex(parseImage("FDDBFBFAFA57CDEF1A90B5CEDF5647AE2CC572EC0958DD981E125C68156882D65D82F869")).getMatch(0);
+        waittime = br.getRegex(tb(1)).getMatch(0);
         if (waittime != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l); }
 
         Form captchaform = null;
@@ -197,7 +198,7 @@ public class TurboBitNet extends PluginForHost {
         if (ttt != null) {
             tt = Integer.parseInt(ttt);
             if (tt < 60 || tt > 600) {
-                ttt = parseImageUrl(parseImage("fdd9fbf2fb05cde71a97b69edf5742f1289470bb0a5bd9c81a1b5e39116c85805982fc6e880ce26a201651b8ea211874e4232d90c59b6462ac28d2b26f0537385fa6") + tt + "};" + br.getRegex(parseImage("f980f8f7fa0acdb21b91b6cbdf5043fc2ac775ea080fd8c71a4f5d68156586d05982fd3e8b5ae33f244555e8eb201d77e12128cbc1c7")).getMatch(0), false);
+                ttt = parseImageUrl(tb(2) + tt + "};" + br.getRegex(tb(3)).getMatch(0), false);
                 if (ttt == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!", 10 * 60 * 60 * 1000l); }
                 tt = Integer.parseInt(ttt);
             }
@@ -207,7 +208,6 @@ public class TurboBitNet extends PluginForHost {
 
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         String res = parseImageUrl(br.getRegex(LnkCrptWs.IMAGEREGEX(null)).getMatch(0), false);
-        res = res == null ? parseImage("f9defbf7fa55cce11bc1b6cede0342f9299075e9085cd8cb1b1e5d68156586d159d9fe3b880fe338211651beec71192fe4232d9cc5986734ad25d6b0") + id : res;
         if (res != null) {
             sleep(tt * 1001, downloadLink);
             br.getPage(res);
@@ -320,27 +320,36 @@ public class TurboBitNet extends PluginForHost {
         }
     }
 
-    private String parseImage(final String s) {
-        return JDHexUtils.toString(LnkCrptWs.IMAGEREGEX(s));
-    }
-
-    private String parseImageUrl(final String fun, final boolean NULL) {
+    private String parseImageUrl(String fun, final boolean NULL) {
         if (fun == null) { return null; }
         if (!NULL) {
-            final String[] next = fun.split(parseImage("ff88"));
-            if (next == null || next.length != 2) { return new Regex(fun, parseImage("fedbfffbfe0bc9e41ac7b29ada5c47ae2d9772ed0b08d9c919495b6f163882d65d83f83d895ae63e251a55eaec261d2fe72429ccc59d6667ac20d2e26c5f32345effc9785d7cffca20f32fef5260c8b445fe8bdb6af198a19c8d2e972831784ec2253a5a68d98031391101f61f3f")).getMatch(3); }
-            Object result = new Object();
-            final ScriptEngineManager manager = new ScriptEngineManager();
-            final ScriptEngine engine = manager.getEngineByName("javascript");
-            try {
-                engine.eval(next[1]);
-                result = ((Double) engine.eval("Timeout.minLimit")).longValue();
-            } catch (final Throwable e) {
-                return null;
+            final String[] next = fun.split(tb(9));
+            if (next == null || next.length != 2) {
+                fun = rhino(fun, true);
+                if (fun == null) return null;
+                fun = new Regex(fun, tb(4)).getMatch(1);
+                return fun == null ? new Regex(fun, tb(5)).getMatch(0) : fun;
             }
-            return result.toString();
+            return rhino(next[1], false);
         }
-        return new Regex(fun, parseImage("ffdbfbfafa57cdef1a90b5cedf5647ae2cc572ec0958dd981e125c68156882d65d82f869")).getMatch(0);
+        return new Regex(fun, tb(1)).getMatch(0);
+    }
+
+    private String rhino(String s, boolean b) {
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            if (b) {
+                engine.eval(s + tb(6));
+                result = engine.get(tb(7));
+            } else {
+                result = ((Double) engine.eval(tb(8))).longValue();
+            }
+        } catch (final Throwable e) {
+            return null;
+        }
+        return result.toString();
     }
 
     private void prepareBrowser(final String userAgent) {
@@ -397,6 +406,21 @@ public class TurboBitNet extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+    }
+
+    private String tb(final int i) {
+        final String[] s = new String[10];
+        s[0] = "fe8cfbfafa57cde31bc2b798df5141ab2dc171ec0852d89a1a135e3f116c83d15d8bf93a";
+        s[1] = "fddbfbfafa57cdef1a90b5cedf5647ae2cc572ec0958dd981e125c68156882d65d82f869";
+        s[2] = "fdd9fbf2fb05cde71a97b69edf5742f1289470bb0a5bd9c81a1b5e39116c85805982fc6e880ce26a201651b8ea211874e4232d90c59b6462ac28d2b26f0537385fa6";
+        s[3] = "f980f8f7fa0acdb21b91b6cbdf5043fc2ac775ea080fd8c71a4f5d68156586d05982fd3e8b5ae33f244555e8eb201d77e12128cbc1c7";
+        s[4] = "fedbfffbf951ceb31ec7b3c8dd0146aa2ac775b60b08dc9b1a495f6d156d86805ad8f8328c01e63e204054bbeb7c1c70e07f29ccc19f6367a828d6ee6b0b376f5ef5c9735979ffc520a92bea553bc8e845a6";
+        s[5] = "f980ffa5f951ceb31ec7b3c8da5246fa2ac770bc0b0fdc9c1e13";
+        s[6] = "fc8efbf2fb01c9e61bc2b798df5146f82cc075bf0b5fd8c71a4e5f3e153a8781588ff86f890de26a221050eaee701824e4742d9cc1c66238a973";
+        s[7] = "fddefaf6fb07";
+        s[8] = "fe8cfbfafa57cde31bc2b798df5146ad29c071b6080edbca1a135f6f156984d75982fc6e8800e338";
+        s[9] = "ff88";
+        return JDHexUtils.toString(LnkCrptWs.IMAGEREGEX(s[i]));
     }
 
 }
