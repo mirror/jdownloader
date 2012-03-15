@@ -17,8 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -38,11 +42,9 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class IFilezCom extends PluginForHost {
 
     private static final String CAPTCHATEXT          = "includes/vvc\\.php\\?vvcid=";
-
     private static final String MAINPAGE             = "http://i-filez.com/";
-
+    private static final Object LOCK                 = new Object();
     private static final String ONLY4PREMIUM         = ">Owner of the file is restricted to download this file only Premium users";
-
     private static final String ONLY4PREMIUMUSERTEXT = "Only downloadable for premium users";
 
     public IFilezCom(PluginWrapper wrapper) {
@@ -52,37 +54,33 @@ public class IFilezCom extends PluginForHost {
         // this.setStartIntervall(11 * 1000l);
     }
 
+    @Override
+    public String getAGBLink() {
+        return "http://i-filez.com/terms";
+    }
+
     public void correctDownloadLink(DownloadLink link) {
         // Links come from a decrypter
         link.setUrlDownload(link.getDownloadURL().replace("i-filezdecrypted.com/", "i-filez.com/"));
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        account.setValid(true);
-        ai.setUnlimitedTraffic();
-        String expire = br.getRegex("href=\\'/myspace/space/premium\\'>(\\d{2}\\.\\d{2}\\.\\d{4} \\d{2}:\\d{2}:\\d{2})</a></div").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy hh:mm:ss", null));
-        }
-        ai.setStatus("Premium User");
-        return ai;
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://i-filez.com/terms";
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        // Set English language
+        br.setCookie(MAINPAGE, "sdlanguageid", "2");
+        br.setCustomCharset("utf-8");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>Файл не найден в базе i-filez\\.com\\. Возможно Вы неправильно указали ссылку\\.<|>File was not found in the i-filez\\.com database|It is possible that you provided wrong link\\.</p>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = new Regex(link.getDownloadURL(), "i-filez\\.com/downloads/i/\\d+/f/(.+)").getMatch(0);
+        String filesize = br.getRegex("<th>Size:</th>[\r\t\n ]+<td>(.*?)</td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim().replace(".html", "")));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        String md5 = br.getRegex("<th>MD5:</th>[\r\t\n ]+<td>([a-z0-9]{32})</td>").getMatch(0);
+        if (md5 != null) link.setMD5Hash(md5);
+        if (br.containsHTML(ONLY4PREMIUM)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -92,8 +90,8 @@ public class IFilezCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        // Max 2 connections at all, more only possible with luck
-        return 1;
+        // Max 8 connections at all, 4 per file
+        return 2;
     }
 
     @Override
@@ -138,10 +136,79 @@ public class IFilezCom extends PluginForHost {
         dl.startDownload();
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            // Load cookies
+            br.setCookiesExclusive(true);
+            final Object ret = account.getProperty("cookies", null);
+            boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (account.isValid()) {
+                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                        final String key = cookieEntry.getKey();
+                        final String value = cookieEntry.getValue();
+                        this.br.setCookie(MAINPAGE, key, value);
+                    }
+                    return;
+                }
+            }
+            // Set English language
+            br.setCookie(MAINPAGE, "sdlanguageid", "2");
+            br.setCustomCharset("utf-8");
+            br.postPage(MAINPAGE, "login=login&loginusername=" + Encoding.urlEncode(account.getUser()) + "&loginpassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&rememberme=on");
+            // Language not English? Change setting and go on!
+            if (!"2".equals(br.getCookie(MAINPAGE, "sdlanguageid"))) {
+                br.setCookie(MAINPAGE, "sdlanguageid", "2");
+                br.getPage(MAINPAGE);
+            }
+            if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null || !br.containsHTML(">Premium until")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // Save cookies
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = this.br.getCookies(MAINPAGE);
+            for (final Cookie c : add.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            account.setProperty("name", Encoding.urlEncode(account.getUser()));
+            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+            account.setProperty("cookies", cookies);
+        }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        // href='/myspace/space/premium'>12.03.13 19:46</a></div><div
+        String expire = br.getRegex("href=\\'/myspace/space/premium\\'>(\\d{2}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2})</a></div").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yy hh:mm", null));
+        }
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        login(account);
+        login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRegex("<th>A link for 24 hours:</th>[\t\n\r ]+<td><input type=\"text\" readonly=\"readonly\" class=\"text_field width100\" onclick=\"this\\.select\\(\\);\" value=\"(http://.*?)\"").getMatch(0);
@@ -151,51 +218,13 @@ public class IFilezCom extends PluginForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        // Set English language
-        br.setCookie(MAINPAGE, "sdlanguageid", "2");
-        br.setCustomCharset("utf-8");
-        br.postPage(MAINPAGE, "login=login&loginusername=" + Encoding.urlEncode(account.getUser()) + "&loginpassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&rememberme=on");
-        // Language not English? Change setting and go on!
-        if (!"2".equals(br.getCookie(MAINPAGE, "sdlanguageid"))) {
-            br.setCookie(MAINPAGE, "sdlanguageid", "2");
-            br.getPage(MAINPAGE);
-        }
-        if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null || !br.containsHTML(">Premium account till")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        // Set English language
-        br.setCookie(MAINPAGE, "sdlanguageid", "2");
-        br.setCustomCharset("utf-8");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Файл не найден в базе i-filez\\.com\\. Возможно Вы неправильно указали ссылку\\.<|>File was not found in the i-filez\\.com database|It is possible that you provided wrong link\\.</p>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = new Regex(link.getDownloadURL(), "i-filez\\.com/downloads/i/\\d+/f/(.+)").getMatch(0);
-        String filesize = br.getRegex("<th>Size:</th>[\r\t\n ]+<td>(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim().replace(".html", "")));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        String md5 = br.getRegex("<th>MD5:</th>[\r\t\n ]+<td>([a-z0-9]{32})</td>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
-        if (br.containsHTML(ONLY4PREMIUM)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT));
-        return AvailableStatus.TRUE;
     }
 
     @Override

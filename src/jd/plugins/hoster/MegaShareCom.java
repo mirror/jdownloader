@@ -39,7 +39,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.com" }, urls = { "http://[\\w\\.]*?megashare\\.com/[0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.com" }, urls = { "http://(www\\.)?megashare\\.com/[0-9]+" }, flags = { 2 })
 public class MegaShareCom extends PluginForHost {
 
     private static final String UA     = RandomUserAgent.generate();
@@ -49,6 +49,28 @@ public class MegaShareCom extends PluginForHost {
         super(wrapper);
         setStartIntervall(2000l);
         this.enablePremium("http://www.megashare.com/premium.php");
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
+        br.getHeaders().put("User-Agent", UA);
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Not Found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        Form freeForm = br.getForm(1);
+        if (freeForm == null) freeForm = br.getForm(0);
+        freeForm.remove("PremDz");
+        freeForm.remove("PremDz");
+        final String crap = br.getRegex("src=\"images/dwn\\-btn3\\.gif\" name=\"(.*?)\"").getMatch(0);
+        if (freeForm == null || crap == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        freeForm.put(Encoding.urlEncode(crap) + ".x", Integer.toString(new Random().nextInt(100)));
+        freeForm.put(Encoding.urlEncode(crap) + ".y", Integer.toString(new Random().nextInt(100)));
+        br.submitForm(freeForm);
+        if (br.containsHTML("This File has been DELETED")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        final String filename = br.getRegex("addthis_open\\(this, \\'\\', \\'http://(www\\.)?MegaShare\\.com\\d+\\', \\'(.*?)\\'\\)").getMatch(1);
+        if (filename != null) downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -137,7 +159,6 @@ public class MegaShareCom extends PluginForHost {
         remove.add("image");
         getForm(remove);
         if (DLFORM == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
         /* captcha */
         final File captchaFile = getLocalCaptchaFile();
         int i = 15;
@@ -264,26 +285,6 @@ public class MegaShareCom extends PluginForHost {
         br.postPage("http://www.megashare.com/login.php", post);
         br.setFollowRedirects(false);
         if (br.getCookie("http://www.megashare.com", "username") == null || br.getCookie("http://www.megashare.com", "password") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        setBrowserExclusive();
-        br.getHeaders().put("User-Agent", UA);
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Not Found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        Form freeForm = br.getForm(1);
-        if (freeForm == null) freeForm = br.getForm(0);
-        final String crap = br.getRegex("src=\"images/dwn\\-btn3\\.gif\" name=\"(.*?)\"").getMatch(0);
-        if (freeForm == null || crap == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        freeForm.put(Encoding.urlEncode(crap) + ".x", Integer.toString(new Random().nextInt(100)));
-        freeForm.put(Encoding.urlEncode(crap) + ".y", Integer.toString(new Random().nextInt(100)));
-        br.submitForm(freeForm);
-        if (br.containsHTML("This File has been DELETED")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        final String filename = br.getRegex("addthis_open\\(this, \\'\\', \\'http://(www\\.)?MegaShare\\.com\\d+\\', \\'(.*?)\\'\\)").getMatch(1);
-        if (filename != null) downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
-        return AvailableStatus.TRUE;
     }
 
     @Override

@@ -58,6 +58,49 @@ public class MegasharesCom extends PluginForHost {
         enablePremium("http://www.megashares.com/lc_order.php?tid=sasky");
     }
 
+    private AvailableStatus requestFileInformationInternal(DownloadLink downloadLink) throws IOException, PluginException {
+        br.getHeaders().put("User-Agent", UserAgent);
+        synchronized (LOCK) {
+            restoreCookies(br, premCookies);
+        }
+        loadpage(downloadLink.getDownloadURL());
+        /* new filename, size regex */
+        String fln = br.getRegex("FILE Download.*?>.*?>(.*?)<").getMatch(0);
+        String dsize = br.getRegex("FILE Download.*?>.*?>.*?>(\\d+.*?)<").getMatch(0);
+        try {
+            renew(br, 0);
+            if (br.containsHTML("class=\"order_push_box_left(_2)?\">")) {
+                renew(br, 1);
+            }
+            if (br.containsHTML("Invalid link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("You already have the maximum")) {
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.megasharescom.errors.alreadyloading", "Cannot check, because aready loading file"));
+                return AvailableStatus.UNCHECKABLE;
+            }
+            if (br.containsHTML("All download slots for this link are currently filled")) {
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.megasharescom.errors.allslotsfilled", "Cannot check, because all slots filled"));
+                return AvailableStatus.UNCHECKABLE;
+            }
+            if (br.containsHTML("This link requires a password")) {
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.megasharescom.errors.passwordprotected", "Password protected download"));
+                return AvailableStatus.UNCHECKABLE;
+            }
+            if (br.containsHTML("This link is currently offline")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This link is currently offline for scheduled maintenance, please try again later", 60 * 60 * 1000l);
+            /* fallback regex */
+            if (dsize == null) dsize = br.getRegex("Filesize:</span></strong>(.*?)<br />").getMatch(0);
+            if (fln == null) fln = br.getRegex("download page link title.*?<h1 class=.*?>(.*?)<").getMatch(0);
+            if (dsize == null || fln == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String betterfln = br.getRegex("download page link title.*?class=.*?style=.*?title=\"(.*?)\"").getMatch(0);
+            if ((fln.endsWith("...") && betterfln != null) || (betterfln != null && betterfln.length() >= fln.length())) {
+                fln = betterfln;
+            }
+            return AvailableStatus.TRUE;
+        } finally {
+            if (dsize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(dsize));
+            if (fln != null) downloadLink.setName(fln.trim());
+        }
+    }
+
     private boolean checkPassword(DownloadLink link) throws Exception {
 
         if (br.containsHTML("This link requires a password")) {
@@ -193,7 +236,7 @@ public class MegasharesCom extends PluginForHost {
         // Reconnet/wartezeit check
 
         // Captchacheck
-        if (br.containsHTML("Your Passport needs to be reactivated.")) {
+        if (br.containsHTML("Your Passport needs to be reactivated\\.")) {
             String captchaAddress = br.getRegex("then hit the \"Reactivate Passport\" button\\.</dt>.*?<dd><img src=\"(.*?)\"").getMatch(0);
             if (captchaAddress == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             HashMap<String, String> input = HTMLParser.getInputHiddenFields(br + "");
@@ -349,49 +392,6 @@ public class MegasharesCom extends PluginForHost {
         setBrowserExclusive();
         br.setDebug(true);
         return requestFileInformationInternal(downloadLink);
-    }
-
-    private AvailableStatus requestFileInformationInternal(DownloadLink downloadLink) throws IOException, PluginException {
-        br.getHeaders().put("User-Agent", UserAgent);
-        synchronized (LOCK) {
-            restoreCookies(br, premCookies);
-        }
-        loadpage(downloadLink.getDownloadURL());
-        /* new filename, size regex */
-        String fln = br.getRegex("FILE Download.*?>.*?>(.*?)<").getMatch(0);
-        String dsize = br.getRegex("FILE Download.*?>.*?>.*?>(\\d+.*?)<").getMatch(0);
-        try {
-            renew(br, 0);
-            if (br.containsHTML("class=\"order_push_box_left(_2)?\">")) {
-                renew(br, 1);
-            }
-            if (br.containsHTML("Invalid link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("You already have the maximum")) {
-                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.megasharescom.errors.alreadyloading", "Cannot check, because aready loading file"));
-                return AvailableStatus.UNCHECKABLE;
-            }
-            if (br.containsHTML("All download slots for this link are currently filled")) {
-                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.megasharescom.errors.allslotsfilled", "Cannot check, because all slots filled"));
-                return AvailableStatus.UNCHECKABLE;
-            }
-            if (br.containsHTML("This link requires a password")) {
-                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.megasharescom.errors.passwordprotected", "Password protected download"));
-                return AvailableStatus.UNCHECKABLE;
-            }
-            if (br.containsHTML("This link is currently offline")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This link is currently offline for scheduled maintenance, please try again later", 60 * 60 * 1000l);
-            /* fallback regex */
-            if (dsize == null) dsize = br.getRegex("Filesize:</span></strong>(.*?)<br />").getMatch(0);
-            if (fln == null) fln = br.getRegex("download page link title.*?<h1 class=.*?>(.*?)<").getMatch(0);
-            if (dsize == null || fln == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String betterfln = br.getRegex("download page link title.*?class=.*?style=.*?title=\"(.*?)\"").getMatch(0);
-            if ((fln.endsWith("...") && betterfln != null) || (betterfln != null && betterfln.length() >= fln.length())) {
-                fln = betterfln;
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            if (dsize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(dsize));
-            if (fln != null) downloadLink.setName(fln.trim());
-        }
     }
 
     @Override

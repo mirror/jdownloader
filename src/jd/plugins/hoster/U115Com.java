@@ -207,10 +207,10 @@ public class U115Com extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        doFree(link, false);
+        doFree(link);
     }
 
-    public void doFree(DownloadLink link, boolean accountActive) throws Exception {
+    public void doFree(DownloadLink link) throws Exception {
         if (UNDERMAINTENANCEURL.equals(br.getRedirectLocation())) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
         if (br.containsHTML(NOFREESLOTS)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment");
         String dllink = findLink(link);
@@ -289,7 +289,7 @@ public class U115Com extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.getPage(link.getDownloadURL());
-        doFree(link, true);
+        doFree(link);
     }
 
     @Override

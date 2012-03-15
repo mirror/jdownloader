@@ -31,13 +31,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datpiff.com" }, urls = { "http://(www\\.)?datpiff\\.com/(.*?\\-download\\.php\\?id=[a-z0-9]+|[A-Za-z0-9\\-_]+\\.\\d+\\.html)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datpiff.com" }, urls = { "http://(www\\.)?datpiff\\.com/(.*?\\-download\\.php\\?id=[a-z0-9]+|[A-Za-z0-9\\-_]+\\.\\d+\\.html|mixtapes\\-detail\\.php\\?id=\\d+)" }, flags = { 2 })
 public class DatPiffCom extends PluginForHost {
 
     private static final String PREMIUMONLY            = ">you must be logged in to download mixtapes<";
-
     private static final String ONLYREGISTEREDUSERTEXT = "Only downloadable for registered users";
-
     private static final String MAINPAGE               = "http://www.datpiff.com/";
 
     public DatPiffCom(PluginWrapper wrapper) {
@@ -46,7 +44,9 @@ public class DatPiffCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) throws IOException {
-        if (!link.getDownloadURL().contains("-download.php")) {
+        if (link.getDownloadURL().matches("http://(www\\.)?datpiff\\.com/mixtapes\\-detail\\.php\\?id=\\d+")) {
+            link.setUrlDownload(link.getDownloadURL().replace("datpiff.com/mixtapes-detail.php?id=", "datpiff.com/pop-mixtape-download.php?id="));
+        } else if (!link.getDownloadURL().contains("-download.php")) {
             br.getPage(link.getDownloadURL());
             String downID = br.getRegex("openMixtape\\( \\'(.*?)\\'").getMatch(0);
             if (downID == null) downID = br.getRegex("mixtapePlayer\\.swf\\?mid=(.*?)\"").getMatch(0);
