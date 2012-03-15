@@ -702,3 +702,5 @@ jd/plugins/decrypter/LixkMe.class
 jd/plugins/decrypter/FilkeHookComFolder.class
 jd/plugins/decrypter/FcTv.class
 jd/plugins/hoster/BulletUploadCom.class
+jd/plugins/decrypter/SkipFileComUser.class
+jd/plugins/hoster/SkipFileCom.class
