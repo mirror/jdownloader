@@ -46,6 +46,11 @@ public class GigaDe extends PluginForDecrypt {
             return null;
         }
         for (String[] singleLink : links) {
+            /**
+             * Change normal links to HD links, this will work as long as they
+             * always look the same. If this is changed we can use the ID
+             * (singleLink[0]) to get the HD link
+             */
             DownloadLink dl = createDownloadlink("directhttp://" + singleLink[2].replace("-normal.mp4", "-hd.mp4"));
             dl.setFinalFileName(Encoding.htmlDecode(singleLink[1].trim()) + ".mp4");
             decryptedLinks.add(dl);

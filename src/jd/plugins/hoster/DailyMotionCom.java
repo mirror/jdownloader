@@ -33,14 +33,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://(www\\.)?dailymotion\\.com/video/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://(www\\.)?dailymotion\\.com/video/[a-z0-9\\-_]+" }, flags = { 2 })
 public class DailyMotionCom extends PluginForHost {
 
     public String               dllink                 = null;
     private static final String MAINPAGE               = "http://www.dailymotion.com/";
-    private static final String REGISTEREDONLY1        = "this content as suitable for mature audiences only";
-    private static final String REGISTEREDONLY2        = "You must be logged in, over 18 years old, and set your family filter OFF, in order to watch it";
+    private static final String REGISTEREDONLY         = "(his content as suitable for mature audiences only|You must be logged in, over 18 years old, and set your family filter OFF, in order to watch it)";
     private static final String REGISTEREDONLYUSERTEXT = "Download only possible for registered users";
+    private static final String COUNTRYBLOCK           = "(Dein Land nicht abrufbar|this content is not available for your country)";
+    private static final String COUNTRYBLOCKUSERTEXT   = "This video is not available for your country";
     private String[]            subtitles              = null;
 
     public DailyMotionCom(PluginWrapper wrapper) {
@@ -107,7 +108,8 @@ public class DailyMotionCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (dllink.contains(REGISTEREDONLY1) || dllink.contains(REGISTEREDONLY2)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.dailymotioncom.only4registered", REGISTEREDONLYUSERTEXT));
+        if (new Regex(dllink, REGISTEREDONLY).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.dailymotioncom.only4registered", REGISTEREDONLYUSERTEXT));
+        if (new Regex(dllink, COUNTRYBLOCK).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.dailymotioncom.only4registered", COUNTRYBLOCKUSERTEXT));
         doFree(downloadLink);
     }
 
@@ -154,16 +156,22 @@ public class DailyMotionCom extends PluginForHost {
         if (dllink != null) {
             String allLinks = Encoding.htmlDecode(dllink).replace("\\", "");
             logger.info("alllinkstext: " + allLinks);
-            if (allLinks.contains("Dein Land nicht abrufbar")) {
+            if (new Regex(allLinks, COUNTRYBLOCK).matches()) {
                 // Video not available for your country, let's get the
                 // downloadUrl from another place
                 logger.info("This video is not available for this country, trying to get the url from another place...");
                 dllink = br.getRegex("addVariable\\(\"video\", \"(http://.*?)\"\\)").getMatch(0);
                 if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?dailymotion\\.com/cdn/.*?)\"").getMatch(0);
-            } else if (allLinks.contains(REGISTEREDONLY1) || allLinks.contains(REGISTEREDONLY2)) {
+                if (dllink == null) {
+                    downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.countryblocked", COUNTRYBLOCKUSERTEXT));
+                    downloadLink.setName(filename + ".mp4");
+                    dllink = COUNTRYBLOCK;
+                    return AvailableStatus.TRUE;
+                }
+            } else if (new Regex(allLinks, REGISTEREDONLY).matches()) {
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.only4registered", REGISTEREDONLYUSERTEXT));
                 downloadLink.setName(filename + ".mp4");
-                dllink = REGISTEREDONLY1 + " " + REGISTEREDONLY2;
+                dllink = REGISTEREDONLY;
                 return AvailableStatus.TRUE;
             } else {
                 // Prefer HD videos
