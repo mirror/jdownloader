@@ -176,7 +176,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @AboutConfig
     @Description("Enable/disable Enable/disable Clipboard monitoring")
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     boolean isClipboardMonitored();
 
     void setClipboardMonitored(boolean b);
