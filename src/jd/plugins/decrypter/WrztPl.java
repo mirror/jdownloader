@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuta.pl" }, urls = { "http://[\\w\\.\\-]+?wrzuta\\.pl/katalog/[a-zA-Z0-9]{11}(/[\\w\\-]+/\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuta.pl" }, urls = { "http://[\\w\\.\\-]+?wrzuta\\.pl/katalog/[a-zA-Z0-9]{11}(/[\\w\\-\\.]+/\\d+)?" }, flags = { 0 })
 public class WrztPl extends PluginForDecrypt {
 
     public WrztPl(PluginWrapper wrapper) {
@@ -57,7 +57,7 @@ public class WrztPl extends PluginForDecrypt {
             fpName = fpName + " - All Pages";
         } else {
             parsePage(decryptedLinks, id);
-            fpName = fpName + " - Page " + new Regex(parameter, "http://[\\w\\.\\-]+?wrzuta\\.pl/katalog/[a-zA-Z0-9]{11}/[\\w\\-]+/(\\d+)").getMatch(0);
+            fpName = fpName + " - Page " + new Regex(parameter, "http://[\\w\\.\\-]+?wrzuta\\.pl/katalog/[a-zA-Z0-9]{11}/[\\w\\-\\.]+/(\\d+)").getMatch(0);
         }
 
         if (fpName != null) {
@@ -79,7 +79,7 @@ public class WrztPl extends PluginForDecrypt {
     }
 
     private boolean parseNextPage(ArrayList<DownloadLink> ret, String id) throws IOException {
-        String nextPage = br.getRegex("<li><a href=\"(http://[\\w\\.\\-]+?wrzuta\\.pl/katalog/" + id + "/[\\w\\.\\-]+/\\d+)\">Następna</a></li>").getMatch(0);
+        String nextPage = br.getRegex("<li[^>]+><a href=\"(http://[\\w\\.\\-]+?wrzuta\\.pl/katalog/" + id + "/[\\w\\.\\-]+/\\d+)\">Następna</a></li>").getMatch(0);
         nextPage = new Regex(nextPage, "(http://[\\w\\.\\-]+?wrzuta\\.pl/katalog/" + id + "/.*?/\\d+)").getMatch(0);
         if (nextPage != null) {
             br.getPage(nextPage);
