@@ -85,6 +85,10 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             if (parameter.contains("9.bb/") && br.getRedirectLocation() != null) {
                 br.getPage(br.getRedirectLocation());
             }
+            if (br.containsHTML("(<b style=\"font\\-size: 20px;\">Sorry the page you are looking for does not exist|>404 Not Found<)")) {
+                logger.info("adf.ly link offline: " + parameter);
+                return decryptedLinks;
+            }
             finallink = br.getRedirectLocation();
             if (finallink == null) {
                 finallink = br.getRegex("\\.attr\\((\"|\\')href(\"|\\'), \\'(.*?)\\'\\)").getMatch(2);
@@ -102,15 +106,14 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                     decryptedLinks.add(createDownloadlink(aLink));
                 }
             }
-            if (finallink == null) {
-                finallink = br.getRegex("var url = \\'(.*?)\\'").getMatch(0);
+            final String extendedProtection = br.getRegex("\\'(https?://adf\\.ly/go/[A-Za-z0-9/]+)\\'").getMatch(0);
+            if (extendedProtection != null) {
+                br.getPage(extendedProtection);
+                finallink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"\\d+; URL=(http://[^<>\"\\']+)\"").getMatch(0);
             }
             if (finallink == null) {
                 logger.warning("adf.ly single regex broken for link: " + parameter);
                 finallink = "dummytext";
-            }
-            if (finallink.contains("mooleech.co.cc")) {
-                dh = true;
             }
         } else if (parameter.contains("link.songs.pk/") || parameter.contains("songspk.info/ghazals/download/ghazals.php?id=")) {
             finallink = br.getRedirectLocation();

@@ -160,7 +160,7 @@ public class ShareFlareNet extends PluginForHost {
             if (dllink == null) {
                 /** If waittime still exists we should have a server error */
                 wait = br.getRegex("y =[ ]+(\\d+);").getMatch(0);
-                if (wait != null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 60 * 60 * 1000l);
+                if (wait != null) logger.info("Either server error or plugin broken!\n");
                 logger.warning("dllink is null");
                 logger.info(debug);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

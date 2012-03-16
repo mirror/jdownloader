@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?filestube\\.com/(?!source|search).+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?(filestube\\.com/(?!source|search)|video\\.filestube\\.com/watch,[a-z0-9]+/).+\\.html" }, flags = { 0 })
 public class FlStbCm extends PluginForDecrypt {
 
     public FlStbCm(PluginWrapper wrapper) {
@@ -39,16 +39,24 @@ public class FlStbCm extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         FilePackage fp = FilePackage.getInstance();
-        br.getPage(parameter.toString());
+        final String parameter = param.toString();
+        br.getPage(parameter);
         if (br.containsHTML("(Requested file was not found|Error 404 \\-)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        if (parameter.toString().contains("/go.html")) {
+        if (parameter.contains("/go.html")) {
             String finallink = br.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
             if (finallink == null) finallink = br.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
             if (finallink == null) return null;
             decryptedLinks.add(createDownloadlink(finallink));
+        } else if (parameter.contains("video.filestube.com/watch")) {
+            final String youtubeID = br.getRegex("name=\"src\" value=\"http://(www\\.)?youtube\\.com/v/([^<>\"\\'/\\&]+)\\&").getMatch(1);
+            if (youtubeID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink("http://www.youtube.com/watch?v=" + youtubeID));
         } else {
             String fpName = br.getRegex("<title>(.*?)\\- Download").getMatch(0);
             // Hmm this plugin should always have a name with that mass of
@@ -71,7 +79,10 @@ public class FlStbCm extends PluginForDecrypt {
             if (pagePiece == null) return null;
             String temp[] = pagePiece.split("\r\n");
             if (temp == null) return null;
-            if (temp == null || temp.length == 0) return null;
+            if (temp == null || temp.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             for (String data : temp)
                 decryptedLinks.add(createDownloadlink(data));
             if (alternativeLinks != null && alternativeLinks.length != 0) {

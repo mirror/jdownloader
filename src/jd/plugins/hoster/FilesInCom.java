@@ -20,7 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.html.Form;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -46,26 +46,35 @@ public class FilesInCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>File Not Found, may be deleted by user|<title>FilesIn\\.com \\| Upload your files fast,easy and free</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?) \\| FilesIn\\.com</title>").getMatch(0);
+        String filesize = br.getRegex("<div>File size <b>(.*?)</b>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        Form freeform = br.getForm(0);
-        if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.submitForm(freeform);
+        String freeLink = br.getRegex("<tr><td style=\"padding\\-left: 50px;\"><a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+        if (freeLink == null) freeLink = br.getRegex("\"(http://(www\\.)?filesin\\.com/[A-Z0-9]+/[A-Z0-9]+/" + downloadLink.getName() + ".html)\"").getMatch(0);
+        if (freeLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(freeLink);
+        final String rcID = br.getRegex("\\?k=([^<>\"\\'/]+)\"").getMatch(0);
+        if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        rc.setId(rcID);
         for (int i = 0; i <= 5; i++) {
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.parse();
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
-            rc.getForm().put("recaptcha_response_field", c);
-            rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, rc.getForm(), false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, freeLink, "download=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, false, 1);
             if (!dl.getConnection().getContentType().contains("html")) break;
             br.followConnection();
             if (br.containsHTML(RECAPTCHAFAILED)) continue;
@@ -79,28 +88,19 @@ public class FilesInCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>File Not Found|may be deleted by user or administrator\\.</|<title>FilesIn\\.com \\| Upload your files fast,easy and free</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1 stlye=\"margin: 2px;\">(.*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) \\| FilesIn\\.com</title>").getMatch(0);
-        String filesize = br.getRegex("<p>File Size: (.*?)</p>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override
