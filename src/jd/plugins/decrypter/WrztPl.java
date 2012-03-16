@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuta.pl" }, urls = { "http://[\\w\\.\\-]+?wrzuta\\.pl/katalog/[a-zA-Z0-9]{11}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuta.pl" }, urls = { "http://[\\w\\.\\-]+?wrzuta\\.pl/katalog/[a-zA-Z0-9]{11}(/[\\w\\-]+/\\d+)?" }, flags = { 0 })
 public class WrztPl extends PluginForDecrypt {
 
     public WrztPl(PluginWrapper wrapper) {
@@ -51,8 +51,14 @@ public class WrztPl extends PluginForDecrypt {
         if (fpName == null) fpName = br.getRegex("<title>WRZUTA - (.*?) - katalog djszymonx</title>").getMatch(0);
         if (fpName == null) fpName = "Untitled";
 
-        parsePage(decryptedLinks, id);
-        parseNextPage(decryptedLinks, id);
+        if (parameter.matches("http://[\\w\\.\\-]+?wrzuta\\.pl/katalog/[a-zA-Z0-9]{11}")) {
+            parsePage(decryptedLinks, id);
+            parseNextPage(decryptedLinks, id);
+            fpName = fpName + " - All Pages";
+        } else {
+            parsePage(decryptedLinks, id);
+            fpName = fpName + " - Page " + new Regex(parameter, "http://[\\w\\.\\-]+?wrzuta\\.pl/katalog/[a-zA-Z0-9]{11}/[\\w\\-]+/(\\d+)").getMatch(0);
+        }
 
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
