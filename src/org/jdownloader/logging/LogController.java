@@ -40,6 +40,8 @@ public class LogController {
             ret.addHandler(cHandler);
             try {
                 // log file max size 100K, 3 rolling files, append-on-open     
+
+                Application.getResource("logs").mkdirs();
                 Handler fileHandler = new FileHandler(Application.getResource("logs/" + ret.getName()).getAbsolutePath(), 100000, 5, true);
                 fileHandler.setFormatter(new LogFormatter());
                 ret.addHandler(fileHandler);
