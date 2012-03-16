@@ -116,7 +116,7 @@
 			</filterchain>
 		</loadfile>
 		<echo file="${working}/version.nfo">${svn.revision}.${updateclient.revision}</echo>
-
+		<echo file="${working}/cfg/version.cfg">${svn.revision}</echo>
 
 	</target>
 
