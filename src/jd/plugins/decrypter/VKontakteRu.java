@@ -38,7 +38,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+)|(photos|id)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album\\d+_\\d+|photo(\\-)?\\d+_\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+)|(photos|id)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album\\d+_\\d+|photo(\\-)?\\d+_\\d+)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -128,15 +128,15 @@ public class VKontakteRu extends PluginForDecrypt {
     private ArrayList<DownloadLink> decryptAudioAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
         br.getPage(parameter);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://vk.com/audio", "act=load_audios_silent&al=1&edit=0&gid=0&id=" + new Regex(parameter, "id=(\\d+)$").getMatch(0));
-        String[][] audioLinks = br.getRegex("\\'(http://cs\\d+\\.vk\\.com/u\\d+/audio/[a-z0-9]+\\.mp3)\\',\\'\\d+\\',\\'\\d+:\\d+\\',\\'(.*?)\\',\\'(.*?)\\'").getMatches();
+        br.postPage("http://vk.com/audio", "act=load_audios_silent&al=1&edit=0&id=0&gid=" + new Regex(parameter, "(\\d+)$").getMatch(0));
+        String[][] audioLinks = br.getRegex("\\'(http://cs\\d+\\.(vk\\.com|userapi\\.com)/u\\d+/audio/[a-z0-9]+\\.mp3)\\',\\'\\d+\\',\\'\\d+:\\d+\\',\\'(.*?)\\',\\'(.*?)\\'").getMatches();
         if (audioLinks == null || audioLinks.length == 0) return null;
         for (String audioInfo[] : audioLinks) {
             String finallink = audioInfo[0];
             if (finallink == null) return null;
             DownloadLink dl = createDownloadlink("directhttp://" + finallink);
             // Set filename so we have nice filenames here ;)
-            dl.setFinalFileName(Encoding.htmlDecode(audioInfo[1].trim()) + " - " + Encoding.htmlDecode(audioInfo[2].trim()) + ".mp3");
+            dl.setFinalFileName(Encoding.htmlDecode(audioInfo[2].trim()) + " - " + Encoding.htmlDecode(audioInfo[3].trim()) + ".mp3");
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
