@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,20 +29,25 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision: 14480 $", interfaceVersion = 2, names = { "fizy.com" }, urls = { "http://((www|[a-z]+)\\.)?fizy\\.com/(#?s/)?[a-z0-9]+" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision: 14480 $", interfaceVersion = 2, names = { "fizy.com" }, urls = { "rtmphttp://((www|[a-z]+)\\.)?fizy\\.com/(#?s/)?[a-z0-9]+" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class FizyCom extends PluginForHost {
 
-    private String clipUrl              = null;
-    private String clipNetConnectionUrl = null;
+    private String        clipUrl              = null;
+
+    private static String clipNetConnectionUrl = "rtmp://fizy.mncdn.net/fizy/";
+
+    private static String INCLUDING_YT         = "INCLUDING_YT";
 
     public FizyCom(final PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/#s/", "/s/"));
+        link.setUrlDownload(link.getDownloadURL().replace("rtmphttp", "http"));
     }
 
     private String decodeUnicode(final String s) {
@@ -84,13 +91,6 @@ public class FizyCom extends PluginForHost {
             rtmp.setTimeOut(1);
 
             ((RTMPDownload) dl).startDownload();
-        } else if (downloadLink.getDownloadURL().startsWith("http")) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -112,21 +112,15 @@ public class FizyCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         final String dllink = downloadLink.getDownloadURL();
-        if (downloadLink.hasProperty("isRTMP") && downloadLink.getBooleanProperty("isRTMP", true)) {
-            if (dllink.matches("http://(www\\.)*?fizy\\.com/s/[a-z0-9]+")) {
-                final String sid = dllink.substring(dllink.lastIndexOf("/") + 1);
-                if (sid == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-                br.postPage("http://fizy.com/fizy::getSong", "SID=" + sid);
-                final String filename = br.getRegex("title\":\"(.*?)\"").getMatch(0).trim();
-                String ext = br.getRegex("type\":\"(.*?)\"").getMatch(0);
-                clipUrl = br.getRegex("source\":\"(.*?)\"").getMatch(0);
-                clipNetConnectionUrl = "rtmp://fizy.mncdn.net/fizy/";
-                if (filename == null || clipUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-                ext = ext == null ? "m4a" : ext;
-                downloadLink.setFinalFileName(decodeUnicode(filename) + "." + ext);
-                return AvailableStatus.TRUE;
-            }
-        }
+        final String sid = dllink.substring(dllink.lastIndexOf("/") + 1);
+        if (sid == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        br.postPage("http://fizy.com/fizy::getSong", "SID=" + sid);
+        final String filename = br.getRegex("title\":\"(.*?)\"").getMatch(0).trim();
+        String ext = br.getRegex("type\":\"(.*?)\"").getMatch(0);
+        clipUrl = br.getRegex("source\":\"(.*?)\"").getMatch(0);
+        if (filename == null || clipUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        ext = ext == null ? "mp3" : ext;
+        downloadLink.setFinalFileName(decodeUnicode(filename) + "." + ext);
         return AvailableStatus.TRUE;
     }
 
@@ -142,4 +136,7 @@ public class FizyCom extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), INCLUDING_YT, JDL.L("plugins.hoster.fizycom.includingyt", "Including youtube links?")).setDefaultValue(false));
+    }
 }

@@ -42,7 +42,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "http://(www\\.)?shahid\\.mbc\\.net/media/video/\\d+/(\\w+)?\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "http://(www\\.)?shahid\\.mbc\\.net/media/video/\\d+(/\\w+)?" }, flags = { 0 })
 public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
 
     public static enum Quality {

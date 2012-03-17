@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -18,12 +18,15 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashMap;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -32,11 +35,30 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fizy.com" }, urls = { "http://\\w+\\.fizy\\.com/p/[0-9a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fizy.com" }, urls = { "http://(((?!www).*)\\.)?fizy\\.com/?(#?(s|p|u)/(s/)?\\w+)?" }, flags = { 0 })
 public class FizyComD extends PluginForDecrypt {
+
+    private String  CLIPDATA;
+
+    private boolean YT = true;
 
     public FizyComD(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private int[] changeReturnTypeToIntArray(String x, String[] y) {
+        if (x == null) return null;
+        String[] tmp = x.split("\r\n");
+        int[] indices = new int[tmp.length];
+        int j = 0;
+        for (int i = 0; i < y.length; i++) {
+            if (tmp[j].equals(y[i])) {
+                indices[j] = i;
+                if (j >= tmp.length - 1) break;
+                j++;
+            }
+        }
+        return indices;
     }
 
     private String decodeUnicode(final String s) {
@@ -49,39 +71,123 @@ public class FizyComD extends PluginForDecrypt {
         return res;
     }
 
+    private int[] letTheUserSelectPlayLists(String[][] playListsTest) {
+        int count = 0;
+        int[] indices = null;
+        StringBuilder sb = new StringBuilder();
+        for (String[] s : playListsTest) {
+            count = new Regex(s[0], "order").count();
+            if (count == 0) continue;
+            sb.append(Encoding.htmlDecode(decodeUnicode(s[1].trim())) + " (" + String.valueOf(count) + ")");
+            sb.append("\r\n");
+        }
+
+        String[] mirrors = sb.toString().split("\r\n");
+
+        try {
+            indices = UserIO.getInstance().requestMultiSelectionDialog(0, "Please select playlist", "Please select the desired playlist.", mirrors, null, null, null, null);
+        } catch (Throwable e) {
+            /* this function DOES NOT exist in 09581 stable */
+            // TODO Get rid of this catch section once
+            // MultiSelectionDialog
+            // makes its way into stable
+            String index = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Please remove unwanted playlists", sb.toString());
+            indices = changeReturnTypeToIntArray(index, mirrors);
+        }
+        // Dialog wurde abgebrochen, Decrypterinstanz wird beendet.
+        if (indices == null) indices = new int[] { -1 };
+        return indices;
+    }
+
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.getCryptedUrl();
 
-        br.getPage(parameter);
-        String fpName = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
-        fpName = fpName == null ? new Regex(parameter, "http://(.*?)\\..+").getMatch(0) : fpName;
-        fpName = fpName == null ? "Fizy.com Playlist" : fpName;
+        // processing plugin configuration
+        final SubConfiguration cfg = SubConfiguration.getConfig("fizy.com");
+        YT = cfg.getBooleanProperty("INCLUDING_YT", true);
 
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName);
+        if (!parameter.matches("http://(www\\.)?fizy\\.com/(#?s/)?\\w+")) {
+            String user = new Regex(parameter, "http://(.*?)\\.fizy\\.com").getMatch(0);
+            user = user == null ? new Regex(parameter, "fizy\\.com/#u/(\\w+)").getMatch(0) : user;
+            if (user == null) return null;
+            String playLists = null;
 
-        final ArrayList<String> allSongs = new ArrayList<String>();
-        for (final String song : br.getRegex("<a class=\"song\" name=\"\\w+\" href=\"(.*?)\">\\[\\d+:\\d+\\] .*?</a>").getColumn(0)) {
-            allSongs.add(song);
-        }
-
-        final Iterator<String> link = allSongs.iterator();
-        while (link.hasNext()) {
-            final DownloadLink dl = getFinalLink(link.next());
-            if (dl == null) {
-                continue;
-            }
-            fp.add(dl);
             try {
-                distribute(dl);
-            } catch (final Throwable e) {
-                /* does not exist in 09581 */
+                playLists = br.postPage("http://fizy.com/fizy::getProfile", "username=" + user);
+            } catch (Throwable e) {
+                logger.severe("Server error! Message: " + e);
+                return null;
             }
-            decryptedLinks.add(dl);
-        }
+            playLists = playLists.replaceAll(":\\s", ":");
+            playLists = playLists.replaceAll(",\\s\"", ",\"");
 
+            /*
+             * TODO: parsing content(JSON) after 0.9xx through
+             * org.codehaus.jackson.JsonNode class
+             */
+
+            final HashMap<String, String> ret = new HashMap<String, String>();
+            // alle Playlisten des Users
+            String[][] playListsTest = new Regex(playLists, "\"songs\":\\[(.+?)\\],\"is_shuffle_on\":\\d+,\"order\":\\d+,\"title\":\"(.*?)\"\\}").getMatches();
+            if (playListsTest == null || playListsTest.length == 0) return null;
+            // selektiere bestimmte Playlisten
+            int[] selectedPlayListIndices = null;
+            if (playListsTest.length > 1) {
+                selectedPlayListIndices = letTheUserSelectPlayLists(playListsTest);
+                if (selectedPlayListIndices[0] == -1) {
+                    logger.info("Aborted by user!");
+                    return decryptedLinks;
+                }
+            }
+
+            int i = 0, j = 0;
+            for (final String[] playList : playListsTest) {
+                if (selectedPlayListIndices != null) {
+                    if (j > selectedPlayListIndices.length - 1) break;
+                    if (i != selectedPlayListIndices[j]) {
+                        i++;
+                        continue;
+                    }
+                    i++;
+                    j++;
+                }
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(user.toUpperCase(Locale.ENGLISH) + "s_Playlist__" + Encoding.htmlDecode(decodeUnicode(playList[1].trim())));
+                // alle Titel in der Playlist
+                for (String[] song : new Regex(playList[0], "\\{(.*?)\\}").getMatches()) {
+                    for (String[] s : new Regex(song[0], "\"(.*?)\":\"?(.*?)\"?,").getMatches()) {
+                        ret.put(s[0], s[1]);
+                    }
+
+                    final DownloadLink dlLink = getFinalLink("http://fizy.com/#s/" + ret.get("ID"));
+                    // for (final Entry<String, String> next : ret.entrySet()) {
+                    // dlLink.setProperty(next.getKey(), next.getValue());
+                    // }
+                    // final String filename = dlLink.getProperty("title",
+                    // "UnknownTitle") + "." + dlLink.getProperty("type",
+                    // "mp3");
+                    // dlLink.setName(decodeUnicode(filename.trim()));
+                    // try {
+                    // dlLink.setDownloadSize(Integer.parseInt(dlLink.getStringProperty("duration"))
+                    // * 16 * 1024);
+                    // } catch (final Exception e) {
+                    // }
+                    if (dlLink == null) continue;
+                    fp.add(dlLink);
+                    try {
+                        distribute(dlLink);
+                    } catch (final Throwable e) {
+                        /* does not exist in 09581 */
+                    }
+                    decryptedLinks.add(dlLink);
+                }
+            }
+
+        } else {
+            decryptedLinks.add(getFinalLink(parameter));
+        }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
@@ -91,57 +197,85 @@ public class FizyComD extends PluginForDecrypt {
 
     private DownloadLink getFinalLink(final String link) throws IOException {
         final String sid = link.substring(link.lastIndexOf("/") + 1);
-        br.postPage("http://fizy.com/fizy::getSong", "SID=" + sid);
-        final String filename = br.getRegex("title\":\"(.*?)\"").getMatch(0).trim();
-        final String duration = br.getRegex("duration\":\"(\\d+)\"").getMatch(0);
-        final String providerId = br.getRegex("providerNumber\":\"(\\d+)\"").getMatch(0);
-        String ext = br.getRegex("type\":\"(.*?)\"").getMatch(0);
-        String clipUrl = br.getRegex("source\":\"(.*?)\"").getMatch(0);
-        if (providerId == null) { return null; }
+        try {
+            CLIPDATA = br.postPage("http://fizy.com/fizy::getSong", "SID=" + sid);
+        } catch (Throwable e) {
+            logger.severe("Server error! Message: " + e);
+            return null;
+        }
 
-        switch (Integer.parseInt(providerId)) {
+        String error = getClipData("error");
+        if (error != null) {
+            logger.warning("fizy.com response error for provider \"" + error + "\"! Link: " + link);
+            return null;
+        }
+
+        final String filename = getClipData("title");
+        final String duration = getClipData("duration");
+        final String providerId = getClipData("providerNumber");
+        String ext = getClipData("type");
+        String clipUrl = getClipData("source");
+        if (providerId == null) { return null; }
+        int pId = providerId.matches("\\d+") ? Integer.parseInt(providerId) : -1;
+
+        switch (pId) {
         case 1:
             // youtube
+            if (!YT) return null;
             if (!clipUrl.startsWith("http")) {
                 clipUrl = "http://www.youtube.com/watch?v=" + clipUrl;
             }
             break;
+        case 2:
+            // daylimotion
+            break;
         case 3:
-            // http
-            clipUrl = clipUrl.replace("\\", "");
+            // wrzuta.pl
             break;
         case 4:
-            // rtmp
-            clipUrl = link;
+            // mu-yap
             break;
         case 6:
-            // rtmp
-            clipUrl = link;
+            // http
+            break;
+        case 7:
+            // metacafe
+            break;
+        case 8:
+            // soundcloud
             break;
         case 9:
             // http
-            clipUrl = clipUrl.replace("\\", "");
             break;
         case 10:
             // grooveshark direkt stream links
-            clipUrl = clipUrl.replace("\\", "");
+            break;
+        case 11:
+            // http
             break;
         default:
-            logger.warning("ProviderId: " + providerId + " --> Link: " + clipUrl + "not supported!");
-            clipUrl = null;
+            logger.info("New providerId: " + providerId + " --> Link: " + clipUrl + " !");
             break;
         }
         if (clipUrl == null || filename == null) { return null; }
-        ext = ext == null ? "m4a" : ext;
-        final DownloadLink tmp = createDownloadlink(clipUrl);
-        tmp.setFinalFileName(Encoding.htmlDecode(decodeUnicode(filename)) + "." + ext);
-        if (providerId.equals("4") || providerId.equals("6")) {
-            tmp.setProperty("isRTMP", true);
+        clipUrl = clipUrl.startsWith("rtmp") ? "rtmp" + link : clipUrl;
+        clipUrl = clipUrl.replace("\\", "");
+        ext = ext == null ? "mp3" : ext;
+        ext = "audio".equals(ext) ? "mp3" : ext;
+        ext = "video".equals(ext) ? "mp4" : ext;
+        if (pId != 1) {
+            clipUrl = "directhttp://" + clipUrl;
         }
+        final DownloadLink tmp = createDownloadlink(clipUrl);
+        tmp.setFinalFileName(Encoding.htmlDecode(decodeUnicode(filename.trim())) + "." + ext);
         if (duration != null) {
             tmp.setDownloadSize(Integer.parseInt(duration) * 16 * 1024);
         }
         return tmp;
+    }
+
+    private String getClipData(final String tag) {
+        return new Regex(CLIPDATA, "\"" + tag + "\"\\s?:\\s?\"?([^\"]+)\"?(,|\\})").getMatch(0);
     }
 
 }
