@@ -201,10 +201,11 @@ public class FileServeCom extends PluginForHost {
             br2.postPage(downloadLink.getDownloadURL(), "checkDownload=check");
             boolean nocaptcha = false;
             if (!br2.containsHTML("success\":\"showCaptcha\"")) {
-                nocaptcha = true;
-                logger.info("There seems to be an error, no captcha is shown!");
                 handleCaptchaErrors(br2, downloadLink);
                 handleErrors(br2);
+                logger.info("There seems to be an error, no captcha is shown!");
+                logger.info(br2.toString());
+                nocaptcha = true;
             }
             Boolean failed = true;
             if (nocaptcha == false) {
@@ -242,7 +243,6 @@ public class FileServeCom extends PluginForHost {
                 if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 handleCaptchaErrors(br2, downloadLink);
                 handleErrors(br2);
-                // }
             }
             this.br.postPage(downloadLink.getDownloadURL(), "downloadLink=wait");
             // Ticket Time

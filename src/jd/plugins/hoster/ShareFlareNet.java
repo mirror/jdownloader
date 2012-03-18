@@ -36,7 +36,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareflare.net" }, urls = { "http://[\\w\\.]*?shareflare\\.net/download/.*?/.*?\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareflare.net" }, urls = { "http://(www\\.)?shareflare\\.net/download/.*?/.*?\\.html" }, flags = { 2 })
 public class ShareFlareNet extends PluginForHost {
 
     private static final String NEXTPAGE             = "http://shareflare.net/tmpl/tmpl_frame_top.php?link=";
@@ -51,8 +51,37 @@ public class ShareFlareNet extends PluginForHost {
     }
 
     @Override
+    public String getAGBLink() {
+        return "http://shareflare.net/page/terms.php";
+    }
+
+    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\?", "%3F"));
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setCookie("http://shareflare.net", "lang", "en");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+        if (br.containsHTML("(File not found|deleted for abuse or something like this|\"http://up\\-file\\.com/find/)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("id=\"file-info\">(.*?)<small").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("name=\"name\" value=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (!br.containsHTML(FREEDOWNLOADPOSSIBLE)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.shareflarenet.nofreedownloadlink", "No free download link for this file"));
+        return AvailableStatus.TRUE;
     }
 
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -67,11 +96,6 @@ public class ShareFlareNet extends PluginForHost {
             }
             return ai;
         }
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://shareflare.net/page/terms.php";
     }
 
     private String getCaptchaUrl() {
@@ -236,30 +260,6 @@ public class ShareFlareNet extends PluginForHost {
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("http://shareflare.net", "lang", "en");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-        if (br.containsHTML("(File not found|deleted for abuse or something like this)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("id=\"file-info\">(.*?)<small").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("name=\"name\" value=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (!br.containsHTML(FREEDOWNLOADPOSSIBLE)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.shareflarenet.nofreedownloadlink", "No free download link for this file"));
-        return AvailableStatus.TRUE;
     }
 
     @Override
