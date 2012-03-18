@@ -20,22 +20,20 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "http://(www\\.)?(mirrorstack\\.com|uploading\\.to)/([a-z0-9]{2}_)?[a-z0-9]{12}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "http://(www\\.)?(mirrorstack\\.com|uploading\\.to|copyload\\.com)/([a-z0-9]{2}_)?[a-z0-9]{12}" }, flags = { 0 })
 public class MirStkCm extends PluginForDecrypt {
 
     /*
-     * TODO many sites are using this type of script (+ multiupload.com). Move
-     * this stuff into general decrypter type plugin, find the name of the
-     * script and rename. Do this after next major update, when we can delete
-     * plugins again.
+     * TODO many sites are using this type of script. Rename this plugin into
+     * general/template type plugin naming scheme (find the name of the script
+     * and rename). Do this after next major update, when we can delete plugins
+     * again.
      */
 
     /*
@@ -47,6 +45,12 @@ public class MirStkCm extends PluginForDecrypt {
      * times and it will work in jd.. provider problem not plugin. Other example
      * links I've used seem to work fine. - Please keep code generic as
      * possible.
+     * 
+     * Don't use package name as these type of services export a list of hoster
+     * urls of a single file. When one imports many links (parts), JD loads many
+     * instances of the decrypter and each url/parameter will a separate
+     * packagename and that sucks. It's best to use linkgrabbers default auto
+     * packagename sorting.
      */
 
     public MirStkCm(PluginWrapper wrapper) {
@@ -55,20 +59,13 @@ public class MirStkCm extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replaceFirst("://uploading\\.to", "://www.uploading.to");
+        String parameter = param.toString().replace("://uploading.to", "://www.uploading.to").replace("://www.copyload.com", "://copyload.com");
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.containsHTML(">Not Found</h2>")) {
             logger.warning("Invalid URL, either removed or never existed :" + parameter);
             return null;
         }
-        String fpName = null;
-        if (parameter.contains("uploading.to/")) {
-            fpName = br.getRegex("<b>File:</b> <a href=\\'http://(www\\.)?uploading\\.to/[a-z0-9]{12}\\'>([^<>\"\\']+)</a>").getMatch(1);
-        } else if (fpName == null && parameter.contains("mirrorstack.com/")) {
-            fpName = br.getRegex("<a class=\"active\" href=\\'http://mirrorstack\\.com/[a-z0-9]{12}\\'>([^<>\"\\']+)</a>").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("value=\\'<a href=http://mirrorstack\\.com/[a-z0-9]{12} >Download ([^<>\"\\']+) from mirrorstack\\.com</a>\\'").getMatch(0);
-        } else if (fpName == null) fpName = new Regex(parameter, "/([a-z0-9]{2}_)?([a-z0-9]{12})").getMatch(1);
         String finallink = null;
         if (parameter.matches("http://[^/<>\"\\' ]+/[a-z0-9]{2}_[a-z0-9]{12}")) {
             if (parameter.contains("uploading.to/")) {
@@ -88,9 +85,13 @@ public class MirStkCm extends PluginForDecrypt {
             progress.setRange(redirectLinks.length);
             for (String redirectLink : redirectLinks) {
                 if (parameter.contains("uploading.to/")) {
-                    br.getHeaders().put("Referer", "http://www.uploading.to/r_counter");
+                    br.getHeaders().put("Referer", new Regex(parameter, "(https?://[\\w+\\.\\d\\-]+(:\\d+)?)/").getMatch(0) + "/r_counter");
                     br.getPage(redirectLink + "?");
                     finallink = br.getRegex("frame src=\"(https?://[^\"\\' <>]+)\"").getMatch(0);
+                } else if (parameter.contains("copyload.com/")) {
+                    br.getHeaders().put("Referer", new Regex(parameter, "(https?://[\\w+\\.\\d\\-]+(:\\d+)?)/").getMatch(0) + "/r_counter");
+                    br.getPage(redirectLink);
+                    finallink = br.getRedirectLocation();
                 } else {
                     br.getPage(redirectLink);
                     finallink = br.getRedirectLocation();
@@ -102,11 +103,6 @@ public class MirStkCm extends PluginForDecrypt {
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
                 progress.increase(1);
-            }
-            if (fpName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
             }
         }
         return decryptedLinks;

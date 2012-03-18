@@ -26,8 +26,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copyload.com" }, urls = { "http://(www\\.)?copyload\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copyload.com" }, urls = { "RIP://(www\\.)?copyload\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class CopyLoadCom extends PluginForDecrypt {
+
+    // TODO: Remove plugin when next major update comes out. Please see MirStkCm
+    // decrypter for working support.
 
     public CopyLoadCom(PluginWrapper wrapper) {
         super(wrapper);
