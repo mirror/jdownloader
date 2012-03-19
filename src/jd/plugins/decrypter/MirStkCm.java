@@ -46,12 +46,14 @@ public class MirStkCm extends PluginForDecrypt {
      * links I've used seem to work fine. - Please keep code generic as
      * possible.
      * 
-     * Don't use package name as these type of services export a list of hoster
-     * urls of a single file. When one imports many links (parts), JD loads many
-     * instances of the decrypter and each url/parameter will a separate
-     * packagename and that sucks. It's best to use linkgrabbers default auto
-     * packagename sorting.
+     * Don't use package name as these type of link protection services export a
+     * list of hoster urls of a single file. When one imports many links
+     * (parts), JD loads many instances of the decrypter and each
+     * url/parameter/instance gets a separate packagename and that sucks. It's
+     * best to use linkgrabbers default auto packagename sorting.
      */
+
+    // version 0.5
 
     public MirStkCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,49 +64,49 @@ public class MirStkCm extends PluginForDecrypt {
         String parameter = param.toString().replace("://uploading.to", "://www.uploading.to").replace("://www.copyload.com", "://copyload.com");
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.containsHTML(">Not Found</h2>")) {
+        if (br.containsHTML("(?i)>(File )?Not Found</")) {
             logger.warning("Invalid URL, either removed or never existed :" + parameter);
             return null;
         }
         String finallink = null;
+        String[] singleLinks = null;
+        // Add a single link parameter to String[]
         if (parameter.matches("http://[^/<>\"\\' ]+/[a-z0-9]{2}_[a-z0-9]{12}")) {
-            if (parameter.contains("uploading.to/")) {
-                br.getHeaders().put("Referer", "http://www.uploading.to/r_counter");
-                br.getPage(parameter + "?");
-                finallink = br.getRegex("frame src=\"(https?://[^\"\\' <>]+)\"").getMatch(0);
-            } else {
-                finallink = br.getRedirectLocation();
-            }
-            decryptedLinks.add(createDownloadlink(finallink));
-        } else if (parameter.matches("http://[^/<>\"\\' ]+/[a-z0-9]{12}")) {
-            String[] redirectLinks = br.getRegex("<a href=\\'(http://[^/<>\"\\' ]+/[a-z0-9]{2}_[a-z0-9]{12})\\'").getColumn(0);
-            if (redirectLinks == null || redirectLinks.length == 0) {
-                logger.warning("Couldn't find redirectLinks... :" + parameter);
+            singleLinks = new Regex(parameter, "(.+)").getColumn(0);
+        }
+        // Standard parameter, find all singleLinks
+        else if (parameter.matches("http://[^/<>\"\\' ]+/[a-z0-9]{12}")) {
+            singleLinks = br.getRegex("<a href=\\'(http://[^/<>\"\\' ]+/[a-z0-9]{2}_[a-z0-9]{12})\\'").getColumn(0);
+            if (singleLinks == null || singleLinks.length == 0) {
+                logger.warning("Couldn't find singleLinks... :" + parameter);
                 return null;
             }
-            progress.setRange(redirectLinks.length);
-            for (String redirectLink : redirectLinks) {
-                if (parameter.contains("uploading.to/")) {
-                    br.getHeaders().put("Referer", new Regex(parameter, "(https?://[\\w+\\.\\d\\-]+(:\\d+)?)/").getMatch(0) + "/r_counter");
-                    br.getPage(redirectLink + "?");
-                    finallink = br.getRegex("frame src=\"(https?://[^\"\\' <>]+)\"").getMatch(0);
-                } else if (parameter.contains("copyload.com/")) {
-                    br.getHeaders().put("Referer", new Regex(parameter, "(https?://[\\w+\\.\\d\\-]+(:\\d+)?)/").getMatch(0) + "/r_counter");
-                    br.getPage(redirectLink);
-                    finallink = br.getRedirectLocation();
-                } else {
-                    br.getPage(redirectLink);
-                    finallink = br.getRedirectLocation();
-                }
-                if (finallink == null) {
-                    logger.warning("WARNING: Couldn't find finallink... :" + parameter);
-                    logger.warning("Please report this issue to JD Developement team.");
-                    continue;
-                }
-                decryptedLinks.add(createDownloadlink(finallink));
-                progress.increase(1);
+        }
+        // Process links found. Each provider has a slightly different
+        // requirement and outcome
+        progress.setRange(singleLinks.length);
+        for (String singleLink : singleLinks) {
+            if (parameter.contains("uploading.to/")) {
+                br.getHeaders().put("Referer", new Regex(parameter, "(https?://[\\w+\\.\\d\\-]+(:\\d+)?)/").getMatch(0) + "/r_counter");
+                br.getPage(singleLink);
+                finallink = br.getRegex("frame src=\"(https?://[^\"\\' <>]+)\"").getMatch(0);
+            } else if (parameter.contains("copyload.com/")) {
+                br.getHeaders().put("Referer", new Regex(parameter, "(https?://[\\w+\\.\\d\\-]+(:\\d+)?)/").getMatch(0) + "/r_counter");
+                br.getPage(singleLink);
+                finallink = br.getRedirectLocation();
+            } else {
+                br.getPage(singleLink);
+                finallink = br.getRedirectLocation();
             }
+            if (finallink == null) {
+                logger.warning("WARNING: Couldn't find finallink. Please report this issue to JD Developement team. :" + parameter);
+                logger.warning("Continuing...");
+                continue;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
+            progress.increase(1);
         }
         return decryptedLinks;
     }
+
 }
