@@ -364,7 +364,7 @@ public class VideoBbCom extends PluginForHost {
             filename = br.getRegex("content=\"videobb \\- (.*?)\"  name=\"title\"").getMatch(0);
         }
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        downloadLink.setName(filename.trim());
+        downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
 
     }
