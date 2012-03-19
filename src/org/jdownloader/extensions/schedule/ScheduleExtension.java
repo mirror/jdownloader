@@ -289,6 +289,11 @@ public class ScheduleExtension extends AbstractExtension<ScheduleConfig> {
     }
 
     @Override
+    public boolean isDefaultEnabled() {
+        return false;
+    }
+
+    @Override
     protected void start() throws StartException {
         actions = this.getPluginConfig().getGenericProperty("Scheduler_Actions", new ArrayList<Actions>());
         if (actions == null) {

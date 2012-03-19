@@ -24,6 +24,8 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 
 import jd.controlling.IOEQ;
+import jd.gui.swing.jdgui.menu.actions.LogAction;
+import jd.gui.swing.jdgui.menu.actions.SettingsAction;
 
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
@@ -55,6 +57,8 @@ public class WindowMenu extends JMenu implements ExtensionControllerListener {
             }
         });
 
+        add(new SettingsAction());
+        add(new LogAction());
         for (final AbstractExtension<?> plg : pluginsOptional) {
             if (!plg.isEnabled()) continue;
 

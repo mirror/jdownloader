@@ -30,7 +30,7 @@ public class GlobalPremiumSwitchToggleAction extends AbstractToolbarToggleAction
     }
 
     public boolean isDefaultVisible() {
-        return false;
+        return true;
     }
 
     @Override

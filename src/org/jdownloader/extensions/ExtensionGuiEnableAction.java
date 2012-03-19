@@ -5,28 +5,25 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 
-import org.appwork.utils.Application;
 import org.jdownloader.images.NewTheme;
 
 public class ExtensionGuiEnableAction extends AbstractAction {
 
-    private static final long    serialVersionUID = 6997360773808826159L;
-    private AbstractExtension<?> plg;
-    private ImageIcon            icon16Enabled;
-    private ImageIcon            icon16Disabled;
-    private boolean              java15;
+    protected AbstractExtension<?> plg;
+    private ImageIcon              icon16Enabled;
+    private ImageIcon              icon16Disabled;
 
     public ExtensionGuiEnableAction(AbstractExtension<?> plg) {
+
         super(plg.getName());
         this.plg = plg;
-        java15 = Application.getJavaVersion() < 16000000;
-        putValue(SELECTED_KEY, plg.getGUI().isActive());
+        setSelected(false);
         icon16Enabled = getCheckBoxImage(20, true);
         icon16Disabled = getCheckBoxImage(20, false);
         updateIcon();
     }
 
-    private void updateIcon() {
+    protected void updateIcon() {
         if (isSelected()) {
             putValue(AbstractAction.SMALL_ICON, icon16Enabled);
         } else {
@@ -35,13 +32,9 @@ public class ExtensionGuiEnableAction extends AbstractAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (java15) {
-            this.setSelected(!this.isSelected());
-        } else {
-            updateIcon();
-        }
 
-        plg.getGUI().setActive(!plg.getGUI().isActive());
+        updateIcon();
+
     }
 
     public boolean isSelected() {
@@ -69,4 +62,5 @@ public class ExtensionGuiEnableAction extends AbstractAction {
             return NewTheme.I().getDisabledIcon(plg.getIcon(size));
         }
     }
+
 }

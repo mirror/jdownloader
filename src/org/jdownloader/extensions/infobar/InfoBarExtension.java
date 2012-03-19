@@ -16,6 +16,7 @@ import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
+import org.jdownloader.extensions.ExtensionGuiEnableAction;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.infobar.translate.T;
@@ -39,6 +40,8 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
 
     private ExtensionConfigPanel<InfoBarExtension> configPanel;
 
+    private ExtensionGuiEnableAction               guiAction;
+
     public ExtensionConfigPanel<InfoBarExtension> getConfigPanel() {
         return configPanel;
     }
@@ -49,6 +52,18 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
 
     public InfoBarExtension() throws StartException {
         super(T._.jd_plugins_optional_infobar_jdinfobar());
+        guiAction = new ExtensionGuiEnableAction(this) {
+            public void actionPerformed(ActionEvent e) {
+                super.actionPerformed(e);
+                setGuiEnable(isSelected());
+            }
+
+        };
+
+    }
+
+    public ExtensionGuiEnableAction getShowGuiAction() {
+        return guiAction;
 
     }
 

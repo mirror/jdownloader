@@ -55,6 +55,8 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     private JLabel                     lblETA;
     private JLabel                     lblHelp;
 
+    private SpeedMeterPanel            speedmeter;
+
     private InfoDialog(AppAction action) {
         super();
 
@@ -66,10 +68,22 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         this.setAlwaysOnTop(true);
         this.setLocation(GUIUtils.getLastLocation(SwingGui.getInstance().getMainFrame(), this));
 
+        initGui();
+
         this.addMouseListener(this);
         this.addMouseMotionListener(this);
 
-        initGui();
+        lblHelp.addMouseMotionListener(this);
+        prgTotal.addMouseMotionListener(this);
+        lblETA.addMouseMotionListener(this);
+        lblProgress.addMouseMotionListener(this);
+        speedmeter.addMouseMotionListener(this);
+        lblHelp.addMouseListener(this);
+        prgTotal.addMouseListener(this);
+        lblETA.addMouseListener(this);
+        lblProgress.addMouseListener(this);
+        speedmeter.addMouseListener(this);
+
     }
 
     private void initGui() {
@@ -90,7 +104,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
         JPanel panel = new JPanel(new MigLayout("ins 5, wrap 1", "[grow,fill,200]"));
         panel.setBorder(BorderFactory.createLineBorder(getBackground().darker().darker()));
-        panel.add(new SpeedMeterPanel(false, true), "h 30!");
+        panel.add(speedmeter = new SpeedMeterPanel(false, true), "h 30!");
         panel.add(lblProgress, "split 2");
         panel.add(lblETA);
         panel.add(prgTotal);
@@ -98,6 +112,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
         this.setLayout(new MigLayout("ins 0", "[grow,fill]"));
         this.add(panel);
+
         this.pack();
     }
 
@@ -178,7 +193,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     public void mouseClicked(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
             JMenuItem mi = new JMenuItem(T._.jd_plugins_optional_infobar_InfoDialog_hideWindow());
-            mi.setIcon(NewTheme.I().getIcon("close", 16));
+            mi.setIcon(NewTheme.I().getIcon("close", -1));
             mi.addActionListener(this);
 
             JPopupMenu popup = new JPopupMenu();
@@ -208,8 +223,13 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
              * Convert coordinate of the component to the whole screen and
              * translate to the dragging-start-point.
              */
-            SwingUtilities.convertPointToScreen(drag, this);
-            drag.translate(-point.x, -point.y);
+            Point point = new Point(this.point);
+            System.out.println("1   " + point);
+            SwingUtilities.convertPointToScreen(point, e.getComponent());
+            SwingUtilities.convertPointFromScreen(point, this);
+            System.out.println(point);
+            SwingUtilities.convertPointToScreen(drag, e.getComponent());
+            // drag.translate(-point.x, -point.y);
 
             int x = drag.x;
             int y = drag.y;
@@ -237,7 +257,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
             /*
              * Finally set the new location.
              */
-            this.setLocation(x, y);
+            this.setLocation(x - point.x, y - point.y);
         } else {
             Point window = this.getLocation();
 

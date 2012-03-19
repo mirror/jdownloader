@@ -134,7 +134,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
 
     @Override
     public boolean isQuickToggleEnabled() {
-        return true;
+        return false;
     }
 
     @Override

@@ -7,7 +7,7 @@ import jd.gui.swing.jdgui.views.ClosableView;
 
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionGuiEnableAction;
+import org.jdownloader.extensions.ExtensionGuiTabToggleAction;
 
 /**
  * Abstract Superclass which should be used for all Extension Gui Panels
@@ -23,7 +23,7 @@ public abstract class AddonPanel<T extends AbstractExtension<? extends Extension
     private static final long        serialVersionUID = 1L;
     private boolean                  active           = false;
     private T                        extension;
-    private ExtensionGuiEnableAction action;
+    private ExtensionGuiTabToggleAction action;
 
     public AddonPanel(T plg) {
         extension = plg;
@@ -106,9 +106,9 @@ public abstract class AddonPanel<T extends AbstractExtension<? extends Extension
      * 
      * @return
      */
-    public synchronized ExtensionGuiEnableAction getEnabledAction() {
+    public synchronized ExtensionGuiTabToggleAction getEnabledAction() {
         if (action == null) {
-            action = new ExtensionGuiEnableAction(extension);
+            action = new ExtensionGuiTabToggleAction(extension);
         }
         return action;
     }

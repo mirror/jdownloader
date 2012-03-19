@@ -141,7 +141,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> {
 
     @Override
     public boolean isQuickToggleEnabled() {
-        return true;
+        return false;
     }
 
     /**

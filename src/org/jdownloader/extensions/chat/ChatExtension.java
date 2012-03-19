@@ -1042,6 +1042,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
 
     @Override
     public java.util.ArrayList<JMenuItem> getMenuAction() {
+
         return null;
     }
 

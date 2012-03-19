@@ -26,7 +26,7 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig> {
 
     @Override
     public boolean isDefaultEnabled() {
-        return true;
+        return false;
     }
 
     @Override

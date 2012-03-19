@@ -15,6 +15,11 @@ public class ShowSettingsAction extends AbstractToolbarAdapterAction {
         return ShowSettingsAction.INSTANCE;
     }
 
+    @Override
+    public boolean isDefaultVisible() {
+        return false;
+    }
+
     /**
      * Create a new instance of ShowSettingsAction. This is a singleton class.
      * Access the only existing instance by using {@link #getInstance()}.

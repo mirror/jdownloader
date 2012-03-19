@@ -54,11 +54,12 @@ public class ToolbarManager {
         addIntern(Seperator.getInstance());
         addIntern(ClipBoardToggleAction.getInstance());
         addIntern(AutoReconnectToggleAction.getInstance());
+        addIntern(GlobalPremiumSwitchToggleAction.getInstance());
         addIntern(Seperator.getInstance());
         addIntern(ReconnectAction.getInstance());
         addIntern(UpdateAction.getInstance());
         addIntern(OpenDefaultDownloadFolderAction.getInstance());
-        addIntern(GlobalPremiumSwitchToggleAction.getInstance());
+
         addIntern(ShowSettingsAction.getInstance());
         addIntern(ExitToolbarAction.getInstance());
 
