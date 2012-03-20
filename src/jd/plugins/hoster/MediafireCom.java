@@ -680,7 +680,7 @@ public class MediafireCom extends PluginForHost {
                     URLConnectionAdapter con = null;
                     try {
                         /* here we also can have direct link */
-                        con = br.cloneBrowser().openGetConnection(redirectURL);
+                        con = br.openGetConnection(redirectURL);
                         if (con.isContentDisposition()) {
                             downloadLink.setProperty("type", "direct");
                             dlURL = redirectURL;
