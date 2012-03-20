@@ -39,6 +39,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.com" }, urls = { "http://(www\\.)?megashare\\.com/[0-9]+" }, flags = { 2 })
 public class MegaShareCom extends PluginForHost {
 
@@ -154,7 +156,9 @@ public class MegaShareCom extends PluginForHost {
         }
         sleep(wait * cDly, downloadLink);
         br.submitForm(DLFORM);
-
+        /** Filesize can't be set in linkgrabber, we set it here */
+        final String filesize = br.getRegex("\\'>File Size: </span>([^<>\"/\\']*?)</div>").getMatch(0);
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         /* FORM_POST_2 */
         remove.add("image");
         getForm(remove);

@@ -60,8 +60,8 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        // See line 68
-        return -1;
+        // See line 72
+        return 1;
     }
 
     @Override

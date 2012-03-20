@@ -38,8 +38,9 @@ public class LolCryptOrg extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(false);
         br.getPage(parameter);
-        final String[] links = br.getRegex("(/decrypt\\?fid=[a-z0-9]+\\&lid=\\d+\\&key=[a-z0-9]+)\\'").getColumn(0);
+        final String[] links = br.getRegex("\\'\\.\\.(/decrypt\\?fid=[a-z0-9]+\\&lid=\\d+\\&key=[a-z-0-9]+)\\'").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -50,19 +51,20 @@ public class LolCryptOrg extends PluginForDecrypt {
              * Schauen, ob es ein megaupload Link ist
              */
             String finallink = br.getRegex("href=\"javascript:clipboardcopy\\(\\'(http://(www\\.)?megaupload\\.com/\\?d=[A-Z0-9]+)\\'\\)").getMatch(0);
-            final Boolean mu = finallink != null ? true : false;
-            /**
-             * Megaupload Direktlink holen
-             */
-            finallink = br.getRegex("id=\"dlbuttondisabled\"></a> [\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+            if (finallink == null) finallink = br.getRedirectLocation();
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            final Boolean mu = finallink.contains("megaupload") ? true : false;
+            /**
+             * Megaupload Direktlink holen
+             */
 
             if (mu) {
                 URLConnectionAdapter con = null;
                 try {
+                    finallink = br.getRegex("id=\"dlbuttondisabled\"></a> [\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
                     con = br.openGetConnection(finallink);
                     finallink = br.getRedirectLocation();
                     finallink = finallink == null ? br.getRequest().getHttpConnection().getHeaderField("etag").replace("\"", "") : finallink;
