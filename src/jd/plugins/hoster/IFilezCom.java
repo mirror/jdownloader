@@ -168,7 +168,8 @@ public class IFilezCom extends PluginForHost {
                 br.setCookie(MAINPAGE, "sdlanguageid", "2");
                 br.getPage(MAINPAGE);
             }
-            if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null || !br.containsHTML(">Premium until")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+
+            if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null || (!br.containsHTML("(>Premium until|<a href='/uploads/logout'>\\✖ \\(" + account.getUser() + "\\)<)")) && !br.containsHTML("href=\\'/myspace/space/premium\\'>(\\d{2}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2})</a></div")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(MAINPAGE);
@@ -212,7 +213,6 @@ public class IFilezCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRegex("<th>A link for 24 hours:</th>[\t\n\r ]+<td><input type=\"text\" readonly=\"readonly\" class=\"text_field width100\" onclick=\"this\\.select\\(\\);\" value=\"(http://.*?)\"").getMatch(0);
-        dllink = null;
         if (dllink == null) dllink = br.getRegex("(\"|\\')(http://[a-z0-9]+\\.i\\-filez\\.com/premdw/\\d+/[a-z0-9]+/.*?)(\"|\\')").getMatch(1);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
