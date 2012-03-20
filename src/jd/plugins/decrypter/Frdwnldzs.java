@@ -20,41 +20,55 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freedownloadz.us" }, urls = { "http://[\\w\\.]*?(v2\\.)?freedownloadz\\.us/download\\.php\\?id=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freedownloadz.us" }, urls = { "http://(www\\.)?(v2\\.)?freedownloadz\\.us/index\\.php\\?run=viewupload\\&groupid=\\d+\\&catid=\\d+\\&uploadid=\\d+" }, flags = { 0 })
 public class Frdwnldzs extends PluginForDecrypt {
 
     public Frdwnldzs(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(false);
         br.getPage(parameter);
-        String[] links = br.getRegex("<a href=\"(http://.*?)\" target=\"_blank\" title=\".*?\"><font color=\"#ff9966\">Link \\d+</font></a>").getColumn(0);
-        if (links.length == 0) return null;
-        String pass = br.getRegex("Passwort:</font>.*?<font color=\"red\">(.*?)</font>").getMatch(0);
+        String fpName = br.getRegex("class=\"title\" align=\"right\">([^<>\"]*?)</span>").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("class=\"title\">Download</span><br /><span class=\"subtitle\">([^<>\"]*?)</span>").getMatch(0);
+        String[] links = br.getRegex("\"(index\\.php\\?run=redirect\\&uploadid=\\d+\\&url=[^<>\"/]*?)\"").getColumn(0);
+        if (links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        String pass = br.getRegex(">Passwort:</strong></td>[\t\n\r ]+<td style=\"width:80%;\"><font color=\"red\"><input type=\"text\" value=\"([^<>\"/]*?)\"").getMatch(0);
         ArrayList<String> passwords = new ArrayList<String>();
+        /* add additional password if found */
+        if (pass != null) passwords.add(pass);
         /* default password */
         passwords.add("www.freedownloadz.us");
-        /* add additional password */
-        if ((pass != null) && !pass.equals(passwords.get(0))) {
-            passwords.add(pass);
-        }
+        passwords.add("freedownloadz.us");
 
-        for (String dl : links) {
-            decryptedLinks.add(createDownloadlink(dl).setSourcePluginPasswordList(passwords));
+        for (String redirectLink : links) {
+            br.getPage("http://freedownloadz.us/" + redirectLink);
+            final String finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink).setSourcePluginPasswordList(passwords));
         }
-
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
-
-    // @Override
 
 }

@@ -704,3 +704,4 @@ jd/plugins/decrypter/FcTv.class
 jd/plugins/hoster/BulletUploadCom.class
 jd/plugins/decrypter/SkipFileComUser.class
 jd/plugins/hoster/SkipFileCom.class
+jd/plugins/hoster/Usershare.class

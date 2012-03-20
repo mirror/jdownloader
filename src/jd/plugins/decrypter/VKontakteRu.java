@@ -411,7 +411,9 @@ public class VKontakteRu extends PluginForDecrypt {
                         if (password == null) return false;
                     }
                     if (!loginSite(username, password)) {
-                        break;
+                        username = null;
+                        password = null;
+                        continue;
                     } else {
                         if (loginCounter > MAXCOOKIEUSE) {
                             loginCounter = 0;
@@ -458,13 +460,13 @@ public class VKontakteRu extends PluginForDecrypt {
         br.getPage("http://vk.com/login.php");
         String damnIPH = br.getRegex("name=\"ip_h\" value=\"(.*?)\"").getMatch(0);
         if (damnIPH == null) damnIPH = br.getRegex("\\{loginscheme: \\'https\\', ip_h: \\'(.*?)\\'\\}").getMatch(0);
-        if (damnIPH == null) damnIPH = br.getRegex("loginscheme: 'https'.*?ip_h: '(.*?)'").getMatch(0);
+        if (damnIPH == null) damnIPH = br.getRegex("loginscheme: \\'https\\'.*?ip_h: \\'(.*?)\\'").getMatch(0);
         if (damnIPH == null) return false;
-        br.postPage("https://login.vk.com/", "act=login&success_url=&fail_url=&try_to_login=1&to=&vk=&al_test=3&from_host=vkontakte.ru&ip_h=" + damnIPH + "&email=" + Encoding.urlEncode(username) + "&pass=" + Encoding.urlEncode(password) + "&expire=1");
-        String hash = br.getRegex("type=\"hidden\" name=\"hash\" value=\"(.*?)\"").getMatch(0);
-        // If this variable is null the login is probably wrong
-        if (hash == null) return false;
-        br.getPage("http://vk.com/login.php?act=slogin&fast=1&hash=" + hash + "&redirect=1&s=0");
+        br.postPage("https://login.vk.com/?act=login", "act=login&q=1&al_frame=1&expire=&captcha_sid=&captcha_key=&from_host=vk.com&from_protocol=http&ip_h=" + damnIPH + "&email=" + Encoding.urlEncode(username) + "&pass=" + Encoding.urlEncode(password));
+        final String sid = br.getRegex("setCookieEx\\(\\'sid\\', \\'(.*?)\'").getMatch(0);
+        /** sid null = login probably wrong */
+        if (sid == null) return false;
+        br.setCookie(DOMAIN, "remixsid", sid);
         // Finish login
         Form lol = br.getFormbyProperty("name", "login");
         if (lol != null) {

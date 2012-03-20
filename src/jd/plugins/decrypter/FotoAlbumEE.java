@@ -16,88 +16,97 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotoalbum.ee" }, urls = { "http://[\\w\\.]*?(pseudaholic\\.|nastazzy\\.)?fotoalbum\\.ee/photos/.+(/sets|/[0-9]+)?(/[0-9]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotoalbum.ee" }, urls = { "http://(www\\.)?(pseudaholic\\.|nastazzy\\.)?fotoalbum\\.ee/photos/[^<>\"\\'/]+(/sets|/[0-9]+)?(/[0-9]+)?" }, flags = { 0 })
 public class FotoAlbumEE extends PluginForDecrypt {
-
-    private Pattern setNamePattern     = Pattern.compile("sets/[0-9]+/\">(<b>)?(.*?)(</b>)?</a>", Pattern.DOTALL);
-    private Pattern setLinkPattern     = Pattern.compile("<b><a href=\"/(photos/.*?/sets/[0-9]+)\">.*?</a></b> \\(([0-9]+)\\)", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
-    private Pattern nextPagePattern    = Pattern.compile("<a href=\"(\\?page=[0-9]+)\" title=\"Proovi nooleklahve\">j.*?rgmised");
-    private Pattern singleLinksPattern = Pattern.compile("<a href=\"(/photos/.*?/[0-9]+)\" alt=\"\" class=\"photolink");
-    private Pattern pictureURLPattern  = Pattern.compile("<img src=\"(http://[\\w\\.]*?fotoalbum\\.ee/fotoalbum/.*?)\" border=\"0\" alt=\"(.*?)\" vspace=\"3\"><", Pattern.CASE_INSENSITIVE);
 
     public FotoAlbumEE(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> picLinks = new ArrayList<String>();
         br.setFollowRedirects(true);
-        String link = parameter.toString();
-        br.getPage(link);
+        String parameter = param.toString();
+        br.getPage(parameter);
+        System.out.println(br.toString());
         String nextPage = null;
         String[] sets = null;
-        String[] links = null;
-        String setName = null;
+        final String setName = br.getRegex("<a href=\"/photos/[^<>\"/]*?/sets/\\d+\">[^<>\"]*?</a>([^<>\"]*?)</h1>").getMatch(0);
         FilePackage fp = null;
-        if (link.matches(".*?fotoalbum\\.ee/photos/Tepsikas/?(/sets(/)?)?")) {
-            sets = br.getRegex(setLinkPattern).getColumn(0);
+        if (setName != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(setName.trim()));
+        }
+        if (parameter.matches(".*?fotoalbum\\.ee/photos/[^<>\"\\'/]+/(sets(/)?)?")) {
+            sets = br.getRegex("\"(/photos/[^<>\"\\'/]+/sets/\\d+)\"").getColumn(0);
             for (String set : sets) {
-                decryptedLinks.add(createDownloadlink("http://fotoalbum.ee/" + set));
+                decryptedLinks.add(createDownloadlink("http://fotoalbum.ee" + set));
             }
             return decryptedLinks;
         }
-        setName = br.getRegex(setNamePattern).getMatch(1);
-        if (setName != null) {
-            fp = FilePackage.getInstance();
-            fp.setName(setName);
-        }
-        if (!link.contains("/sets/")) {
-            picLinks.add(link); // add single picture link
+        if (!parameter.contains("/sets/")) {
+            picLinks.add(parameter); // add single picture link
         } else {
+            // Get all thumbnail-links and change them to direct links->Very
+            // effective
+            String[] thumbnails = null;
             do {
-                links = br.getRegex(singleLinksPattern).getColumn(0);
-                for (String link2 : links) {
-                    String picLink = "http://fotoalbum.ee/" + link2;
-                    picLinks.add(picLink);
+                thumbnails = br.getRegex("\"(http://static\\d+\\.fotoalbum\\.ee/fotoalbum/\\d+/\\d+/[a-z0-9]+\\.jpg)\"").getColumn(0);
+                if (thumbnails == null || thumbnails.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
                 }
-                nextPage = br.getRegex(nextPagePattern).getMatch(0);
+                for (String thumbnail : thumbnails) {
+                    final Regex linkParts = new Regex(thumbnail, "(http://static\\d+\\.fotoalbum\\.ee/fotoalbum/\\d+/\\d+/)(.+)");
+                    final DownloadLink dl = createDownloadlink("directhttp://" + linkParts.getMatch(0) + "0" + linkParts.getMatch(1));
+                    dl.setAvailable(true);
+                    if (fp != null) fp.add(dl);
+                    decryptedLinks.add(dl);
+                }
+                nextPage = br.getRegex("class=\"active\">\\d+</a></li><li><a href=\"(\\?page=\\d+)").getMatch(0);
                 if (nextPage == null) break;
-                br.getPage(link + nextPage);
+                br.getPage(parameter + nextPage);
             } while (true);
+            return decryptedLinks;
         }
-        String[][] picture = null;
+        Regex linkInfo = null;
         String pictureURL = null;
+        String filename = null;
         // String filename = null; //some filenames are not correct in albums
         // TODO: maybe find a workaround later
         DownloadLink dlLink;
         progress.setRange(picLinks.size());
         for (String picLink : picLinks) {
             br.getPage(picLink);
-            picture = br.getRegex(pictureURLPattern).getMatches();
-            pictureURL = picture[0][0];
-            // filename = picture[0][1];
-            if (pictureURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dlLink = createDownloadlink(pictureURL);
-            // if (filename != null) dlLink.setFinalFileName(filename);
+            linkInfo = br.getRegex("<div class=\"photo\\-full\"> [\t\n\r ]+<span>[\t\n\r ]+<img src=\"(http://[^<>\"\\']*?)\" border=\"0\" alt=\"([^<>\"/]*?)\"");
+            pictureURL = linkInfo.getMatch(0);
+            filename = linkInfo.getMatch(1);
+            if (pictureURL == null || filename == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            String ext = pictureURL.substring(pictureURL.lastIndexOf("."));
+            if (ext == null || ext.length() > 5) ext = ".jpg";
+            dlLink = createDownloadlink("directhttp://" + pictureURL);
+            dlLink.setFinalFileName(filename + ext);
+            dlLink.setAvailable(true);
             if (fp != null) fp.add(dlLink);
             decryptedLinks.add(dlLink);
             progress.increase(1);
         }
-
         return decryptedLinks;
     }
 
