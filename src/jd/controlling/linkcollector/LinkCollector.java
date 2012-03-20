@@ -435,11 +435,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         ArrayList<CrawledLink> jobs = new ArrayList<CrawledLink>(links);
         LinkCollectingJob newJob = new LinkCollectingJob();
         newJob.setLinkCrawler(lc);
+        newJob.setLinkChecker(linkChecker);
         for (CrawledLink job : jobs) {
             LinkCollectingJob sourceJob = job.getSourceJob();
             if (sourceJob != null) {
                 /* we set weak reference to linkcrawler for this job */
                 sourceJob.setLinkCrawler(lc);
+                sourceJob.setLinkChecker(linkChecker);
             } else {
                 /* no job set yet, we set new one */
                 job.setSourceJob(newJob);
@@ -487,6 +489,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         lc.setHandler(this);
         /* we set weak reference to linkcrawler for this job */
         job.setLinkCrawler(lc);
+        job.setLinkChecker(linkChecker);
         String jobText = job.getText();
         /*
          * we don't want to keep reference on text during the whole link

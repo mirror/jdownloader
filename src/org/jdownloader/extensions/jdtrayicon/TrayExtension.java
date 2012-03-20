@@ -84,6 +84,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
             guiFrame = null;
         }
         LinkCollector.getInstance().getEventsender().removeListener(this);
+        ShutdownController.getInstance().removeShutdownVetoListener(TrayExtension.this);
     }
 
     @Override
@@ -94,6 +95,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         }
         if (!SystemTray.isSupported()) {
             logger.severe("Error initializing SystemTray: Tray isn't supported jet");
+            if (CrossSystem.isLinux()) logger.severe("Make sure your Notification Area is enabled!");
             throw new StartException("Tray isn't supported!");
         }
         Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
@@ -105,18 +107,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                     protected void runInEDT() {
                         try {
                             if (SwingGui.getInstance() != null) {
-                                guiFrame = SwingGui.getInstance().getMainFrame();
-                                if (guiFrame != null) {
-                                    guiFrame.removeWindowListener(TrayExtension.this);
-                                    guiFrame.addWindowListener(TrayExtension.this);
-                                    guiFrame.removeWindowStateListener(TrayExtension.this);
-                                    guiFrame.addWindowStateListener(TrayExtension.this);
-                                    logger.info("Systemtray OK");
-                                    initGUI();
-                                    LinkCollector.getInstance().getEventsender().addListener(TrayExtension.this);
-                                }
+                                initGUI(true);
+                                LinkCollector.getInstance().getEventsender().addListener(TrayExtension.this);
+                                ShutdownController.getInstance().addShutdownVetoListener(TrayExtension.this);
+                                logger.info("Systemtray OK");
                             }
-                            ShutdownController.getInstance().addShutdownVetoListener(TrayExtension.this);
                         } catch (Exception e) {
                             Log.exception(e);
                         }
@@ -172,9 +167,10 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
 
     private TrayMouseAdapter                    ma;
 
-    private boolean                             iconified = false;
+    private boolean                             iconified       = false;
 
     private Timer                               disableAlwaysonTop;
+    private Thread                              trayIconChecker = null;
 
     private ExtensionConfigPanel<TrayExtension> configPanel;
 
@@ -201,26 +197,23 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         return;
     }
 
-    private void initGUI() {
-        SystemTray systemTray = SystemTray.getSystemTray();
-        Image img = IconIO.getScaledInstance(NewTheme.I().getImage("logo/jd_logo_64_64", -1), (int) systemTray.getTrayIconSize().getWidth(), (int) systemTray.getTrayIconSize().getHeight());
-        /*
-         * trayicon message must be set, else windows cannot handle icon right
-         * (eg autohide feature)
-         */
-        trayIcon = new TrayIcon(img, "JDownloader");
-        trayIcon.setImageAutoSize(true);
-        trayIcon.addActionListener(this);
-
-        ma = new TrayMouseAdapter(this, trayIcon);
-        trayIcon.addMouseListener(ma);
-        trayIcon.addMouseMotionListener(ma);
-
-        trayIconTooltip = new TrayIconTooltip();
-
+    private void initGUI(final boolean startup) {
         try {
+            SystemTray systemTray = SystemTray.getSystemTray();
+            Image img = IconIO.getScaledInstance(NewTheme.I().getImage("logo/jd_logo_64_64", -1), (int) systemTray.getTrayIconSize().getWidth(), (int) systemTray.getTrayIconSize().getHeight());
+            /*
+             * trayicon message must be set, else windows cannot handle icon
+             * right (eg autohide feature)
+             */
+            trayIcon = new TrayIcon(img, "JDownloader");
+            trayIcon.setImageAutoSize(true);
+            trayIcon.addActionListener(this);
+            ma = new TrayMouseAdapter(this, trayIcon);
+            trayIcon.addMouseListener(ma);
+            trayIcon.addMouseMotionListener(ma);
+            trayIconTooltip = new TrayIconTooltip();
             systemTray.add(trayIcon);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             JDLogger.exception(e);
         }
         Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
@@ -233,10 +226,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                     guiFrame.addWindowListener(TrayExtension.this);
                     guiFrame.removeWindowStateListener(TrayExtension.this);
                     guiFrame.addWindowStateListener(TrayExtension.this);
-                }
-
-                if (getSettings().isStartMinimizedEnabled()) {
-                    miniIt(true);
+                    if (startup && getSettings().isStartMinimizedEnabled()) {
+                        miniIt(true);
+                    }
                 }
             }
 
@@ -359,7 +351,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     private void miniIt(final boolean minimize) {
-
         new EDTHelper<Object>() {
             @Override
             public Object edtRun() {
@@ -373,9 +364,58 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
             new EDTHelper<Object>() {
                 @Override
                 public Object edtRun() {
+                    if (trayIconChecker != null) {
+                        trayIconChecker.interrupt();
+                        trayIconChecker = null;
+                    }
                     guiFrame.setAlwaysOnTop(true);
                     disableAlwaysonTop.restart();
                     guiFrame.toFront();
+                    return null;
+                }
+            }.start();
+        } else {
+            new EDTHelper<Object>() {
+                @Override
+                public Object edtRun() {
+                    trayIconChecker = new Thread() {
+
+                        @Override
+                        public void run() {
+                            boolean reInitNeeded = false;
+                            while (Thread.currentThread() == trayIconChecker) {
+                                boolean reInitTrayIcon = false;
+                                try {
+                                    reInitTrayIcon = 0 == SystemTray.getSystemTray().getTrayIcons().length;
+                                } catch (UnsupportedOperationException e) {
+                                    if (reInitNeeded == false) {
+                                        reInitNeeded = true;
+                                        Log.L.severe("TrayIcon gone?! WTF? We will try to restore as soon as possible");
+                                    }
+                                }
+                                if (reInitTrayIcon) {
+                                    removeTrayIcon();
+                                    initGUI(false);
+                                    try {
+                                        if (SystemTray.getSystemTray().getTrayIcons().length > 0) {
+                                            reInitNeeded = false;
+                                            Log.L.severe("TrayIcon restored!");
+                                        }
+                                    } catch (UnsupportedOperationException e) {
+                                    }
+                                }
+                                try {
+                                    Thread.sleep(15000);
+                                } catch (InterruptedException e) {
+                                    break;
+                                }
+                            }
+                        }
+
+                    };
+                    trayIconChecker.setDaemon(true);
+                    trayIconChecker.setName("TrayIconRestore");
+                    trayIconChecker.start();
                     return null;
                 }
             }.start();
@@ -396,34 +436,15 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         try {
             if (trayIcon != null) {
                 trayIcon.removeActionListener(this);
-                SystemTray.getSystemTray().remove(trayIcon);
                 if (ma != null) {
                     trayIcon.removeMouseListener(ma);
                     trayIcon.removeMouseMotionListener(ma);
                 }
+                SystemTray.getSystemTray().remove(trayIcon);
             }
         } catch (Throwable e) {
         }
     }
-
-    // TODO
-    // @Override
-    // public Object interact(String command, Object parameter) {
-    // if (command == null) return null;
-    // if (command.equalsIgnoreCase("closetotray")) return
-    // subConfig.getBooleanProperty(PROPERTY_CLOSE_TO_TRAY, true);
-    // if (command.equalsIgnoreCase("refresh")) {
-    // new EDTHelper<Object>() {
-    // @Override
-    // public Object edtRun() {
-    // removeTrayIcon();
-    // initGUI();
-    // return null;
-    // }
-    // }.start();
-    // }
-    // return null;
-    // }
 
     public void windowActivated(WindowEvent e) {
     }
@@ -492,28 +513,23 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
         LinkCollectingJob sourceJob = parameter.getSourceJob();
         LinkCrawler lc = null;
         if (sourceJob == null || ((lc = sourceJob.getLinkCrawler()) != null && lc.isRunning())) { return; }
+        if (LinkCollector.getInstance().getLinkChecker().isRunning()) {
+            /*
+             * LinkChecker from LinkCollector still running, we wait till its
+             * finished!
+             */
+            return;
+        }
         LinkgrabberResultsOption option = getSettings().getShowLinkgrabbingResultsOption();
         if ((!guiFrame.isVisible() && option == LinkgrabberResultsOption.ONLY_IF_MINIMIZED) || option == LinkgrabberResultsOption.ALWAYS) {
-            /* dont try to restore jd if password required */
-
             if (!guiFrame.isVisible()) {
-                /* set visible */
-                new EDTHelper<Object>() {
-                    @Override
-                    public Object edtRun() {
-                        guiFrame.setVisible(true);
-                        return null;
-                    }
-                }.start();
-            }
-            /* workaround for : toFront() */
-            new EDTHelper<Object>() {
-                @Override
-                public Object edtRun() {
-                    guiFrame.toFront();
-                    return null;
+                /* dont try to restore jd if password required */
+                if (CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled() && !StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue())) {
+                    /* do nothing, because a password is set */
+                    return;
                 }
-            }.start();
+            }
+            miniIt(false);
             if (iconified) {
                 /* restore normale state,if windows was iconified */
                 new EDTHelper<Object>() {

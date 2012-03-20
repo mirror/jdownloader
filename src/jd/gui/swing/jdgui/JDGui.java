@@ -26,6 +26,7 @@ import java.awt.KeyEventPostProcessor;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.SystemTray;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -48,7 +49,6 @@ import javax.swing.WindowConstants;
 import jd.Launcher;
 import jd.config.ConfigContainer;
 import jd.controlling.JDLogger;
-import jd.controlling.JSonWrapper;
 import jd.gui.UIConstants;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.components.StatusBarImpl;
@@ -528,22 +528,24 @@ public class JDGui extends SwingGui {
             ArrayList<AbstractExtension<?>> allExt = ExtensionController.getInstance().getEnabledExtensions();
             for (AbstractExtension<?> ext : allExt) {
                 if ("trayicon".equals(ext.getConfigID())) {
-                    if (JSonWrapper.get("ADDONS_JDLIGHTTRAY").getBooleanProperty("PROPERTY_CLOSE_TO_TRAY", true)) {
-                        /*
-                         * avoid exit if trayicon addon is enabled and close to
-                         * tray active
-                         */
-                        try {
-                            Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.JDGui_windowClosing_try_title_(), _GUI._.JDGui_windowClosing_try_msg_(), null, _GUI._.JDGui_windowClosing_try_answer_tray(), _GUI._.JDGui_windowClosing_try_asnwer_close());
+                    try {
+                        if (SystemTray.isSupported() && ((org.jdownloader.extensions.jdtrayicon.TrayConfig) ext.getSettings()).isCloseToTrayEnabled()) {
+                            /*
+                             * avoid exit if trayicon addon is enabled and close
+                             * to tray active
+                             */
+                            try {
+                                Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.JDGui_windowClosing_try_title_(), _GUI._.JDGui_windowClosing_try_msg_(), null, _GUI._.JDGui_windowClosing_try_answer_tray(), _GUI._.JDGui_windowClosing_try_asnwer_close());
+                                return;
+                            } catch (DialogNoAnswerException e1) {
+                                e1.printStackTrace();
 
-                            return;
-                        } catch (DialogNoAnswerException e1) {
-                            e1.printStackTrace();
+                            }
+                            // NO need to ask again
+                            if (!CrossSystem.isMac()) ShutdownController.getInstance().removeShutdownVetoListener(RlyExitListener.getInstance());
 
                         }
-                        // NO need to ask again
-                        if (!CrossSystem.isMac()) ShutdownController.getInstance().removeShutdownVetoListener(RlyExitListener.getInstance());
-
+                    } catch (final Throwable e2) {
                     }
                 }
             }

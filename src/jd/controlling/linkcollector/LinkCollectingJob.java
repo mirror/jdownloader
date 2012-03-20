@@ -3,18 +3,21 @@ package jd.controlling.linkcollector;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 
 import org.appwork.storage.config.MinTimeWeakReference;
 
 public class LinkCollectingJob {
-    private final static AtomicLong           INSTANCECOUNTER = new AtomicLong(0);
-    private String                            text;
-    private String                            customSourceUrl;
-    private String                            customComment;
-    private boolean                           autoStart       = false;
-    private long                              ID              = INSTANCECOUNTER.incrementAndGet();
-    private MinTimeWeakReference<LinkCrawler> linkCrawler     = null;
+    private final static AtomicLong                        INSTANCECOUNTER = new AtomicLong(0);
+    private String                                         text;
+    private String                                         customSourceUrl;
+    private String                                         customComment;
+    private boolean                                        autoStart       = false;
+    private long                                           ID              = INSTANCECOUNTER.incrementAndGet();
+    private MinTimeWeakReference<LinkCrawler>              linkCrawler     = null;
+    private MinTimeWeakReference<LinkChecker<CrawledLink>> linkChecker     = null;
 
     public boolean isAutoStart() {
         return autoStart;
@@ -113,6 +116,22 @@ public class LinkCollectingJob {
     protected void setLinkCrawler(LinkCrawler linkCrawler) {
         if (this.linkCrawler != null) throw new IllegalStateException("LinkCrawler already set!");
         this.linkCrawler = new MinTimeWeakReference<LinkCrawler>(linkCrawler, 10000, "LinkCrawler for Job: " + ID);
+    }
+
+    public LinkChecker<CrawledLink> getLinkChecker() {
+        MinTimeWeakReference<LinkChecker<CrawledLink>> lCopy = this.linkChecker;
+        if (lCopy == null) return null;
+        LinkChecker<CrawledLink> ret = lCopy.get();
+        if (ret == null) {
+            linkChecker = null;
+            return null;
+        }
+        return ret;
+    }
+
+    protected void setLinkChecker(LinkChecker<CrawledLink> linkChecker) {
+        if (this.linkChecker != null) throw new IllegalStateException("LinkChecker already set!");
+        this.linkChecker = new MinTimeWeakReference<LinkChecker<CrawledLink>>(linkChecker, 10000, "LinkChecker for Job: " + ID);
     }
 
     private String extractPassword;

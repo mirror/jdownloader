@@ -127,6 +127,13 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     LinkCollectingJob sourceJob = parameter.getSourceJob();
                     LinkCrawler lc = null;
                     if (sourceJob == null || ((lc = sourceJob.getLinkCrawler()) != null && lc.isRunning())) { return; }
+                    if (LinkCollector.getInstance().getLinkChecker().isRunning()) {
+                        /*
+                         * LinkChecker from LinkCollector still running, we wait
+                         * till its finished!
+                         */
+                        return;
+                    }
                     if (newJobMap.add(parameter.getSourceJob())) {
                         // new job arrived
                         new EDTRunner() {
