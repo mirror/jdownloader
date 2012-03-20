@@ -82,7 +82,15 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
             @Override
             public void run() {
-                if (quitResponse != null) quitResponse.performQuit();
+                new Thread() {
+                    public void run() {
+                        /*
+                         * own thread because else it will block, performQuit
+                         * calls exit again
+                         */
+                        if (quitResponse != null) quitResponse.performQuit();
+                    };
+                }.start();
             }
         });
     }

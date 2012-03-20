@@ -132,6 +132,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      */
     public void setExtractor(IExtraction extractor) {
         extractors.add(extractor);
+        extractor.setLogger(getLogger());
     }
 
     /**
