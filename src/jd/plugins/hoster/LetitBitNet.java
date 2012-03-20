@@ -125,8 +125,8 @@ public class LetitBitNet extends PluginForHost {
         skymonk.getHeaders().put("User-Agent", null);
         skymonk.getHeaders().put("Referer", null);
         skymonk.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        skymonk.postPage("http://api.letitbit.net/internal/", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&appid=" + JDHash.getMD5(String.valueOf(Math.random())) + "&version=1.63");
-        String[] result = skymonk.getRegex("([^\r?\n]+)").getColumn(0);
+        skymonk.postPage("http://api.letitbit.net/internal/index2.php", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&appid=" + JDHash.getMD5(String.valueOf(Math.random())) + "&version=1.71");
+        String[] result = skymonk.getRegex("([^\r\n]+)").getColumn(0);
         if (result == null || result.length == 0) return null;
         ArrayList<String> res = new ArrayList<String>();
         for (String r : result) {
