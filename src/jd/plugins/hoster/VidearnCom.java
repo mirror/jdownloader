@@ -53,12 +53,23 @@ public class VidearnCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
-        if (oldStyle()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Not supported yet!"); }
-
         final String playpath = br.getRegex("file:'(.*?)',").getMatch(0);
         final String url = br.getRegex("streamer:'(.*?)',").getMatch(0);
+        if (playpath == null && url == null) {
+            /* videarn now also supports download of the flv stream */
+            String directURL = br.getRegex("player\\.swf.*?file: \"(http://.*?)\"").getMatch(0);
+            if (directURL != null) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directURL, true, 0);
+                if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("text")) {
+                    br.followConnection();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dl.startDownload();
+                return;
+            }
+        }
         if (playpath == null || url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
+        if (oldStyle()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Not supported yet!"); }
         dl = new RTMPDownload(this, downloadLink, url + playpath);
         final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 

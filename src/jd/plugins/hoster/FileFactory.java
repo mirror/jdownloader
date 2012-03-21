@@ -31,8 +31,8 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -88,7 +88,6 @@ public class FileFactory extends PluginForHost {
         try {
             final Browser br = new Browser();
             this.br.getHeaders().put("Accept-Encoding", "");
-            br.forceDebug(true);
             final StringBuilder sb = new StringBuilder();
             br.setCookiesExclusive(true);
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -111,11 +110,12 @@ public class FileFactory extends PluginForHost {
                 }
                 br.postPage("http://filefactory.com/tool/links.php", sb.toString());
                 for (final DownloadLink dl : links) {
-                    final String size = br.getRegex("div class=\"metadata\".*?" + dl.getDownloadURL() + ".*?</div>.*?</td>.*?<td>(.*?)</td>").getMatch(0);
-                    final String name = br.getRegex("<a href=.*?" + dl.getDownloadURL() + ".*?\">(.*?)<").getMatch(0);
+                    String size = br.getRegex("class=\"innerText\".*?" + dl.getDownloadURL() + ".*?class=\"hidden size\">(.*?)<").getMatch(0);
+                    final String name = br.getRegex("class=\"name\">([^\r\n \t]*?)</h1>[ \r\n\t]*?<p>" + dl.getDownloadURL() + "[^\r\n \t]*?</p").getMatch(0);
                     if (name != null && size != null) {
                         dl.setName(name.trim());
-                        dl.setDownloadSize(SizeFormatter.getSize(size.trim()));
+                        size = size.trim() + " MB";
+                        dl.setDownloadSize(SizeFormatter.getSize(size));
                         dl.setAvailable(true);
                     } else {
                         dl.setAvailable(false);
@@ -149,12 +149,7 @@ public class FileFactory extends PluginForHost {
             return ai;
         }
         this.br.getPage("http://www.filefactory.com/member/");
-        Regex someDetails = br.getRegex(">Files:</span>[\t\n\r ]+<span style=\"\">(\\d+) \\((.*?)\\)</span>");
-        String filesNum = someDetails.getMatch(0);
-        String usedSpace = someDetails.getMatch(1);
-        if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
-        if (usedSpace != null) ai.setUsedSpace(SizeFormatter.getSize(usedSpace.trim()));
-        if (br.containsHTML(">Membership:</span>[\t\n\r ]+<span>Free <a")) {
+        if (!br.containsHTML("\"greenText\">Premium member until<")) {
             ai.setStatus("Registered (free) User");
             ai.setUnlimitedTraffic();
             account.setProperty("freeAccount", "true");
@@ -165,30 +160,23 @@ public class FileFactory extends PluginForHost {
             }
         } else {
             account.setProperty("freeAccount", null);
-            String expire = this.br.getMatch("Your account is valid until the <strong>(.*?)</strong>");
+            String expire = this.br.getMatch("Premium member until.*?datetime=\"(.*?)\"");
             if (expire == null) {
                 account.setValid(false);
                 return ai;
             }
-            expire = expire.replaceFirst("([^\\d].*?) ", " ");
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM, yyyy", Locale.UK));
-            final String loaded = this.br.getRegex("You have downloaded(.*?)out").getMatch(0);
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.UK));
+            final String loaded = this.br.getRegex("You have used (.*?)out").getMatch(0);
             String max = this.br.getRegex("limit of(.*?\\. )").getMatch(0);
             if (max != null && loaded != null) {
+                max = max.replaceAll("\\.", ",");
+                max = max.replaceFirst(",", "");
+                max = max.replaceAll(",[ \t]*?$", "");
                 ai.setTrafficMax(SizeFormatter.getSize(max));
                 ai.setTrafficLeft(ai.getTrafficMax() - SizeFormatter.getSize(loaded));
             } else {
                 max = this.br.getRegex("You can now download up to(.*?)in").getMatch(0);
                 if (max != null) ai.setTrafficLeft(SizeFormatter.getSize(max));
-            }
-            try {
-                this.br.getPage("http://www.filefactory.com/reward/summary.php");
-                final String points = this.br.getMatch("Available reward points.*?class=\"amount\">(.*?) points");
-                if (points != null) {
-                    /* not always enough info available to calculate points */
-                    ai.setPremiumPoints(Long.parseLong(points.replaceAll("\\,", "").trim()));
-                }
-            } catch (final Throwable e) {
             }
             ai.setStatus("Premium User");
             try {
@@ -229,6 +217,7 @@ public class FileFactory extends PluginForHost {
     public String getUrl() throws IOException, PluginException {
         String url = this.br.getRegex("<div.*?id=\"downloadLink\".*?>.*?<a .*?href=\"(.*?)\".*?\"downloadLinkTarget").getMatch(0);
         if (url == null) url = this.br.getRegex("greyDownload\".*?<div.*?id=\"free\".*?>.*?<a .*?href=\"(http.*?)\".*?\"downloadLinkTarget").getMatch(0);
+        if (url == null) url = this.br.getRegex("downloadLinkTarget.*?href=\"(http.*?)\".*?\"").getMatch(0);
         if (url == null) {
             Context cx = null;
             try {
@@ -366,6 +355,7 @@ public class FileFactory extends PluginForHost {
                 } else {
                     String red = this.br.getRegex(Pattern.compile("10px 0;\">.*<a href=\"(.*?)\">Download with FileFactory Premium", Pattern.DOTALL)).getMatch(0);
                     if (red == null) red = this.br.getRegex("subPremium.*?ready.*?<a href=\"(.*?)\"").getMatch(0);
+                    if (red == null) red = this.br.getRegex("downloadLink.*?href=\"(.*?)\"").getMatch(0);
                     logger.finer("Indirect download");
                     this.br.setFollowRedirects(true);
                     if (red == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
@@ -390,17 +380,19 @@ public class FileFactory extends PluginForHost {
         rc.setId(id);
         final Form form = new Form();
         form.setAction("/file/checkCaptcha.php");
-        final String check = br.getRegex("check:'(.*?)'").getMatch(0);
+        final String check = br.getRegex("check: ?'(.*?)'").getMatch(0);
         form.put("check", check);
+        form.setMethod(MethodType.POST);
         rc.setForm(form);
         rc.load();
         final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
         final String c = this.getCaptchaCode(cf, link);
         rc.setCode(c);
         if (br.containsHTML(CAPTCHALIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-        if (!br.containsHTML("status:\"ok")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        final String url = br.getRegex("path:\"(.*?)\"").getMatch(0);
+        if (!br.containsHTML("status\":\"ok")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        String url = br.getRegex("path\":\"(.*?)\"").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        url = url.replaceAll("\\\\/", "/");
         if (url.startsWith("http")) { return url; }
         return "http://www.filefactory.com" + url;
     }
@@ -509,7 +501,8 @@ public class FileFactory extends PluginForHost {
             } else {
                 if (this.br.containsHTML("File Not Found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 final String fileName = this.br.getRegex("<title>(.*?) - download now for free").getMatch(0);
-                final String fileSize = this.br.getRegex(FileFactory.FILESIZE).getMatch(0);
+                String fileSize = this.br.getRegex(FileFactory.FILESIZE).getMatch(0);
+                if (fileSize == null) fileSize = this.br.getRegex("downloadFileData.*?h2>(.*?) file uploaded").getMatch(0);
                 if (fileName == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 downloadLink.setName(fileName.trim());
                 if (fileSize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));

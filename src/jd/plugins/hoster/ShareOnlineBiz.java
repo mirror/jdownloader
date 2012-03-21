@@ -84,7 +84,7 @@ public class ShareOnlineBiz extends PluginForHost {
                     sb.append(getID(dl));
                     c++;
                 }
-                br.postPage("http://api.share-online.biz/linkcheck.php?md5=1", sb.toString());
+                br.postPage("http://api.share-online.biz/cgi-bin?q=checklinks&md5=1", sb.toString());
                 String infos[][] = br.getRegex(Pattern.compile("(.*?);(.*?);(.*?);(.*?);([0-9a-fA-F]+)")).getMatches();
                 for (DownloadLink dl : links) {
                     String id = getID(dl);
@@ -345,7 +345,7 @@ public class ShareOnlineBiz extends PluginForHost {
             br.setCookie("http://www.share-online.biz", "a", a);
         }
         br.setFollowRedirects(true);
-        final String response = br.getPage("http://api.share-online.biz/account.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=download&lid=" + linkID);
+        final String response = br.getPage("http://api.share-online.biz/cgi-bin?q=linkdata&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&lid=" + linkID);
         if (response.contains("EXCEPTION request download link not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final HashMap<String, String> dlInfos = getInfos(response, ": ");
         final String filename = dlInfos.get("NAME");
@@ -395,7 +395,7 @@ public class ShareOnlineBiz extends PluginForHost {
                 br.setFollowRedirects(true);
                 String page = null;
                 try {
-                    page = br.getPage("http://api.share-online.biz/account.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=userDetails");
+                    page = br.getPage("http://api.share-online.biz/cgi-bin?q=userdetails&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 } finally {
                     br.setFollowRedirects(follow);
                 }
@@ -430,7 +430,7 @@ public class ShareOnlineBiz extends PluginForHost {
         String id = getID(downloadLink);
         br.setDebug(true);
         br.setFollowRedirects(true);
-        if (br.postPage("http://api.share-online.biz/linkcheck.php?md5=1&snr=1", "links=" + id).matches("\\s*")) {
+        if (br.postPage("http://api.share-online.biz/cgi-bin?q=checklinks&md5=1&snr=1", "links=" + id).matches("\\s*")) {
             String startURL = downloadLink.getDownloadURL();
             // workaround to bypass new layout and use old site
             br.getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
