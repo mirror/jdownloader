@@ -539,10 +539,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         throw new Exception("Linklist incompatible");
     }
 
-    public void move(final Object src2, final Object dst, final MOVE mode) {
-        /* TODO: rewrite */
-    }
-
     private void postInit(LinkedList<FilePackage> fps) {
         if (fps == null || fps.size() == 0) return;
         final Iterator<FilePackage> iterator = fps.iterator();

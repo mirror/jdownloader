@@ -20,6 +20,7 @@ package jd;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Random;
@@ -30,10 +31,12 @@ import java.util.logging.Logger;
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
 import jd.controlling.ClipboardMonitoring;
+import jd.controlling.IOEQ;
 import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyEvent;
 import jd.controlling.proxy.ProxyInfo;
@@ -45,6 +48,8 @@ import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.ext.security.JSPermissionRestricter;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -63,6 +68,7 @@ import org.appwork.update.inapp.RlyExitListener;
 import org.appwork.update.inapp.WebupdateSettings;
 import org.appwork.utils.Application;
 import org.appwork.utils.event.DefaultEventListener;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
@@ -480,29 +486,60 @@ public class Launcher {
                         }
                         /* start downloadwatchdog */
                         DownloadWatchDog.getInstance();
-
                         AutoDownloadStartOption doRestartRunninfDownloads = JsonConfig.create(GeneralSettings.class).getAutoStartDownloadOption();
                         boolean closedRunning = JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads();
                         if (doRestartRunninfDownloads == AutoDownloadStartOption.ALWAYS || (closedRunning && doRestartRunninfDownloads == AutoDownloadStartOption.ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS)) {
-                            /* autostart downloads when no autoupdate is enabled */
+                            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                            if (JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() > 0 && CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS.isEnabled()) {
-                                ConfirmDialog d = new ConfirmDialog(Dialog.LOGIC_COUNTDOWN, _JDT._.Main_run_autostart_(), _JDT._.Main_run_autostart_msg(), NewTheme.I().getIcon("start", 32), _JDT._.Mainstart_now(), null);
-                                d.setCountdownTime(JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds());
-                                try {
-                                    Dialog.getInstance().showDialog(d);
-                                    DownloadWatchDog.getInstance().startDownloads();
-                                } catch (DialogNoAnswerException e) {
-                                    if (e.isCausedByTimeout()) {
-                                        DownloadWatchDog.getInstance().startDownloads();
+                                @Override
+                                protected Void run() throws RuntimeException {
+                                    /*
+                                     * we do this check inside IOEQ because
+                                     * initDownloadLinks also does its final
+                                     * init in IOEQ
+                                     */
+                                    List<DownloadLink> dlAvailable = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+
+                                        @Override
+                                        public boolean isChildrenNodeFiltered(DownloadLink node) {
+                                            return node.isEnabled() && node.getLinkStatus().hasStatus(LinkStatus.TODO);
+                                        }
+
+                                        @Override
+                                        public int returnMaxResults() {
+                                            return 1;
+                                        }
+
+                                    });
+                                    if (dlAvailable.size() == 0) {
+                                        /*
+                                         * no downloadlinks available to
+                                         * autostart
+                                         */
+                                        return null;
                                     }
-
+                                    new Thread("AutostartDialog") {
+                                        @Override
+                                        public void run() {
+                                            if (JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() > 0 && CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS.isEnabled()) {
+                                                ConfirmDialog d = new ConfirmDialog(Dialog.LOGIC_COUNTDOWN, _JDT._.Main_run_autostart_(), _JDT._.Main_run_autostart_msg(), NewTheme.I().getIcon("start", 32), _JDT._.Mainstart_now(), null);
+                                                d.setCountdownTime(JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds());
+                                                try {
+                                                    Dialog.getInstance().showDialog(d);
+                                                    DownloadWatchDog.getInstance().startDownloads();
+                                                } catch (DialogNoAnswerException e) {
+                                                    if (e.isCausedByTimeout()) {
+                                                        DownloadWatchDog.getInstance().startDownloads();
+                                                    }
+                                                }
+                                            } else {
+                                                DownloadWatchDog.getInstance().startDownloads();
+                                            }
+                                        }
+                                    }.start();
+                                    return null;
                                 }
-                            } else {
-                                DownloadWatchDog.getInstance().startDownloads();
-                            }
-                            // Dialog.getInstance().showConfirmDialog(Dialog,
-                            // title, message, tmpicon, okOption, cancelOption)
+                            });
                         }
                     }
                 }.start();

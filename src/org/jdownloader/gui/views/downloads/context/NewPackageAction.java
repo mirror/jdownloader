@@ -9,6 +9,7 @@ import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
@@ -49,7 +50,7 @@ public class NewPackageAction extends ContextMenuAction {
             /* TODO: speed optimize */
             link.getFilePackage().remove(link);
         }
-        DownloadController.getInstance().move(links, nfp, DownloadController.MOVE.BEGIN);
+        if (true) throw new WTFException("FINISH ME");
 
         if (JsonConfig.create(GeneralSettings.class).isAddNewLinksOnTop()) {
             DownloadController.getInstance().addmovePackageAt(fp, 0);
