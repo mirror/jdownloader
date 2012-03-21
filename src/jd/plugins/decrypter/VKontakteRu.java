@@ -246,6 +246,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         }
         String numberOfEntrys = br.getRegex("(\\d+) (альбома|альбомов)</").getMatch(0);
+        if (numberOfEntrys == null) numberOfEntrys = br.getRegex("\\| (\\d+) albums</title>").getMatch(0);
         if (numberOfEntrys == null && (decryptedLinks == null || decryptedLinks.size() == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -270,7 +271,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     offset += 12;
                     br.postPage(postPage, "al=1&offset=" + offset + "&part=1");
                 }
-                String[] photoAlbums = br.getRegex("class=\"photo(_album)?_row\" id=\"album(\\d+_\\d+)\"").getColumn(1);
+                String[] photoAlbums = br.getRegex("class=\"photo(_album)?_row\" id=\"album(\\d+_\\d+)").getColumn(1);
                 if (photoAlbums == null || photoAlbums.length == 0) continue;
                 for (String photoAlbum : photoAlbums) {
                     decryptedLinks.add(createDownloadlink("http://vk.com/album" + photoAlbum));

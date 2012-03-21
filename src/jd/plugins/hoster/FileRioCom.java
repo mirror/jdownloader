@@ -111,9 +111,6 @@ public class FileRioCom extends PluginForHost {
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-            if (filesize == null) {
-                filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(GB|MB))").getMatch(0);
-            }
         }
         if (filename == null || filename.equals("")) {
             if (correctedBR.contains("You have reached the download-limit")) {
