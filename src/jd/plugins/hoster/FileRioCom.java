@@ -79,7 +79,7 @@ public class FileRioCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     // do not add @Override here to keep 0.* compatibility

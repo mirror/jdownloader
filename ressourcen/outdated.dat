@@ -706,3 +706,17 @@ jd/plugins/decrypter/SkipFileComUser.class
 jd/plugins/hoster/SkipFileCom.class
 jd/plugins/hoster/Usershare.class
 jd/plugins/hoster/SupaShareNet.class
+jd/captcha/methods/rlcrpt
+jd/captcha/methods/pldbx
+jd/plugins/hoster/UploadBoxCom.class
+jd/plugins/hoster/TabNetUa.class
+jd/captcha/methods/tbnt
+jd/plugins/hoster/LetitFileRu.class
+jd/captcha/methods/lttflr
+jd/captcha/methods/pnflr
+jd/plugins/hoster/OpenFileRu.class
+jd/plugins/hoster/FileSurfRu.class
+jd/captcha/methods/flsrf
+jd/plugins/decrypter/Sldn.class
+jd/captcha/methods/sld
+jd/captcha/methods/fl

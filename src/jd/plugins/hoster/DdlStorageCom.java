@@ -114,7 +114,7 @@ public class DdlStorageCom extends PluginForHost {
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
-                filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(GB|MB))").getMatch(0);
+                filesize = new Regex(correctedBR, "ddlstorage\\.com/[a-z0-9]{12}/[^<>/\"]*? \\((\\d+ [A-Za-z]+)\\)</h2>").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
