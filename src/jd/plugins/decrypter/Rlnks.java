@@ -79,7 +79,7 @@ public class Rlnks extends PluginForDecrypt {
             br.getHeaders().put("User-Agent", UA);
 
             /* Handle Captcha and/or password */
-            getCaptcha(parameter, param);
+            handleCaptchaAndPassword(parameter, param);
             if (ALLFORM != null && ALLFORM.getRegex("password").matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
             if (ALLFORM != null && ALLFORM.getRegex("captcha").matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
 
@@ -128,7 +128,7 @@ public class Rlnks extends PluginForDecrypt {
             PROGRESS.addToMax(matches.length);
             for (final String match : matches) {
                 Thread.sleep(2333);
-                getCaptcha("http://www.relink.us/frame.php?" + match, param);
+                handleCaptchaAndPassword("http://www.relink.us/frame.php?" + match, param);
                 if (ALLFORM != null && ALLFORM.getRegex("captcha").matches()) {
                     logger.warning("Falsche Captcheingabe, Link wird übersprungen!");
                     continue;
@@ -168,10 +168,11 @@ public class Rlnks extends PluginForDecrypt {
         }
     }
 
-    private void getCaptcha(final String partLink, final CryptedLink param) throws Exception {
+    private void handleCaptchaAndPassword(final String partLink, final CryptedLink param) throws Exception {
         br.getPage(partLink);
         ALLFORM = br.getFormbyProperty("name", "form");
-        ALLFORM = ALLFORM == null ? br.getForm(0) : ALLFORM;
+        boolean b = ALLFORM == null ? true : false;
+        ALLFORM = b ? br.getForm(0) : ALLFORM;
         if (ALLFORM != null) {
             for (int i = 0; i < 5; i++) {
                 if (ALLFORM.containsHTML("password")) {
@@ -195,7 +196,7 @@ public class Rlnks extends PluginForDecrypt {
                     br.getPage(partLink);
                 }
                 ALLFORM = br.getFormbyProperty("name", "form");
-                ALLFORM = ALLFORM == null ? br.getForm(0) : ALLFORM;
+                ALLFORM = ALLFORM == null && b ? br.getForm(0) : ALLFORM;
                 if (ALLFORM != null) {
                     continue;
                 }
