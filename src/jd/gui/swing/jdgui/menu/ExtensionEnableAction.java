@@ -74,7 +74,6 @@ public class ExtensionEnableAction extends AbstractAction {
             }
         }
         AddonsMenu.getInstance().onUpdated();
-        WindowMenu.getInstance().onUpdated();
 
     }
 

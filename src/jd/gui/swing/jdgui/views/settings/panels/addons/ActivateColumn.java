@@ -18,7 +18,6 @@ package jd.gui.swing.jdgui.views.settings.panels.addons;
 
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
-import jd.gui.swing.jdgui.menu.WindowMenu;
 
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
@@ -88,7 +87,7 @@ public class ActivateColumn extends ExtCheckColumn<LazyExtension> {
          */
 
         AddonsMenu.getInstance().onUpdated();
-        WindowMenu.getInstance().onUpdated();
+
         // ConfigSidebar.getInstance(null).updateAddons();
         addons.updateShowcase();
     }

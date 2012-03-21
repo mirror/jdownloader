@@ -1,9 +1,7 @@
 package org.jdownloader.extensions.infobar;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 
 import jd.config.ConfigContainer;
@@ -13,7 +11,6 @@ import jd.plugins.AddonPanel;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTHelper;
-import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.ExtensionGuiEnableAction;
@@ -33,8 +30,6 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
     private static final String                    PROPERTY_DROPLOCATION = "PROPERTY_DROPLOCATION";
 
     private static final String                    PROPERTY_DOCKING      = "PROPERTY_DOCKING";
-
-    private AppAction                              activateAction;
 
     private InfoDialog                             infoDialog;
 
@@ -93,7 +88,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
     public void setGuiEnable(boolean b) {
         if (b) {
             if (infoDialog == null) {
-                infoDialog = InfoDialog.getInstance(activateAction);
+                infoDialog = InfoDialog.getInstance(getShowGuiAction());
                 infoDialog.setEnableDropLocation(getPluginConfig().getBooleanProperty(PROPERTY_DROPLOCATION, true));
                 infoDialog.setEnableDocking(getPluginConfig().getBooleanProperty(PROPERTY_DOCKING, true));
                 if (Application.getJavaVersion() >= 16000000) updateOpacity(null);
@@ -102,7 +97,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
         } else {
             if (infoDialog != null) infoDialog.hideDialog();
         }
-        if (activateAction != null && activateAction.isSelected() != b) activateAction.setSelected(b);
+        if (getShowGuiAction() != null && getShowGuiAction().isSelected() != b) getShowGuiAction().setSelected(b);
     }
 
     @Override
@@ -117,16 +112,6 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
 
     @Override
     protected void start() throws StartException {
-        activateAction = new AppAction() {
-            {
-                setName("Show Infobar");
-                setIconKey(this.getIconKey());
-                setSelected(false);
-            }
-
-            public void actionPerformed(ActionEvent e) {
-            }
-        };
 
         logger.info("InfoBar: OK");
     }
@@ -191,11 +176,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
 
     @Override
     public java.util.ArrayList<JMenuItem> getMenuAction() {
-        ArrayList<JMenuItem> menu = new ArrayList<JMenuItem>();
-
-        menu.add(new JCheckBoxMenuItem(activateAction));
-
-        return menu;
+        return null;
     }
 
     @Override

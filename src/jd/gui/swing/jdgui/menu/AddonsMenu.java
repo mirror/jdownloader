@@ -17,14 +17,17 @@
 package jd.gui.swing.jdgui.menu;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
+import java.util.Comparator;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
 import jd.controlling.IOEQ;
+import jd.gui.swing.jdgui.menu.actions.LogAction;
 
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionControllerListener;
@@ -39,7 +42,7 @@ public class AddonsMenu extends JMenu implements ExtensionControllerListener {
     private AddonsMenu() {
         super(_JDT._.gui_menu_extensions());
         ExtensionController.getInstance().getEventSender().addListener(this);
-
+        setEnabled(false);
     }
 
     public static AddonsMenu getInstance() {
@@ -49,10 +52,18 @@ public class AddonsMenu extends JMenu implements ExtensionControllerListener {
 
     private void updateMenu() {
 
+        add(new LogAction());
+
         ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsPress = new ArrayList<JMenuItem>();
-        List<LazyExtension> pluginsOptional = ExtensionController.getInstance().getExtensions();
+        ArrayList<LazyExtension> pluginsOptional = new ArrayList<LazyExtension>(ExtensionController.getInstance().getExtensions());
+        Collections.sort(pluginsOptional, new Comparator<LazyExtension>() {
+
+            public int compare(LazyExtension o1, LazyExtension o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
 
         for (final LazyExtension wrapper : pluginsOptional) {
 
@@ -70,6 +81,12 @@ public class AddonsMenu extends JMenu implements ExtensionControllerListener {
                             itemsPress.add(m);
                         }
                     }
+                }
+
+                if (plg.getShowGuiAction() != null) {
+
+                    itemsToggle.add(new JCheckBoxMenuItem(plg.getShowGuiAction()));
+
                 }
             }
             if (wrapper.isQuickToggleEnabled()) {
@@ -111,13 +128,28 @@ public class AddonsMenu extends JMenu implements ExtensionControllerListener {
         }
     }
 
+    public JMenuItem add(JMenuItem menuItem) {
+
+        setEnabled(true);
+        return super.add(menuItem);
+    }
+
     public void onUpdated() {
-        System.out.println(1);
+
         IOEQ.add(new Runnable() {
 
             public void run() {
-                removeAll();
-                updateMenu();
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        setEnabled(false);
+                        removeAll();
+                        updateMenu();
+
+                    }
+                };
+
             }
 
         }, true);

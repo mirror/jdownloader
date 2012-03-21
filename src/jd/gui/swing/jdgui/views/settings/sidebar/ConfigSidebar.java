@@ -37,7 +37,6 @@ import javax.swing.event.ListSelectionListener;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
-import jd.gui.swing.jdgui.menu.WindowMenu;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
@@ -298,7 +297,7 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
                      */
 
                     AddonsMenu.getInstance().onUpdated();
-                    WindowMenu.getInstance().onUpdated();
+
                     // ConfigSidebar.getInstance(null).updateAddons();
                     // addons.updateShowcase();
 

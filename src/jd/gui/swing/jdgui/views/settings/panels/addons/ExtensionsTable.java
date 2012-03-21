@@ -14,7 +14,6 @@ import javax.swing.table.JTableHeader;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.BasicJDTable;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
-import jd.gui.swing.jdgui.menu.WindowMenu;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 
@@ -143,7 +142,7 @@ public class ExtensionsTable extends BasicJDTable<LazyExtension> implements Sett
                      */
 
                     AddonsMenu.getInstance().onUpdated();
-                    WindowMenu.getInstance().onUpdated();
+
                     // ConfigSidebar.getInstance(null).updateAddons();
                     // addons.updateShowcase();
                 }
