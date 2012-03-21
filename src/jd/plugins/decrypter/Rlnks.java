@@ -171,6 +171,7 @@ public class Rlnks extends PluginForDecrypt {
     private void getCaptcha(final String partLink, final CryptedLink param) throws Exception {
         br.getPage(partLink);
         ALLFORM = br.getFormbyProperty("name", "form");
+        ALLFORM = ALLFORM == null ? br.getForm(0) : ALLFORM;
         if (ALLFORM != null) {
             for (int i = 0; i < 5; i++) {
                 if (ALLFORM.containsHTML("password")) {
@@ -194,6 +195,7 @@ public class Rlnks extends PluginForDecrypt {
                     br.getPage(partLink);
                 }
                 ALLFORM = br.getFormbyProperty("name", "form");
+                ALLFORM = ALLFORM == null ? br.getForm(0) : ALLFORM;
                 if (ALLFORM != null) {
                     continue;
                 }
