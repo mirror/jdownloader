@@ -48,7 +48,7 @@ public class TumblrCom extends PluginForHost {
 
     private void getDllink() throws IOException {
         br.setFollowRedirects(false);
-        dllink = br.getRegex("<img class=\"photo\" src=\"(http://[^<>\"\\']+)\"").getMatch(0);
+        dllink = br.getRegex("\"(http://\\d+\\.media\\.tumblr\\.com/[^<>\"/\\']*?\\.jpg)\"").getMatch(0);
     }
 
     @Override
