@@ -111,8 +111,10 @@ public class FileFactory extends PluginForHost {
                 br.postPage("http://filefactory.com/tool/links.php", sb.toString());
                 for (final DownloadLink dl : links) {
                     String size = br.getRegex("class=\"innerText\".*?" + dl.getDownloadURL() + ".*?class=\"hidden size\">(.*?)<").getMatch(0);
-                    final String name = br.getRegex("class=\"name\">([^\r\n \t]*?)</h1>[ \r\n\t]*?<p>" + dl.getDownloadURL() + "[^\r\n \t]*?</p").getMatch(0);
+                    String name = br.getRegex("class=\"name\">([^\r\n\t]*?)</h1>[ \r\n\t]*?<p>" + dl.getDownloadURL() + "[^\r\n \t]*?</p").getMatch(0);
                     if (name != null && size != null) {
+                        /* remove filesize at the end of filename if given */
+                        name = name.replaceFirst("\\([0-9\\. GKBM]+\\)", "");
                         dl.setName(name.trim());
                         size = size.trim() + " MB";
                         dl.setDownloadSize(SizeFormatter.getSize(size));
