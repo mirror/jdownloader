@@ -213,6 +213,7 @@ public class Freaksharenet extends PluginForHost {
             logger.info("File for the following is offline (server error): " + downloadLink.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
         if (br.containsHTML("bad try")) {
             logger.warning("Hoster said \"bad try\" which means that jd didn't wait enough time before trying to start the download!");
             throw new PluginException(LinkStatus.ERROR_RETRY);
