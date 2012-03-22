@@ -61,7 +61,8 @@ public class SflnkgNt extends PluginForDecrypt {
         dotty,
         cool,
         standard,
-        cats;
+        cats,
+        notDetected;
     }
 
     private static final String PASSWORDPROTECTEDTEXT = "type=\"password\" name=\"link-password\"";
@@ -121,7 +122,7 @@ public class SflnkgNt extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(finallink));
             }
         } else {
-            String cType = "solvemedia";
+            String cType = "notDetected";
             final HashMap<String, String> captchaRegex = new HashMap<String, String>();
             captchaRegex.put("recaptcha", "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)");
             captchaRegex.put("basic", "(http://safelinking\\.net/includes/captcha_factory/securimage/securimage_show\\.php\\?hash=[a-z0-9]+)");
@@ -136,7 +137,7 @@ public class SflnkgNt extends PluginForDecrypt {
                 }
             }
 
-            logger.info("Detected captcha typ \"" + cType + "\" for this host");
+            logger.info("notDetected".equals(cType) ? "Captcha not detected." : "Detected captcha typ \"" + cType + "\" for this host.");
 
             for (int i = 0; i <= 5; i++) {
                 String data = "post-protect=1";
@@ -223,11 +224,11 @@ public class SflnkgNt extends PluginForDecrypt {
                     data += "&adcopy_challenge=" + chid;
                     data += "&adcopy_response=";
                     break;
-                default:
-                    break;
                 }
 
-                post(parameter, data, true);
+                if (captchaRegex.containsKey(cType) || data.contains("link-password")) {
+                    post(parameter, data, true);
+                }
 
                 if (br.containsHTML(captchaRegex.get(cType)) || br.containsHTML(PASSWORDPROTECTEDTEXT)) {
                     continue;
@@ -254,43 +255,41 @@ public class SflnkgNt extends PluginForDecrypt {
             }
 
             // Webprotection decryption
-            decryptedLinks = new ArrayList<DownloadLink>();
-            // look for safelink redirection links
-            String[] links = br.getRegex("(http://safelinking\\.net/d/[a-z0-9]+)").getColumn(0);
-            if (links == null || links.length == 0) {
-                // final fail over, look for all external links.
-                // Regex (lazy), due to the constant changes.
-                links = br.getRegex("href=[\"\\']{1}?(https?://[^<>]+)[\"\\']{1}?").getColumn(0);
-                // links = removeDupes(links);
-                if (links == null || links.length == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().equals(parameter)) get(parameter);
+            for (String[] s : br.getRegex("<div class=\"links\\-container result\\-form\">(.*?)</div>").getMatches()) {
+                for (String[] ss : new Regex(s[0], "<a href=\"(.*?)\"").getMatches()) {
+                    for (String sss : ss) {
+                        if (parameter.equals(sss)) continue;
+                        cryptedLinks.add(sss);
+                    }
                 }
             }
-            progress.setRange(links.length);
-            for (final String link : links) {
-                if (!cryptedLinks.contains(link)) {
-                    cryptedLinks.add(link);
-                }
-            }
-            for (final String link : cryptedLinks) {
+
+            progress.setRange(cryptedLinks.size());
+
+            for (String link : cryptedLinks) {
                 if (link.matches(".*safelinking\\.net/d/.+")) {
                     get(link);
-                    final String finallink = br.getRedirectLocation();
-                    if (finallink == null) {
+                    link = br.getRedirectLocation();
+                    if (link == null) {
                         logger.warning("SafeLinking: Sever issues? continuing...");
                         logger.warning("SafeLinking: Please confirm via browser, and report any bugs to developement team. :" + parameter);
+                        continue;
                     }
-                    // prevent loop
-                    if (!parameter.equals(finallink)) {
-                        decryptedLinks.add(createDownloadlink(finallink));
-                    }
-                } else if (!link.contains("safelinking.net")) {
-                    // might need a better filter
-                    decryptedLinks.add(createDownloadlink(link));
                 }
+                DownloadLink dl = createDownloadlink(link);
+                try {
+                    distribute(dl);
+                } catch (final Throwable e) {
+                    /* does not exist in 09581 */
+                }
+                decryptedLinks.add(dl);
                 progress.increase(1);
             }
+        }
+        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            logger.warning("Decrypter out of date for link: " + parameter);
+            return null;
         }
         return decryptedLinks;
     }
