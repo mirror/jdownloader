@@ -61,6 +61,8 @@ public class TurboBitNet extends PluginForHost {
 
     private static final String COOKIE_HOST   = "http://turbobit.net";
 
+    private static final String BLOCKED       = "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!";
+
     public TurboBitNet(final PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://turbobit.net/turbo");
@@ -199,7 +201,7 @@ public class TurboBitNet extends PluginForHost {
             tt = Integer.parseInt(ttt);
             if (tt < 60 || tt > 600) {
                 ttt = parseImageUrl(tb(2) + tt + "};" + br.getRegex(tb(3)).getMatch(0), false);
-                if (ttt == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!", 10 * 60 * 60 * 1000l); }
+                if (ttt == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l); }
                 tt = Integer.parseInt(ttt);
             }
             logger.info(" Waittime detected, waiting " + ttt + " seconds from now on...");
@@ -217,16 +219,16 @@ public class TurboBitNet extends PluginForHost {
             }
         }
         if (downloadUrl == null) {
-            if (br.containsHTML("Error: ") || res == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!", 10 * 60 * 60 * 1000l); }
+            if (br.containsHTML("Error: ") || res == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l); }
             if (br.containsHTML("The file is not avaliable now because of technical problems")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l); }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l);
         }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Try to download it once again after")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l); }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l);
         }
         dl.startDownload();
     }
@@ -325,26 +327,33 @@ public class TurboBitNet extends PluginForHost {
         if (!NULL) {
             final String[] next = fun.split(tb(9));
             if (next == null || next.length != 2) {
-                fun = rhino(fun, true);
+                fun = rhino(fun, 0);
                 if (fun == null) return null;
                 fun = new Regex(fun, tb(4)).getMatch(1);
-                return fun == null ? new Regex(fun, tb(5)).getMatch(0) : fun;
+                return fun == null ? new Regex(fun, tb(5)).getMatch(0) : rhino(fun, 2);
             }
-            return rhino(next[1], false);
+            return rhino(next[1], 1);
         }
         return new Regex(fun, tb(1)).getMatch(0);
     }
 
-    private String rhino(String s, boolean b) {
+    private String rhino(String s, int b) {
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
-            if (b) {
+            switch (b) {
+            case 0:
                 engine.eval(s + tb(6));
                 result = engine.get(tb(7));
-            } else {
+                break;
+            case 1:
                 result = ((Double) engine.eval(tb(8))).longValue();
+                break;
+            case 2:
+                engine.eval("var out=\"" + s + "\";");
+                result = engine.get("out");
+                break;
             }
         } catch (final Throwable e) {
             return null;

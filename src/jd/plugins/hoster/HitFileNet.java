@@ -56,6 +56,8 @@ public class HitFileNet extends PluginForHost {
 
     public static final Object  LOCK          = new Object();
 
+    private static final String BLOCKED       = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
+
     public HitFileNet(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://hitfile.net/premium/emoney/5");
@@ -155,7 +157,7 @@ public class HitFileNet extends PluginForHost {
             tt = Integer.parseInt(ttt);
             if (tt < 60 || tt > 600) {
                 ttt = parseImageUrl(hf(2) + tt + "};" + br.getRegex(hf(3)).getMatch(0), false);
-                if (ttt == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!", 10 * 60 * 60 * 1000l); }
+                if (ttt == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l); }
                 tt = Integer.parseInt(ttt);
             }
             logger.info(" Waittime detected, waiting " + ttt + " seconds from now on...");
@@ -196,13 +198,13 @@ public class HitFileNet extends PluginForHost {
         }
         if (downloadUrl == null) {
             logger.warning("dllink couldn't be found...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l);
         }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l);
         }
         dl.startDownload();
     }
@@ -262,26 +264,33 @@ public class HitFileNet extends PluginForHost {
         if (!NULL) {
             final String[] next = fun.split(hf(9));
             if (next == null || next.length != 2) {
-                fun = rhino(fun, true);
+                fun = rhino(fun, 0);
                 if (fun == null) return null;
                 fun = new Regex(fun, hf(4)).getMatch(1);
-                return fun == null ? new Regex(fun, hf(5)).getMatch(0) : fun;
+                return fun == null ? new Regex(fun, hf(5)).getMatch(0) : rhino(fun, 2);
             }
-            return rhino(next[1], false);
+            return rhino(next[1], 1);
         }
         return new Regex(fun, hf(1)).getMatch(0);
     }
 
-    private String rhino(String s, boolean b) {
+    private String rhino(String s, int b) {
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
-            if (b) {
+            switch (b) {
+            case 0:
                 engine.eval(s + hf(6));
                 result = engine.get(hf(7));
-            } else {
+                break;
+            case 1:
                 result = ((Double) engine.eval(hf(8))).longValue();
+                break;
+            case 2:
+                engine.eval("var out=\"" + s + "\";");
+                result = engine.get("out");
+                break;
             }
         } catch (final Throwable e) {
             return null;
