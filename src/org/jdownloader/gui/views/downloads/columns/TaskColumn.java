@@ -1,12 +1,14 @@
 package org.jdownloader.gui.views.downloads.columns;
 
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.proxy.ProxyBlock;
 import jd.controlling.proxy.ProxyController;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginProgress;
@@ -22,6 +24,9 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
      * 
      */
     private static final long serialVersionUID = 1L;
+    private ImageIcon         updateIcon;
+    private ImageIcon         trueIcon;
+    private ImageIcon         falseIcon;
 
     @Override
     public int getDefaultWidth() {
@@ -32,12 +37,6 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         return false;
     }
 
-    // @Override
-    // public int getMaxWidth() {
-    //
-    // return 150;
-    // }
-
     @Override
     public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();
@@ -45,26 +44,26 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
     public TaskColumn() {
         super(_GUI._.StatusColumn_StatusColumn());
+        this.updateIcon = NewTheme.I().getIcon("update", 16);
+        this.trueIcon = NewTheme.I().getIcon("true", 16);
+        this.falseIcon = NewTheme.I().getIcon("false", 16);
     }
 
     @Override
     protected Icon getIcon(AbstractNode value) {
         if (value instanceof DownloadLink) {
-            LinkStatus ls = ((DownloadLink) value).getLinkStatus();
-
-            PluginProgress prog = ((DownloadLink) value).getPluginProgress();
+            DownloadLink dl = (DownloadLink) value;
+            LinkStatus ls = dl.getLinkStatus();
+            PluginProgress prog = dl.getPluginProgress();
             if (prog != null && prog.getPercent() > 0.0 && prog.getPercent() < 100.0) {
-                NewTheme.I().getIcon("update", 16);
+                return updateIcon;
             } else if (ls.getStatusIcon() != null) {
                 return ls.getStatusIcon();
             } else if (ls.isFinished()) {
-                return NewTheme.I().getIcon("true", 16);
-            } else if (ls.isFailed() || (((DownloadLink) value).isAvailabilityStatusChecked() && !((DownloadLink) value).isAvailable())) {
-                //
-                return NewTheme.I().getIcon("false", 16);
-            }
+                return trueIcon;
+            } else if (ls.isFailed() || dl.getAvailableStatus() == AvailableStatus.FALSE) { return falseIcon; }
         } else if (value instanceof FilePackage) {
-            if (((FilePackage) value).getView().isFinished()) { return NewTheme.I().getIcon("true", 16); }
+            if (((FilePackage) value).getView().isFinished()) { return trueIcon; }
         }
         return null;
     }
@@ -73,23 +72,25 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
             DownloadLink dl = (DownloadLink) value;
-            ProxyBlock ipTimeout = null;
-            if (dl.getLivePlugin() == null && !dl.getLinkStatus().isPluginActive() && (ipTimeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
-                if (ipTimeout.getLink() == value) {
-                    return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(ipTimeout.getBlockedTimeout() / 1000));
-                } else {
-                    return _JDT._.gui_downloadlink_hosterwaittime();
+            if (!dl.getLinkStatus().isPluginActive()) {
+                ProxyBlock ipTimeout = null;
+                if (dl.getLivePlugin() == null && !dl.getLinkStatus().isPluginActive() && (ipTimeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
+                    if (ipTimeout.getLink() == value) {
+                        return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(ipTimeout.getBlockedTimeout() / 1000));
+                    } else {
+                        return _JDT._.gui_downloadlink_hosterwaittime();
+                    }
+                }
+                ProxyBlock hostTimeout = null;
+                if (dl.getLivePlugin() == null && !dl.getLinkStatus().isPluginActive() && (hostTimeout = ProxyController.getInstance().getHostBlockedTimeout(dl.getHost())) != null) {
+                    if (hostTimeout.getLink() == value) {
+                        return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(hostTimeout.getBlockedTimeout() / 1000));
+                    } else {
+                        return _JDT._.gui_downloadlink_hostertempunavail();
+                    }
                 }
             }
-            ProxyBlock hostTimeout = null;
-            if (dl.getLivePlugin() == null && !dl.getLinkStatus().isPluginActive() && (hostTimeout = ProxyController.getInstance().getHostBlockedTimeout(dl.getHost())) != null) {
-                if (hostTimeout.getLink() == value) {
-                    return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(hostTimeout.getBlockedTimeout() / 1000));
-                } else {
-                    return _JDT._.gui_downloadlink_hostertempunavail();
-                }
-            }
-            return ((DownloadLink) value).getLinkStatus().getStatusString();
+            return dl.getLinkStatus().getStatusString();
 
         } else if (value instanceof FilePackage) {
             if (((FilePackage) value).getView().isFinished()) { return "Finished"; }

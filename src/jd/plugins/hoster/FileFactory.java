@@ -178,7 +178,11 @@ public class FileFactory extends PluginForHost {
                 ai.setTrafficLeft(ai.getTrafficMax() - SizeFormatter.getSize(loaded));
             } else {
                 max = this.br.getRegex("You can now download up to(.*?)in").getMatch(0);
-                if (max != null) ai.setTrafficLeft(SizeFormatter.getSize(max));
+                if (max != null) {
+                    ai.setTrafficLeft(SizeFormatter.getSize(max));
+                } else {
+                    ai.setUnlimitedTraffic();
+                }
             }
             ai.setStatus("Premium User");
             try {
@@ -430,9 +434,10 @@ public class FileFactory extends PluginForHost {
                 }
                 this.br.getHeaders().put("Accept-Encoding", "gzip");
                 this.br.setFollowRedirects(true);
-                this.br.getPage("http://filefactory.com");
-                this.br.postPage("http://filefactory.com/member/login.php", "redirect=%2F&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                this.br.getPage("http://www.filefactory.com");
+                this.br.postPage("http://www.filefactory.com/member/login.php", "redirect=%2F%3Flogout%3D1&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (this.br.containsHTML(FileFactory.LOGIN_ERROR)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                if (this.br.getCookie("http://www.filefactory.com", "ff_membership") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);

@@ -173,7 +173,6 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
             } else {
                 return (Math.max(1, fp.getView().getSize()));
             }
-
         } else {
             DownloadLink dLink = (DownloadLink) value;
             PluginProgress progress = null;
@@ -181,7 +180,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return 100;
             } else if ((progress = dLink.getPluginProgress()) != null) {
                 return (progress.getTotal());
-            } else if (block != null) {
+            } else if (block != null && !dLink.getLinkStatus().isPluginActive()) {
                 return block.getBlockedUntil();
             } else if (dLink.getLinkStatus().isFinished()) {
                 return 100;
@@ -220,7 +219,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return -1;
             } else if ((progress = dLink.getPluginProgress()) != null) {
                 return (progress.getCurrent());
-            } else if (block != null) {
+            } else if (block != null && !dLink.getLinkStatus().isPluginActive()) {
                 return block.getBlockedTimeout();
             } else if (dLink.getLinkStatus().isFinished()) {
                 return (100);
