@@ -462,7 +462,7 @@ public class RyuShareCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
         } else {
-            String expire = new Regex(correctedBR, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
+            String expire = new Regex(correctedBR, Pattern.compile(">Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})<", Pattern.CASE_INSENSITIVE)).getMatch(2);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
