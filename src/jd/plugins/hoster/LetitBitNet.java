@@ -55,8 +55,7 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) {
         /* convert directdownload links to normal links */
-        link.setUrlDownload(link.getDownloadURL().replaceAll("/ddownload", "/download"));
-        link.setUrlDownload(link.getDownloadURL().replaceAll("\\?", "%3F"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("/ddownload", "/download").replaceAll("\\?", "%3F").replace("www.", ""));
     }
 
     @Override

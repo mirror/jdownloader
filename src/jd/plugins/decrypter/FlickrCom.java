@@ -95,6 +95,13 @@ public class FlickrCom extends PluginForDecrypt {
                 }
                 decryptedLinks.add(finalDownloadlink);
             }
+        } else if (new Regex(parameter, "flickr\\.com/photos/[^<>\"/]+/\\d+").matches()) {
+            DownloadLink finalDownloadlink = decryptSingleLink(parameter);
+            if (finalDownloadlink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(finalDownloadlink);
         } else {
             String fpName = br.getRegex("<title>Flickr: ([^<>\"/]+)</title>").getMatch(0);
             if (fpName == null) fpName = br.getRegex("\"search_default\":\"Search ([^<>\"/]+)\"").getMatch(0);
@@ -152,14 +159,16 @@ public class FlickrCom extends PluginForDecrypt {
     private DownloadLink decryptSingleLink(String parameter) throws IOException {
         br.getPage(parameter + "/sizes/l/in/photostream/");
         String filename = getFilename();
-        String link = br.getRegex("<div class=\"spaceball\" style=\"height:\\d+px; width: \\d+px;\"></div>[\t\n\r ]+<img src=\"(http://.*?)\"").getMatch(0);
-        if (link == null) link = br.getRegex("\"(http://farm\\d+\\.static\\.flickr\\.com/\\d+/.*?)\"").getMatch(0);
-        if (link == null) link = br.getRegex("\"(http://farm\\d+\\.staticflickr\\.com/\\d+/.*?)\"").getMatch(0);
+        String link = br.getRegex("id=\"allsizes\\-photo\">[\t\n\r ]+<img src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (link == null) link = br.getRegex("\"(http://farm\\d+\\.(static\\.flickr|staticflickr)\\.com/\\d+/.*?)\"").getMatch(0);
         DownloadLink fina = null;
         if (link != null) {
             fina = createDownloadlink(link);
             final String ext = link.substring(link.lastIndexOf("."));
-            if (ext != null && filename != null) filename = Encoding.htmlDecode(filename.trim()) + ext;
+            if (ext != null && filename != null) {
+                filename = Encoding.htmlDecode(filename.trim() + ext);
+                fina.setFinalFileName(filename);
+            }
             fina.setFinalFileName(filename);
         }
         return fina;

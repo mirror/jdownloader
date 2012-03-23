@@ -175,7 +175,7 @@ public class JumboFilesCom extends PluginForHost {
             else
                 break;
         }
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
 

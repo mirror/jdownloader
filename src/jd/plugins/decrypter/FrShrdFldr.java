@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared(-china)?\\.com/(\"|\r*?\n*?$|dir/.+|folder/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://(www\\.)?4shared(\\-china)?\\.com/(\"|\r*?\n*?$|dir/.+|folder/.+)" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
 
     private final static double RANDOM = Math.random();
@@ -61,6 +61,7 @@ public class FrShrdFldr extends PluginForDecrypt {
 
         // check for password
         br.getPage(parameter);
+        if (br.containsHTML("The file link that you requested is not valid")) return decryptedLinks;
         if (br.containsHTML("enter a password to access")) {
             final Form form = br.getFormbyProperty("name", "theForm");
             if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }

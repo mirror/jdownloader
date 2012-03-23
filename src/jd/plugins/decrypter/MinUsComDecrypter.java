@@ -17,9 +17,12 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -50,7 +53,7 @@ public class MinUsComDecrypter extends PluginForDecrypt {
             return null;
         }
         for (String singlelinkinfo : linkinfo) {
-            final String filename = new Regex(singlelinkinfo, "\"name\": \"([^<>\"/]+\\.[A-Za-z0-9]{1,5})\"").getMatch(0);
+            String filename = new Regex(singlelinkinfo, "\"name\": \"([^<>\"/]+\\.[A-Za-z0-9]{1,5})\"").getMatch(0);
             final String filesize = new Regex(singlelinkinfo, "\"filesize_bytes\": (\\d+)").getMatch(0);
             final String secureprefix = new Regex(singlelinkinfo, "\"secure_prefix\":\"(/\\d+/[A-Za-z0-9\\-_]+)\"").getMatch(0);
             final String linkid = new Regex(singlelinkinfo, "\"id\": \"([A-Za-z0-9\\-_]+)\"").getMatch(0);
@@ -58,6 +61,7 @@ public class MinUsComDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            filename = decodeUnicode(Encoding.htmlDecode(filename.trim()));
             final String filelink = "http://i.minusdecrypted.com" + secureprefix + "/d" + linkid + filename.substring(filename.lastIndexOf("."));
             DownloadLink dl = createDownloadlink(filelink);
             dl.setFinalFileName(filename);
@@ -68,5 +72,15 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    private String decodeUnicode(final String s) {
+        final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
+        String res = s;
+        final Matcher m = p.matcher(res);
+        while (m.find()) {
+            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
+        }
+        return res;
     }
 }

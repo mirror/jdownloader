@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -48,7 +49,8 @@ public class TumblrCom extends PluginForHost {
 
     private void getDllink() throws IOException {
         br.setFollowRedirects(false);
-        dllink = br.getRegex("\"(http://\\d+\\.media\\.tumblr\\.com/[^<>\"/\\']*?\\.jpg)\"").getMatch(0);
+        dllink = br.getRegex("\"><img src=\"(( +)?http://\\d+\\.media\\.tumblr\\.com/[^<>\"/\\']*?\\.jpg)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(( +)?http://\\d+\\.media\\.tumblr\\.com/[^<>\"/\\']*?\\.jpg)\"").getMatch(0);
     }
 
     @Override
@@ -77,6 +79,7 @@ public class TumblrCom extends PluginForHost {
         if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), "tumblr\\.com/post/(\\d+)").getMatch(0);
         getDllink();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = Encoding.htmlDecode(dllink.trim());
         filename = filename.trim();
         String ext = dllink.substring(dllink.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".mp3";
