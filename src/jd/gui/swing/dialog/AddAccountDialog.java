@@ -18,6 +18,7 @@ package jd.gui.swing.dialog;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.Icon;
@@ -179,8 +180,12 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
     @Override
     public JComponent layoutDialogContent() {
-        final List<LazyHostPlugin> plugins = HostPluginController.getInstance().list();
-
+        final List<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
+        // Filter - only premium plugins should be here
+        final ArrayList<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
+        for (LazyHostPlugin lhp : allPLugins) {
+            if (lhp.isPremium()) plugins.add(lhp);
+        }
         // final HostPluginWrapper[] array = plugins.toArray(new
         // HostPluginWrapper[plugins.size()]);
 
