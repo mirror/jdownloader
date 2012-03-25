@@ -476,15 +476,37 @@ public class DepositFiles extends PluginForHost {
                 }
                 br.setReadTimeout(3 * 60 * 1000);
                 br.setFollowRedirects(true);
-                br.getPage(MAINPAGE + "/de/gold/payment.php");
-                final Form login = br.getFormBySubmitvalue("Anmelden");
-                if (login == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                login.put("login", Encoding.urlEncode(account.getUser()));
-                login.put("password", Encoding.urlEncode(account.getPass()));
-                br.submitForm(login);
+                br.getPage(MAINPAGE + "/de/login.php");
+
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    DownloadLink dummy = new DownloadLink(null, null, null, null, true);
+                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    for (int i = 0; i <= 3; i++) {
+                        rc.parse();
+                        rc.load();
+                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        String c = getCaptchaCode(cf, dummy);
+                        rc.getForm().put("login", Encoding.urlEncode(account.getUser()));
+                        rc.getForm().put("password", Encoding.urlEncode(account.getPass()));
+                        rc.setCode(c);
+                        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) continue;
+                        break;
+                    }
+                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                        logger.info("Invalid account or wrong captcha!");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                } else {
+                    final Form login = br.getFormBySubmitvalue("Anmelden");
+                    if (login == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    login.put("login", Encoding.urlEncode(account.getUser()));
+                    login.put("password", Encoding.urlEncode(account.getPass()));
+                    br.submitForm(login);
+                }
                 br.setFollowRedirects(false);
                 final String cookie = br.getCookie(MAINPAGE, "autologin");
-                if (cookie == null || br.containsHTML("Benutzername-Passwort-Kombination")) {
+                if (cookie == null || br.containsHTML("Benutzername\\-Passwort\\-Kombination")) {
                     int i = 1;
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }

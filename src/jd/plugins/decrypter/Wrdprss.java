@@ -50,15 +50,8 @@ public class Wrdprss extends PluginForDecrypt {
 
         StringBuilder completePattern = new StringBuilder();
         completePattern.append("http://[\\w\\.]*?(");
-        completePattern.append("(game-blog\\.us/game-.+\\.html)");
-        completePattern.append("|(cinetopia\\.ws/.*\\.html)");
-        completePattern.append("|(load-it\\.biz/[^/]*/?)");
-        completePattern.append("|(guru-world\\.net/wordpress/\\d+.*)");
-        completePattern.append("|(klee\\.tv/blog/\\d+.*)");
-        completePattern.append("|(blogload\\.org/\\d+.*)");
-        completePattern.append("|(pressefreiheit\\.ws/[\\d]+/.+\\.html)");
-        completePattern.append("|(zeitungsjunge\\.info/.*?/.*?/.*?/)");
-        completePattern.append("|(serien-blog\\.com/download/[\\d]+/.+\\.html)");
+        completePattern.append("(cinetopia\\.ws/.*\\.html)");
+        completePattern.append(")");
         String[] listType1 = { "hd-area.org", "movie-blog.org", "doku.cc", "sound-blog.org" };
         for (String pattern : listType1) {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\d{4}/\\d{2}/\\d{2}/.+)");
@@ -67,7 +60,7 @@ public class Wrdprss extends PluginForDecrypt {
         for (String pattern : listType2) {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/blog\\.php\\?id=[\\d]+)");
         }
-        String[] listType3 = { "sky-porn.info/blog", "best-movies.us/enter", "ladekabel.us/enter", "xxx-blog.org/blog", "ladekabel.us" };
+        String[] listType3 = { "xxx-blog.org/blog" };
         for (String pattern : listType3) {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\?p=[\\d]+)");
         }

@@ -243,6 +243,7 @@ public class SendspaceCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         String url = downloadLink.getDownloadURL();
         if (!url.contains("/pro/dl/")) {
@@ -263,7 +264,7 @@ public class SendspaceCom extends PluginForHost {
                     downloadLink.setDownloadSize(SizeFormatter.getSize(infos[1].trim().replaceAll(",", "\\.")));
                     return AvailableStatus.TRUE;
                 } else {
-                    String filename = br.getRegex("<title>Download (.*?) from Sendspace\\.com \\- send big files the easy way</title>").getMatch(0);
+                    String filename = br.getRegex("<title>Download ([^<>/\"]*?) from Sendspace\\.com \\- send big files the easy way</title>").getMatch(0);
                     if (filename == null) {
                         filename = br.getRegex("<h2 class=\"bgray\"><b>(.*?)</b></h2>").getMatch(0);
                         if (filename == null) filename = br.getRegex("title=\"download (.*?)\">Click here to start").getMatch(0);
@@ -279,7 +280,6 @@ public class SendspaceCom extends PluginForHost {
             } else
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(url);

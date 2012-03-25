@@ -106,9 +106,9 @@ public class RuTubeRu extends PluginForHost {
         final String fsk18 = br.getRegex("<p><b>.*?18.*?href=\"(http://rutube.ru/.*?confirm=.*?)\"").getMatch(0);
         if (fsk18 != null) br.getPage(fsk18);
         br.setFollowRedirects(true);
-        String filename = br.getRegex("<title>(.*?):: Видео на RuTube").getMatch(0);
-        if (filename == null) filename = br.getRegex("meta name=\"title\" content=\"(.*?):: Видео на RuTube").getMatch(0);
-        final String filesize = br.getRegex("<span class=\"icn-size\"[^>]*>(.*?)</span>").getMatch(0);
+        String filename = br.getRegex("class=\"trackTitleLnk\">([^<>\"]*?)</a></h1>").getMatch(0);
+        if (filename == null) filename = br.getRegex("type=\"hidden\" name=\"subject\" value=\"([^<>\"]*?)\"").getMatch(0);
+        final String filesize = br.getRegex("<span class=\"icn\\-size\"[^>]*>(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         filename = filename.replaceFirst("::", "-");
         filename = filename.replace("::", "");

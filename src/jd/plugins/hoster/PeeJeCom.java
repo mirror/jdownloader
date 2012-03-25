@@ -61,9 +61,9 @@ public class PeeJeCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.postPage(downloadLink.getDownloadURL(), "securitytoken=guest&psw=&download=Create+Download+Link");
-        String dllink = br.getRegex("<div style=\"padding: 3px;\"><a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://ww\\d+\\.peeje\\.com/dl/[^<>\"\\']+)\"").getMatch(0);
+        br.postPage(br.getURL(), "securitytoken=guest&psw=&download=Create+Download+Link");
+        String dllink = br.getRegex("<div style=\"padding: 3px; color: #F00000;\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://ww\\d+\\.peeje\\.com/dl/[^<>\"\\']*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

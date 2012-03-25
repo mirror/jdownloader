@@ -21,12 +21,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3lemon.net" }, urls = { "http://(www\\.)?mp3lemon\\.(net|org)/((song|album)/\\d+/|download\\.php\\?idfile=\\d+)" }, flags = { 0 })
 public class MpLemonNet extends PluginForDecrypt {
@@ -41,47 +43,38 @@ public class MpLemonNet extends PluginForDecrypt {
         if (parameter.contains("download.php?idfile=")) parameter = parameter.replace("download.php?idfile=", "song/") + "/";
         br.setFollowRedirects(false);
         br.setCustomCharset("windows-1251");
-        br.getPage(parameter);
+        br.setReadTimeout(3 * 60 * 1000);
         if (parameter.contains("/song/")) {
-            String filename = br.getRegex("<TD class=\"razdel\" width=\"100%\">Скачать песню: (.*?)</TD>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<table class=\"song\"><tr><td><h1 style=\"display: inline;\">(.*?)</h1></td>").getMatch(0);
             String finallink = decryptSingleLink(new Regex(parameter, "mp3lemon\\.net/song/(\\d+)/").getMatch(0));
-            if (filename == null || finallink == null) {
-                logger.warning("mp3link-decrypt failed: " + parameter);
-                logger.warning(br.toString());
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            DownloadLink dlllink = createDownloadlink("directhttp://" + finallink);
-            dlllink.setFinalFileName(filename + ".mp3");
-            decryptedLinks.add(dlllink);
+            decryptedLinks.add(createDownloadlink(finallink));
         } else {
-            String[][] fileInfo = br.getRegex(">\\+</a></td><td class=\"list_tracks\"><a href=\"/song/(\\d+)/.{1,50}\">(.*?)</a><br/>").getMatches();
-            String artist = br.getRegex("<tr><td><a style=\"color: #ff462a; font-size: 20px;\" href=\"/artist/\\d+/\">(.*?)</a></td></tr>").getMatch(0);
-            if (fileInfo == null || fileInfo.length == 0) return null;
-            String albumName = br.getRegex("<tr><td style=\"font-size: 15px; font-weight: bold;\">(.*?)</td></tr>").getMatch(0);
-            progress.setRange(fileInfo.length);
+            br.getPage(parameter);
+            String[][] fileInfo = br.getRegex("\"/song/(\\d+)/([^<>\"/]*?)\"></a></td>[\t\n\r ]+<td class=\"list_tracks\"></td>[\t\n\r ]+<td class=\"list_tracks\">\\d+:\\d+</td>[\t\n\r ]+<td class=\"list_tracks\">(\\d+(\\.\\d+)?)</td>").getMatches();
+            if (fileInfo == null || fileInfo.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             for (String[] dl : fileInfo) {
                 String finallink = dl[0];
                 String filename = dl[1];
-                if (finallink == null || filename == null) return null;
+                if (finallink == null || filename == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
                 finallink = decryptSingleLink(dl[0]);
-                if (finallink == null) return null;
-                DownloadLink dlllink = createDownloadlink("directhttp://" + finallink);
-                if (artist != null)
-                    dlllink.setFinalFileName(artist + " - " + filename + ".mp3");
-                else
-                    dlllink.setFinalFileName(filename + ".mp3");
-                decryptedLinks.add(dlllink);
-                progress.increase(1);
-            }
-            if (artist != null && albumName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(artist + " - " + albumName);
-                fp.addLinks(decryptedLinks);
-            } else if (albumName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(albumName);
-                fp.addLinks(decryptedLinks);
+                if (finallink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                DownloadLink fina = createDownloadlink(finallink);
+                fina.setFinalFileName(Encoding.htmlDecode(dl[1].trim()) + ".mp3");
+                fina.setDownloadSize(SizeFormatter.getSize(dl[2] + " MB"));
+                fina.setAvailable(true);
+                decryptedLinks.add(fina);
             }
         }
         return decryptedLinks;

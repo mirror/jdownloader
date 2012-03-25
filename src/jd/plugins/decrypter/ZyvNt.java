@@ -20,65 +20,45 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zaycev.net" }, urls = { "http://[\\w\\.]*?zaycev\\.net/pages/[0-9]+/[0-9]+\\.shtml" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zaycev.net" }, urls = { "http://(www\\.)?zaycev\\.net/artist/\\d+(\\?page=\\d+)?" }, flags = { 0 })
 public class ZyvNt extends PluginForDecrypt {
 
     public ZyvNt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String CAPTCHATEXT = "/captcha/";
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        /* Error handling */
-        if (br.getRedirectLocation() != null) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String cryptedlink = br.getRegex("\"(/download\\.php\\?ass=.*?\\&id=\\d+)\"").getMatch(0);
-        if (cryptedlink == null) return null;
-        cryptedlink = "http://www.zaycev.net" + cryptedlink;
-        br.getPage(cryptedlink);
-        if (br.containsHTML(CAPTCHATEXT)) {
-            for (int i = 0; i <= 5; i++) {
-                // Captcha handling
-                String captchaID = getCaptchaID();
-                if (captchaID == null) return null;
-                String code = getCaptchaCode("http://www.zaycev.net/captcha/" + captchaID + "/", param);
-                String captchapage = cryptedlink + "&captchaId=" + captchaID + "&text_check=" + code + "&ok=%F1%EA%E0%F7%E0%F2%FC";
-                br.getPage(captchapage);
-                if (br.containsHTML(CAPTCHATEXT)) continue;
-                break;
-            }
-            if (br.containsHTML(CAPTCHATEXT)) throw new DecrypterException(DecrypterException.CAPTCHA);
-        } else {
-            String code = br.getRegex("<label>Ваш IP</label><span class=\"readonly\">[0-9\\.]+</span></div><input value=\"(.*?)\"").getMatch(0);
-            String captchaID = getCaptchaID();
-            if (code == null || captchaID == null) return null;
-            String captchapage = cryptedlink + "&captchaId=" + captchaID + "&text_check=" + code + "&ok=%F1%EA%E0%F7%E0%F2%FC";
-            br.getPage(captchapage);
+        final String artist = br.getRegex("<title>Автор ([^<>\"/]*?) и его композиции</title>").getMatch(0);
+        String[][] fileInfo = br.getRegex("class=\"track artist_img_left\"><a href=\"(/pages/\\d+/\\d+\\.shtml)\">([^<>/\"]*?)</a></td><td class=\"date\">\\d{2}\\.\\d{2}\\.\\d{2}</td><td class=\"bitrate\">[0-9\t\n\r ]+</td><td class=\"size\">(\\d+(\\.\\d+)?)</td>").getMatches();
+        if (fileInfo == null || fileInfo.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
-        String finallink = br.getRegex("http-equiv=\"Content-Type\"/><meta content=\"\\d+; URL=(http.*?)\"").getMatch(0);
-        if (finallink == null) {
-            finallink = br.getRegex("то нажмите на эту <a href=\\'(http.*?)\\'").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("\"(http://dl\\.zaycev\\.net/[a-z0-9-]+/\\d+/\\d+/.*?)\"").getMatch(0);
+        for (String[] file : fileInfo) {
+            final DownloadLink dl = createDownloadlink("http://zaycev.net" + file[0]);
+            dl.setFinalFileName(Encoding.htmlDecode(file[1].trim()) + ".mp3");
+            dl.setDownloadSize(SizeFormatter.getSize(file[2] + " MB"));
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
         }
-        if (finallink == null) return null;
-        decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+        if (artist != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(artist.trim()));
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
-    }
-
-    private String getCaptchaID() {
-        String captchaID = br.getRegex("name=\"id\" type=\"hidden\"/><input value=\"(\\d+)\"").getMatch(0);
-        if (captchaID == null) captchaID = br.getRegex("\"/captcha/(\\d+)").getMatch(0);
-        return captchaID;
     }
 }
