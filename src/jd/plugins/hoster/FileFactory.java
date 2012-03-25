@@ -54,6 +54,11 @@ import org.mozilla.javascript.Scriptable;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "http://[\\w\\.]*?filefactory\\.com(/|//)file/[\\w]+/?" }, flags = { 2 })
 public class FileFactory extends PluginForHost {
 
+    // DEV NOTES
+    // other: currently they 302 redirect all non www. to www. which kills most
+    // of this plugin. Adjust COOKIE_HOST to suite future changes, or remove
+    // COOKIE_HOST from that section of the script
+
     private static final String  FILESIZE         = "id=\"info\" class=\"metadata\">[\t\n\r ]+<span>(.*?) file uploaded";
     private static AtomicInteger maxPrem          = new AtomicInteger(1);
     private static final String  NO_SLOT          = ">All free download slots";
@@ -64,12 +69,12 @@ public class FileFactory extends PluginForHost {
     private static final String  SERVER_DOWN      = "server hosting the file you are requesting is currently down";
     private static final String  CAPTCHALIMIT     = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
     private static final Object  LOCK             = new Object();
-    private static final String  COOKIE_HOST      = "http://filefactory.com/";
+    private static final String  COOKIE_HOST      = "http://www.filefactory.com";
     private String               dlUrl            = null;
 
     public FileFactory(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.filefactory.com/info/premium.php");
+        this.enablePremium(COOKIE_HOST + "/info/premium.php");
     }
 
     public void checkErrors() throws PluginException {
@@ -93,7 +98,7 @@ public class FileFactory extends PluginForHost {
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
             while (true) {
-                br.getPage("http://filefactory.com/tool/links.php");
+                br.getPage(COOKIE_HOST + "/tool/links.php");
                 links.clear();
                 while (true) {
                     if (index == urls.length || links.size() > 25) {
@@ -108,7 +113,7 @@ public class FileFactory extends PluginForHost {
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     sb.append("%0D%0A");
                 }
-                br.postPage("http://filefactory.com/tool/links.php", sb.toString());
+                br.postPage(COOKIE_HOST + "/tool/links.php", sb.toString());
                 for (final DownloadLink dl : links) {
                     String size = br.getRegex("class=\"innerText\".*?" + dl.getDownloadURL() + ".*?class=\"hidden size\">(.*?)<").getMatch(0);
                     String name = br.getRegex("class=\"name\">([^\r\n\t]*?)</h1>[ \r\n\t]*?<p>" + dl.getDownloadURL() + "[^\r\n \t]*?</p").getMatch(0);
@@ -135,7 +140,7 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll(".com//", ".com/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com//", ".com/"));
         link.setUrlDownload(link.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
     }
 
@@ -150,7 +155,7 @@ public class FileFactory extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        this.br.getPage("http://www.filefactory.com/member/");
+        this.br.getPage(COOKIE_HOST + "/member/");
         if (!br.containsHTML("\"greenText\">Premium member until<")) {
             ai.setStatus("Registered (free) User");
             ai.setUnlimitedTraffic();
@@ -196,7 +201,7 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.filefactory.com/legal/terms.php";
+        return COOKIE_HOST + "/legal/terms.php";
     }
 
     @Override
@@ -234,13 +239,13 @@ public class FileFactory extends PluginForHost {
                     // first load js
                     Object result = cx.evaluateString(scope, "function g(){return " + eval[1] + "} g();", "<cmd>", 1, null);
                     final String link = "/file" + result + eval[4];
-                    this.br.getPage("http://www.filefactory.com" + link);
+                    this.br.getPage(COOKIE_HOST + link);
                     final String[] row = this.br.getRegex("var (.*?) = '';(.*;) (.*?)=(.*?)\\(\\);").getRow(0);
                     result = cx.evaluateString(scope, row[1] + row[3] + " ();", "<cmd>", 1, null);
                     if (result.toString().startsWith("http")) {
                         url = result + "";
                     } else {
-                        url = "http://www.filefactory.com" + result;
+                        url = COOKIE_HOST + result;
                     }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -400,7 +405,7 @@ public class FileFactory extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         url = url.replaceAll("\\\\/", "/");
         if (url.startsWith("http")) { return url; }
-        return "http://www.filefactory.com" + url;
+        return COOKIE_HOST + url;
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -434,10 +439,10 @@ public class FileFactory extends PluginForHost {
                 }
                 this.br.getHeaders().put("Accept-Encoding", "gzip");
                 this.br.setFollowRedirects(true);
-                this.br.getPage("http://www.filefactory.com");
-                this.br.postPage("http://www.filefactory.com/member/login.php", "redirect=%2F%3Flogout%3D1&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                this.br.getPage(COOKIE_HOST);
+                this.br.postPage(COOKIE_HOST + "/member/login.php", "redirect=%2F%3Flogout%3D1&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (this.br.containsHTML(FileFactory.LOGIN_ERROR)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-                if (this.br.getCookie("http://www.filefactory.com", "ff_membership") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                if (this.br.getCookie(COOKIE_HOST, "ff_membership") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);

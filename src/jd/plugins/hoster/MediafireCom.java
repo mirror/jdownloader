@@ -709,7 +709,7 @@ public class MediafireCom extends PluginForHost {
                     }
                     String name = br.getRegex("<div class=\"download_file_title\"> (.*?) </div>").getMatch(0);
                     String size = br.getRegex(" <input type=\"hidden\" id=\"sharedtabsfileinfo1-fs\" value=\"(.*?)\">").getMatch(0);
-                    if (size == null) size = br.getRegex("Download <span>\\((.*?)\\)").getMatch(0);
+                    if (size == null) size = br.getRegex("(?i)\\(([\\d\\.]+ (KB|MB|GB|TB))\\)").getMatch(0);
                     if (name != null) {
                         downloadLink.setFinalFileName(Encoding.htmlDecode(name.trim()));
                         downloadLink.setDownloadSize(SizeFormatter.getSize(size));

@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -36,11 +37,13 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unibytes.com" }, urls = { "http://(www\\.)?unibytes\\.com/[a-zA-Z0-9\\-\\.\\_ ]{11}B" }, flags = { 2 })
 public class UniBytesCom extends PluginForHost {
 
+    // DEV NOTES
+    // other: they blocked our default User Agent.
+
     private static final String CAPTCHATEXT      = "captcha\\.jpg";
-
     private static final String FATALSERVERERROR = "<u>The requested resource \\(\\) is not available\\.</u>";
-
     private static final String MAINPAGE         = "http://www.unibytes.com/";
+    private static final String UA               = RandomUserAgent.generate();
 
     public UniBytesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -176,6 +179,7 @@ public class UniBytesCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", UA);
         br.setCookie(MAINPAGE, "lang", "en");
         br.postPage(MAINPAGE, "lb_login=" + Encoding.urlEncode(account.getUser()) + "&lb_password=" + Encoding.urlEncode(account.getPass()) + "&lb_remember=true");
         if (br.getCookie(MAINPAGE, "hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -184,6 +188,7 @@ public class UniBytesCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", UA);
         // Use the english language
         br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());
