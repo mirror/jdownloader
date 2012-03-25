@@ -390,7 +390,7 @@ public class FileFactory extends PluginForHost {
     public String handleRecaptcha(final Browser br, final DownloadLink link) throws Exception {
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        final String id = br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
+        final String id = br.getRegex("Recaptcha\\.create\\(([\r\n\t ]+)?\"([^\"]+)").getMatch(1);
         rc.setId(id);
         final Form form = new Form();
         form.setAction("/file/checkCaptcha.php");

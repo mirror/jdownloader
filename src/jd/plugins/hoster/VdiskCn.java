@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -38,6 +39,10 @@ public class VdiskCn extends PluginForHost {
     // No HTTPS
     // Found hard to test this hoster, has many server issues.
     // locked it to 2(dl) * -4(chunk) = 8 total connection
+    // other: they keep changing final download links url structure, best to use
+    // regex only on finallink static info and not html
+
+    private static final String UA = RandomUserAgent.generate();
 
     public VdiskCn(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,7 +51,7 @@ public class VdiskCn extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         /** We only use the main domain */
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(www\\.)?([a-z0-9]+\\.)?vdisk\\.cn/down", "vdisk.cn/down"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(www\\.)?([a-z0-9]+\\.)?vdisk\\.cn/down", "www.vdisk.cn/down"));
     }
 
     @Override
@@ -78,7 +83,7 @@ public class VdiskCn extends PluginForHost {
             }
         }
         if (dllink == null) {
-            if (dllink == null) dllink = br.getRegex("(http://[\\w\\.]+?vdisk\\.cn/down(file)?/[0-9A-Z]{2}/[A-Z0-9]{32}\\?key=[a-z0-9]{32}[^\"\\>]+)").getMatch(0);
+            dllink = br.getRegex("(http://[\\w\\.]+?vdisk\\.cn/[^/]+/[0-9A-Z]{2}/[A-Z0-9]{32}\\?key=[a-z0-9]{32}[^\"\\>]+)").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -4);
@@ -94,6 +99,7 @@ public class VdiskCn extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", UA);
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
         br.setCookie("http://vdisk.cn/", "lang", "en");
@@ -103,13 +109,13 @@ public class VdiskCn extends PluginForHost {
         if (filename == null) filename = br.getRegex("(?i)<META content=\"(.*?)\" name=\"description\">").getMatch(0);
         String filesize = br.getRegex("(?i)文件大小: ([\\d\\.]+ ?(GB|MB|KB|B))").getMatch(0);
         if (filesize == null) {
-            logger.warning("Vdisk: Can't find filesize, Please report issue to JDownloader Development!");
-            logger.warning("Vdisk: Continuing...");
+            logger.warning("Can't find filesize, Please report issue to JDownloader Development!");
+            logger.warning("Continuing...");
         }
         String MD5sum = br.getRegex("(?i)文件校验: ([A-Z0-9]{32})").getMatch(0);
         if (MD5sum == null) {
-            logger.warning("Vdisk: Can't find MD5sum, Please report issue to JDownloader Development!");
-            logger.warning("Vdisk: Continuing...");
+            logger.warning("Can't find MD5sum, Please report issue to JDownloader Development!");
+            logger.warning("Continuing...");
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
