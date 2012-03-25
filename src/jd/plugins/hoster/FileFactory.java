@@ -116,13 +116,16 @@ public class FileFactory extends PluginForHost {
                 br.postPage(COOKIE_HOST + "/tool/links.php", sb.toString());
                 for (final DownloadLink dl : links) {
                     String size = br.getRegex("class=\"innerText\".*?" + dl.getDownloadURL() + ".*?class=\"hidden size\">(.*?)<").getMatch(0);
+                    if (size != null && !size.equals("0")) size = size.trim() + " MB";
+                    // above result can return value of 0, so we look for the
+                    // other field.
+                    if (size == null || size.equals("0")) size = br.getRegex("(?i)\\(([\\d\\.]+ (KB|MB|GB|TB))\\)</h1>").getMatch(0);
                     String name = br.getRegex("class=\"name\">([^\r\n\t]*?)</h1>[ \r\n\t]*?<p>" + dl.getDownloadURL() + "[^\r\n \t]*?</p").getMatch(0);
-                    if (name != null && size != null) {
+                    if (name != null) {
                         /* remove filesize at the end of filename if given */
                         name = name.replaceFirst("\\([0-9\\. GKBM]+\\)", "");
                         dl.setName(name.trim());
-                        size = size.trim() + " MB";
-                        dl.setDownloadSize(SizeFormatter.getSize(size));
+                        if (size != null) dl.setDownloadSize(SizeFormatter.getSize(size));
                         dl.setAvailable(true);
                     } else {
                         dl.setAvailable(false);
