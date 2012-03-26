@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "http://(www\\.)?(mirrorstack\\.com|uploading\\.to|copyload\\.com)/([a-z0-9]{2}_)?[a-z0-9]{12}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "http://(www\\.)?(mirrorstack\\.com|uploading\\.to|copyload\\.com|multishared\\.com)/([a-z0-9]{2}_)?[a-z0-9]{12}" }, flags = { 0 })
 public class MirStkCm extends PluginForDecrypt {
 
     /*
@@ -61,13 +61,16 @@ public class MirStkCm extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("://uploading.to", "://www.uploading.to").replace("://www.copyload.com", "://copyload.com");
-        br.setFollowRedirects(false);
+        String parameter = param.toString();
+        // easier to set redirects on and off than renaming parameter them all
+        // and it also creates less maintenance if provider changes things up.
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("(?i)>(File )?Not Found</")) {
             logger.warning("Invalid URL, either removed or never existed :" + parameter);
             return null;
         }
+        br.setFollowRedirects(false);
         String finallink = null;
         String[] singleLinks = null;
         // Add a single link parameter to String[]
@@ -86,7 +89,7 @@ public class MirStkCm extends PluginForDecrypt {
         // requirement and outcome
         progress.setRange(singleLinks.length);
         for (String singleLink : singleLinks) {
-            if (parameter.contains("uploading.to/")) {
+            if (parameter.contains("uploading.to/") || parameter.contains("multishared.com/")) {
                 br.getHeaders().put("Referer", new Regex(parameter, "(https?://[\\w+\\.\\d\\-]+(:\\d+)?)/").getMatch(0) + "/r_counter");
                 br.getPage(singleLink);
                 finallink = br.getRegex("frame src=\"(https?://[^\"\\' <>]+)\"").getMatch(0);
