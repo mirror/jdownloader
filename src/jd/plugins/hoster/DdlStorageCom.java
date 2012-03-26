@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -53,16 +54,16 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddlstorage.com" }, urls = { "https?://(www\\.)?ddlstorage\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class DdlStorageCom extends PluginForHost {
 
-    private String              correctedBR         = "";
-    private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://ddlstorage.com";
-    private static final String MAINTENANCE         = ">This server is in maintenance mode";
-    private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
-    private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static final Object LOCK                = new Object();
+    private String               correctedBR         = "";
+    private static final String  PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
+    private static final String  COOKIE_HOST         = "http://ddlstorage.com";
+    private static final String  MAINTENANCE         = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT = "This server is under Maintenance";
+    private static final String  ALLWAIT_SHORT       = "Waiting till new downloads can be started";
+    private static final Object  LOCK                = new Object();
+    private static AtomicInteger maxPrem             = new AtomicInteger(1);
 
-    // XfileSharingProBasic Version 2.5.3.5, modified some stuff, limits
-    // untested->Set to standard
+    // XfileSharingProBasic Version 2.5.3.5, modified some stuff
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
@@ -431,6 +432,8 @@ public class DdlStorageCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         try {
             login(account, true);
         } catch (PluginException e) {
@@ -447,12 +450,12 @@ public class DdlStorageCom extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         if (account.getBooleanProperty("nopremium")) {
-            /*
-             * please fix max parallel download handling first, before enabling
-             * it again
-             */
-            ai.setStatus("Registered (free) User (not supported yet!)");
-            account.setValid(false);
+            try {
+                maxPrem.set(1);
+                account.setMaxSimultanDownloads(1);
+            } catch (final Throwable e) {
+            }
+            ai.setStatus("Registered (free) User");
             return ai;
         } else {
             String expire = new Regex(correctedBR, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
@@ -461,6 +464,11 @@ public class DdlStorageCom extends PluginForHost {
                 account.setValid(false);
                 return ai;
             } else {
+                try {
+                    maxPrem.set(-1);
+                    account.setMaxSimultanDownloads(-1);
+                } catch (final Throwable e) {
+                }
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
             }
@@ -566,7 +574,8 @@ public class DdlStorageCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     @Override

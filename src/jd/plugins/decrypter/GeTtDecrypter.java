@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?ge\\.tt/#?[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?ge\\.tt/#?[A-Za-z0-9]+(/v/0)?" }, flags = { 0 })
 public class GeTtDecrypter extends PluginForDecrypt {
 
     public GeTtDecrypter(PluginWrapper wrapper) {
@@ -39,23 +39,39 @@ public class GeTtDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String parameter = param.toString().replace("#", "");
-        String fid = new Regex(parameter, IDREGEX).getMatch(0);
-        br.getPage("http://api.ge.tt/0/" + fid + "?jsonp=_tmp_jsonp.cb" + System.currentTimeMillis());
-        if (br.containsHTML("\"error\":\"share not found\"")) {
-            DownloadLink dlink = createDownloadlink("http://api.ge.tt/0/" + fid + "/0/" + fid);
-            dlink.setAvailable(false);
-            decryptedLinks.add(dlink);
-            return decryptedLinks;
-        }
-        String[] links = br.getRegex("downloadurl\":\"(http://api\\d+?\\.ge\\.tt/\\d/[A-Za-z0-9]+/.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String dl : links) {
-            if (!dl.contains("/download")) {
-                /* important to get a download url */
-                dl = dl + "/download";
+        if (new Regex(parameter, "http://(www\\.)?ge\\.tt/[A-Za-z0-9]+/v/0").matches()) {
+            br.getPage(parameter);
+            String pictureLink = br.getRegex("<img class=\\'image\\-view loadable\\' src=\\'(http://[^<>\"]*?)\\'>").getMatch(0);
+            if (pictureLink == null) pictureLink = br.getRegex("\\'(http://w\\d+\\.open\\.ge\\.tt/\\d+/files/[^<>\"]*?)\\'").getMatch(0);
+            if (pictureLink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
-            decryptedLinks.add(createDownloadlink(dl));
+            decryptedLinks.add(createDownloadlink("directhttp://" + pictureLink));
+
+        } else {
+            String fid = new Regex(parameter, IDREGEX).getMatch(0);
+            br.getPage("http://api.ge.tt/0/" + fid + "?jsonp=_tmp_jsonp.cb" + System.currentTimeMillis());
+            if (br.containsHTML("\"error\":\"share not found\"")) {
+                DownloadLink dlink = createDownloadlink("http://api.ge.tt/0/" + fid + "/0/" + fid);
+                dlink.setAvailable(false);
+                decryptedLinks.add(dlink);
+                return decryptedLinks;
+            }
+            String[] links = br.getRegex("downloadurl\":\"(http://api\\d+?\\.ge\\.tt/\\d/[A-Za-z0-9]+/.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String dl : links) {
+                if (!dl.contains("/download")) {
+                    /* important to get a download url */
+                    dl = dl + "/download";
+                }
+                decryptedLinks.add(createDownloadlink(dl));
+            }
         }
+
         return decryptedLinks;
     }
 

@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangafox.com" }, urls = { "http://[\\w\\.]*?mangafox\\.(com|me)/manga/.*?/(v\\d+/c[\\d\\.]+|c[\\d\\.]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangafox.me" }, urls = { "http://(www\\.)?mangafox\\.(com|me)/manga/.*?/(v\\d+/c[\\d\\.]+|c[\\d\\.]+)" }, flags = { 0 })
 public class Mangafox extends PluginForDecrypt {
 
     public Mangafox(PluginWrapper wrapper) {
@@ -37,7 +37,7 @@ public class Mangafox extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String url = parameter.toString();
+        String url = parameter.toString().replace("mangafox.com/", "mangafox.me/");
         if (url.endsWith("/")) {
             url = url.substring(0, url.length() - 1);
         }

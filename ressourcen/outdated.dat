@@ -720,3 +720,5 @@ jd/captcha/methods/flsrf
 jd/plugins/decrypter/Sldn.class
 jd/captcha/methods/sld
 jd/captcha/methods/fl
+jd/plugins/hoster/ShareHutCom.class
+jd/plugins/hoster/ShareHubCom.class

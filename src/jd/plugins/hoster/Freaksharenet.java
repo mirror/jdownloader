@@ -41,7 +41,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://(www\\.)?freakshare\\.(net|com)/file(s/|/)[\\w]+/(.*)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://(www\\.)?freakshare\\.(net|com)/files?/([\\w]+/(.*)\\.html|[\\w]+/(.*))" }, flags = { 2 })
 public class Freaksharenet extends PluginForHost {
 
     private boolean             NOPREMIUM          = false;

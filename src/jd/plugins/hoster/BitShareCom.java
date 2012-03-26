@@ -44,7 +44,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://(www\\.)?bitshare\\.com/(files/[a-z0-9]{8}/[^<>\"/]*?\\.html|\\?(f|m)=[a-z0-9]{8})" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://(www\\.)?bitshare\\.com/(\\?(f|m)=[a-z0-9]{8}|files/[a-z0-9]{8}/[^<>\"/]*?\\.html|files/[a-z0-9]{8}/.+)" }, flags = { 2 })
 public class BitShareCom extends PluginForHost {
 
     // private static final String RECAPTCHA = "/recaptcha/";
@@ -279,6 +279,7 @@ public class BitShareCom extends PluginForHost {
         return true;
     }
 
+    @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
