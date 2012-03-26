@@ -63,45 +63,46 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         TRUE;
     }
 
-    private static final String                          PROPERTY_MD5            = "MD5";
-    private static final String                          PROPERTY_SHA1           = "SHA1";
-    private static final String                          PROPERTY_PASS           = "pass";
-    private static final String                          PROPERTY_FINALFILENAME  = "FINAL_FILENAME";
-    private static final String                          PROPERTY_FORCEDFILENAME = "FORCED_FILENAME";
-    private static final String                          PROPERTY_COMMENT        = "COMMENT";
-    private static final String                          PROPERTY_PRIORITY       = "PRIORITY";
-    private static final String                          PROPERTY_FINISHTIME     = "FINISHTIME";
-    private static final String                          PROPERTY_ENABLED        = "ENABLED";
-    private static final String                          PROPERTY_PWLIST         = "PWLIST";
-    private static final String                          PROPERTY_LINKDUPEID     = "LINKDUPEID";
-    private static final String                          PROPERTY_SPEEDLIMIT     = "SPEEDLIMIT";
+    private static final String                          PROPERTY_MD5                    = "MD5";
+    private static final String                          PROPERTY_SHA1                   = "SHA1";
+    private static final String                          PROPERTY_PASS                   = "pass";
+    private static final String                          PROPERTY_FINALFILENAME          = "FINAL_FILENAME";
+    private static final String                          PROPERTY_FORCEDFILENAME         = "FORCED_FILENAME";
+    private static final String                          PROPERTY_COMMENT                = "COMMENT";
+    private static final String                          PROPERTY_PRIORITY               = "PRIORITY";
+    private static final String                          PROPERTY_FINISHTIME             = "FINISHTIME";
+    private static final String                          PROPERTY_ENABLED                = "ENABLED";
+    private static final String                          PROPERTY_PWLIST                 = "PWLIST";
+    private static final String                          PROPERTY_LINKDUPEID             = "LINKDUPEID";
+    private static final String                          PROPERTY_SPEEDLIMIT             = "SPEEDLIMIT";
+    private static final String                          PROPERTY_SUGGESTEDFINALFILENAME = "SUGGESTEDFINALFILENAME";
 
-    public static final int                              LINKTYPE_CONTAINER      = 1;
+    public static final int                              LINKTYPE_CONTAINER              = 1;
 
-    public static final int                              LINKTYPE_NORMAL         = 0;
+    public static final int                              LINKTYPE_NORMAL                 = 0;
 
-    private transient static Logger                      logger                  = JDLogger.getLogger();
+    private transient static Logger                      logger                          = JDLogger.getLogger();
 
-    private static final long                            serialVersionUID        = 1981079856214268373L;
+    private static final long                            serialVersionUID                = 1981079856214268373L;
 
-    public static final String                           UNKNOWN_FILE_NAME       = "unknownFileName.file";
-    private static final String                          PROPERTY_CHUNKS         = "CHUNKS";
+    public static final String                           UNKNOWN_FILE_NAME               = "unknownFileName.file";
+    private static final String                          PROPERTY_CHUNKS                 = "CHUNKS";
 
-    private transient AvailableStatus                    availableStatus         = AvailableStatus.UNCHECKED;
+    private transient AvailableStatus                    availableStatus                 = AvailableStatus.UNCHECKED;
 
-    private long[]                                       chunksProgress          = null;
+    private long[]                                       chunksProgress                  = null;
 
     /** Aktuell heruntergeladene Bytes der Datei */
-    private long                                         downloadCurrent         = 0;
+    private long                                         downloadCurrent                 = 0;
 
     private transient DownloadInterface                  downloadInstance;
 
     private transient SingleDownloadController           downloadLinkController;
 
     /** Maximum der heruntergeladenen Datei (Dateilaenge) */
-    private long                                         downloadMax             = 0;
+    private long                                         downloadMax                     = 0;
 
-    private String                                       browserurl              = null;
+    private String                                       browserurl                      = null;
 
     private FilePackage                                  filePackage;
 
@@ -113,7 +114,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     private LinkStatus                                   linkStatus;
 
-    private int                                          linkType                = LINKTYPE_NORMAL;
+    private int                                          linkType                        = LINKTYPE_NORMAL;
 
     /** Beschreibung des Downloads */
     /* kann sich noch ändern, NICHT final */
@@ -141,13 +142,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     private transient PluginProgress                     pluginProgress;
 
-    private transient ImageIcon                          icon                    = null;
+    private transient ImageIcon                          icon                            = null;
 
-    private long                                         created                 = -1l;
+    private long                                         created                         = -1l;
 
-    private transient UniqueSessionID                    uniqueID                = null;
+    private transient UniqueSessionID                    uniqueID                        = null;
     transient private AbstractNodeNotifier<DownloadLink> propertyListener;
-    transient DomainInfo                                 domainInfo              = null;
+    transient DomainInfo                                 domainInfo                      = null;
 
     /**
      * Erzeugt einen neuen DownloadLink

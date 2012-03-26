@@ -70,6 +70,7 @@ public class MirStkCm extends PluginForDecrypt {
             logger.warning("Invalid URL, either removed or never existed :" + parameter);
             return null;
         }
+        String suggestedFilename = br.getRegex("class=\"file\">[ \r\n\t]*<h2>(.*?)</h2>").getMatch(0);
         br.setFollowRedirects(false);
         String finallink = null;
         String[] singleLinks = null;
@@ -106,7 +107,9 @@ public class MirStkCm extends PluginForDecrypt {
                 logger.warning("Continuing...");
                 continue;
             }
-            decryptedLinks.add(createDownloadlink(finallink));
+            DownloadLink dl;
+            decryptedLinks.add(dl = createDownloadlink(finallink));
+            if (suggestedFilename != null) dl.setProperty("SUGGESTEDFINALFILENAME", suggestedFilename);
             progress.increase(1);
         }
         return decryptedLinks;

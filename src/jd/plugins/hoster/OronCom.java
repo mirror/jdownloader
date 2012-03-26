@@ -476,7 +476,13 @@ public class OronCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL);
         }
         doSomething();
-        if (new Regex(brbefore, Pattern.compile("(?i)(No such file with this filename|No such user exist|File( could)? Not( be)? Found|>This file has been blocked for TOS violation)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(brbefore, Pattern.compile("(?i)(No such file with this filename|No such user exist|File( could)? Not( be)? Found|>This file has been blocked for TOS violation)", Pattern.CASE_INSENSITIVE)).matches()) {
+            String suggestedName;
+            if ((suggestedName = (String) link.getProperty("SUGGESTEDFINALFILENAME", (String) null)) != null) {
+                link.setName(suggestedName);
+            }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Not using brbefore as filename can be <!--commented out & cleanup
         // removes comments.
         String filename = br.getRegex("Filename: ?(<[\\w\"\\= ]+>)?([^\"<]+)").getMatch(1);

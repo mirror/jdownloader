@@ -346,12 +346,22 @@ public class BitShareCom extends PluginForHost {
             logger.warning("Filename or filesize is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace("yte", "")));
-        if (filename.contains("....")) {
+        filename = filename.trim();
+        if (filename.contains("...")) {
             String urlFilename = new Regex(link.getDownloadURL(), "/files/[a-z0-9]+/(.*?)\\.html").getMatch(0);
-            if (urlFilename != null) link.setName(Encoding.htmlDecode(urlFilename));
+            if (urlFilename != null) filename = urlFilename;
         }
+        String suggestedName = null;
+        /* special filename modding if we have a suggested filename */
+        if ((suggestedName = (String) link.getProperty("SUGGESTEDFINALFILENAME", (String) null)) != null) {
+            String finalFilename2 = suggestedName.replaceAll("(\\[|\\])", "-");
+            if (finalFilename2.equalsIgnoreCase(filename)) {
+                link.setFinalFileName(suggestedName);
+            }
+        }
+        link.setName(filename);
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace("yte", "")));
+
         return AvailableStatus.TRUE;
     }
 
