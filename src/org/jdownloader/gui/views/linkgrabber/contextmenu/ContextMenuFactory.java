@@ -13,6 +13,8 @@ import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.exttable.ExtColumn;
+import org.jdownloader.gui.menu.eventsender.MenuFactoryEvent;
+import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
@@ -57,7 +59,7 @@ public class ContextMenuFactory {
         p.add(new PrioritySubMenu(selection));
         p.add(new FileCheckAction(selection).toContextMenuAction());
         p.add(new CreateDLCAction(selection).toContextMenuAction());
-        p.add(new ValidateArchiveAction(selection).toContextMenuAction());
+
         p.add(new SetDownloadPassword(link, selection).toContextMenuAction());
 
         p.add(new JSeparator());
@@ -82,6 +84,8 @@ public class ContextMenuFactory {
         m.add(new RemoveOfflineAction().toContextMenuAction());
         m.add(new RemoveIncompleteArchives(selection).toContextMenuAction());
         p.add(m);
+
+        MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new LinkgrabberTableContext(table, p, contextObject, selection, column, event)));
 
         return p;
     }

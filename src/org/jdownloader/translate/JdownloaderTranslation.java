@@ -1,7 +1,5 @@
 package org.jdownloader.translate;
 
-import java.util.List;
-
 import org.appwork.txtresource.Default;
 import org.appwork.txtresource.Defaults;
 import org.appwork.txtresource.TranslateInterface;
@@ -745,12 +743,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Archive: %s1" })
     String LinkCollector_packagename(String archiveNameByFileName);
-
-    @Default(lngs = { "en" }, values = { "Archive %s1 has %s2 part(s) and is complete" })
-    String ValidateArchiveAction_actionPerformed_(String name, int size);
-
-    @Default(lngs = { "en" }, values = { "Archive %s1 has %s2 part(s) and is incomplete.\r\n Missing Part(s): %s3" })
-    String ValidateArchiveAction_actionPerformed_bad(String name, int size, List<String> missing);
 
     @Default(lngs = { "en" }, values = { "%s1" })
     String LinkCollector_archiv(String cleanFileName);

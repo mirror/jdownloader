@@ -68,8 +68,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/swfutils.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JDBrowser"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/AppWorkUtils"/>
-	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingLinux.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingMac.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingWin.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/swingx.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/UpdateClient"/>

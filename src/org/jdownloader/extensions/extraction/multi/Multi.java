@@ -44,6 +44,7 @@ import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.StringFormatter;
+import org.appwork.utils.logging.Log;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -223,6 +224,7 @@ public class Multi extends IExtraction {
         try {
             SevenZip.initSevenZipFromPlatformJAR();
         } catch (SevenZipNativeInitializationException e) {
+            Log.exception(e);
             logger.warning("Could not initialize Multiunpacker");
             return false;
         }

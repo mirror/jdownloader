@@ -42,7 +42,7 @@ public class RemoveNonSelectedAction extends AppAction {
 
                 public void run() {
 
-                    final ArrayList<CrawledLink> selected = LinkTreeUtils.getSelectedChildren(selection);
+                    final ArrayList<CrawledLink> selected = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<CrawledLink>());
                     List<CrawledLink> nonselected = LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
 
                         public boolean isChildrenNodeFiltered(CrawledLink node) {

@@ -23,7 +23,7 @@ public class PriorityActionEntry extends AppAction {
     public PriorityActionEntry(Priority priority, ArrayList<AbstractNode> selection) {
         setName(priority._());
         setSmallIcon(priority.loadIcon(18));
-        this.selection = LinkTreeUtils.getSelectedChildren(selection);
+        this.selection = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<CrawledLink>());
         this.priority = priority;
     }
 

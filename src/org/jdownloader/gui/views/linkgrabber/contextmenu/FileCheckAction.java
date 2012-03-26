@@ -27,7 +27,7 @@ public class FileCheckAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
         LinkChecker<CrawledLink> linkChecker = new LinkChecker<CrawledLink>();
-        ArrayList<CrawledLink> links = LinkTreeUtils.getSelectedChildren(selection);
+        ArrayList<CrawledLink> links = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<CrawledLink>());
         for (CrawledLink l : links) {
             l.getDownloadLink().setAvailableStatus(AvailableStatus.UNCHECKED);
         }

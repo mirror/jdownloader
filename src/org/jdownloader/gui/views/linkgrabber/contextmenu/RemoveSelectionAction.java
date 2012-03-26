@@ -39,7 +39,7 @@ public class RemoveSelectionAction extends AppAction {
             IOEQ.add(new Runnable() {
 
                 public void run() {
-                    ArrayList<CrawledLink> remove = LinkTreeUtils.getSelectedChildren(selection);
+                    ArrayList<CrawledLink> remove = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<CrawledLink>());
                     LinkCollector.getInstance().removeChildren(remove);
                 }
 

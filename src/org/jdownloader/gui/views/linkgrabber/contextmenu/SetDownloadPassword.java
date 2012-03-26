@@ -26,7 +26,7 @@ public class SetDownloadPassword extends AppAction {
 
     public SetDownloadPassword(AbstractNode node, ArrayList<AbstractNode> selection2) {
 
-        this.selection = LinkTreeUtils.getSelectedChildren(selection2);
+        this.selection = LinkTreeUtils.getSelectedChildren(selection2, new ArrayList<CrawledLink>());
         setName(_GUI._.SetDownloadPassword_SetDownloadPassword_());
         setIconKey("password");
     }

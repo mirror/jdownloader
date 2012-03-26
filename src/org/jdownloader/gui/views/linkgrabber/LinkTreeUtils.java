@@ -7,6 +7,7 @@ import java.util.List;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 
 public class LinkTreeUtils {
 
@@ -48,12 +49,13 @@ public class LinkTreeUtils {
         return new ArrayList<CrawledPackage>(ret);
     }
 
-    public static ArrayList<CrawledLink> getSelectedChildren(ArrayList<AbstractNode> selection2) {
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public static <T extends AbstractNode> ArrayList<T> getSelectedChildren(ArrayList<AbstractNode> selection2, ArrayList<T> container) {
         HashSet<AbstractNode> has = new HashSet<AbstractNode>(selection2);
-        HashSet<CrawledLink> ret = new HashSet<CrawledLink>();
+        HashSet<T> ret = new HashSet<T>();
         for (AbstractNode node : selection2) {
-            if (node instanceof CrawledLink) {
-                ret.add((CrawledLink) node);
+            if (node instanceof AbstractNode) {
+                ret.add((T) node);
             } else {
 
                 // if we selected a package, and ALL it's links, we want all
@@ -63,16 +65,16 @@ public class LinkTreeUtils {
                 // if we selected a package, and it is NOT expanded, we want all
                 // links
 
-                if (!((CrawledPackage) node).isExpanded()) {
+                if (!((AbstractPackageNode) node).isExpanded()) {
                     // add allTODO
-                    List<CrawledLink> childs = ((CrawledPackage) node).getChildren();
+                    List<T> childs = ((AbstractPackageNode) node).getChildren();
                     ret.addAll(childs);
                     // LinkGrabberTableModel.getInstance().getAllChildrenNodes()
                 } else {
-                    List<CrawledLink> childs = ((CrawledPackage) node).getChildren();
+                    List<T> childs = ((AbstractPackageNode) node).getChildren();
                     boolean containsNone = true;
                     boolean containsAll = true;
-                    for (CrawledLink l : childs) {
+                    for (AbstractNode l : childs) {
                         if (has.contains(l)) {
                             containsNone = false;
                         } else {
@@ -86,8 +88,8 @@ public class LinkTreeUtils {
                 }
             }
         }
-
-        return new ArrayList<CrawledLink>(ret);
+        container.addAll(ret);
+        return container;
     }
 
 }
