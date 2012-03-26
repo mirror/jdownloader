@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangafox.com" }, urls = { "http://[\\w\\.]*?mangafox\\.com/manga/.*?/(v\\d+/c[\\d\\.]+|c[\\d\\.]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangafox.com" }, urls = { "http://[\\w\\.]*?mangafox\\.(com|me)/manga/.*?/(v\\d+/c[\\d\\.]+|c[\\d\\.]+)" }, flags = { 0 })
 public class Mangafox extends PluginForDecrypt {
 
     public Mangafox(PluginWrapper wrapper) {

@@ -44,7 +44,7 @@ public class IFilezCom extends PluginForHost {
     private static final String CAPTCHATEXT          = "includes/vvc\\.php\\?vvcid=";
     private static final String MAINPAGE             = "http://i-filez.com/";
     private static final Object LOCK                 = new Object();
-    private static final String ONLY4PREMIUM         = ">Owner of the file is restricted to download this file only Premium users";
+    private static final String ONLY4PREMIUM         = ">Owner of the file is restricted to download this file only Premium users|>File is available only for Premium users.<";
     private static final String ONLY4PREMIUMUSERTEXT = "Only downloadable for premium users";
 
     public IFilezCom(PluginWrapper wrapper) {
@@ -71,7 +71,7 @@ public class IFilezCom extends PluginForHost {
         br.setCookie(MAINPAGE, "sdlanguageid", "2");
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Файл не найден в базе i-filez\\.com\\. Возможно Вы неправильно указали ссылку\\.<|>File was not found in the i-filez\\.com database|It is possible that you provided wrong link\\.</p>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>Файл не найден в базе i\\-filez\\.com\\. Возможно Вы неправильно указали ссылку\\.<|>File was not found in the i\\-filez\\.com database|It is possible that you provided wrong link\\.</p>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = new Regex(link.getDownloadURL(), "i-filez\\.com/downloads/i/\\d+/f/(.+)").getMatch(0);
         String filesize = br.getRegex("<th>Size:</th>[\r\t\n ]+<td>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
