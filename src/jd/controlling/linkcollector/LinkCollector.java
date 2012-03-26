@@ -320,8 +320,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             }
                         }
                     }
-
-                    String identifier = packageID + "_" + packageName + "_" + downloadFolder;
+                    String cleanPackageID = packageID == null ? null : packageID.replaceAll("([^a-zA-Z0-9]+)", "");
+                    String cleanPackageName = packageName == null ? null : packageName.replaceAll("([^a-zA-Z0-9]+)", "");
+                    String identifier = cleanPackageID + "_||_" + cleanPackageName + "_||_" + downloadFolder;
                     CrawledPackage pkg = packageMap.get(identifier);
                     if (pkg == null) {
                         if (LinkCrawler.PERMANENT_OFFLINE_ID == uID) {

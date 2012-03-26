@@ -7,6 +7,7 @@ import java.util.List;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
 public class LinkTreeUtils {
@@ -54,7 +55,7 @@ public class LinkTreeUtils {
         HashSet<AbstractNode> has = new HashSet<AbstractNode>(selection2);
         HashSet<T> ret = new HashSet<T>();
         for (AbstractNode node : selection2) {
-            if (node instanceof AbstractNode) {
+            if (node instanceof AbstractPackageChildrenNode) {
                 ret.add((T) node);
             } else {
 

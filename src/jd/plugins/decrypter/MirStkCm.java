@@ -109,7 +109,8 @@ public class MirStkCm extends PluginForDecrypt {
             }
             DownloadLink dl;
             decryptedLinks.add(dl = createDownloadlink(finallink));
-            if (suggestedFilename != null) dl.setProperty("SUGGESTEDFINALFILENAME", suggestedFilename);
+            // if (suggestedFilename != null)
+            // dl.setProperty("SUGGESTEDFINALFILENAME", suggestedFilename);
             progress.increase(1);
         }
         return decryptedLinks;
