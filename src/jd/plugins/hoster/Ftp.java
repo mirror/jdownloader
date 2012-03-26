@@ -162,6 +162,10 @@ public class Ftp extends PluginForHost {
                 ftp.setCmanager(dl.getManagedConnetionHandler());
             } catch (final Throwable e) {
             }
+            try {
+                ftp.setDownloadInterface(dl);
+            } catch (final Throwable e) {
+            }
             downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
                 try {
@@ -192,6 +196,11 @@ public class Ftp extends PluginForHost {
                     }
                 }
             } finally {
+                try {
+                    downloadLink.setDownloadCurrent(tmp.length());
+                    ftp.setDownloadInterface(null);
+                } catch (final Throwable e) {
+                }
                 downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
                 downloadLink.setDownloadInstance(null);
                 downloadLink.getLinkStatus().setStatusText(null);

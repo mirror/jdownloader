@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
@@ -66,6 +67,7 @@ public class DepositFiles extends PluginForHost {
 
     private static final Object PREMLOCK                 = new Object();
     private static final Object LOCK                     = new Object();
+    private boolean             showCaptcha              = false;
 
     private static int          simultanpremium          = 1;
 
@@ -125,11 +127,14 @@ public class DepositFiles extends PluginForHost {
         setBrowserExclusive();
         synchronized (LOCK) {
             try {
+                showCaptcha = true;
                 login(account, true);
             } catch (final PluginException e) {
                 ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
                 account.setValid(false);
                 return ai;
+            } finally {
+                showCaptcha = false;
             }
             if (isFreeAccount(account, true)) {
                 try {
@@ -367,6 +372,7 @@ public class DepositFiles extends PluginForHost {
         boolean free = false;
         requestFileInformation(downloadLink);
         synchronized (PREMLOCK) {
+            showCaptcha = false;
             login(account, false);
             if (isFreeAccount(account, false)) {
                 simultanpremium = 1;
@@ -453,12 +459,13 @@ public class DepositFiles extends PluginForHost {
     }
 
     private String getDonloadManagerVersion() {
+        Browser brc = br.cloneBrowser();
         try {
-            br.getPage("http://system.depositfiles.com/api/get_downloader_version.php");
+            brc.getPage("http://system.depositfiles.com/api/get_downloader_version.php");
         } catch (Throwable e) {
             return null;
         }
-        return br.getRegex("([\\d\\.]+)").getMatch(0);
+        return brc.getRegex("([\\d\\.]+)").getMatch(0);
     }
 
     @SuppressWarnings("unchecked")
@@ -489,41 +496,40 @@ public class DepositFiles extends PluginForHost {
                     br.setFollowRedirects(true);
                     br.getPage(MAINPAGE + "/de/login.php");
 
-                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                        DownloadLink dummy = new DownloadLink(null, null, null, null, true);
-                        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                        for (int i = 0; i <= 3; i++) {
-                            rc.parse();
-                            rc.load();
-                            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                            String c = getCaptchaCode(cf, dummy);
-                            rc.getForm().put("login", Encoding.urlEncode(account.getUser()));
-                            rc.getForm().put("password", Encoding.urlEncode(account.getPass()));
-                            rc.setCode(c);
-                            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) continue;
-                            break;
-                        }
-                        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                            logger.info("Invalid account or wrong captcha!");
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    } else {
-                        final Form login = br.getFormBySubmitvalue("Anmelden");
-                        if (login == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        login.put("login", Encoding.urlEncode(account.getUser()));
-                        login.put("password", Encoding.urlEncode(account.getPass()));
-                        br.submitForm(login);
-                    }
-                    br.setFollowRedirects(false);
-                    final String cookie = br.getCookie(MAINPAGE, "autologin");
-                    if (cookie == null || br.containsHTML("Benutzername\\-Passwort\\-Kombination")) {
-                        int i = 1;
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    final Form login = br.getFormBySubmitvalue("Anmelden");
+                    if (login == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    login.put("login", Encoding.urlEncode(account.getUser()));
+                    login.put("password", Encoding.urlEncode(account.getPass()));
+                    br.submitForm(login);
                 } else {
                     br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 5.1; ru; rv:1.8.1.20) DepositFiles/FileManager " + dmVersion);
                     br.postPage("http://depositfiles.com/de/login.php", "go=1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                }
+                br.setFollowRedirects(false);
+                if (showCaptcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    DownloadLink dummy = new DownloadLink(null, null, null, null, true);
+                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    for (int i = 0; i <= 3; i++) {
+                        rc.parse();
+                        rc.load();
+                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        String c = getCaptchaCode(cf, dummy);
+                        rc.getForm().put("login", Encoding.urlEncode(account.getUser()));
+                        rc.getForm().put("password", Encoding.urlEncode(account.getPass()));
+                        rc.setCode(c);
+                        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) continue;
+                        break;
+                    }
+                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                        logger.info("Invalid account or wrong captcha!");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                final String cookie = br.getCookie(MAINPAGE, "autologin");
+                if (cookie == null || br.containsHTML("Benutzername\\-Passwort\\-Kombination")) {
+                    logger.info("invalid password/username or captcha required!");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();

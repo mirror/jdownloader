@@ -1026,6 +1026,10 @@ abstract public class DownloadInterface {
         totaleLinkBytesLoaded += block;
     }
 
+    public synchronized void setTotalLinkBytesLoaded(long loaded) {
+        totaleLinkBytesLoaded = loaded;
+    }
+
     /**
      * ueber error() kann ein fehler gemeldet werden. DIe Methode entscheided
      * dann ob dieser fehler zu einem Abbruch fuehren muss

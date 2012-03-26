@@ -51,6 +51,7 @@ import java.rmi.ConnectException;
 import java.util.StringTokenizer;
 
 import jd.controlling.JDLogger;
+import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
@@ -75,6 +76,7 @@ public class SimpleFTP {
     private String                             host;
     private Eventsender<FtpListener, FtpEvent> broadcaster;
     private ThrottledConnectionHandler         cmanager   = null;
+    private DownloadInterface                  dl;
 
     public ThrottledConnectionHandler getCmanager() {
         return cmanager;
@@ -682,10 +684,20 @@ public class SimpleFTP {
         RandomAccessFile fos = null;
         Socket dataSocket = null;
         try {
+            final long resumeAmount = resumePosition;
             dataSocket = new Socket();
             dataSocket.setSoTimeout(30 * 1000);
             dataSocket.connect(new InetSocketAddress(pasv.getHostName(), pasv.getPort()), 30 * 1000);
-            input = new MeteredThrottledInputStream(dataSocket.getInputStream(), new AverageSpeedMeter());
+            input = new MeteredThrottledInputStream(dataSocket.getInputStream(), new AverageSpeedMeter()) {
+
+                @Override
+                public long transfered() {
+                    DownloadInterface ldl = dl;
+                    if (ldl != null) ldl.setTotalLinkBytesLoaded(resumeAmount + super.transfered());
+                    return super.transfered();
+                }
+
+            };
             fos = new RandomAccessFile(file, "rw");
             if (resumePosition > 0) {
                 /* in case we do resume, reposition the writepointer */
@@ -858,6 +870,10 @@ public class SimpleFTP {
         } else {
             connect(host, port);
         }
+    }
+
+    public void setDownloadInterface(DownloadInterface dl) {
+        this.dl = dl;
     }
 
 }
