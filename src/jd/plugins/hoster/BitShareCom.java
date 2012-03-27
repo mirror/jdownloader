@@ -74,7 +74,7 @@ public class BitShareCom extends PluginForHost {
     protected String getFixedFileName(String originalFilename, String prototypeName) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < prototypeName.length(); i++) {
-            char c = prototypeName.charAt(i);
+            char c = originalFilename.charAt(i);
             char correctc = prototypeName.charAt(i);
             if (c != correctc) {
                 if (c == '-') {
@@ -375,7 +375,7 @@ public class BitShareCom extends PluginForHost {
         }
         filename = filename.trim();
         if (filename.contains("...")) {
-            String urlFilename = new Regex(link.getDownloadURL(), "/files/[a-z0-9]+/(.*?)\\.html").getMatch(0);
+            String urlFilename = new Regex(link.getDownloadURL(), "/files/[a-z0-9]+/(.*?)(\\.html|$)").getMatch(0);
             if (urlFilename != null) filename = urlFilename;
         }
         String suggestedName = null;

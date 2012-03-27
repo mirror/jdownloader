@@ -974,43 +974,27 @@ public abstract class PluginForHost extends Plugin {
     // return null;
     // }
     public String autoFilenameCorrection(String originalFilename, DownloadLink downloadLink, ArrayList<DownloadLink> dlinks) {
-        if (!isHosterManipulatesFilenames()) return null;
         try {
             String filteredName = filterPackageID(originalFilename);
+            String MD5 = downloadLink.getMD5Hash();
+            String SHA1 = downloadLink.getSha1Hash();
             for (DownloadLink next : dlinks) {
                 if (downloadLink == next) continue;
                 if (next.getHost().equals(getHost())) continue;
-                String prototypeName = next.getFinalFileName();
-                if (prototypeName == null) {
-
-                    String forced = next.getForcedFileName();
-                    try {
-                        next.forceFileName(null);
-                        prototypeName = next.getName();
-
-                    } finally {
-                        next.forceFileName(forced);
-                    }
+                String prototypeName = next.getNameSetbyPlugin();
+                if (prototypeName.equals(originalFilename)) continue;
+                if (prototypeName.equalsIgnoreCase(originalFilename)) {
+                    String newName = fixCase(originalFilename, prototypeName);
+                    if (newName != null) return newName;
                 }
-                if (originalFilename.length() != prototypeName.length()) { return null; }
-                if (!filteredName.equals(filterPackageID(prototypeName))) return null;
-                String newName = getFixedFileName(originalFilename, prototypeName);
-                if (newName != null) { return newName; }
-
-                if (downloadLink.getMD5Hash() != null && next.getMD5Hash() != null) {
-                    if (downloadLink.getMD5Hash().equalsIgnoreCase(next.getMD5Hash())) {
-                        // 100% mirror! ok and now? these files should have the
-                        // same filename!!
-                        return next.getName();
-                    }
+                if (isHosterManipulatesFilenames() && originalFilename.length() == prototypeName.length() && filteredName.equals(filterPackageID(prototypeName))) {
+                    String newName = getFixedFileName(originalFilename, prototypeName);
+                    if (newName != null) { return newName; }
                 }
-
-                if (downloadLink.getSha1Hash() != null && next.getSha1Hash() != null) {
-                    if (downloadLink.getSha1Hash().equalsIgnoreCase(next.getSha1Hash())) {
-                        // 100% mirror! ok and now? these files should have the
-                        // same filename!!
-                        return next.getName();
-                    }
+                if ((MD5 != null && MD5.equalsIgnoreCase(next.getMD5Hash())) || (SHA1 != null && SHA1.equalsIgnoreCase(next.getSha1Hash()))) {
+                    // 100% mirror! ok and now? these files should have the
+                    // same filename!!
+                    return next.getName();
                 }
             }
         } catch (Throwable e) {
@@ -1019,8 +1003,22 @@ public abstract class PluginForHost extends Plugin {
         return null;
     }
 
+    protected String fixCase(String originalFilename, String prototypeName) {
+        StringBuilder sb = new StringBuilder(prototypeName.length());
+        for (int i = 0; i < prototypeName.length(); i++) {
+            char c = originalFilename.charAt(i);
+            char correctc = prototypeName.charAt(i);
+            if (Character.toLowerCase(c) == Character.toLowerCase(correctc)) {
+                sb.append(Character.isUpperCase(c) ? c : correctc);
+            } else {
+                return null;
+            }
+        }
+        return sb.toString();
+    }
+
     protected String getFixedFileName(String originalFilename, String prototypeName) {
-        throw new RuntimeException("Not implemented");
+        throw new RuntimeException("not implemented");
     }
 
     /**

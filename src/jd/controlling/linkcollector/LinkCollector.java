@@ -263,7 +263,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     protected void autoFileNameCorrection(List<CrawledLink> pkgchildren) {
         if (CFG_LINKGRABBER.AUTO_FILENAME_CORRECTION_ENABLED.isEnabled()) {
-
             ArrayList<DownloadLink> dlinks = new ArrayList<DownloadLink>();
             ArrayList<DownloadLink> maybebadfilenames = new ArrayList<DownloadLink>();
             for (CrawledLink link : pkgchildren) {
@@ -272,30 +271,25 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 } else {
                     maybebadfilenames.add(link.getDownloadLink());
                 }
-
             }
             for (CrawledLink link : pkgchildren) {
-                String name = link.getDownloadLink().getFinalFileName();
-                if (name == null) {
-                    String forced = link.getDownloadLink().getForcedFileName();
-                    try {
-                        link.getDownloadLink().forceFileName(null);
-                        name = link.getDownloadLink().getName();
-                    } finally {
-                        link.getDownloadLink().forceFileName(forced);
-                    }
-                }
+                String name = link.getDownloadLink().getNameSetbyPlugin();
                 if (name == null) continue;
                 String newName = link.gethPlugin().autoFilenameCorrection(name, link.getDownloadLink(), dlinks);
                 if (newName != null) {
                     Log.L.info("Renamed file " + name + " to " + newName);
-                    link.getDownloadLink().forceFileName(newName);
                 } else {
                     newName = link.gethPlugin().autoFilenameCorrection(name, link.getDownloadLink(), maybebadfilenames);
                     if (newName != null) {
                         Log.L.info("Renamed file2 " + name + " to " + newName);
-                        link.getDownloadLink().forceFileName(newName);
                     }
+                }
+                if (newName != null && !name.equals(newName)) {
+                    /*
+                     * we do not force a filename if newName equals to name set
+                     * by plugin!
+                     */
+                    link.getDownloadLink().forceFileName(newName);
                 }
             }
         }
@@ -366,7 +360,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
 
                     String identifier = (packageID + "_||_" + packageName + "_||_" + downloadFolder);
-                    if (CrossSystem.isWindows()) {
+                    if (CrossSystem.isWindows() || CFG_LINKGRABBER.AUTO_FILENAME_CORRECTION_ENABLED.isEnabled()) {
                         // only on windows, because mac and linux have case
                         // sensitive file systems.
                         identifier = identifier.toLowerCase(Locale.ENGLISH);

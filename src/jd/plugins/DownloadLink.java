@@ -420,6 +420,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
+    public String getNameSetbyPlugin() {
+        String ret = this.getFinalFileName();
+        if (ret != null) return ret;
+        return name;
+    }
+
     /**
      * Liefert das Plugin zurueck, dass diesen DownloadLink handhabt
      * 

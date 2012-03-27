@@ -158,7 +158,6 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     public void nodeUpdated(CrawledLink source) {
-        getView().updateInfo(source);
         notifyChanges();
     }
 

@@ -229,7 +229,7 @@ public class Rapidshare extends PluginForHost {
     protected String getFixedFileName(String originalFilename, String prototypeName) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < prototypeName.length(); i++) {
-            char c = prototypeName.charAt(i);
+            char c = originalFilename.charAt(i);
             char correctc = prototypeName.charAt(i);
             if (c != correctc) {
                 if (c == '_') {

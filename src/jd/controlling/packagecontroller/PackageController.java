@@ -404,7 +404,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     protected void autoFileNameCorrection(List<ChildType> pkgchildren) {
-
     }
 
     /**
