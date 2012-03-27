@@ -31,7 +31,6 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -56,7 +55,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends PluginForHost {
 
-    private static final String UA                       = RandomUserAgent.generate();
+    private static final String UA                       = "User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:11.0) Gecko/20100101 Firefox/11.0";
     private static final String FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
     private static final String PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
     private static final String MAINPAGE                 = "http://depositfiles.com";
@@ -480,6 +479,10 @@ public class DepositFiles extends PluginForHost {
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 if (premium != null && acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    String dmVersion = account.getStringProperty("dmVersion", null);
+                    if (dmVersion != null) {
+                        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 5.1; ru; rv:1.8.1.20) DepositFiles/FileManager " + dmVersion);
+                    }
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
@@ -491,18 +494,27 @@ public class DepositFiles extends PluginForHost {
                     }
                 }
                 String dmVersion = getDonloadManagerVersion();
+                String UA = null;
                 if (dmVersion == null) {
+                    String uprand = account.getStringProperty("uprand", null);
+                    if (uprand != null) br.setCookie(MAINPAGE, "uprand", uprand);
+                    br.getHeaders().put("User-Agent", UA);
                     br.setReadTimeout(3 * 60 * 1000);
                     br.setFollowRedirects(true);
-                    br.getPage(MAINPAGE + "/de/login.php");
-
+                    br.getPage(MAINPAGE);
+                    Thread.sleep(2000);
                     final Form login = br.getFormBySubmitvalue("Anmelden");
-                    if (login == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    login.put("login", Encoding.urlEncode(account.getUser()));
-                    login.put("password", Encoding.urlEncode(account.getPass()));
-                    br.submitForm(login);
+                    if (login != null) {
+                        login.setAction("http://depositfiles.com/login.php?return=%2F");
+                        login.put("login", Encoding.urlEncode(account.getUser()));
+                        login.put("password", Encoding.urlEncode(account.getPass()));
+                        br.submitForm(login);
+                    } else if (!showCaptcha || !br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 } else {
-                    br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 5.1; ru; rv:1.8.1.20) DepositFiles/FileManager " + dmVersion);
+                    UA = "Mozilla/5.0 (Windows; U; Windows NT 5.1; ru; rv:1.8.1.20) DepositFiles/FileManager " + dmVersion;
+                    br.getHeaders().put("User-Agent", UA);
+                    br.setFollowRedirects(true);
+                    Thread.sleep(2000);
                     br.postPage("http://depositfiles.com/de/login.php", "go=1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 }
                 br.setFollowRedirects(false);
@@ -540,6 +552,9 @@ public class DepositFiles extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+                account.setProperty("dmVersion", dmVersion);
+                account.setProperty("uprand", br.getCookie(MAINPAGE, "uprand"));
+                account.setProperty("UA", UA);
             } catch (final PluginException e) {
                 account.setProperty("premium", Property.NULL);
                 account.setProperty("cookies", Property.NULL);

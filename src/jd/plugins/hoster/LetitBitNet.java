@@ -19,10 +19,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -346,12 +350,46 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private void login(final Account account, final boolean force) throws Exception {
-        this.setBrowserExclusive();
-        br.setCookie("http://letitbit.net/", "lang", "en");
-        br.postPage("http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
-        String check = br.getCookie("http://letitbit.net/", "log");
-        if (check == null) check = br.getCookie("http://letitbit.net/", "pas");
-        if (check == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        synchronized (LOCK) {
+            // Load cookies
+            try {
+                this.setBrowserExclusive();
+                br.setCookie("http://letitbit.net/", "lang", "en");
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(COOKIE_HOST, key, value);
+                        }
+                        return;
+                    }
+                }
+                /*
+                 * we must save the cookies, because letitbit only allows 100
+                 * logins per 24hours
+                 */
+                br.postPage("http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
+                String check = br.getCookie("http://letitbit.net/", "log");
+                if (check == null) check = br.getCookie("http://letitbit.net/", "pas");
+                if (check == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", null);
+                throw e;
+            }
+        }
     }
 
     private void prepareBrowser(final Browser br) {

@@ -52,7 +52,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(embed/|watch.*?v=|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(embed/|.*?watch.*?v=|.*?watch.*?v%3D|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
     private static boolean PLUGIN_DISABLED;
 
@@ -207,6 +207,8 @@ public class TbCm extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (PLUGIN_DISABLED) return decryptedLinks;
         String parameter = param.toString().replace("watch#!v", "watch?v");
+        parameter = parameter.replaceFirst("(verify_age\\?next_url=\\/?)", "");
+        parameter = parameter.replaceFirst("(%3Fv%3D)", "?v=");
         parameter = parameter.replaceFirst("(watch\\?.*?v)", "watch?v");
         parameter = parameter.replaceFirst("/embed/", "/watch?v=");
         parameter = parameter.replaceFirst("https", "http");
@@ -449,7 +451,12 @@ public class TbCm extends PluginForDecrypt {
         br.getPage(video);
         if (br.containsHTML("id=\"unavailable-submessage\" class=\"watch-unavailable-submessage\"")) { return null; }
         final String VIDEOID = new Regex(video, "watch\\?v=([\\w_\\-]+)").getMatch(0);
-        String YT_FILENAME = br.containsHTML("&title=") ? Encoding.htmlDecode(br.getRegex("&title=([^&$]+)").getMatch(0).replaceAll("\\+", " ").trim()) : VIDEOID;
+        boolean fileNameFound = false;
+        String YT_FILENAME = VIDEOID;
+        if (br.containsHTML("&title=")) {
+            YT_FILENAME = Encoding.htmlDecode(br.getRegex("&title=([^&$]+)").getMatch(0).replaceAll("\\+", " ").trim());
+            fileNameFound = true;
+        }
         final String url = br.getURL();
         boolean ythack = false;
         if (url != null && !url.equals(video)) {
@@ -472,14 +479,20 @@ public class TbCm extends PluginForDecrypt {
             } else if (url.toLowerCase(Locale.ENGLISH).indexOf("youtube.com/index?ytsession=") != -1 || url.toLowerCase(Locale.ENGLISH).indexOf("youtube.com/verify_age?next_url=") != -1 && !prem) {
                 ythack = true;
                 br.getPage("http://www.youtube.com/get_video_info?video_id=" + VIDEOID);
-                YT_FILENAME = br.containsHTML("&title=") ? Encoding.htmlDecode(br.getRegex("&title=([^&$]+)").getMatch(0).replaceAll("\\+", " ").trim()) : VIDEOID;
+                if (br.containsHTML("&title=") && fileNameFound == false) {
+                    YT_FILENAME = Encoding.htmlDecode(br.getRegex("&title=([^&$]+)").getMatch(0).replaceAll("\\+", " ").trim());
+                    fileNameFound = true;
+                }
             } else if (url.toLowerCase(Locale.ENGLISH).indexOf("google.com/accounts/servicelogin?") != -1) {
                 // private videos
                 return null;
             }
         }
         /* html5_fmt_map */
-        YT_FILENAME = br.getRegex(TbCm.YT_FILENAME_PATTERN).count() != 0 ? Encoding.htmlDecode(br.getRegex(TbCm.YT_FILENAME_PATTERN).getMatch(0).trim()) : VIDEOID;
+        if (br.getRegex(TbCm.YT_FILENAME_PATTERN).count() != 0 && fileNameFound == false) {
+            YT_FILENAME = Encoding.htmlDecode(br.getRegex(TbCm.YT_FILENAME_PATTERN).getMatch(0).trim());
+            fileNameFound = true;
+        }
         final HashMap<Integer, String[]> links = new HashMap<Integer, String[]>();
         String html5_fmt_map = br.getRegex("\"html5_fmt_map\": \\[(.*?)\\]").getMatch(0);
 
@@ -527,6 +540,22 @@ public class TbCm extends PluginForDecrypt {
         final String fmt_list_map[][] = new Regex(fmt_list_str, "(\\d+)/(\\d+x\\d+)/\\d+/\\d+/\\d+,").getMatches();
         for (final String[] fmt : fmt_list_map) {
             fmt_list.put(fmt[0], fmt[1]);
+        }
+        if (links.size() == 0 && ythack) {
+            /* try to find fallback links */
+            String urls[] = br.getRegex("url%3D(.*?)($|%2C)").getColumn(0);
+            int index = 0;
+            for (String vurl : urls) {
+                String hitUrl = new Regex(vurl, "(.*?)%26").getMatch(0);
+                String hitQ = new Regex(vurl, "%26quality%3D(.*?)%").getMatch(0);
+                if (hitUrl != null && hitQ != null) {
+                    hitUrl = unescape(hitUrl.replaceAll("\\\\/", "/"));
+                    if (fmt_list_map.length >= index) {
+                        links.put(Integer.parseInt(fmt_list_map[index][0]), new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, false)), hitQ });
+                        index++;
+                    }
+                }
+            }
         }
         for (Integer fmt : links.keySet()) {
             String fmt2 = fmt + "";

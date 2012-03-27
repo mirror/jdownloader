@@ -51,7 +51,6 @@ public class Wrdprss extends PluginForDecrypt {
         StringBuilder completePattern = new StringBuilder();
         completePattern.append("http://[\\w\\.]*?(");
         completePattern.append("(cinetopia\\.ws/.*\\.html)");
-        completePattern.append(")");
         String[] listType1 = { "hd-area.org", "movie-blog.org", "doku.cc", "sound-blog.org" };
         for (String pattern : listType1) {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\d{4}/\\d{2}/\\d{2}/.+)");
