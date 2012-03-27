@@ -65,6 +65,7 @@ public class FilestoreTo extends PluginForHost {
         final String[] pwnage = br.getRegex(zStatistic("RkM4Q0ZBRkFGQjAzQ0RFMzFFQzBCMjlGREU1RDQyRjEyOTkwNzFCQjA4NUVEODlCMUUxODVCM0IxNTM5ODY4NTU5REZGQzNGOEQ1REU2M0UyMjQxNTNFOUVBMjYxQzczRTA3NTJFQ0FDMUM5NjU2NUE4NzNENkU0NkIwQzM3M0E1QUY2Q0QyOTVEMkFGQkM4MjFBRTJFQkI1MjYwQ0ZCMzQyRkE4QkRFNkJBRDk4QUI5QkQ5MkJDMzJGNjc3ODE1QzM3QTNBNTA=")).getColumn(0);
         if (pwnage == null || pwnage.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         final String waittime = br.getRegex("Bitte warte (\\d+) Sekunden und starte dann").getMatch(0);
+        final String dlink = "http://filestore.to/ajax/download.php?DDL=";
         int wait = 10;
         if (waittime != null) {
             if (Integer.parseInt(waittime) < 61) {
@@ -74,7 +75,7 @@ public class FilestoreTo extends PluginForHost {
         sleep(wait * 1001l, downloadLink);
         // If plugin breaks most times this link is changed
         for (final String gam3r : pwnage) {
-            br.getPage("http://filestore.to/ajax/download.php?Download=" + gam3r);
+            br.getPage(dlink + gam3r);
             if (br.containsHTML("(Da hat etwas nicht geklappt|Wartezeit nicht eingehalten|Versuche es erneut)")) {
                 continue;
             }

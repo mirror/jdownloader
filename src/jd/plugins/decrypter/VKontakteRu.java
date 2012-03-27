@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -126,6 +127,8 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> decryptAudioAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
+        int overallCounter = 1;
+        DecimalFormat df = new DecimalFormat("00000");
         br.getPage(parameter);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         String postData = null;
@@ -140,11 +143,14 @@ public class VKontakteRu extends PluginForDecrypt {
         for (String audioInfo[] : audioLinks) {
             String finallink = audioInfo[0];
             if (finallink == null) return null;
-            DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+            finallink = "directhttp://" + finallink;
+            DownloadLink dl = createDownloadlink(finallink);
             // Set filename so we have nice filenames here ;)
             dl.setFinalFileName(Encoding.htmlDecode(audioInfo[2].trim()) + " - " + Encoding.htmlDecode(audioInfo[3].trim()) + ".mp3");
             dl.setAvailable(true);
             decryptedLinks.add(dl);
+            logger.info("Decrypted link number " + df.format(overallCounter) + " :" + finallink);
+            overallCounter++;
         }
         return decryptedLinks;
     }
@@ -162,6 +168,8 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> decryptPhotoAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter, ProgressController progress) throws IOException {
+        int overallCounter = 1;
+        DecimalFormat df = new DecimalFormat("00000");
         if (parameter.contains("#/album"))
             parameter = "http://vk.com/album" + new Regex(parameter, "#/album(\\d+_\\d+)").getMatch(0);
         else if (parameter.matches(".*?vk\\.com/(photos|id)\\d+")) parameter = parameter.replaceAll("vk\\.com/(photos|id)", "vk.com/album") + "_0";
@@ -216,6 +224,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 dl.setAvailable(true);
                 dl.setProperty("albumid", albumID);
                 decryptedLinks.add(dl);
+                logger.info("Decrypted link number " + df.format(overallCounter) + " : " + albumID + "_" + photoID);
+                overallCounter++;
             }
             progress.increase(1);
         }
@@ -238,6 +248,8 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> decryptPhotoAlbums(ArrayList<DownloadLink> decryptedLinks, String parameter, ProgressController progress) throws IOException {
+        int overallCounter = 1;
+        DecimalFormat df = new DecimalFormat("00000");
         br.getPage(parameter);
         /** Photo regexes, last regex is for albums */
         final String[] regexes = { "class=\"photo_album_row\" id=\"(album\\d+_\\d+)\"", "<div class=\\\\\"photo_album_row\\\\\" id=\\\\\"album(\\d+_\\d+)\\\\\"", "<div class=\\\\\"photo_row\\\\\" id=\\\\\"album(\\d+_\\d+)\\\\\"" };
@@ -245,10 +257,14 @@ public class VKontakteRu extends PluginForDecrypt {
             String[] photoAlbums = br.getRegex(regex).getColumn(0);
             if (photoAlbums == null || photoAlbums.length == 0) continue;
             for (String photoAlbum : photoAlbums) {
+                String decryptedLink = null;
                 if (photoAlbum.contains("/"))
-                    decryptedLinks.add(createDownloadlink("http://vk.com" + photoAlbum));
+                    decryptedLink = "http://vk.com" + photoAlbum;
                 else
-                    decryptedLinks.add(createDownloadlink("http://vk.com/album" + photoAlbum));
+                    decryptedLink = "http://vk.com/album" + photoAlbum;
+                decryptedLinks.add(createDownloadlink(decryptedLink));
+                logger.info("Decrypted link number " + df.format(overallCounter) + " :" + decryptedLink);
+                overallCounter++;
             }
         }
         String numberOfEntrys = br.getRegex("(\\d+) (альбома|альбомов)</").getMatch(0);
@@ -280,7 +296,10 @@ public class VKontakteRu extends PluginForDecrypt {
                 String[] photoAlbums = br.getRegex("class=\"photo(_album)?_row\" id=\"album(\\d+_\\d+)").getColumn(1);
                 if (photoAlbums == null || photoAlbums.length == 0) continue;
                 for (String photoAlbum : photoAlbums) {
-                    decryptedLinks.add(createDownloadlink("http://vk.com/album" + photoAlbum));
+                    final String decryptedLink = "http://vk.com/album" + photoAlbum;
+                    decryptedLinks.add(createDownloadlink(decryptedLink));
+                    logger.info("Decrypted link number " + df.format(overallCounter) + " : " + decryptedLink);
+                    overallCounter++;
                 }
             }
         }
@@ -292,6 +311,8 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> decryptVideoAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter, ProgressController progress) throws IOException {
+        int overallCounter = 1;
+        DecimalFormat df = new DecimalFormat("00000");
         br.getPage(parameter);
         String[] allVideos = br.getRegex("<td class=\"video_thumb\"><a href=\"/video(\\d+_\\d+)\"").getColumn(0);
         if (allVideos == null || allVideos.length == 0) allVideos = br.getRegex("<div class=\"video_info_cont\">[\t\n\r ]+<a href=\"/video(\\d+_\\d+)\"").getColumn(0);
@@ -317,6 +338,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.warning("stopped at: " + completeVideolink);
                 return null;
             }
+            logger.info("Decrypted link number " + df.format(overallCounter) + " : " + completeVideolink);
             decryptedLinks.add(finallink);
             progress.increase(1);
             counter++;
