@@ -48,6 +48,7 @@ import jd.plugins.download.DownloadInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.images.IconIO;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -944,6 +945,92 @@ public abstract class PluginForHost extends Plugin {
 
     public boolean hasAutoCaptcha() {
         return JACMethod.hasMethod(getHost());
+    }
+
+    /**
+     * plugins may change the package identifier used for auto package matching.
+     * some hosters replace chars, shorten filenames...
+     * 
+     * @param packageIdentifier
+     * @return
+     */
+    public String filterPackageID(String packageIdentifier) {
+        return packageIdentifier;
+    }
+
+    /**
+     * Some hosters have bad filenames. Rapidshare for example replaces all
+     * special chars and spaces with _. Plugins can try to autocorrect this
+     * based on other downloadlinks
+     * 
+     * @param orgiginalfilename
+     * 
+     * @param downloadLink
+     * 
+     * @param dlinks
+     */
+    // public String autoFilenameCorrection(String orgiginalfilename,
+    // DownloadLink downloadLink, ArrayList<DownloadLink> dlinks) {
+    // return null;
+    // }
+    public String autoFilenameCorrection(String originalFilename, DownloadLink downloadLink, ArrayList<DownloadLink> dlinks) {
+        if (!isHosterManipulatesFilenames()) return null;
+        try {
+            String filteredName = filterPackageID(originalFilename);
+            for (DownloadLink next : dlinks) {
+                if (downloadLink == next) continue;
+                if (next.getHost().equals(getHost())) continue;
+                String prototypeName = next.getFinalFileName();
+                if (prototypeName == null) {
+
+                    String forced = next.getForcedFileName();
+                    try {
+                        next.forceFileName(null);
+                        prototypeName = next.getName();
+
+                    } finally {
+                        next.forceFileName(forced);
+                    }
+                }
+                if (originalFilename.length() != prototypeName.length()) { return null; }
+                if (!filteredName.equals(filterPackageID(prototypeName))) return null;
+                String newName = getFixedFileName(originalFilename, prototypeName);
+                if (newName != null) { return newName; }
+
+                if (downloadLink.getMD5Hash() != null && next.getMD5Hash() != null) {
+                    if (downloadLink.getMD5Hash().equalsIgnoreCase(next.getMD5Hash())) {
+                        // 100% mirror! ok and now? these files should have the
+                        // same filename!!
+                        return next.getName();
+                    }
+                }
+
+                if (downloadLink.getSha1Hash() != null && next.getSha1Hash() != null) {
+                    if (downloadLink.getSha1Hash().equalsIgnoreCase(next.getSha1Hash())) {
+                        // 100% mirror! ok and now? these files should have the
+                        // same filename!!
+                        return next.getName();
+                    }
+                }
+            }
+        } catch (Throwable e) {
+            Log.exception(e);
+        }
+        return null;
+    }
+
+    protected String getFixedFileName(String originalFilename, String prototypeName) {
+        throw new RuntimeException("Not implemented");
+    }
+
+    /**
+     * Some hoster manipulate the filename after upload. rapidshare for example,
+     * replaces special chars and spaces with _
+     * 
+     * @return
+     */
+    public boolean isHosterManipulatesFilenames() {
+        return false;
     }
 
 }

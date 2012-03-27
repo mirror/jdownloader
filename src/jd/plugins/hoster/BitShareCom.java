@@ -63,6 +63,32 @@ public class BitShareCom extends PluginForHost {
         this.enablePremium("http://bitshare.com/premium.html");
     }
 
+    public String filterPackageID(String packageIdentifier) {
+        return packageIdentifier.replaceAll("([^a-zA-Z0-9]+)", "");
+    }
+
+    public boolean isHosterManipulatesFilenames() {
+        return true;
+    }
+
+    protected String getFixedFileName(String originalFilename, String prototypeName) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < prototypeName.length(); i++) {
+            char c = prototypeName.charAt(i);
+            char correctc = prototypeName.charAt(i);
+            if (c != correctc) {
+                if (c == '-') {
+                    sb.append(correctc);
+                } else {
+                    return null;
+                }
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();

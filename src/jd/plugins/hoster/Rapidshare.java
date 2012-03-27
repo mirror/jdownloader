@@ -222,6 +222,32 @@ public class Rapidshare extends PluginForHost {
         return true;
     }
 
+    public String filterPackageID(String packageIdentifier) {
+        return packageIdentifier.replaceAll("([^a-zA-Z0-9]+)", "");
+    }
+
+    protected String getFixedFileName(String originalFilename, String prototypeName) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < prototypeName.length(); i++) {
+            char c = prototypeName.charAt(i);
+            char correctc = prototypeName.charAt(i);
+            if (c != correctc) {
+                if (c == '_') {
+                    sb.append(correctc);
+                } else {
+                    return null;
+                }
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
+    public boolean isHosterManipulatesFilenames() {
+        return true;
+    }
+
     public boolean checkLinksIntern(final DownloadLink[] urls) {
         if (urls == null) { return false; }
         final ArrayList<DownloadLink> checkurls = new ArrayList<DownloadLink>();

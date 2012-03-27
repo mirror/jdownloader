@@ -387,6 +387,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             for (ChildType child : children) {
                                 child.setParentNode(pkg);
                             }
+                            autoFileNameCorrection(pkgchildren);
                         }
                         pkg.notifyStructureChanges();
                     } finally {
@@ -400,6 +401,10 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                 }
             });
         }
+    }
+
+    protected void autoFileNameCorrection(List<ChildType> pkgchildren) {
+
     }
 
     /**

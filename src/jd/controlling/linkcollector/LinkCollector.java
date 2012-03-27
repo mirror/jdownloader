@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.zip.ZipEntry;
@@ -48,6 +49,7 @@ import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.zip.ZipIOReader;
@@ -63,6 +65,7 @@ import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
 
 public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink>, LinkCrawlerHandler {
@@ -104,6 +107,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private HashMap<String, ArrayList<CrawledLink>> offlineMap    = new HashMap<String, ArrayList<CrawledLink>>();
 
     private HashMap<String, ArrayList<CrawledLink>> variousMap    = new HashMap<String, ArrayList<CrawledLink>>();
+    private HashMap<String, ArrayList<CrawledLink>> hosterMap     = new HashMap<String, ArrayList<CrawledLink>>();
 
     private LinkCollector() {
         ShutdownController.getInstance().addShutdownVetoListener(new ShutdownVetoListener() {
@@ -257,6 +261,46 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         if (linkChecker != null) linkChecker.stopChecking();
     }
 
+    protected void autoFileNameCorrection(List<CrawledLink> pkgchildren) {
+        if (CFG_LINKGRABBER.AUTO_FILENAME_CORRECTION_ENABLED.isEnabled()) {
+
+            ArrayList<DownloadLink> dlinks = new ArrayList<DownloadLink>();
+            ArrayList<DownloadLink> maybebadfilenames = new ArrayList<DownloadLink>();
+            for (CrawledLink link : pkgchildren) {
+                if (!link.gethPlugin().isHosterManipulatesFilenames()) {
+                    dlinks.add(link.getDownloadLink());
+                } else {
+                    maybebadfilenames.add(link.getDownloadLink());
+                }
+
+            }
+            for (CrawledLink link : pkgchildren) {
+                String name = link.getDownloadLink().getFinalFileName();
+                if (name == null) {
+                    String forced = link.getDownloadLink().getForcedFileName();
+                    try {
+                        link.getDownloadLink().forceFileName(null);
+                        name = link.getDownloadLink().getName();
+                    } finally {
+                        link.getDownloadLink().forceFileName(forced);
+                    }
+                }
+                if (name == null) continue;
+                String newName = link.gethPlugin().autoFilenameCorrection(name, link.getDownloadLink(), dlinks);
+                if (newName != null) {
+                    Log.L.info("Renamed file " + name + " to " + newName);
+                    link.getDownloadLink().forceFileName(newName);
+                } else {
+                    newName = link.gethPlugin().autoFilenameCorrection(name, link.getDownloadLink(), maybebadfilenames);
+                    if (newName != null) {
+                        Log.L.info("Renamed file2 " + name + " to " + newName);
+                        link.getDownloadLink().forceFileName(newName);
+                    }
+                }
+            }
+        }
+    }
+
     private void addCrawledLink(final CrawledLink link) {
         /* try to find good matching package or create new one */
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
@@ -320,7 +364,77 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             }
                         }
                     }
-                    String identifier = packageID + "_||_" + packageName + "_||_" + downloadFolder;
+
+                    String identifier = (packageID + "_||_" + packageName + "_||_" + downloadFolder);
+                    if (CrossSystem.isWindows()) {
+                        // only on windows, because mac and linux have case
+                        // sensitive file systems.
+                        identifier = identifier.toLowerCase(Locale.ENGLISH);
+                    }
+                    LazyHostPlugin lazyPlg = null;
+                    PluginForHost plg = link.gethPlugin();
+
+                    if (plg != null && CFG_LINKGRABBER.AUTO_PACKAGE_MATCHING_CORRECTION_ENABLED.isEnabled()) {
+                        identifier = plg.filterPackageID(identifier);
+                        // run through all active hosts, and filter the
+                        // identifier
+                        for (String host : hosterMap.keySet()) {
+                            lazyPlg = HostPluginController.getInstance().get(host);
+                            PluginForHost plg2 = null;
+                            if (lazyPlg != null) plg2 = lazyPlg.getPrototype();
+                            if (plg2 != null) {
+                                identifier = plg2.filterPackageID(identifier);
+                            }
+                        }
+                        ArrayList<CrawledLink> list = hosterMap.get(link.getHost());
+
+                        if (list == null || list.size() == 0) {
+                            // new hoster - we have to update all identifiers
+                            // and maps
+
+                            HashMap<String, CrawledPackage> newMap = new HashMap<String, CrawledPackage>();
+                            Entry<String, CrawledPackage> next;
+                            for (Iterator<Entry<String, CrawledPackage>> it = packageMap.entrySet().iterator(); it.hasNext();) {
+                                next = it.next();
+                                String newID = plg.filterPackageID(next.getKey());
+                                if (!next.getKey().equals(newID)) {
+                                    it.remove();
+                                    ArrayList<CrawledLink> ret = offlineMap.remove(next.getKey());
+                                    if (ret != null) {
+                                        ArrayList<CrawledLink> existing = offlineMap.get(newID);
+                                        if (existing != null) {
+                                            ret.addAll(existing);
+                                        }
+                                        offlineMap.put(newID, ret);
+                                    }
+                                    CrawledPackage existing = newMap.get(newID);
+
+                                    if (existing != null) {
+                                        addmoveChildren(next.getValue(), existing.getChildren(), -1);
+                                    }
+                                    newMap.put(newID, next.getValue());
+                                }
+                            }
+
+                            for (Iterator<Entry<String, CrawledPackage>> it = newMap.entrySet().iterator(); it.hasNext();) {
+                                next = it.next();
+                                CrawledPackage current = packageMap.remove(next.getKey());
+
+                                if (current != null) {
+                                    addmoveChildren(current, next.getValue().getChildren(), -1);
+                                } else {
+                                    packageMap.put(next.getKey(), next.getValue());
+                                }
+
+                            }
+
+                        }
+
+                    }
+                    // add to hostermap
+                    ArrayList<CrawledLink> hosterlist = getIdentifiedMap(link.getHost(), hosterMap);
+                    hosterlist.add(link);
+
                     CrawledPackage pkg = packageMap.get(identifier);
                     if (pkg == null) {
                         if (LinkCrawler.PERMANENT_OFFLINE_ID == uID) {
@@ -513,6 +627,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             dupeCheckMap.remove(l.getLinkID());
             removeFromMap(variousMap, l);
             removeFromMap(offlineMap, l);
+            removeFromMap(hosterMap, l);
         }
     }
 
@@ -528,6 +643,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         permanentofflinePackage = null;
         variousMap.clear();
         offlineMap.clear();
+        hosterMap.clear();
         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_EMPTY));
     }
 
@@ -771,6 +887,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             for (CrawledLink link : filePackage.getChildren()) {
                                 /* keep maps up2date */
                                 dupeCheckMap.add(link.getLinkID());
+                                ArrayList<CrawledLink> list = getIdentifiedMap(link.getHost(), hosterMap);
+                                list.add(link);
+
                             }
                             filePackage.setControlledBy(LinkCollector.this);
                             CrawledPackageStorable storable = restoreMap.get(filePackage);

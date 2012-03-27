@@ -119,4 +119,18 @@ public interface LinkgrabberSettings extends ConfigInterface {
     int getAutoConfirmDelay();
 
     void setAutoConfirmDelay(int delay);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @Description("If true, Plugins will try to correct filenames to match to others. For example in splitted archives.")
+    boolean isAutoFilenameCorrectionEnabled();
+
+    void setAutoFilenameCorrectionEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @Description("If true, the Linkcollector asks the Hosterplugins to filter the packageidentifier. This helps to map corrupt filenames into the correct packages.")
+    boolean isAutoPackageMatchingCorrectionEnabled();
+
+    void setAutoPackageMatchingCorrectionEnabled(boolean b);
 }
