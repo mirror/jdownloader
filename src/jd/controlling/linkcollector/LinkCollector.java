@@ -11,7 +11,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.zip.ZipEntry;
@@ -321,9 +320,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             }
                         }
                     }
-                    String cleanPackageID = packageID == null ? null : packageID.replaceAll("([^a-zA-Z0-9]+)", "").toLowerCase(Locale.ENGLISH);
-                    String cleanPackageName = packageName == null ? null : packageName.replaceAll("([^a-zA-Z0-9]+)", "").toLowerCase(Locale.ENGLISH);
-                    String identifier = cleanPackageID + "_||_" + cleanPackageName + "_||_" + downloadFolder;
+                    String identifier = packageID + "_||_" + packageName + "_||_" + downloadFolder;
                     CrawledPackage pkg = packageMap.get(identifier);
                     if (pkg == null) {
                         if (LinkCrawler.PERMANENT_OFFLINE_ID == uID) {
