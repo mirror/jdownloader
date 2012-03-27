@@ -27,7 +27,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
             // not yet packagized
             ret.add(this);
         } else {
-            for (CrawledLink l : getLink().getParentNode().getView()) {
+            for (CrawledLink l : getLink().getParentNode().getView().getItems()) {
                 if (pat.matcher(l.getName()).matches()) {
                     CrawledLinkArchiveFile claf = new CrawledLinkArchiveFile(l);
                     // if(claf.isComplete()&&claf.isValid()){
