@@ -49,20 +49,22 @@ public class FoxPlayInfo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        String dllink = br.getRegex("Wait and you download mp3<div id=\\'digits\\'>\\d+</div>[\t\n\r ]+<br>[\t\n\r ]+<a href=\\'(download[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\\'(download\\.php\\?get=[A-Za-z0-9=]+\\&name=[^<>\"]*?)\\'").getMatch(0);
+        String dllink = br.getRegex("Wait and you download mp3<div id=\\'digits\\'>\\d+</div>[\t\n\r ]+<br>[\t\n\r ]+<a href=\\'(download[^\"]*?)\\'").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\\'(download\\.php\\?get=[A-Za-z0-9=]+\\&name=[^\"]*?)\\'").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = "http://foxplay.info/" + Encoding.urlEncode_light(dllink);
-        int wait = 30;
-        final String waittime = br.getRegex("id=\\'digits\\'>(\\d+)</div>").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait * 1001l, downloadLink);
+        // Can be skipped
+        // int wait = 30;
+        // final String waittime =
+        // br.getRegex("id=\\'digits\\'>(\\d+)</div>").getMatch(0);
+        // if (waittime != null) wait = Integer.parseInt(waittime);
+        // sleep(wait * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (!dl.startDownload()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
     }
 
     @Override

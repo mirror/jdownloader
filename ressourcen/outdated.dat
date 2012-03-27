@@ -722,3 +722,5 @@ jd/captcha/methods/sld
 jd/captcha/methods/fl
 jd/plugins/hoster/ShareHutCom.class
 jd/plugins/hoster/ShareHubCom.class
+jd/plugins/hoster/GotUploadCom.class
+jd/plugins/hoster/FyelsCom.class

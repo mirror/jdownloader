@@ -157,9 +157,16 @@ public class ChoMikujPl extends PluginForDecrypt {
                     fileIds = br.getRegex("fileIdContainer\" rel=\"(\\d+)\"").getMatches();
                 }
             }
-            /** Broken at the moment */
-            String[][] allFolders = br.getRegex("<td><a href=\"(/[^<>\"/]+/[^<>\"]+)\" onclick=\"return Ts\\(\\'\\d+\\'\\)\">([^<>\"]+)</span></td></tr>").getMatches();
+            String[][] allFolders = null;
+            final String folderTable = br.getRegex("<div id=\"foldersList\">[\t\n\r ]+<table>(.*?)</table>[\t\n\r ]+</div>").getMatch(0);
+            if (folderTable != null) {
+                allFolders = new Regex(folderTable, "<a href=\"(/[^<>\"]*?)\" rel=\"\\d+\" title=\"([^<>\"]*?)\"").getMatches();
+            }
             if ((fileIds == null || fileIds.length == 0) && (allFolders == null || allFolders.length == 0)) {
+                if (br.containsHTML("class=\"noFile\">Nie ma plik\\&#243;w w tym folderze</p>")) {
+                    logger.info("The following link is offline: " + parameter);
+                    return decryptedLinks;
+                }
                 // If the last page only contains a file or fileS the regexes
                 // don't work but the decrypter isn't broken so the user should
                 // get the links!

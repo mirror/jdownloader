@@ -63,7 +63,8 @@ public class DdlStorageCom extends PluginForHost {
     private static final Object  LOCK                = new Object();
     private static AtomicInteger maxPrem             = new AtomicInteger(1);
 
-    // XfileSharingProBasic Version 2.5.3.5, modified some stuff
+    // XfileSharingProBasic Version 2.5.3.5, modified some stuff, free limits
+    // untested (except resume) so set to standard
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
