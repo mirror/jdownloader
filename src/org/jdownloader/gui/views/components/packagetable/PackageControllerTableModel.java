@@ -275,7 +275,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 }
             }
             if (node.getView() != null) {
-                node.getView().replace(files);
+                node.getView().update(files);
             }
             boolean expanded = ((PackageType) node).isExpanded();
             if (column != null && expanded) {

@@ -1,9 +1,9 @@
 package jd.controlling.linkcrawler;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.TreeSet;
 
 import jd.controlling.linkcrawler.CrawledLink.LinkState;
@@ -26,6 +26,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     protected HashMap<CrawledLink, Long>   sizes;
     private HashSet<CrawledLink>           offline;
     private HashSet<CrawledLink>           online;
+    private ArrayList<CrawledLink>         items            = new ArrayList<CrawledLink>();
 
     public CrawledPackageView() {
         this.fileSize = 0l;
@@ -38,10 +39,11 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         domainInfos = new DomainInfo[0];
     }
 
-    @Override
-    public void replace(ArrayList<CrawledLink> items) {
+    public void update(ArrayList<CrawledLink> items) {
         CrawledPackageView newl = new CrawledPackageView();
-        newl.addAll(items);
+        for (CrawledLink item : items) {
+            newl.addInfo(item);
+        }
         this.fileSize = newl.fileSize;
         this.hostCountMap = newl.hostCountMap;
         this.domainList = newl.domainList;
@@ -50,42 +52,10 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         this.sizes = newl.sizes;
         this.offline = newl.offline;
         this.online = newl.online;
-        super.clear();
-        super.addAll(items);
+        this.items = newl.items;
     }
 
-    @Override
-    public CrawledLink set(int index, CrawledLink element) {
-        CrawledLink old = get(index);
-        try {
-            return super.set(index, element);
-        } finally {
-            if (old != null) {
-                removeInfo(old);
-            }
-            addInfo(element);
-        }
-    }
-
-    @Override
-    public boolean add(CrawledLink e) {
-        try {
-            return super.add(e);
-        } finally {
-            addInfo(e);
-        }
-    }
-
-    @Override
-    public void add(int index, CrawledLink element) {
-        try {
-            super.add(index, element);
-        } finally {
-            addInfo(element);
-        }
-    }
-
-    private void addInfo(CrawledLink element) {
+    protected void addInfo(CrawledLink element) {
         // domain
         DomainInfo domainInfo = element.getDomainInfo();
         Integer current = hostCountMap.get(domainInfo);
@@ -105,12 +75,13 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         // size
         sizes.put(element, element.getSize());
         fileSize += sizes.get(element);
+        items.add(element);
         // System.out.println(element + " add: " + crawledPackage.getName()
         // + " : " + hostCountMap + " " + domainList);
     }
 
-    private void removeInfo(CrawledLink element) {
-        // domain
+    protected void removeInfo(CrawledLink element) {
+        if (!items.remove(element)) return;
         DomainInfo domainInfo = element.getDomainInfo();
         Integer current = hostCountMap.get(domainInfo);
         if (current == null || current < 1) throw new WTFException("cannot remove element. Is not there");
@@ -132,99 +103,19 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         // + " : " + hostCountMap + " " + domainList);
     }
 
-    @Override
-    public CrawledLink remove(int index) {
-        CrawledLink ret = super.remove(index);
-        removeInfo(ret);
-        return ret;
-    }
-
-    @Override
-    public boolean remove(Object o) {
-        try {
-            return super.remove(o);
-        } finally {
-            if (o instanceof CrawledLink) {
-                removeInfo((CrawledLink) o);
-            }
-        }
-    }
-
-    @Override
     public void clear() {
-        try {
-            super.clear();
-        } finally {
-            this.fileSize = 0l;
-            hostCountMap.clear();
-            domainList.clear();
-            offline.clear();
-            online.clear();
-            enabled.clear();
-            sizes.clear();
-
-        }
-    }
-
-    @Override
-    public boolean addAll(Collection<? extends CrawledLink> c) {
-        try {
-            return super.addAll(c);
-        } finally {
-            for (CrawledLink cc : c) {
-                addInfo(cc);
-            }
-        }
-    }
-
-    public void update() {
-    }
-
-    @Override
-    public boolean addAll(int index, Collection<? extends CrawledLink> c) {
-        try {
-            return super.addAll(index, c);
-        } finally {
-            for (CrawledLink cc : c) {
-                addInfo(cc);
-            }
-        }
-    }
-
-    @Override
-    protected void removeRange(int fromIndex, int toIndex) {
-        ArrayList<CrawledLink> old = new ArrayList<CrawledLink>();
-        for (int i = fromIndex; i < toIndex; i++) {
-            old.add(get(i));
-        }
-        super.removeRange(fromIndex, toIndex);
-
-        for (CrawledLink c : old) {
-            if (c != null) removeInfo(c);
-        }
-    }
-
-    @Override
-    public boolean removeAll(Collection<?> old) {
-        try {
-            return super.removeAll(old);
-        } finally {
-            for (Object c : old) {
-                if (c != null && c instanceof CrawledLink) removeInfo((CrawledLink) c);
-            }
-        }
-    }
-
-    @Override
-    public boolean retainAll(Collection<?> c) {
-        throw new WTFException("Not supported");
-        // return super.retainAll(c);
+        this.fileSize = 0l;
+        hostCountMap.clear();
+        domainList.clear();
+        offline.clear();
+        online.clear();
+        enabled.clear();
+        sizes.clear();
     }
 
     public void updateInfo(CrawledLink crawledLink) {
         removeInfo(crawledLink);
         addInfo(crawledLink);
-
     }
 
     public DomainInfo[] getDomainInfos() {
@@ -245,6 +136,11 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
     public long getFileSize() {
         return fileSize;
+    }
+
+    @Override
+    public List<CrawledLink> getItems() {
+        return items;
     }
 
 }

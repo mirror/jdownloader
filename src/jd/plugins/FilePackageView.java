@@ -1,6 +1,8 @@
 package jd.plugins;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.ChildrenView;
@@ -144,5 +146,18 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             updateStatus();
         }
         return finishedDate;
+    }
+
+    @Override
+    public void update(ArrayList<DownloadLink> items) {
+    }
+
+    @Override
+    public void clear() {
+    }
+
+    @Override
+    public List<DownloadLink> getItems() {
+        return fp.getChildren();
     }
 }

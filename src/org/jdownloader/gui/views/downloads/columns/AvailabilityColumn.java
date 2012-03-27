@@ -74,7 +74,7 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
                 }
             }
         } else if (value instanceof CrawledPackage) {
-            int size = ((CrawledPackage) value).getView().size();
+            int size = ((CrawledPackage) value).getView().getItems().size();
             int off = ((CrawledPackage) value).getView().getOfflineCount();
             int on = ((CrawledPackage) value).getView().getOnlineCount();
             if (on == size) return online;
@@ -142,7 +142,7 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public String getStringValue(AbstractNode value) {
-        if (value instanceof CrawledPackage) { return _GUI._.AvailabilityColumn_getStringValue_object_(((CrawledPackage) value).getView().getOnlineCount(), ((CrawledPackage) value).getView().size()); }
+        if (value instanceof CrawledPackage) { return _GUI._.AvailabilityColumn_getStringValue_object_(((CrawledPackage) value).getView().getOnlineCount(), ((CrawledPackage) value).getView().getItems().size()); }
         return nothing;
     }
 

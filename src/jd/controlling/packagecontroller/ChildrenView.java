@@ -1,26 +1,22 @@
 package jd.controlling.packagecontroller;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.jdownloader.DomainInfo;
 
-public abstract class ChildrenView<T> extends ArrayList<T> {
-	/**
+public abstract class ChildrenView<T> {
+    /**
 	 * 
 	 */
-	private static final long serialVersionUID = 5324936310983343571L;
+    private static final long serialVersionUID = 5324936310983343571L;
 
-	/**
-	 * Update the whole view.
-	 */
-	public void update() {
-	}
+    abstract public void update(ArrayList<T> items);
 
-	public void replace(ArrayList<T> items) {
-		this.clear();
-		this.addAll(items);
-	}
+    abstract public DomainInfo[] getDomainInfos();
 
-	abstract public DomainInfo[] getDomainInfos();
+    abstract public void clear();
+
+    abstract public List<T> getItems();
 
 }

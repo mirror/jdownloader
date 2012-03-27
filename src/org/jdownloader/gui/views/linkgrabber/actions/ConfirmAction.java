@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.ImageIcon;
 
@@ -55,7 +56,7 @@ public class ConfirmAction extends AppAction {
                 for (AbstractNode node : values) {
                     if (node instanceof CrawledPackage) {
                         /* first convert all CrawledPackages to FilePackages */
-                        ArrayList<CrawledLink> links = new ArrayList<CrawledLink>(((CrawledPackage) node).getView());
+                        List<CrawledLink> links = new ArrayList<CrawledLink>(((CrawledPackage) node).getView().getItems());
                         ArrayList<FilePackage> packages = LinkCollector.getInstance().removeAndConvert(links);
                         if (packages != null) fpkgs.addAll(packages);
                     } else if (node instanceof CrawledLink) {

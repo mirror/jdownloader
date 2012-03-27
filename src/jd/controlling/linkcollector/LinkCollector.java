@@ -669,7 +669,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_DATA));
     }
 
-    public ArrayList<FilePackage> removeAndConvert(final ArrayList<CrawledLink> links) {
+    public ArrayList<FilePackage> removeAndConvert(final List<CrawledLink> links) {
         if (links == null || links.size() == 0) return null;
         return IOEQ.getQueue().addWait(new QueueAction<ArrayList<FilePackage>, RuntimeException>() {
 
