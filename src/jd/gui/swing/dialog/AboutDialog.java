@@ -16,26 +16,36 @@
 
 package jd.gui.swing.dialog;
 
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.jdgui.JDGui;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.app.gui.MigPanel;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Application;
+import org.appwork.utils.IO;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.update.JDUpdater;
@@ -59,16 +69,16 @@ public class AboutDialog extends AbstractDialog<Integer> {
     @Override
     public JComponent layoutDialogContent() {
         final JPanel contentpane = new JPanel();
-        JLabel lbl = new JLabel("JDownloader");
+        JLabel lbl = new JLabel("JDownloader 2");
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize() * 2.0f));
 
-        String branch = null;
-        String version = null;
+        String branch = "";
+
         try {
             branch = JDUpdater.getInstance().getBranch().getName();
-            version = "JDownloader -" + branch + "- Build " + JDUtilities.getRevision();
+
         } catch (Throwable e2) {
-            version = "JDownloader Build " + JDUtilities.getRevision();
+
         }
 
         JPanel links = new JPanel(new MigLayout("ins 0", "[]push[]push[]push[]"));
@@ -77,7 +87,23 @@ public class AboutDialog extends AbstractDialog<Integer> {
 
                 public void actionPerformed(ActionEvent e) {
                     String license = JDIO.readFileToString(JDUtilities.getResourceFile("licenses/jdownloader.license"));
-                    UserIO.getInstance().requestMessageDialog(UserIO.STYLE_LARGE | UserIO.NO_ICON | UserIO.NO_COUNTDOWN, _GUI._.jd_gui_swing_components_AboutDialog_license_title(), license);
+                    try {
+                        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | Dialog.BUTTONS_HIDE_CANCEL, _GUI._.jd_gui_swing_components_AboutDialog_license_title(), license, null, null, null) {
+
+                            @Override
+                            protected boolean isResizable() {
+                                return true;
+                            }
+
+                        };
+                        d.setPreferredSize(JDGui.getInstance().getMainFrame().getSize());
+
+                        Dialog.getInstance().showDialog(d);
+                    } catch (DialogClosedException e1) {
+                        e1.printStackTrace();
+                    } catch (DialogCanceledException e1) {
+                        e1.printStackTrace();
+                    }
                 }
 
             });
@@ -90,36 +116,51 @@ public class AboutDialog extends AbstractDialog<Integer> {
         } catch (MalformedURLException e1) {
             e1.printStackTrace();
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append(version).append("\r\n");
-        sb.append("Java Vendor: ").append(System.getProperty("java.vendor")).append("\r\n");
-        sb.append("Java Version: ").append(System.getProperty("java.version"));
 
-        final String info = sb.toString();
-        JButton btn = Factory.createButton(_GUI._.jd_gui_swing_components_AboutDialog_copy(), NewTheme.I().getIcon("copy", 16), new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-
-                ClipboardMonitoring.getINSTANCE().setCurrentContent(info);
-            }
-
-        });
-        btn.setBorder(null);
-        btn.setVerticalTextPosition(JButton.BOTTOM);
-        btn.setHorizontalTextPosition(JButton.CENTER);
-
-        contentpane.setLayout(new MigLayout("ins 10, wrap 3", "[]15[]push[right]"));
+        contentpane.setLayout(new MigLayout("ins 10, wrap 1", "[grow,fill]"));
         contentpane.add(new JLabel(NewTheme.I().getIcon("logo/jd_logo_128_128", -1)), "aligny center, spany 6");
-        contentpane.add(lbl, "spanx");
-        contentpane.add(new JLabel("© AppWork GmbH 2007-2011"), "spanx");
-        contentpane.add(new JLabel(version), "gaptop 10");
-        contentpane.add(btn, "aligny center, spany 3");
-        contentpane.add(new JLabel("JRE Vendor: " + System.getProperty("java.vendor")));
-        contentpane.add(new JLabel("JRE Version: " + System.getProperty("java.version")));
+
+        contentpane.add(lbl, "split 2");
+        contentpane.add(new JLabel("(" + branch + ")"), "pushx,growx");
+
+        MigPanel stats = new MigPanel("ins 0,wrap 2", "[][grow,align right]", "[]");
+
+        contentpane.add(stats, "pushx,growx,spanx");
+        HashMap<String, Object> map = null;
+        try {
+            map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
+            });
+
+            // contentpane.add(btn, "aligny center, spany 3");
+            stats.add(new JLabel("Build Date:"));
+            stats.add(disable(map.get("buildDate")));
+            stats.add(new JLabel("Source Revisions:"), "spanx");
+            stats.add(new JLabel("   Core:"), "");
+            stats.add(disable("#" + map.get("JDownloaderRevision")));
+            stats.add(new JLabel("   AppWork Utilities:"), "");
+            stats.add(disable("#" + map.get("AppWorkUtilsRevision")));
+            stats.add(new JLabel("   Browser:"), "");
+            stats.add(disable("#" + map.get("JDBrowserRevision")));
+            stats.add(new JLabel("   Updater:"), "");
+            stats.add(disable("#" + map.get("UpdateClientRevision")));
+        } catch (Throwable t) {
+            Log.exception(t);
+
+        }
+        stats.add(new JLabel("Java:"), "");
+        stats.add(disable(System.getProperty("java.vendor") + " - " + System.getProperty("java.version")));
+
         contentpane.add(new JLabel("Synthetica License Registration Number (#289416475)"), "gaptop 10, spanx");
+        contentpane.add(new JLabel("© AppWork GmbH 2007-2011"), "spanx");
         contentpane.add(links, "gaptop 15, growx, pushx, spanx");
         this.registerEscape(contentpane);
         return contentpane;
+    }
+
+    private Component disable(Object object) {
+        JLabel ret = new JLabel(object + "");
+        ret.setEnabled(false);
+        return ret;
     }
 
 }

@@ -67,6 +67,7 @@ import org.appwork.update.inapp.RestartController;
 import org.appwork.update.inapp.RlyExitListener;
 import org.appwork.update.inapp.WebupdateSettings;
 import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
@@ -222,6 +223,12 @@ public class Launcher {
         System.setProperty("java.net.preferIPv4Stack", "true");
         // Disable the GUI rendering on the graphic card
         System.setProperty("sun.java2d.d3d", "false");
+        try {
+            // log source revision infos
+            Log.L.info(IO.readFileToString(Application.getResource("build.json")));
+        } catch (IOException e1) {
+            Log.exception(e1);
+        }
         final Properties pr = System.getProperties();
         final TreeSet<Object> propKeys = new TreeSet<Object>(pr.keySet());
         for (final Object it : propKeys) {
