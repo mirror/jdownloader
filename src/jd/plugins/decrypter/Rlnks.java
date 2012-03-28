@@ -172,7 +172,10 @@ public class Rlnks extends PluginForDecrypt {
         br.getPage(partLink);
         ALLFORM = br.getFormbyProperty("name", "form");
         boolean b = ALLFORM == null ? true : false;
-        ALLFORM = b ? br.getForm(0) : ALLFORM;
+        if (b) {
+            ALLFORM = br.getForm(0);
+            ALLFORM = ALLFORM != null && ALLFORM.getAction().startsWith("http://www.relink.us/container_password.php") ? ALLFORM : null;
+        }
         if (ALLFORM != null) {
             for (int i = 0; i < 5; i++) {
                 if (ALLFORM.containsHTML("password")) {
