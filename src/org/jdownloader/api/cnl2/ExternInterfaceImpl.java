@@ -176,6 +176,8 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         } else {
             key = HexFormatter.hexToByteArray(k);
         }
+        /* workaround for wrong relink post encoding! */
+        crypted = crypted.trim().replaceAll("\\s", "+");
         byte[] baseDecoded = Base64.decode(crypted);
         return decrypt(baseDecoded, key).trim();
     }

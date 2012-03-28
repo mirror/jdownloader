@@ -410,12 +410,14 @@ public class Uploadedto extends PluginForHost {
                 /* ul does not take care of set language.... */
                 if (br.containsHTML(">Traffic exhausted") || br.containsHTML(">Traffickontingent aufgebraucht")) {
                     logger.info("Traffic exhausted, temp disabled account");
+                    /* temp debug info */
+                    logger.info(br.toString());
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
                 logger.info("InDirect Downloads active");
                 Form form = br.getForm(0);
                 if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (form.getAction() != null && form.getAction().contains("register")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (form.getAction() != null && form.getAction().contains("register")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 if (form.getAction() == null || form.getAction().contains("access")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 logger.info("Download from:" + form.getAction());
                 form.setMethod(MethodType.GET);
