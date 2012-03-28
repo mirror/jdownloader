@@ -561,10 +561,11 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                         post += f;
                     }
                 }
-                br.postPage("http://" + nextUrl + "/ajax.fly.php", post);
-                if (!post.contains("make_log")) {
+                if (!post.contains("make_log") || "link.tl/fly".equals(nextUrl)) {
+                    if ("link.tl/fly".equals(nextUrl)) wait = wait + wait;
                     sleep(1000 * wait, param);
                 }
+                br.postPage("http://" + nextUrl + "/ajax.fly.php", post);
                 finallink = br.getRegex("\"url\":\\s?\"(.*?)\"").getMatch(0);
             }
             if (finallink != null) {
@@ -652,5 +653,4 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
 
         return decryptedLinks;
     }
-
 }
