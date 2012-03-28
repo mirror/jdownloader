@@ -29,15 +29,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trilulilu.ro" }, urls = { "http://(www\\.)?trilulilu\\.ro/(?!video/)[A-Za-z0-9_]+/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trilulilu.ro" }, urls = { "http://(www\\.)?trilulilu\\.ro/(?!video/)[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" }, flags = { 0 })
 public class TriLuLiLuRo extends PluginForHost {
 
-    private String              DLLINK       = null;
+    private String              DLLINK               = null;
 
-    private static final String VIDEOPLAYER  = "(video_player|\"video_player_swf\"|static\\.trilulilu\\.ro/swfobject/expressInstall\\.swf)";
-
-    private static final String LIMITREACHED = ">Ai atins limita de 5 ascultări de piese audio pe zi. Te rugăm să intri in cont ca să poţi";
+    private static final String VIDEOPLAYER          = "(video_player|\"video_player_swf\"|static\\.trilulilu\\.ro/swfobject/expressInstall\\.swf)";
+    private static final String LIMITREACHED         = ">Ai atins limita de 5 ascultări de piese audio pe zi. Te rugăm să intri in cont ca să poţi";
+    private static final String COUNTRYBLOCK         = "Fişierul nu este disponibil pentru vizionare în ţara dumneavoastră";
+    private static final String COUNTRYBLOCKUSERTEXT = JDL.L("plugins.hoster.triluliluro", "This file is not downloadable in your country");
 
     public TriLuLiLuRo(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,6 +48,36 @@ public class TriLuLiLuRo extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.trilulilu.ro/termeni-conditii";
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCustomCharset("utf-8");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("(Fişierul căutat nu există|Contul acestui utilizator a fost dezactivat)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(LIMITREACHED)) return AvailableStatus.TRUE;
+        String filename = br.getRegex("<div class=\"file_description floatLeft\">[\r\t\n ]+<h1>(.*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<meta name=\"title\" content=\"Trilulilu \\- (.*?) - Muzică Diverse\" />").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>Trilulilu \\- (.*?) - Muzică Diverse</title>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<div class=\"music_demo\">[\n\t\r ]+<h3>(.*?)\\.mp3 \\(demo 30 de secunde\\)</h3").getMatch(0);
+                    if (filename == null) filename = br.getRegex("<div class=\"hentry\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
+                }
+            }
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML(COUNTRYBLOCK)) downloadLink.getLinkStatus().setStatusText(COUNTRYBLOCKUSERTEXT);
+        filename = Encoding.htmlDecode(filename.trim());
+        if (br.containsHTML(VIDEOPLAYER))
+            downloadLink.setFinalFileName(filename + ".mp4");
+        else
+            downloadLink.setFinalFileName(filename + ".mp3");
+        return AvailableStatus.TRUE;
     }
 
     private void getDownloadUrl(DownloadLink downloadLink) throws PluginException, IOException {
@@ -91,6 +123,7 @@ public class TriLuLiLuRo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (br.containsHTML(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        if (br.containsHTML(COUNTRYBLOCK)) throw new PluginException(LinkStatus.ERROR_FATAL, COUNTRYBLOCKUSERTEXT);
         getDownloadUrl(downloadLink);
         int maxchunks = 1;
         // Videos have no chunk-limits!
@@ -101,35 +134,6 @@ public class TriLuLiLuRo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCustomCharset("utf-8");
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(Fişierul căutat nu există|Fişierul nu este disponibil pentru vizionare în ţara dumneavoastră|Contul acestui utilizator a fost dezactivat)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(LIMITREACHED)) return AvailableStatus.TRUE;
-        String filename = br.getRegex("<div class=\"file_description floatLeft\">[\r\t\n ]+<h1>(.*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta name=\"title\" content=\"Trilulilu - (.*?) - Muzică Diverse\" />").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>Trilulilu - (.*?) - Muzică Diverse</title>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<div class=\"music_demo\">[\n\t\r ]+<h3>(.*?)\\.mp3 \\(demo 30 de secunde\\)</h3").getMatch(0);
-                    if (filename == null) filename = br.getRegex("<div class=\"hentry\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
-                }
-            }
-        }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = Encoding.htmlDecode(filename.trim());
-        if (br.containsHTML(VIDEOPLAYER))
-            downloadLink.setFinalFileName(filename + ".mp4");
-        else
-            downloadLink.setFinalFileName(filename + ".mp3");
-        return AvailableStatus.TRUE;
     }
 
     @Override
