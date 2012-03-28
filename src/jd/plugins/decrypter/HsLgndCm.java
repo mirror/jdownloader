@@ -36,10 +36,10 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "houselegend.com" }, urls = { "http://[\\w\\.]*?houselegend\\.com/(([0-9]+.+)|(redirector.+))" }, flags = { 0 })
 public class HsLgndCm extends PluginForDecrypt {
 
-    private Pattern sitePattern = Pattern.compile("target='_blank' href='(.*?houselegend\\.com/redirector\\.php\\?url=.*?)'>", Pattern.CASE_INSENSITIVE);
-    private Pattern redirectorPattern = Pattern.compile("click on the link <a href=\"(http://.*?)\">", Pattern.CASE_INSENSITIVE);
+    private Pattern             sitePattern       = Pattern.compile("target='_blank' href='(.*?houselegend\\.com/redirector\\.php\\?url=.*?)'>", Pattern.CASE_INSENSITIVE);
+    private Pattern             redirectorPattern = Pattern.compile("click on the link <a href=\"(http://.*?)\">", Pattern.CASE_INSENSITIVE);
     /* must be static so all plugins share same lock */
-    private static final Object LOCK = new Object();
+    private static final Object LOCK              = new Object();
 
     public HsLgndCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,7 +55,10 @@ public class HsLgndCm extends PluginForDecrypt {
         if (parameter.contains("redirector.php?")) {
             links = new String[] { parameter };
         } else {
-            if (!getUserLogin(parameter)) return decryptedLinks;
+            if (!getUserLogin(parameter)) {
+                logger.info("Invalid logindata!");
+                return decryptedLinks;
+            }
             links = br.getRegex(sitePattern).getColumn(0);
         }
         if (links == null || links.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

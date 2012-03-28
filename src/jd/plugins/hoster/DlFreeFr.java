@@ -16,11 +16,13 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,10 +30,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dl.free.fr" }, urls = { "http://[\\w\\.]*?dl\\.free\\.fr/(getfile\\.pl\\?file=/[\\w]+|[\\w]+/?)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dl.free.fr" }, urls = { "http://(www\\.)?dl\\.free\\.fr/(getfile\\.pl\\?file=/[\\w]+|[\\w]+/?)" }, flags = { 0 })
 public class DlFreeFr extends PluginForHost {
 
     public DlFreeFr(PluginWrapper wrapper) {
@@ -53,21 +56,39 @@ public class DlFreeFr extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(true);
         if (HTML) {
-            if (br.containsHTML("Trop de slots utilis")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
+            br.setFollowRedirects(false);
+            if (br.containsHTML("Trop de slots utilis")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+            final Form captchaForm = br.getForm(1);
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String filename = br.getRegex(Pattern.compile("Fichier:</td>.*?<td.*?>(.*?)<", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)soit", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            String dlLink = br.getRegex("window\\.location\\.href = \\'(http://.*?)\\'").getMatch(0);
-            if (dlLink == null) dlLink = br.getRegex("style=\"text\\-decoration: underline\" id=\"link\" href=\"(http[^<>\"]+)").getMatch(0);
+            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setForm(captchaForm);
+            String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\\'").getMatch(0);
+            rc.setId(id);
+            rc.load();
+            rc.getForm().put("_ayl_captcha_engine", "recaptcha");
+            rc.getForm().put("_ayl_utf8_ie_fix", "%E2%98%83");
+            rc.getForm().put("_ayl_env", "prod");
+            rc.getForm().put("_ayl_token_challenge", "undefined");
+            rc.getForm().put("_ayl_tid", "undefined");
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            rc.setCode(c);
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            final String dlLink = br.getRedirectLocation();
+            if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, 1);
         } else {
+            br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.getURL().contains("overload")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
+            if (br.getURL().contains("overload")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

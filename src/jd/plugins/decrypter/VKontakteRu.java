@@ -263,7 +263,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 else
                     decryptedLink = "http://vk.com/album" + photoAlbum;
                 decryptedLinks.add(createDownloadlink(decryptedLink));
-                logger.info("Decrypted link number " + df.format(overallCounter) + " :" + decryptedLink);
+                logger.info("Decrypted link number " + df.format(overallCounter) + " : " + decryptedLink);
                 overallCounter++;
             }
         }

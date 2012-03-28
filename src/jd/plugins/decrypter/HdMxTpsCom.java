@@ -57,7 +57,10 @@ public class HdMxTpsCom extends PluginForDecrypt {
         String finallink = null;
         if (parameter.contains("/login/") || br.containsHTML("hdmixtapes\\.com/Create_account")) {
             synchronized (LOCK) {
-                if (!getUserLogin()) return null;
+                if (!getUserLogin()) {
+                    logger.info("Invalid logindata!");
+                    return decryptedLinks;
+                }
                 br.setFollowRedirects(false);
                 // Access the page
                 br.getPage(parameter);

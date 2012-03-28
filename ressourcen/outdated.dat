@@ -723,4 +723,6 @@ jd/captcha/methods/fl
 jd/plugins/hoster/ShareHutCom.class
 jd/plugins/hoster/ShareHubCom.class
 jd/plugins/hoster/GotUploadCom.class
-jd/plugins/hoster/FyelsCom.class
+jd/plugins/hoster/FyelsCom.classä
+jd/plugins/decrypter/HdLnkngCom.class
+jd/plugins/decrypter/Hsbstzcm.class
