@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitsor.com", "flameupload.com", "mirrorafile.com", "lougyl.com", "neo-share.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "megaupper.com", "shrta.com", "1filesharing.com", "7ups.net", "mirrorfusion.com", "digzip.com", "needmirror.com" }, urls = { "http://(www\\.)?bitsor\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?flameupload\\.(com|co)/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?neo\\-share\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}",
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitsor.com", "flameupload.com", "mirrorafile.com", "lougyl.com", "neo-share.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "megaupper.com", "shrta.com", "1filesharing.com", "7ups.net", "mirrorfusion.com", "digzip.com", "needmirror.com" }, urls = { "http://(www\\.)?bitsor\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?flameupload\\.(com|co)/(download|files)/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?neo\\-share\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}",
         "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?7ups\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?digzip\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
@@ -52,14 +52,14 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         // This should never happen but in case a dev changes the plugin without
         // much testing he ll see the error later!
         if (host == null || id == null) {
-            logger.warning("A critical error happened! Please inform the support.");
+            logger.warning("A critical error happened! Please inform the support. : " + param.toString());
             return null;
         }
         parameter = host + "/status.php?uid=" + id;
         br.getPage(parameter);
         /* Error handling */
         if (!br.containsHTML("<img src=") && !br.containsHTML("<td class=\"host\">")) {
-            logger.info("The following link should be offline: " + parameter);
+            logger.info("The following link should be offline: " + param.toString());
             throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         }
         br.setFollowRedirects(false);
@@ -76,14 +76,20 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             // by redirect
             if (singlelink.contains("/redirect/") || singlelink.contains("/rd/")) {
                 brc.getPage(host.replace("www.", "") + singlelink);
-                dllink = brc.getRedirectLocation();
-                if (dllink == null) {
-                    dllink = brc.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
-                    // For 1filesharing.com links
+                if (parameter.contains("flameupload.com")) {
+                    dllink = brc.getRegex(">Download Link:<br><a href=\"([^\"]+)").getMatch(0);
+                } else {
+                    dllink = brc.getRedirectLocation();
                     if (dllink == null) {
-                        dllink = brc.getRegex("<iframe id=\"download\" src=\"(.*?)\"").getMatch(0);
-                        // For needmirror.com links
-                        if (dllink == null) dllink = brc.getRegex(">Please <a href=\"([^\"\\']+)\"").getMatch(0);
+                        dllink = brc.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
+                        // For 1filesharing.com links
+                        if (dllink == null) {
+                            dllink = brc.getRegex("<iframe id=\"download\" src=\"(.*?)\"").getMatch(0);
+                            // For needmirror.com links
+                            if (dllink == null) {
+                                dllink = brc.getRegex(">Please <a href=\"([^\"\\']+)\"").getMatch(0);
+                            }
+                        }
                     }
                 }
             } else {
@@ -91,13 +97,18 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
                 dllink = singlelink;
             }
             progress.increase(1);
-            if (dllink == null) continue;
+            if (dllink == null || dllink.equals("")) {
+                // Continue away, randomised pages can cause failures.
+                logger.warning("Possible plugin error: " + param.toString());
+                logger.warning("Continuing...");
+                continue;
+            }
             if (dllink.contains("flameupload")) {
                 logger.info("Recursion? " + param.toString() + "->" + dllink);
             }
             decryptedLinks.add(createDownloadlink(dllink));
         }
+        logger.warning("Task Complete! : " + param.toString());
         return decryptedLinks;
     }
-
 }

@@ -48,7 +48,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         // This should never happen but in case a dev changes the plugin without
         // much testing he ll see the error later!
         if (host == null || id == null) {
-            logger.warning("A critical error happened! Please inform the support.");
+            logger.warning("A critical error happened! Please inform the support. : " + param.toString());
             return null;
         }
         parameter = host + "/status.php?uid=" + id;
@@ -57,7 +57,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         br.getPage(parameter);
         /* Error handling */
         if (!br.containsHTML("<img src=") && !br.containsHTML("<td class=\"host\">")) {
-            logger.info("The following link should be offline: " + parameter);
+            logger.info("The following link should be offline: " + param.toString());
             throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         }
         String[] redirectLinks = br.getRegex("(/redirect/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
@@ -73,21 +73,28 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             if (singlelink.contains("/redirect/")) {
                 br.getPage(host + singlelink);
                 dllink = br.getRedirectLocation();
-                if (dllink == null) dllink = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
-                if (dllink == null) dllink = br.getRegex("Please <a href=\"(http.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("Please <a href=(\"|\\')?(http.*?)(\"|\\')? ").getMatch(1);
+                        if (dllink == null) dllink = br.getRegex("redirecturl\">(https?://[^<>]+)</div>").getMatch(0);
+                    }
+                }
             } else {
                 // Handling for already regexed final-links
                 dllink = singlelink;
             }
-            if (dllink == null) {
-                logger.warning("Decrypter for this link is broken: " + parameter);
-                return null;
+            if (dllink == null || dllink.equals("")) {
+                // Continue away, randomised pages can cause failures.
+                logger.warning("Possible plugin error: " + param.toString());
+                logger.warning("Continuing...");
+                progress.increase(1);
+                continue;
             }
-            if (dllink.equals("")) logger.info("Found one broken link!");
             decryptedLinks.add(createDownloadlink(dllink));
             progress.increase(1);
         }
-
+        logger.warning("Task Complete! : " + param.toString());
         return decryptedLinks;
     }
 
