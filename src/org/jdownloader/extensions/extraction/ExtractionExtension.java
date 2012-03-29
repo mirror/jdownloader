@@ -58,6 +58,7 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
+import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.Multi;
 import org.jdownloader.extensions.extraction.split.HJSplit;
 import org.jdownloader.extensions.extraction.split.Unix;
@@ -251,8 +252,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      * 
      * @param link
      * @return
+     * @throws ArchiveException
      */
-    private synchronized Archive buildArchive(ArchiveFactory link) {
+    private synchronized Archive buildArchive(ArchiveFactory link) throws ArchiveException {
         IExtraction extrctor = getExtractorByFactory(link);
         if (extrctor == null) {
             //
@@ -527,13 +529,19 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 if (files == null) return;
 
                 for (File archiveStartFile : files) {
-                    final Archive archive = buildArchive(new FileArchiveFactory(archiveStartFile));
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            if (archive.isComplete()) addToQueue(archive);
-                        }
-                    }.start();
+
+                    try {
+                        final Archive archive = buildArchive(new FileArchiveFactory(archiveStartFile));
+
+                        new Thread() {
+                            @Override
+                            public void run() {
+                                if (archive.isComplete()) addToQueue(archive);
+                            }
+                        }.start();
+                    } catch (ArchiveException e1) {
+                        Log.exception(e1);
+                    }
                 }
             }
         };
@@ -597,10 +605,15 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         if (caller instanceof SingleDownloadController) {
             DownloadLink link = ((SingleDownloadController) caller).getDownloadLink();
             if (link.getFilePackage().isPostProcessing() && this.getPluginConfig().getBooleanProperty("ACTIVATED", true) && isLinkSupported(new DownloadLinkArchiveFactory(link))) {
-                Archive archive = buildArchive(new DownloadLinkArchiveFactory(link));
+                Archive archive;
+                try {
+                    archive = buildArchive(new DownloadLinkArchiveFactory(link));
 
-                if (!archive.isActive() && archive.getArchiveFiles().size() > 0 && archive.isComplete()) {
-                    this.addToQueue(archive);
+                    if (!archive.isActive() && archive.getArchiveFiles().size() > 0 && archive.isComplete()) {
+                        this.addToQueue(archive);
+                    }
+                } catch (ArchiveException e) {
+                    Log.exception(e);
                 }
             }
         } else if (caller instanceof ExtractionController && getSettings().isDeepExtractionEnabled()) {
@@ -680,15 +693,19 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
                     for (AbstractNode link : context.getSelectedObjects()) {
                         if (link instanceof DownloadLink) {
-                            final Archive archive = buildArchive(new DownloadLinkArchiveFactory((DownloadLink) link));
-                            if (archive != null) {
+                            try {
+                                final Archive archive = buildArchive(new DownloadLinkArchiveFactory((DownloadLink) link));
+                                if (archive != null) {
 
-                                new Thread() {
-                                    @Override
-                                    public void run() {
-                                        if (archive.isComplete()) addToQueue(archive);
-                                    }
-                                }.start();
+                                    new Thread() {
+                                        @Override
+                                        public void run() {
+                                            if (archive.isComplete()) addToQueue(archive);
+                                        }
+                                    }.start();
+                                }
+                            } catch (ArchiveException e1) {
+                                Log.exception(e1);
                             }
                         }
                     }
@@ -746,10 +763,14 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
                     for (AbstractNode link : context.getSelectedObjects()) {
                         if (link instanceof DownloadLink) {
-                            Archive archive0 = buildArchive(new DownloadLinkArchiveFactory((DownloadLink) link));
-                            for (ArchiveFile l : archive0.getArchiveFiles()) {
+                            try {
+                                Archive archive0 = buildArchive(new DownloadLinkArchiveFactory((DownloadLink) link));
+                                for (ArchiveFile l : archive0.getArchiveFiles()) {
 
-                                ((DownloadLinkArchiveFile) l).getDownloadLink().setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0]);
+                                    ((DownloadLinkArchiveFile) l).getDownloadLink().setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0]);
+                                }
+                            } catch (ArchiveException e1) {
+                                Log.exception(e1);
                             }
                         }
                     }
@@ -820,13 +841,17 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                         }
                         if (links.size() == 0) return;
                         for (DownloadLink link0 : links) {
-                            final Archive archive0 = buildArchive(new DownloadLinkArchiveFactory(link0));
-                            new Thread() {
-                                @Override
-                                public void run() {
-                                    if (archive0.isComplete()) addToQueue(archive0);
-                                }
-                            }.start();
+                            try {
+                                final Archive archive0 = buildArchive(new DownloadLinkArchiveFactory(link0));
+                                new Thread() {
+                                    @Override
+                                    public void run() {
+                                        if (archive0.isComplete()) addToQueue(archive0);
+                                    }
+                                }.start();
+                            } catch (ArchiveException e1) {
+                                Log.exception(e1);
+                            }
                         }
                     }
                 });

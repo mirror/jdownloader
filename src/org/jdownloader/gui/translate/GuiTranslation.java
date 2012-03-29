@@ -3550,4 +3550,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "The entered Password was wrong!" })
     String SwingGui_setVisible_password_wrong();
 
+    @Default(lngs = { "en" }, values = { "New Package" })
+    String MergeToPackageAction_actionPerformed_newpackage_();
+
 }

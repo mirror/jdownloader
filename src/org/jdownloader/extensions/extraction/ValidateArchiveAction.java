@@ -9,10 +9,13 @@ import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
+import org.jdownloader.extensions.extraction.multi.ArchiveException;
+import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 
@@ -26,7 +29,7 @@ public class ValidateArchiveAction extends AppAction {
         setName(T._.ValidateArchiveAction_ValidateArchiveAction_object_());
         setIconKey("archive");
         this.selection = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<AbstractNode>());
-
+        // System.out.println(1);
         extractor = extractionExtension;
         archives = new ArrayList<Archive>();
 
@@ -39,9 +42,13 @@ public class ValidateArchiveAction extends AppAction {
                         for (Archive a : archives) {
                             if (a.contains(clf)) continue nextLink;
                         }
-                        Archive archive = extractor.getExtractorByFactory(clf).buildArchive(clf);
-                        if (archive != null) {
-                            archives.add(archive);
+                        try {
+                            Archive archive = extractor.getExtractorByFactory(clf).buildArchive(clf);
+                            if (archive != null) {
+                                archives.add(archive);
+                            }
+                        } catch (ArchiveException e1) {
+                            Log.exception(e1);
                         }
                     }
                 }
@@ -53,9 +60,13 @@ public class ValidateArchiveAction extends AppAction {
                         for (Archive a : archives) {
                             if (a.contains(clf)) continue nextLink;
                         }
-                        Archive archive = extractor.getExtractorByFactory(clf).buildArchive(clf);
-                        if (archive != null) {
-                            archives.add(archive);
+                        try {
+                            Archive archive = extractor.getExtractorByFactory(clf).buildArchive(clf);
+                            if (archive != null) {
+                                archives.add(archive);
+                            }
+                        } catch (ArchiveException e1) {
+                            Log.exception(e1);
                         }
                     }
                 }
@@ -67,14 +78,23 @@ public class ValidateArchiveAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
         for (Archive archive : archives) {
-            boolean compl = archive.isComplete();
-            if (compl) {
-                Dialog.getInstance().showMessageDialog(T._.ValidateArchiveAction_actionPerformed_(archive.getName(), archive.getArchiveFiles().size()));
+            try {
+                DummyArchive da = archive.createDummyArchive();
+                if (da.isComplete()) {
 
-            } else {
-                Dialog.getInstance().showMessageDialog(T._.ValidateArchiveAction_actionPerformed_bad(archive.getName(), archive.getArchiveFiles().size(), archive.getMissing()));
+                    Dialog.getInstance().showMessageDialog(T._.ValidateArchiveAction_actionPerformed_(archive.getName(), da.getSize()));
+
+                } else {
+                    Dialog.getInstance().showMessageDialog(T._.ValidateArchiveAction_actionPerformed_bad(archive.getName(), da.getSize()));
+                }
+            } catch (CheckException e1) {
+                Dialog.getInstance().showExceptionDialog("Error", "Cannot Check Archive", e1);
             }
         }
+    }
+
+    public ArrayList<Archive> getArchives() {
+        return archives;
     }
 
 }

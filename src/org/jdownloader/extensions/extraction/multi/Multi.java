@@ -23,6 +23,7 @@ import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -48,6 +49,8 @@ import org.appwork.utils.logging.Log;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.DummyArchive;
+import org.jdownloader.extensions.extraction.DummyArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
@@ -92,36 +95,36 @@ public class Multi extends IExtraction {
         }
     }
 
-    private static final String      _7Z_D              = "\\.7z\\.?(\\d+)$";
+    private static final String      _7Z_D                                                       = "\\.7z\\.?(\\d+)$";
 
-    private static final String      _7Z$               = "\\.7z$";
-    private static final String      BZ2$               = "\\.bz2$";
-    private static final String      GZ$                = "\\.gz$";
-    private static final String      I_7Z_001$          = "(?i).*\\.7z\\.001$";
-    private static final String      I_PA_R_T_0_0_RAR$  = "(?i).*\\.pa?r?t?\\.?[0]*0.rar$";
-    private static final String      I_PA_R_T_0_1_RAR$  = "(?i).*\\.pa?r?t?\\.?[0]*1.rar$";
-    private static final String      I_PA_R_T_0_9_RAR$  = "(?i).*\\.pa?r?t?\\.?[0-9]+.*?.rar$";
-    private static final String      I_R_D2             = "(?i).*\\.r\\d+$";
-    private static final String      I_RAR$             = "(?i).*\\.rar$";
-    private static final String      PA_R_T_0_9_RAR$    = "\\.pa?r?t?\\.?[0-9]+.rar$";
-    private static final String      PA_R_T_D           = "\\.pa?r?t?\\.?(\\d+)\\.";
-    private static final String      PA_R_T_D2          = "(\\.pa?r?t?\\.?)(\\d+)\\.";
-    private static final String      PATTERN_7Z_PART    = "(?i).*\\.7z\\.\\d+$";
-    private static final String      PATTERN_RAR_MULTI  = "(?i).*\\.pa?r?t?\\.?\\d+.rar$";
+    private static final String      _7Z$                                                        = "\\.7z$";
+    private static final String      BZ2$                                                        = "\\.bz2$";
+    private static final String      GZ$                                                         = "\\.gz$";
+    private static final String      REGEX_FIRST_PART_7ZIP                                       = "(?i).*\\.7z\\.001$";
+    private static final String      REGEX_ZERO_PART_MULTI_RAR                                   = "(?i).*\\.pa?r?t?\\.?[0]*0.rar$";
+    private static final String      REGEX_FIRST_PART_MULTI_RAR                                  = "(?i).*\\.pa?r?t?\\.?[0]*1.rar$";
+    private static final String      REGEX_ANY_MULTI_RAR_PART_FILE                               = "(?i).*\\.pa?r?t?\\.?[0-9]+.*?.rar$";
+    private static final String      REGEX_ANY_DOT_R19_FILE                                      = "(?i).*\\.r\\d+$";
+    private static final String      REGEX_ENDS_WITH_DOT_RAR                                     = "(?i).*\\.rar$";
+    private static final String      PA_R_T_0_9_RAR$                                             = "\\.pa?r?t?\\.?[0-9]+.rar$";
+    private static final String      REGEX_FIND_PARTNUMBER_MULTIRAR                              = "\\.pa?r?t?\\.?(\\d+)\\.";
+    private static final String      REGEX_FIND_MULTIPARTRAR_FULL_PART_EXTENSION_AND_PART_NUMBER = "(\\.pa?r?t?\\.?)(\\d+)\\.";
+    private static final String      REGEX_ANY_7ZIP_PART                                         = "(?i).*\\.7z\\.\\d+$";
+    private static final String      PATTERN_RAR_MULTI                                           = "(?i).*\\.pa?r?t?\\.?\\d+.rar$";
+    private static final String      REGEX_FIND_PARTNUMBER                                       = "\\.r(\\d+)$";
+    private static final String      REGEX_FIND_PART_EXTENSION_AND_PARTNUMBER                    = "(\\.r)(\\d+)$";
 
-    private static final String      R_D2               = "(\\.r)(\\d+)$";
+    private static final String      REGEX_EXTENSION_RAR                                         = "\\.rar$";
+    private static final String      TAR_BZ2$                                                    = "\\.tar\\.bz2$";
 
-    private static final String      RAR$               = "\\.rar$";
-    private static final String      TAR_BZ2$           = "\\.tar\\.bz2$";
+    private static final String      TAR_GZ$                                                     = "\\.tar\\.gz$";
 
-    private static final String      TAR_GZ$            = "\\.tar\\.gz$";
+                                                                                                                                         ;
+    private static final String      TAR$                                                        = "\\.tar$";
 
-                                                                                                ;
-    private static final String      TAR$               = "\\.tar$";
-
-    private static final String      ZIP$               = "\\.zip$";
+    private static final String      ZIP$                                                        = "\\.zip$";
     private int                      crack;
-    private ArrayList<String>        filter             = new ArrayList<String>();
+    private ArrayList<String>        filter                                                      = new ArrayList<String>();
 
     private ArchiveFormat            format;
 
@@ -129,7 +132,7 @@ public class Multi extends IExtraction {
     /** For 7z */
     private MultiOpener              multiopener;
     // Indicates that the passwordcheck works with extracting the archive.
-    private boolean                  passwordExtracting = false;
+    private boolean                  passwordExtracting                                          = false;
 
     /** For rar */
     private RarOpener                raropener;
@@ -145,42 +148,43 @@ public class Multi extends IExtraction {
     }
 
     @Override
-    public Archive buildArchive(ArchiveFactory link) {
+    public Archive buildArchive(ArchiveFactory link) throws ArchiveException {
         String file = link.getFilePath();
         Archive archive = link.createArchive();
         archive.setExtractor(this);
         archive.setName(getArchiveName(link));
         String pattern = "";
-
+        boolean canBeSingleType = true;
         if (file.matches(PATTERN_RAR_MULTI)) {
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.pa?r?t?\\.?[0-9]+\\.rar$", "")) + "\\.pa?r?t?\\.?[0-9]+\\.rar$";
             archive.setArchiveFiles(link.createPartFileList(pattern));
+            canBeSingleType = false;
+        } else if (file.matches(REGEX_ENDS_WITH_DOT_RAR)) {
 
-        } else if (file.matches(I_RAR$)) {
-
-            pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.rar$", "")) + R_D2;
+            pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.rar$", "")) + REGEX_FIND_PART_EXTENSION_AND_PARTNUMBER;
             archive.setArchiveFiles(link.createPartFileList(pattern));
             archive.getArchiveFiles().add(link);
-        } else if (file.matches(I_R_D2)) {
+        } else if (file.matches(REGEX_ANY_DOT_R19_FILE)) {
             // matches.add(link);
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.r\\d+$", "")) + "\\.(r\\d+|rar)$";
             archive.setArchiveFiles(link.createPartFileList(pattern));
-
-        } else if (file.matches(PATTERN_7Z_PART)) {
+            canBeSingleType = false;
+        } else if (file.matches(REGEX_ANY_7ZIP_PART)) {
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.7z\\.\\d+$", "")) + _7Z_D;
-
+            canBeSingleType = false;
         } else {
             archive.setArchiveFiles(link.createPartFileList(pattern));
             archive.getArchiveFiles().add(link);
         }
 
-        if (archive.getArchiveFiles().size() == 1) {
-            archive.setType(Archive.SINGLE_FILE);
+        if (archive.getArchiveFiles().size() == 1 && canBeSingleType) {
+            archive.setType(ArchiveType.SINGLE_FILE);
             archive.setFirstArchiveFile(link);
         } else {
+
             for (ArchiveFile l : archive.getArchiveFiles()) {
-                if (archive.getFirstArchiveFile() == null && l.getFilePath().matches(I_PA_R_T_0_1_RAR$)) {
-                    archive.setType(Archive.MULTI_RAR);
+                if (archive.getFirstArchiveFile() == null && l.getFilePath().matches(REGEX_FIRST_PART_MULTI_RAR)) {
+                    archive.setType(ArchiveType.MULTI_RAR);
                     archive.setFirstArchiveFile(l);
                     // l.isValid()
                     if (!l.isValid()) {
@@ -188,24 +192,29 @@ public class Multi extends IExtraction {
                         continue;
                     }
                     break;
-                } else if (l.getFilePath().matches(I_PA_R_T_0_0_RAR$)) {
-                    archive.setType(Archive.MULTI_RAR);
+                } else if (l.getFilePath().matches(REGEX_ZERO_PART_MULTI_RAR)) {
+                    archive.setType(ArchiveType.MULTI_RAR);
                     archive.setFirstArchiveFile(l);
                     if (!l.isValid()) {
                         /* this should help finding the link that got downloaded */
                         continue;
                     }
                     break;
-                } else if (l.getFilePath().matches(I_RAR$) && !l.getFilePath().matches(I_PA_R_T_0_9_RAR$)) {
-                    archive.setType(Archive.MULTI_RAR);
-                    archive.setFirstArchiveFile(l);
+                } else if (l.getFilePath().matches(REGEX_ENDS_WITH_DOT_RAR) && !l.getFilePath().matches(REGEX_ANY_MULTI_RAR_PART_FILE)) {
+                    if (archive.getArchiveFiles().size() == 1) {
+                        archive.setType(ArchiveType.SINGLE_FILE);
+                        archive.setFirstArchiveFile(link);
+                    } else {
+                        archive.setType(ArchiveType.MULTI_RAR);
+                        archive.setFirstArchiveFile(l);
+                    }
                     if (!l.isValid()) {
                         /* this should help finding the link that got downloaded */
                         continue;
                     }
                     break;
-                } else if (l.getFilePath().matches(I_7Z_001$)) {
-                    archive.setType(Archive.MULTI);
+                } else if (l.getFilePath().matches(REGEX_FIRST_PART_7ZIP)) {
+                    archive.setType(ArchiveType.MULTI);
                     archive.setFirstArchiveFile(l);
                     if (!l.isValid()) {
                         /* this should help finding the link that got downloaded */
@@ -213,9 +222,53 @@ public class Multi extends IExtraction {
                     }
                     break;
                 }
+                // TODO several multipart archive types are missing in this loop
+            }
+            if (archive.getType() == null) {
+                // maybe first part missing? try to get archive type without
+                // first part
+
+                for (ArchiveFile l : archive.getArchiveFiles()) {
+                    if (l.getFilePath().matches(REGEX_ANY_MULTI_RAR_PART_FILE)) {
+
+                        archive.setType(ArchiveType.MULTI_RAR);
+
+                        if (!l.isValid()) {
+                            /*
+                             * this should help finding the link that got
+                             * downloaded
+                             */
+                            continue;
+                        }
+                        break;
+                    } else if (l.getFilePath().matches(REGEX_ANY_7ZIP_PART)) {
+                        archive.setType(ArchiveType.MULTI);
+
+                        if (!l.isValid()) {
+                            /*
+                             * this should help finding the link that got
+                             * downloaded
+                             */
+                            continue;
+                        }
+                        break;
+                    } else if (l.getFilePath().matches(REGEX_ANY_DOT_R19_FILE)) {
+                        archive.setType(ArchiveType.MULTI_RAR);
+                        if (!l.isValid()) {
+                            /*
+                             * this should help finding the link that got
+                             * downloaded
+                             */
+                            continue;
+                        }
+                        break;
+                    }
+                    // TODO several multipart archive types are missing in this
+                    // loop
+                }
             }
         }
-
+        if (archive.getType() == null) throw new ArchiveException("Unsupported Archive: " + link.getFilePath());
         return archive;
     }
 
@@ -232,87 +285,119 @@ public class Multi extends IExtraction {
     }
 
     @Override
-    public List<String> checkComplete(Archive archive) {
-        List<String> missing = new ArrayList<String>();
+    public DummyArchive checkComplete(Archive archive) throws CheckException {
+        try {
+            DummyArchive ret = new DummyArchive(archive);
 
-        if (archive.getType() == Archive.SINGLE_FILE || archive.getArchiveFiles().size() < 2) return missing;
+            if (archive.getType() == ArchiveType.SINGLE_FILE) {
+                ret.add(new DummyArchiveFile(archive.getArchiveFiles().get(0)));
+                return ret;
+            }
 
-        int last = 1;
-        int length = 0;
-        int start = 2;
-        String getpartid = "";
-        String getwhole = "";
-        String postfix = "";
-        String first = "";
-        ArchiveFile firstdl = null;
+            int last = 0;
+            int length = 0;
+            int start = 2;
+            String getpartid = "";
 
-        switch (archive.getType()) {
-        case Archive.MULTI:
-            firstdl = archive.getFirstArchiveFile();
-            getpartid = _7Z_D;
-            getwhole = _7Z_D;
-            break;
-        case Archive.MULTI_RAR:
-            if (archive.getFirstArchiveFile().getFilePath().matches(I_PA_R_T_0_1_RAR$) || archive.getFirstArchiveFile().getFilePath().matches(I_PA_R_T_0_0_RAR$)) {
-                getpartid = PA_R_T_D;
-                getwhole = PA_R_T_D2;
-                postfix = RAR$;
-                firstdl = archive.getFirstArchiveFile();
-            } else if (archive.getFirstArchiveFile().getFilePath().matches(I_RAR$) && !archive.getFirstArchiveFile().getFilePath().matches(I_PA_R_T_0_9_RAR$)) {
+            String format = null;
+            HashMap<Integer, ArchiveFile> erg = new HashMap<Integer, ArchiveFile>();
+            switch (archive.getType()) {
+            case MULTI:
+
+                getpartid = _7Z_D;
                 start = 0;
-                getpartid = R_D2;
-                getwhole = R_D2;
+                format = archive.getArchiveFiles().get(0).getName().replace("%", "\\%").replace("$", "\\$").replaceAll("(\\.7z\\.?)(\\d+)$", "$1%s");
+                length = new Regex(archive.getArchiveFiles().get(0).getName(), "\\.7z\\.?(\\d+)$").getMatch(0).length();
+                // Just get partnumbers to speed up the checking.
+
                 for (ArchiveFile l : archive.getArchiveFiles()) {
-                    if (l.getFilePath().endsWith(".r00")) {
-                        firstdl = l;
-                        break;
+                    String e = "";
+                    // String name = l.getName();
+                    if ((e = new Regex(l.getFilePath(), getpartid).getMatch(0)) != null) {
+                        int p = Integer.parseInt(e);
+                        if (p > last) last = p;
+                        if (p < start) start = p;
+                        erg.put(p, l);
                     }
                 }
+
+                break;
+            case MULTI_RAR:
+
+                for (ArchiveFile af : archive.getArchiveFiles()) {
+                    if (af.getFilePath().matches(REGEX_ANY_MULTI_RAR_PART_FILE)) {
+                        getpartid = REGEX_FIND_PARTNUMBER_MULTIRAR;
+                        start = 1;
+                        format = af.getName().replace("%", "\\%").replace("$", "\\$").replaceAll(REGEX_FIND_MULTIPARTRAR_FULL_PART_EXTENSION_AND_PART_NUMBER, "$1%s.");
+                        length = new Regex(af.getName(), "\\.pa?r?t?\\.?(\\d+)\\.").getMatch(0).length();
+                        // Just get partnumbers to speed up the checking.
+
+                        for (ArchiveFile l : archive.getArchiveFiles()) {
+                            String e = "";
+                            // String name = l.getName();
+                            if ((e = new Regex(l.getFilePath(), getpartid).getMatch(0)) != null) {
+                                int p = Integer.parseInt(e);
+                                if (p > last) last = p;
+                                if (p < start) start = p;
+                                erg.put(p, l);
+                            }
+                        }
+                        break;
+                    } else if (af.getFilePath().matches(REGEX_ANY_DOT_R19_FILE)) {
+                        start = 0;
+
+                        getpartid = REGEX_FIND_PARTNUMBER;
+                        format = af.getName().replace("%", "\\%").replace("$", "\\$").replaceAll(REGEX_FIND_PARTNUMBER, ".r%s");
+                        length = new Regex(af.getName(), REGEX_FIND_PARTNUMBER).getMatch(0).length();
+                        // Just get partnumbers to speed up the checking.
+
+                        for (ArchiveFile l : archive.getArchiveFiles()) {
+                            String e = "";
+                            // String name = l.getName();
+                            if ((e = new Regex(l.getFilePath(), getpartid).getMatch(0)) != null) {
+                                int p = Integer.parseInt(e);
+                                if (p > last) last = p;
+                                if (p < start) start = p;
+                                erg.put(p, l);
+
+                            } else if (l.getFilePath().endsWith(".rar")) {
+                                ret.add(new DummyArchiveFile(l));
+
+                            }
+                        }
+                        if (!erg.containsKey(0)) start = 1;
+                        if (ret.getSize() == 0) {
+                            // .rar missing
+                            ret.add(new DummyArchiveFile(archive.getName() + ".rar"));
+
+                        }
+                        break;
+                    }
+
+                }
+
             }
-            break;
-        default:
-            return missing;
-        }
+            if (format == null) throw new CheckException("Cannot check Archive " + archive.getName());
 
-        first = firstdl.getFilePath();
+            for (int i = start; i <= last; i++) {
 
-        if (archive.getArchiveFiles().size() == 1) {
-            String part = archive.getName() + new Regex(first, getwhole).getMatch(0) + StringFormatter.fillString(last++ + "", "0", "", length) + postfix;
-            missing.add(part);
-            return missing;
-        }
+                ArchiveFile af = erg.get(i);
 
-        // Just get partnumbers to speed up the checking.
-        List<Integer> erg = new ArrayList<Integer>();
-        for (ArchiveFile l : archive.getArchiveFiles()) {
-            String e = "";
-            // String name = l.getName();
-            if ((e = new Regex(l.getFilePath(), getpartid).getMatch(0)) != null) {
-                int p = Integer.parseInt(e);
+                if (af != null) {
+                    // available file
+                    ret.add(new DummyArchiveFile(af));
+                } else {
+                    // missing file
+                    String part = String.format(format, StringFormatter.fillString(i + "", "0", "", length));
+                    ret.add(new DummyArchiveFile(part));
+                }
 
-                if (p > last) last = p;
-
-                erg.add(p);
             }
-        }
 
-        length = new Regex(first, getpartid).getMatch(0).length();
-
-        for (int i = start; i <= last; i++) {
-            if (!erg.contains(i)) {
-                String part = archive.getName() + new Regex(first, getwhole).getMatch(0) + StringFormatter.fillString(i + "", "0", "", length) + postfix;
-                missing.add(part);
-            }
+            return ret;
+        } catch (Throwable e) {
+            throw new CheckException("Cannot check Archive " + archive.getName(), e);
         }
-        File firstFile = archive.getFactory().toFile(first);
-        File lastFile = new File(firstFile.getParent() + File.separator + archive.getName() + new Regex(first, getwhole).getMatch(0) + StringFormatter.fillString(last + "", "0", "", length) + postfix);
-        // ignore this check if both files do not exist
-        if ((firstFile.exists() || lastFile.exists()) && firstFile.length() <= lastFile.length()) {
-            String part = archive.getName() + new Regex(first, getwhole).getMatch(0) + StringFormatter.fillString(last++ + "", "0", "", length) + postfix;
-            missing.add(part);
-        }
-
-        return missing;
     }
 
     @Override
@@ -320,7 +405,7 @@ public class Multi extends IExtraction {
         // Deleteing rar recovery volumes
         if (archive.getExitCode() == ExtractionControllerConstants.EXIT_CODE_SUCCESS && archive.getFirstArchiveFile().getFilePath().matches(PATTERN_RAR_MULTI)) {
             for (ArchiveFile link : archive.getArchiveFiles()) {
-                File f = archive.getFactory().toFile(link.getFilePath().replace(RAR$, ".rev"));
+                File f = archive.getFactory().toFile(link.getFilePath().replace(REGEX_EXTENSION_RAR, ".rev"));
                 if (f.exists()) {
                     logger.info("Deleting rar recovery volume " + f.getAbsolutePath());
                     if (!f.delete()) {
@@ -352,7 +437,7 @@ public class Multi extends IExtraction {
     @Override
     public String createID(ArchiveFactory f) {
 
-        String[] patterns = new String[] { PA_R_T_0_9_RAR$, RAR$, ZIP$, _7Z$, _7Z_D, TAR_GZ$, TAR_BZ2$, R_D2, TAR$, Z_D_$ };
+        String[] patterns = new String[] { PA_R_T_0_9_RAR$, REGEX_EXTENSION_RAR, ZIP$, _7Z$, _7Z_D, TAR_GZ$, TAR_BZ2$, REGEX_FIND_PART_EXTENSION_AND_PARTNUMBER, TAR$, Z_D_$ };
 
         for (String p : patterns) {
             Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);
@@ -361,11 +446,11 @@ public class Multi extends IExtraction {
             if (matcher.find()) {
                 //
 
-                if (p.equals(R_D2)) {
+                if (p.equals(REGEX_FIND_PART_EXTENSION_AND_PARTNUMBER)) {
                     // we cannot distingish between *.rar and *.rar -> *.r00
                     // archives when looking only at one single filename. that's
                     // why the get the same id
-                    return matcher.replaceAll(RAR$.replace("\\", "_").replace("$", "_"));
+                    return matcher.replaceAll(REGEX_EXTENSION_RAR.replace("\\", "_").replace("$", "_"));
                 } else if (p.equals(Z_D_$)) {
                     // we cannot distingish between *.zip and *.zip -> *.z01
                     // archives when looking only at one single filename. that's
@@ -564,9 +649,9 @@ public class Multi extends IExtraction {
                 }
             }
 
-            if (archive.getType() == Archive.SINGLE_FILE) {
+            if (archive.getType() == ArchiveType.SINGLE_FILE) {
                 inArchive = SevenZip.openInArchive(format, stream, password);
-            } else if (archive.getType() == Archive.MULTI) {
+            } else if (archive.getType() == ArchiveType.MULTI) {
                 if (multiopener != null) {
                     multiopener.close();
                 }
@@ -574,7 +659,7 @@ public class Multi extends IExtraction {
                 multiopener = new MultiOpener(password);
                 IInStream inStream = new VolumedArchiveInStream(archive.getFirstArchiveFile().getFilePath(), multiopener);
                 inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
-            } else if (archive.getType() == Archive.MULTI_RAR) {
+            } else if (archive.getType() == ArchiveType.MULTI_RAR) {
                 if (raropener != null) {
                     raropener.close();
                 }
@@ -692,7 +777,7 @@ public class Multi extends IExtraction {
     private List<ArchiveFile> getAffectedArchiveFileFromArchvieFiles(String path) throws FileNotFoundException, SevenZipException {
         ArrayList<ArchiveFile> result = new ArrayList<ArchiveFile>();
 
-        if (archive.getType() == Archive.MULTI || archive.getType() == Archive.SINGLE_FILE) {
+        if (archive.getType() == ArchiveType.MULTI || archive.getType() == ArchiveType.SINGLE_FILE) {
             result = archive.getArchiveFiles();
             return result;
         }
@@ -714,7 +799,7 @@ public class Multi extends IExtraction {
     @Override
     public String getArchiveName(ArchiveFactory factory) {
 
-        String[] patterns = new String[] { PA_R_T_0_9_RAR$, RAR$, ZIP$, _7Z$, _7Z_D, TAR_GZ$, TAR_BZ2$, R_D2, TAR$, Z_D_$ };
+        String[] patterns = new String[] { PA_R_T_0_9_RAR$, REGEX_EXTENSION_RAR, ZIP$, _7Z$, _7Z_D, TAR_GZ$, TAR_BZ2$, REGEX_FIND_PART_EXTENSION_AND_PARTNUMBER, TAR$, Z_D_$ };
 
         for (String p : patterns) {
             Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);
@@ -737,7 +822,7 @@ public class Multi extends IExtraction {
 
     @Override
     public boolean isArchivSupported(ArchiveFactory factory) {
-        String[] patterns = new String[] { PA_R_T_0_9_RAR$, RAR$, ZIP$, _7Z$, _7Z_D, TAR_GZ$, TAR_BZ2$, R_D2, TAR$, Z_D_$ };
+        String[] patterns = new String[] { PA_R_T_0_9_RAR$, REGEX_EXTENSION_RAR, ZIP$, _7Z$, _7Z_D, TAR_GZ$, TAR_BZ2$, REGEX_FIND_PART_EXTENSION_AND_PARTNUMBER, TAR$, Z_D_$ };
 
         for (String p : patterns) {
             Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);
@@ -772,8 +857,8 @@ public class Multi extends IExtraction {
                 }
             }
 
-            if (archive.getType() == Archive.SINGLE_FILE) {
-                if (matches(archive.getFirstArchiveFile().getFilePath(), RAR$)) {
+            if (archive.getType() == ArchiveType.SINGLE_FILE) {
+                if (matches(archive.getFirstArchiveFile().getFilePath(), REGEX_EXTENSION_RAR)) {
                     format = ArchiveFormat.RAR;
 
                 } else if (matches(archive.getFirstArchiveFile().getFilePath(), _7Z$)) {
@@ -790,11 +875,11 @@ public class Multi extends IExtraction {
 
                 stream = new RandomAccessFileInStream(new RandomAccessFile(archive.getFirstArchiveFile().getFilePath(), "r"));
                 inArchive = SevenZip.openInArchive(format, stream);
-            } else if (archive.getType() == Archive.MULTI) {
+            } else if (archive.getType() == ArchiveType.MULTI) {
                 multiopener = new MultiOpener();
                 IInStream inStream = new VolumedArchiveInStream(archive.getFirstArchiveFile().getFilePath(), multiopener);
                 inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
-            } else if (archive.getType() == Archive.MULTI_RAR) {
+            } else if (archive.getType() == ArchiveType.MULTI_RAR) {
                 raropener = new RarOpener();
                 IInStream inStream = raropener.getStream(archive.getFirstArchiveFile().getFilePath());
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
@@ -850,7 +935,7 @@ public class Multi extends IExtraction {
     @Override
     public boolean isMultiPartArchive(ArchiveFactory factory) {
         // rememver *.rar archives may be the start of a multiarchive, too
-        String[] patterns = new String[] { PA_R_T_0_9_RAR$, RAR$, _7Z_D, R_D2, Z_D_$, ZIP$ };
+        String[] patterns = new String[] { PA_R_T_0_9_RAR$, REGEX_EXTENSION_RAR, _7Z_D, REGEX_FIND_PART_EXTENSION_AND_PARTNUMBER, Z_D_$, ZIP$ };
 
         for (String p : patterns) {
             Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);

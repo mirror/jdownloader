@@ -18,7 +18,6 @@ package org.jdownloader.extensions.extraction;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -38,7 +37,7 @@ import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
  * 
  */
 public class ExtractionController extends QueueAction<Void, RuntimeException> {
-    private HashSet<String>    passwordList;
+    private ArrayList<String>  passwordList;
     private int                passwordListSize = 0;
     private Exception          exception;
     private boolean            removeAfterExtraction;
@@ -58,7 +57,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
         this.logger = logger;
         extractor.setLogger(logger);
-        passwordList = new HashSet<String>();
+        passwordList = new ArrayList<String>();
     }
 
     public ExtractionQueue getExtractionQueue() {
@@ -133,6 +132,11 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 }
 
                 if (archive.isProtected() && archive.getPassword().equals("")) {
+                    String pw = "How.I.Met.Your.Mother.S07E19.German.Subbed.HDTV.XviD-DN";
+                    for (int i = 1; i < pw.length(); i++) {
+                        passwordList.add(pw.substring(0, i));
+                    }
+
                     passwordList.addAll(archive.getFactory().getPasswordList(archive));
                     ArrayList<String> pwList = extractor.config.getPasswordList();
                     if (pwList == null) pwList = new ArrayList<String>();

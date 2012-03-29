@@ -100,6 +100,7 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
     }
 
     public String cryptoGetTextPassword() throws SevenZipException {
+
         return password;
     }
 }

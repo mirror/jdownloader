@@ -16,10 +16,12 @@
 
 package org.jdownloader.extensions.extraction;
 
-import java.util.List;
 import java.util.logging.Logger;
 
 import jd.plugins.DownloadLink;
+
+import org.jdownloader.extensions.extraction.multi.ArchiveException;
+import org.jdownloader.extensions.extraction.multi.CheckException;
 
 /**
  * Interface for the individual extraction programs.
@@ -81,8 +83,9 @@ public abstract class IExtraction {
      * @param link
      *            An complete downloaded file.
      * @return An {@link Archive} that contains all {@link Downloadlink}s.
+     * @throws ArchiveException
      */
-    public abstract Archive buildArchive(ArchiveFactory link);
+    public abstract Archive buildArchive(ArchiveFactory link) throws ArchiveException;
 
     /**
      * Checks a single password if the archive is encrypted with it.
@@ -164,8 +167,9 @@ public abstract class IExtraction {
      * @param archive
      *            The archive.
      * @return A list of parts which are missing.
+     * @throws CheckException
      */
-    public abstract List<String> checkComplete(Archive archive);
+    public abstract DummyArchive checkComplete(Archive archive) throws CheckException;
 
     /**
      * tries to create an ID for the archive the given filename belongs to.

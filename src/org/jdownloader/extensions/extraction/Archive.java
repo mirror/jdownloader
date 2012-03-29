@@ -18,9 +18,10 @@ package org.jdownloader.extensions.extraction;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 
 import org.appwork.utils.logging.Log;
+import org.jdownloader.extensions.extraction.multi.ArchiveType;
+import org.jdownloader.extensions.extraction.multi.CheckException;
 
 /**
  * Contains information about the archivefile.
@@ -29,18 +30,6 @@ import org.appwork.utils.logging.Log;
  * 
  */
 public class Archive {
-    /**
-     * Is a single file archive.
-     */
-    public static final int        SINGLE_FILE      = 0;
-    /**
-     * Is a 7zip or HJSplit multipar archive.
-     */
-    public static final int        MULTI            = 1;
-    /**
-     * Is a multipart rar archive.
-     */
-    public static final int        MULTI_RAR        = 2;
 
     /**
      * Extractionpath
@@ -100,7 +89,7 @@ public class Archive {
     /**
      * Type of the archive.
      */
-    private int                    type             = 0;
+    private ArchiveType            type             = null;
 
     /**
      * Number of files in the archive.
@@ -127,7 +116,7 @@ public class Archive {
      */
     private IExtraction            extractor;
     private ArchiveFactory         factory;
-    private List<String>           missing;
+
     private String                 name;
 
     public ArchiveFactory getFactory() {
@@ -238,29 +227,17 @@ public class Archive {
     }
 
     public boolean isComplete() {
-        missing = new ArrayList<String>();
 
-        for (ArchiveFile l : archives) {
-
-            if (!l.isComplete()) {
-                missing.add(l.getFilePath());
-
-            }
+        try {
+            return createDummyArchive().isComplete();
+        } catch (CheckException e) {
+            Log.exception(e);
         }
-        List<String> ms = extractor.checkComplete(this);
-        if (ms != null) this.missing.addAll(ms);
-        if (missing.size() > 0) {
-            for (String entry : missing) {
-                Log.L.info("Missing archive file: " + entry);
-            }
-            return false;
-        }
-
-        return true;
+        return false;
     }
 
-    public List<String> getMissing() {
-        return missing;
+    public DummyArchive createDummyArchive() throws CheckException {
+        return extractor.checkComplete(this);
     }
 
     public void setActive(boolean active) {
@@ -271,11 +248,11 @@ public class Archive {
         return active;
     }
 
-    public void setType(int type) {
-        this.type = type;
+    public void setType(ArchiveType singleFile) {
+        this.type = singleFile;
     }
 
-    public int getType() {
+    public ArchiveType getType() {
         return type;
     }
 
@@ -331,4 +308,5 @@ public class Archive {
     public void setName(String archiveName) {
         this.name = archiveName;
     }
+
 }

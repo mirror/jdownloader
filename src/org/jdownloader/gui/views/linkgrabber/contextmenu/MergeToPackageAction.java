@@ -9,8 +9,11 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
@@ -33,7 +36,18 @@ public class MergeToPackageAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
         try {
-            final String name = Dialog.getInstance().showInputDialog(0, _GUI._.MergeToPackageAction_MergeToPackageAction_(), null);
+            String defValue = _GUI._.MergeToPackageAction_actionPerformed_newpackage_();
+            try {
+                if (selection.get(0) instanceof AbstractPackageNode) {
+                    defValue = ((AbstractPackageNode) selection.get(0)).getName();
+                } else {
+                    defValue = ((AbstractPackageNode) ((AbstractPackageChildrenNode) selection.get(0)).getParentNode()).getName();
+                }
+            } catch (Throwable e2) {
+                // too many unsafe casts. catch problems - just to be sure
+                Log.exception(e2);
+            }
+            final String name = Dialog.getInstance().showInputDialog(0, _GUI._.MergeToPackageAction_MergeToPackageAction_(), defValue);
             if (name == null | name.trim().length() == 0) return;
 
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {

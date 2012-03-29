@@ -28,6 +28,7 @@ import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
@@ -135,7 +136,7 @@ public class HJSplit extends IExtraction {
     public void close() {
     }
 
-    public List<String> checkComplete(Archive archive) {
+    public DummyArchive checkComplete(Archive archive) {
         int last = 1;
         List<String> missing = new ArrayList<String>();
         List<Integer> erg = new ArrayList<Integer>();
@@ -162,7 +163,7 @@ public class HJSplit extends IExtraction {
             }
         }
 
-        return missing;
+        return DummyArchive.create(archive, missing);
     }
 
     @Override

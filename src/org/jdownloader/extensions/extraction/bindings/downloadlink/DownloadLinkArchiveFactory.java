@@ -131,8 +131,9 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     public Collection<? extends String> getPasswordList(Archive archive) {
 
         Set<String> ret = FilePackage.getPasswordAuto(((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getDownloadLink().getFilePackage());
-
-        ret.add(new File(archive.getFirstArchiveFile().getFilePath()).getName());
+        // VM crashes if password is filename
+        // ret.add(new
+        // File(archive.getFirstArchiveFile().getFilePath()).getName());
         return ret;
     }
 

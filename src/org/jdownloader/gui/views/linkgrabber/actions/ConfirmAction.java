@@ -17,7 +17,14 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.ValidateArchiveAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -50,6 +57,22 @@ public class ConfirmAction extends AppAction {
         IOEQ.add(new Runnable() {
 
             public void run() {
+
+                try {
+                    for (Archive a : new ValidateArchiveAction((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), new ArrayList<AbstractNode>(values)).getArchives()) {
+                        if (!a.isComplete()) {
+
+                            Dialog.getInstance().showConfirmDialog(0, "Archive incomplete: " + a.getName(), "The archive " + a.getName() + " is not complete. Download anyway?");
+
+                        }
+
+                    }
+                    System.out.println(1);
+                } catch (DialogNoAnswerException e) {
+                    return;
+                } catch (Throwable e) {
+                    Log.exception(e);
+                }
                 boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_ADD_AT_TOP.getValue();
                 ArrayList<FilePackage> fpkgs = new ArrayList<FilePackage>();
                 ArrayList<CrawledLink> clinks = new ArrayList<CrawledLink>();
@@ -65,6 +88,7 @@ public class ConfirmAction extends AppAction {
                     }
                 }
                 /* convert all selected CrawledLinks to FilePackages */
+
                 ArrayList<FilePackage> frets = LinkCollector.getInstance().removeAndConvert(clinks);
                 if (frets != null) fpkgs.addAll(frets);
                 /* add the converted FilePackages to DownloadController */

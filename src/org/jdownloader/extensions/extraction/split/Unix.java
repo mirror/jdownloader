@@ -28,6 +28,7 @@ import org.appwork.utils.Regex;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
@@ -112,7 +113,7 @@ public class Unix extends IExtraction {
     public void close() {
     }
 
-    public List<String> checkComplete(Archive archive) {
+    public DummyArchive checkComplete(Archive archive) {
         List<String> missing = new ArrayList<String>();
         List<String> files = new ArrayList<String>();
 
@@ -138,7 +139,7 @@ public class Unix extends IExtraction {
             suffix = countupSuffix(suffix);
         }
 
-        return missing;
+        return DummyArchive.create(archive, missing);
     }
 
     /**
