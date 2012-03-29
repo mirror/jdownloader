@@ -237,6 +237,7 @@ public class TurboBitNet extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
+        sleep(2000, link);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRegex("<h1><a href=\\'(.*?)\\'>").getMatch(0);
         if (dllink == null) {

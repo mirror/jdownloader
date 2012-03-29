@@ -1338,6 +1338,8 @@ abstract public class DownloadInterface {
             } catch (final Throwable e) {
             }
             setupChunks();
+            /* download in progress so file should be online ;) */
+            downloadLink.setAvailable(true);
             waitForChunks();
             onChunksReady();
             return handleErrors();
