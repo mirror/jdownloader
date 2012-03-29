@@ -167,7 +167,7 @@ public class Uploadedto extends PluginForHost {
                         /* id not in response, so its offline */
                         dl.setAvailable(false);
                     } else {
-                        dl.setFinalFileName(infos[hit][4].trim());
+                        dl.setFinalFileName(Encoding.htmlDecode(infos[hit][4].trim()));
                         dl.setDownloadSize(SizeFormatter.getSize(infos[hit][2]));
                         if ("online".equalsIgnoreCase(infos[hit][0].trim())) {
                             dl.setAvailable(true);
@@ -516,7 +516,7 @@ public class Uploadedto extends PluginForHost {
             String name = br.getRegex("(.*?)(\r|\n)").getMatch(0);
             String size = br.getRegex(".+[\r\n]{1,2}(.+)").getMatch(0);
             if (name == null || size == null) return AvailableStatus.UNCHECKABLE;
-            downloadLink.setFinalFileName(name.trim());
+            downloadLink.setFinalFileName(Encoding.htmlDecode(name.trim()));
             downloadLink.setDownloadSize(SizeFormatter.getSize(size));
         } finally {
             br.setFollowRedirects(red);

@@ -104,7 +104,7 @@ public class WUploadCom extends PluginForHost {
                         }
                         final String size = new Regex(hit, "size>(\\d+)</size").getMatch(0);
                         dllink.setAvailable(true);
-                        dllink.setFinalFileName(name);
+                        dllink.setFinalFileName(Encoding.htmlDecode(name));
                         if (size != null) {
                             dllink.setDownloadSize(Long.parseLong(size));
                         }
