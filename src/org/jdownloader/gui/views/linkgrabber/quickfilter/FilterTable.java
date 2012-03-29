@@ -242,17 +242,18 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
     }
 
     @Override
-    protected void onSingleClick(MouseEvent e, Filter obj) {
+    protected boolean onSingleClick(MouseEvent e, Filter obj) {
         ArrayList<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
 
         if (!e.isControlDown()) {
             for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
                 if (f instanceof FilterTable && f != this) {
                     ((FilterTable) f).clearSelection();
-
                 }
             }
+            return true;
         }
+        return false;
     }
 
     protected boolean processKeyBinding(final KeyStroke stroke, final KeyEvent evt, final int condition, final boolean pressed) {

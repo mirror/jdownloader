@@ -30,7 +30,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.OpenDownloadFolderAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderAction;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
@@ -120,11 +119,6 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public boolean isEditable(AbstractNode obj) {
         return true;
-    }
-
-    @Override
-    protected void onSingleClick(MouseEvent e, AbstractNode obj) {
-        super.onSingleClick(e, obj);
     }
 
     @Override

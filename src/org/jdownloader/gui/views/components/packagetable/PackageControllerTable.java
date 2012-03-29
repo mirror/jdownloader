@@ -419,7 +419,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     @Override
-    protected void onSingleClick(MouseEvent e, final AbstractNode obj) {
+    protected boolean onSingleClick(MouseEvent e, final AbstractNode obj) {
         if (obj instanceof AbstractPackageNode) {
             final ExtColumn<AbstractNode> column = this.getExtColumnAtPoint(e.getPoint());
 
@@ -433,11 +433,11 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                     } else {
                         tableModel.toggleFilePackageExpand((AbstractPackageNode<?, ?>) obj, TOGGLEMODE.CURRENT);
                     }
-                    return;
+                    return true;
                 }
             }
         }
-        super.onSingleClick(e, obj);
+        return super.onSingleClick(e, obj);
     }
 
     public boolean isOriginalOrder() {

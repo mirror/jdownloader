@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -33,12 +34,17 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         BOTTOM
     }
 
-    private static final String                                                     SORT_ORIGINAL = "ORIGINAL";
+    private abstract class TableDataModifier {
+        public abstract void modifyTableData(ArrayList<PackageType> packages);
+    }
+
+    private static final String                                                     SORT_ORIGINAL  = "ORIGINAL";
 
     private DelayedRunnable                                                         asyncRefresh;
     protected PackageController<PackageType, ChildrenType>                          pc;
-    private DelayedRunnable                                                         asyncRecreate = null;
-    private ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> tableFilters  = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
+    private DelayedRunnable                                                         asyncRecreate  = null;
+    private ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> tableFilters   = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
+    private LinkedList<TableDataModifier>                                           tableModifiers = new LinkedList<TableDataModifier>();
 
     public ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> getTableFilters() {
         return tableFilters;
@@ -129,27 +135,38 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         return pc;
     }
 
-    public void toggleFilePackageExpand(final AbstractPackageNode fp2, final TOGGLEMODE mode) {
-        queue.execute(new Runnable() {
-            public void run() {
-                final boolean cur = !fp2.isExpanded();
-                boolean doToggle = true;
-                switch (mode) {
-                case CURRENT:
-                    fp2.setExpanded(cur);
-                    break;
-                case TOP:
-                    doToggle = true;
-                    break;
-                case BOTTOM:
-                    doToggle = false;
-                    break;
-                }
-                if (mode != TOGGLEMODE.CURRENT) {
-                    final boolean readL = pc.readLock();
-                    try {
-                        for (PackageType fp : pc.getPackages()) {
+    public PackageControllerTable<PackageType, ChildrenType> getPackageTable() {
+        return (PackageControllerTable<PackageType, ChildrenType>) this.getTable();
+    }
 
+    public void toggleFilePackageExpand(final AbstractPackageNode fp2, final TOGGLEMODE mode) {
+        synchronized (tableModifiers) {
+            tableModifiers.add(new TableDataModifier() {
+
+                @Override
+                public void modifyTableData(ArrayList<PackageType> packages) {
+                    final boolean cur = !fp2.isExpanded();
+                    boolean doToggle = true;
+                    switch (mode) {
+                    case CURRENT:
+                        fp2.setExpanded(cur);
+                        break;
+                    case TOP:
+                        doToggle = true;
+                        break;
+                    case BOTTOM:
+                        doToggle = false;
+                        break;
+                    }
+                    if (mode != TOGGLEMODE.CURRENT) {
+                        ArrayList<PackageType> selectedPackages = PackageControllerTableModel.this.getPackageTable().getSelectedPackages();
+                        if (selectedPackages.size() > 1) {
+                            for (PackageType fp : selectedPackages) {
+                                fp.setExpanded(cur);
+                            }
+                            return;
+                        }
+                        for (PackageType fp : packages) {
                             if (doToggle) {
                                 fp.setExpanded(cur);
                                 if (fp == fp2) doToggle = false;
@@ -159,25 +176,24 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                                     fp.setExpanded(cur);
                                 }
                             }
-
                         }
-                    } finally {
-                        pc.readUnlock(readL);
                     }
                 }
-                asyncRecreate.delayedrun();
-            };
-        });
+            });
+        }
+        asyncRecreate.delayedrun();
     }
 
     public void setFilePackageExpand(final AbstractPackageNode fp2, final boolean expanded) {
-        queue.execute(new Runnable() {
-            public void run() {
-                fp2.setExpanded(expanded);
-                asyncRecreate.delayedrun();
-            };
-        });
-
+        synchronized (tableModifiers) {
+            tableModifiers.add(new TableDataModifier() {
+                @Override
+                public void modifyTableData(ArrayList<PackageType> packages) {
+                    fp2.setExpanded(expanded);
+                }
+            });
+        }
+        asyncRecreate.delayedrun();
     }
 
     public void addFilter(PackageControllerTableModelFilter<PackageType, ChildrenType> filter) {
@@ -204,6 +220,10 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             if (filter.highlightFilter()) return true;
         }
         return false;
+    }
+
+    @Override
+    protected void initColumns() {
     }
 
     /*
@@ -257,6 +277,12 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         }
         /* sort packages */
         if (column != null) Collections.sort(packages, column.getRowSorter());
+        synchronized (tableModifiers) {
+            while (tableModifiers.size() > 0) {
+                TableDataModifier modifier = tableModifiers.removeFirst();
+                modifier.modifyTableData(packages);
+            }
+        }
         ArrayList<AbstractNode> newData = new ArrayList<AbstractNode>(Math.max(data.size(), packages.size()));
         for (PackageType node : packages) {
             ArrayList<ChildrenType> files = null;
