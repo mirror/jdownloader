@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "http://(www\\.)?(mirrorstack\\.com|uploading\\.to|copyload\\.com|multishared\\.com)/([a-z0-9]{2}_)?[a-z0-9]{12}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "http://(www\\.)?(mirrorstack\\.com|uploading\\.to|copyload\\.com|multishared\\.com|onmirror\\.com)/([a-z0-9]{1,2}_)?[a-z0-9]{12}" }, flags = { 0 })
 public class MirStkCm extends PluginForDecrypt {
 
     /*
@@ -62,15 +62,14 @@ public class MirStkCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        // easier to set redirects on and off than renaming parameter them all
-        // and it also creates less maintenance if provider changes things up.
+        // easier to set redirects on and off than to define every provider.
+        // It also creates less maintenance if provider changes things up.
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("(?i)>(File )?Not Found</")) {
             logger.warning("Invalid URL, either removed or never existed :" + parameter);
             return null;
         }
-        String suggestedFilename = br.getRegex("class=\"file\">[ \r\n\t]*<h2>(.*?)</h2>").getMatch(0);
         br.setFollowRedirects(false);
         String finallink = null;
         String[] singleLinks = null;
@@ -79,7 +78,7 @@ public class MirStkCm extends PluginForDecrypt {
             singleLinks = new Regex(parameter, "(.+)").getColumn(0);
         }
         // Standard parameter, find all singleLinks
-        else if (parameter.matches("http://[^/<>\"\\' ]+/[a-z0-9]{12}")) {
+        else if (parameter.matches("http://[^/<>\"\\' ]+/([a-z]_)?[a-z0-9]{12}")) {
             singleLinks = br.getRegex("<a href=\\'(http://[^/<>\"\\' ]+/[a-z0-9]{2}_[a-z0-9]{12})\\'").getColumn(0);
             if (singleLinks == null || singleLinks.length == 0) {
                 logger.warning("Couldn't find singleLinks... :" + parameter);
@@ -107,13 +106,9 @@ public class MirStkCm extends PluginForDecrypt {
                 logger.warning("Continuing...");
                 continue;
             }
-            DownloadLink dl;
-            decryptedLinks.add(dl = createDownloadlink(finallink));
-            // if (suggestedFilename != null)
-            // dl.setProperty("SUGGESTEDFINALFILENAME", suggestedFilename);
+            decryptedLinks.add(createDownloadlink(finallink));
             progress.increase(1);
         }
         return decryptedLinks;
     }
-
 }

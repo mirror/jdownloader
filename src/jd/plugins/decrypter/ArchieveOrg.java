@@ -36,13 +36,13 @@ public class ArchieveOrg extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("://www.", "://");
         br.getPage(parameter);
         if (br.containsHTML(">Item cannot be found\\.<")) return decryptedLinks;
         String[] links = br.getRegex("\"(/download/.*?/.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String singleLink : links) {
-            decryptedLinks.add(createDownloadlink("directhttp://http://www.archive.org" + singleLink));
+            decryptedLinks.add(createDownloadlink("directhttp://http://archive.org" + singleLink));
         }
         FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(parameter, "archive\\.org/details/(.+)").getMatch(0).trim());
