@@ -157,21 +157,32 @@ public class FlickrCom extends PluginForDecrypt {
 
     /** Get single links and set nice filenames */
     private DownloadLink decryptSingleLink(String parameter) throws IOException {
-        br.getPage(parameter + "/sizes/l/in/photostream/");
+        br.getPage(parameter + "/in/photostream");
         String filename = getFilename();
-        String link = br.getRegex("id=\"allsizes\\-photo\">[\t\n\r ]+<img src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        String link = getFinalLink();
         if (link == null) link = br.getRegex("\"(http://farm\\d+\\.(static\\.flickr|staticflickr)\\.com/\\d+/.*?)\"").getMatch(0);
         DownloadLink fina = null;
         if (link != null) {
             fina = createDownloadlink(link);
-            final String ext = link.substring(link.lastIndexOf("."));
+            String ext = link.substring(link.lastIndexOf("."));
             if (ext != null && filename != null) {
+                if (ext == null || ext.length() > 5) ext = ".jpg";
                 filename = Encoding.htmlDecode(filename.trim() + ext);
                 fina.setFinalFileName(filename);
             }
             fina.setFinalFileName(filename);
         }
         return fina;
+    }
+
+    private String getFinalLink() {
+        final String[] sizes = { "l", "z", "m", "n", "s", "t", "q", "sq" };
+        String finallink = null;
+        for (String size : sizes) {
+            finallink = br.getRegex(size + ": \\{[\t\n\r ]+url: \\'(http://[^<>\"]*?)\\',[\t\n\r ]+").getMatch(0);
+            if (finallink != null) break;
+        }
+        return finallink;
     }
 
     private String getFilename() {

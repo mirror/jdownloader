@@ -631,12 +631,13 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         } else if (parameter.contains("adv.li/")) {
             finallink = br.getRegex("_url=\\'(http://[^<>\"]*?)\\'").getMatch(0);
         } else if (parameter.contains("primemusic.ru/")) {
-            finallink = br.getRegex("name=\"FlashVars\" value=\"mp3=(http://[^<>\"]*?\\.mp3)").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("(http://play\\.primemusic\\.ru/dl\\d+[^<>\"]*?\\.mp3)").getMatch(0);
-            dh = true;
             finalfilename = br.getRegex("<h2>Скачать ([^<>\"]*?)\\.mp3</h2>").getMatch(0);
             if (finalfilename == null) finalfilename = br.getRegex("<div class=\"caption\">[\t\n\r ]+<h1>([^<>\"]*?) скачать песню</h1>").getMatch(0);
             if (finalfilename != null) finalfilename = Encoding.htmlDecode(finalfilename.trim()) + ".mp3";
+            br.getPage(parameter.replace("/Media-page-", "/Media-download-"));
+            finallink = br.getRegex("<a class=\"download\" href=(http://[^<>\"]*?\\.mp3)\"").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("\"(http://mp3\\.primemusic\\.ru/dl\\d+/[^<>\"]*?)\"").getMatch(0);
+            dh = true;
         }
         if (finallink == null) {
             logger.info("DecrypterForRedirectServicesWithoutDirectRedirects says \"Out of date\" for link: " + parameter);

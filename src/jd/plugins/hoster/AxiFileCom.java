@@ -34,25 +34,15 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axifile.com" }, urls = { "http://(www\\.)?axifile\\.com(/mydownload\\.php\\?file=|/en/|(/)?\\?)[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axifile.com" }, urls = { "http://(www\\.)?axifile\\.com/en/[A-Z0-9]+" }, flags = { 0 })
 public class AxiFileCom extends PluginForHost {
     private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-
     private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
-
     private static final String COOKIE_HOST      = "http://www.axifile.com";
-
     private static final String IPBLOCKED        = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
 
     public AxiFileCom(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        String addedLink = link.getDownloadURL();
-        if (addedLink.contains("axifile.com?"))
-            link.setUrlDownload(addedLink.replace("?", "/?"));
-        else if (addedLink.contains("/en/")) link.setUrlDownload(addedLink.replace("/en/", "/?"));
     }
 
     private String findLink() throws Exception {

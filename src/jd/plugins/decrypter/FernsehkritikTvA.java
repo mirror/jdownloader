@@ -44,6 +44,7 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         final String parameter = param.toString();
         setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCustomCharset("utf-8");
         br.getPage(parameter);
         final String episode = new Regex(parameter, "folge-(\\d+)").getMatch(0);
         if (episode == null) { return null; }
