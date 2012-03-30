@@ -54,7 +54,7 @@ public class IFileIt extends PluginForHost {
     private static final String RECAPTCHAIMAGEPART  = "image?c=";
     private boolean             showDialog          = false;
     private boolean             RESUMING            = false;
-    private int                 MAXFREECHUNKS        = 0;
+    private int                 MAXFREECHUNKS       = 0;
 
     public IFileIt(final PluginWrapper wrapper) {
         super(wrapper);
@@ -85,7 +85,7 @@ public class IFileIt extends PluginForHost {
         final String finaldownlink = result.toString();
         if (finaldownlink == null || finaldownlink.equals("") || !finaldownlink.startsWith("http")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-        final String downlink = br.getRegex("var _url\\s+\\t+=\\s+\\t+\'(.*?)\';").getMatch(0);
+        final String downlink = br.getRegex("var _url\\s+\\t+=\\s+\\t+\\'(.*?)\\';").getMatch(0);
         String type = null, extra = null;
         if (downlink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
