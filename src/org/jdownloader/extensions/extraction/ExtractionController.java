@@ -87,6 +87,11 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     private boolean checkPassword(String pw) {
         if (pw == null || pw.equals("")) return false;
+        // workaround for bug
+        // http://sourceforge.net/projects/sevenzipjbind/forums/forum/757965/topic/5152496
+        // <br>
+        // http://sourceforge.net/tracker/?func=detail&aid=3314311&group_id=111810&atid=660493
+        if (pw.length() > 28) return false;
 
         fireEvent(ExtractionEvent.Type.PASSWORT_CRACKING);
 
@@ -132,10 +137,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 }
 
                 if (archive.isProtected() && archive.getPassword().equals("")) {
-                    String pw = "How.I.Met.Your.Mother.S07E19.German.Subbed.HDTV.XviD-DN";
-                    for (int i = 1; i < pw.length(); i++) {
-                        passwordList.add(pw.substring(0, i));
-                    }
 
                     passwordList.addAll(archive.getFactory().getPasswordList(archive));
                     ArrayList<String> pwList = extractor.config.getPasswordList();
