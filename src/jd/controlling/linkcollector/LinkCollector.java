@@ -393,14 +393,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 String newID = plg.filterPackageID(next.getKey());
                                 if (!next.getKey().equals(newID)) {
                                     it.remove();
-                                    ArrayList<CrawledLink> ret = offlineMap.remove(next.getKey());
-                                    if (ret != null) {
-                                        ArrayList<CrawledLink> existing = offlineMap.get(newID);
-                                        if (existing != null) {
-                                            ret.addAll(existing);
-                                        }
-                                        offlineMap.put(newID, ret);
-                                    }
+
                                     CrawledPackage existing = newMap.get(newID);
 
                                     if (existing != null) {
@@ -421,7 +414,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 }
 
                             }
-
+                            remapIdentifier(variousMap, plg);
+                            remapIdentifier(offlineMap, plg);
                         }
 
                     }
@@ -473,6 +467,38 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
             }
         });
+    }
+
+    private static void remapIdentifier(HashMap<String, ArrayList<CrawledLink>> map, PluginForHost plg) {
+
+        Entry<String, ArrayList<CrawledLink>> entry;
+        HashMap<String, ArrayList<CrawledLink>> mapmap = new HashMap<String, ArrayList<CrawledLink>>();
+        for (Iterator<Entry<String, ArrayList<CrawledLink>>> it = map.entrySet().iterator(); it.hasNext();) {
+            entry = it.next();
+            String newID = plg.filterPackageID(entry.getKey());
+            if (!entry.getKey().equals(newID)) {
+                it.remove();
+
+                ArrayList<CrawledLink> existing = mapmap.get(newID);
+
+                if (existing != null) {
+                    existing.addAll(entry.getValue());
+
+                }
+                mapmap.put(newID, entry.getValue());
+            }
+        }
+        for (Iterator<Entry<String, ArrayList<CrawledLink>>> it = mapmap.entrySet().iterator(); it.hasNext();) {
+            entry = it.next();
+            ArrayList<CrawledLink> current = map.remove(entry.getKey());
+            if (current != null) {
+                current.addAll(entry.getValue());
+            } else {
+                map.put(entry.getKey(), entry.getValue());
+            }
+
+        }
+
     }
 
     private ArrayList<CrawledLink> getIdentifiedMap(String identifier, HashMap<String, ArrayList<CrawledLink>> map) {

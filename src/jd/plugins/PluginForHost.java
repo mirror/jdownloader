@@ -62,10 +62,14 @@ import org.jdownloader.translate._JDT;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
+    private static Pattern[] PATTERNS     = new Pattern[] {
+                                          // multipart rar archives
+            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)"),
+            // normal files with extension
+            Pattern.compile("(.*)\\.(.*?$)") };
+    private IOPermission     ioPermission = null;
 
-    private IOPermission   ioPermission = null;
-
-    private LazyHostPlugin lazyP        = null;
+    private LazyHostPlugin   lazyP        = null;
 
     public LazyHostPlugin getLazyP() {
         return lazyP;
@@ -973,33 +977,63 @@ public abstract class PluginForHost extends Plugin {
     // DownloadLink downloadLink, ArrayList<DownloadLink> dlinks) {
     // return null;
     // }
+
     public String autoFilenameCorrection(String originalFilename, DownloadLink downloadLink, ArrayList<DownloadLink> dlinks) {
         try {
-            String filteredName = filterPackageID(originalFilename);
+
             String MD5 = downloadLink.getMD5Hash();
             String SHA1 = downloadLink.getSha1Hash();
+            // auto partname correction
+
+            String[] multiPart = null;
+            Pattern pattern = null;
+            // find first match
+            for (Pattern p : PATTERNS) {
+                multiPart = new Regex(originalFilename, p).getRow(0);
+                if (multiPart != null) {
+                    pattern = p;
+                    break;
+                }
+            }
+
+            if (multiPart == null) {
+                multiPart = new String[] { originalFilename, "" };
+            }
+            String filteredName = filterPackageID(multiPart[0]);
+            String prototypesplit;
+            String newName;
             for (DownloadLink next : dlinks) {
                 if (downloadLink == next) continue;
                 if (next.getHost().equals(getHost())) continue;
                 String prototypeName = next.getNameSetbyPlugin();
                 if (prototypeName.equals(originalFilename)) continue;
                 if (prototypeName.equalsIgnoreCase(originalFilename)) {
-                    String newName = fixCase(originalFilename, prototypeName);
+                    newName = fixCase(originalFilename, prototypeName);
                     if (newName != null) return newName;
                 }
-                if (isHosterManipulatesFilenames() && originalFilename.length() == prototypeName.length() && filteredName.equals(filterPackageID(prototypeName))) {
-                    String newName = getFixedFileName(originalFilename, prototypeName);
-                    if (newName != null) { return newName; }
+                if (pattern != null) {
+                    prototypesplit = new Regex(prototypeName, pattern).getMatch(0);
+                } else {
+                    prototypesplit = prototypeName;
                 }
+                if (isHosterManipulatesFilenames() && multiPart[0].length() == prototypesplit.length() && filteredName.equals(filterPackageID(prototypesplit))) {
+                    newName = getFixedFileName(originalFilename, prototypesplit);
+                    if (newName != null) {
+
+                    return newName + multiPart[1]; }
+                }
+
                 if ((MD5 != null && MD5.equalsIgnoreCase(next.getMD5Hash())) || (SHA1 != null && SHA1.equalsIgnoreCase(next.getSha1Hash()))) {
                     // 100% mirror! ok and now? these files should have the
                     // same filename!!
                     return next.getName();
                 }
             }
+
         } catch (Throwable e) {
             Log.exception(e);
         }
+
         return null;
     }
 

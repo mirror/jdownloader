@@ -18,11 +18,11 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Multi unpacker settings" })
     String plugins_optional_extraction_multi_config();
 
-    @Default(lngs = { "en" }, values = { "Archive %s1 has %s2 part(s) and is complete" })
-    String ValidateArchiveAction_actionPerformed_(String name, int size);
+    @Default(lngs = { "en" }, values = { "Archive has %s1 part(s) and is complete" })
+    String ValidateArchiveAction_actionPerformed_(int size);
 
-    @Default(lngs = { "en" }, values = { "Archive %s1 has %s2 part(s) and is incomplete." })
-    String ValidateArchiveAction_actionPerformed_bad(String name, int size);
+    @Default(lngs = { "en" }, values = { "Archive has %s1 part(s) and is incomplete." })
+    String ValidateArchiveAction_actionPerformed_bad(int size);
 
     @Default(lngs = { "en" }, values = { "Validate Archive(s)" })
     String ValidateArchiveAction_ValidateArchiveAction_object_();

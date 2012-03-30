@@ -5,8 +5,14 @@ import java.util.List;
 
 public class DummyArchive {
 
-    private Archive                     archive;
-    private int                         missingCount = 0;
+    private Archive archive;
+    private int     missingCount    = 0;
+    private int     incompleteCount = 0;
+
+    public int getIncompleteCount() {
+        return incompleteCount;
+    }
+
     private ArrayList<DummyArchiveFile> list;
 
     public ArrayList<DummyArchiveFile> getList() {
@@ -20,11 +26,13 @@ public class DummyArchive {
 
     public void add(DummyArchiveFile e) {
         list.add(e);
-        if (!e.isExists()) missingCount++;
+        if (e.isMissing()) missingCount++;
+        if (!e.isIncomplete()) incompleteCount++;
+
     }
 
     public boolean isComplete() {
-        return missingCount == 0;
+        return missingCount == 0 && incompleteCount == 0;
     }
 
     public int getSize() {
@@ -36,7 +44,7 @@ public class DummyArchive {
 
         if (missing != null) {
             for (String miss : missing) {
-                ret.add(new DummyArchiveFile(miss).setExists(false));
+                ret.add(new DummyArchiveFile(miss).setMissing(false));
             }
         }
         for (ArchiveFile af : archive2.getArchiveFiles()) {

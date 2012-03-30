@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JPanel;
 
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadController;
@@ -15,16 +17,22 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.FilePackage;
+import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.ValidateArchiveAction;
+import org.jdownloader.extensions.extraction.gui.DummyArchiveDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -60,14 +68,40 @@ public class ConfirmAction extends AppAction {
 
                 try {
                     for (Archive a : new ValidateArchiveAction((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), new ArrayList<AbstractNode>(values)).getArchives()) {
-                        if (!a.isComplete()) {
+                        final DummyArchive da = a.createDummyArchive();
+                        if (!da.isComplete()) {
 
-                            Dialog.getInstance().showConfirmDialog(0, "Archive incomplete: " + a.getName(), "The archive " + a.getName() + " is not complete. Download anyway?");
+                            ConfirmDialog d = new ConfirmDialog(0, _GUI._.ConfirmAction_run_incomplete_archive_title_(a.getName()), _GUI._.ConfirmAction_run_incomplete_archive_msg(), NewTheme.I().getIcon("stop", 32), _GUI._.ConfirmAction_run_incomplete_archive_continue(), null) {
+                                protected JPanel createBottomButtonPanel() {
 
+                                    JPanel ret = new JPanel(new MigLayout("ins 0", "[]", "0[]0"));
+                                    ret.add(new JButton(new AppAction() {
+                                        {
+                                            setName(_GUI._.ConfirmAction_run_incomplete_archive_details());
+                                        }
+
+                                        @Override
+                                        public void actionPerformed(ActionEvent e) {
+                                            try {
+                                                Dialog.getInstance().showDialog(new DummyArchiveDialog(da));
+                                            } catch (DialogClosedException e1) {
+                                                e1.printStackTrace();
+                                            } catch (DialogCanceledException e1) {
+                                                e1.printStackTrace();
+                                            }
+                                        }
+
+                                    }), "gapleft 32");
+                                    return ret;
+                                }
+
+                            };
+
+                            Dialog.getInstance().showDialog(d);
                         }
 
                     }
-                    System.out.println(1);
+
                 } catch (DialogNoAnswerException e) {
                     return;
                 } catch (Throwable e) {

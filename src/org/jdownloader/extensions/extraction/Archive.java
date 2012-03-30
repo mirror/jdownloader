@@ -226,16 +226,6 @@ public class Archive {
         return extracted;
     }
 
-    public boolean isComplete() {
-
-        try {
-            return createDummyArchive().isComplete();
-        } catch (CheckException e) {
-            Log.exception(e);
-        }
-        return false;
-    }
-
     public DummyArchive createDummyArchive() throws CheckException {
         return extractor.checkComplete(this);
     }
@@ -307,6 +297,15 @@ public class Archive {
 
     public void setName(String archiveName) {
         this.name = archiveName;
+    }
+
+    public boolean isComplete() {
+        try {
+            return createDummyArchive().isComplete();
+        } catch (CheckException e) {
+            Log.exception(e);
+        }
+        return false;
     }
 
 }

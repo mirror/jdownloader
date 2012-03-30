@@ -36,22 +36,28 @@ public class DummyArchiveDialog extends AbstractDialog<Object> {
     @Override
     public JComponent layoutDialogContent() {
 
-        MigPanel d = new MigPanel("ins 5,wrap 1", "[][]", "[]");
+        MigPanel d = new MigPanel("ins 5,wrap 1", "[]", "[grow,fill]");
 
         if (archive.isComplete()) {
             JLabel lbl;
-            d.add(lbl = new JLabel(T._.ValidateArchiveAction_actionPerformed_(archive.getName(), archive.getSize())));
-            lbl.setIcon(NewTheme.I().getIcon("ok", 20));
+
+            d.add(lbl = new JLabel(), "pushx,growx");
+            lbl.setIcon(NewTheme.I().getIcon("ok", 32));
+            lbl.setText(T._.ValidateArchiveAction_actionPerformed_(archive.getSize()));
+
         } else {
             JLabel lbl;
-            d.add(lbl = new JLabel(T._.ValidateArchiveAction_actionPerformed_bad(archive.getName(), archive.getSize())));
-            lbl.setIcon(NewTheme.I().getIcon("stop", 20));
+            // )
+
+            d.add(lbl = new JLabel(), "pushx,growx");
+            lbl.setIcon(NewTheme.I().getIcon("stop", 32));
+            lbl.setText(T._.ValidateArchiveAction_actionPerformed_bad(archive.getSize()));
 
         }
         DummyArchiveContentsTable table = new DummyArchiveContentsTable(archive);
-        d.add(new JScrollPane(table), "spanx");
+        d.add(new JScrollPane(table), "spanx,pushx,growx");
 
-        setPreferredSize(new Dimension(500, 400));
+        setPreferredSize(new Dimension(500, 500));
         return d;
     }
 
