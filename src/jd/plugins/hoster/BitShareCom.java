@@ -76,7 +76,7 @@ public class BitShareCom extends PluginForHost {
         for (int i = 0; i < prototypeName.length(); i++) {
             char c = originalFilename.charAt(i);
             char correctc = prototypeName.charAt(i);
-            if (c != correctc) {
+            if (Character.toLowerCase(c) != Character.toLowerCase(correctc)) {
                 if (c == '-') {
                     sb.append(correctc);
                 } else {

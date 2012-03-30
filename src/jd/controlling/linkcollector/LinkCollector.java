@@ -274,7 +274,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
             for (CrawledLink link : pkgchildren) {
                 String name = link.getDownloadLink().getNameSetbyPlugin();
-                if (name == null) continue;
+                if (name == null) {
+
+                    continue;
+                }
                 String newName = link.gethPlugin().autoFilenameCorrection(name, link.getDownloadLink(), dlinks);
                 if (newName != null) {
                     Log.L.info("Renamed file " + name + " to " + newName);

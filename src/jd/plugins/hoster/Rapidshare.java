@@ -231,7 +231,7 @@ public class Rapidshare extends PluginForHost {
         for (int i = 0; i < prototypeName.length(); i++) {
             char c = originalFilename.charAt(i);
             char correctc = prototypeName.charAt(i);
-            if (c != correctc) {
+            if (Character.toLowerCase(c) != Character.toLowerCase(correctc)) {
                 if (c == '_') {
                     sb.append(correctc);
                 } else {

@@ -59,9 +59,9 @@ import org.jdownloader.translate._JDT;
 public abstract class PluginForHost extends Plugin {
     private static Pattern[] PATTERNS     = new Pattern[] {
                                           // multipart rar archives
-            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)"),
+            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
             // normal files with extension
-            Pattern.compile("(.*)\\.(.*?$)") };
+            Pattern.compile("(.*)\\.(.*?$)", Pattern.CASE_INSENSITIVE) };
     private IOPermission     ioPermission = null;
 
     private LazyHostPlugin   lazyP        = null;
@@ -651,20 +651,25 @@ public abstract class PluginForHost extends Plugin {
                 if (next.getHost().equals(getHost())) continue;
                 String prototypeName = next.getNameSetbyPlugin();
                 if (prototypeName.equals(originalFilename)) continue;
-                if (prototypeName.equalsIgnoreCase(originalFilename)) {
-                    newName = fixCase(originalFilename, prototypeName);
-                    if (newName != null) return newName;
-                }
+
                 if (pattern != null) {
                     prototypesplit = new Regex(prototypeName, pattern).getMatch(0);
                 } else {
                     prototypesplit = prototypeName;
                 }
-                if (isHosterManipulatesFilenames() && multiPart[0].length() == prototypesplit.length() && filteredName.equals(filterPackageID(prototypesplit))) {
+
+                if (prototypesplit.equalsIgnoreCase(multiPart[0])) {
+                    newName = fixCase(originalFilename, prototypesplit);
+                    if (newName != null) return newName;
+                }
+                if (isHosterManipulatesFilenames() && multiPart[0].length() == prototypesplit.length() && filteredName.equalsIgnoreCase(filterPackageID(prototypesplit))) {
                     newName = getFixedFileName(originalFilename, prototypesplit);
                     if (newName != null) {
 
-                    return newName + multiPart[1]; }
+                        String caseFix = fixCase(newName + multiPart[1], prototypeName);
+                        if (caseFix != null) return caseFix;
+                        return newName + multiPart[1];
+                    }
                 }
 
                 if ((MD5 != null && MD5.equalsIgnoreCase(next.getMD5Hash())) || (SHA1 != null && SHA1.equalsIgnoreCase(next.getSha1Hash()))) {
@@ -682,12 +687,38 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected String fixCase(String originalFilename, String prototypeName) {
+
+        String[] multiPart = null;
+        Pattern pattern = null;
+        // find first match
+        // todo implement part file support
+        // for (Pattern p : PATTERNS) {
+        // multiPart = new Regex(originalFilename, p).getRow(0);
+        // if (multiPart != null) {
+        // pattern = p;
+        // break;
+        // }
+        // }
+        //
+        // if (multiPart == null) {
+        // multiPart = new String[] { originalFilename, "" };
+        // }
+        //
+        boolean eic = originalFilename.equals(prototypeName);
         StringBuilder sb = new StringBuilder(prototypeName.length());
         for (int i = 0; i < prototypeName.length(); i++) {
             char c = originalFilename.charAt(i);
             char correctc = prototypeName.charAt(i);
             if (Character.toLowerCase(c) == Character.toLowerCase(correctc)) {
-                sb.append(Character.isUpperCase(c) ? c : correctc);
+                if (eic) {
+                    sb.append(Character.isUpperCase(c) ? c : correctc);
+                } else {
+                    // for fixcase after rename cases
+                    sb.append(correctc);
+                }
+                // may cause filename errors
+            } else if (Character.isDigit(c) && Character.isDefined(correctc)) {
+                sb.append(c);
             } else {
                 return null;
             }
