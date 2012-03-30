@@ -340,7 +340,7 @@ public class Uploadedto extends PluginForHost {
         if (br.containsHTML("err\":\"Keine weiteren Downloadslots")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free Downloadslots available", 10 * 60 * 1000l);
         if (br.containsHTML("limit-dl")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         if (br.containsHTML("limit-parallel")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You're already downloading", 60 * 60 * 1000l);
-        if (br.containsHTML("limit-size")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only Premiumusers are allowed to download files lager than 1,00 GB.");
+        if (br.containsHTML("(limit-size|\"err\":\"Nur Premium\\-Kunden können Dateien ab einer Größe von 1,00 GB herunter laden\")")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only Premium users are allowed to download files lager than 1,00 GB.");
         if (wait != null) {
             this.sleep(Integer.parseInt(wait) * 1000l, downloadLink);
         }

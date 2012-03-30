@@ -47,7 +47,8 @@ public class Brds4Chnrg extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(parameter + "res/" + thread));
             }
         } else {
-            String[] images = br.getRegex("(http://[\\w\\.]*?images.4chan\\.org/[0-9a-z]{1,3}/src/[0-9]+\\.(?i:(gif|jpg|png)))").getColumn(0);
+            String[] images = br.getRegex("(?i)(http://[\\w\\.]*?images.4chan\\.org/[0-9a-z]{1,3}/src/\\d+\\.(gif|jpg|png))").getColumn(0);
+            if (images == null || images.length == 0) images = br.getRegex("(?i)File: <a href=\"(//images.4chan\\.org/[0-9a-z]{1,3}/src/\\d+\\.(gif|jpg|png))\"").getColumn(0);
 
             if (br.containsHTML("404 - Not Found")) {
                 fp.setName("4chan - 404 - Not Found");
@@ -71,6 +72,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
                 String date = new Date().toString();
                 fp.setName(domain + " - " + cat + " - " + date);
                 for (String image : images) {
+                    if (image.startsWith("/") && !image.startsWith("h")) image = image.replace("//", "http://");
                     DownloadLink dl = createDownloadlink(image);
                     dl.setAvailableStatus(AvailableStatus.TRUE);
                     fp.add(dl);
