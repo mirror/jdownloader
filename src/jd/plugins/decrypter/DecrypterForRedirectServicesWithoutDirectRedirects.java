@@ -17,7 +17,10 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -639,10 +642,15 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             if (finallink == null) finallink = br.getRegex("\"(http://mp3\\.primemusic\\.ru/dl\\d+/[^<>\"]*?)\"").getMatch(0);
             dh = true;
         } else if (parameter.contains("protetorbr.com/")) {
-            System.out.println(br.toString());
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-            System.out.println(br.toString());
-            finallink = "4.bismarck";
+            Map<String, List<String>> rH = br.getRequest().getResponseHeaders();
+            Set<String> keys = rH.keySet();
+            for (String s : keys) {
+                if (!"refresh".equalsIgnoreCase(s)) continue;
+                for (String ss : rH.get(s)) {
+                    finallink = new Regex(ss, "URL=(.*?)$").getMatch(0);
+                }
+            }
         } else if (parameter.contains("leechmf.com/")) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("http://leechmf.com/get.php?do=getlink", "pass=&url=" + new Regex(parameter, "leechmf\\.com/\\?(.+)").getMatch(0));
