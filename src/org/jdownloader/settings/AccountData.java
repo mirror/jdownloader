@@ -51,7 +51,6 @@ public class AccountData implements Storable {
     private long                    trafficLeft;
     private long                    trafficMax;
     private long                    validUntil;
-    private String                  status;
     private boolean                 active;
     private boolean                 enabled;
     private boolean                 tempDisabled;
@@ -60,6 +59,16 @@ public class AccountData implements Storable {
     private boolean                 trafficUnlimited;
     private boolean                 specialtraffic;
     private String                  user;
+
+    private boolean                 concurrentUsePossible = true;
+
+    public boolean isConcurrentUsePossible() {
+        return concurrentUsePossible;
+    }
+
+    public void setConcurrentUsePossible(boolean concurrentUsePossible) {
+        this.concurrentUsePossible = concurrentUsePossible;
+    }
 
     public AccountData() {
         // reuqired by Storable
@@ -82,12 +91,11 @@ public class AccountData implements Storable {
             ret.trafficLeft = a.getAccountInfo().getTrafficLeft();
             ret.trafficMax = a.getAccountInfo().getTrafficMax();
             ret.validUntil = a.getAccountInfo().getValidUntil();
-            ret.status = a.getAccountInfo().getStatus();
             ret.trafficUnlimited = a.getAccountInfo().isUnlimitedTraffic();
             // whatever??
             ret.specialtraffic = a.getAccountInfo().isSpecialTraffic();
         }
-        ret.active = a.isActive();
+        ret.concurrentUsePossible = a.isConcurrentUsePossible();
         ret.enabled = a.isEnabled();
         ret.tempDisabled = a.isTempDisabled();
         ret.valid = a.isValid();
@@ -137,14 +145,6 @@ public class AccountData implements Storable {
 
     public void setValidUntil(long validUntil) {
         this.validUntil = validUntil;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 
     public boolean isActive() {
@@ -213,11 +213,10 @@ public class AccountData implements Storable {
             ai.setTrafficLeft(trafficLeft);
             ai.setTrafficMax(trafficMax);
             ai.setValidUntil(validUntil);
-            ai.setStatus(status);
             if (trafficUnlimited) ai.setUnlimitedTraffic();
             ai.setSpecialTraffic(specialtraffic);
         }
-        ret.setActive(active);
+        ret.setConcurrentUsePossible(concurrentUsePossible);
         ret.setEnabled(enabled);
         ret.setHoster(hoster);
         ret.setMaxSimultanDownloads(maxSimultanDownloads);

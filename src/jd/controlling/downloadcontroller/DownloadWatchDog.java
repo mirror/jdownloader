@@ -100,7 +100,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
          */
         HIDDEN,
         /* to set a random stopmark */
-        RANDOM
+        RANDOM;
     }
 
     private final LinkedList<SingleDownloadController>                 DownloadControllers   = new LinkedList<SingleDownloadController>();
@@ -991,13 +991,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                  * unavail
                                                  */
                                                 if (linkStatus.getRemainingWaittime() == 0) {
-                                                    /*
-                                                     * clear blocked accounts
-                                                     * for this host
-                                                     */
-                                                    if (linkStatus.hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE)) {
-                                                        AccountController.getInstance().removeAccountBlocked(link.getHost());
-                                                    }
                                                     /* reset if waittime is over */
                                                     linkStatus.reset(false);
                                                 } else {
@@ -1016,7 +1009,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                      * clear blocked accounts
                                                      * for this host
                                                      */
-                                                    AccountController.getInstance().removeAccountBlocked(link.getHost());
                                                 } else if (!resetWaitingNewIP) {
                                                     /*
                                                      * we request a reconnect if
@@ -1134,7 +1126,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         /* clear Status */
                         clearDownloadListStatus();
                         /* clear blocked Accounts */
-                        AccountController.getInstance().removeAccountBlocked((String) null);
+                        AccountController.getInstance().removeAccountBlocked(null);
                         /* unpause downloads */
                         pauseDownloadWatchDog(false);
                         if (isStopMarkReached()) {

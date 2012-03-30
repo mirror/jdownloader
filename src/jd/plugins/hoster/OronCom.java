@@ -245,6 +245,7 @@ public class OronCom extends PluginForHost {
             try {
                 maxPrem.set(5);
                 account.setMaxSimultanDownloads(5);
+                account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
         } else {
@@ -252,6 +253,7 @@ public class OronCom extends PluginForHost {
             try {
                 maxPrem.set(1);
                 account.setMaxSimultanDownloads(1);
+                account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
         }
@@ -375,10 +377,6 @@ public class OronCom extends PluginForHost {
                         }
                         logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached,retry in 1 hour");
                         account.setTempDisabled(true);
-                        try {
-                            account.setTmpDisabledIntervalv3(60 * 60 * 1000l);
-                        } catch (final Throwable e) {
-                        }
                         account.getAccountInfo().setTrafficLeft(0);
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many different IPs used!", 30 * 60 * 1000l);
                     }

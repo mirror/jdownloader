@@ -162,12 +162,14 @@ public class UploadStationCom extends PluginForHost {
             try {
                 maxDls.set(1);
                 account.setMaxSimultanDownloads(1);
+                account.setConcurrentUsePossible(false);
             } catch (final Throwable noin09581Stable) {
             }
         } else {
             try {
                 maxDls.set(-1);
                 account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(true);
             } catch (final Throwable noin09581Stable) {
             }
             if (expire.equals("Lifetime")) {
@@ -422,6 +424,7 @@ public class UploadStationCom extends PluginForHost {
             try {
                 maxDls.set(1);
                 account.setMaxSimultanDownloads(1);
+                account.setConcurrentUsePossible(false);
             } catch (final Throwable noin09581Stable) {
             }
         } else {
@@ -429,6 +432,7 @@ public class UploadStationCom extends PluginForHost {
             try {
                 maxDls.set(-1);
                 account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(true);
             } catch (final Throwable noin09581Stable) {
             }
         }

@@ -111,6 +111,7 @@ public class OneFichierCom extends PluginForHost {
             try {
                 maxPrem.set(20);
                 account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
             ai.setStatus("Premium User");
@@ -119,6 +120,7 @@ public class OneFichierCom extends PluginForHost {
             try {
                 maxPrem.set(5);
                 account.setMaxSimultanDownloads(5);
+                account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
             ai.setStatus("Registered (free) User");

@@ -354,6 +354,7 @@ public class Megauploadcom extends PluginForHost {
                 ai.setStatus("Free Membership");
                 try {
                     account.setMaxSimultanDownloads(1);
+                    account.setConcurrentUsePossible(false);
                 } catch (final Throwable e) {
                 }
                 return ai;
@@ -390,6 +391,7 @@ public class Megauploadcom extends PluginForHost {
         }
         try {
             account.setMaxSimultanDownloads(-1);
+            account.setConcurrentUsePossible(true);
         } catch (final Throwable e) {
         }
         account.setValid(true);

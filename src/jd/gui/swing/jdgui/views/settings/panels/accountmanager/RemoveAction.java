@@ -47,7 +47,7 @@ public class RemoveAction extends AbstractRemoveAction {
                     try {
                         if (!force) Dialog.getInstance().showConfirmDialog(Dialog.STYLE_LARGE, _GUI._.account_remove_action_title(selection.size()), _GUI._.account_remove_action_msg(selection.size() <= 1 ? sb.toString() : "\r\n" + sb.toString()));
                         for (Account account : selection) {
-                            AccountController.getInstance().removeAccount((String) null, account);
+                            AccountController.getInstance().removeAccount(account);
                         }
                     } catch (DialogClosedException e1) {
                         e1.printStackTrace();

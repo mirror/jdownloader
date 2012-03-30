@@ -16,16 +16,13 @@
 
 package jd.controlling;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.logging.Logger;
 
 import jd.config.SubConfiguration;
 import jd.controlling.accountchecker.AccountChecker;
@@ -37,6 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
@@ -48,62 +46,30 @@ import org.jdownloader.settings.AccountSettings;
 
 public class AccountController implements AccountControllerListener {
 
-    private static final long                                                    serialVersionUID          = -7560087582989096645L;
+    private static final long                                                    serialVersionUID = -7560087582989096645L;
 
-    private static HashMap<String, ArrayList<Account>>                           hosteraccounts            = null;
+    private static HashMap<String, ArrayList<Account>>                           hosteraccounts   = null;
 
-    private static HashMap<String, ArrayList<Account>>                           blockedAccounts           = new HashMap<String, ArrayList<Account>>();
+    private static HashMap<Account, Long>                                        blockedAccounts  = new HashMap<Account, Long>();
 
-    private static AccountController                                             INSTANCE                  = new AccountController();
+    private static AccountController                                             INSTANCE         = new AccountController();
 
-    private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster               = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
+    private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
-                                                                                                               @Override
-                                                                                                               protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                                   listener.onAccountControllerEvent(event);
-                                                                                                               }
+                                                                                                      @Override
+                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+                                                                                                          listener.onAccountControllerEvent(event);
+                                                                                                      }
 
-                                                                                                           };
+                                                                                                  };
 
-    private long                                                                 waittimeAccountInfoUpdate = 15 * 60 * 1000l;
-
-    private Logger                                                               logger                    = JDLogger.getLogger();
-
-    private AccountSettings                                                      config;
-
-    public static final Object                                                   ACCOUNT_LOCK              = new Object();
-
-    public long getUpdateTime() {
-        return waittimeAccountInfoUpdate;
+    public Eventsender<AccountControllerListener, AccountControllerEvent> getBroadcaster() {
+        return broadcaster;
     }
 
-    public void setUpdateTime(final long time) {
-        this.waittimeAccountInfoUpdate = time;
-    }
+    private AccountSettings config;
 
-    private static final Comparator<Account> COMPARE_MOST_TRAFFIC_LEFT = new Comparator<Account>() {
-                                                                           public int compare(final Account o1, final Account o2) {
-                                                                               final AccountInfo ai1 = o1.getAccountInfo();
-                                                                               final AccountInfo ai2 = o2.getAccountInfo();
-                                                                               long t1 = ai1 == null ? 0 : ai1.getTrafficLeft();
-                                                                               long t2 = ai2 == null ? 0 : ai2.getTrafficLeft();
-                                                                               if (t1 < 0) t1 = Long.MAX_VALUE;
-                                                                               if (t2 < 0) t2 = Long.MAX_VALUE;
-                                                                               if (t1 == t2) return 0;
-                                                                               /*
-                                                                                * reverse
-                                                                                * order
-                                                                                * ,
-                                                                                * we
-                                                                                * want
-                                                                                * biggest
-                                                                                * on
-                                                                                * top
-                                                                                */
-                                                                               if (t1 < t2) return 1;
-                                                                               return -1;
-                                                                           }
-                                                                       };
+    private DelayedRunnable delayedSaver;
 
     private AccountController() {
         super();
@@ -127,6 +93,13 @@ public class AccountController implements AccountControllerListener {
                 acc.setAccountController(this);
             }
         }
+        delayedSaver = new DelayedRunnable(IOEQ.TIMINGQUEUE, 5000, 30000) {
+
+            @Override
+            public void delayedrun() {
+                save();
+            }
+        };
         broadcaster.addListener(this);
     }
 
@@ -142,42 +115,29 @@ public class AccountController implements AccountControllerListener {
                         list.add(AccountData.create(a));
                     }
                 }
-
             }
         }
         config.setAccounts(ret);
     }
 
-    public AccountInfo updateAccountInfo(final String host, final Account account, final boolean forceupdate) {
-        final String hostname = host != null ? host : getHosterName(account);
-        if (hostname == null) {
-            account.setAccountInfo(null);
-            logger.severe("Cannot update AccountInfo, no Hostername available!");
-            return null;
-        }
-        final PluginForHost plugin = JDUtilities.getNewPluginForHostInstance(hostname);
-        if (plugin == null) {
-            account.setAccountInfo(null);
-            logger.severe("Cannot update AccountInfo, no HosterPlugin available!");
-            return null;
-        }
-        plugin.setLogger(new JDPluginLogger("AccountCheck:" + hostname));
-        plugin.setBrowser(new Browser());
+    public AccountInfo updateAccountInfo(final Account account, final boolean forceupdate) {
         AccountInfo ai = account.getAccountInfo();
         if (!forceupdate) {
-            if (account.lastUpdateTime() != 0 && ai != null && ai.isExpired()) {
-                account.setEnabled(false);
-                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_EXPIRED, hostname, account));
-                /* account is expired, no need to update */
-                return ai;
+            if (account.lastUpdateTime() != 0) {
+                if (ai != null && ai.isExpired()) {
+                    account.setEnabled(false);
+                    this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.EXPIRED, account));
+                    /* account is expired, no need to update */
+                    return ai;
+                }
+                if (!account.isValid()) {
+                    account.setEnabled(false);
+                    this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.INVALID, account));
+                    /* account is invalid, no need to update */
+                    return ai;
+                }
             }
-            if (!account.isValid() && account.lastUpdateTime() != 0) {
-                account.setEnabled(false);
-                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_INVALID, hostname, account));
-                /* account is invalid, no need to update */
-                return ai;
-            }
-            if ((System.currentTimeMillis() - account.lastUpdateTime()) < waittimeAccountInfoUpdate) {
+            if ((System.currentTimeMillis() - account.lastUpdateTime()) < account.getRefreshTimeout()) {
                 /*
                  * account was checked before, timeout for recheck not reached,
                  * no need to update
@@ -185,6 +145,18 @@ public class AccountController implements AccountControllerListener {
                 return ai;
             }
         }
+        final PluginForHost plugin = JDUtilities.getNewPluginForHostInstance(account.getHoster());
+        if (plugin == null) {
+            Log.L.severe("AccountCheck: Failed because plugin " + account.getHoster() + " is missing!");
+            account.setEnabled(false);
+            return null;
+        }
+        String whoAmI = account.getUser() + "->" + account.getHoster();
+        JDPluginLogger logger = new JDPluginLogger("AccountCheck: " + whoAmI);
+        plugin.setLogger(logger);
+        Browser br = new Browser();
+        br.setLogger(logger);
+        plugin.setBrowser(br);
         try {
             /* not every plugin sets this info correct */
             account.setValid(true);
@@ -195,32 +167,39 @@ public class AccountController implements AccountControllerListener {
                 ai.setExpired(false);
                 ai.setValidUntil(-1);
             }
+            Thread currentThread = Thread.currentThread();
+            ClassLoader oldClassLoader = currentThread.getContextClassLoader();
             try {
+                /*
+                 * make sure the current Thread uses the PluginClassLoaderChild
+                 * of the Plugin in use
+                 */
+                currentThread.setContextClassLoader(plugin.getLazyP().getClassLoader());
                 ai = plugin.fetchAccountInfo(account);
             } finally {
                 account.setUpdateTime(System.currentTimeMillis());
+                currentThread.setContextClassLoader(oldClassLoader);
             }
             if (ai == null) {
-                // System.out.println("plugin no update " + hostname);
                 /* not every plugin has fetchAccountInfo */
                 account.setAccountInfo(null);
-                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, hostname, account));
+                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.UPDATE, account));
                 return null;
             }
-            synchronized (ACCOUNT_LOCK) {
-                account.setAccountInfo(ai);
-            }
+            account.setAccountInfo(ai);
             if (ai.isExpired()) {
-                account.setEnabled(false);
-                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_EXPIRED, hostname, account));
+                logger.clear();
+                logger.info("Account " + whoAmI + " is expired!");
+                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.EXPIRED, account));
             } else if (!account.isValid()) {
                 account.setEnabled(false);
-                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_INVALID, hostname, account));
+                logger.clear();
+                logger.info("Account " + whoAmI + " is invalid!");
+                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.INVALID, account));
             } else {
-                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, hostname, account));
+                logger.clear();
+                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.UPDATE, account));
             }
-        } catch (final IOException e) {
-            logger.severe("AccountUpdate: " + host + " failed!");
         } catch (final Throwable e) {
             if (e instanceof PluginException) {
                 PluginException pe = (PluginException) e;
@@ -231,64 +210,37 @@ public class AccountController implements AccountControllerListener {
                 }
                 if ((pe.getLinkStatus() == LinkStatus.ERROR_PREMIUM)) {
                     if (pe.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
-                        logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
+                        logger.clear();
+                        logger.info("Account " + whoAmI + " traffic limit reached!");
                         account.setTempDisabled(true);
                         account.getAccountInfo().setTrafficLeft(0);
-                        this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, hostname, account));
+                        this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.UPDATE, account));
                         return ai;
                     } else if (pe.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
                         account.setEnabled(false);
                         account.setValid(false);
                         if (StringUtils.isEmpty(ai.getStatus())) ai.setStatus("Invalid Account!");
-                        logger.severe("Premium Account " + account.getUser() + ": expired:");
-                        this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_INVALID, hostname, account));
+                        logger.clear();
+                        logger.info("Account " + whoAmI + " is invalid!");
+                        this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.INVALID, account));
                         return ai;
                     }
                 }
             }
-            logger.severe("AccountUpdate: " + host + " failed!");
-            JDLogger.exception(e);
+            logger.severe("AccountCheck: Failed because of exception");
+            logger.severe(JDLogger.getStackTrace(e));
+            /* move download log into global log */
             account.setAccountInfo(null);
             account.setEnabled(false);
             account.setValid(false);
-            this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_INVALID, hostname, account));
+            this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.INVALID, account));
         }
+        logger.logInto(JDLogger.getLogger());
         return ai;
-    }
-
-    /**
-     * return hostername if account is under controll of AccountController
-     */
-    public String getHosterName(final Account account) {
-        if (account == null) return null;
-        if (account.getHoster() != null) { return account.getHoster(); }
-        synchronized (hosteraccounts) {
-            for (final String host : hosteraccounts.keySet()) {
-                if (hosteraccounts.get(host).contains(account)) {
-                    account.setHoster(host);
-                    return host;
-                }
-            }
-        }
-        return null;
-    }
-
-    public HashMap<String, ArrayList<Account>> list() {
-        synchronized (hosteraccounts) {
-            return new HashMap<String, ArrayList<Account>>(hosteraccounts);
-        }
     }
 
     public static AccountController getInstance() {
         return INSTANCE;
-    }
-
-    public void addListener(final AccountControllerListener l) {
-        broadcaster.addListener(l);
-    }
-
-    public void removeListener(final AccountControllerListener l) {
-        broadcaster.removeListener(l);
     }
 
     private synchronized HashMap<String, ArrayList<Account>> loadAccounts() {
@@ -298,22 +250,24 @@ public class AccountController implements AccountControllerListener {
                 dat = restore();
             } catch (final Throwable e) {
                 Log.exception(e);
-                dat = new HashMap<String, ArrayList<AccountData>>();
             }
         }
+        if (dat == null) {
+            dat = new HashMap<String, ArrayList<AccountData>>();
+        }
         HashMap<String, ArrayList<Account>> ret = new HashMap<String, ArrayList<Account>>();
-
         for (Iterator<Entry<String, ArrayList<AccountData>>> it = dat.entrySet().iterator(); it.hasNext();) {
             Entry<String, ArrayList<AccountData>> next = it.next();
             if (next.getValue().size() > 0) {
                 ArrayList<Account> list = new ArrayList<Account>();
-
                 ret.put(next.getKey(), list);
-
                 for (AccountData ad : next.getValue()) {
                     Account acc;
                     list.add(acc = ad.toAccount());
-                    /* make sure hostername is set */
+                    /*
+                     * make sure hostername is set and share same String
+                     * instance
+                     */
                     acc.setHoster(next.getKey());
                 }
             }
@@ -349,238 +303,157 @@ public class AccountController implements AccountControllerListener {
         return ret;
     }
 
+    @Deprecated
     public void addAccount(final PluginForHost pluginForHost, final Account account) {
-        addAccount(pluginForHost.getHost(), account);
-        account.setAccountController(this);
-    }
-
-    public ArrayList<Account> getAllAccounts(final PluginForHost pluginForHost) {
-        // if (pluginForHost == null) return new ArrayList<Account>();
-        // return this.getAllAccounts(pluginForHost.getHost());
-        return (pluginForHost == null) ? new ArrayList<Account>() : getAllAccounts(pluginForHost.getHost());
+        account.setHoster(pluginForHost.getHost());
+        addAccount(account);
     }
 
     public boolean isAccountBlocked(final Account account) {
         synchronized (blockedAccounts) {
-            final String host = this.getHosterName(account);
-            List<Account> blockedAccountsOfTheSameHoster = blockedAccounts.get(host);
-            return blockedAccountsOfTheSameHoster != null && blockedAccountsOfTheSameHoster.contains(account);
-        }
-    }
-
-    public void addAccountBlocked(final Account account) {
-        synchronized (blockedAccounts) {
-            if (isAccountBlocked(account)) return;
-            final String host = this.getHosterName(account);
-            ArrayList<Account> ar = blockedAccounts.get(host);
-            if (ar == null) {
-                ar = new ArrayList<Account>();
-                blockedAccounts.put(host, ar);
+            Long ret = blockedAccounts.get(account);
+            if (ret == null) return false;
+            if (System.currentTimeMillis() > ret) {
+                /*
+                 * timeout is over, lets remove the account as it is no longer
+                 * blocked
+                 */
+                blockedAccounts.remove(account);
+                return false;
             }
-            ar.add(account);
+            return true;
         }
     }
 
+    public void addAccountBlocked(final Account account, final long value) {
+        synchronized (blockedAccounts) {
+            long blockedTime = Math.max(0, value);
+            if (blockedTime == 0) {
+                Log.L.info("Invalid AccountBlock timeout! set 30 mins!");
+                blockedTime = 60 * 60 * 1000l;
+            }
+            blockedAccounts.put(account, System.currentTimeMillis() + blockedTime);
+        }
+    }
+
+    /* remove accountblock for given account or all if account is null */
     public void removeAccountBlocked(final Account account) {
         synchronized (blockedAccounts) {
-            if (!isAccountBlocked(account)) return;
-            final String host = this.getHosterName(account);
-            final ArrayList<Account> ar = blockedAccounts.get(host);
-            if (ar != null) ar.remove(account);
-        }
-    }
-
-    public void removeAccountBlocked(final String host) {
-        synchronized (blockedAccounts) {
-            if (host == null) {
+            if (account == null) {
                 blockedAccounts.clear();
             } else {
-                blockedAccounts.remove(host);
+                blockedAccounts.remove(account);
             }
         }
     }
 
-    public ArrayList<Account> getAllAccounts(final String host) {
-        final ArrayList<Account> ret = new ArrayList<Account>();
-        if (host == null) return ret;
+    /* returns a list of all available accounts for given host */
+    public List<Account> list(String host) {
+        ArrayList<Account> ret = new ArrayList<Account>();
         synchronized (hosteraccounts) {
-            if (hosteraccounts.containsKey(host)) {
-                return hosteraccounts.get(host);
+            if (StringUtils.isEmpty(host)) {
+                for (String hoster : hosteraccounts.keySet()) {
+                    ArrayList<Account> ret2 = hosteraccounts.get(hoster);
+                    if (ret2 != null) ret.addAll(ret2);
+                }
             } else {
-                final ArrayList<Account> haccounts = new ArrayList<Account>();
-                hosteraccounts.put(host, haccounts);
-                return haccounts;
+                ArrayList<Account> ret2 = hosteraccounts.get(host);
+                if (ret2 != null) ret.addAll(ret2);
             }
         }
+        return ret;
     }
 
+    /* returns a list of all available accounts */
+    public List<Account> list() {
+        return list(null);
+    }
+
+    /* checks for available accounts for given host */
     public boolean hasAccounts(final String host) {
+        ArrayList<Account> ret = null;
         synchronized (hosteraccounts) {
-            final ArrayList<Account> ret = hosteraccounts.get(host);
-            if (ret != null && ret.size() > 0) return true;
+            ret = hosteraccounts.get(host);
         }
-        return false;
+        return (ret != null && ret.size() > 0);
     }
 
-    public int validAccounts() {
-        int count = 0;
+    public void addAccount(final Account account) {
+        if (account == null) return;
         synchronized (hosteraccounts) {
-            for (final ArrayList<Account> accs : hosteraccounts.values()) {
-                for (final Account acc : accs) {
-                    if (acc.isEnabled()) {
-                        count++;
-                    }
-                }
+            ArrayList<Account> accs = hosteraccounts.get(account.getHoster());
+            if (accs == null) {
+                accs = new ArrayList<Account>();
+                hosteraccounts.put(account.getHoster(), accs);
             }
+            for (final Account acc : accs) {
+                if (acc.equals(account)) return;
+            }
+            accs.add(account);
+            account.setAccountController(this);
         }
-        return count;
+        this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account));
     }
 
-    private void addAccount(final String host, final Account account) {
-        if (host != null && account != null) {
-            synchronized (hosteraccounts) {
-                if (hosteraccounts.containsKey(host)) {
-                    final ArrayList<Account> haccounts = hosteraccounts.get(host);
-                    synchronized (haccounts) {
-                        boolean b = haccounts.contains(account);
-                        if (!b) {
-                            boolean b2 = false;
-                            final ArrayList<Account> temp = new ArrayList<Account>(haccounts);
-                            for (final Account acc : temp) {
-                                if (acc.equals(account)) {
-                                    b2 = true;
-                                    break;
-                                }
-                            }
-                            if (!b2) {
-                                haccounts.add(account);
-                                b = true;
-                            }
-                        }
-                        if (b) {
-                            this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_ADDED, host, account));
-                        }
-                    }
-                } else {
-                    final ArrayList<Account> haccounts = new ArrayList<Account>();
-                    haccounts.add(account);
-                    hosteraccounts.put(host, haccounts);
-                    this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_ADDED, host, account));
-                }
-            }
-        }
-    }
-
-    public boolean removeAccount(final String hostname, final Account account) {
+    public boolean removeAccount(final Account account) {
         if (account == null) { return false; }
-        final String host = (hostname == null) ? getHosterName(account) : hostname;
-        if (host == null) { return false; }
+        /* remove reference to AccountController */
+        account.setAccountController(null);
+        removeAccountBlocked(account);
         synchronized (hosteraccounts) {
-            if (!hosteraccounts.containsKey(host)) { return false; }
-            final ArrayList<Account> haccounts = hosteraccounts.get(host);
-            synchronized (haccounts) {
-                boolean b = haccounts.remove(account);
-                if (!b) {
-                    final ArrayList<Account> temp = new ArrayList<Account>(haccounts);
-                    for (final Account acc : temp) {
-                        if (acc.equals(account)) {
-                            // account = acc;
-                            // b = haccounts.remove(account);
-                            b = haccounts.remove(acc);
-                            break;
-                        }
-                    }
-                }
-                if (b) {
-                    this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_REMOVED, host, account));
-                }
-                return b;
-            }
+            ArrayList<Account> accs = hosteraccounts.get(account.getHoster());
+            if (accs == null || !accs.remove(account)) return false;
+            if (accs.size() == 0) hosteraccounts.remove(account.getHoster());
         }
-    }
-
-    public boolean removeAccount(final PluginForHost pluginForHost, final Account account) {
-        if (account == null) { return false; }
-        if (pluginForHost == null) { return removeAccount((String) null, account); }
-        return removeAccount(pluginForHost.getHost(), account);
+        this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.REMOVED, account));
+        return true;
     }
 
     public void onAccountControllerEvent(final AccountControllerEvent event) {
         Account acc = null;
-        switch (event.getEventID()) {
-        case AccountControllerEvent.ACCOUNT_ADDED:
-            acc = event.getAccount();
-            /*
-             * we do an accountcheck as this account just got added to this
-             * controller
-             */
-            if (acc != null) {
-                if (System.currentTimeMillis() - acc.lastUpdateTime() > 20000) {
-                    /*
-                     * only check account again if last check is more than 20
-                     * secs ago, prevents double check on addaccountdialog
-                     */
-                    AccountChecker.getInstance().check(acc, true);
-                }
-            }
+        switch (event.getType()) {
+        case ADDED:
             org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.setValue(true);
+            delayedSaver.run();
             break;
-        case AccountControllerEvent.ACCOUNT_UPDATE:
-            acc = event.getAccount();
-            /* we do a new accountcheck as this account got updated */
-            /* WARNING: DO NOT FORCE check here, it might end up in a loop */
-            if (acc != null && acc.isEnabled() && this == acc.getAccountController()) AccountChecker.getInstance().check(acc, false);
-            break;
-        case AccountControllerEvent.ACCOUNT_REMOVED:
-        case AccountControllerEvent.ACCOUNT_EXPIRED:
-        case AccountControllerEvent.ACCOUNT_INVALID:
-            break;
-        default:
-            break;
+        case REMOVED:
+            delayedSaver.run();
+            return;
+        }
+        if (event.isRecheckRequired()) {
+            /* event tells us to recheck the account */
+            AccountChecker.getInstance().check(acc, true);
         }
     }
 
-    public void throwUpdateEvent(final PluginForHost pluginForHost, final Account account) {
-        if (pluginForHost != null) {
-            this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, pluginForHost.getHost(), account));
-        } else {
-            this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, null, account));
-        }
-    }
-
+    @Deprecated
     public Account getValidAccount(final PluginForHost pluginForHost) {
-        return getValidAccount(pluginForHost.getHost());
+        LinkedList<Account> ret = getValidAccounts(pluginForHost.getHost());
+        if (ret != null && ret.size() > 0) return ret.getFirst();
+        return null;
     }
 
-    public boolean hasValidAccount(final String host) {
+    public LinkedList<Account> getValidAccounts(final String host) {
+        LinkedList<Account> ret = null;
         synchronized (hosteraccounts) {
-            final ArrayList<Account> ret = hosteraccounts.get(host);
-            if (ret != null) {
-                for (final Account next : ret) {
-                    if (!next.isTempDisabled() && next.isEnabled() && next.isValid()) { return true; }
-                }
-            }
+            final ArrayList<Account> accounts = hosteraccounts.get(host);
+            if (accounts == null || accounts.size() == 0) return null;
+            ret = new LinkedList<Account>(accounts);
         }
-        return false;
-    }
-
-    public Account getValidAccount(final String host) {
-        Account ret = null;
-        synchronized (hosteraccounts) {
-            final ArrayList<Account> accounts = new ArrayList<Account>(getAllAccounts(host));
-            if (config.isUseAccountWithMostTrafficLeft()) {
-                Collections.sort(accounts, COMPARE_MOST_TRAFFIC_LEFT);
-            }
-            // final int accountsSize = accounts.size();
-            // for (int i = 0; i < accountsSize; i++) {
-            // final Account next = accounts.get(i);
-            for (final Account next : accounts) {
-                if (!next.isTempDisabled() && next.isEnabled() && next.isValid() && !isAccountBlocked(next)) {
-                    ret = next;
-                    break;
-                }
+        Iterator<Account> it = ret.iterator();
+        while (it.hasNext()) {
+            Account next = it.next();
+            if (!next.isEnabled() || !next.isValid() || next.isTempDisabled() || isAccountBlocked(next)) {
+                /* we remove every invalid/disabled/tempdisabled/blocked account */
+                it.remove();
             }
         }
         return ret;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Deprecated
+    public ArrayList<Account> getAllAccounts(String string) {
+        return (ArrayList<Account>) list(string);
     }
 }

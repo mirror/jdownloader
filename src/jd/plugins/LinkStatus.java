@@ -120,14 +120,6 @@ public class LinkStatus implements Serializable {
     public static final int   PLUGIN_IN_PROGRESS                   = 1 << 18;
 
     /**
-     * Conttrolling, Downloadinterface, Plugins Zeigt an, dass gerade ein
-     * anderes Plugin an der Lokalen Datei arbeitet. Wird eingesetzt um dem
-     * Controller mitzuteilen, dass bereits ein Mirror dieser Datei geladen
-     * wird.
-     */
-    public static final int   ERROR_LINK_IN_PROGRESS               = 1 << 19;
-
-    /**
      * DownloadINterface & Controlling zeigt an dass es zu einem plugintimeout
      * gekommen ist
      */

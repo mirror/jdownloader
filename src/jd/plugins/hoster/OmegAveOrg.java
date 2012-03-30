@@ -355,12 +355,17 @@ public class OmegAveOrg extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
             }
             ai.setStatus("Premium User");
+            try {
+                account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(true);
+            } catch (Throwable e) {
+            }
         } else {
             ai.setStatus("Registered (free) User");
             try {
                 account.setMaxSimultanDownloads(4);
-            } catch (Exception e) {
-
+                account.setConcurrentUsePossible(false);
+            } catch (Throwable e) {
             }
         }
         return ai;

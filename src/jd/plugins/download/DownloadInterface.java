@@ -1055,7 +1055,6 @@ abstract public class DownloadInterface {
         case LinkStatus.ERROR_LOCAL_IO:
         case LinkStatus.ERROR_NO_CONNECTION:
         case LinkStatus.ERROR_ALREADYEXISTS:
-        case LinkStatus.ERROR_LINK_IN_PROGRESS:
         case LinkStatus.ERROR_DOWNLOAD_FAILED:
             fatalErrorOccured = true;
             terminate();
@@ -1246,7 +1245,7 @@ abstract public class DownloadInterface {
     abstract protected void setupChunks() throws Exception;
 
     public static boolean preDownloadCheckFailed(DownloadLink link) {
-        if (!link.isAvailabilityStatusChecked()) {
+        if (!link.isAvailabilityStatusChecked() && link.getForcedFileName() == null) {
             /*
              * dont proceed if no linkcheck has done yet, maybe we dont know
              * filename yet

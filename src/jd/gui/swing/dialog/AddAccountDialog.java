@@ -78,7 +78,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
     public static boolean addAccount(final Account ac) throws DialogClosedException, DialogCanceledException {
         try {
             checkAccount(ac);
-
         } catch (DialogClosedException e) {
 
             throw e;
@@ -92,17 +91,15 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         if (ac.getAccountInfo() != null) {
             if (ac.getAccountInfo().isExpired()) {
                 Dialog.getInstance().showConfirmDialog(0, _GUI._.accountdialog_check_expired_title(), _GUI._.accountdialog_check_expired(ac.getAccountInfo().getStatus()), null, _GUI._.accountdialog_check_expired_renew(), null);
-
-                AccountController.getInstance().addAccount(ac.getDomainInfo().findPlugin(), ac);
+                AccountController.getInstance().addAccount(ac);
                 return true;
 
             } else if (!ac.isValid()) {
-
                 Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_invalid(ac.getAccountInfo().getStatus()));
                 return false;
             } else {
                 Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_valid(ac.getAccountInfo().getStatus()));
-                AccountController.getInstance().addAccount(ac.getDomainInfo().findPlugin(), ac);
+                AccountController.getInstance().addAccount(ac);
                 return true;
 
             }
@@ -115,7 +112,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         ProgressDialog pd = new ProgressDialog(new ProgressGetter() {
 
             public void run() throws Exception {
-                ac.setHoster(ac.getHoster());
                 AccountCheckJob job = AccountChecker.getInstance().check(ac, true);
                 job.waitChecked();
             }

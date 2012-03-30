@@ -18,33 +18,31 @@ package jd.controlling;
 
 import jd.plugins.Account;
 
-import org.appwork.utils.event.DefaultIntEvent;
+import org.appwork.utils.event.SimpleEvent;
 
-public class AccountControllerEvent extends DefaultIntEvent {
+public class AccountControllerEvent extends SimpleEvent<AccountController, Account, AccountControllerEvent.Types> {
 
-    private final Account account;
-    private final String  host;
+    private boolean recheckRequired = false;
 
-    public AccountControllerEvent(final Object source, final int ID, final String host, final Account account) {
-        super(source, ID);
-        this.account = account;
-        this.host = host;
+    public boolean isRecheckRequired() {
+        return recheckRequired;
     }
 
-    public String getHost() {
-        return host;
+    public void setRecheckRequired(boolean recheckRequired) {
+        this.recheckRequired = recheckRequired;
     }
 
-    public Account getAccount() {
-        return account;
+    public AccountControllerEvent(AccountController caller, Types type, Account... parameters) {
+        super(caller, type, parameters);
+
     }
 
-    public static final byte ACCOUNT_ADDED   = 10;
-    public static final byte ACCOUNT_REMOVED = 11;
-
-    public static final byte ACCOUNT_UPDATE  = 20;
-
-    public static final byte ACCOUNT_INVALID = 30;
-    public static final byte ACCOUNT_EXPIRED = 31;
+    public static enum Types {
+        ADDED,
+        REMOVED,
+        UPDATE,
+        EXPIRED,
+        INVALID
+    }
 
 }

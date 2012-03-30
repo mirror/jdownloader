@@ -232,6 +232,7 @@ public class Uploadedto extends PluginForHost {
             try {
                 maxPrem.set(1);
                 account.setMaxSimultanDownloads(1);
+                account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
             account.setProperty("free", "true");
@@ -248,6 +249,7 @@ public class Uploadedto extends PluginForHost {
             try {
                 maxPrem.set(-1);
                 account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
             account.setProperty("free", Property.NULL);

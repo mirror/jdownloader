@@ -21,17 +21,19 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import jd.controlling.AccountController;
 import jd.controlling.IOPermission;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.proxy.ProxyInfo;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettingsThread;
 import jd.nutils.io.JDIO;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -40,9 +42,7 @@ import jd.plugins.download.DownloadInterface;
 
 import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
-import org.appwork.controlling.StateMonitor;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -59,6 +59,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     private static final Object             DUPELOCK          = new Object();
 
     private boolean                         aborted           = false;
+    private boolean                         handling          = false;
 
     /**
      * Das Plugin, das den aktuellen Download steuert
@@ -74,11 +75,11 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
 
     private StateMachine                    stateMachine;
 
-    private StateMonitor                    stateMonitor;
-
     private IOPermission                    ioP               = null;
 
     private DownloadSpeedManager            connectionHandler = null;
+
+    private Throwable                       exception         = null;
 
     public DownloadSpeedManager getConnectionHandler() {
         return connectionHandler;
@@ -134,7 +135,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
      * Bricht den Downloadvorgang ab.
      */
     public SingleDownloadController abortDownload() {
-        if (aborted == true) return this;
+        if (aborted == true || handling) return this;
         if (downloadLink.getLinkStatus().isPluginActive() == false) return this;
         aborted = true;
         Thread abortThread = new Thread() {
@@ -173,26 +174,38 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             linkStatus.setStatusText(_JDT._.gui_download_create_connection());
             currentPlugin.init();
             if ((downloadLink.getLinkStatus().getRetryCount()) <= currentPlugin.getMaxRetries()) {
+                final long sizeBefore = Math.max(0, downloadLink.getDownloadCurrent());
+                long traffic = 0;
                 try {
                     try {
-                        /*
-                         * make sure the current Thread uses the
-                         * PluginClassLoaderChild of the Plugin in use
-                         */
-                        this.setContextClassLoader(currentPlugin.getLazyP().getClassLoader());
-                        currentPlugin.handle(downloadLink, account);
-                    } catch (jd.http.Browser.BrowserException e) {
-                        /* damit browserexceptions korrekt weitergereicht werden */
-                        if (e.getException() != null) {
-                            throw e.getException();
-                        } else {
-                            throw e;
+                        try {
+                            /*
+                             * make sure the current Thread uses the
+                             * PluginClassLoaderChild of the Plugin in use
+                             */
+                            this.setContextClassLoader(currentPlugin.getLazyP().getClassLoader());
+                            handling = true;
+                            currentPlugin.handle(downloadLink, account);
+                        } catch (BrowserException e) {
+                            /*
+                             * damit browserexceptions korrekt weitergereicht
+                             * werden
+                             */
+                            if (e.getException() != null) {
+                                throw e.getException();
+                            } else {
+                                throw e;
+                            }
                         }
+                    } catch (final Throwable e) {
+                        /* we keep the exception in case we need it later */
+                        exception = e;
+                        throw e;
+                    } finally {
+                        handling = false;
                     }
                 } catch (PluginException e) {
                     e.fillLinkStatus(downloadLink.getLinkStatus());
-                    if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) logger.info(JDLogger.getStackTrace(e));
-                    logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
                 } catch (UnknownHostException e) {
                     linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_nointernetconn());
@@ -210,26 +223,32 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_hosterproblem());
                     linkStatus.setValue(10 * 60 * 1000l);
                 } catch (InterruptedException e) {
-                    long rev = downloadLink.getLivePlugin() == null ? -1 : downloadLink.getLivePlugin().getVersion();
-                    logger.finest("Hoster Plugin Version: " + rev);
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    linkStatus.setErrorMessage(_JDT._.plugins_errors_error() + Exceptions.getStackTrace(e));
+                    linkStatus.setErrorMessage(_JDT._.plugins_errors_error() + "Interrupted");
                 } catch (Throwable e) {
-                    logger.finest("Hoster Plugin Version: " + downloadLink.getLivePlugin().getVersion());
-                    JDLogger.exception(e);
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    linkStatus.setErrorMessage(_JDT._.plugins_errors_error() + Exceptions.getStackTrace(e));
+                    linkStatus.setErrorMessage(_JDT._.plugins_errors_error() + "Throwable");
+                } finally {
+                    traffic = Math.max(0, downloadLink.getDownloadCurrent() - sizeBefore);
                 }
-            } else {
-                /* TODO: */
-                /*
-                 * we assume the plugin to be broken when download failed too
-                 * often
-                 */
-                downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-                downloadLink.getLinkStatus().setErrorMessage("Download failed!");
+                /* now lets update the account if any was used */
+                if (account != null) {
+                    final AccountInfo ai = account.getAccountInfo();
+                    /* check traffic of account (eg traffic limit reached) */
+                    if (traffic > 0 && ai != null && !ai.isUnlimitedTraffic()) {
+                        long left = Math.max(0, ai.getTrafficLeft() - traffic);
+                        ai.setTrafficLeft(left);
+                        if (left == 0) {
+                            if (ai.isSpecialTraffic()) {
+                                logger.severe("Premium Account " + account.getUser() + ": Traffic Limit could be reached, but SpecialTraffic might be available!");
+                            } else {
+                                logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
+                                account.setTempDisabled(true);
+                            }
+                        }
+                    }
+                }
             }
-
             if (isAborted() && !linkStatus.isFinished()) {
                 linkStatus.setErrorMessage(null);
                 linkStatus.setStatus(LinkStatus.TODO);
@@ -244,93 +263,85 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             }
             switch (linkStatus.getLatestStatus()) {
             case LinkStatus.ERROR_LOCAL_IO:
-                onErrorLocalIO(downloadLink, currentPlugin);
+                onErrorLocalIO();
                 break;
             case LinkStatus.ERROR_IP_BLOCKED:
-                onErrorIPWaittime(downloadLink, currentPlugin);
+                onErrorIPWaittime();
                 break;
             case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
-                onErrorDownloadTemporarilyUnavailable(downloadLink, currentPlugin);
+                onErrorDownloadTemporarilyUnavailable();
                 break;
             case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
-                onErrorHostTemporarilyUnavailable(downloadLink, currentPlugin);
+                onErrorHostTemporarilyUnavailable();
                 break;
             case LinkStatus.ERROR_FILE_NOT_FOUND:
-                onErrorFileNotFound(downloadLink, currentPlugin);
-                break;
-            case LinkStatus.ERROR_LINK_IN_PROGRESS:
-                onErrorLinkBlock(downloadLink, currentPlugin);
+                onErrorFileNotFound();
                 break;
             case LinkStatus.ERROR_FATAL:
-                onErrorFatal(downloadLink, currentPlugin);
+                onErrorFatal();
                 break;
             case LinkStatus.ERROR_CAPTCHA:
-                onErrorCaptcha(downloadLink, currentPlugin);
+                onErrorCaptcha();
                 break;
             case LinkStatus.ERROR_PREMIUM:
-                onErrorPremium(downloadLink, currentPlugin);
+                onErrorPremium();
                 break;
             case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
-                onErrorIncomplete(downloadLink, currentPlugin);
+                onErrorIncomplete();
                 break;
             case LinkStatus.ERROR_ALREADYEXISTS:
-                onErrorFileExists(downloadLink, currentPlugin);
+                onErrorFileExists();
                 break;
             case LinkStatus.ERROR_DOWNLOAD_FAILED:
-                onErrorChunkloadFailed(downloadLink, currentPlugin);
+                onErrorDownloadFailed();
                 break;
             case LinkStatus.ERROR_PLUGIN_DEFECT:
-                onErrorPluginDefect(downloadLink, currentPlugin);
+                onErrorPluginDefect();
                 break;
             case LinkStatus.ERROR_NO_CONNECTION:
             case LinkStatus.ERROR_TIMEOUT_REACHED:
-                onErrorNoConnection(downloadLink, currentPlugin);
+                onErrorNoConnection();
                 break;
             default:
                 if (linkStatus.hasStatus(LinkStatus.FINISHED)) {
-                    logger.finest("\r\nFinished- " + downloadLink.getLinkStatus());
-                    logger.info("\r\nFinished- " + downloadLink.getFileOutput());
-                    onDownloadFinishedSuccessFull(downloadLink);
+                    onDownloadFinishedSuccessFull();
                 } else {
-                    retry(downloadLink, currentPlugin);
+                    retry();
                 }
             }
         } catch (Throwable e) {
+            logger.severe(JDLogger.getStackTrace(e));
             logger.severe("Error in Plugin Version: " + downloadLink.getLivePlugin().getVersion());
-            JDLogger.exception(e);
         }
     }
 
-    private void onErrorLinkBlock(DownloadLink downloadLink, PluginForHost currentPlugin) {
-        if (handler != null) {
-            /* special handler is used */
-            if (handler.handleDownloadLink(downloadLink, account)) return;
-        }
-        LinkStatus status = downloadLink.getLinkStatus();
-        if (status.hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
-            onErrorFileExists(downloadLink, currentPlugin);
-        } else {
-            status.resetWaitTime();
-            downloadLink.setEnabled(false);
-        }
+    protected void onErrorCaptcha() {
+        logger.warning("Captcha not correct-> will retry!");
+        retry();
     }
 
-    private void onErrorPluginDefect(DownloadLink downloadLink2, PluginForHost currentPlugin2) {
+    protected void onErrorPluginDefect() {
+        logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
+        if (exception != null) {
+            /* show stacktrace where the exception happened */
+            logger.info(JDLogger.getStackTrace(exception));
+        }
         long rev = downloadLink.getLivePlugin() == null ? -1 : downloadLink.getLivePlugin().getVersion();
         logger.warning("The Plugin for " + currentPlugin.getHost() + " seems to be out of date(rev" + rev + "). Please inform the Support-team http://jdownloader.org/support.");
-        if (downloadLink2.getLinkStatus().getErrorMessage() != null) logger.warning(downloadLink2.getLinkStatus().getErrorMessage());
-        // Dieser Exception deutet meistens auf einen PLuginfehler hin. Deshalb
-        // wird in diesem Fall die zuletzt geladene browserseite aufgerufen.
+        if (downloadLink.getLinkStatus().getErrorMessage() != null) {
+            logger.warning(downloadLink.getLinkStatus().getErrorMessage());
+        }
+        /* show last browser request headers+content in logfile */
         try {
-            logger.finest(currentPlugin2.getBrowser().getRequest().getHttpConnection() + "");
-        } catch (Exception e) {
+            logger.finest(currentPlugin.getBrowser().getRequest().getHttpConnection() + "");
+        } catch (Throwable e2) {
         }
         try {
-            logger.finest(currentPlugin2.getBrowser() + "");
-        } catch (Exception e) {
+            logger.finest(currentPlugin.getBrowser() + "");
+        } catch (Throwable e2) {
         }
-        String orgMessage = downloadLink2.getLinkStatus().getErrorMessage();
-        downloadLink2.getLinkStatus().setErrorMessage(_JDT._.controller_status_plugindefective() + (orgMessage == null ? "" : " " + orgMessage));
+        String orgMessage = downloadLink.getLinkStatus().getErrorMessage();
+        downloadLink.getLinkStatus().setErrorMessage(_JDT._.controller_status_plugindefective() + (orgMessage == null ? "" : " " + orgMessage));
     }
 
     /**
@@ -342,94 +353,54 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         return aborted;
     }
 
-    private void onDownloadFinishedSuccessFull(DownloadLink downloadLink) {
-
-        // set all links to disabled that point to the same file location
-        // - prerequisite: 'skip link' option selected
-        // TODO WORKAROUND FOR NOW.. WILL BE HANDLED BY A MIRROR MANAGER IN THE
-        // FUTURE
-        if (JsonConfig.create(GeneralSettings.class).getIfFileExistsAction() == IfFileExistsAction.SKIP_FILE) {
-            ArrayList<DownloadLink> links = DownloadController.getInstance().getAllDownloadLinks();
-            for (DownloadLink link : links) {
-                if (downloadLink != link && downloadLink.getFileOutput().equals(link.getFileOutput())) {
-                    /*
-                     * mirror links need this error at the moment for other
-                     * things to work correctly
-                     */
-                    link.getLinkStatus().addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-                    link.getLinkStatus().setErrorMessage(_JDT._.controller_status_fileexists_othersource(downloadLink.getHost()));
-                    link.setEnabled(false);
-                }
-            }
-        }
-
+    protected void onDownloadFinishedSuccessFull() {
     }
 
-    /**
-     * Diese Funktion wird aufgerufen wenn ein Download wegen eines
-     * captchafehlersabgebrochen wird
-     * 
-     * @param downloadLink
-     * @param plugin2
-     * @param step
+    /*
+     * returns true if we can try again or false if maxRetries reached
      */
-    private void onErrorCaptcha(DownloadLink downloadLink, PluginForHost plugin) {
-        retry(downloadLink, plugin);
-    }
-
-    private void retry(DownloadLink downloadLink, PluginForHost plugin) {
+    protected boolean retry() {
         int r;
-        if (downloadLink.getLinkStatus().getValue() > 0) {
-            downloadLink.getLinkStatus().setStatusText(null);
+        if (linkStatus.getValue() > 0) {
+            linkStatus.setStatusText(null);
         }
-        if ((r = downloadLink.getLinkStatus().getRetryCount()) <= plugin.getMaxRetries()) {
-            downloadLink.getLinkStatus().reset();
-            downloadLink.getLinkStatus().setRetryCount(r + 1);
-            downloadLink.getLinkStatus().setErrorMessage(null);
+        if ((r = linkStatus.getRetryCount()) <= currentPlugin.getMaxRetries()) {
+            linkStatus.reset();
+            linkStatus.setRetryCount(r + 1);
+            linkStatus.setErrorMessage(null);
             try {
-                plugin.sleep(Math.max((int) downloadLink.getLinkStatus().getValue(), 2000), downloadLink);
+                currentPlugin.sleep(Math.max((int) linkStatus.getValue(), 2000), downloadLink);
             } catch (PluginException e) {
-                downloadLink.getLinkStatus().setStatusText(null);
-                return;
+                linkStatus.setStatusText(null);
             }
+            return true;
         } else {
-            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
+            linkStatus.setErrorMessage("Download failed too often! Mark link as defect");
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
+            return false;
         }
 
     }
 
-    private void onErrorChunkloadFailed(DownloadLink downloadLink, PluginForHost plugin) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+    private void onErrorDownloadFailed() {
         if (linkStatus.getErrorMessage() == null) {
             linkStatus.setErrorMessage(_JDT._.plugins_error_downloadfailed());
         }
         if (linkStatus.getValue() != LinkStatus.VALUE_FAILED_HASH) {
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
-                return;
+            /* no HashCheck error happened, so we handle it here */
+            if (retry()) {
+                /* we can try again, let's wait 5 mins */
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.setWaitTime(5 * 60 * 1000l);
             }
-            retry(downloadLink, plugin);
         }
     }
 
-    private void onErrorFatal(DownloadLink downloadLink, PluginForHost currentPlugin) {
-
+    protected void onErrorFatal() {
     }
 
-    private void onErrorFileExists(DownloadLink downloadLink, PluginForHost plugin) {
-        LinkStatus status = downloadLink.getLinkStatus();
-        String[] fileExists = new String[] { _JDT._.system_download_triggerfileexists_overwrite(), _JDT._.system_download_triggerfileexists_skip(), _JDT._.system_download_triggerfileexists_rename() };
-        // String title =
-        // _JDT._.jd_controlling_SingleDownloadController_askexists_title();
-        // String msg =
-        // _JDT._.jd_controlling_SingleDownloadController_askexists(downloadLink.getFileOutput());
-        // int doit =
-        // JSonWrapper.get("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS,
-        // 1);
-        IfFileExistsAction action = JsonConfig.create(GeneralSettings.class).getIfFileExistsAction();
-        IfFileExistsAction doAction = action;
-
+    private void onErrorFileExists() {
+        IfFileExistsAction doAction = JsonConfig.create(GeneralSettings.class).getIfFileExistsAction();
         switch (doAction) {
         case ASK_FOR_EACH_FILE:
             try {
@@ -437,63 +408,26 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             } catch (DialogNoAnswerException e1) {
                 doAction = IfFileExistsAction.SKIP_FILE;
             }
-            // switch
-            // (UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN,
-            // title, msg, fileExists, 0, null, null, null, null)) {
-            // case 0:
-            // doAction = IfFileExistsAction.OVERWRITE_FILE;
-            // break;
-            // case 1:
-            // doAction = IfFileExistsAction.SKIP_FILE;
-            // break;
-            // default:
-            // doAction = IfFileExistsAction.AUTO_RENAME;
-            //
-            // }
             break;
-        // case ASK_FOR_EACH_PACKAGE:
-        //
-        // String saved =
-        // downloadLink.getFilePackage().getStringProperty("DO_IF_EXISTS",
-        // null);
-        // try {
-        // doAction = IfFileExistsAction.valueOf(saved);
-        // break;
-        // } catch (Throwable e) {
-        // }
-        //
-        // switch (UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN,
-        // title, msg, fileExists, 0, null, null, null, null)) {
-        // case 0:
-        // doAction = IfFileExistsAction.OVERWRITE_FILE;
-        // break;
-        // case 1:
-        // doAction = IfFileExistsAction.SKIP_FILE;
-        // break;
-        // default:
-        // doAction = IfFileExistsAction.AUTO_RENAME;
-        //
-        // }
-        // downloadLink.getFilePackage().setProperty("DO_IF_EXISTS",
-        // doAction.toString());
-        // break;
-
         }
-
         switch (doAction) {
         case SKIP_FILE:
-            status.setErrorMessage(_JDT._.controller_status_fileexists_skip());
+            linkStatus.setErrorMessage(_JDT._.controller_status_fileexists_skip());
             downloadLink.setEnabled(false);
             break;
         case AUTO_RENAME:
             // auto rename
-            status.reset();
+            linkStatus.reset();
             File file = new File(downloadLink.getFileOutput());
             String filename = file.getName();
             String extension = JDIO.getFileExtension(file);
             String name = filename.substring(0, filename.length() - extension.length() - 1);
             int copy = 2;
             try {
+                /*
+                 * TODO: please do this without forcing a different name, do
+                 * this without getFileOutput
+                 */
                 String[] num = new Regex(name, "(.*)_(\\d+)").getRow(0);
                 copy = Integer.parseInt(num[1]) + 1;
                 downloadLink.forceFileName(name + "_" + copy + "." + extension);
@@ -505,119 +439,108 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 copy = 2;
                 downloadLink.forceFileName(name + "_" + copy + "." + extension);
             }
-
             break;
         default:
-
             if (new File(downloadLink.getFileOutput()).delete()) {
-                status.reset();
+                /* delete local file and retry = overwrite */
+                linkStatus.reset();
             } else {
-                status.addStatus(LinkStatus.ERROR_FATAL);
-                status.setErrorMessage(_JDT._.controller_status_fileexists_overwritefailed() + downloadLink.getFileOutput());
+                /* delete failed */
+                linkStatus.setErrorMessage(_JDT._.controller_status_fileexists_overwritefailed() + downloadLink.getFileOutput());
+                downloadLink.setEnabled(false);
             }
         }
 
     }
 
-    /**
-     * Wird aufgerufenw ennd as Plugin einen filenot found Fehler meldet
-     * 
-     * @param downloadLink
-     * @param plugin
-     * @param step
-     */
-    private void onErrorFileNotFound(DownloadLink downloadLink, PluginForHost plugin) {
-        logger.severe("File not found :" + downloadLink.getDownloadURL());
+    protected void onErrorFileNotFound() {
+        logger.severe("Link is no longer available:" + downloadLink.getDownloadURL());
         downloadLink.setAvailable(false);
         downloadLink.setEnabled(false);
     }
 
-    private void onErrorIncomplete(DownloadLink downloadLink, PluginForHost plugin) {
-        retry(downloadLink, plugin);
+    protected void onErrorIncomplete() {
+        retry();
     }
 
-    private void onErrorNoConnection(DownloadLink downloadLink, PluginForHost plugin) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+    protected void onErrorNoConnection() {
         logger.severe("Error occurred: No Server connection");
-        long milliSeconds = JsonConfig.create(GeneralSettings.class).getWaittimeOnConnectionLoss();
+        if (exception != null) {
+            /* show stacktrace where the exception happened */
+            logger.severe(JDLogger.getStackTrace(exception));
+        }
         linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        linkStatus.setWaitTime(milliSeconds);
+        linkStatus.setWaitTime(JsonConfig.create(GeneralSettings.class).getWaittimeOnConnectionLoss());
         if (linkStatus.getErrorMessage() == null) {
             linkStatus.setErrorMessage(_JDT._.controller_status_connectionproblems());
         }
     }
 
-    /**
-     * Fehlerfunktion für einen UNbekannten premiumfehler.
-     * Plugin-premium-support wird deaktiviert und link wird erneut versucht
-     * 
-     * @param downloadLink
-     * @param plugin
-     * @param step
-     */
-    private void onErrorPremium(DownloadLink downloadLink, PluginForHost plugin) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+    protected void onErrorPremium() {
+        if (linkStatus.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
+            logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
+            account.setTempDisabled(true);
+            account.getAccountInfo().setTrafficLeft(0);
+        } else if (linkStatus.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
+            logger.severe("Premium Account " + account.getUser() + ": expired:" + linkStatus.getLongErrorMessage());
+            account.setEnabled(false);
+        } else {
+            logger.severe("Premium Account " + account.getUser() + ": exception");
+            account.setEnabled(false);
+            if (exception != null) {
+                /* show stacktrace where the exception happened */
+                logger.info(JDLogger.getStackTrace(exception));
+            }
+        }
+        /* we reset linkStatus so link can be download again as free user */
         linkStatus.reset();
     }
 
-    private void onErrorLocalIO(DownloadLink downloadLink, PluginForHost plugin) {
-        LinkStatus status = downloadLink.getLinkStatus();
-        /*
-         * Value<=0 bedeutet das der link dauerhauft deaktiviert bleiben soll.
-         * value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms.
-         * Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
-         */
-        status.setWaitTime(30 * 60 * 1000l);
+    protected void onErrorLocalIO() {
+        logger.severe("LOCALIO Error on: " + downloadLink.getFileOutput() + " -> disable link!");
         downloadLink.setEnabled(false);
     }
 
-    /**
-     * TODO: needs max retry here, best would be that plugin know how often
-     * retry was done and then can react differently on try x
-     */
-    /**
-     * Wird aufgerufen wenn ein Link kurzzeitig nicht verfügbar ist. ER wird
-     * deaktiviert und kann zu einem späteren zeitpunkt wieder aktiviert werden
-     * 
-     * @param downloadLink
-     * @param plugin
-     * @param step
-     */
-    private void onErrorDownloadTemporarilyUnavailable(DownloadLink downloadLink, PluginForHost plugin) {
-        logger.warning("Error occurred: Temporarily unavailable: Please wait " + downloadLink.getLinkStatus().getValue() + " ms for a retry");
-        LinkStatus status = downloadLink.getLinkStatus();
-        if (status.getErrorMessage() == null) status.setErrorMessage(_JDT._.controller_status_tempunavailable());
-
+    protected void onErrorDownloadTemporarilyUnavailable() {
+        if (linkStatus.getErrorMessage() == null) linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
         /*
          * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll.
          * value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms.
          * value==0 macht default 30 mins Der DownloadWatchdoggibt den Link
          * wieder frei ewnn es zeit ist.
          */
-        if (status.getValue() > 0) {
-            status.setWaitTime(status.getValue());
-        } else if (status.getValue() == 0) {
-            status.setWaitTime(30 * 60 * 1000l);
+        if (linkStatus.getValue() > 0) {
+            linkStatus.setWaitTime(linkStatus.getValue());
+            logger.warning("Error occurred: Temporarily unavailable: Please wait " + linkStatus.getValue() + " ms for a retry");
+        } else if (linkStatus.getValue() == 0) {
+            linkStatus.setWaitTime(30 * 60 * 1000l);
+            logger.warning("Error occurred: Temporarily unavailable: Please wait " + 30 * 60 * 1000l + " ms for a retry");
         } else {
-            status.resetWaitTime();
+            logger.warning("Error occurred: Temporarily unavailable: disable link!");
+            linkStatus.resetWaitTime();
             downloadLink.setEnabled(false);
         }
-        if (status.getValue() >= 0) {
+        if (linkStatus.getValue() >= 0) {
             /* plugin can evaluate retrycount and act differently then */
             downloadLink.getLinkStatus().setRetryCount(downloadLink.getLinkStatus().getRetryCount() + 1);
         }
-
     }
 
-    private void onErrorHostTemporarilyUnavailable(DownloadLink downloadLink, PluginForHost plugin) {
-        LinkStatus status = downloadLink.getLinkStatus();
-        long milliSeconds = downloadLink.getLinkStatus().getValue();
+    protected void onErrorHostTemporarilyUnavailable() {
+        long milliSeconds = linkStatus.getValue();
         if (milliSeconds <= 0) {
             logger.severe(_JDT._.plugins_errors_pluginerror());
             milliSeconds = 3600000l;
         }
+        if (account != null) {
+            /*
+             * check blocked account(eg free user accounts with waittime)
+             */
+            logger.severe("Account: " + account.getUser() + " is blocked, temp. disabling it!");
+            AccountController.getInstance().addAccountBlocked(account, milliSeconds);
+        }
         logger.warning("Error occurred: Download from this host is currently not possible: Please wait " + milliSeconds + " ms for a retry");
-        status.setWaitTime(milliSeconds);
+        linkStatus.setWaitTime(milliSeconds);
         HTTPProxy proxyInfo = getCurrentProxy();
         if (proxyInfo != null && proxyInfo instanceof ProxyInfo) {
             /* set remaining waittime for host-temp unavailable */
@@ -626,37 +549,34 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
 
     }
 
-    /**
-     * Diese Funktion wird aufgerufen wenn Ein Download mit einem Waittimefehler
-     * abgebrochen wird
-     * 
-     * @param downloadLink
-     * @param plugin
-     * @param step
-     */
-    private void onErrorIPWaittime(DownloadLink downloadLink, PluginForHost plugin) {
-        LinkStatus status = downloadLink.getLinkStatus();
-        long milliSeconds = downloadLink.getLinkStatus().getValue();
+    protected void onErrorIPWaittime() {
+        long milliSeconds = linkStatus.getValue();
         if (milliSeconds <= 0) {
             logger.severe(_JDT._.plugins_errors_pluginerror());
             milliSeconds = 3600000l;
         }
-        status.setWaitTime(milliSeconds);
-        status.setStatusText(null);
+        if (account != null) {
+            /*
+             * check blocked account(eg free user accounts with waittime)
+             */
+            logger.severe("Account: " + account.getUser() + " is blocked, temp. disabling it!");
+            AccountController.getInstance().addAccountBlocked(account, milliSeconds);
+            /*
+             * we reset linkStatus so link can be download again as free
+             * user(not with this account)
+             */
+            linkStatus.reset();
+            return;
+        }
+        linkStatus.setWaitTime(milliSeconds);
+        linkStatus.setStatusText(null);
         HTTPProxy proxyInfo = getCurrentProxy();
         if (proxyInfo != null && proxyInfo instanceof ProxyInfo) {
             /* set remaining waittime for host-temp unavailable */
             ((ProxyInfo) proxyInfo).setHostIPBlockTimeout(downloadLink, milliSeconds);
         }
-
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.lang.Thread#run()
-     */
-    // @Override
     @Override
     public void run() {
         JDPluginLogger llogger = null;
@@ -698,7 +618,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                      * werden kann
                      */
                     if (DownloadInterface.preDownloadCheckFailed(downloadLink)) {
-                        onErrorLinkBlock(downloadLink, currentPlugin);
+                        if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) onErrorFileExists();
                         return;
                     }
                     /*

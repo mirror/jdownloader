@@ -138,6 +138,7 @@ public class DepositFiles extends PluginForHost {
             if (isFreeAccount(account, true)) {
                 try {
                     account.setMaxSimultanDownloads(1);
+                    account.setConcurrentUsePossible(false);
                 } catch (final Throwable e) {
                 }
                 ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountokfree", "Account is OK.(Free User)"));
@@ -146,6 +147,7 @@ public class DepositFiles extends PluginForHost {
             } else {
                 try {
                     account.setMaxSimultanDownloads(-1);
+                    account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
                 }
             }

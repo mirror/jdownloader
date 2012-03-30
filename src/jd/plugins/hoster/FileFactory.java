@@ -166,6 +166,7 @@ public class FileFactory extends PluginForHost {
             try {
                 maxPrem.set(1);
                 account.setMaxSimultanDownloads(1);
+                account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
         } else {
@@ -196,6 +197,7 @@ public class FileFactory extends PluginForHost {
             try {
                 maxPrem.set(-1);
                 account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
         }

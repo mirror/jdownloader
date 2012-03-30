@@ -18,7 +18,9 @@ package jd.gui.swing.jdgui.components.premiumbar;
 
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.JPanel;
@@ -28,16 +30,14 @@ import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.controlling.IOEQ;
-import jd.controlling.JDLogger;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.gui.UserIF;
-import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -45,9 +45,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.DomainInfo;
 
 public class PremiumStatus extends JPanel implements MouseListener {
 
@@ -96,17 +94,17 @@ public class PremiumStatus extends JPanel implements MouseListener {
                             public void run() {
                                 /*
                                  * this scheduleritem checks all enabled
-                                 * accounts every 30 mins
+                                 * accounts every 5 mins
                                  */
                                 try {
                                     refreshAccountStats();
                                 } catch (Throwable e) {
-                                    JDLogger.exception(e);
+                                    Log.exception(e);
                                 }
                             }
 
-                        }, 1, 30, TimeUnit.MINUTES);
-                        redrawTimer = new DelayedRunnable(IOEQ.TIMINGQUEUE, 5000) {
+                        }, 1, 5, TimeUnit.MINUTES);
+                        redrawTimer = new DelayedRunnable(IOEQ.TIMINGQUEUE, 5000, 20000) {
 
                             @Override
                             public void delayedrun() {
@@ -115,20 +113,10 @@ public class PremiumStatus extends JPanel implements MouseListener {
 
                         };
                         redrawTimer.run();
-                        AccountController.getInstance().addListener(new AccountControllerListener() {
+                        AccountController.getInstance().getBroadcaster().addListener(new AccountControllerListener() {
 
                             public void onAccountControllerEvent(AccountControllerEvent event) {
-                                switch (event.getEventID()) {
-                                case AccountControllerEvent.ACCOUNT_ADDED:
-                                case AccountControllerEvent.ACCOUNT_UPDATE:
-                                case AccountControllerEvent.ACCOUNT_REMOVED:
-                                case AccountControllerEvent.ACCOUNT_EXPIRED:
-                                case AccountControllerEvent.ACCOUNT_INVALID:
-                                    if (org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled()) redrawTimer.run();
-                                    break;
-                                default:
-                                    break;
-                                }
+                                if (org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled()) redrawTimer.run();
                             }
 
                         });
@@ -154,124 +142,51 @@ public class PremiumStatus extends JPanel implements MouseListener {
     }
 
     private void refreshAccountStats() {
-
-        for (LazyHostPlugin wrapper : HostPluginController.getInstance().list()) {
-            String host = wrapper.getDisplayName();
-            // if (wrapper.isLoaded()) {
-            ArrayList<Account> accs = new ArrayList<Account>(AccountController.getInstance().getAllAccounts(host));
-            for (Account acc : accs) {
-                if (acc.isEnabled()) {
-                    /*
-                     * we do not force update here, the internal timeout will
-                     * make sure accounts get fresh checked from time to time
-                     */
-                    AccountChecker.getInstance().check(acc, false);
-                }
-                // }
+        for (Account acc : AccountController.getInstance().list()) {
+            if (acc.isEnabled() && acc.refreshTimeoutReached()) {
+                /*
+                 * we do not force update here, the internal timeout will make
+                 * sure accounts get fresh checked from time to time
+                 */
+                AccountChecker.getInstance().check(acc, false);
             }
         }
     }
 
     private void redraw() {
+        List<Account> accs = AccountController.getInstance().list();
+        HashMap<String, DomainInfo> domainInfos = new HashMap<String, DomainInfo>();
+        final LinkedList<DomainInfo> domains = new LinkedList<DomainInfo>();
+        for (Account acc : accs) {
+            AccountInfo ai = acc.getAccountInfo();
+            if (!acc.isEnabled() || !acc.isValid() || (ai != null && ai.isExpired())) continue;
+            DomainInfo domainInfo = domainInfos.get(acc.getHoster());
+            if (domainInfo == null) {
+                PluginForHost plugin = JDUtilities.getPluginForHost(acc.getHoster());
+                if (plugin != null) {
+                    domainInfo = plugin.getDomainInfo();
+                    domainInfos.put(acc.getHoster(), domainInfo);
+                    domains.add(domainInfo);
+                }
+            }
+        }
+        domainInfos = null;
+        accs = null;
         new EDTHelper<Object>() {
             @Override
             public Object edtRun() {
-                int ii = 0;
                 try {
                     for (int i = 0; i < BARCOUNT; i++) {
-                        bars[i].setVisible(false);
-                    }
-                    boolean enabled = false;
-                    for (LazyHostPlugin wrapper : HostPluginController.getInstance().list()) {
-                        String host = wrapper.getDisplayName();
-
-                        ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(host);
-                        if (accs.size() > 0) {
-                            long max = 0l;
-                            long left = 0l;
-                            enabled = false;
-                            boolean special = false;
-                            for (Account a : accs) {
-                                if (a.isEnabled()) {
-                                    enabled = true;
-                                    AccountInfo ai = a.getAccountInfo();
-                                    if (ai == null) continue;
-                                    if (ai.isExpired()) continue;
-                                    if (!ai.isUnlimitedTraffic()) {
-                                        /* no unlimited traffic */
-                                        if (!a.isTempDisabled()) {
-                                            /*
-                                             * only increase data if not temp.
-                                             * disabled
-                                             */
-                                            max += ai.getTrafficMax();
-                                            if (left != -1) {
-                                                /*
-                                                 * only add TrafficLeft if no
-                                                 * unlimted account available
-                                                 * TODO: seperate normal and
-                                                 * premium accs
-                                                 */
-                                                left += ai.getTrafficLeft();
-                                                if (ai.isSpecialTraffic()) special = true;
-                                            }
-                                        }
-                                    } else {
-                                        /* left < 0 for unlimited */
-                                        left = -1;
-                                    }
-                                }
-                            }
-                            if (!enabled) continue;
-                            PluginForHost plugin = null;
-                            try {
-                                plugin = wrapper.getPrototype();
-                                if (plugin == null) throw new WTFException();
-                            } catch (final Throwable e) {
-                                /*
-                                 * in case something went wrong with prototype,
-                                 * we disable the accounts
-                                 */
-                                Log.exception(e);
-                                for (Account a : accs) {
-                                    a.setEnabled(false);
-                                }
-                                continue;
-                            }
-                            bars[ii].setVisible(true);
-                            bars[ii].setIcon(plugin.getDomainInfo().getFavIcon());
-                            bars[ii].setPlugin(plugin);
-
-                            if (left == 0) {
-                                bars[ii].setMaximum(10);
-                                bars[ii].setValue(0);
-                                if (special) {
-                                    bars[ii].setToolTipText(_GUI._.gui_premiumstatus_expired_maybetraffic_tooltip(host, accs.size()));
-                                } else {
-                                    bars[ii].setToolTipText(_GUI._.gui_premiumstatus_expired_traffic_tooltip(host, accs.size()));
-                                }
-                            } else if (left > 0) {
-                                bars[ii].setMaximum(max);
-                                bars[ii].setValue(left);
-                                bars[ii].setToolTipText(_GUI._.gui_premiumstatus_traffic_tooltip(host, accs.size(), Formatter.formatReadable(left)));
-                            } else {
-                                /* left < 0 for unlimited */
-                                bars[ii].setMaximum(10);
-                                bars[ii].setValue(10);
-                                bars[ii].setToolTipText(_GUI._.gui_premiumstatus_unlimited_traffic_tooltip(host));
-                            }
-                            ii++;
-                            if (ii >= BARCOUNT) {
-                                invalidate();
-                                return null;
-                            }
+                        if (domains.size() > 0) {
+                            bars[i].setDomainInfo(domains.removeFirst());
+                        } else {
+                            bars[i].setVisible(false);
                         }
-
                     }
-                    invalidate();
                 } catch (final Throwable e) {
-                    JDLogger.exception(e);
+                    Log.exception(e);
                 }
+                invalidate();
                 return null;
             }
         }.start();
@@ -279,24 +194,19 @@ public class PremiumStatus extends JPanel implements MouseListener {
 
     public void mouseClicked(MouseEvent e) {
         if (e.getSource() instanceof TinyProgressBar) {
-            TinyProgressBar tpb = (TinyProgressBar) e.getSource();
+            final TinyProgressBar tpb = (TinyProgressBar) e.getSource();
             if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-                // JPopupMenu popup = new JPopupMenu();
-                // ArrayList<MenuAction> entries =
-                // tpb.getPlugin().createMenuitems();
-                // for (MenuAction next : entries) {
-                // JMenuItem mi = next.toJMenuItem();
-                // if (mi == null) {
-                // popup.addSeparator();
-                // } else {
-                // popup.add(mi);
-                // }
-                // }
-                // popup.show(tpb, e.getPoint().x, e.getPoint().y);
             } else {
-                if (tpb.getPlugin().hasConfig()) {
-                    UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, tpb.getPlugin().getConfig());
-                }
+                IOEQ.add(new Runnable() {
+                    @Override
+                    public void run() {
+                        PluginForHost plugin = tpb.getDomainInfo().findPlugin();
+                        if (plugin != null && plugin.hasConfig()) {
+                            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, plugin.getConfig());
+                        }
+                    }
+                });
+
             }
         }
 

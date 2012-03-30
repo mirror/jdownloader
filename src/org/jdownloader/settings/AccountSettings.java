@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AllowStorage;
 import org.appwork.storage.config.annotations.CryptedStorage;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
 
 public interface AccountSettings extends ConfigInterface {
     // @AboutConfig
@@ -17,11 +15,5 @@ public interface AccountSettings extends ConfigInterface {
 
     @AllowStorage({ Object.class })
     void setAccounts(HashMap<String, ArrayList<AccountData>> data);
-
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    boolean isUseAccountWithMostTrafficLeft();
-
-    void setUseAccountWithMostTrafficLeft(boolean b);
 
 }

@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.swing.Icon;
 import javax.swing.JTable;
@@ -64,22 +65,18 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             }
 
         };
-        AccountController.getInstance().addListener(new AccountControllerListener() {
+        AccountController.getInstance().getBroadcaster().addListener(new AccountControllerListener() {
 
             public void onAccountControllerEvent(AccountControllerEvent event) {
                 if (accountManagerSettings.isShown()) {
-                    switch (event.getEventID()) {
-                    case AccountControllerEvent.ACCOUNT_UPDATE:
-                    case AccountControllerEvent.ACCOUNT_EXPIRED:
-                    case AccountControllerEvent.ACCOUNT_INVALID:
+                    switch (event.getType()) {
+                    case UPDATE:
                         /* just repaint */
                         delayedUpdate.run();
                         break;
                     default:
                         /* structure changed */
                         delayedFill.run();
-                        break;
-
                     }
                 }
             }
@@ -394,10 +391,12 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
         if (accountManagerSettings.isShown()) {
             final ArrayList<Account> newtableData = new ArrayList<Account>(this.getRowCount());
             for (LazyHostPlugin plugin : HostPluginController.getInstance().list()) {
-                ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getDisplayName());
-                for (Account acc : accs) {
-                    newtableData.add(acc);
-                    acc.setHoster(plugin.getDisplayName());
+                List<Account> accs = AccountController.getInstance().list(plugin.getDisplayName());
+                if (accs != null) {
+                    for (Account acc : accs) {
+                        newtableData.add(acc);
+                        acc.setHoster(plugin.getDisplayName());
+                    }
                 }
             }
             _fireTableStructureChanged(newtableData, true);

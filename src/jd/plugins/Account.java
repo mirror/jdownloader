@@ -18,48 +18,45 @@ package jd.plugins;
 
 import jd.config.Property;
 import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
 
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.UniqueSessionID;
 
 public class Account extends Property {
 
-    private static final long         serialVersionUID      = -7578649066389032068L;
+    private static final long  serialVersionUID               = -7578649066389032068L;
 
-    private String                    user;
-    private String                    pass;
+    private String             user;
+    private String             pass;
 
-    private boolean                   enabled               = true;
-    private boolean                   valid                 = true;
+    private boolean            enabled                        = true;
+    private boolean            concurrentUsePossible          = true;
 
-    private transient long            tmpDisabledIntervalv3 = 10 * 60 * 1000;
-    private transient boolean         tempDisabled          = false;
-    private transient long            tmpDisabledTime       = 0;
-    private transient UniqueSessionID ID                    = new UniqueSessionID();
+    public static final String PROPERTY_TEMP_DISABLED_TIMEOUT = "PROPERTY_TEMP_DISABLED_TIMEOUT";
+    public static final String PROPERTY_REFRESH_TIMEOUT       = "PROPERTY_REFRESH_TIMEOUT";
+
+    public boolean isConcurrentUsePossible() {
+        return concurrentUsePossible;
+    }
+
+    public void setConcurrentUsePossible(boolean concurrentUsePossible) {
+        this.concurrentUsePossible = concurrentUsePossible;
+    }
+
+    private boolean                     valid              = true;
+
+    private transient long              tmpDisabledTimeout = -1;
+    private transient UniqueSessionID   ID                 = new UniqueSessionID();
 
     /* keep for comp. reasons */
-    private String                    hoster                = null;
-    private AccountInfo               accinfo               = null;
-    /**
-     * if an account becomes invalid, or outdated, we can set active to false.
-     * enabled should be used for user en/disable active should be used to
-     * en/disable the account programmatically
-     */
-    private boolean                   active;
+    private String                      hoster             = null;
+    private AccountInfo                 accinfo            = null;
 
-    public boolean isActive() {
-        return active;
-    }
+    private long                        updatetime         = 0;
+    private int                         maxDownloads       = 0;
 
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    private long                        updatetime   = 0;
-
-    private int                         maxDownloads = 0;
-
-    private transient AccountController ac           = null;
+    private transient AccountController ac                 = null;
 
     /**
      * 
@@ -86,8 +83,6 @@ public class Account extends Property {
     public Account(final String user, final String pass) {
         this.user = trim(user);
         this.pass = trim(pass);
-        // this.hoster = null;
-        this.setTmpDisabledIntervalv3(10 * 60 * 1000l);
     }
 
     public int getMaxSimultanDownloads() {
@@ -134,11 +129,15 @@ public class Account extends Property {
     }
 
     public AccountInfo getAccountInfo() {
-        return accinfo;
+        synchronized (this) {
+            return accinfo;
+        }
     }
 
     public void setAccountInfo(final AccountInfo info) {
-        accinfo = info;
+        synchronized (this) {
+            accinfo = info;
+        }
     }
 
     public String getUser() {
@@ -154,10 +153,7 @@ public class Account extends Property {
     private void readObject(final java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
         /* nach dem deserialisieren sollen die transienten neu geholt werden */
         stream.defaultReadObject();
-
-        tmpDisabledIntervalv3 = 10 * 60 * 1000l;
-        tempDisabled = false;
-        tmpDisabledTime = 0;
+        tmpDisabledTimeout = -1;
         ID = new UniqueSessionID();
     }
 
@@ -166,10 +162,14 @@ public class Account extends Property {
     }
 
     public boolean isTempDisabled() {
-        if (tempDisabled && (System.currentTimeMillis() - tmpDisabledTime) > this.getTmpDisabledIntervalv3()) {
-            tempDisabled = false;
+        synchronized (this) {
+            if (tmpDisabledTimeout < 0) { return false; }
+            if (System.currentTimeMillis() >= tmpDisabledTimeout) {
+                tmpDisabledTimeout = -1;
+                return false;
+            }
+            return true;
         }
-        return tempDisabled;
     }
 
     public void setEnabled(final boolean enabled) {
@@ -179,7 +179,29 @@ public class Account extends Property {
             if (enabled && (!isValid() || ai != null && ai.isExpired())) {
                 setUpdateTime(0);
             }
-            if (ac != null) ac.throwUpdateEvent(null, this);
+            notifyUpdate(enabled);
+        }
+    }
+
+    public long getRefreshTimeout() {
+        /* default refresh timeout is 30 mins */
+        long defaultRefreshTimeOut = 30 * 60 * 1000l;
+        Long timeout = this.getLongProperty(PROPERTY_REFRESH_TIMEOUT, defaultRefreshTimeOut);
+        if (timeout == null || timeout <= 0) timeout = defaultRefreshTimeOut;
+        return timeout;
+    }
+
+    public boolean refreshTimeoutReached() {
+        if (updatetime <= 0) return true;
+        return System.currentTimeMillis() - updatetime >= getRefreshTimeout();
+    }
+
+    private void notifyUpdate(boolean recheckRequired) {
+        AccountController lac = ac;
+        if (lac != null) {
+            AccountControllerEvent event = new AccountControllerEvent(lac, AccountControllerEvent.Types.UPDATE, this);
+            event.setRecheckRequired(recheckRequired);
+            lac.getBroadcaster().fireEvent(event);
         }
     }
 
@@ -193,16 +215,22 @@ public class Account extends Property {
             this.pass = newPass;
             accinfo = null;
             setUpdateTime(0);
-            if (ac != null) ac.throwUpdateEvent(null, this);
+            notifyUpdate(true);
         }
     }
 
     public void setTempDisabled(final boolean tempDisabled) {
-        if (this.tempDisabled != tempDisabled) {
-            this.tmpDisabledTime = System.currentTimeMillis();
-            this.tempDisabled = tempDisabled;
-            if (ac != null) ac.throwUpdateEvent(null, this);
+        boolean notify = false;
+        synchronized (this) {
+            if ((this.tmpDisabledTimeout > 0 && tempDisabled == false) || (this.tmpDisabledTimeout <= 0 && tempDisabled == true)) {
+                long defaultTmpDisabledTimeOut = 60 * 60 * 1000l;
+                Long timeout = this.getLongProperty(PROPERTY_TEMP_DISABLED_TIMEOUT, defaultTmpDisabledTimeOut);
+                if (timeout == null || timeout <= 0) timeout = defaultTmpDisabledTimeOut;
+                this.tmpDisabledTimeout = System.currentTimeMillis() + timeout;
+                notify = true;
+            }
         }
+        if (notify) notifyUpdate(false);
     }
 
     public void setUser(final String user) {
@@ -211,27 +239,13 @@ public class Account extends Property {
             accinfo = null;
             setUpdateTime(0);
             this.user = newUser;
-            if (ac != null) ac.throwUpdateEvent(null, this);
+            notifyUpdate(true);
         }
     }
 
     // @Override
     public String toString() {
         return user + ":" + pass + " " + enabled + " " + super.toString();
-    }
-
-    /**
-     * returns how lon a premiumaccount will stay disabled if he got temporary
-     * disabled
-     * 
-     * @return
-     */
-    public long getTmpDisabledIntervalv3() {
-        return tmpDisabledIntervalv3;
-    }
-
-    public void setTmpDisabledIntervalv3(final long tmpDisabledInterval) {
-        this.tmpDisabledIntervalv3 = tmpDisabledInterval;
     }
 
     public boolean equals(final Account account2) {
@@ -242,7 +256,6 @@ public class Account extends Property {
         } else {
             if (account2.user == null || !this.user.equalsIgnoreCase(account2.user)) { return false; }
         }
-
         if (this.pass == null) {
             if (account2.pass != null) { return false; }
         } else {

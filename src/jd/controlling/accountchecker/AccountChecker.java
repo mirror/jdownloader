@@ -9,6 +9,8 @@ import jd.controlling.AccountController;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 
+import org.appwork.exceptions.WTFException;
+
 public class AccountChecker {
 
     public class AccountCheckJob {
@@ -34,7 +36,7 @@ public class AccountChecker {
         protected void check() {
             isChecking = true;
             try {
-                ai = AccountController.getInstance().updateAccountInfo((String) null, account, force);
+                ai = AccountController.getInstance().updateAccountInfo(account, force);
             } finally {
                 isChecking = false;
                 synchronized (AccountCheckJob.this) {
@@ -102,20 +104,20 @@ public class AccountChecker {
         AccountCheckJob ret = null;
         boolean started = false;
         synchronized (AccountChecker.this) {
-            final String host = AccountController.getInstance().getHosterName(account);
-            if (host == null) return null;
             /* get joblist for same host */
-            LinkedList<AccountCheckJob> list = jobs.get(host);
+            final String hoster = account.getHoster();
+            if (hoster == null) throw new WTFException("no hoster?");
+            LinkedList<AccountCheckJob> list = jobs.get(hoster);
             if (list == null) {
                 list = new LinkedList<AccountCheckJob>();
-                jobs.put(host, list);
+                jobs.put(hoster, list);
             }
             /* add job to joblist */
             ret = new AccountCheckJob(account, force);
             jobsRequested.incrementAndGet();
             list.add(ret);
             /* get thread to check this hoster */
-            Thread thread = checkThreads.get(host);
+            Thread thread = checkThreads.get(hoster);
             if (thread == null || !thread.isAlive()) {
                 started = checkThreads.isEmpty();
                 thread = new Thread(new Runnable() {
@@ -125,12 +127,12 @@ public class AccountChecker {
                         boolean stopped = false;
                         while (true) {
                             synchronized (AccountChecker.this) {
-                                LinkedList<AccountCheckJob> joblist = jobs.get(host);
+                                LinkedList<AccountCheckJob> joblist = jobs.get(hoster);
                                 if (joblist != null && joblist.size() > 0) {
                                     job = joblist.removeFirst();
                                 } else {
-                                    jobs.remove(host);
-                                    checkThreads.remove(host);
+                                    jobs.remove(hoster);
+                                    checkThreads.remove(hoster);
                                     stopped = checkThreads.isEmpty();
                                     break;
                                 }
@@ -147,9 +149,9 @@ public class AccountChecker {
                     }
 
                 });
-                thread.setName("AccountChecker: " + host);
+                thread.setName("AccountChecker: " + hoster);
                 thread.setDaemon(true);
-                checkThreads.put(host, thread);
+                checkThreads.put(hoster, thread);
                 thread.start();
             }
         }

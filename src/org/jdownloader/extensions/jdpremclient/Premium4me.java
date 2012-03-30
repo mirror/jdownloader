@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
-import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
@@ -150,7 +149,8 @@ public class Premium4me extends PluginForHost implements JDPremInterface {
             if (!PremiumCompoundExtension.isStaticEnabled() || !enabled) return false;
             /* premium available for this host */
             if (!premiumHosts.contains(link.getHost())) return false;
-            acc = AccountController.getInstance().getValidAccount("premium4.me");
+            // acc =
+            // AccountController.getInstance().getValidAccount("premium4.me");
             /* enabled account found? */
             if (acc == null || !acc.isEnabled()) return false;
         }
@@ -340,7 +340,9 @@ public class Premium4me extends PluginForHost implements JDPremInterface {
             } else if (PremiumCompoundExtension.isStaticEnabled() && enabled) {
                 /* Premium4Me */
                 synchronized (LOCK) {
-                    if (premiumHosts.contains(plugin.getHost()) && AccountController.getInstance().getValidAccount("premium4.me") != null) return Integer.MAX_VALUE;
+                    // if (premiumHosts.contains(plugin.getHost()) &&
+                    // AccountController.getInstance().getValidAccount("premium4.me")
+                    // != null) return Integer.MAX_VALUE;
                 }
             }
             return plugin.getMaxSimultanDownload(account);
@@ -358,12 +360,6 @@ public class Premium4me extends PluginForHost implements JDPremInterface {
     public String getFileInformationString(DownloadLink downloadLink) {
         if (proxyused || plugin == null) return "";
         return plugin.getFileInformationString(downloadLink);
-    }
-
-    @Override
-    public ArrayList<Account> getPremiumAccounts() {
-        if (plugin != null) return plugin.getPremiumAccounts();
-        return super.getPremiumAccounts();
     }
 
     public void setReplacedPlugin(PluginForHost plugin) {

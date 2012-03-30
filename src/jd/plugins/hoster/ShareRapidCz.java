@@ -104,9 +104,19 @@ public class ShareRapidCz extends PluginForHost {
                     /* not available in 0.9xxx */
                 }
             }
+            try {
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                /* not available in 0.9xxx */
+            }
         } else {
             ai.setStatus("Registered (free) User");
             account.setProperty("freeaccount", "true");
+            try {
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                /* not available in 0.9xxx */
+            }
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);

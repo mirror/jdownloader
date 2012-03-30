@@ -103,7 +103,6 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
     public static DomainInfo getInstance(String host) {
         if (host == null) return null;
         // WARNING: can be a memleak
-
         synchronized (CACHE) {
             DomainInfo ret = CACHE.get(host);
             if (ret == null) {

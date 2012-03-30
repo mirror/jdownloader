@@ -18,6 +18,7 @@ package org.jdownloader.extensions.jdpremclient;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -181,8 +182,11 @@ public class PremiumCompoundExtension extends AbstractExtension<PremiumCompoundC
                         try {
                             ArrayList<AccountCheckJob> jobs = new ArrayList<AccountCheckJob>();
                             for (String key : premShareHosts.keySet()) {
-                                for (Account acc : AccountController.getInstance().getAllAccounts(key)) {
-                                    jobs.add(AccountChecker.getInstance().check(acc, true));
+                                List<Account> accs = AccountController.getInstance().list(key);
+                                if (accs != null) {
+                                    for (Account acc : accs) {
+                                        jobs.add(AccountChecker.getInstance().check(acc, true));
+                                    }
                                 }
                             }
                             for (AccountCheckJob job : jobs) {

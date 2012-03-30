@@ -166,12 +166,14 @@ public class Freaksharenet extends PluginForHost {
             }
             try {
                 account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
             ai.setStatus("Premium User");
         } else {
             try {
                 account.setMaxSimultanDownloads(1);
+                account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
             ai.setStatus("Registered (free) User");

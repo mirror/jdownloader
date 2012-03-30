@@ -16,7 +16,7 @@
 
 package org.jdownloader.extensions.schedule.modules;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import jd.controlling.AccountController;
 import jd.plugins.Account;
@@ -38,9 +38,11 @@ public class DisablePremiumForHost implements SchedulerModuleInterface {
     }
 
     public void execute(String parameter) {
-        ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(parameter);
-        for (Account acc : accs) {
-            acc.setEnabled(false);
+        List<Account> accs = AccountController.getInstance().list(parameter);
+        if (accs != null) {
+            for (Account acc : accs) {
+                acc.setEnabled(false);
+            }
         }
     }
 

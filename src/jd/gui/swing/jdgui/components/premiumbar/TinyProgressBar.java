@@ -18,64 +18,37 @@ package jd.gui.swing.jdgui.components.premiumbar;
 
 import java.awt.Cursor;
 
-import javax.swing.ImageIcon;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 
-import jd.gui.swing.jdgui.components.JDProgressBar;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
+import org.jdownloader.DomainInfo;
 
-public class TinyProgressBar extends JPanel {
+public class TinyProgressBar extends JLabel {
 
-    private static final long   serialVersionUID = 8385631080915257786L;
-    private final JLabel        lbl;
-    private final JDProgressBar prg;
-    private PluginForHost       plugin;
+    private static final long serialVersionUID = 8385631080915257786L;
+
+    private DomainInfo        domainInfo       = null;
 
     public TinyProgressBar() {
-        super(new MigLayout("ins 0", "[grow,fill]1[10]", "[grow,fill]"));
-
-        lbl = new JLabel();
-        lbl.setOpaque(false);
-
-        prg = new JDProgressBar();
-        prg.setOpaque(false);
-        prg.setOrientation(JDProgressBar.VERTICAL);
-        /* FIXME: wait for synthethica simple2d bugfix */
-        // prg.setBorder(null);
-
-        this.add(lbl);
-        this.add(prg);
-
-        this.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        setOpaque(false);
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
     }
 
-    @Override
-    public void setEnabled(boolean b) {
-        super.setEnabled(b);
-        lbl.setEnabled(b);
-        prg.setEnabled(b);
+    /**
+     * @param domainInfo
+     *            the domainInfo to set
+     */
+    public void setDomainInfo(DomainInfo domainInfo) {
+        this.domainInfo = domainInfo;
+        this.setIcon(domainInfo.getFavIcon());
+        this.setVisible(true);
+        this.setToolTipText(domainInfo.getName());
     }
 
-    public void setIcon(ImageIcon hosterIcon) {
-        lbl.setIcon(hosterIcon);
-    }
-
-    public void setMaximum(long max) {
-        prg.setMaximum(max);
-    }
-
-    public void setValue(long left) {
-        prg.setValue(left);
-    }
-
-    public void setPlugin(PluginForHost plugin) {
-        this.plugin = plugin;
-    }
-
-    public PluginForHost getPlugin() {
-        return plugin;
+    /**
+     * @return the domainInfo
+     */
+    public DomainInfo getDomainInfo() {
+        return domainInfo;
     }
 
 }

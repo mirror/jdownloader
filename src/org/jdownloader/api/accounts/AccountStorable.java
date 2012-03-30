@@ -13,12 +13,6 @@ public class AccountStorable implements Storable {
         return acc.getUser();
     }
 
-    public String getStatus() {
-        AccountInfo ai = acc.getAccountInfo();
-        if (ai != null) return ai.getStatus();
-        return null;
-    }
-
     public boolean isEnabled() {
         return acc.isEnabled();
     }
