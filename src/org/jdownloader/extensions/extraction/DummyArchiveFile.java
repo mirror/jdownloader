@@ -25,6 +25,7 @@ public class DummyArchiveFile {
 
     public DummyArchiveFile(ArchiveFile af) {
         name = af.getName();
+        exists = af.isComplete();
     }
 
     public String getName() {
