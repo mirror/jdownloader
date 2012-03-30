@@ -16,12 +16,14 @@
 
 package org.jdownloader.extensions.extraction;
 
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 
 import javax.swing.Action;
+import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -43,6 +45,7 @@ import jd.plugins.FilePackage;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
@@ -670,37 +673,41 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     }
 
     protected void onExtendPopupMenuDownloadTable(final DownloadTableContext context) {
-        JMenu menu = new JMenu("Extract") {
+        JMenu menu = new JMenu(T._.contextmenu_main()) {
             protected JMenuItem createActionComponent(Action a) {
                 if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
                 return super.createActionComponent(a);
             }
         };
-        context.getMenu().add(menu);
-        menu.setIcon(getIcon(20));
 
         if (context.getClickedObject() instanceof DownloadLink) {
             final DownloadLink link = (DownloadLink) context.getClickedObject();
-
+            final ValidateArchiveAction validateAction = new ValidateArchiveAction(this, context.getSelectedObjects());
             menu.add(new AppAction() {
                 {
-                    setName("Extract Link");
-                    setIconKey(ExtractionExtension.this.getIconKey());
-                    setEnabled(new File(link.getFileOutput()).exists() && isLinkSupported(new DownloadLinkArchiveFactory(link)));
+                    setName(T._.contextmenu_extract());
+                    Image front = NewTheme.I().getImage("media-playback-start", 20, true);
+
+                    setSmallIcon(new ImageIcon(ImageProvider.merge(getIcon(20).getImage(), front, 0, 0, 5, 5)));
+                    setEnabled(new File(link.getFileOutput()).exists() && isLinkSupported(new DownloadLinkArchiveFactory(link)) && validateAction.getArchives().size() > 0);
                 }
 
                 public void actionPerformed(ActionEvent e) {
-
+                    boolean found = false;
                     for (AbstractNode link : context.getSelectedObjects()) {
                         if (link instanceof DownloadLink) {
                             try {
                                 final Archive archive = buildArchive(new DownloadLinkArchiveFactory((DownloadLink) link));
                                 if (archive != null) {
-
+                                    found = true;
                                     new Thread() {
                                         @Override
                                         public void run() {
-                                            if (archive.isComplete()) addToQueue(archive);
+                                            if (archive.isComplete()) {
+                                                addToQueue(archive);
+                                            } else {
+                                                Dialog.getInstance().showMessageDialog(T._.cannot_extract_incopmplete(archive.getName()));
+                                            }
                                         }
                                     }.start();
                                 }
@@ -709,13 +716,29 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                             }
                         }
                     }
+
                 }
             });
 
+            if (validateAction.getArchives().size() == 1) {
+                menu.add(validateAction.toContextMenuAction());
+            } else if (validateAction.getArchives().size() > 1) {
+                JMenu validate = new JMenu(T._.contextmenu_validate_parent());
+                validate.setIcon(validateAction.getSmallIcon());
+                for (Archive a : validateAction.getArchives()) {
+                    validate.add(new ValidateArchiveAction(this, a));
+                }
+                menu.add(validate);
+
+            } else {
+                menu.setEnabled(false);
+            }
+            menu.add(new JSeparator());
+
             menu.add(new AppAction() {
                 {
-                    setName("Autoextract");
-                    setIconKey(ExtractionExtension.this.getIconKey());
+                    setName(T._.contextmenu_autoextract());
+                    setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("unpack", 20), NewTheme.I().getImage("refresh", 12), 0, 0, 10, 10)));
                     setSelected(link.getFilePackage().isPostProcessing());
                 }
 
@@ -728,11 +751,12 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                     }
                 }
             });
-            menu.add(new JSeparator());
+
             menu.add(new AppAction() {
                 {
-                    setName("Extract to");
-                    setIconKey(ExtractionExtension.this.getIconKey());
+                    setName(T._.contextmenu_extract_to());
+                    setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("folder", 20), NewTheme.I().getImage("edit", 12), 0, 0, 10, 10)));
+
                     setEnabled(new File(link.getFileOutput()).exists() && isLinkSupported(new DownloadLinkArchiveFactory(link)));
                 }
 
@@ -786,8 +810,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
             menu.add(new AppAction() {
                 {
-                    setName("Open Extract folder");
-                    setIconKey(ExtractionExtension.this.getIconKey());
+                    setName(T._.contextmenu_openextract_folder());
+                    setIconKey("folder");
                     setEnabled(new File(link.getFileOutput()).exists() && isLinkSupported(new DownloadLinkArchiveFactory(link)));
                 }
 
@@ -815,8 +839,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
                 menu.add(new AppAction() {
                     {
-                        setName("Extract Package");
-                        setIconKey(ExtractionExtension.this.getIconKey());
+                        setName(T._.contextmenu_extract());
+                        Image front = NewTheme.I().getImage("media-playback-start", 20, true);
+
+                        setSmallIcon(new ImageIcon(ImageProvider.merge(getIcon(20).getImage(), front, 0, 0, 5, 5)));
 
                     }
 
@@ -855,9 +881,26 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                         }
                     }
                 });
+
+                ValidateArchiveAction validateAction = new ValidateArchiveAction(this, context.getSelectedObjects());
+                if (validateAction.getArchives().size() == 1) {
+                    menu.add(validateAction.toContextMenuAction());
+                } else if (validateAction.getArchives().size() > 1) {
+                    JMenu validate = new JMenu(T._.contextmenu_validate_parent());
+
+                    validate.setIcon(validateAction.getSmallIcon());
+                    for (Archive a : validateAction.getArchives()) {
+                        validate.add(new ValidateArchiveAction(this, a));
+                    }
+                    menu.add(validate);
+
+                } else {
+                    menu.setEnabled(false);
+                }
+                menu.add(new JSeparator());
                 menu.add(new AppAction() {
                     {
-                        setName("Auto Extract Package");
+                        setName(T._.contextmenu_auto_extract_package());
                         setIconKey(ExtractionExtension.this.getIconKey());
                         setSelected(fp.isPostProcessing());
                         setEnabled(getPluginConfig().getBooleanProperty("ACTIVATED", true));
@@ -876,8 +919,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
             }
         }
-
-        context.getMenu().add(new ValidateArchiveAction(this, context.getSelectedObjects()).toContextMenuAction());
+        context.getMenu().add(menu);
+        menu.setIcon(getIcon(20));
 
     }
 

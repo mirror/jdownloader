@@ -64,4 +64,10 @@ public interface AntireconnectTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Automaticly disables reconnect features of one ore more network conditions match." })
     String description();
 
+    @Default(lngs = { "en" }, values = { "Filename" })
+    String filename();
+
+    @Default(lngs = { "en" }, values = { "Status" })
+    String exists();
+
 }

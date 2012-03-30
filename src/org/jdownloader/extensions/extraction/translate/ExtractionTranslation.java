@@ -24,7 +24,7 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Archive %s1 has %s2 part(s) and is incomplete." })
     String ValidateArchiveAction_actionPerformed_bad(String name, int size);
 
-    @Default(lngs = { "en" }, values = { "Validate Archives" })
+    @Default(lngs = { "en" }, values = { "Validate Archive(s)" })
     String ValidateArchiveAction_ValidateArchiveAction_object_();
 
     @Default(lngs = { "en" }, values = { "Extract OK" })
@@ -191,4 +191,37 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Extracting" })
     String plugins_optional_extraction_status_extracting2();
+
+    @Default(lngs = { "en" }, values = { "Extract Now" })
+    String contextmenu_extract();
+
+    @Default(lngs = { "en" }, values = { "Archive(s)" })
+    String contextmenu_main();
+
+    @Default(lngs = { "en" }, values = { "Auto Extract Enabled" })
+    String contextmenu_autoextract();
+
+    @Default(lngs = { "en" }, values = { "Set Extraction Path" })
+    String contextmenu_extract_to();
+
+    @Default(lngs = { "en" }, values = { "Show Extraction Path" })
+    String contextmenu_openextract_folder();
+
+    @Default(lngs = { "en" }, values = { "Auto Extract Enabled" })
+    String contextmenu_auto_extract_package();
+
+    @Default(lngs = { "en" }, values = { "Validate Archive" })
+    String contextmenu_validate_parent();
+
+    @Default(lngs = { "en" }, values = { "Validate %s1" })
+    String ValidateArchiveAction_ValidateArchiveAction(String name);
+
+    @Default(lngs = { "en" }, values = { "Cannot extract %s1. Archive is incomplete!" })
+    String cannot_extract_incopmplete(String name);
+
+    @Default(lngs = { "en" }, values = { "Archive %s1" })
+    String dummyarchivedialog_title(String name);
+
+    @Default(lngs = { "en" }, values = { "Close" })
+    String close();
 }

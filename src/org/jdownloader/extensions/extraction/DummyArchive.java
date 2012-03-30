@@ -45,4 +45,8 @@ public class DummyArchive {
         return ret;
     }
 
+    public String getName() {
+        return archive.getName();
+    }
+
 }
