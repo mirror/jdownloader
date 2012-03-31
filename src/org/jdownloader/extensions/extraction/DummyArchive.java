@@ -27,7 +27,7 @@ public class DummyArchive {
     public void add(DummyArchiveFile e) {
         list.add(e);
         if (e.isMissing()) missingCount++;
-        if (!e.isIncomplete()) incompleteCount++;
+        if (e.isIncomplete()) incompleteCount++;
 
     }
 

@@ -659,15 +659,21 @@ public abstract class PluginForHost extends Plugin {
                 }
 
                 if (prototypesplit.equalsIgnoreCase(multiPart[0])) {
-                    newName = fixCase(originalFilename, prototypesplit);
-                    if (newName != null) return newName;
+                    newName = fixCase(originalFilename, prototypeName);
+                    if (newName != null) {
+                        //
+                        return newName;
+                    }
                 }
                 if (isHosterManipulatesFilenames() && multiPart[0].length() == prototypesplit.length() && filteredName.equalsIgnoreCase(filterPackageID(prototypesplit))) {
                     newName = getFixedFileName(originalFilename, prototypesplit);
                     if (newName != null) {
 
                         String caseFix = fixCase(newName + multiPart[1], prototypeName);
-                        if (caseFix != null) return caseFix;
+                        if (caseFix != null) {
+                            //
+                            return caseFix;
+                        }
                         return newName + multiPart[1];
                     }
                 }
