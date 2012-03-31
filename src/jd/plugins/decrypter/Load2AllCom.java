@@ -38,10 +38,14 @@ public class Load2AllCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        parameter = parameter.replace("files", "links").replace(".html", "");
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("No htmlCode read")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("Requested file is deleted")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        parameter = parameter.replace("files", "links").replace(".html", "");
+        br.getPage(parameter);
         String[] redirectLinks = br.getRegex("(/redirect/[0-9A-Z]+/.*?/[0-9]+)").getColumn(0);
         if (redirectLinks.length == 0) return null;
         progress.setRange(redirectLinks.length);
@@ -66,5 +70,4 @@ public class Load2AllCom extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }

@@ -82,9 +82,7 @@ public class Media4Me extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage(link.getDownloadURL(), "downloadverify=1&d=1");
         if (br.containsHTML("(The allowed download sessions assigned to your IP is used up:|Please try later, untill your current downloads are completed or)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        if (br.containsHTML("value=\"Free Users\""))
-            br.postPage(link.getDownloadURL(), "Free=Free+Users");
-        else if (br.getFormbyProperty("name", "entryform1") != null) br.submitForm(br.getFormbyProperty("name", "entryform1"));
+        if (br.containsHTML("The allowed bandwidth assigned to your country is used up")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No bandwidth available for your country!", 30 * 60 * 1000l);
         String finalLink = findLink();
         if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String waittime = br.getRegex("countdown\\((\\d+)\\)").getMatch(0);

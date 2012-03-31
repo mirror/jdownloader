@@ -28,11 +28,10 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "http://[\\w\\.]*?filehippo\\.com(/(es|en|pl|jp))?/download_.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "http://(www\\.)?filehippo\\.com(/(es|en|pl|jp|de))?/download_[^<>/\"]+" }, flags = { 0 })
 public class FileHippoCom extends PluginForHost {
 
     private static final String FILENOTFOUND = "(<h1>404 Error</h1>|<b>Sorry the page you requested could not be found)";
-
     public static final String  MAINPAGE     = "http://www.filehippo.com";
 
     public FileHippoCom(PluginWrapper wrapper) {
@@ -40,7 +39,7 @@ public class FileHippoCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("/(es|en|pl|jp)", ""));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("/(es|en|pl|jp|de)", ""));
         if (!link.getDownloadURL().endsWith("/"))
             link.setUrlDownload(link.getDownloadURL() + "/tech/");
         else
@@ -55,6 +54,42 @@ public class FileHippoCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCookie("http://filehippo.com/", "FH_PreferredCulture", "en-US");
+        br.getPage(link.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            if (br.getRedirectLocation().equals("http://www.filehippo.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.getPage(br.getRedirectLocation());
+        }
+        if (br.containsHTML(FILENOTFOUND) || link.getDownloadURL().contains("/history")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String realLink = br.getRegex("id=\"_ctl0_contentMain_lblPath\"> <strong>\\&#187;</strong>.*?<a href=\"(/download_.*?/\\d+/)\">").getMatch(0);
+        // If the user adds a wrong link we have to find the right one here and
+        // set it
+        if (realLink != null) {
+            realLink = "http://www.filehippo.com" + realLink + "tech/";
+            link.setUrlDownload(realLink);
+            br.getPage(link.getDownloadURL());
+            if (br.containsHTML(FILENOTFOUND) || link.getDownloadURL().contains("/history")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("<title>Download (.*?) \\- Technical Details \\- FileHippo\\.com</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("title: \\'Download (.*?) \\- Technical Details \\- FileHippo\\.com\\'").getMatch(0);
+            if (filename == null) filename = br.getRegex("<h1><span itemprop=\"name\">([^<>\"]*?)</span></h1>").getMatch(0);
+        }
+        String filesize = br.getRegex("\\(([0-9,]+ bytes)\\)").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("<b>Download<br/>This Version</b></a><br/><b>(.*?)</b><div").getMatch(0);
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String md5 = br.getRegex("MD5 Checksum:</b></td><td>(.*?)</td>").getMatch(0);
+        if (md5 != null) link.setMD5Hash(md5);
+        link.setName(filename.trim());
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -83,43 +118,6 @@ public class FileHippoCom extends PluginForHost {
         }
         downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().equals("http://www.filehippo.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (br.containsHTML(FILENOTFOUND) || link.getDownloadURL().contains("/history")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String realLink = br.getRegex("id=\"_ctl0_contentMain_lblPath\"> <strong>\\&#187;</strong>.*?<a href=\"(/download_.*?/\\d+/)\">").getMatch(0);
-        // If the user adds a wrong link we have to find the right one here and
-        // set it
-        if (realLink != null) {
-            realLink = "http://www.filehippo.com" + realLink + "tech/";
-            link.setUrlDownload(realLink);
-            br.getPage(link.getDownloadURL());
-            if (br.containsHTML(FILENOTFOUND) || link.getDownloadURL().contains("/history")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("<title>Download (.*?) \\- Download \\- FileHippo\\.com</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>Download (.*?) \\- FileHippo\\.com</title>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("title: \\'Download (.*?) \\- FileHippo\\.com\\'").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("\\(([0-9,]+ bytes)\\)").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("<b>Download<br/>This Version</b></a><br/><b>(.*?)</b><div").getMatch(0);
-        }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String md5 = br.getRegex("MD5 Checksum:</b></td><td>(.*?)</td>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
-        link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
-        return AvailableStatus.TRUE;
     }
 
     @Override

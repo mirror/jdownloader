@@ -69,8 +69,14 @@ public class FlsncCm extends PluginForDecrypt {
         boolean failed = false;
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        if (br.containsHTML(">No links to show<")) return decryptedLinks;
-        if (br.containsHTML("(Folder do not exist<|>The requested folder do not exist or was deleted by the owner|>If you want, you can contact the owner of the referring site to tell him about this mistake)")) return decryptedLinks;
+        if (br.containsHTML(">No links to show<")) {
+            logger.info("Folder empty: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("(>The page you are trying to access was not found|>Error 404 \\- Page Not Found<)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String[] links = br.getRegex("\"(" + getDomain() + "/file/[^\"]+)\"").getColumn(0);
         if (links == null || links.length == 0) {
             failed = true;

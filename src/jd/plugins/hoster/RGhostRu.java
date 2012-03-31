@@ -104,10 +104,10 @@ public class RGhostRu extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         // error clause for offline links
-        if (br.containsHTML(">[\r\n]+File is deleted.[\r\n]+<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<meta name=\"description\" content=\"(.*?). Download").getMatch(0);
+        if (br.containsHTML(">[\r\n]+File is deleted\\.[\r\n]+<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("rel=\"alternate\" title=\"Comments for the file ([^<>\"]*?)\"").getMatch(0);
         if (filename == null) filename = br.getRegex("title=\"Comments for the file (.*?)\"").getMatch(0);
-        String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
+        String filesize = br.getRegex("<small>([\r\n]+)?\\((.*?)\\)([\r\n]+)?</small>").getMatch(1);
         if (filesize == null) filesize = br.getRegex("class=\"filesize\">\\((.*?)\\)</span>").getMatch(0);
         if (filename == null || filesize == null) {
             offlineCheck();

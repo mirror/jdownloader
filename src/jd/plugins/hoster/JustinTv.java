@@ -21,8 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,12 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(www\\.)?justindecrypted\\.tv/[a-z0-9\\-_]+/./\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(www\\.)?media\\d+.(justin|twitch)decrypted\\.tv/archives/[^<>\"]*?\\.flv" }, flags = { 0 })
 public class JustinTv extends PluginForHost {
-
-    private String  DLLINK  = null;
-
-    private boolean blocked = false;
 
     public JustinTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,6 +37,7 @@ public class JustinTv extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("justindecrypted.tv", "justin.tv"));
+        link.setUrlDownload(link.getDownloadURL().replace("twitchdecrypted.tv", "justin.tv"));
     }
 
     @Override
@@ -56,68 +51,37 @@ public class JustinTv extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        URLConnectionAdapter con = null;
+        Browser br2 = br.cloneBrowser();
+        // In case the link redirects to the finallink
+        br2.setFollowRedirects(true);
+        try {
+            con = br2.openGetConnection(downloadLink.getDownloadURL());
+            if (!con.getContentType().contains("html"))
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            else
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (blocked) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads!", 10 * 60 * 1000l);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-
-        String type = getType(downloadLink);
-        URLConnectionAdapter con = null;
-        // System.out.println(type);
-        if ("c".equals(type)) {
-            con = br.openGetConnection("http://api.justin.tv/api/broadcast/by_chapter/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + ".xml");
-
-        } else {
-            con = br.openGetConnection("http://api.justin.tv/api/broadcast/show/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + ".xml");
-
-        }
-        if (con.getResponseCode() == 400) {
-            con.disconnect();
-            blocked = true;
-            return AvailableStatus.TRUE;
-        }
-        br.followConnection();
-        if (br.containsHTML("<error>broadcast not found</error>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        DLLINK = br.getRegex("<video_file_url>(http://.*?)</video_file_url>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
-        if (downloadLink.getFinalFileName() == null) downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
-        if (DLLINK != null) {
-            Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
-            try {
-                con = br2.openGetConnection(DLLINK);
-                if (!con.getContentType().contains("html"))
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                else
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
-        }
-        return AvailableStatus.TRUE;
-    }
-
-    private String getType(DownloadLink downloadLink) {
-
-        return new Regex(downloadLink.getDownloadURL(), "\\.tv/[a-z0-9\\-_]+/(.)/\\d+").getMatch(0);
     }
 
     @Override

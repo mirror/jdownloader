@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -26,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "http://[\\w\\.]*?chauthanh\\.info/animeDownload/download/\\d+/.+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "http://[\\w\\.]*?chauthanh\\.info/animeDownload/(download|new)/\\d+/.+/.+" }, flags = { 0 })
 public class ChThnhInfo extends PluginForHost {
 
     public String              dllink = null;
@@ -72,13 +73,13 @@ public class ChThnhInfo extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("This video does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>Downloading file(.*?)- Download Anime").getMatch(0);
+        String filename = br.getRegex("<title>Downloading file(.*?)\\- Download Anime").getMatch(0);
         if (filename == null) filename = br.getRegex("<div id=\"content_text\"><p><center><b>(.*?)</b>").getMatch(0);
         dllink = br.getRegex("<p><a href=\"(/.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(/animeDownload/.*?/download/\\d+/.*?/.*?)\"").getMatch(0);
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         dllink = "http://chauthanh.info" + dllink;
-        filename = filename.trim();
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
 

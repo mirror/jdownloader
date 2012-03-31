@@ -56,7 +56,7 @@ public class LolCryptOrg extends PluginForDecrypt {
                 }
             }
         }
-        final String[] links = br.getRegex("\\'\\.\\.(/decrypt\\?fid=[a-z0-9]+\\&lid=\\d+\\&key=[a-z-0-9]+)\\'").getColumn(0);
+        final String[] links = br.getRegex("\\.\\.(/decrypt\\?fid=[a-z0-9]+\\&lid=\\d+\\&key=[a-z-0-9]+)(\\'|\")").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

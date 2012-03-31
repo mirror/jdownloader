@@ -21,14 +21,14 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(www\\.)?(justin\\.tv|(de\\.)?(twitchtv\\.com|twitch\\.tv))/[a-z0-9\\-_]+/(./\\d+|videos(\\?page=\\d+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "justin.tv" }, urls = { "http://(www\\.)?(justin\\.tv|(de\\.)?(twitchtv\\.com|twitch\\.tv))/[^<>/\"]+/((b|c)/\\d+|videos(\\?page=\\d+)?)" }, flags = { 0 })
 public class JustinTvDecrypt extends PluginForDecrypt {
 
     public JustinTvDecrypt(PluginWrapper wrapper) {
@@ -40,8 +40,9 @@ public class JustinTvDecrypt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // twitchtv belongs to justin.tv
-        String parameter = param.toString().replaceAll("((de\\.)?(twitchtv\\.com|twitch\\.tv))", "justin.tv");
-        parameter = param.toString();
+        br.setCookie("http://justin.tv", "language", "en");
+        br.setCookie("http://justin.tv", "mature_allowed", "true");
+        String parameter = param.toString().replaceAll("(de\\.)?(twitchtv\\.com|twitch\\.tv)", "justin.tv");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (parameter.contains("/videos")) {
@@ -51,27 +52,34 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             for (String dl : links)
                 decryptedLinks.add(createDownloadlink(HOSTURL + dl));
         } else {
-            if (br.getURL().contains("/videos")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
-                if (filename == null) filename = br.getRegex("<h2 class=\"clip_title\">(.*?)</h2>").getMatch(0);
+            if (br.getURL().contains("/videos")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
             }
-            DownloadLink singleLink = createDownloadlink(parameter.replaceAll("((de\\.)?(twitchtv\\.com|twitch\\.tv))", "justin.tv").replace("justin", "justindecrypted"));
-            String[] links = br.getRegex("\\|[\t\n\r ]+<a href=\"(/.*?)\"").getColumn(0);
-            int counter = 2;
-            if (links != null && links.length != 0) {
-                if (filename == null) return null;
-                filename = Encoding.htmlDecode(filename.trim());
-                singleLink.setFinalFileName(filename + " - Part 1.flv");
-                for (String dl : links) {
-                    DownloadLink dlink = createDownloadlink(HOSTURL + dl);
+            String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<h2 class=\"clip_title\">(.*?)</h2>").getMatch(0);
+            br.getPage("http://api.justin.tv/api/broadcast/by_archive/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".xml");
+            String[] links = br.getRegex("<video_file_url>(http://[^<>\"]*?)</video_file_url>").getColumn(0);
+            int counter = 1;
+            if (links == null || links.length == 0 || filename == null) {
+                logger.warning("Decrypter broken: " + parameter);
+                return null;
+            }
+            filename = Encoding.htmlDecode(filename.trim());
+            for (String dl : links) {
+                DownloadLink dlink = createDownloadlink(dl.replace("twitch.tv/", "twitchdecrypted.tv/").replace("justin.tv/", "justindecrypted.tv/"));
+                dlink.setProperty("directlink", "true");
+                if (links.length != 1) {
                     dlink.setFinalFileName(filename + " - Part " + counter + ".flv");
-                    decryptedLinks.add(dlink);
-                    counter++;
+                } else {
+                    dlink.setFinalFileName(filename + ".flv");
                 }
+                decryptedLinks.add(dlink);
+                counter++;
             }
-            decryptedLinks.add(singleLink);
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(filename);
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
