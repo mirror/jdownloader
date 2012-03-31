@@ -7,9 +7,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.jdownloader.extensions.antireconnect.translate.T;
 import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.DummyArchiveFile;
+import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.images.NewTheme;
 
 public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFile> {

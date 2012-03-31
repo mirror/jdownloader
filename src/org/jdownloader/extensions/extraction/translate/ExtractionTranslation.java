@@ -224,4 +224,37 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Close" })
     String close();
+
+    @Default(lngs = { "en" }, values = { "Filename" })
+    String filename();
+
+    @Default(lngs = { "en" }, values = { "Link Status" })
+    String exists();
+
+    @Default(lngs = { "en" }, values = { "Unknown" })
+    String unknown();
+
+    @Default(lngs = { "en" }, values = { "Link available" })
+    String online();
+
+    @Default(lngs = { "en" }, values = { "File offline or missing" })
+    String offline();
+
+    @Default(lngs = { "en" }, values = { "There is no Link for this part in this package, or the Link is offline" })
+    String offline_tt();
+
+    @Default(lngs = { "en" }, values = { "Link available" })
+    String online_tt();
+
+    @Default(lngs = { "en" }, values = { "A Link for this part is available, but it may be offline." })
+    String unknown_tt();
+
+    @Default(lngs = { "en" }, values = { "File Status" })
+    String local();
+
+    @Default(lngs = { "en" }, values = { "File already exists" })
+    String downloadedok();
+
+    @Default(lngs = { "en" }, values = { "File must be downloaded" })
+    String downloadedbad();
 }
