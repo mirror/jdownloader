@@ -225,7 +225,7 @@ public class ChoMikujPl extends PluginForHost {
             con = br.openGetConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
-                if (!videolink) link.setFinalFileName(getFileNameFromHeader(con));
+                if (!videolink) link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

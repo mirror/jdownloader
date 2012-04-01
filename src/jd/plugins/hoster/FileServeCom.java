@@ -179,7 +179,6 @@ public class FileServeCom extends PluginForHost {
             dllink = br.getRedirectLocation();
         }
         if (dllink == null) {
-            System.out.println(br.toString());
             this.handleErrors(br);
             final String fileId = this.br.getRegex("fileserve\\.com/file/([a-zA-Z0-9]+)").getMatch(0);
             this.br.setFollowRedirects(false);

@@ -43,7 +43,6 @@ public class ChoMikujPl extends PluginForDecrypt {
 
     private static final String PASSWORDWRONG = ">Nieprawidłowe hasło<";
     private static final String PASSWORDTEXT  = "Ten folder jest <b>zabezpieczony oddzielnym hasłem";
-    private static final String VIDEOTEXT     = "GalPage";
     private ArrayList<Integer>  REGEXSORT     = new ArrayList<Integer>();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -109,8 +108,6 @@ public class ChoMikujPl extends PluginForDecrypt {
         fpName = fpName.trim();
         // Alle Haupt-POSTdaten
         String postdata = "chomikId=" + chomikID + "&folderId=" + folderID + "&sortType=Name&ascending=True&pageNr=%jdownloaderpage%&isGallery=True&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken);
-        // Needed for page-change for videolinks
-        if (br.containsHTML(VIDEOTEXT)) postdata = postdata.replace("&FVPage=", "&GalPage=");
         // Passwort Handling
         if (br.containsHTML(PASSWORDTEXT)) {
             prepareBrowser(parameter, br);
@@ -181,9 +178,9 @@ public class ChoMikujPl extends PluginForDecrypt {
                     DownloadLink dl = createDownloadlink(finalLink);
                     if (id.length > 1) {
                         if (id.length == 5) {
-                            dl.setName(id[REGEXSORT.get(4)].trim());
+                            dl.setName(Encoding.htmlDecode(id[REGEXSORT.get(4)].trim()));
                         } else {
-                            dl.setName(id[REGEXSORT.get(0)].trim() + id[REGEXSORT.get(1)].trim());
+                            dl.setName(Encoding.htmlDecode(id[REGEXSORT.get(0)].trim()) + id[REGEXSORT.get(1)].trim());
                         }
                         dl.setDownloadSize(SizeFormatter.getSize(id[REGEXSORT.get(2)].replace(",", ".")));
                         dl.setAvailable(true);
