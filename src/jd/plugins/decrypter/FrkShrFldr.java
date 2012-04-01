@@ -20,13 +20,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://[\\w\\.]*?freakshare.(com|net)/(folder/\\d+/([a-z\\d]+\\.html)?|\\?x=folder\\&f_id=\\d+&f_md5=[a-z0-9]+[^ <>\"\\']+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://(www\\.)?freakshare\\.(com|net)/(folder/\\d+/([a-z\\d]+\\.html)?|\\?x=folder\\&f_id=\\d+&f_md5=[a-z0-9]+)" }, flags = { 0 })
 public class FrkShrFldr extends PluginForDecrypt {
 
     public FrkShrFldr(PluginWrapper wrapper) {
@@ -35,7 +36,14 @@ public class FrkShrFldr extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replaceAll("\\&page=\\d+", "&page=0");
+        String parameter = param.toString();
+        final Regex fInfo = new Regex(parameter, "/folder/(\\d+)/([a-z0-9]+)\\.html");
+        final Regex fInfo2 = new Regex(parameter, "/\\?x=folder\\&f_id=(\\d+)\\&f_md5=([a-z0-9]+)\\&");
+        String fid = fInfo.getMatch(0);
+        String fmd5 = fInfo.getMatch(1);
+        if (fid == null) fid = fInfo2.getMatch(0);
+        if (fmd5 == null) fmd5 = fInfo2.getMatch(1);
+        parameter = "http://freakshare.com/?x=folder&f_id=" + fid + "&f_md5=" + fmd5 + "&entrys=10000&page=0&order=";
         br.setCookiesExclusive(true);
         br.setReadTimeout(3 * 60 * 1000);
         br.getPage(parameter);
