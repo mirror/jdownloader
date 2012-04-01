@@ -39,7 +39,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+)|(photos|id)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album\\d+_\\d+|photo(\\-)?\\d+_\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+)|(photos|id)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -61,6 +61,7 @@ public class VKontakteRu extends PluginForDecrypt {
         String parameter = param.toString().replace("vkontakte.ru/", "vk.com/");
         br.setCookiesExclusive(false);
         synchronized (LOCK) {
+            sleep(1500l, param);
             try {
                 /** Login process */
                 if (!getUserLogin()) return null;
@@ -90,7 +91,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 } else if (parameter.matches(".*?vk\\.com/video(\\-)?\\d+_\\d+")) {
                     /** Single video */
                     decryptedLinks = decryptSingleVideo(decryptedLinks, parameter);
-                } else if (parameter.matches(".*?(album\\d+_|photos|id)\\d+")) {
+                } else if (parameter.matches(".*?(album(\\-)?\\d+_|photos|id)\\d+")) {
                     /**
                      * Photo albums Examples: http://vk.com/photos575934598
                      * http://vk.com/id28426816 http://vk.com/album87171972_0
@@ -171,7 +172,7 @@ public class VKontakteRu extends PluginForDecrypt {
         int overallCounter = 1;
         DecimalFormat df = new DecimalFormat("00000");
         if (parameter.contains("#/album"))
-            parameter = "http://vk.com/album" + new Regex(parameter, "#/album(\\d+_\\d+)").getMatch(0);
+            parameter = "http://vk.com/album" + new Regex(parameter, "#/album((\\-)?\\d+_\\d+)").getMatch(0);
         else if (parameter.matches(".*?vk\\.com/(photos|id)\\d+")) parameter = parameter.replaceAll("vk\\.com/(photos|id)", "vk.com/album") + "_0";
         br.getPage(parameter);
         if (br.containsHTML(FILEOFFLINE) || br.containsHTML("(В альбоме нет фотографий|<title>DELETED</title>)")) {
@@ -205,11 +206,11 @@ public class VKontakteRu extends PluginForDecrypt {
                 offset += 40;
             }
             String correctedBR = br.toString().replace("\\", "");
-            String[] photoIDs = new Regex(correctedBR, "class=\"photo_row\" id=\"photo_row(\\d+_\\d+)\"").getColumn(0);
+            String[] photoIDs = new Regex(correctedBR, "class=\"photo_row\" id=\"photo_row((\\-)?\\d+_\\d+)\"").getColumn(0);
             if (photoIDs == null || photoIDs.length == 0) {
-                photoIDs = new Regex(correctedBR, "><a href=\"/photo(\\d+_\\d+)\"").getColumn(0);
+                photoIDs = new Regex(correctedBR, "><a href=\"/photo((\\-)?\\d+_\\d+)\"").getColumn(0);
                 if (photoIDs == null || photoIDs.length == 0) {
-                    photoIDs = new Regex(correctedBR, "showPhoto\\(\\'(\\d+_\\d+)\\'").getColumn(0);
+                    photoIDs = new Regex(correctedBR, "showPhoto\\(\\'((\\-)?\\d+_\\d+)\\'").getColumn(0);
                 }
             }
             if (photoIDs == null || photoIDs.length == 0) {
@@ -252,7 +253,7 @@ public class VKontakteRu extends PluginForDecrypt {
         DecimalFormat df = new DecimalFormat("00000");
         br.getPage(parameter);
         /** Photo regexes, last regex is for albums */
-        final String[] regexes = { "class=\"photo_album_row\" id=\"(album\\d+_\\d+)\"", "<div class=\\\\\"photo_album_row\\\\\" id=\\\\\"album(\\d+_\\d+)\\\\\"", "<div class=\\\\\"photo_row\\\\\" id=\\\\\"album(\\d+_\\d+)\\\\\"" };
+        final String[] regexes = { "class=\"photo_album_row\" id=\"(album(\\-)?\\d+_\\d+)\"", "<div class=\\\\\"photo_album_row\\\\\" id=\\\\\"album((\\-)?\\d+_\\d+)\\\\\"", "<div class=\\\\\"photo_row\\\\\" id=\\\\\"album((\\-)?\\d+_\\d+)\\\\\"" };
         for (String regex : regexes) {
             String[] photoAlbums = br.getRegex(regex).getColumn(0);
             if (photoAlbums == null || photoAlbums.length == 0) continue;
@@ -293,7 +294,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     offset += 12;
                     br.postPage(postPage, "al=1&offset=" + offset + "&part=1");
                 }
-                String[] photoAlbums = br.getRegex("class=\"photo(_album)?_row\" id=\"album(\\d+_\\d+)").getColumn(1);
+                String[] photoAlbums = br.getRegex("class=\"photo(_album)?_row\" id=\"album((\\-)?\\d+_\\d+)").getColumn(1);
                 if (photoAlbums == null || photoAlbums.length == 0) continue;
                 for (String photoAlbum : photoAlbums) {
                     final String decryptedLink = "http://vk.com/album" + photoAlbum;

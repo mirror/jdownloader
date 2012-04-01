@@ -143,17 +143,15 @@ public class ChoMikujPl extends PluginForDecrypt {
             prepareBrowser(parameter, br);
             accessPage(postdata, br, i);
             // Every full page has 30 links (pictures)
-            boolean filenameIncluded = true;
             /** For photos */
-            String[][] fileIds = br.getRegex("<div class=\"left\">[\t\n\r ]+<p class=\"filename\">[\t\n\r ]+<a class=\"downloadAction\" href=\"[^<>\"\\']+\"> +<span class=\"bold\">(.{1,300})</span>(\\..{1,20})</a>[\t\n\r ]+</p>[\t\n\r ]+<div class=\"thumbnail\">.*?</div>[\t\n\r ]+<div class=\"smallTab\">[\t\n\r ]+<ul class=\"tabGradientBg borderRadius\">[\t\n\r ]+<li>([^<>\"\\'/]+)</li>.*?class=\"galeryActionButtons visibleOpt fileIdContainer\" rel=\"(\\d+)\"").getMatches();
-            addRegexInt(0, 1, 2, 3);
+            String[][] fileIds = br.getRegex("<div class=\"left\">[\t\n\r ]+<p class=\"filename\">[\t\n\r ]+<a class=\"downloadAction\" href=\"[^<>\"\\']+\"> +<span class=\"bold\">(.{1,300})</span>(\\..{1,20})</a>[\t\n\r ]+</p>[\t\n\r ]+<div class=\"thumbnail\">.*?title=\"([^<>\"]*?)\".*?</div>[\t\n\r ]+<div class=\"smallTab\">[\t\n\r ]+<ul class=\"tabGradientBg borderRadius\">[\t\n\r ]+<li>([^<>\"\\'/]+)</li>.*?class=\"galeryActionButtons visibleOpt fileIdContainer\" rel=\"(\\d+)\"").getMatches();
+            addRegexInt(0, 1, 3, 4, 2);
             if (fileIds == null || fileIds.length == 0) {
                 /** Specified for videos */
                 fileIds = br.getRegex("<ul class=\"borderRadius tabGradientBg\">[\t\n\r ]+<li><span>([^<>\"\\']+)</span></li>[\t\n\r ]+<li><span class=\"date\">[^<>\"\\']+</span></li>[\t\n\r ]+</ul>[\t\n\r ]+</div>[\t\n\r ]+<div class=\"fileActionsButtons clear visibleButtons  fileIdContainer\" rel=\"(\\d+)\" style=\"visibility: hidden;\">.*?class=\"expanderHeader downloadAction\" href=\"[^<>\"\\']+\" title=\"[^<>\"\\']+\">[\t\n\r ]+<span class=\"bold\">([^<>\"\\']+)</span>([^<>\"\\']+)</a>[\t\n\r ]+<img alt=\"pobierz\" class=\"downloadArrow visibleArrow\" src=\"").getMatches();
-                addRegexInt(2, 3, 0, 1);
+                addRegexInt(2, 3, 0, 1, 0);
                 /** Last attempt, only get IDs (no pre-available-check possible) */
                 if (fileIds == null || fileIds.length == 0) {
-                    filenameIncluded = false;
                     fileIds = br.getRegex("fileIdContainer\" rel=\"(\\d+)\"").getMatches();
                 }
             }
@@ -181,8 +179,12 @@ public class ChoMikujPl extends PluginForDecrypt {
                 for (String[] id : fileIds) {
                     String finalLink = String.format("&id=%s&gallerylink=%s&", id[REGEXSORT.get(3)], param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
                     DownloadLink dl = createDownloadlink(finalLink);
-                    if (filenameIncluded) {
-                        dl.setName(id[REGEXSORT.get(0)].trim() + id[REGEXSORT.get(1)].trim());
+                    if (id.length > 1) {
+                        if (id.length == 5) {
+                            dl.setName(id[REGEXSORT.get(4)].trim());
+                        } else {
+                            dl.setName(id[REGEXSORT.get(0)].trim() + id[REGEXSORT.get(1)].trim());
+                        }
                         dl.setDownloadSize(SizeFormatter.getSize(id[REGEXSORT.get(2)].replace(",", ".")));
                         dl.setAvailable(true);
                         /**
@@ -220,12 +222,13 @@ public class ChoMikujPl extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void addRegexInt(int filename, int filenameExt, int filesize, int fileid) {
+    private void addRegexInt(int filename, int filenameExt, int filesize, int fileid, int fullfilename) {
         REGEXSORT.clear();
         REGEXSORT.add(filename);
         REGEXSORT.add(filenameExt);
         REGEXSORT.add(filesize);
         REGEXSORT.add(fileid);
+        REGEXSORT.add(fullfilename);
     }
 
     public int getPageCount(String postdata, String theParameter) throws NumberFormatException, DecrypterException, IOException {

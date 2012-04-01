@@ -44,7 +44,7 @@ public class FileSwapCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override
@@ -67,18 +67,22 @@ public class FileSwapCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML(">The storage node this file is currently on is currently undergoing")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 1000l);
-        int wait = 1;
-        String waittime = br.getRegex("var time=(\\d+);").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait * 1001l, downloadLink);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://www.fileswap.com/ajax_requests.php", "id=" + new Regex(downloadLink.getDownloadURL(), "fileswap\\.com/dl/([A-Za-z0-9]+)/").getMatch(0));
-        String dllink = br.toString();
-        /* remove newline */
-        dllink = dllink.replaceAll("%0D%0A", "");
-        dllink = dllink.trim();
-        if (!dllink.startsWith("http") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+        String dllink = br.getRegex("<a class=\"downloadbutton\" id=\"bttnDownloadLink\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://dl\\d+\\.fileswap\\.com/download/\\?id=[^<>\"/]*?)\"").getMatch(0);
+        if (dllink == null) {
+            int wait = 1;
+            String waittime = br.getRegex("var time=(\\d+);").getMatch(0);
+            if (waittime != null) wait = Integer.parseInt(waittime);
+            sleep(wait * 1001l, downloadLink);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage("http://www.fileswap.com/ajax_requests.php", "id=" + new Regex(downloadLink.getDownloadURL(), "fileswap\\.com/dl/([A-Za-z0-9]+)/").getMatch(0));
+            dllink = br.toString();
+            /* remove newline */
+            dllink = dllink.replaceAll("%0D%0A", "");
+            dllink = dllink.trim();
+            if (!dllink.startsWith("http") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("(There has been an error on the page you tried to access\\.|Support staff has been notified of this error\\.)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l);

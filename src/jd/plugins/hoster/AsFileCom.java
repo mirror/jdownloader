@@ -42,7 +42,8 @@ public class AsFileCom extends PluginForHost {
 
     public AsFileCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("");
+        this.setAccountwithoutUsername(true);
+        this.enablePremium("http://asfile.com/en/index/pay");
     }
 
     @Override
@@ -122,8 +123,8 @@ public class AsFileCom extends PluginForHost {
                 }
             }
             br.setFollowRedirects(false);
-            br.postPage("http://asfile.com/en/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            br.getPage("http://asfile.com/en/");
+            br.postPage(MAINPAGE + "/en/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            br.getPage(MAINPAGE + "/en/");
             if (!br.containsHTML("logout\">Logout ")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             br.getPage("http://asfile.com/en/profile");
             if (!br.containsHTML("<p>Your account:<strong> premium")) {
@@ -167,7 +168,18 @@ public class AsFileCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        if (account.getUser() == null || account.getUser().trim().length() == 0) {
+            br.postPage("http://asfile.com/en/index/enterCode", "code=" + account.getPass());
+            final String expire = br.getRegex("<p>You have got the premium access to: (\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2})\\)</p>").getMatch(0);
+            if (br.getCookie(MAINPAGE, "code") == null || expire == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            account.setValid(true);
+            AccountInfo ai = new AccountInfo();
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd hh:mm", null));
+            ai.setStatus("Premium User");
+            account.setAccountInfo(ai);
+        } else {
+            login(account, false);
+        }
         br.setFollowRedirects(false);
         br.getPage("http://asfile.com/en/premium-download/file/" + new Regex(link.getDownloadURL(), "asfile\\.com/file/(.+)").getMatch(0));
         String dllink = br.getRegex("\"(http://s\\d+\\.asfile\\.com/file/premium/[a-z0-9]+/\\d+/[A-Za-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
