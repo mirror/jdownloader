@@ -1,6 +1,18 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (C) 2012 Shashank Tulsyan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.jdownloader.extensions.neembuu.gui;
 
@@ -25,21 +37,19 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.plaf.basic.BasicButtonUI;
-
+import java.awt.*;
+import java.awt.event.*;
 import org.jdownloader.extensions.neembuu.DownloadSession;
+import org.jdownloader.extensions.neembuu.translate._NT;
 
 /**
  * Component to be used as tabComponent; Contains a JLabel to show the text and
  * a JButton to close the tab it belongs to
  */
 public class ButtonTabComponent extends JPanel {
-    /**
-	 * 
-	 */
-    private static final long       serialVersionUID = 1672135537070393545L;
-    private final JTabbedPane       pane;
+    private final JTabbedPane     pane;
     private final DownloadSession jdds;
-    private final NeembuuGui        neembuuGui;
+    private final NeembuuGui      neembuuGui;
 
     public ButtonTabComponent(final JTabbedPane pane, DownloadSession jdds, NeembuuGui neembuuGui) {
         // unset default FlowLayout' gaps
@@ -101,18 +111,9 @@ public class ButtonTabComponent extends JPanel {
         }
 
         public void actionPerformed(ActionEvent e) {
-            int ret = JOptionPane.showConfirmDialog(null, jdds.toString(), "Are you sure you want to unmount?", JOptionPane.YES_NO_OPTION);
+            int ret = JOptionPane.showConfirmDialog(null, jdds.getDownloadLink().getFilePackage().getName(), _NT._.unmountConfirm(), JOptionPane.YES_NO_OPTION);
             if (ret == JOptionPane.YES_OPTION) {
-                try {
-                    jdds.getWatchAsYouDownloadSession().unMount();
-                } catch (Exception a) {
-
-                }
-                try {
-                    neembuuGui.removeSession(jdds);
-                } catch (Exception a) {
-
-                }
+                jdds.getWatchAsYouDownloadSession().getVirtualFileSystem().unmountAndEndSessions();
             }
             /*
              * int i = pane.indexOfTabComponent(ButtonTabComponent.this); if (i

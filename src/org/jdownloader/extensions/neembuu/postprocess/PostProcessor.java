@@ -14,31 +14,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.jdownloader.extensions.neembuu;
+package org.jdownloader.extensions.neembuu.postprocess;
 
-import java.io.File;
-import javax.swing.JPanel;
-import neembuu.vfs.file.SeekableConnectionFile;
-import org.jdownloader.extensions.neembuu.gui.HttpFilePanel;
+import java.util.List;
+import jpfm.fs.BasicFileSystem;
+import org.jdownloader.extensions.neembuu.DownloadSession;
 
 /**
  * 
  * @author Shashank Tulsyan
  */
-public interface WatchAsYouDownloadSession {
-    SeekableConnectionFile getSeekableConnectionFile();
+public interface PostProcessor {
+    boolean canHandle(List<DownloadSession> sessions);
 
-    NB_VirtualFileSystem getVirtualFileSystem();
-
-    JPanel getFilePanel();
-
-    HttpFilePanel getHttpFilePanel();
-
-    boolean isMounted();
-
-    File getMountLocation();
-
-    void waitForDownloadToFinish() throws Exception;
-
-    long getTotalDownload();
+    boolean handle(List<DownloadSession> sessions, BasicFileSystem bfs, String mountLocation);
 }

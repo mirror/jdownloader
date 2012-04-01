@@ -78,7 +78,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-config.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-config.src.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-diskmanager.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-diskmanager.src.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-swing.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-swing.src.zip"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-test.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-test.src.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-util.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-util.src.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-util-logging.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-util-logging.src.zip"/>
 	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-util-weaklisteners.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-util-weaklisteners.src.zip"/>

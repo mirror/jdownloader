@@ -36,6 +36,7 @@ import org.jdownloader.gui.views.downloads.context.ResetAction;
 import org.jdownloader.gui.views.downloads.context.ResumeAction;
 import org.jdownloader.gui.views.downloads.context.SetPasswordAction;
 import org.jdownloader.gui.views.downloads.context.StopsignAction;
+import org.jdownloader.gui.views.downloads.context.WatchAsYouDownloadAction;
 
 public class DownloadTableContextMenuFactory {
     private static final DownloadTableContextMenuFactory INSTANCE = new DownloadTableContextMenuFactory();
@@ -84,6 +85,9 @@ public class DownloadTableContextMenuFactory {
         popup.add(new ForceDownloadAction(links));
         popup.add(new ResumeAction(links));
         popup.add(new ResetAction(links));
+        if (contextObject instanceof FilePackage) {
+            popup.add(new WatchAsYouDownloadAction(fps));
+        }
         popup.add(new JSeparator());
         popup.add(new NewPackageAction(links));
         popup.add(new CheckStatusAction(links));

@@ -162,16 +162,6 @@ public class Youtube extends PluginForHost {
             this.dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        try {
-            org.jdownloader.extensions.neembuu.DownloadSession downloadSession = new org.jdownloader.extensions.neembuu.DownloadSession(downloadLink, this.dl, this, this.dl.getConnection(), this.br.cloneBrowser());
-            if (org.jdownloader.extensions.neembuu.NeembuuExtension.tryHandle(downloadSession)) {
-                org.jdownloader.extensions.neembuu.WatchAsYouDownloadSession watchAsYouDownloadSession = downloadSession.getWatchAsYouDownloadSession();
-                watchAsYouDownloadSession.waitForDownloadToFinish();
-            }
-            logger.severe("Neembuu could not handle this link/filehost. Using default download system.");
-        } catch (Throwable e) {
-            // Neembuu extension is not installed
-        }
         if (this.dl.startDownload()) {
             this.postprocess(downloadLink);
         }

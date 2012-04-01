@@ -1157,6 +1157,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Unset Stopmark" })
     String gui_table_contextmenu_stopmark_unset();
+    
+    @Default(lngs = { "en" }, values = { "Watch As you download" })
+    String gui_table_contextmenu_watch_as_you_download();
 
     @Default(lngs = { "en" }, values = { "Force download" })
     String gui_table_contextmenu_tryforce();
@@ -1982,6 +1985,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Size" })
     String SizeColumn_SizeColumn();
+    
+    @Default(lngs = { "en" }, values = { "Watch As You Download" })
+    String WatchAsYouDownloadColumn_WatchAsYouDownloadColumn();
 
     @Default(lngs = { "en" }, values = { "Bytes Left" })
     String RemainingColumn_RemainingColumn();
@@ -2994,6 +3000,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Open Download Directory" })
     String OpenDownloadFolderAction_OpenDownloadFolderAction_();
+    
+    @Default(lngs = { "en" }, values = { "Watch As You Download" })
+    String WatchAsYouDownload_WatchAsYouDownloadAction_();
 
     @Default(lngs = { "en" }, values = { "Enabled" })
     String EnabledAction_EnabledAction_object_();

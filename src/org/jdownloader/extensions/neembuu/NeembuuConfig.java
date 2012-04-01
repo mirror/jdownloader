@@ -12,10 +12,10 @@ public interface NeembuuConfig extends ExtensionConfigInterface {
     // adds the enbtry to jd advanced config table
 
     @AboutConfig
-    // default value
     @DefaultIntValue(4)
-    // will be shown in the advanced config
+    // default value
     @Description("This is a bla value")
+    // will be shown in the advanced config
     int getBlaNum();
 
     void setBlaNum(int num);

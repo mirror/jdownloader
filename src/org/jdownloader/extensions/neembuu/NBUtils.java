@@ -4,18 +4,21 @@
  */
 package org.jdownloader.extensions.neembuu;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
-
+import java.util.logging.Logger;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 
 /**
