@@ -22,7 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -42,16 +42,21 @@ public class LolCryptOrg extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
+
         /* use cnl2 button if available */
         if (br.containsHTML("127\\.0\\.0\\.1:9666/flash/addcrypted2")) {
-            final String crpted = br.getRegex("TYPE=\"hidden\" NAME=\"crypted\" VALUE=\"([^<>\"]*?)\"").getMatch(0);
-            final String jk = br.getRegex("NAME=\"jk\"[\t\n\r ]+VALUE=\"([^<>\"/]*?)\"").getMatch(0);
-            if (crpted != null && jk != null) {
-                final Browser cnlbr = new Browser();
+            Form cnlform = br.getForm(0);
+            if (cnlform != null) {
+                // Fehler in Formsyntax --> Form neu bauen!
+                for (String[] s : cnlform.getRegex("<INPUT\r?\n?\t?\\s?TYPE=\"hidden\"\r?\n?\t?\\s?NAME=\"(.*?)\"\r?\n?\t?\\s?VALUE=\"(.*?)\">").getMatches()) {
+                    cnlform.put(s[0], s[1]);
+                }
+                final Browser cnlbr = br.cloneBrowser();
                 cnlbr.setConnectTimeout(5000);
                 cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
                 try {
-                    cnlbr.postPage("http://127.0.0.1:9666/flash/addcrypted2", "passwords=any_password&source=http%3A%2F%2Flolcrypt.org&jk=" + Encoding.urlEncode(jk) + "&crypted" + Encoding.urlEncode(crpted));
+                    cnlbr.submitForm(cnlform);
+                    if (cnlbr.containsHTML("success")) { return decryptedLinks; }
                 } catch (final Throwable e) {
                 }
             }

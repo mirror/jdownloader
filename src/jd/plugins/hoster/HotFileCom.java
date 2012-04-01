@@ -18,15 +18,21 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import javax.script.Invocable;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.reconnect.ipcheck.IPController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -306,8 +312,16 @@ public class HotFileCom extends PluginForHost {
                 }
                 // Reconnect if the waittime is too big!
                 if (sleeptime > 100 * 1000l) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sleeptime); }
+                // no captcha
+                String noCaptchaKey = br.getRegex("el\\.name\\s?=\\s?\"([0-9a-z]+)\"").getMatch(0);
+                if (noCaptchaKey != null) {
+                    String noCaptchaValue = getNoCaptchaHashValue();
+                    if (noCaptchaValue != null) {
+                        form.put(noCaptchaKey, noCaptchaValue);
+                    }
+                }
                 /* 2secs more as extra buffer */
-                this.sleep(sleeptime + 2000, link);
+                sleep(sleeptime + 2000, link);
                 submit(br, form);
                 // captcha
                 if (!br.containsHTML("Click here to download")) {
@@ -359,6 +373,23 @@ public class HotFileCom extends PluginForHost {
             link.setFinalFileName(urlFileName);
         }
         dl.startDownload();
+    }
+
+    private String getNoCaptchaHashValue() {
+        String val = br.getRegex("el\\.value\\s?=\\s?\"([0-9a-z\\-]+)\"").getMatch(0);
+        String checksum = br.getRegex("(function calcchecksum.*?\\})").getMatch(0);
+        if (val == null || checksum == null) return null;
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        final Invocable inv = (Invocable) engine;
+        try {
+            engine.eval(checksum);
+            result = ((Double) inv.invokeFunction("calcchecksum")).longValue();
+        } catch (Throwable e) {
+            return null;
+        }
+        return val + result.toString();
     }
 
     @Override
@@ -533,17 +564,13 @@ public class HotFileCom extends PluginForHost {
     }
 
     private void prepareBrowser(final Browser br) {
-        try {
-            if (br == null) { return; }
-            br.setCookie("http://hotfile.com", "lang", "en");
-            br.getHeaders().put("User-Agent", ua);
-            br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-            br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
-            br.getHeaders().put("Pragma", null);
-            br.getHeaders().put("Cache-Control", null);
-        } catch (Throwable e) {
-            /* setCookie throws exception in 09580 */
-        }
+        if (br == null) { return; }
+        br.setCookie("http://hotfile.com", "lang", "en");
+        br.getHeaders().put("User-Agent", ua);
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
+        br.getHeaders().put("Pragma", null);
+        br.getHeaders().put("Cache-Control", null);
     }
 
     @Override
@@ -618,21 +645,27 @@ public class HotFileCom extends PluginForHost {
         getConfig().addEntry(cond);
     }
 
+    private String getIP() throws Exception {
+        String ip = null;
+        try {
+            ip = IPController.getInstance().getIP().toString();
+        } catch (Throwable e) {
+            // ip = IPCheck.getIPAdress();
+            ip = InetAddress.getLocalHost().getHostAddress();
+        }
+        if (ip == null || !ip.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) return null;
+        ip = new Regex(ip, "(\\d+\\.\\d+)\\.\\d+\\.\\d+").getMatch(0);
+        return ip;
+    }
+
     private void submit(final Browser br, final Form form) throws Exception {
-        br.getHeaders().setDominant(true);
-        br.setCookie("http://hotfile.com", "lang", "en");
-        br.getHeaders().put("User-Agent", ua);
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.setCookie(br.getHost(), "ip", getIP());
+        br.getHeaders().put("Accept", "text/html, application/xhtml+xml, */*");
         br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
-        br.getHeaders().put("Accept-Encoding", null);
-        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-        br.getHeaders().put("Connection", "close");
-        br.getHeaders().put("Referer", br.getHeaders().get("Referer"));
-        br.getHeaders().put("Cookie", br.getHeaders().get("Cookie"));
+        br.getHeaders().put("Accept-Charset", null);
+        br.getHeaders().put("Accept-Encoding", "gzip, deflate");
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         br.submitForm(form);
-        br.getHeaders().put("Content-Type", null);
-        br.getHeaders().put("Accept-Encoding", "gzip");
     }
 
 }
