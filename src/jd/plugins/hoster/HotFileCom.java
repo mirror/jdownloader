@@ -32,7 +32,6 @@ import javax.script.ScriptEngineManager;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.controlling.reconnect.ipcheck.IPController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -645,15 +644,15 @@ public class HotFileCom extends PluginForHost {
         getConfig().addEntry(cond);
     }
 
-    private String getIP() throws Exception {
+    private String getIP() {
         String ip = null;
         try {
-            ip = IPController.getInstance().getIP().toString();
+            ip = InetAddress.getLocalHost().getHostAddress();
+            // ip = IPController.getInstance().getIP().toString();
         } catch (Throwable e) {
             // ip = IPCheck.getIPAdress();
-            ip = InetAddress.getLocalHost().getHostAddress();
         }
-        if (ip == null || !ip.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) return null;
+        if (ip == null || !ip.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) return "192.168";
         ip = new Regex(ip, "(\\d+\\.\\d+)\\.\\d+\\.\\d+").getMatch(0);
         return ip;
     }

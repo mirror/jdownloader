@@ -108,6 +108,14 @@ public class AsFileCom extends PluginForHost {
             // Load cookies
             br.setCookiesExclusive(true);
             br.setFollowRedirects(true);
+            String user = account.getUser();
+            account.setUser(user == null ? "" : user);
+            if (account.getUser().isEmpty()) {
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                cookies.put("code", account.getPass());
+                account.setProperty("cookies", cookies);
+                force = false;
+            }
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
             if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -153,12 +161,14 @@ public class AsFileCom extends PluginForHost {
             return ai;
         }
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex("premium </strong>\\(to (\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2})\\)</p>").getMatch(0);
-        if (expire == null) {
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd hh:mm", null));
+        if (!account.getUser().isEmpty()) {
+            String expire = br.getRegex("premium </strong>\\(to (\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2})\\)</p>").getMatch(0);
+            if (expire == null) {
+                account.setValid(false);
+                return ai;
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd hh:mm", null));
+            }
         }
         account.setValid(true);
         ai.setStatus("Premium User");
@@ -168,18 +178,7 @@ public class AsFileCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        if (account.getUser() == null || account.getUser().trim().length() == 0) {
-            br.postPage("http://asfile.com/en/index/enterCode", "code=" + account.getPass());
-            final String expire = br.getRegex("<p>You have got the premium access to: (\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2})\\)</p>").getMatch(0);
-            if (br.getCookie(MAINPAGE, "code") == null || expire == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            account.setValid(true);
-            AccountInfo ai = new AccountInfo();
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd hh:mm", null));
-            ai.setStatus("Premium User");
-            account.setAccountInfo(ai);
-        } else {
-            login(account, false);
-        }
+        login(account, false);
         br.setFollowRedirects(false);
         br.getPage("http://asfile.com/en/premium-download/file/" + new Regex(link.getDownloadURL(), "asfile\\.com/file/(.+)").getMatch(0));
         String dllink = br.getRegex("\"(http://s\\d+\\.asfile\\.com/file/premium/[a-z0-9]+/\\d+/[A-Za-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
