@@ -262,6 +262,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     protected void autoFileNameCorrection(List<CrawledLink> pkgchildren) {
+        long t = System.currentTimeMillis();
         if (CFG_LINKGRABBER.AUTO_FILENAME_CORRECTION_ENABLED.isEnabled()) {
             ArrayList<DownloadLink> dlinks = new ArrayList<DownloadLink>();
             ArrayList<DownloadLink> maybebadfilenames = new ArrayList<DownloadLink>();
@@ -279,11 +280,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     continue;
                 }
                 String newName = link.gethPlugin().autoFilenameCorrection(name, link.getDownloadLink(), dlinks);
-                if (newName != null) {
+                if (newName != null && !newName.equals(name)) {
                     Log.L.info("Renamed file " + name + " to " + newName);
                 } else {
                     newName = link.gethPlugin().autoFilenameCorrection(name, link.getDownloadLink(), maybebadfilenames);
-                    if (newName != null) {
+                    if (newName != null && !newName.equals(name)) {
                         Log.L.info("Renamed file2 " + name + " to " + newName);
                     }
                 }
@@ -296,6 +297,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
             }
         }
+        System.out.println(System.currentTimeMillis() - t);
     }
 
     private void addCrawledLink(final CrawledLink link) {
