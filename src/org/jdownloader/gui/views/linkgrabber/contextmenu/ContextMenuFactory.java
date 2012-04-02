@@ -42,7 +42,7 @@ public class ContextMenuFactory {
         JMenu m;
 
         p.add(new ConfirmAction(isShift, selection).toContextMenuAction());
-
+        p.add(new EnabledAction(selection).toContextMenuAction());
         if (selection == null || selection.size() == 0) {
             p.add(new AddLinksAction().toContextMenuAction());
             return p;
@@ -77,12 +77,12 @@ public class ContextMenuFactory {
         int count = p.getComponentCount();
         MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new LinkgrabberTableContext(table, p, contextObject, selection, column, event)));
         if (p.getComponentCount() > count) p.add(new JSeparator());
-        p.add(new EnabledAction(selection).toContextMenuAction());
+
         /* remove menu */
         m = new JMenu(_GUI._.ContextMenuFactory_createPopup_cleanup());
         m.setIcon(NewTheme.I().getIcon("clear", 18));
         m.add(new RemoveAllAction().toContextMenuAction());
-        m.add(new RemoveSelectionAction(table, selection).toContextMenuAction());
+        m.add(new RemoveSelectionAction(selection).toContextMenuAction());
         m.add(new RemoveNonSelectedAction(table, selection).toContextMenuAction());
         m.add(new RemoveOfflineAction().toContextMenuAction());
         m.add(new RemoveIncompleteArchives(selection).toContextMenuAction());

@@ -24,7 +24,7 @@ public class CheckStatusAction extends ContextMenuAction {
 
     @Override
     protected String getIcon() {
-        return "network-idle";
+        return "ok";
     }
 
     @Override

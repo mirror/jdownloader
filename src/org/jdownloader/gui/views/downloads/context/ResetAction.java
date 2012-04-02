@@ -6,12 +6,12 @@ import java.util.ArrayList;
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 
-public class ResetAction extends ContextMenuAction {
+public class ResetAction extends AppAction {
 
     private static final long             serialVersionUID = -5583373118359478729L;
 
@@ -19,18 +19,8 @@ public class ResetAction extends ContextMenuAction {
 
     public ResetAction(ArrayList<DownloadLink> links) {
         this.links = links;
-
-        init();
-    }
-
-    @Override
-    protected String getIcon() {
-        return "undo";
-    }
-
-    @Override
-    protected String getName() {
-        return _GUI._.gui_table_contextmenu_reset() + " (" + links.size() + ")";
+        setIconKey("undo");
+        setName(_GUI._.gui_table_contextmenu_reset());
     }
 
     public void actionPerformed(ActionEvent e) {

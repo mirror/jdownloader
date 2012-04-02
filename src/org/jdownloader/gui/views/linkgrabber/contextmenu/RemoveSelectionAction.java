@@ -12,7 +12,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 
 public class RemoveSelectionAction extends AppAction {
@@ -22,13 +21,12 @@ public class RemoveSelectionAction extends AppAction {
      */
     private static final long       serialVersionUID = -3008851305036758872L;
     private ArrayList<AbstractNode> selection;
-    private LinkGrabberTable        table;
 
-    public RemoveSelectionAction(LinkGrabberTable table, ArrayList<AbstractNode> selection) {
+    public RemoveSelectionAction(ArrayList<AbstractNode> selection) {
         setIconKey("remove");
         setName(_GUI._.RemoveSelectionAction_RemoveSelectionAction_object_());
         this.selection = selection;
-        this.table = table;
+
     }
 
     public void actionPerformed(ActionEvent e) {

@@ -14,18 +14,18 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class ForceDownloadAction extends AppAction {
+public class SuperPriorityDownloadAction extends AppAction {
 
     private static final long             serialVersionUID = 7107840091963427544L;
 
     private final ArrayList<DownloadLink> links;
 
-    public ForceDownloadAction(final ArrayList<DownloadLink> links) {
+    public SuperPriorityDownloadAction(final ArrayList<DownloadLink> links) {
         this.links = links;
         Image add = NewTheme.I().getImage("media-playback-start", 20);
-        Image play = NewTheme.I().getImage("prio_3", 14);
+        Image play = NewTheme.I().getImage("prio_1", 14);
         setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, -4, 0, 6, 10)));
-        setName(_GUI._.gui_table_contextmenu_tryforcethisdownload());
+        setName(_GUI._.gui_table_contextmenu_SuperPriorityDownloadAction());
     }
 
     @Override
@@ -34,7 +34,11 @@ public class ForceDownloadAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        DownloadWatchDog.getInstance().forceDownload(links);
+
+        for (DownloadLink link : links) {
+            link.setPriority(3);
+        }
+
     }
 
 }

@@ -4,6 +4,7 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
 
+import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
@@ -15,6 +16,7 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEvent;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
 import org.jdownloader.gui.views.downloads.context.CheckStatusAction;
 import org.jdownloader.gui.views.downloads.context.CopyPasswordAction;
@@ -23,7 +25,6 @@ import org.jdownloader.gui.views.downloads.context.CreateDLCAction;
 import org.jdownloader.gui.views.downloads.context.CustomSpeed;
 import org.jdownloader.gui.views.downloads.context.DeleteAction;
 import org.jdownloader.gui.views.downloads.context.DeleteFromDiskAction;
-import org.jdownloader.gui.views.downloads.context.EditLinkOrPackageAction;
 import org.jdownloader.gui.views.downloads.context.ForceDownloadAction;
 import org.jdownloader.gui.views.downloads.context.NewPackageAction;
 import org.jdownloader.gui.views.downloads.context.OpenDirectoryAction;
@@ -36,6 +37,8 @@ import org.jdownloader.gui.views.downloads.context.ResetAction;
 import org.jdownloader.gui.views.downloads.context.ResumeAction;
 import org.jdownloader.gui.views.downloads.context.SetPasswordAction;
 import org.jdownloader.gui.views.downloads.context.StopsignAction;
+import org.jdownloader.gui.views.downloads.context.SuperPriorityDownloadAction;
+import org.jdownloader.images.NewTheme;
 
 public class DownloadTableContextMenuFactory {
     private static final DownloadTableContextMenuFactory INSTANCE = new DownloadTableContextMenuFactory();
@@ -78,13 +81,12 @@ public class DownloadTableContextMenuFactory {
                 }
             }
         }
-
-        popup.add(new StopsignAction(contextObject));
-        popup.add(new EnabledAction(selection));
         popup.add(new ForceDownloadAction(links));
+        popup.add(new SuperPriorityDownloadAction(links));
+        popup.add(new EnabledAction(selection));
         popup.add(new ResumeAction(links));
         popup.add(new ResetAction(links));
-
+        popup.add(new StopsignAction(contextObject));
         popup.add(new JSeparator());
         popup.add(new NewPackageAction(links));
         popup.add(new CheckStatusAction(links));
@@ -114,7 +116,14 @@ public class DownloadTableContextMenuFactory {
         MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new DownloadTableContext(downloadsTable, popup, contextObject, selection, column, ev)));
 
         popup.add(new JSeparator());
-        popup.add(new EditLinkOrPackageAction(downloadsTable, contextObject));
+
+        /* remove menu */
+        JMenu m = new JMenu(_GUI._.ContextMenuFactory_createPopup_cleanup());
+        m.setIcon(NewTheme.I().getIcon("clear", 18));
+
+        popup.add(m);
+        // popup.add(new EditLinkOrPackageAction(downloadsTable,
+        // contextObject));
         return popup;
     }
 }

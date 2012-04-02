@@ -1157,12 +1157,12 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Unset Stopmark" })
     String gui_table_contextmenu_stopmark_unset();
-    
+
     @Default(lngs = { "en" }, values = { "Watch As you download" })
     String gui_table_contextmenu_watch_as_you_download();
 
-    @Default(lngs = { "en" }, values = { "Force download" })
-    String gui_table_contextmenu_tryforce();
+    @Default(lngs = { "en" }, values = { "Force Downloads" })
+    String gui_table_contextmenu_tryforcethisdownload();
 
     @Default(lngs = { "en" }, values = { "Drop after '%s1'" })
     String gui_table_draganddrop_after(Object s1);
@@ -1985,7 +1985,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Size" })
     String SizeColumn_SizeColumn();
-    
+
     @Default(lngs = { "en" }, values = { "Watch As You Download" })
     String WatchAsYouDownloadColumn_WatchAsYouDownloadColumn();
 
@@ -3000,7 +3000,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Open Download Directory" })
     String OpenDownloadFolderAction_OpenDownloadFolderAction_();
-    
+
     @Default(lngs = { "en" }, values = { "Watch As You Download" })
     String WatchAsYouDownload_WatchAsYouDownloadAction_();
 
@@ -3573,5 +3573,20 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Show details" })
     String ConfirmAction_run_incomplete_archive_details();
+
+    @Default(lngs = { "en" }, values = { "Stop Mark for Download Links" })
+    String StopsignAction_actionPerformed_help_title_();
+
+    @Default(lngs = { "en" }, values = { "If you set a Stop Mark on a Download Link, JDownloader will stop downloading after this file has been loaded.\r\nIf you want to download until this Package is finished, you should set the Stop Mark on the Package instead." })
+    String StopsignAction_actionPerformed_help_msg_();
+
+    @Default(lngs = { "en" }, values = { "Stop Mark for Packages" })
+    String StopsignAction_actionPerformed_help_title_package_();
+
+    @Default(lngs = { "en" }, values = { "If you set a Stop Mark on a Package, JDownloader will stop downloading after all files in this Package have finished." })
+    String StopsignAction_actionPerformed_help_msg_package_();
+
+    @Default(lngs = { "en" }, values = { "Download next" })
+    String gui_table_contextmenu_SuperPriorityDownloadAction();
 
 }

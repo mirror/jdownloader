@@ -41,7 +41,7 @@ public class RemoveOptionsAction extends AbstractAction {
         JPopupMenu popup = new JPopupMenu();
         ArrayList<AbstractNode> selection = table.getExtTableModel().getSelectedObjects();
         popup.add(new RemoveAllAction().toContextMenuAction());
-        popup.add(new RemoveSelectionAction(table, selection).toContextMenuAction());
+        popup.add(new RemoveSelectionAction(selection).toContextMenuAction());
         popup.add(new RemoveNonSelectedAction(table, selection).toContextMenuAction());
         popup.add(new RemoveOfflineAction().toContextMenuAction());
         popup.add(new RemoveIncompleteArchives(selection).toContextMenuAction());

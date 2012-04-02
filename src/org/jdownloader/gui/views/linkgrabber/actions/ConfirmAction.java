@@ -49,8 +49,8 @@ public class ConfirmAction extends AppAction {
         if ((org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue() && !autostart) || (autostart && !org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue())) {
             setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_start());
             Image add = NewTheme.I().getImage("media-playback-start", 20);
-            Image play = NewTheme.I().getImage("add", 12);
-            setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, -2, 0, 9, 10)));
+            Image play = NewTheme.I().getImage("add", 14);
+            setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, -2, 0, 8, 10)));
             this.autostart = true;
         } else {
             setName(_GUI._.ConfirmAction_ConfirmAction_context_add());

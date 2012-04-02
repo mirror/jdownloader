@@ -920,7 +920,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             }
         }
         context.getMenu().add(menu);
-        menu.setIcon(getIcon(20));
+        menu.setIcon(getIcon(18));
 
     }
 

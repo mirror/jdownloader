@@ -81,7 +81,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     @Override
     protected boolean onShortcutDelete(final ArrayList<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
-        new RemoveSelectionAction(this, selectedObjects).actionPerformed(null);
+        new RemoveSelectionAction(selectedObjects).actionPerformed(null);
         return true;
     }
 
