@@ -161,20 +161,22 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
-    protected DownloadInterface                dl                     = null;
+    protected DownloadInterface                dl                                           = null;
 
-    private static final HashMap<String, Long> LAST_CONNECTION_TIME   = new HashMap<String, Long>();
-    private static final HashMap<String, Long> LAST_STARTED_TIME      = new HashMap<String, Long>();
+    private static final HashMap<String, Long> LAST_CONNECTION_TIME                         = new HashMap<String, Long>();
+    private static final HashMap<String, Long> LAST_STARTED_TIME                            = new HashMap<String, Long>();
+    private static final String                AUTO_FILE_NAME_CORRECTION_NAME_SPLIT         = "AUTO_FILE_NAME_CORRECTION_NAME_SPLIT";
+    private static final String                AUTO_FILE_NAME_CORRECTION_NAME_SPLIT_PATTERN = "AUTO_FILE_NAME_CORRECTION_NAME_SPLIT_PATTERN";
 
-    private Long                               WAIT_BETWEEN_STARTS    = 0L;
+    private Long                               WAIT_BETWEEN_STARTS                          = 0L;
 
-    private boolean                            enablePremium          = false;
+    private boolean                            enablePremium                                = false;
 
-    private boolean                            accountWithoutUsername = false;
+    private boolean                            accountWithoutUsername                       = false;
 
-    private String                             premiumurl             = null;
+    private String                             premiumurl                                   = null;
 
-    private DownloadLink                       link                   = null;
+    private DownloadLink                       link                                         = null;
 
     public boolean checkLinks(final DownloadLink[] urls) {
         return false;
@@ -611,57 +613,81 @@ public abstract class PluginForHost extends Plugin {
      * special chars and spaces with _. Plugins can try to autocorrect this
      * based on other downloadlinks
      * 
-     * @param orgiginalfilename
-     * 
+     * @param cache
+     *            TODO
      * @param downloadLink
-     * 
      * @param dlinks
+     * @param orgiginalfilename
      */
     // public String autoFilenameCorrection(String orgiginalfilename,
     // DownloadLink downloadLink, ArrayList<DownloadLink> dlinks) {
     // return null;
     // }
 
-    public String autoFilenameCorrection(String originalFilename, DownloadLink downloadLink, ArrayList<DownloadLink> dlinks) {
+    public String autoFilenameCorrection(HashMap<Object, Object> cache, String originalFilename, DownloadLink downloadLink, ArrayList<DownloadLink> dlinks) {
         try {
 
             String MD5 = downloadLink.getMD5Hash();
             String SHA1 = downloadLink.getSha1Hash();
             // auto partname correction
 
-            String[] multiPart = null;
-            Pattern pattern = null;
+            String[] multiPart = cache != null ? (String[]) cache.get(AUTO_FILE_NAME_CORRECTION_NAME_SPLIT + originalFilename) : null;
+            Pattern pattern = cache != null ? (Pattern) cache.get(AUTO_FILE_NAME_CORRECTION_NAME_SPLIT_PATTERN + originalFilename) : null;
             // find first match
-            for (Pattern p : PATTERNS) {
-                multiPart = new Regex(originalFilename, p).getRow(0);
-                if (multiPart != null) {
-                    pattern = p;
-                    break;
-                }
-            }
 
-            if (multiPart == null) {
-                multiPart = new String[] { originalFilename, "" };
+            if (pattern == null) {
+                for (Pattern p : PATTERNS) {
+                    multiPart = new Regex(originalFilename, p).getRow(0);
+                    if (multiPart != null) {
+                        pattern = p;
+                        if (cache != null) {
+                            cache.put(AUTO_FILE_NAME_CORRECTION_NAME_SPLIT + originalFilename, multiPart);
+                            cache.put(AUTO_FILE_NAME_CORRECTION_NAME_SPLIT_PATTERN + originalFilename, pattern);
+                        }
+                        break;
+                    }
+                }
+
+                if (multiPart == null) {
+                    multiPart = new String[] { originalFilename, "" };
+                }
             }
             String filteredName = filterPackageID(multiPart[0]);
             String prototypesplit;
             String newName;
             for (DownloadLink next : dlinks) {
-                if (downloadLink == next) continue;
-                if (next.getHost().equals(getHost())) continue;
-                String prototypeName = next.getNameSetbyPlugin();
-                if (prototypeName.equals(originalFilename)) continue;
 
-                if (pattern != null) {
-                    prototypesplit = new Regex(prototypeName, pattern).getMatch(0);
-                } else {
-                    prototypesplit = prototypeName;
+                if (downloadLink == next) {
+
+                    continue;
+                }
+
+                if (next.getHost().equals(getHost())) {
+                    continue;
+                }
+
+                prototypesplit = cache != null ? (String) cache.get(pattern) : null;
+                String prototypeName = next.getNameSetbyPlugin();
+                if (prototypeName.equals(originalFilename)) {
+
+                    continue;
+                }
+
+                if (prototypesplit == null) {
+                    if (pattern != null) {
+                        prototypesplit = new Regex(prototypeName, pattern).getMatch(0);
+                    } else {
+                        prototypesplit = prototypeName;
+                    }
+                    if (cache != null) cache.put(pattern, prototypesplit);
+
                 }
 
                 if (prototypesplit.equalsIgnoreCase(multiPart[0])) {
-                    newName = fixCase(originalFilename, prototypeName);
+                    newName = fixCase(cache, originalFilename, prototypeName);
                     if (newName != null) {
                         //
+
                         return newName;
                     }
                 }
@@ -669,7 +695,7 @@ public abstract class PluginForHost extends Plugin {
                     newName = getFixedFileName(originalFilename, prototypesplit);
                     if (newName != null) {
 
-                        String caseFix = fixCase(newName + multiPart[1], prototypeName);
+                        String caseFix = fixCase(cache, newName + multiPart[1], prototypeName);
                         if (caseFix != null) {
                             //
                             return caseFix;
@@ -692,10 +718,13 @@ public abstract class PluginForHost extends Plugin {
         return null;
     }
 
-    protected String fixCase(String originalFilename, String prototypeName) {
-
-        String[] multiPart = null;
-        Pattern pattern = null;
+    protected String fixCase(HashMap<Object, Object> cache, String originalFilename, String prototypeName) {
+        if (cache != null) {
+            Object ret = cache.get(originalFilename + "_" + prototypeName);
+            if (ret != null) return (String) ret;
+        }
+        // String[] multiPart = null;
+        // Pattern pattern = null;
         // find first match
         // todo implement part file support
         // for (Pattern p : PATTERNS) {
@@ -729,6 +758,7 @@ public abstract class PluginForHost extends Plugin {
                 return null;
             }
         }
+        if (cache != null) cache.put(originalFilename + "_" + prototypeName, sb.toString());
         return sb.toString();
     }
 

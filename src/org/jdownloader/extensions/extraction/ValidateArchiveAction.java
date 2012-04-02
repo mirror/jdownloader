@@ -44,7 +44,7 @@ public class ValidateArchiveAction extends AppAction {
 
     public ValidateArchiveAction(ExtractionExtension extractionExtension, ArrayList<AbstractNode> selection) {
         setName(T._.ValidateArchiveAction_ValidateArchiveAction_object_());
-        setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("unpack", 20), NewTheme.I().getImage("ok", 12), 0, 0, 10, 10)));
+        setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("unpack", 20), NewTheme.I().getImage("ok", 12), -2, 0, 10, 10)));
         this.selection = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<AbstractNode>());
         // System.out.println(1);
         extractor = extractionExtension;

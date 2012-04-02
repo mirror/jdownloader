@@ -108,8 +108,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     private HashMap<String, ArrayList<CrawledLink>> variousMap    = new HashMap<String, ArrayList<CrawledLink>>();
     private HashMap<String, ArrayList<CrawledLink>> hosterMap     = new HashMap<String, ArrayList<CrawledLink>>();
+    private HashMap<Object, Object>                 autoRenameCache;
+    private long                                    lastRenameTime;
 
     private LinkCollector() {
+        autoRenameCache = new HashMap<Object, Object>();
         ShutdownController.getInstance().addShutdownVetoListener(new ShutdownVetoListener() {
 
             @Override
@@ -263,7 +266,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     protected void autoFileNameCorrection(List<CrawledLink> pkgchildren) {
         long t = System.currentTimeMillis();
-        if (CFG_LINKGRABBER.AUTO_FILENAME_CORRECTION_ENABLED.isEnabled()) {
+        // if we have only one single hoster, we can hardly learn anything
+        if (CFG_LINKGRABBER.AUTO_FILENAME_CORRECTION_ENABLED.isEnabled() && hosterMap.size() > 1) {
             ArrayList<DownloadLink> dlinks = new ArrayList<DownloadLink>();
             ArrayList<DownloadLink> maybebadfilenames = new ArrayList<DownloadLink>();
             for (CrawledLink link : pkgchildren) {
@@ -279,11 +283,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                     continue;
                 }
-                String newName = link.gethPlugin().autoFilenameCorrection(name, link.getDownloadLink(), dlinks);
+                String newName = link.gethPlugin().autoFilenameCorrection(autoRenameCache, name, link.getDownloadLink(), dlinks);
                 if (newName != null && !newName.equals(name)) {
                     Log.L.info("Renamed file " + name + " to " + newName);
                 } else {
-                    newName = link.gethPlugin().autoFilenameCorrection(name, link.getDownloadLink(), maybebadfilenames);
+                    newName = link.gethPlugin().autoFilenameCorrection(autoRenameCache, name, link.getDownloadLink(), maybebadfilenames);
                     if (newName != null && !newName.equals(name)) {
                         Log.L.info("Renamed file2 " + name + " to " + newName);
                     }
@@ -297,7 +301,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
             }
         }
-        System.out.println(System.currentTimeMillis() - t);
+        lastRenameTime = (System.currentTimeMillis() - t);
     }
 
     private void addCrawledLink(final CrawledLink link) {

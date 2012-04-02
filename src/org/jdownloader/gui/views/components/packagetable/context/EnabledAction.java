@@ -4,13 +4,17 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.ImageIcon;
+
 import jd.controlling.IOEQ;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
+import org.appwork.utils.images.IconIO;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class EnabledAction extends AppAction {
     /**
@@ -32,15 +36,17 @@ public class EnabledAction extends AppAction {
         setName(_GUI._.EnabledAction_EnabledAction_object_());
         switch (state = getState(selection)) {
         case MIXED:
-            setIconKey("checkbox_undefined");
+            setSmallIcon(new ImageIcon((IconIO.paint(IconIO.createEmptyImage(22, 22), NewTheme.I().getImage("checkbox_undefined", 14), 5, 4))));
             break;
         case ALL_DISABLED:
-            setIconKey("disabled");
+            setSmallIcon(new ImageIcon((IconIO.paint(IconIO.createEmptyImage(22, 22), NewTheme.I().getImage("disabled", 14), 5, 4))));
+            ;
             break;
         case ALL_ENABLED:
-            setIconKey("enabled");
+            setSmallIcon(new ImageIcon((IconIO.paint(IconIO.createEmptyImage(22, 22), NewTheme.I().getImage("enabled", 14), 5, 4))));
             break;
         }
+        setIconSizes(12);
 
     }
 
