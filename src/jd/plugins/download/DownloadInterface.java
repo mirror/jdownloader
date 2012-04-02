@@ -53,10 +53,6 @@ import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.extensions.neembuu.DownloadSession;
-import org.jdownloader.extensions.neembuu.NeembuuExtension;
-import org.jdownloader.extensions.neembuu.WatchAsYouDownloadSession;
-import org.jdownloader.extensions.neembuu.translate._NT;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
@@ -1306,22 +1302,24 @@ abstract public class DownloadInterface {
     public boolean startDownload() throws Exception {
         try {
             linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
-
-            if (downloadLink.getFilePackage().getProperty(NeembuuExtension.WATCH_AS_YOU_DOWNLOAD_KEY, false).equals(true)) {
-                DownloadSession downloadSession = new DownloadSession(downloadLink, this, this.plugin, this.getConnection(), this.browser.cloneBrowser());
-                if (NeembuuExtension.tryHandle(downloadSession)) {
-                    WatchAsYouDownloadSession watchAsYouDownloadSession = downloadSession.getWatchAsYouDownloadSession();
-                    watchAsYouDownloadSession.waitForDownloadToFinish();
-                    return true;
+            try {
+                if (downloadLink.getFilePackage().getProperty(org.jdownloader.extensions.neembuu.NeembuuExtension.WATCH_AS_YOU_DOWNLOAD_KEY, false).equals(true)) {
+                    org.jdownloader.extensions.neembuu.DownloadSession downloadSession = new org.jdownloader.extensions.neembuu.DownloadSession(downloadLink, this, this.plugin, this.getConnection(), this.browser.cloneBrowser());
+                    if (org.jdownloader.extensions.neembuu.NeembuuExtension.tryHandle(downloadSession)) {
+                        org.jdownloader.extensions.neembuu.WatchAsYouDownloadSession watchAsYouDownloadSession = downloadSession.getWatchAsYouDownloadSession();
+                        watchAsYouDownloadSession.waitForDownloadToFinish();
+                        return true;
+                    }
+                    int o = 0;
+                    try {
+                        o = Dialog.I().showConfirmDialog(Dialog.LOGIC_COUNTDOWN, org.jdownloader.extensions.neembuu.translate._NT._.neembuu_could_not_handle_title(), org.jdownloader.extensions.neembuu.translate._NT._.neembuu_could_not_handle_message());
+                    } catch (Exception a) {
+                        o = Dialog.RETURN_CANCEL;
+                    }
+                    if (o == Dialog.RETURN_CANCEL) return false;
+                    logger.severe("Neembuu could not handle this link/filehost. Using default download system.");
                 }
-                int o = 0;
-                try {
-                    o = Dialog.I().showConfirmDialog(Dialog.LOGIC_COUNTDOWN, _NT._.neembuu_could_not_handle_title(), _NT._.neembuu_could_not_handle_message());
-                } catch (Exception a) {
-                    o = Dialog.RETURN_CANCEL;
-                }
-                if (o == Dialog.RETURN_CANCEL) return false;
-                logger.severe("Neembuu could not handle this link/filehost. Using default download system.");
+            } catch (final Throwable e) {
             }
 
             logger.finer("Start Download");
