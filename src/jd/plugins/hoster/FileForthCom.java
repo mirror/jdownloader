@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -53,13 +54,14 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision: 16002 $", interfaceVersion = 2, names = { "fileforth.com" }, urls = { "https?://(www\\.)?fileforth\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class FileForthCom extends PluginForHost {
 
-    private String              correctedBR         = "";
-    private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://fileforth.com";
-    private static final String MAINTENANCE         = ">This server is in maintenance mode";
-    private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
-    private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static final Object LOCK                = new Object();
+    private String               correctedBR         = "";
+    private static final String  PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
+    private static final String  COOKIE_HOST         = "http://fileforth.com";
+    private static final String  MAINTENANCE         = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT = "This server is under Maintenance";
+    private static final String  ALLWAIT_SHORT       = "Waiting till new downloads can be started";
+    private static final Object  LOCK                = new Object();
+    private static AtomicInteger maxPrem             = new AtomicInteger(1);
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.2.4
@@ -444,6 +446,7 @@ public class FileForthCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        maxPrem.set(1);
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
@@ -462,6 +465,12 @@ public class FileForthCom extends PluginForHost {
         }
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
+            try {
+                maxPrem.set(1);
+                account.setMaxSimultanDownloads(1);
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+            }
         } else {
             String expire = new Regex(correctedBR, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
             if (expire == null) {
@@ -473,6 +482,12 @@ public class FileForthCom extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
             }
             ai.setStatus("Premium User");
+            try {
+                maxPrem.set(-1);
+                account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+            }
         }
         return ai;
     }
@@ -524,7 +539,7 @@ public class FileForthCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -14);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -1);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -588,8 +603,7 @@ public class FileForthCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        // Max 14 conenctions at all
-        return 1;
+        return maxPrem.get();
     }
 
     @Override

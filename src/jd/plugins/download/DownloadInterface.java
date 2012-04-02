@@ -1304,25 +1304,26 @@ abstract public class DownloadInterface {
      * @throws Exception
      */
     public boolean startDownload() throws Exception {
-        if (downloadLink.getFilePackage().getProperty(NeembuuExtension.WATCH_AS_YOU_DOWNLOAD_KEY, false).equals(true)) {
-            DownloadSession downloadSession = new DownloadSession(downloadLink, this, this.plugin, this.getConnection(), this.browser.cloneBrowser());
-            if (NeembuuExtension.tryHandle(downloadSession)) {
-                WatchAsYouDownloadSession watchAsYouDownloadSession = downloadSession.getWatchAsYouDownloadSession();
-                watchAsYouDownloadSession.waitForDownloadToFinish();
-                return true;
-            }
-            int o = 0;
-            try {
-                o = Dialog.I().showConfirmDialog(Dialog.LOGIC_COUNTDOWN, _NT._.neembuu_could_not_handle_title(), _NT._.neembuu_could_not_handle_message());
-            } catch (Exception a) {
-                o = Dialog.RETURN_CANCEL;
-            }
-            if (o == Dialog.RETURN_CANCEL) return false;
-            logger.severe("Neembuu could not handle this link/filehost. Using default download system.");
-        }
-
         try {
             linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
+
+            if (downloadLink.getFilePackage().getProperty(NeembuuExtension.WATCH_AS_YOU_DOWNLOAD_KEY, false).equals(true)) {
+                DownloadSession downloadSession = new DownloadSession(downloadLink, this, this.plugin, this.getConnection(), this.browser.cloneBrowser());
+                if (NeembuuExtension.tryHandle(downloadSession)) {
+                    WatchAsYouDownloadSession watchAsYouDownloadSession = downloadSession.getWatchAsYouDownloadSession();
+                    watchAsYouDownloadSession.waitForDownloadToFinish();
+                    return true;
+                }
+                int o = 0;
+                try {
+                    o = Dialog.I().showConfirmDialog(Dialog.LOGIC_COUNTDOWN, _NT._.neembuu_could_not_handle_title(), _NT._.neembuu_could_not_handle_message());
+                } catch (Exception a) {
+                    o = Dialog.RETURN_CANCEL;
+                }
+                if (o == Dialog.RETURN_CANCEL) return false;
+                logger.severe("Neembuu could not handle this link/filehost. Using default download system.");
+            }
+
             logger.finer("Start Download");
             if (!connected) connect();
             if (connection != null && connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {

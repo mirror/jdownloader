@@ -135,7 +135,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
      * Bricht den Downloadvorgang ab.
      */
     public SingleDownloadController abortDownload() {
-        if (aborted == true || handling) return this;
+        if (aborted == true || !handling) return this;
         if (downloadLink.getLinkStatus().isPluginActive() == false) return this;
         aborted = true;
         Thread abortThread = new Thread() {
