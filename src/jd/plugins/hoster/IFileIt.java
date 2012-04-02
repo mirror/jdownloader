@@ -37,31 +37,34 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifile.it" }, urls = { "http://[\\w\\.]*?ifile\\.it/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifile.it" }, urls = { "http://(www\\.)?ifile\\.it/[a-z0-9]+" }, flags = { 2 })
 public class IFileIt extends PluginForHost {
 
-    private final String        useragent           = RandomUserAgent.generate();
+    private final String        useragent               = RandomUserAgent.generate();
 
     /* must be static so all plugins share same lock */
-    private static final Object LOCK                = new Object();
+    private static final Object LOCK                    = new Object();
 
-    private static final String CHALLENGEREGEX      = "challenge[ ]+:[ ]+\\'(.*?)\\',";
-    private static final String SERVER              = "server[ ]+:[ ]+\\'(.*?)\\'";
-    private static final String RECAPTCHPUBLICREGEX = "recaptcha_public.*?=.*?\\'(.*?)\\'";
-    private static final String RECAPTCHAIMAGEPART  = "image?c=";
-    private boolean             showDialog          = false;
-    private boolean             RESUMING            = false;
-    private int                 MAXFREECHUNKS       = 0;
+    private static final String CHALLENGEREGEX          = "challenge[ ]+:[ ]+\\'(.*?)\\',";
+    private static final String SERVER                  = "server[ ]+:[ ]+\\'(.*?)\\'";
+    private static final String RECAPTCHPUBLICREGEX     = "recaptcha_public.*?=.*?\\'(.*?)\\'";
+    private static final String RECAPTCHAIMAGEPART      = "image?c=";
+    private boolean             showDialog              = false;
+    private int                 MAXFREECHUNKS           = 0;
+    private static final String ONLY4REGISTERED         = "You need to be a registered user in order to download this file";
+    private static final String ONLY4REGISTEREDUSERTEXT = JDL.LF("plugins.hoster.ifileit.only4registered", "Only downloadable for registered users");
 
     public IFileIt(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://secure.ifile.it/account-signup.html");
     }
 
-    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, boolean resume, boolean viaAccount) throws Exception, PluginException {
+        if (!viaAccount && br.containsHTML(ONLY4REGISTERED)) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLY4REGISTEREDUSERTEXT); }
         br.setFollowRedirects(true);
         // generating first request
         final String c = br.getRegex("(var.*?eval.*?\r?\n)").getMatch(0);
@@ -161,7 +164,7 @@ public class IFileIt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, RESUMING, MAXFREECHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, MAXFREECHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
             br.followConnection();
@@ -227,7 +230,7 @@ public class IFileIt extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        doFree(downloadLink, false, false);
     }
 
     @Override
@@ -236,8 +239,8 @@ public class IFileIt extends PluginForHost {
         showDialog = false;
         loginAPI(account, null);
         if (account.getProperty("typ", null).equals("free")) {
-            RESUMING = true;
-            doFree(downloadLink);
+            br.getPage(downloadLink.getDownloadURL());
+            doFree(downloadLink, true, true);
         } else {
             final String ukey = new Regex(downloadLink.getDownloadURL(), "http://.*?/(.*?)(/.*?)?$").getMatch(0);
 
@@ -311,6 +314,7 @@ public class IFileIt extends PluginForHost {
         }
         final String filesize = br.getRegex(".*?(([0-9]+|[0-9]+\\.[0-9]+) (MB|KB|B|GB)).*?").getMatch(0);
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML(ONLY4REGISTERED)) downloadLink.getLinkStatus().setStatusText(ONLY4REGISTEREDUSERTEXT);
         downloadLink.setName(filename.trim().replaceAll("(\r|\n|\t)", ""));
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;

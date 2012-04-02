@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -55,15 +56,15 @@ public class UploadMbCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String post = "turingno=0&id=" + new Regex(downloadLink.getDownloadURL(), "dw\\.php\\?id=(\\d+)").getMatch(0) + "&DownloadNow=Download+File";
-        br.postPage(downloadLink.getDownloadURL(), post);
-        String dllink = br.getRegex("\\&#121;\\.\\.\\.<br> or <a href=\\'(/.*?)\\'").getMatch(0);
+        br.postPage(downloadLink.getDownloadURL(), "turingno=0&id=" + new Regex(downloadLink.getDownloadURL(), "dw\\.php\\?id=(\\d+)").getMatch(0) + "&DownloadNow=Download+File");
+        String dllink = br.getRegex("or <a href=\\'(/.*?)\\'").getMatch(0);
         if (dllink == null) dllink = br.getRegex("(\\'|\")(/file\\.php\\?id=\\d+\\&/.*?)(\\'|\")").getMatch(1);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://uploadmb.com" + dllink;
+        dllink = "http://www.uploadmb.com" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("Too many loads")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -72,6 +73,7 @@ public class UploadMbCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>The file you are requesting to download is not available<br>|Reasons for this \\(Invalid link, Violation of <a)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex name2AndSize = br.getRegex("\\&#100;\\&#58;</font></b> (.*?)\\((.*?)\\)<br>");
