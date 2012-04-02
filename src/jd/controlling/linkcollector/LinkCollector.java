@@ -277,6 +277,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     maybebadfilenames.add(link.getDownloadLink());
                 }
             }
+
             for (CrawledLink link : pkgchildren) {
                 String name = link.getDownloadLink().getNameSetbyPlugin();
                 if (name == null) {
@@ -650,7 +651,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     // clean up offline/various/dupeCheck maps
-    private void cleanupMaps(List<CrawledLink> links) {
+    protected void cleanupMaps(List<CrawledLink> links) {
         if (links == null) return;
         for (CrawledLink l : links) {
             dupeCheckMap.remove(l.getLinkID());
@@ -658,6 +659,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             removeFromMap(offlineMap, l);
             removeFromMap(hosterMap, l);
         }
+        autoRenameCache.clear();
+
     }
 
     @Override
