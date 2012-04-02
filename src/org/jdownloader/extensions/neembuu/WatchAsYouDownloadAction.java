@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.jdownloader.gui.views.downloads.context;
+package org.jdownloader.extensions.neembuu;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -24,7 +24,6 @@ import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.extensions.neembuu.NeembuuExtension;
 import org.jdownloader.gui.translate._GUI;
 
 /**

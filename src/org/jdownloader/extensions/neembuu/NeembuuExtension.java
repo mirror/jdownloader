@@ -16,10 +16,17 @@
  */
 package org.jdownloader.extensions.neembuu;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.logging.Level;
 
 import javax.swing.ImageIcon;
+
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -31,22 +38,26 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.neembuu.gui.NeembuuGui;
-import org.jdownloader.extensions.neembuu.gui.VirtualFilesPanel;
 import org.jdownloader.extensions.neembuu.translate._NT;
+import org.jdownloader.gui.menu.MenuContext;
+import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
+import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
+import org.jdownloader.gui.views.downloads.table.DownloadTableContext;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
 
-public class NeembuuExtension extends AbstractExtension<NeembuuConfig> {
+public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implements MenuFactoryListener {
 
-    private NeembuuGui                                  tab;
-    private int                                         number_of_retries          = 0;                                                                                                                         // 0=not
+    private NeembuuGui                                   tab;
+    private int                                          number_of_retries          = 0;                                                                                                                         // 0=not
     // checked, 1=checked once but failed ... -1 =works :)
-    private String                                      basicMntLoc                = new java.io.File(System.getProperty("user.home") + java.io.File.separator + "NeembuuWatchAsYouDownload").getAbsolutePath();
-    private String                                      vlcLoc                     = null;
-    private final LinkedList<WatchAsYouDownloadSession> watchAsYouDownloadSessions = new LinkedList<WatchAsYouDownloadSession>();
-    public static final String                          WATCH_AS_YOU_DOWNLOAD_KEY  = "WATCH_AS_YOU_DOWNLOAD";
-    private final Map<FilePackage,NB_VirtualFileSystem> virtualFileSystems         = new HashMap<FilePackage,NB_VirtualFileSystem>();
-    private final Map<DownloadLink,DownloadSession>     downloadSessions           = new HashMap<DownloadLink,DownloadSession>();
-    
+    private String                                       basicMntLoc                = new java.io.File(System.getProperty("user.home") + java.io.File.separator + "NeembuuWatchAsYouDownload").getAbsolutePath();
+    private String                                       vlcLoc                     = null;
+    private final LinkedList<WatchAsYouDownloadSession>  watchAsYouDownloadSessions = new LinkedList<WatchAsYouDownloadSession>();
+    public static final String                           WATCH_AS_YOU_DOWNLOAD_KEY  = "WATCH_AS_YOU_DOWNLOAD";
+    private final Map<FilePackage, NB_VirtualFileSystem> virtualFileSystems         = new HashMap<FilePackage, NB_VirtualFileSystem>();
+    private final Map<DownloadLink, DownloadSession>     downloadSessions           = new HashMap<DownloadLink, DownloadSession>();
+
     public NeembuuExtension() {
         super(_NT._.title());
         new EDTRunner() {
@@ -56,21 +67,22 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> {
                 tab = new NeembuuGui(NeembuuExtension.this);
             }
         }.waitForEDT();
+
         System.setProperty("neembuu.vfs.test.MoniorFrame.resumepolicy", "resumeFromPreviousState");
     }
 
     public String getBasicMountLocation() {
         return basicMntLoc;
     }
-    
+
     public String getVlcLocation() {
         return vlcLoc;
     }
-    
-    public void setVlcLocation(String vlcl){
+
+    public void setVlcLocation(String vlcl) {
         this.vlcLoc = vlcl;
     }
-    
+
     public void setBasicMountLocation(String basicMntLoc) throws Exception {
         java.io.File f = new java.io.File(basicMntLoc);
         if (!f.exists()) { throw new IllegalArgumentException("Basic mount location does not exist"); }
@@ -109,26 +121,28 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> {
         return number_of_retries == -1;
     }
 
-    public static boolean canHandle(ArrayList<FilePackage> fps){
+    public static boolean canHandle(ArrayList<FilePackage> fps) {
         if (!isActive()) { return false; }
         NeembuuExtension ne = getInstance();
         if (!ne.isUsable()) { return false; }
-        
-        for(FilePackage fp : fps){
-            if(fp==null)continue;//ignore empty entries
-            for(DownloadLink dl  : fp.getChildren()){
-                //todo : make this better. Check other features of host to ensure
-                // it can support watch as you download. It would be best if hosts
-                // that have been tested successfully/unsuccessfully are added to 
+
+        for (FilePackage fp : fps) {
+            if (fp == null) continue;// ignore empty entries
+            for (DownloadLink dl : fp.getChildren()) {
+                // todo : make this better. Check other features of host to
+                // ensure
+                // it can support watch as you download. It would be best if
+                // hosts
+                // that have been tested successfully/unsuccessfully are added
+                // to
                 // a whitelist/blacklist.
                 int c = dl.getDefaultPlugin().getMaxSimultanPremiumDownloadNum();
-                if(c < 5 && c!=-1)
-                    return false;
+                if (c < 5 && c != -1) return false;
             }
         }
         return true;
     }
-    
+
     public static boolean tryHandle(final DownloadSession jdds) {
         if (!isActive()) { return false; }
         NeembuuExtension ne = getInstance();
@@ -139,33 +153,43 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> {
 
     private boolean tryHandle_(final DownloadSession jdds) {
         synchronized (watchAsYouDownloadSessions) {
-            
+
             int o = 0;
-            //try{
-                //o = Dialog.I().showConfirmDialog(Dialog.LOGIC_COUNTDOWN, _NT._.approve_WatchAsYouDownload_Title(), _NT._.approve_WatchAsYouDownload_Message());
-            //}catch(Exception a){
-                //ignore
-            //}
-            //int o = JOptionPane.showConfirmDialog(SwingGui.getInstance().getMainFrame(), _NT._.approve_WatchAsYouDownload_Message(), _NT._.approve_WatchAsYouDownload_Title(), JOptionPane.YES_NO_OPTION);
-            //if (o != /*JOptionPane.YES_OPTION*/ Dialog.RETURN_OK) { return false; }
+            // try{
+            // o = Dialog.I().showConfirmDialog(Dialog.LOGIC_COUNTDOWN,
+            // _NT._.approve_WatchAsYouDownload_Title(),
+            // _NT._.approve_WatchAsYouDownload_Message());
+            // }catch(Exception a){
+            // ignore
+            // }
+            // int o =
+            // JOptionPane.showConfirmDialog(SwingGui.getInstance().getMainFrame(),
+            // _NT._.approve_WatchAsYouDownload_Message(),
+            // _NT._.approve_WatchAsYouDownload_Title(),
+            // JOptionPane.YES_NO_OPTION);
+            // if (o != /*JOptionPane.YES_OPTION*/ Dialog.RETURN_OK) { return
+            // false; }
 
             try {
                 WatchAsYouDownloadSessionImpl.makeNew(jdds);
                 watchAsYouDownloadSessions.add(jdds.getWatchAsYouDownloadSession());
             } catch (Exception a) {
-                /*SwingUtilities.invokeLater(new Runnable() {
-                    // @Override
-
-                    public void run() {
-                            JOptionPane.showMessageDialog(SwingGui.getInstance().getMainFrame(), _NT._.failed_WatchAsYouDownload_Message() + "\n" + jdds.toString(), _NT._.failed_WatchAsYouDownload_Title(), JOptionPane.ERROR_MESSAGE);
-                    }
-                });*/
+                /*
+                 * SwingUtilities.invokeLater(new Runnable() { // @Override
+                 * 
+                 * public void run() {
+                 * JOptionPane.showMessageDialog(SwingGui.getInstance
+                 * ().getMainFrame(), _NT._.failed_WatchAsYouDownload_Message()
+                 * + "\n" + jdds.toString(),
+                 * _NT._.failed_WatchAsYouDownload_Title(),
+                 * JOptionPane.ERROR_MESSAGE); } });
+                 */
 
                 logger.log(Level.SEVERE, "Could not start a watch as you download session", a);
                 return false;
             }
             tab.addSession(jdds);
-            downloadSessions.put(jdds.getDownloadLink(),jdds);
+            downloadSessions.put(jdds.getDownloadLink(), jdds);
             return true;
         }
     }
@@ -184,8 +208,8 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> {
 
     public final Map<DownloadLink, DownloadSession> getDownloadSessions() {
         return downloadSessions;
-    }   
-    
+    }
+
     /**
      * Action "onStop". Is called each time the user disables the extension
      */
@@ -204,6 +228,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> {
                 it.remove();
             }
         }
+        MenuFactoryEventSender.getInstance().removeListener(this);
         Log.L.finer("Stopped " + getClass().getSimpleName());
     }
 
@@ -213,6 +238,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> {
     @Override
     protected void start() throws StartException {
         Log.L.finer("Started " + getClass().getSimpleName());
+        MenuFactoryEventSender.getInstance().addListener(this, true);
     }
 
     /**
@@ -283,5 +309,38 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> {
     @Override
     public NeembuuGui getGUI() {
         return tab;
+    }
+
+    @Override
+    public void onExtendPopupMenu(MenuContext<?> context) {
+
+        if (context instanceof LinkgrabberTableContext) {
+            onExtendLinkgrabberTablePopupMenu((LinkgrabberTableContext) context);
+        } else if (context instanceof DownloadTableContext) {
+
+            onExtendDownloadTablePopupMenu((DownloadTableContext) context);
+
+        }
+    }
+
+    private void onExtendLinkgrabberTablePopupMenu(LinkgrabberTableContext context) {
+        context.getMenu().add(new WatchAsYouDownloadLinkgrabberAction(context.getMouseEvent().isShiftDown(), context.getSelectedObjects()));
+    }
+
+    private void onExtendDownloadTablePopupMenu(DownloadTableContext context) {
+        if (context.getClickedObject() instanceof FilePackage) {
+            final HashSet<FilePackage> fps = new HashSet<FilePackage>();
+            if (context.getSelectedObjects() != null) {
+                for (final AbstractNode node : context.getSelectedObjects()) {
+                    if (node instanceof FilePackage) {
+
+                        fps.add((FilePackage) node);
+
+                    }
+                }
+            }
+            context.getMenu().add(new WatchAsYouDownloadAction(new ArrayList<FilePackage>(fps)));
+        }
+
     }
 }

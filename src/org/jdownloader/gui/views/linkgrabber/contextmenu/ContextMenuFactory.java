@@ -52,8 +52,6 @@ public class ContextMenuFactory {
         }
 
         p.add(new JSeparator());
-        p.add(new WatchAsYouDownloadAction(isShift, selection).toContextMenuAction());
-        p.add(new JSeparator());
 
         p.add(new OpenDownloadFolderAction(contextObject, selection).toContextMenuAction());
         p.add(new SetDownloadFolderAction(contextObject, selection).toContextMenuAction());

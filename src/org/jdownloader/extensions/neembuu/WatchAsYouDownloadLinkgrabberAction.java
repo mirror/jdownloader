@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.jdownloader.gui.views.linkgrabber.contextmenu;
+package org.jdownloader.extensions.neembuu;
 
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -33,7 +33,6 @@ import jd.plugins.FilePackage;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.extensions.neembuu.NeembuuExtension;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -41,7 +40,7 @@ import org.jdownloader.images.NewTheme;
  * 
  * @author Shashank Tulsyan
  */
-public class WatchAsYouDownloadAction extends AppAction {
+public class WatchAsYouDownloadLinkgrabberAction extends AppAction {
     /**
      *
      */
@@ -49,7 +48,7 @@ public class WatchAsYouDownloadAction extends AppAction {
     private ArrayList<AbstractNode> values;
     private boolean                 autostart;
 
-    public WatchAsYouDownloadAction(boolean autostart, ArrayList<AbstractNode> arrayList) {
+    public WatchAsYouDownloadLinkgrabberAction(boolean autostart, ArrayList<AbstractNode> arrayList) {
         // if
         // ((org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue()
         // && !autostart) || (autostart &&
