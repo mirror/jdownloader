@@ -16,8 +16,8 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,9 +27,19 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 14953 $", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://(www\\.)?(u\\.)?115\\.com/folder/[a-z0-9]{11}" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@DecrypterPlugin(revision = "$Revision: 14953 $", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://(www\\.)?(u\\.)?115\\.com/folder/[a-z0-9]{1,11}" }, flags = { 0 })
 public class U115ComFolder extends PluginForDecrypt {
+
+    // DEV NOTES
+    // other: haven't tested for over 1000 links / folder as I haven't been able
+    // to find one to play with!
+
+    private static boolean pluginloaded = false;
 
     public U115ComFolder(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,27 +50,61 @@ public class U115ComFolder extends PluginForDecrypt {
         String parameter = param.toString();
         parameter = parameter.replace("u.115.com/", "115.com/");
         br.setReadTimeout(2 * 60 * 1000);
-        br.setCookie("http://u.115.com/", "lang", "en");
+        br.setCookie("http://115.com/", "lang", "en");
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(false);
         br.setCookiesExclusive(true);
         br.getPage(parameter);
-        String id = new Regex(parameter, "115\\.com/folder/([a-z0-9]{11})").getMatch(0);
-        if (br.containsHTML(">文件夹提取码不存在<")) {
+        if (br.containsHTML("(>文件夹提取码不存在<|>文件拥有者未分享该文件夹。<)")) {
             logger.warning("Invalid URL: " + parameter);
-            return decryptedLinks;
+            return null;
         }
-        if (br.containsHTML(">该文件夹下暂时没有分享文件。<")) {
-            logger.warning("Empty folder: " + parameter);
-            return decryptedLinks;
-        }
+
         // Set package name and prevent null field from creating plugin errors
         String fpName = br.getRegex("<i class=\"file\\-type tp\\-folder\"></i><span class=\"file\\-name\">(.*?)</span>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("desc:\\'分享好资源\\|   (.*?) http://").getMatch(0);
         if (fpName == null) fpName = "Untitled";
 
-        parsePage(decryptedLinks, id);
-        parseNextPage(decryptedLinks, id);
+        // API STUFF
+        String API = br.getRegex("(var UAPI = \\{[^\\}]+)").getMatch(0);
+        if (API == null) {
+            logger.warning("Can't find UAPI: " + parameter);
+            return null;
+        }
+        String aid = new Regex(API, "aid: Number\\(\\'(\\d+)").getMatch(0);
+        String cid = new Regex(API, "cid: Number\\(\\'(\\d+)").getMatch(0);
+        String uid = new Regex(API, "user_id: Number\\(\\'(\\d+)").getMatch(0);
+        if (aid == null || cid == null || uid == null) {
+            logger.warning("Can't find values within 'API' " + parameter);
+            return null;
+        }
+        br.getHeaders().put("Referer", "http://web.api.115.com/bridge.html?namespace=UAPI&api=DataAPI");
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        br.getPage("http://web.api.115.com/folder/file?aid=" + aid + "&cid=" + cid + "&user_id=" + uid + "&offset=0&limit=1000&_t=" + Integer.toString(new Random().nextInt(100000000)));
+
+        // find and process each entry.
+        String[] results = br.getRegex("(\\{\"file_name\":[^\\}]+)").getColumn(0);
+
+        if (results != null && results.length != 0) {
+            for (String result : results) {
+                String[][] formatThis = new Regex(result, "\"file_name\":\"([^\"]+).+?\"file_size\":\"([^\"]+)\",\"file_status\":\"([^\"]+)\".+?\"pick_code\":\"([^\"]+)\"").getMatches();
+                if (formatThis == null || formatThis.length == 0) {
+                    logger.warning("Problem with 'formatThis' " + parameter);
+                    return null;
+                }
+                DownloadLink dl = createDownloadlink(new Regex(param, "(https?)://").getMatch(0) + "://115.com/file/" + formatThis[0][3]);
+                dl.setName(unescape(formatThis[0][0].trim()));
+                dl.setDownloadSize(SizeFormatter.getSize(formatThis[0][1]));
+                if (formatThis[0][2].equals("1"))
+                    dl.setAvailable(true);
+                else
+                    dl.setAvailable(false);
+                decryptedLinks.add(dl);
+            }
+        } else {
+            logger.warning("Problem with 'results' " + parameter);
+            return null;
+        }
 
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
@@ -70,23 +114,13 @@ public class U115ComFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void parsePage(ArrayList<DownloadLink> ret, String id) {
-        String[] links = br.getRegex("<span class=\"file\\-name\"><a title=\".*?\" href=\"(http://(www\\.)?(u\\.)?115\\.com/file/[a-z0-9]+)\" target=\"\\_blank\">").getColumn(0);
-        if (links == null || links.length == 0) return;
-        if (links != null && links.length != 0) {
-            for (String dl : links)
-                ret.add(createDownloadlink(dl));
+    private static synchronized String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (pluginloaded == false) {
+            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            pluginloaded = true;
         }
-    }
-
-    private boolean parseNextPage(ArrayList<DownloadLink> ret, String id) throws IOException {
-        String nextPage = br.getRegex("<a href=\\'(http://(www\\.)?(u\\.)?115\\.com/folder/" + id + "/(\\d+))\\'><b class=\\'next-page\\'>").getMatch(0);
-        if (nextPage != null) {
-            br.getPage(nextPage);
-            parsePage(ret, id);
-            parseNextPage(ret, id);
-            return true;
-        }
-        return false;
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 }
