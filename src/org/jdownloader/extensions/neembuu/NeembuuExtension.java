@@ -30,6 +30,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
@@ -60,14 +61,6 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
 
     public NeembuuExtension() {
         super(_NT._.title());
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                tab = new NeembuuGui(NeembuuExtension.this);
-            }
-        }.waitForEDT();
-
         System.setProperty("neembuu.vfs.test.MoniorFrame.resumepolicy", "resumeFromPreviousState");
     }
 
@@ -229,6 +222,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
             }
         }
         MenuFactoryEventSender.getInstance().removeListener(this);
+        tab = null;
         Log.L.finer("Stopped " + getClass().getSimpleName());
     }
 
@@ -237,7 +231,16 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
      */
     @Override
     protected void start() throws StartException {
+        if (Application.getJavaVersion() < Application.JAVA17) throw new StartException("Java 1.7 needed!");
         Log.L.finer("Started " + getClass().getSimpleName());
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                tab = new NeembuuGui(NeembuuExtension.this);
+            }
+        }.waitForEDT();
+
         MenuFactoryEventSender.getInstance().addListener(this, true);
     }
 
