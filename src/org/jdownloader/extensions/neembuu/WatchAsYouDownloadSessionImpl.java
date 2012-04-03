@@ -268,24 +268,31 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
             jdds.getDownloadLink().getLinkStatus().addStatus(LinkStatus.FINISHED);
 
             final AtomicBoolean done = new AtomicBoolean(false);
-            new Thread() {
+            Thread thread = new Thread() {
                 @Override
                 public void run() {
                     try {
                         jdds.getWatchAsYouDownloadSession().getSeekableConnectionFile().getFileStorageManager().completeSession(new File(jdds.getDownloadLink().getFileOutput()), jdds.getDownloadLink().getDownloadSize());
-                        done.set(true);
                     } catch (Exception i) {
                         Logger.getGlobal().log(Level.SEVERE, "Problem in completing session", i);
+                    } finally {
+                        done.set(true);
                     }
                 }
-            }.start();
-
-            for (int j = 0; !done.get() /* && j < 20 */; j++) {
+            };
+            thread.start();
+            while (!done.get() && thread.isAlive()) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException ie) {
-                    // ignore
+                    break;
                 }
+            }
+            try {
+                jdds.getWatchAsYouDownloadSession().getSeekableConnectionFile().close();
+            } catch (final Throwable e) {
+            } finally {
+                thread.interrupt();
             }
             PostProcessors.downloadComplete(jdds.getDownloadLink());
         } else {

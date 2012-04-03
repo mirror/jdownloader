@@ -109,12 +109,10 @@ public class AsFileCom extends PluginForHost {
             br.setCookiesExclusive(true);
             br.setFollowRedirects(true);
             String user = account.getUser();
-            account.setUser(user == null ? "" : user);
-            if (account.getUser().isEmpty()) {
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                cookies.put("code", account.getPass());
-                account.setProperty("cookies", cookies);
-                force = false;
+            if (user == null || user.trim().length() == 0) {
+                /* passCode only */
+                br.setCookie(MAINPAGE, "code", account.getPass());
+                return;
             }
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
@@ -161,7 +159,8 @@ public class AsFileCom extends PluginForHost {
             return ai;
         }
         ai.setUnlimitedTraffic();
-        if (!account.getUser().isEmpty()) {
+        String user = account.getUser();
+        if (user != null && user.trim().length() > 0) {
             String expire = br.getRegex("premium </strong>\\(to (\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2})\\)</p>").getMatch(0);
             if (expire == null) {
                 account.setValid(false);
@@ -169,9 +168,11 @@ public class AsFileCom extends PluginForHost {
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd hh:mm", null));
             }
+            ai.setStatus("Premium User");
+        } else {
+            ai.setStatus("Passcode User");
         }
         account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 
@@ -180,7 +181,14 @@ public class AsFileCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getPage("http://asfile.com/en/premium-download/file/" + new Regex(link.getDownloadURL(), "asfile\\.com/file/(.+)").getMatch(0));
+        try {
+            br.getPage("http://asfile.com/en/premium-download/file/" + new Regex(link.getDownloadURL(), "asfile\\.com/file/(.+)").getMatch(0));
+        } catch (Exception e) {
+            if (e.getMessage() != null && e.getMessage().contains("500")) {
+                logger.severe("500 error->account seems invalid!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
         String dllink = br.getRegex("\"(http://s\\d+\\.asfile\\.com/file/premium/[a-z0-9]+/\\d+/[A-Za-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("<p><a href=\"(http://[^<>\"\\'/]+)\"").getMatch(0);
         if (dllink == null) {
