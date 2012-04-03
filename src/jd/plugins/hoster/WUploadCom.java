@@ -62,6 +62,7 @@ public class WUploadCom extends PluginForHost {
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
+        if (true) return false;
         if (urls == null || urls.length == 0) { return false; }
         try {
             final Browser br = new Browser();
@@ -283,6 +284,7 @@ public class WUploadCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        if (true) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String downloadUrl = null;
         String passCode = null;
         passCode = null;
@@ -424,6 +426,7 @@ public class WUploadCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        if (true) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         setBrowserExclusive();
         requestFileInformation(downloadLink);
         String resp = downloadAPI(br, account, downloadLink);
@@ -482,6 +485,7 @@ public class WUploadCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        if (true) return AvailableStatus.FALSE;
         correctDownloadLink(downloadLink);
         checkLinks(new DownloadLink[] { downloadLink });
         if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }

@@ -27,11 +27,18 @@ public class PluginClassLoader extends URLClassLoader {
                     // System.out.println("Class has already been loaded by this PluginClassLoaderChild");
                     return c;
                 }
-                // Log.L.info(name.replace(".", "/") + ".class");
-                URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
-                byte[] data;
-                data = IO.readURL(myUrl);
-                return defineClass(name, data, 0, data.length);
+                synchronized (this) {
+                    /*
+                     * we have to synchronize this because concurrent
+                     * defineClass for same class throws exception
+                     */
+                    c = findLoadedClass(name);
+                    if (c != null) { return c; }
+                    URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
+                    byte[] data;
+                    data = IO.readURL(myUrl);
+                    return defineClass(name, data, 0, data.length);
+                }
             } catch (Exception e) {
                 Log.exception(e);
                 throw new ClassNotFoundException(e.getMessage(), e);
