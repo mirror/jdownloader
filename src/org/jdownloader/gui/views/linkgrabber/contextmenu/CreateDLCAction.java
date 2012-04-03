@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import jd.controlling.packagecontroller.AbstractNode;
 
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.dlc.DLCFactory;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 
 public class CreateDLCAction extends AppAction {
 
@@ -19,6 +21,8 @@ public class CreateDLCAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
+
+        new DLCFactory().createDLCByCrawledLinks(LinkTreeUtils.getChildren(selection));
     }
 
 }

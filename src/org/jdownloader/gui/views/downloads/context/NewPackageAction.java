@@ -5,16 +5,16 @@ import java.util.ArrayList;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
 
-public class NewPackageAction extends ContextMenuAction {
+public class NewPackageAction extends AppAction {
 
     private static final long             serialVersionUID = -8544759375428602013L;
 
@@ -22,17 +22,8 @@ public class NewPackageAction extends ContextMenuAction {
 
     public NewPackageAction(ArrayList<DownloadLink> links) {
         this.links = links;
-        init();
-    }
-
-    @Override
-    protected String getIcon() {
-        return "package_new";
-    }
-
-    @Override
-    protected String getName() {
-        return _GUI._.gui_table_contextmenu_newpackage() + " (" + links.size() + ")";
+        setIconKey("package_new");
+        setName(_GUI._.gui_table_contextmenu_newpackage());
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -51,7 +42,7 @@ public class NewPackageAction extends ContextMenuAction {
             link.getFilePackage().remove(link);
         }
         if (true) throw new WTFException("FINISH ME");
-
+        // TODO:Daniel
         if (JsonConfig.create(GeneralSettings.class).isAddNewLinksOnTop()) {
             DownloadController.getInstance().addmovePackageAt(fp, 0);
         } else {

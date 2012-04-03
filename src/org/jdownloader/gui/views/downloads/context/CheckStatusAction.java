@@ -5,12 +5,12 @@ import java.util.ArrayList;
 
 import jd.controlling.IOEQ;
 import jd.controlling.linkchecker.LinkChecker;
-import jd.gui.swing.jdgui.interfaces.ContextMenuAction;
 import jd.plugins.DownloadLink;
 
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 
-public class CheckStatusAction extends ContextMenuAction {
+public class CheckStatusAction extends AppAction {
 
     private static final long             serialVersionUID = 6821943398259956694L;
 
@@ -18,18 +18,9 @@ public class CheckStatusAction extends ContextMenuAction {
 
     public CheckStatusAction(ArrayList<DownloadLink> links) {
         this.links = links;
+        setIconKey("ok");
+        setName(_GUI._.gui_table_contextmenu_check());
 
-        init();
-    }
-
-    @Override
-    protected String getIcon() {
-        return "ok";
-    }
-
-    @Override
-    protected String getName() {
-        return _GUI._.gui_table_contextmenu_check() + " (" + links.size() + ")";
     }
 
     public void actionPerformed(ActionEvent e) {

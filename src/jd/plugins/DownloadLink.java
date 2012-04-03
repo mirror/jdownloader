@@ -954,6 +954,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     @Deprecated
+    /**
+     * @deprecated use #getDefaultPlugin
+     * @return
+     */
     public PluginForHost getPlugin() {
         return this.liveplugin;
     }

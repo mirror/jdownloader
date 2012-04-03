@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+import javax.swing.JMenu;
 
 import jd.PluginWrapper;
 import jd.captcha.JACMethod;
@@ -774,6 +775,16 @@ public abstract class PluginForHost extends Plugin {
      */
     public boolean isHosterManipulatesFilenames() {
         return false;
+    }
+
+    /**
+     * Can be extended by the plugin to add entries to the contextmenu in the
+     * downloadtable
+     * 
+     * @param m
+     * @param downloadLink
+     */
+    public void extendDownloadTablePropertiesMenu(JMenu m, DownloadLink downloadLink) {
     }
 
 }

@@ -3589,4 +3589,46 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download next" })
     String gui_table_contextmenu_SuperPriorityDownloadAction();
 
+    @Default(lngs = { "en" }, values = { "Save DLC File to..." })
+    String CreateDLCAction_actionPerformed_title_();
+
+    @Default(lngs = { "en" }, values = { "Created DLC File: %s1" })
+    String DLCFactory_createDLC_created_(String absolutePath);
+
+    @Default(lngs = { "en" }, values = { "Link Properties" })
+    String ContextMenuFactory_createPopup_properties();
+
+    @Default(lngs = { "en" }, values = { "Package Properties" })
+    String ContextMenuFactory_createPopup_properties_package();
+
+    @Default(lngs = { "en" }, values = { "Download Speed Limit" })
+    String ContextMenuFactory_createPopup_speed();
+
+    @Default(lngs = { "en" }, values = { "Custom Speed Limit" })
+    String CustomSpeedLimitator_SpeedlimitEditor__lbl();
+
+    @Default(lngs = { "en" }, values = { "Download Password" })
+    String ContextMenuFactory_createPopup_downloadpassword();
+
+    @Default(lngs = { "en" }, values = { "Password to download the file(s)" })
+    String PasswordEditor__lbl();
+
+    @Default(lngs = { "en" }, values = { "Enter Password..." })
+    String PasswordEditor_PasswordEditor_help_();
+
+    @Default(lngs = { "en" }, values = { "From List" })
+    String ContextMenuFactory_createPopup_cleanup_list();
+
+    @Default(lngs = { "en" }, values = { "From List & Disk" })
+    String ContextMenuFactory_createPopup_cleanup_listAndDisk();
+
+    @Default(lngs = { "en" }, values = { "Download Folder" })
+    String ContextMenuFactory_createPopup_destFolder();
+
+    @Default(lngs = { "en" }, values = { "Download Destination Folder" })
+    String DownloadFolderEditor__lbl();
+
+    @Default(lngs = { "en" }, values = { "Browse" })
+    String DownloadFolderEditor_DownloadFolderEditor_browse_();
+
 }

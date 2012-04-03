@@ -29,22 +29,7 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
         super();
         this.extension = plg;
         keyHandlerEnabled = plg.getSettings().getStorageHandler().getKeyHandler("enabled", BooleanKeyHandler.class);
-        keyHandlerEnabled.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
-            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-
-                try {
-                    extension.setEnabled(header.isHeaderEnabled());
-                    updateHeaders(header.isHeaderEnabled());
-                } catch (Exception e1) {
-                    e1.printStackTrace();
-                    Dialog.getInstance().showExceptionDialog("Error", e1.getMessage(), e1);
-                }
-            }
-
-            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-            }
-        });
         plg.getSettings().getStorageHandler().getEventSender().addListener(this);
         if (!clean) {
             header = new Header(plg.getName(), plg.getIcon(32), keyHandlerEnabled);
@@ -56,6 +41,24 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
                 addDescription(plg.getDescription());
             }
         }
+
+        keyHandlerEnabled.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                if (header != null) {
+                    try {
+                        extension.setEnabled(header.isHeaderEnabled());
+                        updateHeaders(header.isHeaderEnabled());
+                    } catch (Exception e1) {
+                        e1.printStackTrace();
+                        Dialog.getInstance().showExceptionDialog("Error", e1.getMessage(), e1);
+                    }
+                }
+            }
+
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+        });
 
     }
 

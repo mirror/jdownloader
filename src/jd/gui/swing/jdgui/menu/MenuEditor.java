@@ -21,4 +21,8 @@ public class MenuEditor extends MigPanel {
         ret.setIconTextGap(7);
         return ret;
     }
+
+    public void addLbl(String chunksEditor_ChunksEditor_, ImageIcon icon) {
+        add(getLbl(chunksEditor_ChunksEditor_, icon));
+    }
 }

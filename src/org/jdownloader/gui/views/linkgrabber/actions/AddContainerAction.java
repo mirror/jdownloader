@@ -15,7 +15,6 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
-import org.jdownloader.settings.GeneralSettings;
 
 public class AddContainerAction extends AppAction {
     /**
@@ -33,8 +32,8 @@ public class AddContainerAction extends AppAction {
         File[] ret;
         try {
             String exts = ContainerPluginController.getInstance().getContainerExtensions(null);
-
-            ret = Dialog.getInstance().showFileChooser("loaddlc", _GUI._.AddContainerAction_actionPerformed_(), FileChooserSelectionMode.FILES_ONLY, new JDFileFilter(_GUI._.AddContainerAction_actionPerformed_extensions(exts), exts, true), false, FileChooserType.OPEN_DIALOG, new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getDefaultDownloadFolder()));
+            // Dialog.getInstance().showMessageDialog(_GUI._.DLCFactory_createDLC_created_(file.getAbsolutePath()));
+            ret = Dialog.getInstance().showFileChooser("loaddlc", _GUI._.AddContainerAction_actionPerformed_(), FileChooserSelectionMode.FILES_ONLY, new JDFileFilter(_GUI._.AddContainerAction_actionPerformed_extensions(exts), exts, true), false, FileChooserType.OPEN_DIALOG, null);
 
             if (ret == null) return;
             StringBuilder sb = new StringBuilder();
