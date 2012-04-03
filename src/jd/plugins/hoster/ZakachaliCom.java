@@ -60,7 +60,11 @@ public class ZakachaliCom extends PluginForHost {
         String filesize = br.getRegex(">Размер файла: ([^<>\"/]*?)<").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        /**
+         * Only accept filesizes under 1 GB because sometimes they show buggy
+         * filesizes (a dew TB instead of unter 1 MB)
+         */
+        if (SizeFormatter.getSize(filesize) <= 1048576000) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

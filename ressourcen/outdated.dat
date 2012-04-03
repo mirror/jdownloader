@@ -729,3 +729,6 @@ jd/plugins/decrypter/Hsbstzcm.class
 jd/plugins/decrypter/ImageWasteComGallery.class
 jd/plugins/hoster/ImageWasteCom.class
 jd/plugins/hoster/FilezzzCom.class
+jd/plugins/hoster/FileApeCom.class
+jd/plugins/hoster/Fik1Com.class
+jd/plugins/hoster/DaTumBitCom.class
