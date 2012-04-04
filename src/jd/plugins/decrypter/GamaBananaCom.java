@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamebanana.com" }, urls = { "http://(www\\.)?gamebanana\\.com/[a-z0-9]+/maps/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gamebanana.com" }, urls = { "http://(www\\.)?gamebanana\\.com/[a-z0-9]+/[a-z0-9]+/(download/)?\\d+" }, flags = { 0 })
 public class GamaBananaCom extends PluginForDecrypt {
 
     public GamaBananaCom(PluginWrapper wrapper) {
@@ -36,7 +36,7 @@ public class GamaBananaCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
-        parameter = parameter.replace("/maps/", "/maps/download/");
+        if (!parameter.contains("/download/")) parameter = parameter.replace("/maps/", "/maps/download/");
         br.getPage(parameter);
         String finallink = br.getRegex("<input type=\"hidden\" id=\"DirectDownloadUrl\" value=\"(http://[^<>\"\\']+)\"").getMatch(0);
         if (finallink == null) {

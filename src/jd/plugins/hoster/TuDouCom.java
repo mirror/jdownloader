@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tudou.com" }, urls = { "http://[\\w\\.]*?tudou\\.com/programs/view/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tudou.com" }, urls = { "http://(www\\.)?tudou\\.com/programs/view/[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class TuDouCom extends PluginForHost {
 
     private String dllink = null;

@@ -53,7 +53,11 @@ public class MpLemonNet extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
             br.getPage(parameter);
-            String[][] fileInfo = br.getRegex("\"/song/(\\d+)/([^<>\"/]*?)\"></a></td>[\t\n\r ]+<td class=\"list_tracks\"></td>[\t\n\r ]+<td class=\"list_tracks\">\\d+:\\d+</td>[\t\n\r ]+<td class=\"list_tracks\">(\\d+(\\.\\d+)?)</td>").getMatches();
+            if (br.containsHTML(">Альбом не найден")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            String[][] fileInfo = br.getRegex("\"/song/(\\d+)/([^<>\"/]*?)\"></a></td>[\t\n\r ]+<td class=\"list_tracks\"></td>[\t\n\r ]+<td class=\"list_tracks\">\\d+:\\d+</td>[\t\n\r ]+<td class=\"list_tracks\">(\\d+(\\.\\d+)? *?)</td>").getMatches();
             if (fileInfo == null || fileInfo.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

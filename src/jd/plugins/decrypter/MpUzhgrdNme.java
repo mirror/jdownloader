@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -29,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3.uzhgorod.name" }, urls = { "http://[\\w\\.]*?mp3\\.uzhgorod\\.name/(\\d+/\\d+/\\d+/|mp3music/\\d+-).+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3.uzhgorod.name" }, urls = { "http://(www\\.)?mp3\\.uzhgorod\\.name/(\\d+/\\d+/\\d+/|mp3music/\\d+-).+\\.html" }, flags = { 0 })
 public class MpUzhgrdNme extends PluginForDecrypt {
 
     public MpUzhgrdNme(PluginWrapper wrapper) {
@@ -42,24 +43,18 @@ public class MpUzhgrdNme extends PluginForDecrypt {
         br.setCustomCharset("windows-1251");
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("К сожалению, данная страница для Вас не доступна, возможно был изменен ее адрес или она была удалена. Пожалуйста, воспользуйтесь поиском")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("К сожалению, данная страница для Вас не доступна, возможно был изменен ее адрес или она была удалена\\. Пожалуйста, воспользуйтесь поиском")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("<title>(.*?)\\&raquo; Территория Меломана").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("title='(.*?)'").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("title=\\'(.*?)\\'").getMatch(0);
         }
-        String pagepiece = br.getRegex("</strong><br /><\\!--dle_leech_begin--><a href=\"(.*?)</a><\\!--dle_leech_end--></div>").getMatch(0);
-        if (pagepiece == null) pagepiece = br.getRegex("<span><strong></strong></span></div>(.*?)</div></div></div>.*?<div class=\"clr\"></div>").getMatch(0);
-        String[] links = null;
-        if (pagepiece != null) {
-            links = HTMLParser.getHttpLinks(pagepiece, "");
-        } else {
-            links = br.getRegex("<!--dle_leech_begin--><a href=\"(.*?)\"").getColumn(0);
-        }
+        String[] links = HTMLParser.getHttpLinks(br.toString(), "");
         if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
         for (String dl : links) {
-            if (dl.contains("/engine/go.php")) {
+            if (new Regex(dl, "http://(www\\.)?mp3\\.uzhgorod\\.name/(\\d+/\\d+/\\d+/|mp3music/\\d+-).+\\.html").matches()) {
+                continue;
+            } else if (dl.contains("/engine/go.php")) {
                 br.getPage(dl);
                 String finallink = br.getRedirectLocation();
                 if (finallink == null)
@@ -69,7 +64,6 @@ public class MpUzhgrdNme extends PluginForDecrypt {
             } else {
                 if (!dl.contains("mp3.uzhgorod.name/")) decryptedLinks.add(createDownloadlink(dl));
             }
-            progress.increase(1);
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
@@ -78,5 +72,4 @@ public class MpUzhgrdNme extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
 }
