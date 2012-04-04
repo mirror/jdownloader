@@ -30,8 +30,20 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "peeje.com" }, urls = { "http://(www\\.)?peeje\\.com/files/\\d+/[^<>\"\\'/]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "peeje.com" }, urls = { "https?://(www\\.)?peeje(share)?\\.com/files/\\d+/[^<>\"\\'/]+" }, flags = { 0 })
 public class PeeJeCom extends PluginForHost {
+
+    // DEV NOTES
+    // non account: 20 * unlimited
+    // protocol: http + https
+    // captchatype: null 4dignum recaptcha
+    // other: no redirects
+
+    // avoid dupes across domains/url types.
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(www\\.)?peejeshare.com", "peeje.com").replace(".html", ""));
+    }
 
     public PeeJeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,8 +74,8 @@ public class PeeJeCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.postPage(br.getURL(), "securitytoken=guest&psw=&download=Create+Download+Link");
-        String dllink = br.getRegex("<div style=\"padding: 3px; color: #F00000;\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://ww\\d+\\.peeje\\.com/dl/[^<>\"\\']*?)\"").getMatch(0);
+        String dllink = br.getRegex("<a href=\"(https?://[^<>\"]*?)\"><b>Click here to Download</b>").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(https?://ww\\d+\\.peeje\\.com/dl/[^<>\"\\']*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
