@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -109,13 +109,17 @@ public class RGhostRu extends PluginForHost {
         if (filename == null) filename = br.getRegex("title=\"Comments for the file (.*?)\"").getMatch(0);
         String filesize = br.getRegex("<small>([\r\n]+)?\\((.*?)\\)([\r\n]+)?</small>").getMatch(1);
         if (filesize == null) filesize = br.getRegex("class=\"filesize\">\\((.*?)\\)</span>").getMatch(0);
-        if (filename == null || filesize == null) {
+        // will pick up the first filesize mentioned.. as last resort fail over.
+        if (filesize == null) filesize = br.getRegex("(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
+        if (filename == null) {
             offlineCheck();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String md5 = br.getRegex("<b>MD5</b></td><td>(.*?)</td></tr>").getMatch(0);
+        if (md5 == null) md5 = br.getRegex("(?i)MD5(<[^>]+> ?)+?([a-z0-9]{32})").getMatch(1);
         if (md5 != null) link.setMD5Hash(md5.trim());
         String sha1 = br.getRegex("<b>SHA1</b></td><td>(.*?)</td></tr>").getMatch(0);
+        if (sha1 == null) sha1 = br.getRegex("(?i)SHA1(<[^>]+> ?|)+?([a-z0-9]{41})").getMatch(1);
         if (sha1 != null) link.setSha1Hash(sha1.trim());
         link.setName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize));

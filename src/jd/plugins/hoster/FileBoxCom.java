@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2011  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -83,7 +83,7 @@ public class FileBoxCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
@@ -94,27 +94,36 @@ public class FileBoxCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
+
+        Form dlForm = br.getFormbyProperty("name", "F1");
+        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dlForm.remove(null);
+        br.submitForm(dlForm);
+        doSomething();
+
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + "/[a-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
             if (filename == null) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = new Regex(correctedBR, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
-                    if (filename == null) {
-                        filename = new Regex(correctedBR, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
-                        if (filename == null) {
-                            filename = new Regex(correctedBR, "File Name.*?nowrap>(.*?)</td").getMatch(0);
-                        }
-                    }
+                    // generic regex will pick up false positives (html)
+                    // adjust to make work with COOKIE_HOST
+                    filename = new Regex(correctedBR, "(?i)File Name : (<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                 }
             }
         }
-        String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+        String filesize = new Regex(correctedBR, "([0-9]+ bytes)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(correctedBR, "<small>\\((.*?)\\)</small>").getMatch(0);
             if (filesize == null) {
                 filesize = new Regex(correctedBR, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+                if (filesize == null) {
+                    // generic regex picks up false positives (premium ads above
+                    // filesize)
+                    // adjust accordingly to make work with COOKIE_HOST
+                    filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(bytes|KB|MB|GB))").getMatch(0);
+                }
             }
         }
         if (filename != null && !filename.equals("")) {
@@ -166,6 +175,7 @@ public class FileBoxCom extends PluginForHost {
          * Videolinks can already be found here, if a link is found here we can
          * skip waittimes and captchas
          */
+        dllink = getDllink();
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
@@ -314,7 +324,7 @@ public class FileBoxCom extends PluginForHost {
                             if (dllink == null) {
                                 dllink = new Regex(correctedBR, "class=\"getpremium_heading4\"><a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
                                 if (dllink == null) {
-                                    dllink = new Regex(correctedBR, "\"(http://[a-z0-9]+\\.filebox\\.com:\\d+/d/[a-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
+                                    dllink = new Regex(br, "(http://[a-z0-9]+\\.filebox\\.com:\\d+/d/[a-z0-9]+/[^<>\"\\']+)").getMatch(0);
                                     if (dllink == null) {
                                         String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                                         if (cryptedScripts != null && cryptedScripts.length != 0) {
