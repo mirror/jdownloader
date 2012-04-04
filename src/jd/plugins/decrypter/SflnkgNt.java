@@ -187,12 +187,12 @@ public class SflnkgNt extends PluginForDecrypt {
                 case cats:
                     break;
                 case solvemedia:
-                    String chid = br.getRegex("src=\"(http://api\\.solvemedia\\.com/papi/challenge\\.script\\?k=[\\w\\-\\.]+)\"").getMatch(0);
+                    String chid = br.getRegex("ckey:\'([\\w\\-\\.]+)\'").getMatch(0);
                     if (chid == null) { return null; }
-                    chid = chid.replace("challenge.script", "_challenge.js");
+
                     final boolean skipcaptcha = getPluginConfig().getBooleanProperty("SKIP_CAPTCHA", false);
 
-                    captchaBr.getPage(chid);
+                    captchaBr.getPage("http://api.solvemedia.com/papi/_challenge.js?k=" + chid);
                     chid = captchaBr.getRegex("\"chid\"\\s+?:\\s+?\"(.*?)\",").getMatch(0);
                     if (chid == null) { return null; }
 
