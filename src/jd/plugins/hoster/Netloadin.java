@@ -224,7 +224,6 @@ public class Netloadin extends PluginForHost {
         this.setBrowserExclusive();
         String ID = getID(downloadLink.getDownloadURL());
         br.getPage("http://netload.in/json/datei" + ID + ".htm");
-        System.out.println(br.toString());
         checkPassword(downloadLink, br);
         checkErrors(downloadLink, br, false);
         checkLimit(downloadLink, br);
