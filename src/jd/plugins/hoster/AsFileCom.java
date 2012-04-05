@@ -104,6 +104,7 @@ public class AsFileCom extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
+        br.setReadTimeout(3 * 60 * 1000);
         synchronized (LOCK) {
             // Load cookies
             br.setCookiesExclusive(true);
@@ -170,6 +171,9 @@ public class AsFileCom extends PluginForHost {
             }
             ai.setStatus("Premium User");
         } else {
+            br.getPage("http://asfile.com/en/index/pay");
+            String expire = br.getRegex("You have got the premium access to: (\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2})</p>").getMatch(0);
+            if (expire != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd hh:mm", null));
             ai.setStatus("Passcode User");
         }
         account.setValid(true);
