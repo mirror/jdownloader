@@ -14,6 +14,8 @@ import javax.swing.JToggleButton;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 
+import jd.controlling.IOEQ;
+import jd.controlling.linkcollector.LinkCollectingInformation;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
@@ -87,8 +89,13 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
 
             public void actionPerformed(ActionEvent e) {
-                ArrayList<CrawledLink> filteredStuff = LinkCollector.getInstance().getFilteredStuff(true);
-                LinkCollector.getInstance().addCrawlerJob(filteredStuff);
+                IOEQ.add(new Runnable() {
+                    @Override
+                    public void run() {
+                        ArrayList<CrawledLink> filteredStuff = LinkCollector.getInstance().getFilteredStuff(true);
+                        LinkCollector.getInstance().addCrawlerJob(filteredStuff);
+                    }
+                });
             }
 
         });
@@ -124,7 +131,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
                 if (org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberAutoTabSwitchEnabled()) {
-                    LinkCollectingJob sourceJob = parameter.getSourceJob();
+                    LinkCollectingInformation sourceJob = parameter.getCollectingInfo();
                     LinkCrawler lc = null;
                     if (sourceJob == null || ((lc = sourceJob.getLinkCrawler()) != null && lc.isRunning())) { return; }
                     if (LinkCollector.getInstance().getLinkChecker().isRunning()) {

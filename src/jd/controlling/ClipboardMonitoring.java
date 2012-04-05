@@ -149,6 +149,20 @@ public class ClipboardMonitoring {
         }
     }
 
+    public synchronized void setCurrentContent(Transferable object) {
+        try {
+            clipboard.setContents(object, new ClipboardOwner() {
+
+                public void lostOwnership(Clipboard clipboard, Transferable contents) {
+                    skipChangeDetection = false;
+                }
+            });
+            skipChangeDetection = true;
+        } catch (final Throwable e) {
+            skipChangeDetection = false;
+        }
+    }
+
     private boolean changeDetector(String oldS, String newS) {
         if (oldS == null && newS != null) return true;
         if (oldS != null && newS != null && !oldS.equalsIgnoreCase(newS)) return true;

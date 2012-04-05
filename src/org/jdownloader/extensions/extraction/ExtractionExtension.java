@@ -33,6 +33,7 @@ import javax.swing.filechooser.FileFilter;
 import jd.Launcher;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -381,6 +382,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
     @Override
     protected void stop() throws StopException {
+        LinkCollector.getInstance().setArchiver(null);
         ShutdownController.getInstance().removeShutdownVetoListener(listener);
         MenuFactoryEventSender.getInstance().removeListener(this);
         FileCreationManager.getInstance().getEventSender().removeListener(this);
@@ -405,6 +407,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
     @Override
     protected void start() throws StartException {
+        LinkCollector.getInstance().setArchiver(this);
         MenuFactoryEventSender.getInstance().addListener(this);
         FileCreationManager.getInstance().getEventSender().addListener(this);
         Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {

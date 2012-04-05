@@ -13,7 +13,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
-import java.util.logging.Level;
 import java.util.zip.ZipEntry;
 
 import jd.controlling.IOEQ;
@@ -57,7 +56,6 @@ import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.controlling.UniqueSessionID;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.packagizer.PackagizerController;
-import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.gui.translate._GUI;
@@ -354,17 +352,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         downloadFolder = dpi.getDestinationFolder();
                     }
                     CrawledLinkFactory clf = new CrawledLinkFactory(link);
-                    if (archiver != null && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.ARCHIVE_PACKAGIZER_ENABLED.getValue()) {
-                        if (archiver.isMultiPartArchive(clf)) {
+                    ExtractionExtension lArchiver = archiver;
+                    if (lArchiver != null && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.ARCHIVE_PACKAGIZER_ENABLED.getValue()) {
+                        if (lArchiver.isMultiPartArchive(clf)) {
                             isMultiArchive = true;
                         }
                     }
                     if (packageName == null) {
                         packageName = LinknameCleaner.cleanFileName(link.getName());
                         if (isMultiArchive) {
-                            packageID = archiver.createArchiveID(clf);
+                            packageID = lArchiver.createArchiveID(clf);
                             if (packageID != null) {
-                                packageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(archiver.getArchiveName(clf)));
+                                packageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(lArchiver.getArchiveName(clf)));
                             }
                         }
                     }
@@ -469,7 +468,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         add.add(link);
                         LinkCollector.this.addmoveChildren(pkg, add, -1);
                     }
-                    eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ADDED_LINK, link, QueuePriority.NORM));
+                    try {
+                        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ADDED_LINK, link, QueuePriority.NORM));
+                    } finally {
+                        link.setCollectingInfo(null);
+                    }
                     return null;
                 } catch (RuntimeException e) {
                     dupeCheckMap.remove(link.getLinkID());
@@ -564,10 +567,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
                         link.getDesiredPackageInfo().setName(job.getPackageName());
                     }
-
                     if (!StringUtils.isEmpty(job.getExtractPassword())) {
                         if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
                         link.getDesiredPackageInfo().getExtractionPasswords().add(job.getExtractPassword());
+                    }
+                    if (job.isAutoStart()) {
+                        link.setAutoConfirmEnabled(true);
+                        link.setAutoStartEnabled(true);
                     }
                 }
             }
@@ -575,20 +581,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         eventsender.addListener(lc, true);
         lc.setFilter(crawlerFilter);
         lc.setHandler(this);
+        LinkCollectingInformation collectingInfo = new LinkCollectingInformation(lc, linkChecker);
         ArrayList<CrawledLink> jobs = new ArrayList<CrawledLink>(links);
-        LinkCollectingJob newJob = new LinkCollectingJob();
-        newJob.setLinkCrawler(lc);
-        newJob.setLinkChecker(linkChecker);
+        collectingInfo.setLinkCrawler(lc);
+        collectingInfo.setLinkChecker(linkChecker);
         for (CrawledLink job : jobs) {
-            LinkCollectingJob sourceJob = job.getSourceJob();
-            if (sourceJob != null) {
-                /* we set weak reference to linkcrawler for this job */
-                sourceJob.setLinkCrawler(lc);
-                sourceJob.setLinkChecker(linkChecker);
-            } else {
-                /* no job set yet, we set new one */
-                job.setSourceJob(newJob);
-            }
+            job.setCollectingInfo(collectingInfo);
         }
         lc.crawl(jobs);
         return lc;
@@ -598,10 +596,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         if (job == null) throw new IllegalArgumentException("job is null");
         lazyInit();
         final LinkCollectorCrawler lc = new LinkCollectorCrawler() {
+            private LinkCollectingInformation collectingInfo = new LinkCollectingInformation(this, linkChecker);
+
             @Override
             protected CrawledLink crawledLinkFactorybyURL(String url) {
                 CrawledLink ret = new CrawledLink(url);
-                ret.setSourceJob(job);
+                ret.setCollectingInfo(collectingInfo);
                 return ret;
             }
 
@@ -630,9 +630,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         eventsender.addListener(lc, true);
         lc.setFilter(crawlerFilter);
         lc.setHandler(this);
-        /* we set weak reference to linkcrawler for this job */
-        job.setLinkCrawler(lc);
-        job.setLinkChecker(linkChecker);
         String jobText = job.getText();
         /*
          * we don't want to keep reference on text during the whole link
@@ -644,6 +641,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     private void addFilteredStuff(CrawledLink filtered) {
+        filtered.setCollectingInfo(null);
         synchronized (filteredStuff) {
             filteredStuff.add(filtered);
         }
@@ -792,11 +790,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             linkChecker.setLinkCheckHandler(this);
             setCrawlerFilter(LinkFilterController.getInstance());
             setPackagizer(PackagizerController.getInstance());
-            try {
-                setArchiver((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension());
-            } catch (Throwable e) {
-                Log.exception(Level.SEVERE, e);
-            }
         }
     }
 
@@ -1235,7 +1228,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         return Application.getResource("cfg/linkcollector.zip");
     }
 
-    private void setArchiver(ExtractionExtension archiver) {
+    public void setArchiver(ExtractionExtension archiver) {
         this.archiver = archiver;
     }
 

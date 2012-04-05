@@ -115,7 +115,6 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected Icon getIcon(AbstractNode value) {
-
         if (false && value instanceof ArchiveCrawledPackage) {
             return (((AbstractPackageNode<?, ?>) value).isExpanded() ? iconArchiveOpen : iconArchive);
         } else if (value instanceof AbstractPackageNode) {
@@ -179,9 +178,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public final String getStringValue(AbstractNode value) {
-
         return value.getName();
-
     }
 
 }

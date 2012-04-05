@@ -3,6 +3,7 @@ package jd.controlling.linkcrawler;
 import javax.swing.ImageIcon;
 
 import jd.controlling.captcha.CaptchaController;
+import jd.controlling.linkcollector.LinkCollectingInformation;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
@@ -72,12 +73,13 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         this.unknownHandler = unknownHandler;
     }
 
-    private PluginForDecrypt  dPlugin            = null;
-    private LinkCollectingJob sourceJob          = null;
-    private long              created            = -1;
+    private PluginForDecrypt          dPlugin            = null;
+    private LinkCollectingJob         sourceJob          = null;
+    private long                      created            = -1;
 
-    boolean                   enabledState       = true;
-    private PackageInfo       desiredPackageInfo = null;
+    boolean                           enabledState       = true;
+    private PackageInfo               desiredPackageInfo = null;
+    private LinkCollectingInformation collectingInfo     = null;
 
     public PackageInfo getDesiredPackageInfo() {
         return desiredPackageInfo;
@@ -415,6 +417,21 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private void notifyChanges() {
         CrawledPackage lparent = parent;
         if (lparent != null) lparent.nodeUpdated(this);
+    }
+
+    /**
+     * @param collectingInfo
+     *            the collectingInfo to set
+     */
+    public void setCollectingInfo(LinkCollectingInformation collectingInfo) {
+        this.collectingInfo = collectingInfo;
+    }
+
+    /**
+     * @return the collectingInfo
+     */
+    public LinkCollectingInformation getCollectingInfo() {
+        return collectingInfo;
     }
 
 }

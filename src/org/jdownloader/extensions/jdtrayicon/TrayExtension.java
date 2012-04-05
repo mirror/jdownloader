@@ -40,7 +40,7 @@ import javax.swing.Timer;
 
 import jd.Launcher;
 import jd.controlling.JDLogger;
-import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollectingInformation;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
@@ -510,7 +510,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
-        LinkCollectingJob sourceJob = parameter.getSourceJob();
+        LinkCollectingInformation sourceJob = parameter.getCollectingInfo();
         LinkCrawler lc = null;
         if (sourceJob == null || ((lc = sourceJob.getLinkCrawler()) != null && lc.isRunning())) { return; }
         if (LinkCollector.getInstance().getLinkChecker().isRunning()) {

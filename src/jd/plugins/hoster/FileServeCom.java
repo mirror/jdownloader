@@ -70,6 +70,7 @@ public class FileServeCom extends PluginForHost {
      * because it was broken (error 500)
      */
     public boolean checkLinks(final DownloadLink[] urls) {
+        if (true) return false;
         if (urls == null || urls.length == 0) { return false; }
         boolean seemsOkay = false;
         try {
@@ -305,6 +306,10 @@ public class FileServeCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
+        if (true) {
+            account.setValid(false);
+            return ai;
+        }
         try {
             loginAPI(br, account);
         } catch (PluginException e) {
@@ -601,6 +606,7 @@ public class FileServeCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (true) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         correctHeaders(this.br);
         if (this.checkLinks(new DownloadLink[] { link }) == false) {
             /* linkcheck broken */

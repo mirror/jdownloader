@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15600 $", interfaceVersion = 2, names = { "nekaka.com" }, urls = { "https?://(www\\.)?nekaka\\.com/d/\\w{10}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 15600 $", interfaceVersion = 2, names = { "nekaka.com" }, urls = { "https?://(www\\.)?nekaka\\.com/d/[a-zA-Z0-9\\-]{10}" }, flags = { 0 })
 public class NekakaCom extends PluginForHost {
 
     // DEV NOTES:
