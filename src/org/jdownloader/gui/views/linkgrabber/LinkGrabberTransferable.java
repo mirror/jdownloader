@@ -50,7 +50,11 @@ public class LinkGrabberTransferable extends PackageControllerTableTransferable<
             for (CrawledLink link : lcontent.getLinks()) {
                 DownloadLink llink = link.getDownloadLink();
                 if (llink != null && DownloadLink.LINKTYPE_CONTAINER != llink.getLinkType()) {
-                    urls.add(llink.getDownloadURL());
+                    if (llink.gotBrowserUrl()) {
+                        urls.add(llink.getBrowserUrl());
+                    } else {
+                        urls.add(llink.getDownloadURL());
+                    }
                 }
             }
         }
@@ -60,7 +64,11 @@ public class LinkGrabberTransferable extends PackageControllerTableTransferable<
                     for (CrawledLink link : fp.getChildren()) {
                         DownloadLink llink = link.getDownloadLink();
                         if (llink != null && DownloadLink.LINKTYPE_CONTAINER != llink.getLinkType()) {
-                            urls.add(llink.getDownloadURL());
+                            if (llink.gotBrowserUrl()) {
+                                urls.add(llink.getBrowserUrl());
+                            } else {
+                                urls.add(llink.getDownloadURL());
+                            }
                         }
                     }
                 }

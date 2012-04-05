@@ -48,7 +48,11 @@ public class DownloadsTransferable extends PackageControllerTableTransferable<Fi
         if (lcontent.getLinks() != null) {
             for (DownloadLink link : lcontent.getLinks()) {
                 if (DownloadLink.LINKTYPE_CONTAINER != link.getLinkType()) {
-                    urls.add(link.getDownloadURL());
+                    if (link.gotBrowserUrl()) {
+                        urls.add(link.getBrowserUrl());
+                    } else {
+                        urls.add(link.getDownloadURL());
+                    }
                 }
             }
         }
@@ -57,7 +61,11 @@ public class DownloadsTransferable extends PackageControllerTableTransferable<Fi
                 synchronized (fp) {
                     for (DownloadLink link : fp.getChildren()) {
                         if (DownloadLink.LINKTYPE_CONTAINER != link.getLinkType()) {
-                            urls.add(link.getDownloadURL());
+                            if (link.gotBrowserUrl()) {
+                                urls.add(link.getBrowserUrl());
+                            } else {
+                                urls.add(link.getDownloadURL());
+                            }
                         }
                     }
                 }
