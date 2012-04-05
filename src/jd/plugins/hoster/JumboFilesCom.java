@@ -34,6 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -170,13 +171,40 @@ public class JumboFilesCom extends PluginForHost {
             if (dllink == null && br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                 dlForm = br.getFormbyProperty("name", "F1");
                 continue;
-            } else if (dllink == null && !br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\""))
+            } else if (dllink == null && !br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            else
+            } else {
                 break;
+            }
         }
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        dl.startDownload();
+        boolean resume = true;
+        int chunks = 0;
+        if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false)) {
+            resume = false;
+        }
+        if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) || resume == false) {
+            chunks = 1;
+        }
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, chunks);
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+                if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
+                    downloadLink.setChunksProgress(null);
+                    downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            } else {
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(DirectHTTP.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        }
     }
 
     @Override

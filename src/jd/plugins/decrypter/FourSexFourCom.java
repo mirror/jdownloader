@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -69,10 +70,8 @@ public class FourSexFourCom extends PluginForDecrypt {
         filename = filename.trim();
         tempID = br.getRegex("flashvars=\"videoCode=(.*?)\\&WID=\">").getMatch(0);
         if (tempID != null) {
-            br.getPage("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + tempID);
-            String finallink = br.getRegex("CDNUrl=(http://.*?)\\&SeekType").getMatch(0);
-            DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-            dl.setFinalFileName(filename + finallink.substring(finallink.length() - 4, finallink.length()));
+            DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + tempID);
+            dl.setName(Encoding.htmlDecode(filename.trim()));
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

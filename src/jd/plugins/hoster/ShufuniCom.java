@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shufuni.com" }, urls = { "http://(www\\.)?shufuni\\.com/[\\w\\-\\+]+\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shufuni.com" }, urls = { "http://(www\\.)?shufuni\\.com/([\\w\\-\\+]+\\d+|handlers/FLVStreamingv2\\.ashx\\?videoCode=[A-Z0-9\\-]+)" }, flags = { 2 })
 public class ShufuniCom extends PluginForHost {
 
     private String dllink = null;
@@ -69,15 +70,35 @@ public class ShufuniCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.followConnection();
-        if (br.containsHTML("(<title>500 \\- Internal server error\\.</title>|<h2>500 \\- Internal server error\\.</h2>|<h3>There is a problem with the resource you are looking for)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?) \\- Free Porn Video[\t\n\r ]+</title>").getMatch(0);
+        String filename = null;
+        if (downloadLink.getDownloadURL().matches("http://(www\\.)?shufuni\\.com/handlers/FLVStreamingv2\\.ashx\\?videoCode=[A-Z0-9\\-]+")) {
+            filename = downloadLink.getName();
+            dllink = br.getRegex("CDNUrl=(http://[^<>\"]*?)\\&SeekType=").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String ext = null;
+            if (filename.contains(".")) ext = filename.substring(filename.lastIndexOf("."));
+            if (ext == null || ext.length() > 5) {
+                ext = dllink.substring(dllink.lastIndexOf("."));
+                if (ext == null || ext.length() > 5) ext = ".mp4";
+            }
+            if (!filename.endsWith(ext)) {
+                downloadLink.setFinalFileName(filename + ext);
+            } else {
+                downloadLink.setFinalFileName(filename);
+            }
+        } else {
+            if (br.containsHTML("(<title>500 \\- Internal server error\\.</title>|<h2>500 \\- Internal server error\\.</h2>|<h3>There is a problem with the resource you are looking for)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?) \\- Free Porn Video[\t\n\r ]+</title>").getMatch(0);
+            }
+            dllink = br.getRegex("addVariable\\(\"CDNUrl\", \"(.*?)\"\\);").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://media\\d+\\.shufuni\\.com/.*?)\"").getMatch(0);
+            if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String ext = dllink.substring(dllink.lastIndexOf("."));
+            if (ext == null || ext.length() > 5) ext = ".mp4";
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ext);
         }
-        dllink = br.getRegex("addVariable\\(\"CDNUrl\", \"(.*?)\"\\);").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://media\\d+\\.shufuni\\.com/.*?)\"").getMatch(0);
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setFinalFileName(filename.trim() + ".flv");
         try {
             con = br.openGetConnection(dllink);
             if (!con.getContentType().contains("html"))

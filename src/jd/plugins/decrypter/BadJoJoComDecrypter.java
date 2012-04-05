@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -59,14 +60,12 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
         }
         externalID = br.getRegex("flashvars=\"VideoCode=(.*?)\"").getMatch(0);
         if (externalID != null) {
-            br.getPage("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externalID);
-            String finallink = br.getRegex("CDNUrl=(http://.*?)\\&SeekType=").getMatch(0);
-            if (finallink == null) {
-                logger.warning("badjojo decrypter broken for link: " + parameter);
+            if (filename == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-            if (filename != null) dl.setFinalFileName(filename + ".flv");
+            DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externalID);
+            dl.setName(Encoding.htmlDecode(filename.trim()));
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

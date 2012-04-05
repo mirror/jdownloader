@@ -77,7 +77,7 @@ public class ShareRapidCz extends PluginForHost {
          * got no limit when downloading from this host so i guess it's the best
          * not to show any traffic-information
          */
-        String trafficleft = br.getMatch("Kredit:</td><td>(.*?)<a");
+        String trafficleft = br.getMatch("<td>GB:</td><td>([^<>\"]*?)<a");
         if (trafficleft != null) {
             logger.info("Free traffic equals: " + trafficleft);
             realTraffic = SizeFormatter.getSize(trafficleft);
@@ -221,10 +221,10 @@ public class ShareRapidCz extends PluginForHost {
         form.put("pass1", Encoding.urlEncode(account.getPass()));
         form.remove("remember");
         br.submitForm(form);
-        if (!br.containsHTML("Kredit:</td>")) {
+        if (!br.containsHTML("<td>GB:</td>")) {
             br.getPage("http://share-rapid.com/mujucet/");
         }
-        if (!br.containsHTML("Kredit:</td>")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        if (!br.containsHTML("<td>GB:</td>")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
     }
 
     @Override
