@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.downloads.table;
 
+import java.awt.Point;
 import java.util.ArrayList;
 
 import javax.swing.JLabel;
@@ -34,7 +35,11 @@ public class PasswordEditor extends SubMenuEditor {
     }
 
     @Override
-    public void reload() {
+    public Point getDesiredLocation() {
+        Point loc = txt.getLocation();
+        loc.x += txt.getPreferredSize().width / 2;
+        loc.y += txt.getPreferredSize().height / 2;
+        return loc;
 
     }
 

@@ -100,14 +100,14 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public boolean isEditable(AbstractNode obj) {
-        return obj instanceof CrawledLink;
+        return obj instanceof CrawledLink || obj instanceof DownloadLink;
     }
 
     private boolean isOpenURLAllowed(AbstractNode value) {
         if (value instanceof CrawledLink) {
             DownloadLink dlLink = ((CrawledLink) value).getDownloadLink();
             return dlLink.getLinkType() == DownloadLink.LINKTYPE_NORMAL;
-        }
+        } else if (value instanceof DownloadLink) { return ((DownloadLink) value).getLinkType() == DownloadLink.LINKTYPE_NORMAL; }
         return false;
     }
 
@@ -131,6 +131,10 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
             return null;
         } else if (value instanceof CrawledLink) {
             DownloadLink dlLink = ((CrawledLink) value).getDownloadLink();
+            if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) return null;
+            return dlLink.getBrowserUrl();
+        } else if (value instanceof DownloadLink) {
+            DownloadLink dlLink = ((DownloadLink) value);
             if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) return null;
             return dlLink.getBrowserUrl();
         }

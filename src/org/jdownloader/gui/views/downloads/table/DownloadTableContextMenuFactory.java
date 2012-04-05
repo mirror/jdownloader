@@ -38,7 +38,7 @@ import org.jdownloader.gui.views.downloads.context.PrioritySubMenu;
 import org.jdownloader.gui.views.downloads.context.ResetAction;
 import org.jdownloader.gui.views.downloads.context.ResumeAction;
 import org.jdownloader.gui.views.downloads.context.StopsignAction;
-import org.jdownloader.gui.views.downloads.context.SuperPriorityDownloadAction;
+import org.jdownloader.gui.views.downloads.table.linkproperties.URLEditorAction;
 import org.jdownloader.images.NewTheme;
 
 public class DownloadTableContextMenuFactory {
@@ -82,23 +82,20 @@ public class DownloadTableContextMenuFactory {
                 }
             }
         }
-        JMenu m;
+        JMenu properties = new JMenu(_GUI._.ContextMenuFactory_createPopup_properties_package());
+        popup.add(properties);
         if (contextObject instanceof AbstractPackageNode) {
-            m = new JMenu(_GUI._.ContextMenuFactory_createPopup_properties_package());
-            Image back = (((AbstractPackageNode<?, ?>) contextObject).isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) : NewTheme.I().getImage("tree_package_closed", 32));
-            m.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)));
-            popup.add(m);
-        } else if (contextObject instanceof DownloadLink) {
-            m = new JMenu(_GUI._.ContextMenuFactory_createPopup_properties());
-            Image back = (((DownloadLink) contextObject).getIcon().getImage());
-            m.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)));
-            popup.add(m);
-            ((DownloadLink) contextObject).getDefaultPlugin().extendDownloadTablePropertiesMenu(m, ((DownloadLink) contextObject));
 
-            m.add(new SubMenu(_GUI._.ContextMenuFactory_createPopup_speed(), NewTheme.I().getIcon("speed", 20), new SpeedLimitator((DownloadLink) contextObject, links, fps)));
-            m.add(new SubMenu(_GUI._.ContextMenuFactory_createPopup_downloadpassword(), NewTheme.I().getIcon("password", 20), new PasswordEditor((DownloadLink) contextObject, links, fps)));
-            m.add(new SubMenu(_GUI._.ContextMenuFactory_createPopup_destFolder(), NewTheme.I().getIcon("folder", 20), new DownloadFolderEditor((DownloadLink) contextObject, links, fps)));
-            m.add(PrioritySubMenu.createPrioMenu(links));
+            Image back = (((AbstractPackageNode<?, ?>) contextObject).isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) : NewTheme.I().getImage("tree_package_closed", 32));
+            properties.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)));
+
+        } else if (contextObject instanceof DownloadLink) {
+
+            Image back = (((DownloadLink) contextObject).getIcon().getImage());
+            properties.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)));
+
+            ((DownloadLink) contextObject).getDefaultPlugin().extendDownloadTablePropertiesMenu(properties, ((DownloadLink) contextObject));
+
             // package
 
             // m = new
@@ -110,9 +107,18 @@ public class DownloadTableContextMenuFactory {
             // m.setIcon(new ImageIcon(ImageProvider.merge(back,
             // NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)));
             // popup.add(m);
+            properties.add(new SubMenu(_GUI._.ContextMenuFactory_createPopup_speed(), NewTheme.I().getIcon("speed", 20), new SpeedLimitator((DownloadLink) contextObject, links, fps)));
+            properties.add(new SubMenu(_GUI._.ContextMenuFactory_createPopup_downloadpassword(), NewTheme.I().getIcon("password", 20), new PasswordEditor((DownloadLink) contextObject, links, fps)));
+
         }
+
+        // properties.add(new DownloadFolderEditorAction((DownloadLink)
+        // contextObject, links, fps));
+
+        properties.add(new URLEditorAction(null, links, fps));
+        properties.add(PrioritySubMenu.createPrioMenu(links));
         popup.add(new ForceDownloadAction(links));
-        popup.add(new SuperPriorityDownloadAction(links));
+        // popup.add(new SuperPriorityDownloadAction(links));
         popup.add(new EnabledAction(selection));
         popup.add(new ResumeAction(links));
         popup.add(new ResetAction(links));
@@ -144,7 +150,7 @@ public class DownloadTableContextMenuFactory {
         popup.add(new JSeparator());
 
         /* remove menu */
-        m = new JMenu(_GUI._.ContextMenuFactory_createPopup_cleanup());
+        JMenu m = new JMenu(_GUI._.ContextMenuFactory_createPopup_cleanup());
         m.setIcon(NewTheme.I().getIcon("clear", 18));
         m.add(new DeleteAction(links));
         m.add(new DeleteFromDiskAction(links));

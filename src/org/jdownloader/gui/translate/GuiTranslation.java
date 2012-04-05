@@ -2998,7 +2998,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Choose Download Directory" })
     String SetDownloadFolderAction_SetDownloadFolderAction_();
 
-    @Default(lngs = { "en" }, values = { "Open Download Directory" })
+    @Default(lngs = { "en" }, values = { "Download Directory" })
     String OpenDownloadFolderAction_OpenDownloadFolderAction_();
 
     @Default(lngs = { "en" }, values = { "Watch As You Download" })
@@ -3598,7 +3598,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Link Properties" })
     String ContextMenuFactory_createPopup_properties();
 
-    @Default(lngs = { "en" }, values = { "Package Properties" })
+    @Default(lngs = { "en" }, values = { "Properties" })
     String ContextMenuFactory_createPopup_properties_package();
 
     @Default(lngs = { "en" }, values = { "Download Speed Limit" })
@@ -3630,5 +3630,29 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Browse" })
     String DownloadFolderEditor_DownloadFolderEditor_browse_();
+
+    @Default(lngs = { "en" }, values = { "Download URLs" })
+    String ContextMenuFactory_createPopup_url();
+
+    @Default(lngs = { "en" }, values = { "Source URL for this Download Link" })
+    String LinkURLEditor();
+
+    @Default(lngs = { "en" }, values = { "Open" })
+    String LinkURLEditor_LinkURLEditor_open_();
+
+    @Default(lngs = { "en" }, values = { "Copy to Clipboard" })
+    String LinkURLEditor_LinkURLEditor_copy_();
+
+    @Default(lngs = { "en" }, values = { "Copy URLs" })
+    String LinkURLEditor_onContextMenu_copy_();
+
+    @Default(lngs = { "en" }, values = { "Download Directory for %s1" })
+    String OpenDownloadFolderAction_actionPerformed_object_(String string);
+
+    @Default(lngs = { "en" }, values = { "Explore" })
+    String OpenDownloadFolderAction_actionPerformed_button_();
+
+    @Default(lngs = { "en" }, values = { "Save" })
+    String OpenDownloadFolderAction_actionPerformed_save_();
 
 }

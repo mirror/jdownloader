@@ -33,12 +33,12 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
      * 
      */
     private static final long serialVersionUID = -2963955407564917958L;
-    private Border            leftGapBorder;
+    protected Border          leftGapBorder;
     private ImageIcon         iconPackageOpen;
     private ImageIcon         iconPackageClosed;
     private ImageIcon         iconArchive;
     private ImageIcon         iconArchiveOpen;
-    private Border            normalBorder;
+    protected Border          normalBorder;
 
     public FileColumn() {
         super(_GUI._.filecolumn_title());

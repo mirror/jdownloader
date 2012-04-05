@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.downloads.table;
 
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -70,7 +71,18 @@ public class SpeedLimitator extends SubMenuEditor {
     }
 
     @Override
-    public void reload() {
+    public Point getDesiredLocation() {
+        if (enabledBox.isSelected()) {
+            Point loc = spinner.getLocation();
+            loc.x += spinner.getPreferredSize().width / 2;
+            loc.y += spinner.getPreferredSize().height / 2;
+            return loc;
+        } else {
+            Point loc = enabledBox.getLocation();
+            loc.x += enabledBox.getPreferredSize().width / 2;
+            loc.y += enabledBox.getPreferredSize().height / 2;
+            return loc;
+        }
 
     }
 

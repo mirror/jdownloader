@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.downloads.table;
 
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -38,17 +39,17 @@ public class DownloadFolderEditor extends SubMenuEditor {
 
         this.contextObject = contextObject;
         txt = new ExtTextField();
-        txt.setEditable(false);
+        // txt.setEditable(false);
         bt = new JButton(_GUI._.DownloadFolderEditor_DownloadFolderEditor_browse_());
         bt.addActionListener(new ActionListener() {
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    closeMenu();
+
                     File[] files = Dialog.getInstance().showFileChooser("chooseDownloadFolder", _GUI._.DownloadFolderEditor__lbl(), FileChooserSelectionMode.DIRECTORIES_ONLY, null, false, FileChooserType.SAVE_DIALOG, new File(contextObject.getFilePackage().getDownloadDirectory()));
                     if (files != null && files.length == 1) {
-                        contextObject.getFilePackage().setDownloadDirectory(files[0].getAbsolutePath());
+                        txt.setText(files[0].getAbsolutePath());
                     }
                 } catch (DialogCanceledException e1) {
                     e1.printStackTrace();
@@ -60,16 +61,22 @@ public class DownloadFolderEditor extends SubMenuEditor {
         });
         add(txt);
         add(bt);
+        txt.setText(contextObject.getFilePackage().getDownloadDirectory());
 
-    }
-
-    @Override
-    public void reload() {
-        // txt.setText(contextObject.getFilePackage().getDownloadDirectory());
     }
 
     @Override
     public void save() {
+        contextObject.getFilePackage().setDownloadDirectory(txt.getText());
+
+    }
+
+    @Override
+    public Point getDesiredLocation() {
+        Point loc = bt.getLocation();
+        loc.x += bt.getPreferredSize().width / 2;
+        loc.y += bt.getPreferredSize().height / 2;
+        return loc;
 
     }
 }
