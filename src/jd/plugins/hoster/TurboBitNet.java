@@ -68,7 +68,7 @@ public class TurboBitNet extends PluginForHost {
         if (freeId != null) {
             link.setUrlDownload(MAINPAGE + "/" + freeId + ".html");
         } else {
-            link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+", "://turbobit\\.net"));
+            link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+", "://turbobit.net"));
         }
     }
 
