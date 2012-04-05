@@ -53,17 +53,19 @@ public class OpenDownloadFolderAction extends AppAction {
         if (!isEnabled()) return;
 
         final ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(pkg.getName()), _GUI._.OpenDownloadFolderAction_actionPerformed_save_(), null);
-        d.setLeftActions(new AppAction() {
-            {
-                setName(_GUI._.OpenDownloadFolderAction_actionPerformed_button_());
-            }
+        if (CrossSystem.isOpenFileSupported()) {
+            d.setLeftActions(new AppAction() {
+                {
+                    setName(_GUI._.OpenDownloadFolderAction_actionPerformed_button_());
+                }
 
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                CrossSystem.openFile(d.getSelection()[0] == null ? path : d.getSelection()[0]);
-            }
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    CrossSystem.openFile(d.getSelection()[0] == null ? path : d.getSelection()[0]);
+                }
 
-        });
+            });
+        }
         d.setPreSelection(path);
         d.setFileSelectionMode(FileChooserSelectionMode.DIRECTORIES_ONLY);
 

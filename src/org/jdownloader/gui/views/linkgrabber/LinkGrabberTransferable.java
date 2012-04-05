@@ -9,7 +9,6 @@ import java.util.Iterator;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.plugins.DownloadLink;
 
 import org.appwork.utils.ClipboardUtils;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
@@ -47,30 +46,12 @@ public class LinkGrabberTransferable extends PackageControllerTableTransferable<
         HashSet<String> urls = new HashSet<String>();
         if (lcontent == null) return urls;
         if (lcontent.getLinks() != null) {
-            for (CrawledLink link : lcontent.getLinks()) {
-                DownloadLink llink = link.getDownloadLink();
-                if (llink != null && DownloadLink.LINKTYPE_CONTAINER != llink.getLinkType()) {
-                    if (llink.gotBrowserUrl()) {
-                        urls.add(llink.getBrowserUrl());
-                    } else {
-                        urls.add(llink.getDownloadURL());
-                    }
-                }
-            }
+            urls.addAll(CrawledLink.getURLs(lcontent.getLinks()));
         }
         if (lcontent.getPackages() != null) {
             for (CrawledPackage fp : lcontent.getPackages()) {
                 synchronized (fp) {
-                    for (CrawledLink link : fp.getChildren()) {
-                        DownloadLink llink = link.getDownloadLink();
-                        if (llink != null && DownloadLink.LINKTYPE_CONTAINER != llink.getLinkType()) {
-                            if (llink.gotBrowserUrl()) {
-                                urls.add(llink.getBrowserUrl());
-                            } else {
-                                urls.add(llink.getDownloadURL());
-                            }
-                        }
-                    }
+                    urls.addAll(CrawledLink.getURLs(fp.getChildren()));
                 }
             }
         }

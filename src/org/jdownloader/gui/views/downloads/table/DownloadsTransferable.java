@@ -46,28 +46,12 @@ public class DownloadsTransferable extends PackageControllerTableTransferable<Fi
         HashSet<String> urls = new HashSet<String>();
         if (lcontent == null) return urls;
         if (lcontent.getLinks() != null) {
-            for (DownloadLink link : lcontent.getLinks()) {
-                if (DownloadLink.LINKTYPE_CONTAINER != link.getLinkType()) {
-                    if (link.gotBrowserUrl()) {
-                        urls.add(link.getBrowserUrl());
-                    } else {
-                        urls.add(link.getDownloadURL());
-                    }
-                }
-            }
+            urls.addAll(DownloadLink.getURLs(lcontent.getLinks()));
         }
         if (lcontent.getPackages() != null) {
             for (FilePackage fp : lcontent.getPackages()) {
                 synchronized (fp) {
-                    for (DownloadLink link : fp.getChildren()) {
-                        if (DownloadLink.LINKTYPE_CONTAINER != link.getLinkType()) {
-                            if (link.gotBrowserUrl()) {
-                                urls.add(link.getBrowserUrl());
-                            } else {
-                                urls.add(link.getDownloadURL());
-                            }
-                        }
-                    }
+                    urls.addAll(DownloadLink.getURLs(fp.getChildren()));
                 }
             }
         }

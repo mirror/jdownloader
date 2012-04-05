@@ -1,5 +1,9 @@
 package jd.controlling.linkcrawler;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+
 import javax.swing.ImageIcon;
 
 import jd.controlling.captcha.CaptchaController;
@@ -432,6 +436,16 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      */
     public LinkCollectingInformation getCollectingInfo() {
         return collectingInfo;
+    }
+
+    public static HashSet<String> getURLs(List<CrawledLink> links) {
+        ArrayList<DownloadLink> dLinks = new ArrayList<DownloadLink>();
+        if (links != null) {
+            for (CrawledLink cLink : links) {
+                if (cLink.getDownloadLink() != null) dLinks.add(cLink.getDownloadLink());
+            }
+        }
+        return DownloadLink.getURLs(dLinks);
     }
 
 }

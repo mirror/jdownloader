@@ -30,46 +30,15 @@ import org.jdownloader.images.NewTheme;
 
 public class LinkURLEditor extends SubMenuEditor {
 
-    private FileColumn file;
-    private UrlColumn  url;
+    private ArrayList<DownloadLink> links;
 
     public LinkURLEditor(final DownloadLink contextObject, final ArrayList<DownloadLink> links, ArrayList<FilePackage> fps) {
         super();
         setLayout(new MigLayout("ins 2,wrap 2", "[grow,fill][]", "[][grow,fill]"));
         setOpaque(false);
-
+        this.links = links;
         JLabel lbl = getLbl(_GUI._.LinkURLEditor(), NewTheme.I().getIcon("url", 18));
         add(SwingUtils.toBold(lbl), "spanx");
-        file = new FileColumn() {
-            {
-                this.leftGapBorder = normalBorder;
-            }
-
-            @Override
-            public int getDefaultWidth() {
-                return 150;
-            }
-
-            @Override
-            public boolean isEnabled(AbstractNode obj) {
-                return true;
-            }
-
-            public boolean isEditable(AbstractNode obj) {
-                return false;
-            }
-        };
-        url = new UrlColumn() {
-            @Override
-            public int getDefaultWidth() {
-                return 350;
-            }
-
-            @Override
-            public boolean isEnabled(AbstractNode obj) {
-                return true;
-            }
-        };
         final ExtTableModel<AbstractNode> model = new ExtTableModel<AbstractNode>("linkurleditor") {
             {
                 getTableData().addAll(links);
@@ -77,8 +46,57 @@ public class LinkURLEditor extends SubMenuEditor {
 
             @Override
             protected void initColumns() {
-                addColumn(file);
-                addColumn(url);
+                addColumn(new FileColumn() {
+                    {
+                        this.leftGapBorder = normalBorder;
+                    }
+
+                    @Override
+                    public int getDefaultWidth() {
+                        return 150;
+                    }
+
+                    @Override
+                    public boolean isEnabled(AbstractNode obj) {
+                        return true;
+                    }
+
+                    public boolean isEditable(AbstractNode obj) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isDefaultVisible() {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean isHidable() {
+                        return false;
+                    }
+                });
+                addColumn(new UrlColumn() {
+                    @Override
+                    public int getDefaultWidth() {
+                        return 350;
+                    }
+
+                    @Override
+                    public boolean isEnabled(AbstractNode obj) {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean isDefaultVisible() {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean isHidable() {
+                        return false;
+                    }
+
+                });
 
             }
         };
@@ -103,21 +121,25 @@ public class LinkURLEditor extends SubMenuEditor {
 
             protected boolean onShortcutCopy(final ArrayList<AbstractNode> selectedObjects, final KeyEvent evt) {
                 StringBuilder sb = new StringBuilder();
-                for (AbstractNode n : selectedObjects) {
-                    if (n instanceof DownloadLink) {
-                        if (sb.length() > 0) sb.append("\r\n");
-                        sb.append(((DownloadLink) n).getBrowserUrl());
+                ArrayList<DownloadLink> links = null;
+                if (selectedObjects.size() == 0) {
+                    links = LinkURLEditor.this.links;
+                } else {
+                    links = new ArrayList<DownloadLink>(selectedObjects.size());
+                    for (AbstractNode node : selectedObjects) {
+                        if (node instanceof DownloadLink) links.add((DownloadLink) node);
                     }
-
+                }
+                for (String url : DownloadLink.getURLs(links)) {
+                    if (sb.length() > 0) sb.append("\r\n");
+                    sb.append(url);
                 }
                 ClipboardMonitoring.getINSTANCE().setCurrentContent(sb.toString());
                 return true;
             }
         };
         table.setPreferredScrollableViewportSize(new Dimension(650, 250));
-        model.setColumnVisible(url, true);
         JScrollPane sp = new JScrollPane(table);
-
         add(sp, "spanx");
     }
 

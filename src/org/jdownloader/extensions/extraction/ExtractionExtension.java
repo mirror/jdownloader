@@ -114,14 +114,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         return INSTANCE;
     }
 
-    public void addListener(ExtractionListener listener) {
-        broadcaster.addListener(listener);
-    }
-
-    public void removeListener(ExtractionListener listener) {
-        broadcaster.removeListener(listener);
-    }
-
     /**
      * Adds all internal extraction plugins.
      */
@@ -396,7 +388,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
                         if (statusbarListener != null) {
                             statusbarListener.cleanup();
-                            removeListener(statusbarListener);
+                            broadcaster.removeListener(statusbarListener);
                         }
                     }
                 };
@@ -417,7 +409,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                     @Override
                     protected void runInEDT() {
                         if (statusbarListener != null) statusbarListener.cleanup();
-                        addListener(statusbarListener = new ExtractionListenerIcon(ExtractionExtension.this));
+                        broadcaster.addListener(statusbarListener = new ExtractionListenerIcon(ExtractionExtension.this));
                     }
                 };
             }
@@ -494,7 +486,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         initExtractors();
 
         // addListener(new ExtractionListenerFile());
-        addListener(new ExtractionListenerList());
+        broadcaster.addListener(new ExtractionListenerList());
 
         Iterator<IExtraction> it = extractors.iterator();
         while (it.hasNext()) {
