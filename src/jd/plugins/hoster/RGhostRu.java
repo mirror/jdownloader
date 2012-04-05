@@ -116,10 +116,10 @@ public class RGhostRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String md5 = br.getRegex("<b>MD5</b></td><td>(.*?)</td></tr>").getMatch(0);
-        if (md5 == null) md5 = br.getRegex("(?i)MD5(<[^>]+> ?)+?([a-z0-9]{32})").getMatch(1);
+        if (md5 == null) md5 = br.getRegex("(?i)MD5((<[^>]+>)+?([\r\n\t ]+)?(<[^>]+>)+?)?([a-z0-9]{32})").getMatch(4);
         if (md5 != null) link.setMD5Hash(md5.trim());
         String sha1 = br.getRegex("<b>SHA1</b></td><td>(.*?)</td></tr>").getMatch(0);
-        if (sha1 == null) sha1 = br.getRegex("(?i)SHA1(<[^>]+> ?|)+?([a-z0-9]{41})").getMatch(1);
+        if (sha1 == null) sha1 = br.getRegex("(?i)SHA1((<[^>]+>)+?([\r\n\t ]+)?(<[^>]+>)+?)?([a-z0-9]{40})").getMatch(4);
         if (sha1 != null) link.setSha1Hash(sha1.trim());
         link.setName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize));

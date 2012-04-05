@@ -56,7 +56,7 @@ public class NmLdsrg extends PluginForDecrypt {
             if (br.containsHTML("Link existiert nicht")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             fpName = br.getRegex(":: (.*?)</span></h2>").getMatch(0);
             if (fpName == null) fpName = "No Title";
-            String[] continueLinks = br.getRegex("\"(http://(www\\.)?anime-loads\\.org/redirect/\\d+/[a-z0-9]+)\"").getColumn(0);
+            String[] continueLinks = br.getRegex("\"(http://(www\\.)?anime\\-loads\\.org/redirect/\\d+/[a-z0-9]+)\"").getColumn(0);
             if (continueLinks == null || continueLinks.length == 0) return null;
             if (continueLinks != null && continueLinks.length != 0) {
                 for (String singlelink : continueLinks) {
@@ -67,9 +67,21 @@ public class NmLdsrg extends PluginForDecrypt {
         progress.setRange(links.size());
         for (String link : links) {
             br.getPage(link);
-            String dllink = Encoding.htmlDecode(br.getRegex("<meta http-equiv=\"refresh\" content=\"5;URL=(.*?)\" />").getMatch(0));
-            if (dllink == null) dllink = Encoding.htmlDecode(br.getRegex("redirect=(http://.*?)\"").getMatch(0));
-            DownloadLink dl = createDownloadlink(dllink);
+            String dllink = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"5;URL=(.*?)\" />").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("redirect=(http://.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("txt.innerHTML = \\'<a href=\"(http[^\"]+)\" target=\"_top\">Skip this Ad</a>\\'").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("(https?://(www\\.)?crypt\\-it\\.com/[^\"]+)").getMatch(0);
+                        if (dllink == null) {
+                            logger.warning("Can not find redirect final link");
+                            return null;
+                        }
+                    }
+                }
+            }
+            DownloadLink dl = createDownloadlink(Encoding.htmlDecode(dllink));
             dl.setSourcePluginPasswordList(passwords);
             dl.setDecrypterPassword(passwords.get(0));
             decryptedLinks.add(dl);
