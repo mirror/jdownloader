@@ -56,7 +56,7 @@ public class VidHogCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.0-raz
     // mods: setStartIntervall
-    // non account: 20 * unlimited?
+    // non account: 2 chunk * 3 max dl?
     // free account:
     // premium account:
     // protocol: no https
@@ -140,7 +140,7 @@ public class VidHogCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "freelink");
+        doFree(downloadLink, true, -2, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -270,7 +270,7 @@ public class VidHogCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 3;
     }
 
     /** Remove HTML code which could break the plugin */
@@ -303,11 +303,17 @@ public class VidHogCom extends PluginForHost {
                 if (dllink == null) {
                     dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                        if (cryptedScripts != null && cryptedScripts.length != 0) {
-                            for (String crypted : cryptedScripts) {
-                                dllink = decodeDownloadLink(crypted);
-                                if (dllink != null) break;
+                        dllink = new Regex(correctedBR, "<a href=\"([^\"]+)\">Click Here to download this file</a>").getMatch(0);
+                        if (dllink == null) {
+                            dllink = new Regex(correctedBR, "(https?://(\\w+\\.vidhog(servers)?\\.com|[\\d\\.]+):182/[^\"]+)").getMatch(0);
+                            if (dllink == null) {
+                                String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                                    for (String crypted : cryptedScripts) {
+                                        dllink = decodeDownloadLink(crypted);
+                                        if (dllink != null) break;
+                                    }
+                                }
                             }
                         }
                     }

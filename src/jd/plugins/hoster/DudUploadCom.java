@@ -43,22 +43,25 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15976 $", interfaceVersion = 2, names = { "180upload.com" }, urls = { "https?://(www\\.)?180upload\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class OneEightZeroUploadCom extends PluginForHost {
+@HostPlugin(revision = "$Revision: 16216 $", interfaceVersion = 2, names = { "dudupload.com" }, urls = { "https?://(www\\.)?dudupload\\.com/[a-z0-9]{12}" }, flags = { 0 })
+public class DudUploadCom extends PluginForHost {
 
     private String              correctedBR         = "";
-    private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://180upload.com";
+    private static final String PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
+    private static final String COOKIE_HOST         = "http://dudupload.com";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.5.2.2
-    // mods: filename, filesize, dllink
-    // free: 1 chunks, 3 max dl
-    // protocol: no https
+    // XfileSharingProBasic Version 2.5.5.0-raz
+    // mods:
+    // non account: 1 * 1 max dl
+    // free account:
+    // premium account:
+    // protocol: no https,
     // captchatype: null
+    // other: no redirects
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -70,7 +73,7 @@ public class OneEightZeroUploadCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public OneEightZeroUploadCom(PluginWrapper wrapper) {
+    public DudUploadCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -86,24 +89,25 @@ public class OneEightZeroUploadCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getPage(link.getDownloadURL());
-        doSomething();
+        getPage(link.getDownloadURL());
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
+        String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
             if (filename == null) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = new Regex(correctedBR, "<b>Filename:</b></td><td nowrap>([^<>]+)").getMatch(0);
+                    // generic regex will pick up false positives (html)
+                    // adjust to make work with COOKIE_HOST
+                    filename = new Regex(correctedBR, "(?i)((File)?name|Download File) ?:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(3);
                 }
             }
         }
@@ -111,11 +115,14 @@ public class OneEightZeroUploadCom extends PluginForHost {
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
-                filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(GB|MB))").getMatch(0);
+                // generic regex picks up false positives (premium ads above
+                // filesize)
+                // adjust accordingly to make work with COOKIE_HOST
+                filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
-            if (correctedBR.contains("You have reached the download-limit")) {
+            if (correctedBR.contains("You have reached the download\\-limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
@@ -123,6 +130,7 @@ public class OneEightZeroUploadCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        link.setProperty("plainfilename", filename);
         link.setFinalFileName(filename.trim());
         if (filesize != null && !filesize.equals("")) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -131,10 +139,10 @@ public class OneEightZeroUploadCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, true);
+        doFree(downloadLink, false, 1, "freelink");
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean getLinkWithoutLogin) throws Exception, PluginException {
+    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
         String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
@@ -143,32 +151,7 @@ public class OneEightZeroUploadCom extends PluginForHost {
             downloadLink.setMD5Hash(md5hash);
         }
 
-        String dllink = null;
-        if (getLinkWithoutLogin)
-            dllink = downloadLink.getStringProperty("freelink");
-        else
-            dllink = downloadLink.getStringProperty("freelink2");
-        if (dllink != null) {
-            try {
-                Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    if (getLinkWithoutLogin)
-                        downloadLink.setProperty("freelink", Property.NULL);
-                    else
-                        downloadLink.setProperty("freelink2", Property.NULL);
-                    dllink = null;
-                }
-                con.disconnect();
-            } catch (Exception e) {
-                if (getLinkWithoutLogin)
-                    downloadLink.setProperty("freelink", Property.NULL);
-                else
-                    downloadLink.setProperty("freelink2", Property.NULL);
-                dllink = null;
-            }
-        }
-
+        String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
          * Video links can already be found here, if a link is found here we can
          * skip wait times and captchas
@@ -176,8 +159,7 @@ public class OneEightZeroUploadCom extends PluginForHost {
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
-                br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replaceAll("https?://", "") + "/" + "([A-Za-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Free+Download");
-                doSomething();
+                postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=Free+Download");
                 checkErrors(downloadLink, false, passCode);
             }
             dllink = getDllink();
@@ -185,84 +167,90 @@ public class OneEightZeroUploadCom extends PluginForHost {
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dlForm.remove(null);
-            final long timeBefore = System.currentTimeMillis();
-            boolean password = false;
-            boolean skipWaittime = false;
-            if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
-                password = true;
-                logger.info("The downloadlink seems to be password protected.");
-            }
-
-            /* Captcha START */
-            if (correctedBR.contains(";background:#ccc;text-align")) {
-                logger.info("Detected captcha method \"plaintext captchas\" for this host");
-                /** Captcha method by ManiacMansion */
-                String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(\\d)</span>").getMatches();
-                if (letters == null || letters.length == 0) {
-                    logger.warning("plaintext captchahandling broken!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // this is for sites with multiple f1 forms deep. This does not hurt
+            // or interfere any other sections of this script
+            for (int i = 0; i <= 3; i++) {
+                dlForm.remove(null);
+                final long timeBefore = System.currentTimeMillis();
+                boolean password = false;
+                boolean skipWaittime = false;
+                if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
+                    password = true;
+                    logger.info("The downloadlink seems to be password protected.");
                 }
-                SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
-                for (String[] letter : letters) {
-                    capMap.put(Integer.parseInt(letter[0]), letter[1]);
-                }
-                StringBuilder code = new StringBuilder();
-                for (String value : capMap.values()) {
-                    code.append(value);
-                }
-                dlForm.put("code", code.toString());
-                logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
-            } else if (correctedBR.contains("/captchas/")) {
-                logger.info("Detected captcha method \"Standard captcha\" for this host");
-                String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-                String captchaurl = null;
-                if (sitelinks == null || sitelinks.length == 0) {
-                    logger.warning("Standard captcha captchahandling broken!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                for (String link : sitelinks) {
-                    if (link.contains("/captchas/")) {
-                        captchaurl = link;
-                        break;
+                /* Captcha START */
+                if (correctedBR.contains(";background:#ccc;text-align")) {
+                    logger.info("Detected captcha method \"plaintext captchas\" for this host");
+                    /** Captcha method by ManiacMansion */
+                    String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(\\d)</span>").getMatches();
+                    if (letters == null || letters.length == 0) {
+                        logger.warning("plaintext captchahandling broken!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                    SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+                    for (String[] letter : letters) {
+                        capMap.put(Integer.parseInt(letter[0]), letter[1]);
+                    }
+                    StringBuilder code = new StringBuilder();
+                    for (String value : capMap.values()) {
+                        code.append(value);
+                    }
+                    dlForm.put("code", code.toString());
+                    logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
+                } else if (correctedBR.contains("/captchas/")) {
+                    logger.info("Detected captcha method \"Standard captcha\" for this host");
+                    String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+                    String captchaurl = null;
+                    if (sitelinks == null || sitelinks.length == 0) {
+                        logger.warning("Standard captcha captchahandling broken!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    for (String link : sitelinks) {
+                        if (link.contains("/captchas/")) {
+                            captchaurl = link;
+                            break;
+                        }
+                    }
+                    if (captchaurl == null) {
+                        logger.warning("Standard captcha captchahandling broken!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
+                    dlForm.put("code", code);
+                    logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
+                } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
+                    logger.info("Detected captcha method \"Re Captcha\" for this host");
+                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.setForm(dlForm);
+                    String id = new Regex(correctedBR, "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    rc.setId(id);
+                    rc.load();
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    String c = getCaptchaCode(cf, downloadLink);
+                    Form rcform = rc.getForm();
+                    rcform.put("recaptcha_challenge_field", rc.getChallenge());
+                    rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
+                    logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
+                    dlForm = rc.getForm();
+                    /** wait time is often skippable for reCaptcha handling */
+                    // skipWaittime = true;
                 }
-                if (captchaurl == null) {
-                    logger.warning("Standard captcha captchahandling broken!");
+                /* Captcha END */
+                if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
+                if (!skipWaittime) waitTime(timeBefore, downloadLink);
+                sendForm(dlForm);
+                logger.info("Submitted DLForm");
+                checkErrors(downloadLink, true, passCode);
+                dllink = getDllink();
+                if (dllink == null && br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\"")) {
+                    dlForm = br.getFormbyProperty("name", "F1");
+                    continue;
+                } else if (dllink == null && !br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\"")) {
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
-                dlForm.put("code", code);
-                logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-            } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
-                logger.info("Detected captcha method \"Re Captcha\" for this host");
-                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.setForm(dlForm);
-                String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-                rc.setId(id);
-                rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
-                Form rcform = rc.getForm();
-                rcform.put("recaptcha_challenge_field", rc.getChallenge());
-                rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
-                logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                dlForm = rc.getForm();
-                /** wait time is often skippable for reCaptcha handling */
-                // skipWaittime = true;
-            }
-            /* Captcha END */
-            if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
-            if (!skipWaittime) waitTime(timeBefore, downloadLink);
-            br.submitForm(dlForm);
-            logger.info("Submitted DLForm");
-            doSomething();
-            checkErrors(downloadLink, true, passCode);
-            dllink = getDllink();
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else
+                    break;
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
@@ -270,25 +258,22 @@ public class OneEightZeroUploadCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            doSomething();
+            correctBR();
             checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (getLinkWithoutLogin)
-            downloadLink.setProperty("freelink", dllink);
-        else
-            downloadLink.setProperty("freelink2", dllink);
+        downloadLink.setProperty(directlinkproperty, dllink);
         if (passCode != null) downloadLink.setProperty("pass", passCode);
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 3;
+        return 1;
     }
 
-    /** This removes fake messages which can kill the plugin */
-    public void doSomething() throws NumberFormatException, PluginException {
+    /** Remove HTML code which could break the plugin */
+    public void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> someStuff = new ArrayList<String>();
         ArrayList<String> regexStuff = new ArrayList<String>();
@@ -311,24 +296,17 @@ public class OneEightZeroUploadCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            // within the html comment
-            dllink = new Regex(br, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
                 if (dllink == null) {
                     dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<a href=\"([^<>\"]+)\"><img src=\"(https?://[\\w\\.]+)?/images/downloadbutton.png\"/></a>").getMatch(0);
-                        if (dllink == null) {
-                            dllink = new Regex(correctedBR, "<a href=\"([^<>\"]+)\">[\\w\"\\= \\;<>]+Download").getMatch(0);
-                            if (dllink == null) {
-                                String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                                if (cryptedScripts != null && cryptedScripts.length != 0) {
-                                    for (String crypted : cryptedScripts) {
-                                        dllink = decodeDownloadLink(crypted);
-                                        if (dllink != null) break;
-                                    }
-                                }
+                        String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                        if (cryptedScripts != null && cryptedScripts.length != 0) {
+                            for (String crypted : cryptedScripts) {
+                                dllink = decodeDownloadLink(crypted);
+                                if (dllink != null) break;
                             }
                         }
                     }
@@ -336,6 +314,21 @@ public class OneEightZeroUploadCom extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    private void getPage(String page) throws Exception {
+        br.getPage(page);
+        correctBR();
+    }
+
+    private void postPage(String page, String postdata) throws Exception {
+        br.postPage(page, postdata);
+        correctBR();
+    }
+
+    private void sendForm(Form form) throws Exception {
+        br.submitForm(form);
+        correctBR();
     }
 
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
@@ -352,12 +345,14 @@ public class OneEightZeroUploadCom extends PluginForHost {
         }
         /** Wait time reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait)").matches()) {
-            String tmphrs = new Regex(correctedBR, "\\s+(\\d+)\\s+hours?").getMatch(0);
+            // adjust this regex to catch the wait time string for COOKIE_HOST
+            String WAIT = new Regex(correctedBR, "((You have reached the download\\-limit|You have to wait)[^<>]+)").getMatch(0);
+            String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
-            String tmpmin = new Regex(correctedBR, "\\s+(\\d+)\\s+minutes?").getMatch(0);
+            String tmpmin = new Regex(WAIT, "\\s+(\\d+)\\s+minutes?").getMatch(0);
             if (tmpmin == null) tmpmin = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
-            String tmpsec = new Regex(correctedBR, "\\s+(\\d+)\\s+seconds?").getMatch(0);
-            String tmpdays = new Regex(correctedBR, "\\s+(\\d+)\\s+days?").getMatch(0);
+            String tmpsec = new Regex(WAIT, "\\s+(\\d+)\\s+seconds?").getMatch(0);
+            String tmpdays = new Regex(WAIT, "\\s+(\\d+)\\s+days?").getMatch(0);
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
                 logger.info("Waittime regexes seem to be broken");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
@@ -432,12 +427,31 @@ public class OneEightZeroUploadCom extends PluginForHost {
         return finallink;
     }
 
-    public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
+    private String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
         passCode = thelink.getStringProperty("pass", null);
         if (passCode == null) passCode = Plugin.getUserInput("Password?", thelink);
         pwform.put("password", passCode);
         logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
         return Encoding.urlEncode(passCode);
+    }
+
+    private String checkDirectLink(DownloadLink downloadLink, String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
     }
 
     @Override

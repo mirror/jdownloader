@@ -41,7 +41,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?facebook\\.com/(video/video\\.php\\?v=|profile\\.php\\?id=\\d+\\&ref=ts#\\!/video/video\\.php\\?v=)\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?facebook\\.com/(video/video\\.php\\?v=|profile\\.php\\?id=\\d+\\&ref=ts#\\!/video/video\\.php\\?v=|(photo/)?photo\\.php\\?v=)\\d+" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
 
     private static String       FACEBOOKMAINPAGE = "http://www.facebook.com";
@@ -57,7 +57,7 @@ public class FaceBookComVideos extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         String thislink = link.getDownloadURL().replace("https://", "http://");
-        String videoID = new Regex(thislink, "ts#\\!/video/video\\.php\\?v=(\\d+)").getMatch(0);
+        String videoID = new Regex(thislink, "(ts#\\!/video/video\\.php|photo.php)\\?v=(\\d+)").getMatch(1);
         if (videoID != null) thislink = "http://facebook.com/video/video.php?v=" + videoID;
         link.setUrlDownload(thislink);
     }

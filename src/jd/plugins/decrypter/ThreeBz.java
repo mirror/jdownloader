@@ -31,9 +31,10 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drei.bz" }, urls = { "http://(www\\.)?drei\\.bz/\\?id=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drei.bz" }, urls = { "http://(www\\.)?drei\\.bz/(index\\.php)?(\\?id|\\?a=Download\\&dlid)=\\d+" }, flags = { 0 })
 public class ThreeBz extends PluginForDecrypt {
 
     public ThreeBz(PluginWrapper wrapper) {
@@ -41,32 +42,46 @@ public class ThreeBz extends PluginForDecrypt {
     }
 
     private static final String CAPTCHATEXT = "captcha/imagecreate\\.php";
+    private String              correctedBR = "";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        final String secondLink = "http://drei.bz/?a=Download&dlid=" + new Regex(parameter, "drei\\.bz/\\?id=(\\d+)").getMatch(0);
+        String secondLink = null;
+        if (parameter.matches("http://(www\\.)?drei\\.bz/(index\\.php)?\\?a=Download&dlid=\\d+")) {
+            secondLink = "http://drei.bz/?a=Download&dlid=" + new Regex(parameter, "dlid=(\\d+)").getMatch(0);
+        } else if (parameter.matches("http://(www\\.)?drei\\.bz/(index\\.php)?\\?id=\\d+")) {
+            secondLink = "http://drei.bz/?a=Download&dlid=" + new Regex(parameter, "drei\\.bz/\\?id=(\\d+)").getMatch(0);
+        }
+        if (secondLink == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         br.getPage(secondLink);
-        final String fpName = br.getRegex("div class=\"contenthead_inner\">Download von ([^<>]+)</div>").getMatch(0);
+        correctBR();
+        final String fpName = new Regex(correctedBR, "div class=\"contenthead_inner\">Download von ([^<>]+)</div>").getMatch(0);
         if (!br.containsHTML(CAPTCHATEXT)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         boolean failed = true;
-        for (int i = 0; i <= 3; i++) {
-            File file = this.getLocalCaptchaFile();
-            Browser.download(file, br.cloneBrowser().openGetConnection("http://drei.bz/captcha/imagecreate.php"));
-            Point p = UserIO.getInstance().requestClickPositionDialog(file, "relink.us", "Click on open Circle");
-            /* anticaptcha does not work good enough */
-            // int[] p = new jd.captcha.specials.GmdMscCm(file).getResult();
-            if (p == null) continue;
-            br.postPage(secondLink, "button.x=" + p.x + "&button.y=" + p.y);
-            if (br.containsHTML(CAPTCHATEXT) || br.containsHTML(">Du hast den Captach falsch eingegeben")) continue;
-            failed = false;
-            break;
+        if (correctedBR.contains(CAPTCHATEXT)) {
+            for (int i = 0; i <= 3; i++) {
+                File file = this.getLocalCaptchaFile();
+                Browser.download(file, br.cloneBrowser().openGetConnection("http://drei.bz/captcha/imagecreate.php"));
+                Point p = UserIO.getInstance().requestClickPositionDialog(file, "relink.us", "Click on open Circle");
+                /* anticaptcha does not work good enough */
+                // int[] p = new jd.captcha.specials.GmdMscCm(file).getResult();
+                if (p == null) continue;
+                br.postPage(secondLink, "button.x=" + p.x + "&button.y=" + p.y);
+                correctBR();
+                if (correctedBR.contains(CAPTCHATEXT) || correctedBR.contains(">Du hast den Captach falsch eingegeben")) continue;
+                failed = false;
+                break;
+            }
+            if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
         }
-        if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
-        String[] links = br.getRegex("window\\.open\\(\\'(.*?)\\'").getColumn(0);
+        String[] links = new Regex(correctedBR, "window\\.open\\(\\'(.*?)\\'").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -81,4 +96,22 @@ public class ThreeBz extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    /** Remove HTML code which could break the plugin */
+    public void correctBR() throws NumberFormatException, PluginException {
+        correctedBR = br.toString();
+        ArrayList<String> someStuff = new ArrayList<String>();
+        ArrayList<String> regexStuff = new ArrayList<String>();
+        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
+        for (String aRegex : regexStuff) {
+            String lolz[] = br.getRegex(aRegex).getColumn(0);
+            if (lolz != null) {
+                for (String dingdang : lolz) {
+                    someStuff.add(dingdang);
+                }
+            }
+        }
+        for (String fun : someStuff) {
+            correctedBR = correctedBR.replace(fun, "");
+        }
+    }
 }
