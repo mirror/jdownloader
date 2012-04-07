@@ -25,6 +25,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -42,7 +43,7 @@ public class PeeJeCom extends PluginForHost {
     // avoid dupes across domains/url types.
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(www\\.)?peejeshare.com", "peeje.com").replace(".html", ""));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(www\\.)?peeje\\.com/", "peejeshare.com/").replace(".html", ""));
     }
 
     public PeeJeCom(PluginWrapper wrapper) {
@@ -54,6 +55,8 @@ public class PeeJeCom extends PluginForHost {
         return "http://www.peeje.com/terms";
     }
 
+    private static final String PASSWORDTEXT = ">This file is password\\-protected";
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -61,10 +64,15 @@ public class PeeJeCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">The file you requested does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fileInfo = br.getRegex("<br />File information:<b> (.*?) \\- (\\d+.*?) </b>");
-        String filename = fileInfo.getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Download ([^<>\"/]+)</title>").getMatch(0);
-        String filesize = fileInfo.getMatch(1);
+        String filename = null;
+        if (br.containsHTML(PASSWORDTEXT)) {
+            filename = br.getRegex("var RELPATH = \"([^<>\"]*?)(\\.html)?\"").getMatch(0);
+        } else {
+            filename = fileInfo.getMatch(0);
+            if (filename == null) filename = br.getRegex("<title>Download ([^<>\"/]+)</title>").getMatch(0);
+        }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filesize = fileInfo.getMatch(1);
         link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -73,7 +81,15 @@ public class PeeJeCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.postPage(br.getURL(), "securitytoken=guest&psw=&download=Create+Download+Link");
+        String passCode = downloadLink.getStringProperty("pass", null);
+        if (br.containsHTML(PASSWORDTEXT)) {
+            if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
+            br.postPage(br.getURL(), "psw=" + Encoding.urlEncode(passCode) + "&securitytoken=guest&pswcheck=Click+here+to+continue");
+            if (br.containsHTML(">Invalid Password, please try again") || br.containsHTML(PASSWORDTEXT)) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+        } else {
+            passCode = "";
+        }
+        br.postPage(br.getURL(), "securitytoken=guest&psw=" + passCode + "&download=Create+Download+Link");
         String dllink = br.getRegex("<a href=\"(https?://[^<>\"]*?)\"><b>Click here to Download</b>").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(https?://ww\\d+\\.peeje\\.com/dl/[^<>\"\\']*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -82,6 +98,7 @@ public class PeeJeCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (passCode != null) downloadLink.setProperty("pass", passCode);
         dl.startDownload();
     }
 

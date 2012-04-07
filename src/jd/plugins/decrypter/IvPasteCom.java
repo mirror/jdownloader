@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -29,9 +30,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ivpaste.com" }, urls = { "http://(www\\.)?ivpaste\\.com/v/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ivpaste.com" }, urls = { "http://(www\\.)?ivpaste\\.com/(v/|view\\.php\\?id=)[A-Za-z0-9]+" }, flags = { 0 })
 public class IvPasteCom extends PluginForDecrypt {
 
     public IvPasteCom(PluginWrapper wrapper) {
@@ -44,7 +44,11 @@ public class IvPasteCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("NO Existe\\!")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        br.getPage("http://ivpaste.com/p/" + new Regex(parameter, "ivpaste\\.com/(v/|view\\.php\\?id=)([A-Za-z0-9]+)").getMatch(1));
+        if (br.containsHTML("<b>Acceda desde: <a")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML("api\\.recaptcha\\.net") || br.containsHTML("google\\.com/recaptcha/api/")) {
             boolean failed = true;
             for (int i = 0; i <= 5; i++) {
@@ -64,11 +68,11 @@ public class IvPasteCom extends PluginForDecrypt {
             }
             if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
         }
-        br.getPage(parameter.replace("/v/", "/p/"));
         String[] links = br.getRegex("<a href=\"(.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
+        for (String dl : links) {
+            if (!dl.matches("http://(www\\.)?ivpaste\\.com/(v/|view\\.php\\?id=)[A-Za-z0-9]+")) decryptedLinks.add(createDownloadlink(dl));
+        }
         return decryptedLinks;
     }
 

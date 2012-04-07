@@ -25,11 +25,9 @@ import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "irfree.com" }, urls = { "http://(www\\.)?irfree\\.(com|eu)(/.+/.*)" }, flags = { 0 })
 public class IrfreeCm extends PluginForDecrypt {
@@ -38,19 +36,18 @@ public class IrfreeCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // Most of the code done by user "garciamax"
-    // http://board.jdownloader.org/member.php?u=43543
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> passwords;
         br.setFollowRedirects(true);
-        String parameter = param.toString().replace("irfree.eu", "irfree.com");
+        String parameter = param.toString().replace("irfree.eu/", "irfree.com/");
         br.getPage(parameter);
-        if (br.containsHTML("(>We\\'re sorry \\- that page was not found \\(Error 404\\)<|<title>Nothing found for)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String content = br.getRegex(Pattern.compile("<div class=\"entry\">(.*?)<div align=\"center\">", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (content == null) return null;
-        passwords = HTMLParser.findPasswords(content);
-        String[] links = new Regex(content, "<a href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE).getColumn(0);
+        if (br.containsHTML("(The article cannot be found\\.|>Ooops, Error\\!<)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        passwords = HTMLParser.findPasswords(br.toString());
+        String[] links = new Regex(br.toString(), "<a href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE).getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String link : links) {
             if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {

@@ -39,9 +39,13 @@ public class FileTramCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.getRedirectLocation() != null) {
+        if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches("http://(www\\.)?filetram\\.com/download/.+")) {
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
         } else {
+            if (br.containsHTML("(>Not Found<|The requested URL was not found on this server)")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String fpName = br.getRegex("<h1 class=\"title\">(.*?)</h1>").getMatch(0);
             if (fpName == null) fpName = br.getRegex("<title>(.*?) \\- [A-Za-z0-9\\-]+ download</title>").getMatch(0);
             String textArea = br.getRegex("id=\"copy\\-links\" class=\"select\\-content\" wrap=\"off\">(.*?)</textarea>").getMatch(0);
