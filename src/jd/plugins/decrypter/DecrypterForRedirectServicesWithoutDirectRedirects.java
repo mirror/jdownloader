@@ -469,7 +469,10 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         } else if (parameter.contains("lnk.co/")) {
             finallink = br.getRedirectLocation();
             if (finallink == null) {
-                finallink = br.getRegex("<iframe src =\"(.*?)\"").getMatch(0);
+                finallink = br.getRegex("window\\.top\\.location = \\'srh\\.php\\?u=(http://[^<>\"]*?)\\'").getMatch(0);
+                if (finallink == null) {
+                    finallink = br.getRegex("style=\\'pointer\\-events: none;\\' id=\\'dest\\' src=\"(http://[^<>\"]*?)\"").getMatch(0);
+                }
             }
         } else if (parameter.contains("freeonsmash.com/")) {
             finallink = br.getRegex("<meta http\\-equiv=\"Refresh\" content=\"\\d+; URL=(.*?)\"").getMatch(0);
