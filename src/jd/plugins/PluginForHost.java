@@ -36,6 +36,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.captcha.CaptchaController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
@@ -771,6 +772,16 @@ public abstract class PluginForHost extends Plugin {
      * @param downloadLink
      */
     public void extendDownloadTablePropertiesMenu(JMenu m, DownloadLink downloadLink) {
+    }
+
+    /**
+     * Can be extended by the plugin to add entries to the contextmenu in the
+     * linkgrabbertable
+     * 
+     * @param m
+     * @param downloadLink
+     */
+    public void extendLinkgrabberTablePropertiesMenu(JMenu m, CrawledLink crawledLink) {
     }
 
 }

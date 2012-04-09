@@ -8,6 +8,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JSeparator;
+
 import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinknameCleaner;
@@ -16,16 +21,20 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
+import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserType;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
+import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 import org.jdownloader.translate._JDT;
 
 public class SetDownloadFolderAction extends AppAction {
@@ -41,6 +50,8 @@ public class SetDownloadFolderAction extends AppAction {
     private HashMap<CrawledPackage, ArrayList<CrawledLink>> newPackages;
 
     private CrawledPackage                                  pkg;
+
+    private File                                            path;
 
     public boolean newValueSet() {
         return retOkay;
@@ -92,6 +103,7 @@ public class SetDownloadFolderAction extends AppAction {
 
         }
         setName(_GUI._.SetDownloadFolderAction_SetDownloadFolderAction_());
+        path = LinkTreeUtils.getDownloadDirectory(node);
         setIconKey("save");
     }
 
@@ -100,7 +112,57 @@ public class SetDownloadFolderAction extends AppAction {
 
         try {
 
-            final File[] dest = Dialog.getInstance().showFileChooser("downloadFolderDialog", _GUI._.SetDownloadFolderAction_SetDownloadFolderAction_(), FileChooserSelectionMode.DIRECTORIES_ONLY, null, false, FileChooserType.SAVE_DIALOG, new File(pkg.getDownloadFolder()));
+            final ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(pkg.getName()), _GUI._.OpenDownloadFolderAction_actionPerformed_save_(), null) {
+                @Override
+                public JComponent layoutDialogContent() {
+
+                    MigPanel ret = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[]");
+                    ExtTextField lbl = new ExtTextField();
+                    lbl.setText(_GUI._.OpenDownloadFolderAction_layoutDialogContent_current_(path.getAbsolutePath()));
+                    lbl.setEditable(false);
+                    if (CrossSystem.isOpenFileSupported()) {
+                        ret.add(lbl);
+
+                        ret.add(new JButton(new AppAction() {
+                            {
+                                setName(_GUI._.OpenDownloadFolderAction_actionPerformed_button_());
+                            }
+
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                CrossSystem.openFile(path);
+                            }
+
+                        }), "height 20!");
+                    } else {
+                        ret.add(lbl, "spanx");
+                    }
+
+                    ret.add(new JSeparator(), "spanx");
+                    ret.add(new JLabel(_GUI._.OpenDownloadFolderAction_layoutDialogContent_object_()), "spanx");
+                    ret.add(super.layoutDialogContent(), "spanx");
+                    return ret;
+
+                }
+            };
+            if (CrossSystem.isOpenFileSupported()) {
+                d.setLeftActions(new AppAction() {
+                    {
+                        setName(_GUI._.OpenDownloadFolderAction_actionPerformed_button_());
+                    }
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        CrossSystem.openFile(d.getSelection()[0] == null ? path : d.getSelection()[0]);
+                    }
+
+                });
+            }
+            d.setPreSelection(path);
+            d.setFileSelectionMode(FileChooserSelectionMode.DIRECTORIES_ONLY);
+
+            final File[] dest = Dialog.getInstance().showDialog(d);
+
             if (!isDownloadFolderValid(dest[0])) return;
             retOkay = true;
             IOEQ.add(new Runnable() {

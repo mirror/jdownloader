@@ -2993,9 +2993,6 @@ public interface GuiTranslation extends TranslateInterface {
     String FileCheckAction_FileCheckAction_();
 
     @Default(lngs = { "en" }, values = { "Download Directory" })
-    String ContextMenuFactory_createPopup_downloaddir();
-
-    @Default(lngs = { "en" }, values = { "Choose Download Directory" })
     String SetDownloadFolderAction_SetDownloadFolderAction_();
 
     @Default(lngs = { "en" }, values = { "Download Directory" })
@@ -3007,7 +3004,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enabled" })
     String EnabledAction_EnabledAction_object_();
 
-    @Default(lngs = { "en" }, values = { "Set Download Password" })
+    @Default(lngs = { "en" }, values = { "Download Password" })
     String SetDownloadPassword_SetDownloadPassword_();
 
     @Default(lngs = { "en" }, values = { "Download Password" })
@@ -3654,5 +3651,20 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Save" })
     String OpenDownloadFolderAction_actionPerformed_save_();
+
+    @Default(lngs = { "en" }, values = { "Current Download Directory: %s1" })
+    String OpenDownloadFolderAction_layoutDialogContent_current_(String absolutePath);
+
+    @Default(lngs = { "en" }, values = { "Choose new Download Directory:" })
+    String OpenDownloadFolderAction_layoutDialogContent_object_();
+
+    @Default(lngs = { "en" }, values = { "%s1's Properties" })
+    String ContextMenuFactory_createPopup_properties(String name);
+
+    @Default(lngs = { "en" }, values = { "Comment(s)" })
+    String SetCommentAction_SetCommentAction_object_();
+
+    @Default(lngs = { "en" }, values = { "Edit Link/Package Comments" })
+    String SetCommentAction_actionPerformed_dialog_title_();
 
 }

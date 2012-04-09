@@ -257,4 +257,16 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "File must be downloaded" })
     String downloadedbad();
+
+    @Default(lngs = { "en" }, values = { "Extract Password" })
+    String contextmenu_set_password();
+
+    @Default(lngs = { "en" }, values = { "Extract Password for %s1" })
+    String password(String s);
+
+    @Default(lngs = { "en" }, values = { "Extract Password" })
+    String contextmenu_main_passsub();
+
+    @Default(lngs = { "en" }, values = { "Extract after Download" })
+    String auto_extract_enabled();
 }

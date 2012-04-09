@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.linkgrabber;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -9,6 +10,10 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
+import org.appwork.exceptions.WTFException;
 
 public class LinkTreeUtils {
 
@@ -91,6 +96,17 @@ public class LinkTreeUtils {
         }
         container.addAll(ret);
         return container;
+    }
+
+    public static File getDownloadDirectory(AbstractNode node) {
+        if (node instanceof DownloadLink) {
+            return new File(((DownloadLink) node).getFilePackage().getDownloadDirectory());
+        } else if (node instanceof FilePackage) {
+            return new File(((FilePackage) node).getDownloadDirectory());
+        } else if (node instanceof CrawledLink) {
+            return new File(((CrawledLink) node).getParentNode().getDownloadFolder());
+        } else if (node instanceof CrawledPackage) { return new File(((CrawledPackage) node).getDownloadFolder()); }
+        throw new WTFException("Unknown Type: " + node.getClass());
     }
 
 }

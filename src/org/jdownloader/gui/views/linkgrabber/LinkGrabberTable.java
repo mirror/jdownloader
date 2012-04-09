@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber;
 
 import java.awt.Color;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -9,16 +10,23 @@ import java.util.EventObject;
 
 import javax.swing.DropMode;
 import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
+import javax.swing.SwingConstants;
 import javax.swing.TransferHandler;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ContextMenuFactory;
@@ -71,7 +79,28 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     @Override
     protected void onDoubleClick(final MouseEvent e, final AbstractNode obj) {
+        JPopupMenu m = new JPopupMenu();
 
+        if (obj instanceof AbstractPackageNode) {
+
+            Image back = (((AbstractPackageNode<?, ?>) obj).isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) : NewTheme.I().getImage("tree_package_closed", 32));
+
+            m.add(SwingUtils.toBold(new JLabel(_GUI._.ContextMenuFactory_createPopup_properties(obj.getName()), new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)), SwingConstants.LEFT)));
+            m.add(new JSeparator());
+        } else if (obj instanceof CrawledLink) {
+
+            Image back = (((CrawledLink) obj).getDownloadLink().getIcon().getImage());
+
+            m.add(SwingUtils.toBold(new JLabel(_GUI._.ContextMenuFactory_createPopup_properties(obj.getName()), new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)), SwingConstants.LEFT)));
+            m.add(new JSeparator());
+        }
+
+        final ExtColumn<AbstractNode> col = this.getExtColumnAtPoint(e.getPoint());
+
+        for (JMenuItem mm : ContextMenuFactory.fillPropertiesMenu(obj, getExtTableModel().getSelectedObjects(), col)) {
+            m.add(mm);
+        }
+        m.show(this, e.getPoint().x, e.getPoint().y);
     }
 
     @Override

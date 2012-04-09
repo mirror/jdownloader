@@ -1,23 +1,29 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
+import java.awt.Image;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
+import javax.swing.ImageIcon;
 import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEvent;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
@@ -41,8 +47,29 @@ public class ContextMenuFactory {
         JPopupMenu p = new JPopupMenu();
         JMenu m;
 
+        JMenu properties = new JMenu(_GUI._.ContextMenuFactory_createPopup_properties_package());
+        p.add(properties);
+        p.add(new JSeparator());
+        if (contextObject instanceof AbstractPackageNode) {
+
+            Image back = (((AbstractPackageNode<?, ?>) contextObject).isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) : NewTheme.I().getImage("tree_package_closed", 32));
+            properties.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)));
+
+        } else if (contextObject instanceof CrawledLink) {
+
+            Image back = (((CrawledLink) contextObject).getDownloadLink().getIcon().getImage());
+            properties.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)));
+
+            ((CrawledLink) contextObject).getDownloadLink().getDefaultPlugin().extendLinkgrabberTablePropertiesMenu(properties, ((CrawledLink) contextObject));
+
+        }
+
+        for (JMenuItem mm : fillPropertiesMenu(contextObject, selection, column)) {
+            properties.add(mm);
+        }
+
         p.add(new ConfirmAction(isShift, selection).toContextMenuAction());
-        p.add(new EnabledAction(selection).toContextMenuAction());
+
         if (selection == null || selection.size() == 0) {
             p.add(new AddLinksAction().toContextMenuAction());
             return p;
@@ -53,14 +80,8 @@ public class ContextMenuFactory {
 
         p.add(new JSeparator());
 
-        p.add(new OpenDownloadFolderAction(contextObject, selection).toContextMenuAction());
-        p.add(new SetDownloadFolderAction(contextObject, selection).toContextMenuAction());
-
-        p.add(new PrioritySubMenu(selection));
         p.add(new FileCheckAction(selection).toContextMenuAction());
         p.add(new CreateDLCAction(selection).toContextMenuAction());
-
-        p.add(new SetDownloadPassword(link, selection).toContextMenuAction());
 
         p.add(new JSeparator());
         p.add(new MergeToPackageAction(selection).toContextMenuAction());
@@ -89,5 +110,19 @@ public class ContextMenuFactory {
         p.add(m);
 
         return p;
+    }
+
+    public static ArrayList<JMenuItem> fillPropertiesMenu(AbstractNode contextObject, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column) {
+        ArrayList<AbstractNode> inteliSelect = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<AbstractNode>());
+        ArrayList<JMenuItem> ret = new ArrayList<JMenuItem>();
+        ret.add(new JMenuItem(new SetDownloadFolderAction(contextObject, inteliSelect).toContextMenuAction()));
+        ret.add(new JMenuItem(new SetDownloadPassword(contextObject, inteliSelect).toContextMenuAction()));
+        ret.add(new JMenuItem(new SetCommentAction(contextObject, inteliSelect).toContextMenuAction()));
+
+        ret.add(new JMenuItem(new EnabledAction(inteliSelect).toContextMenuAction()));
+        ret.add(new PrioritySubMenu(selection));
+        MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new LinkgrabberTablePropertiesContext(ret, contextObject, selection, column)));
+
+        return ret;
     }
 }

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
@@ -39,6 +40,7 @@ import org.jdownloader.gui.views.downloads.context.ResetAction;
 import org.jdownloader.gui.views.downloads.context.ResumeAction;
 import org.jdownloader.gui.views.downloads.context.StopsignAction;
 import org.jdownloader.gui.views.downloads.table.linkproperties.URLEditorAction;
+import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
 
 public class DownloadTableContextMenuFactory {
@@ -107,19 +109,17 @@ public class DownloadTableContextMenuFactory {
             // m.setIcon(new ImageIcon(ImageProvider.merge(back,
             // NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)));
             // popup.add(m);
-            properties.add(new SubMenu(_GUI._.ContextMenuFactory_createPopup_speed(), NewTheme.I().getIcon("speed", 20), new SpeedLimitator((DownloadLink) contextObject, links, fps)));
-            properties.add(new SubMenu(_GUI._.ContextMenuFactory_createPopup_downloadpassword(), NewTheme.I().getIcon("password", 20), new PasswordEditor((DownloadLink) contextObject, links, fps)));
-
         }
-
+        for (JMenuItem mm : fillPropertiesMenu(contextObject, selection, column, fps)) {
+            properties.add(mm);
+        }
+        popup.add(new JSeparator());
         // properties.add(new DownloadFolderEditorAction((DownloadLink)
         // contextObject, links, fps));
 
-        properties.add(new URLEditorAction(null, links, fps));
-        properties.add(PrioritySubMenu.createPrioMenu(links));
         popup.add(new ForceDownloadAction(links));
         // popup.add(new SuperPriorityDownloadAction(links));
-        popup.add(new EnabledAction(selection));
+
         popup.add(new ResumeAction(links));
         popup.add(new ResetAction(links));
         popup.add(new StopsignAction(contextObject));
@@ -159,5 +159,19 @@ public class DownloadTableContextMenuFactory {
         // popup.add(new EditLinkOrPackageAction(downloadsTable,
         // contextObject));
         return popup;
+    }
+
+    private ArrayList<JMenuItem> fillPropertiesMenu(AbstractNode contextObject, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column, ArrayList<FilePackage> fps) {
+        ArrayList<DownloadLink> inteliSelect = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<DownloadLink>());
+        ArrayList<JMenuItem> ret = new ArrayList<JMenuItem>();
+        ret.add(new JMenuItem(new EnabledAction(new ArrayList<AbstractNode>(inteliSelect))));
+        ret.add(new JMenuItem(new URLEditorAction(null, inteliSelect, fps)));
+
+        if (contextObject instanceof DownloadLink) {
+            ret.add(new SubMenu(_GUI._.ContextMenuFactory_createPopup_speed(), NewTheme.I().getIcon("speed", 20), new SpeedLimitator((DownloadLink) contextObject, inteliSelect, fps)));
+            ret.add(new SubMenu(_GUI._.ContextMenuFactory_createPopup_downloadpassword(), NewTheme.I().getIcon("password", 20), new PasswordEditor((DownloadLink) contextObject, inteliSelect, fps)));
+        }
+        ret.add(PrioritySubMenu.createPrioMenu(inteliSelect));
+        return ret;
     }
 }

@@ -27,7 +27,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.OpenDownloadFolderAction;
+import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
@@ -81,7 +81,9 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
             public void actionPerformed(ActionEvent e) {
                 noset = true;
-                new OpenDownloadFolderAction(editing).actionPerformed(e);
+
+                CrossSystem.openFile(LinkTreeUtils.getDownloadDirectory(editing));
+
                 DownloadFolderColumn.this.stopCellEditing();
             }
         });

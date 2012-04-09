@@ -1,7 +1,5 @@
 package org.jdownloader.gui.menu.eventsender;
 
-import javax.swing.JPopupMenu;
-
 import org.appwork.utils.event.Eventsender;
 
 public class MenuFactoryEventSender extends Eventsender<MenuFactoryListener, MenuFactoryEvent> {
@@ -30,11 +28,8 @@ public class MenuFactoryEventSender extends Eventsender<MenuFactoryListener, Men
     protected void fireEvent(MenuFactoryListener listener, MenuFactoryEvent event) {
         switch (event.getType()) {
         case EXTEND:
-            if (event.getContext().getMenu() instanceof JPopupMenu) {
-                listener.onExtendPopupMenu(event.getContext());
-            } else {
-                System.out.println("Unhandled Event Context: " + event);
-            }
+
+            listener.onExtendPopupMenu(event.getContext());
 
             break;
         default:

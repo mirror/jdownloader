@@ -20,6 +20,7 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 
 import javax.swing.Action;
@@ -51,6 +52,8 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.FileCreationListener;
@@ -59,6 +62,7 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkArchiveFile;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
@@ -74,6 +78,7 @@ import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.gui.views.downloads.table.DownloadTableContext;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTableContext;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTablePropertiesContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
@@ -654,7 +659,22 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             onExtendPopupMenuLinkgrabberTable((LinkgrabberTableContext) unspecifiedContext);
             // p.add(new
             // ValidateArchiveAction(selection).toContextMenuAction());
+        } else if (unspecifiedContext instanceof LinkgrabberTablePropertiesContext) {
+            onExtendPropertiesMenuLinkgrabberTable((LinkgrabberTablePropertiesContext) unspecifiedContext);
         }
+    }
+
+    private void onExtendPropertiesMenuLinkgrabberTable(final LinkgrabberTablePropertiesContext context) {
+
+        // JMenu menu = new JMenu(T._.contextmenu_main()) {
+        // protected JMenuItem createActionComponent(Action a) {
+        // if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
+        // return super.createActionComponent(a);
+        // }
+        // };
+        // menu.setIcon(getIcon(18));
+        // context.getMenu().add(menu);
+
     }
 
     private void onExtendPopupMenuLinkgrabberTable(LinkgrabberTableContext context) {
@@ -663,8 +683,77 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         boolean isPkgContext = context.getClickedObject() instanceof CrawledPackage;
         CrawledLink link = isLinkContext ? (CrawledLink) context.getClickedObject() : null;
         CrawledPackage pkg = isPkgContext ? (CrawledPackage) context.getClickedObject() : null;
+        JMenu menu = new JMenu(T._.contextmenu_main()) {
+            protected JMenuItem createActionComponent(Action a) {
+                if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
+                return super.createActionComponent(a);
+            }
+        };
 
-        context.getMenu().add(new ValidateArchiveAction(this, context.getSelectedObjects()).toContextMenuAction());
+        context.getMenu().add(menu);
+        menu.setIcon(getIcon(18));
+        menu.setEnabled(false);
+        ValidateArchiveAction validation = new ValidateArchiveAction(this, context.getSelectedObjects());
+        for (final Archive a : validation.getArchives()) {
+            menu.setEnabled(true);
+            JMenu parent = menu;
+            if (validation.getArchives().size() > 1) {
+                parent = new JMenu(a.getName()) {
+                    protected JMenuItem createActionComponent(Action a) {
+                        if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
+                        return super.createActionComponent(a);
+                    }
+                };
+                menu.add(parent);
+            }
+
+            parent.add(new AppAction() {
+                {
+                    setName(T._.auto_extract_enabled());
+                    setSelected(((CrawledLinkArchiveFile) a.getArchiveFiles().get(0)).getLink().getParentNode().isAutoExtractionEnabled());
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+                    ((CrawledLinkArchiveFile) a.getArchiveFiles().get(0)).getLink().getParentNode().setAutoExtractionEnabled(isSelected());
+                }
+            });
+            parent.add(new AppAction() {
+                {
+                    setName(T._.contextmenu_set_password());
+                    setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("unpack", 20), NewTheme.I().getImage("password", 12), 0, 0, 10, 10)));
+
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    try {
+                        HashSet<String> passwords = ((CrawledLinkArchiveFile) a.getArchiveFiles().get(0)).getLink().getParentNode().getExtractionPasswords();
+                        String def = null;
+                        if (passwords.size() > 0) {
+                            def = passwords.iterator().next();
+                        }
+                        String newPassword;
+
+                        newPassword = Dialog.getInstance().showInputDialog(0, T._.password(a.getName()), "", def, NewTheme.I().getIcon("password", 32), null, null);
+
+                        if (def != null && def.equals(newPassword)) return;
+
+                        passwords.clear();
+
+                        passwords.add(newPassword);
+                    } catch (DialogClosedException e1) {
+                        e1.printStackTrace();
+                    } catch (DialogCanceledException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            });
+            parent.add(new ValidateArchiveAction(this, a));
+
+        }
+
     }
 
     protected void onExtendPopupMenuDownloadTable(final DownloadTableContext context) {
