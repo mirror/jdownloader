@@ -54,15 +54,25 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veoh.com" }, urls = { "http://(www\\.)?veoh.com/(browse/videos/category/.*?/)?watch/[A-Za-z0-9]+" }, flags = { 0 })
 public class VeohCom extends PluginForHost {
+
     private static final String  APIKEY          = "NEQzRTQyRUMtRjEwQy00MTcyLUExNzYtRDMwQjQ2OEE2OTcy";
+
     private URLConnectionAdapter DL;
+
     private byte[]               IV;
+
     private InputStream          INPUTSTREAM;
+
     private byte[]               BUFFER;
+
     private long                 BYTESLOADED;
+
     private long                 BYTES2DO        = -1;
+
     private BufferedOutputStream FILEOUT;
+
     private boolean              CONNECTIONCLOSE = false;
+
     private int                  FAILCOUNTER     = 0;
 
     public VeohCom(final PluginWrapper wrapper) {
@@ -142,23 +152,27 @@ public class VeohCom extends PluginForHost {
         final String fileSize = br.getRegex("size=\"(\\d+)\"").getMatch(0);
         final String ext = br.getRegex("extension=\"(.*?)\"").getMatch(0);
         String sTime = br.getRegex("timestamp=\"(\\d+)\"").getMatch(0);
-        if (fHash == null || fHash.length() < 32 || sTime == null || videoId == null || fileSize == null || ext == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (fHash == null || fHash == null || sTime == null || videoId == null || fileSize == null || ext == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-        downloadLink.setName(downloadLink.getName() + ext);
-        br.setFollowRedirects(true);
-
-        // prepareBrowser("veohplugin-1.3.6 service (NT 6.1; IE 7.0; en-US Windows)");
-        /* generate crypted token (ct=) */
-        final String path = "/veoh/" + permaLinkID + "/" + fHash + ".eveoh";
-        final String cryptedToken = Hash.getSHA1(sTime + "VT Copyright 2008 Veoh" + path);
-        final int p = Integer.parseInt(cryptedToken.substring(0, 1), 16);
+        boolean oldDlHandling = fHash.length() < 32;
         String hexTime = String.format("%08x", Integer.parseInt(sTime));
 
-        downloadLink.getLinkStatus().setStatusText("download to initialize ...");
-        boolean oldDlHandling = false;
-        br.getPage("http://content.veoh.com" + path + "?version=3&ct=" + cryptedToken + xor(cryptedToken.substring(p, p + 8), hexTime));
-        if (br.getHttpConnection().getResponseCode() == 404 && br.containsHTML("<title>404 Not Found</title>")) {
-            oldDlHandling = true;
+        if (!oldDlHandling) {
+            downloadLink.setName(downloadLink.getName() + ext);
+            br.setFollowRedirects(true);
+
+            // prepareBrowser("veohplugin-1.3.6 service (NT 6.1; IE 7.0; en-US Windows)");
+            /* generate crypted token (ct=) */
+            final String path = "/veoh/" + permaLinkID + "/" + fHash + ".eveoh";
+            final String cryptedToken = Hash.getSHA1(sTime + "VT Copyright 2008 Veoh" + path);
+            final int p = Integer.parseInt(cryptedToken.substring(0, 1), 16);
+
+            downloadLink.getLinkStatus().setStatusText("download to initialize ...");
+
+            br.getPage("http://content.veoh.com" + path + "?version=3&ct=" + cryptedToken + xor(cryptedToken.substring(p, p + 8), hexTime));
+            if (br.getHttpConnection().getResponseCode() == 404 && br.containsHTML("<title>404 Not Found</title>")) {
+                oldDlHandling = true;
+            }
         }
         if (!oldDlHandling) {
             downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
@@ -278,7 +292,7 @@ public class VeohCom extends PluginForHost {
                         } else {
                             downloadLink.setProperty("parts_finished", Long.valueOf(T[3]));
                         }
-                        boolean resumable = false;
+                        boolean resumable = true;
                         try {
                             resumable = dl.isResumable();
                         } catch (final Throwable e) {
@@ -352,7 +366,7 @@ public class VeohCom extends PluginForHost {
             /* fileextension */
             if (!downloadLink.getName().matches(".+\\.[\\w]{1,3}$")) {
                 final String extension = br.getRegex("extension=\"(.*?)\"").getMatch(0);
-                downloadLink.setName(downloadLink.getName() + extension);
+                downloadLink.setFinalFileName(downloadLink.getName() + extension);
             }
             /* finallinkparameter */
             final String fHashPath = br.getRegex("fullHashPath=\"(.*?)\"").getMatch(0);
@@ -364,7 +378,7 @@ public class VeohCom extends PluginForHost {
             }
             if (fHashPath == null || fHashToken == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-            br.getHeaders().put("Referer", "http://www.veoh.com/static/swf/veoh/VeohMediaPlayer.swf?v=2011-09-15.3");
+            br.getHeaders().put("Referer", "http://www.veoh.com/static/swf/veoh/VeohMediaPlayer.swf?v=2012-03-26.2");
             br.getHeaders().put("x-flash-version", "10,3,183,7");
 
             br.setFollowRedirects(true);
