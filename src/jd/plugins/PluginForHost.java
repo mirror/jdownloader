@@ -91,7 +91,6 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public JDPluginLogger getLogger() {
-
         return (JDPluginLogger) logger;
     }
 
@@ -305,19 +304,6 @@ public abstract class PluginForHost extends Plugin {
      */
     public abstract AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception;
 
-    /**
-     * Gibt einen String mit den Dateiinformationen zurueck. Die Defaultfunktion
-     * gibt nur den dateinamen zurueck. Allerdings Sollte diese Funktion
-     * ueberschrieben werden. So kann ein Plugin zusatzinfos zu seinen Links
-     * anzeigen (Nach dem aufruf von getFileInformation()
-     * 
-     * @param downloadLink
-     * @return
-     */
-    public String getFileInformationString(final DownloadLink downloadLink) {
-        return downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")";
-    }
-
     public int getMaxRetries() {
         return JsonConfig.create(GeneralSettings.class).getMaxPluginRetries();
     }
@@ -438,7 +424,7 @@ public abstract class PluginForHost extends Plugin {
             } catch (Throwable e) {
             }
             try {
-                br.getHttpConnection().disconnect();
+                br.disconnect();
             } catch (Throwable e) {
             }
             try {

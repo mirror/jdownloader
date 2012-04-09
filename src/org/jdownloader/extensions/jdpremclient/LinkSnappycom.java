@@ -439,12 +439,6 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
         return plugin.checkLinks(urls);
     }
 
-    @Override
-    public String getFileInformationString(DownloadLink downloadLink) {
-        if (proxyused || plugin == null) return "";
-        return plugin.getFileInformationString(downloadLink);
-    }
-
     public void setReplacedPlugin(PluginForHost plugin) {
         this.plugin = plugin;
     }

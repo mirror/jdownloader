@@ -403,11 +403,6 @@ public class DirectHTTP extends PluginForHost {
     }
 
     @Override
-    public String getFileInformationString(final DownloadLink parameter) {
-        return "(" + this.contentType + ")" + parameter.getName();
-    }
-
-    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }

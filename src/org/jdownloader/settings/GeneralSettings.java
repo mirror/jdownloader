@@ -113,6 +113,7 @@ public interface GeneralSettings extends ConfigInterface {
     @AboutConfig
     @Description("How often a Plugin restarts a download if download failed")
     @DefaultIntValue(3)
+    @RequiresRestart
     int getMaxPluginRetries();
 
     @AboutConfig

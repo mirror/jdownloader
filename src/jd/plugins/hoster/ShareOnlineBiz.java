@@ -346,6 +346,8 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         br.setFollowRedirects(true);
         final String response = br.getPage("http://api.share-online.biz/cgi-bin?q=linkdata&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&lid=" + linkID);
+        if (response.contains("** USER DATA INVALID")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (response.contains("** REQUESTED DOWNLOAD LINK NOT FOUND **")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (response.contains("EXCEPTION request download link not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final HashMap<String, String> dlInfos = getInfos(response, ": ");
         final String filename = dlInfos.get("NAME");
