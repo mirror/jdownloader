@@ -103,6 +103,12 @@ public class ShareRapidCz extends PluginForHost {
                 } catch (final Throwable e) {
                     /* not available in 0.9xxx */
                 }
+            } else {
+                try {
+                    account.setMaxSimultanDownloads(1);
+                } catch (final Throwable e) {
+                    /* not available in 0.9xxx */
+                }
             }
             try {
                 account.setConcurrentUsePossible(true);
@@ -113,6 +119,7 @@ public class ShareRapidCz extends PluginForHost {
             ai.setStatus("Registered (free) User");
             account.setProperty("freeaccount", "true");
             try {
+                account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
                 /* not available in 0.9xxx */
