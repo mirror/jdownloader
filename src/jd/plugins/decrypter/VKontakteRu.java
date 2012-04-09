@@ -104,7 +104,7 @@ public class VKontakteRu extends PluginForDecrypt {
                      * Example:http://vk.com/photo125005168_269986868
                      */
                     decryptedLinks = decryptSinglePhoto(decryptedLinks, parameter);
-                } else if (parameter.matches(".*?vk\\.com/\\d+|albums(\\-)?\\d+")) {
+                } else if (parameter.matches(".*?vk\\.com/albums(\\-)?\\d+")) {
                     /**
                      * Photo Album lists/overviews Example:
                      * http://vk.com/albums46486585
