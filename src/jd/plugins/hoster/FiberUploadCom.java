@@ -268,12 +268,29 @@ public class FiberUploadCom extends PluginForHost {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             correctBR();
-            checkServerErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("(The download should start momentarily, if it does not|<meta http\\-equiv=\"refresh\" content=\"\\d+\")")) {
+                dllink = br.getRegex("url=([^\"]+)").getMatch(0);
+                if (dllink == null) dllink = br.getRegex("click <a href=\"([^\"]+)").getMatch(0);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+                if (dl.getConnection().getContentType().contains("html")) {
+                    logger.warning("The final dllink seems not to be a file!");
+                    br.followConnection();
+                    correctBR();
+                    checkServerErrors();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                downloadLink.setProperty(directlinkproperty, dllink);
+                if (passCode != null) downloadLink.setProperty("pass", passCode);
+                dl.startDownload();
+            } else {
+                checkServerErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else {
+            downloadLink.setProperty(directlinkproperty, dllink);
+            if (passCode != null) downloadLink.setProperty("pass", passCode);
+            dl.startDownload();
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
-        dl.startDownload();
     }
 
     @Override
@@ -547,12 +564,29 @@ public class FiberUploadCom extends PluginForHost {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 correctBR();
-                checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (br.containsHTML("(The download should start momentarily, if it does not|<meta http\\-equiv=\"refresh\" content=\"\\d+\")")) {
+                    dllink = br.getRegex("url=([^\"]+)").getMatch(0);
+                    if (dllink == null) dllink = br.getRegex("click <a href=\"([^\"]+)").getMatch(0);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+                    if (dl.getConnection().getContentType().contains("html")) {
+                        logger.warning("The final dllink seems not to be a file!");
+                        br.followConnection();
+                        correctBR();
+                        checkServerErrors();
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    link.setProperty("premlink", dllink);
+                    if (passCode != null) link.setProperty("pass", passCode);
+                    dl.startDownload();
+                } else {
+                    checkServerErrors();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } else {
+                link.setProperty("premlink", dllink);
+                if (passCode != null) link.setProperty("pass", passCode);
+                dl.startDownload();
             }
-            if (passCode != null) link.setProperty("pass", passCode);
-            link.setProperty("premlink", dllink);
-            dl.startDownload();
         }
     }
 

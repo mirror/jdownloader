@@ -33,42 +33,47 @@ public class SubMangaCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /**
+     * @author raztoki
+     */
+
     // DEV NOTES
     // other: decided to write like unixmanga.
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        br.setFollowRedirects(false);
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("www.", "");
+        br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/404")) {
             logger.warning("Invalid URL! : " + parameter);
             return null;
         }
         // We get the title
-        String[][] title = br.getRegex("<title>([\\w ]+) (\\d+) \\&mdash;").getMatches();
+        String[][] title = br.getRegex("<strong>submanga\\.com</strong></a> \\&rsaquo; <a href=\"[^>]+>[^<]+</a> \\&rsaquo; <a href=\"[^>]+>([^<]+)</a> \\&rsaquo; <a href=\"[^>]+>([^<]+)</a></td><th width=\"1%\">").getMatches();
         if (title == null || title.length == 0) {
             logger.warning("Title not found! : " + parameter);
             return null;
         }
+        String useTitle = (title[0][0] + "_" + title[0][1]).replace("Â·", ".");
         // grab the total pages within viewer
-        String TotalPages = br.getRegex("(?i)<option value=\"(\\d+)\">\\d+</option></select>").getMatch(0);
-        if (TotalPages == null) {
-            logger.warning("'TotalPages' not found! : " + parameter);
+        String totalPages = br.getRegex("(?i)<option value=\"(\\d+)\">\\d+</option></select>").getMatch(0);
+        if (totalPages == null) {
+            logger.warning("'totalPages' not found! : " + parameter);
             return null;
         }
-        int numberOfPages = Integer.parseInt(TotalPages);
+        int numberOfPages = Integer.parseInt(totalPages);
         String format = "%02d";
         if (numberOfPages > 0) {
             format = String.format("%%0%dd", (int) Math.log10(numberOfPages) + 1);
         }
 
         progress.setRange(numberOfPages);
-
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        // We load each page and retrieve the URL of the picture
         FilePackage fp = FilePackage.getInstance();
-        fp.setName(title[0][0] + "_" + title[0][1]);
+        fp.setName(useTitle);
+
+        // We load each page and retrieve the URL of the picture
         for (int i = 1; i <= numberOfPages; i++) {
             String pageNumber = String.format(format, (i));
             // grab the image source
@@ -77,11 +82,17 @@ public class SubMangaCom extends PluginForDecrypt {
             if (img == null) {
                 logger.warning("No images found for page : " + pageNumber + " : " + parameter);
                 logger.warning("Continuing...");
+                if (i != numberOfPages) {
+                    // load next page for the 'for' loop.
+                    br.getPage(parameter + "/" + (i + 1));
+                }
+                progress.increase(1);
+                continue;
             }
-
             String extension = img.substring(img.lastIndexOf("."));
             DownloadLink link = createDownloadlink("directhttp://" + img);
-            link.setFinalFileName(title[0][0] + "_" + title[0][1] + "–page_" + pageNumber + extension);
+            link.setFinalFileName((useTitle + "_–_page_" + pageNumber + extension).replace(" ", "_"));
+            link.setAvailable(true); // fast add
             fp.add(link);
             try {
                 distribute(link);

@@ -57,7 +57,7 @@ public class FaceBookComVideos extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         String thislink = link.getDownloadURL().replace("https://", "http://");
-        String videoID = new Regex(thislink, "(ts#\\!/video/video\\.php|photo.php)\\?v=(\\d+)").getMatch(1);
+        String videoID = new Regex(thislink, "(ts#\\!/video/video\\.php|photo\\.php)\\?v=(\\d+)").getMatch(1);
         if (videoID != null) thislink = "http://facebook.com/video/video.php?v=" + videoID;
         link.setUrlDownload(thislink);
     }

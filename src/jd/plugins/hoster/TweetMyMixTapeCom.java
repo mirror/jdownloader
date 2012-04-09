@@ -49,7 +49,7 @@ public class TweetMyMixTapeCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("alt=\"retweet\" /></a>[\t\n\r ]+<a href=\"(/.*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(/admin/postback/mixdownloader\\.ashx\\?SongKey=[^\"\\'<>]+)\"").getMatch(0);
+            dllink = br.getRegex("\"(/admin/postback/(mixdownloader|songdownloader)\\.ashx\\?SongKey=[^\"\\'<>]+)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("file: \"(http://.*?)\"").getMatch(0);
                 if (dllink == null) {
