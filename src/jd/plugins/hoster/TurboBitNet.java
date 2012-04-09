@@ -16,7 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,6 +24,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
@@ -50,11 +51,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class TurboBitNet extends PluginForHost {
 
     private final static String UA            = RandomUserAgent.generate();
+
     private static final String RECAPTCHATEXT = "api\\.recaptcha\\.net";
+
     private static final String CAPTCHAREGEX  = "\"(http://turbobit\\.net/captcha/.*?)\"";
+
     private static String       MAINPAGE      = "http://turbobit.net";
+
     private static final Object LOCK          = new Object();
-    private static final String COOKIE_HOST   = "http://turbobit.net";
+
     private static final String BLOCKED       = "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!";
 
     public TurboBitNet(final PluginWrapper wrapper) {
@@ -121,7 +126,21 @@ public class TurboBitNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        br.setDebug(true);
+        prepareBrowser(UA);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("(>Please wait, searching file|\\'File not found\\. Probably it was deleted)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String fileSize = br.getRegex("File size:</b>(.*?)</div>").getMatch(0);
+        if (fileSize == null) fileSize = br.getRegex("<span class=\\'file\\-icon.*?\\'>.*?</span>.*?\\((.*?)\\)").getMatch(0);
+        if (fileSize != null) {
+            fileSize = fileSize.replace("М", "M");
+            fileSize = fileSize.replace("к", "k");
+            fileSize = fileSize.replace("Г", "g");
+            fileSize = fileSize.replace("б", "");
+            if (!fileSize.endsWith("b")) {
+                fileSize = fileSize + "b";
+            }
+            downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize.trim().replace(",", ".").replace(" ", "")));
+        }
         String downloadUrl = null, waittime = null;
         String id = new Regex(downloadLink.getDownloadURL(), "turbobit\\.net/(.*?)/.*?\\.html").getMatch(0);
         if (id == null) {
@@ -195,34 +214,60 @@ public class TurboBitNet extends PluginForHost {
             tt = Integer.parseInt(ttt);
             if (tt < 60 || tt > 600) {
                 ttt = parseImageUrl(tb(2) + tt + "};" + br.getRegex(tb(3)).getMatch(0), false);
-                if (ttt == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l); }
+                if (ttt == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1001l); }
                 tt = Integer.parseInt(ttt);
             }
             logger.info(" Waittime detected, waiting " + ttt + " seconds from now on...");
+            if (tt > 250) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l); }
         }
-        if (tt > 250) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l); }
 
+        String fun = escape(br.toString());
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         String res = parseImageUrl(br.getRegex(LnkCrptWs.IMAGEREGEX(null)).getMatch(0), false);
-        if (res != null) {
+
+        // realtime update
+        String rtUpdate = getPluginConfig().getStringProperty("rtupdate", null);
+        boolean isUpdateNeeded = getPluginConfig().getBooleanProperty("isUpdateNeeded", false);
+
+        /** TODO: remove me Jiaz :-) */
+        isUpdateNeeded = false;
+
+        if (isUpdateNeeded) {
+            Browser rt = new Browser();
+            rtUpdate = rt.getPage("http://.../turbobit/update.js");
+            getPluginConfig().setProperty("rtupdate", rtUpdate);
+            getPluginConfig().setProperty("isUpdateNeeded", false);
+            getPluginConfig().save();
+        }
+
+        if (res == null || res != null && !res.matches(tb(10))) {
+            res = rhino(fun + "@" + rtUpdate, 666);
+        }
+
+        if (res != null && res.matches(tb(10))) {
             sleep(tt * 1001, downloadLink);
             br.getPage(res);
             downloadUrl = br.getRegex("<a href=\\'(.*?)\\'>").getMatch(0);
             if (downloadUrl == null) {
-                downloadUrl = br.getRegex("\"href\",\\s?\"(.*?)\"").getMatch(0);
+                downloadUrl = br.getRegex("\\(\"href\"\\)==\"(.*?)\"\\)").getMatch(0);
+                if (downloadUrl == null) {
+                    downloadUrl = rhino(escape(br.toString()) + "@" + rtUpdate, 999);
+                }
             }
         }
         if (downloadUrl == null) {
+            getPluginConfig().setProperty("isUpdateNeeded", true);
+            getPluginConfig().save();
             if (br.containsHTML("Error: ") || res == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l); }
             if (br.containsHTML("The file is not avaliable now because of technical problems")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l); }
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 1000l);
         }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Try to download it once again after")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l); }
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 1000l);
         }
         dl.startDownload();
     }
@@ -278,7 +323,7 @@ public class TurboBitNet extends PluginForHost {
             try {
                 setBrowserExclusive();
                 br.getHeaders().put("User-Agent", UA);
-                br.setCookie("http://turbobit.net/", "set_user_lang_change", "en");
+                br.setCookie(MAINPAGE, "set_user_lang_change", "en");
                 br.setCustomCharset("UTF-8");
                 br.setFollowRedirects(true);
                 final Object ret = account.getProperty("cookies", null);
@@ -292,7 +337,7 @@ public class TurboBitNet extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            br.setCookie(COOKIE_HOST, key, value);
+                            br.setCookie(MAINPAGE, key, value);
                         }
                         return;
                     }
@@ -303,7 +348,7 @@ public class TurboBitNet extends PluginForHost {
                 if (br.getCookie(MAINPAGE + "/", "sid") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 // cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(COOKIE_HOST);
+                final Cookies add = br.getCookies(br.getHost());
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -324,7 +369,7 @@ public class TurboBitNet extends PluginForHost {
             if (next == null || next.length != 2) {
                 fun = rhino(fun, 0);
                 if (fun == null) return null;
-                fun = new Regex(fun, tb(4)).getMatch(1);
+                fun = new Regex(fun, tb(4)).getMatch(0);
                 return fun == null ? new Regex(fun, tb(5)).getMatch(0) : rhino(fun, 2);
             }
             return rhino(next[1], 1);
@@ -349,11 +394,34 @@ public class TurboBitNet extends PluginForHost {
                 engine.eval("var out=\"" + s + "\";");
                 result = engine.get("out");
                 break;
+            case 666:
+                String[] code = s.split("@");
+                engine.eval("var b = new Boolean(true);var inn = \'" + code[0] + "\';" + code[1]);
+                result = engine.get("out");
+                break;
+            case 999:
+                code = s.split("@");
+                engine.eval("var b = new Boolean(false);var inn = \'" + code[0] + "\';" + code[1]);
+                result = engine.get("out");
+                break;
             }
         } catch (final Throwable e) {
             return null;
         }
-        return result.toString();
+        return result != null ? result.toString() : null;
+    }
+
+    private String escape(String s) {
+        final byte[] org = s.getBytes();
+        final StringBuilder sb = new StringBuilder();
+        String code;
+        for (final byte element : org) {
+            sb.append('%');
+            code = Integer.toHexString(element);
+            code = code.length() % 2 > 0 ? "0" + code : code;
+            sb.append(code.substring(code.length() - 2));
+        }
+        return sb + "";
     }
 
     private void prepareBrowser(final String userAgent) {
@@ -368,40 +436,71 @@ public class TurboBitNet extends PluginForHost {
 
     // Also check HitFileNet plugin if this one is broken
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        prepareBrowser(UA);
-        br.setCookie(MAINPAGE + "/", "set_user_lang_change", "en");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<div class=\"code\\-404\">404</div>|Файл не найден\\. Возможно он был удален\\.<br|File( was)? not found\\.|It could possibly be deleted\\.)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String fileName = br.getRegex("<title>[ \t\r\n]+(Download|Datei downloaden) (.*?)\\. Free download without registration from TurboBit\\.net").getMatch(1);
-        if (fileName == null) {
-            fileName = br.getRegex("<span class=\\'file\\-icon.*?\\'>(.*?)</span>").getMatch(0);
-        }
-        String fileSize = br.getRegex("(File size|Dateiumfang):</b>(.*?)</div>").getMatch(1);
-        if (fileSize == null) {
-            fileSize = br.getRegex("<span class=\\'file\\-icon.*?\\'>.*?</span>.*?\\((.*?)\\)").getMatch(0);
-        }
-        if (fileName == null) {
-            if (br.containsHTML("Our service is currently unavailable in your country.")) {
-                downloadLink.getLinkStatus().setStatusText("Our service is currently unavailable in your country.");
-                return AvailableStatus.UNCHECKABLE;
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setName(fileName.trim());
-        if (fileSize != null) {
-            fileSize = fileSize.replace("М", "M");
-            fileSize = fileSize.replace("к", "k");
-            fileSize = fileSize.replace("Г", "g");
-            fileSize = fileSize.replace("б", "");
-            if (!fileSize.endsWith("b")) {
-                fileSize = fileSize + "b";
-            }
-            downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize.trim().replace(",", ".").replace(" ", "")));
-        }
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        /** Old linkcheck code can be found in rev 16195 */
+        correctDownloadLink(downloadLink);
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            final Browser br = new Browser();
+            br.setCookie(MAINPAGE, "user_lang", "en");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once */
+                    if (index == urls.length || links.size() > 49) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("links_to_check=");
+                for (final DownloadLink dl : links) {
+                    sb.append(dl.getDownloadURL());
+                    sb.append("%0A");
+                }
+                br.postPage("http://" + this.getHost() + "/linkchecker/check", sb.toString());
+                for (final DownloadLink dllink : links) {
+                    final String linkID = getID(dllink.getDownloadURL());
+                    final Regex fileInfo = br.getRegex("<td>" + linkID + "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\"><img src=\"/img/icon/(done|error)\\.png\"");
+                    if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
+                        dllink.setAvailable(false);
+                        logger.warning("Linkchecker broken for " + this.getHost());
+                    } else {
+                        if (fileInfo.getMatch(1).equals("error")) {
+                            dllink.setAvailable(false);
+                        } else {
+                            String name = fileInfo.getMatch(0);
+                            dllink.setAvailable(true);
+                            dllink.setFinalFileName(Encoding.htmlDecode(name.trim()));
+                        }
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    private String getID(String downloadlink) {
+        return new Regex(downloadlink, this.getHost() + "/([^<>/\"]+)\\.html").getMatch(0);
     }
 
     @Override
@@ -413,17 +512,18 @@ public class TurboBitNet extends PluginForHost {
     }
 
     private String tb(final int i) {
-        final String[] s = new String[10];
+        final String[] s = new String[11];
         s[0] = "fe8cfbfafa57cde31bc2b798df5141ab2dc171ec0852d89a1a135e3f116c83d15d8bf93a";
         s[1] = "fddbfbfafa57cdef1a90b5cedf5647ae2cc572ec0958dd981e125c68156882d65d82f869";
         s[2] = "fdd9fbf2fb05cde71a97b69edf5742f1289470bb0a5bd9c81a1b5e39116c85805982fc6e880ce26a201651b8ea211874e4232d90c59b6462ac28d2b26f0537385fa6";
         s[3] = "f980f8f7fa0acdb21b91b6cbdf5043fc2ac775ea080fd8c71a4f5d68156586d05982fd3e8b5ae33f244555e8eb201d77e12128cbc1c7";
-        s[4] = "fedbfffbf951ceb31ec7b3c8dd0146aa2ac775b60b08dc9b1a495f6d156d86805ad8f8328c01e63e204054bbeb7c1c70e07f29ccc19f6367a828d6ee6b0b376f5ef5c9735979ffc520a92bea553bc8e845a6";
+        s[4] = "f980ffa5fa07cdb01a93b6c8de0642ae299571bb0c0ddb9c1a1b5b6f143d84855ddfff6b8b5de66e254553eeea751d72e17e2d98c19a6760af75d6b46b05";
         s[5] = "f980ffa5f951ceb31ec7b3c8da5246fa2ac770bc0b0fdc9c1e13";
         s[6] = "fc8efbf2fb01c9e61bc2b798df5146f82cc075bf0b5fd8c71a4e5f3e153a8781588ff86f890de26a221050eaee701824e4742d9cc1c66238a973";
         s[7] = "fddefaf6fb07";
         s[8] = "fe8cfbfafa57cde31bc2b798df5146ad29c071b6080edbca1a135f6f156984d75982fc6e8800e338";
         s[9] = "ff88";
+        s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f181b5b6f143d85d05dd9f86c8b5be73c254755b5ef741d72e5262ecdc19c";
         return JDHexUtils.toString(LnkCrptWs.IMAGEREGEX(s[i]));
     }
 

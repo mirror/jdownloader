@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -50,7 +51,13 @@ public class WebShareCz extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         String dllink = br.getRegex("<a style=\"text-decoration: none;\" id=\"download_link\" href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://dl\\d+\\.webshare\\.cz/\\d+/[A-Za-z0-9]+/[A-Za-z0-9]+/[A-Za-z0-9]+/[A-Za-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://dl\\d+\\.webshare\\.cz/\\d+/[A-Za-z0-9]+/[A-Za-z0-9]+/[A-Za-z0-9]+/[A-Za-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
+            if (dllink == null) {
+                String fun = br.getRegex("var l\\s?=\\s?\"?\'?(.*?)\'?\"?\\;").getMatch(0);
+                dllink = fun != null ? Encoding.Base64Decode(fun) : null;
+            }
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
