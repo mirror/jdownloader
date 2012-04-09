@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?\\d+_\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?\\d+_\\d+(\\?tag=\\d+)?" }, flags = { 0 })
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN    = "vk.com";
@@ -114,7 +114,6 @@ public class VKontakteRuHoster extends PluginForHost {
             logger.warning("A property couldn't be found!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!albumID.startsWith("album")) albumID = "album" + albumID;
         final HashMap<String, String> cookies = (HashMap<String, String>) ret;
         for (Map.Entry<String, String> entry : cookies.entrySet()) {
             this.br.setCookie(DOMAIN, entry.getKey(), entry.getValue());

@@ -50,6 +50,7 @@ public class FlickrCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<Integer> pages = new ArrayList<Integer>();
+        ArrayList<String> addLinks = new ArrayList<String>();
         pages.add(1);
         br.setCookiesExclusive(true);
         String parameter = param.toString();
@@ -60,11 +61,9 @@ public class FlickrCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        /** Maybe login is needed to view those pictures */
-        if (br.containsHTML(">You must be signed in to see this content")) {
-            getUserLogin();
-            br.getPage(parameter);
-        }
+        /** Login is not always needed but we force it to get all pictures */
+        getUserLogin();
+        br.getPage(parameter);
         if (new Regex(parameter, "http://(www\\.)?flickr\\.com/photos/[a-z0-9_\\-]+/\\d+").matches()) {
             String filename = getFilename();
             if (br.containsHTML("(photo\\-div video\\-div|class=\"video\\-wrapper\")")) {
@@ -119,19 +118,27 @@ public class FlickrCom extends PluginForDecrypt {
             final int lastPage = pages.get(pages.size() - 1);
             for (int i = 1; i <= lastPage; i++) {
                 if (i != 1) br.getPage(parameter + "/page" + i);
-                String[] links = br.getRegex("data\\-track=\"photo\\-click\" href=\"(/photos/[^<>\"\\'/]+/\\d+)").getColumn(0);
-                if (links == null || links.length == 0) {
+                final String[] regexes = { "data\\-track=\"photo\\-click\" href=\"(/photos/[^<>\"\\'/]+/\\d+)" };
+                for (String regex : regexes) {
+                    String[] links = br.getRegex(regex).getColumn(0);
+                    if (links != null && links.length != 0) {
+                        for (String singleLink : links) {
+                            if (!addLinks.contains(singleLink)) addLinks.add(singleLink);
+                        }
+                    }
+                }
+            }
+            if (addLinks == null || addLinks.size() == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String singleLink : addLinks) {
+                DownloadLink finalDownloadlink = decryptSingleLink("http://www.flickr.com" + singleLink);
+                if (finalDownloadlink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                for (String singleLink : links) {
-                    DownloadLink finalDownloadlink = decryptSingleLink("http://www.flickr.com" + singleLink);
-                    if (finalDownloadlink == null) {
-                        logger.warning("Decrypter broken for link: " + parameter);
-                        return null;
-                    }
-                    decryptedLinks.add(finalDownloadlink);
-                }
+                decryptedLinks.add(finalDownloadlink);
             }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
@@ -139,7 +146,6 @@ public class FlickrCom extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
         }
-
         return decryptedLinks;
     }
 
