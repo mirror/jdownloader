@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "rtmpe://mbc\\d\\.csl\\.delvenetworks.com/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "rtmpe://mbc\\d\\.csl\\.delvenetworks.com/.+" }, flags = { 2 })
 public class ShaHidMbcNet extends PluginForHost {
 
     private static final String ALLOW_HD        = "ALLOW_HD";
