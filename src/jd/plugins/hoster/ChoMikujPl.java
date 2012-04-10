@@ -83,16 +83,29 @@ public class ChoMikujPl extends PluginForHost {
     }
 
     public boolean getDllink(DownloadLink theLink, Browser br2) throws NumberFormatException, PluginException, IOException {
+        final boolean redirectsSetting = br.isFollowingRedirects();
+        br.setFollowRedirects(false);
+        final String fid = new Regex(theLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
         // Set by the decrypter if the link is password protected
         String savedLink = theLink.getStringProperty("savedlink");
         String savedPost = theLink.getStringProperty("savedpost");
         if (savedLink != null && savedPost != null) br.postPage(savedLink, savedPost);
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.postPage("http://chomikuj.pl/action/License/Download", "fileId=" + new Regex(theLink.getDownloadURL(), FILEIDREGEX).getMatch(0) + "&__RequestVerificationToken=" + Encoding.urlEncode(theLink.getStringProperty("requestverificationtoken")));
-        if (br2.containsHTML(PREMIUMONLY)) return false;
-        DLLINK = br2.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br2.getRegex("\\\\u003ca href=\\\\\"(.*?)\\\\\"").getMatch(0);
-        if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
+        br.getPage("http://chomikuj.pl/action/fileDetails/Index/" + fid);
+        final String videoLink = br.getRegex("\"(http://chomikuj\\.pl/Video\\.ashx\\?realId=\\d+\\&amp;id=\\d+\\&amp;type=1)\"").getMatch(0);
+        if (videoLink != null) {
+            br.getPage(Encoding.htmlDecode(videoLink));
+            DLLINK = br.getRedirectLocation();
+            if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
+        } else {
+            br2.postPage("http://chomikuj.pl/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(theLink.getStringProperty("requestverificationtoken")));
+            System.out.println(br2.toString());
+            if (br2.containsHTML(PREMIUMONLY)) return false;
+            DLLINK = br2.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
+            if (DLLINK == null) DLLINK = br2.getRegex("\\\\u003ca href=\\\\\"(.*?)\\\\\"").getMatch(0);
+            if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
+        }
+        br.setFollowRedirects(redirectsSetting);
         return true;
     }
 
@@ -176,8 +189,10 @@ public class ChoMikujPl extends PluginForHost {
                         return;
                     }
                 }
-                br.postPage("http://chomikuj.pl/action/Login/TopBarLogin", "ReturnUrl=&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&rememberLogin=true&rememberLogin=false&topBar_LoginBtn=Zaloguj");
-                System.out.print(br.toString());
+                br.getPage("http://chomikuj.pl/");
+                final String requestVerificationToken = br.getRegex("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"\\']+)\"").getMatch(0);
+                if (requestVerificationToken == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.postPage("http://chomikuj.pl/action/Login/TopBarLogin", "rememberLogin=true&rememberLogin=false&topBar_LoginBtn=Zaloguj&ReturnUrl=&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
                 if (br.getURL().equals(MAINPAGE)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();

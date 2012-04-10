@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xboxisozone.com" }, urls = { "http://[\\w\\.]*?((xboxisozone|dcisozone|gcisozone)\\.com/downloads/\\d+/.*?\\.html|psisozone\\.com/downloads/\\d+/.*?/|romgamer\\.com/roms/.*?/\\d+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xboxisozone.com" }, urls = { "http://(www\\.)?((xboxisozone|dcisozone|gcisozone|theisozone)\\.com/downloads/[^<>\"/]+/[^<>\"/]+/[^<>\"/]+/|psisozone\\.com/downloads/\\d+/.*?/|romgamer\\.com/roms/.*?/\\d+/)" }, flags = { 0 })
 public class XboxSoZoneCom extends PluginForDecrypt {
 
     public XboxSoZoneCom(PluginWrapper wrapper) {
@@ -43,11 +43,11 @@ public class XboxSoZoneCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("(g> The page you requested could not be found\\. </strong>|It may have been moved or deleted\\. <br)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String fpName = br.getRegex("<title>Download: (.*?) \\| ").getMatch(0);
+        String fpName = br.getRegex("class=\"row_link\" >([^<>\"]*?)</a>").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("\\.jpg\" class=\"imageborder\" alt=\"(.*?) Cover\"").getMatch(0);
+            fpName = br.getRegex("<title>([^<>\"]*?) \\&bull; .*?</title>").getMatch(0);
         }
-        String[] links = br.getRegex("\"((/download)?/free/\\d+/(\\d+/)?)\"").getColumn(0);
+        String[] links = br.getRegex("\"(/dl\\-start/\\d+/(\\d+/)?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
         String host = new Regex(parameter, "(http://.*?\\.com)").getMatch(0);
         for (String finallink : links) {

@@ -32,7 +32,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "reverbnationcomid\\d+reverbnationcomartist\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "http://reverbnationcomid\\d+reverbnationcomartist\\d+" }, flags = { 0 })
 public class ReverBnationComHoster extends PluginForHost {
 
     public ReverBnationComHoster(final PluginWrapper wrapper) {
@@ -42,6 +42,10 @@ public class ReverBnationComHoster extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.reverbnation.com/main/terms_and_conditions";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("http://", ""));
     }
 
     private String getBps(final String crap, final String sID) throws PluginException {

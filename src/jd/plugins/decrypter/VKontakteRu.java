@@ -226,7 +226,7 @@ public class VKontakteRu extends PluginForDecrypt {
             progress.increase(1);
         }
         FilePackage fp = FilePackage.getInstance();
-        fp.setName(new Regex(parameter, "/album(.+)").getMatch(0));
+        fp.setName(new Regex(parameter, "/(album|tag)(.+)").getMatch(1));
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }

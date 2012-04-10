@@ -50,15 +50,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class TurboBitNet extends PluginForHost {
 
     private final static String UA            = RandomUserAgent.generate();
-
     private static final String RECAPTCHATEXT = "api\\.recaptcha\\.net";
-
     private static final String CAPTCHAREGEX  = "\"(http://turbobit\\.net/captcha/.*?)\"";
-
     private static String       MAINPAGE      = "http://turbobit.net";
-
     private static final Object LOCK          = new Object();
-
     private static final String BLOCKED       = "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!";
 
     public TurboBitNet(final PluginWrapper wrapper) {
@@ -310,7 +305,7 @@ public class TurboBitNet extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     // do not add @Override here to keep 0.* compatibility

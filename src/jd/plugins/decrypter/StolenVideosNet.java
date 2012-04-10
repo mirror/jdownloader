@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -46,11 +47,12 @@ public class StolenVideosNet extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        String filename = br.getRegex("<title>Welcome to Stolen XXX Videos \\- Viewing Media \\-(.*?)\\- Daily Free XXX Porn Videos</title>").getMatch(0);
+        String filename = br.getRegex("<title>Welcome to Stolen XXX Videos \\- Viewing Media \\-([^<>\"]*?)\\- Daily Free XXX Porn Videos</title>").getMatch(0);
         if (filename == null) {
             logger.warning("Couldn't decrypt link: " + parameter);
             return null;
         }
+        filename = Encoding.htmlDecode(filename.trim());
         tempID = br.getRegex("\"file=(http://hosted\\.yourvoyeurvideos\\.com/videos/\\d+\\.flv)\\&").getMatch(0);
         if (tempID != null) {
             DownloadLink dl = createDownloadlink("directhttp://" + tempID);
@@ -63,9 +65,11 @@ public class StolenVideosNet extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("(megaporn|cum)\\.com/e/([A-Z0-9]{8})").getMatch(1);
+        tempID = br.getRegex("\\&file=(http://[^<>\"]*?\\.flv)\\&").getMatch(0);
         if (tempID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.cum.com/video/?v=" + tempID));
+            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         if (tempID == null) {

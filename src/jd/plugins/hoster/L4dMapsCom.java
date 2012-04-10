@@ -21,7 +21,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,7 +31,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "l4dmaps.com" }, urls = { "http://[\\w\\.]*?l4dmaps\\.com/(details|mirrors|file-download)\\.php\\?file=[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "l4dmaps.com" }, urls = { "http://(www\\.)?l4dmaps\\.com/(details|mirrors|file\\-download)\\.php\\?file=[0-9]+" }, flags = { 0 })
 public class L4dMapsCom extends PluginForHost {
     private static final String   l4dservers = "l4dservers";
 
@@ -77,6 +76,37 @@ public class L4dMapsCom extends PluginForHost {
         }
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return false;
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(parameter.getDownloadURL().replaceAll("(mirrors|file-download|details)", "details"));
+        String offlinecheck = br.getRedirectLocation();
+        if (offlinecheck != null || br.containsHTML("(404 Not Found|This file could not be found on our system)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>Download(.*?)for Left 4 Dead").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("You are about to download <a href=\".*?\">(.*?)</a>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("rel=\"nofollow\" title=\"Download(.*?)\"").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex(">Size: <em>(.*?)</em>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setName(filename.trim());
+        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
@@ -112,13 +142,41 @@ public class L4dMapsCom extends PluginForHost {
             logger.warning("Link to configured server hasn't been successfully taken, link = " + usedServer);
         }
         br.getPage(usedServer);
-        String dllink = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;url=(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Workaround to make the dllink valid
-        String entry = new Regex(usedServer, "entry=(\\d+)").getMatch(0);
-        if (entry != null) dllink = dllink.replace("entry=0", "entry=" + entry);
-        dllink = Encoding.htmlDecode(dllink);
-        dllink = "http://www.l4dmaps.com/" + dllink;
+        String dllink = null;
+        if (br.containsHTML(">Enter the captcha to start your download")) {
+            String ajaxData = br.getRegex("data: \\{(\".*?\")\\}").getMatch(0);
+            if (!br.containsHTML("captcha_show\\.php") || ajaxData == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            ajaxData = ajaxData.replace("\"", "");
+            String[][] data = new Regex(ajaxData, "(.*?):([a-z0-9:]+),?").getMatches();
+            if (data == null || data.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int wait = 60;
+            String waittime = br.getRegex("\"t\":(\\d+)").getMatch(0);
+            if (waittime == null) wait = Integer.parseInt(waittime);
+            final StringBuilder sb = new StringBuilder();
+            for (String[] singleData : data) {
+                sb.append(Encoding.urlEncode(singleData[0]) + "=" + Encoding.urlEncode(singleData[1]) + "&");
+            }
+            String code = getCaptchaCode("http://www.l4dmaps.com/captcha/captcha_show.php", link);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getHeaders().put("Accept", "application/json, text/javascript, */*");
+            br.postPage("http://www.l4dmaps.com/ajax_assorted.php", "intent=validate_captcha&guess=" + Encoding.urlEncode(code));
+            if (br.containsHTML("\"Invalid code entered, please try again")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (!br.containsHTML("\"success\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            sleep(wait * 1001l, link);
+            br.postPage("http://www.l4dmaps.com/ajax_assorted.php", sb.toString());
+            dllink = br.getRegex("\"(fbounce\\.php\\?file=[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = Encoding.htmlDecode(dllink);
+            dllink = "http://www.l4dmaps.com/" + dllink;
+        } else {
+            dllink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+;url=(.*?)\"").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // Workaround to make the dllink valid
+            String entry = new Regex(usedServer, "entry=(\\d+)").getMatch(0);
+            if (entry != null) dllink = dllink.replace("entry=0", "entry=" + entry);
+            dllink = Encoding.htmlDecode(dllink);
+            dllink = "http://www.l4dmaps.com/" + dllink;
+        }
         br.getPage(dllink);
         dllink = br.getRedirectLocation();
         if (dllink == null || dllink.contains("index.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -127,29 +185,9 @@ public class L4dMapsCom extends PluginForHost {
         // someone knows how to make JD know that it is downloading 3 files from
         // one server you could make jd switch to the other servers so you can
         // download 6 files at the same time
-        BrowserAdapter.openDownload(br, link, dllink, true, -3);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -3);
+        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(parameter.getDownloadURL().replaceAll("(mirrors|file-download|details)", "details"));
-        String offlinecheck = br.getRedirectLocation();
-        if (offlinecheck != null || br.containsHTML("(404 Not Found|This file could not be found on our system)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>Download(.*?)for Left 4 Dead").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("You are about to download <a href=\".*?\">(.*?)</a>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("rel=\"nofollow\" title=\"Download(.*?)\"").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex(">Size: <em>(.*?)</em>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override

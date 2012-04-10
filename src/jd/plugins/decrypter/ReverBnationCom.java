@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "http://(www\\.)?reverbnation\\.com/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "http://(www\\.)?reverbnation\\.com/artist/artist_songs/\\d+" }, flags = { 0 })
 public class ReverBnationCom extends PluginForDecrypt {
 
     public ReverBnationCom(final PluginWrapper wrapper) {
@@ -39,48 +39,27 @@ public class ReverBnationCom extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        String artist = br.getRegex("=artist_(\\d+)\"").getMatch(0);
-        if (artist == null) {
-            artist = br.getRegex("CURRENT_PAGE_OBJECT = \\'artist_(\\d+)\\';").getMatch(0);
-            if (artist == null) {
-                artist = br.getRegex("_artist_(\\d+)").getMatch(0);
-            }
+        final String fpName = br.getRegex("<title>([^<>\"]*?) \\- ReverbNation</title>").getMatch(0);
+        String[][] allInfo = br.getRegex("class=\"artist_backpage_songs_row clearfix \" data\\-url=\"/artist/artist_song/(\\d+)\\?song_id=(\\d+)\">[\t\n\r ]+<a href=\"#\" class=\" standard_play_button song\\-action play\" data\\-song\\-id=\"\\d+\" title=\"Play \\&quot;([^<>\"]*?)\\&quot;\"").getMatches();
+        if (allInfo == null || allInfo.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
-        String[] ids = br.getRegex("id=\"tuxedo_song_row_(\\d+)\"").getColumn(0);
-        if (ids == null || ids.length == 0) {
-            ids = br.getRegex("onclick=\"playSongNow\\(\\'(\\d+)\\'\\)").getColumn(0);
-            if (ids == null || ids.length == 0) {
-                ids = br.getRegex("onclick=\"addSongToQueue\\(\\'(\\d+)\\'\\)").getColumn(0);
-            }
-        }
-        final String[] titleContent = br.getRegex("songpopup-(songname|artistname).*?\">(.*?)(</div>|\">)").getColumn(1);
-        if (ids == null || ids.length == 0 || titleContent == null || titleContent.length == 0 || artist == null) { return null; }
-        final String[] title = new String[ids.length];
-        for (int i = 0, j = 0; j < ids.length; i += 2, j++) {
-            if (!titleContent[i].contains(titleContent[i + 1])) {
-                title[j] = titleContent[i + 1] + " - " + titleContent[i];
-            } else {
-                title[j] = titleContent[i];
-            }
-        }
-        int nameCounter = 0;
-        for (int i = 0; i < ids.length; i++) {
-            final DownloadLink dlLink = createDownloadlink("reverbnationcomid" + ids[i] + "reverbnationcomartist" + artist);
-            String name = Encoding.htmlDecode(title[i].replaceAll("<span title=\"", ""));
+        for (String singleInfo[] : allInfo) {
+            final DownloadLink dlLink = createDownloadlink("http://reverbnationcomid" + singleInfo[1] + "reverbnationcomartist" + singleInfo[0]);
+            String name = Encoding.htmlDecode(singleInfo[2]);
             if (name.contains(".mp3"))
                 dlLink.setName(name);
             else
                 dlLink.setName(name + ".mp3");
             dlLink.setProperty("orgName", dlLink.getName());
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(titleContent[nameCounter + 1]);
-            fp.add(dlLink);
             decryptedLinks.add(dlLink);
-            nameCounter += 2;
         }
-        if (decryptedLinks.size() == 0) {
-            logger.warning("Decrypter out of date for link: " + parameter);
-            return null;
+
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }

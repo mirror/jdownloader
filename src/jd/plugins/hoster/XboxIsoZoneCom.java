@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
@@ -30,7 +31,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xboxisozone.com" }, urls = { "http://(www\\.)?((xboxisozone|dcisozone|gcisozone|psisozone)\\.com|romgamer\\.com/download)/free/\\d+/(\\d+/)?" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xboxisozone.com" }, urls = { "http://(www\\.)?((xboxisozone|dcisozone|gcisozone|psisozone|theisozone)\\.com|romgamer\\.com/download)/dl\\-start/\\d+/(\\d+/)?" }, flags = { 0 })
 public class XboxIsoZoneCom extends PluginForHost {
 
     public XboxIsoZoneCom(PluginWrapper wrapper) {
@@ -58,14 +61,18 @@ public class XboxIsoZoneCom extends PluginForHost {
         if (mainlink == null) throw new PluginException(LinkStatus.ERROR_FATAL, "mainlink missing, please delete and re-add this link to your downloadlist!");
         br.getPage(mainlink);
         br.setFollowRedirects(false);
-        String rcID = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+        br.getPage(downloadLink.getDownloadURL());
+        final String filesize = br.getRegex("<title>Download [^<>\"/]*? ([0-9\\.,]+ MB) \\&bull;").getMatch(0);
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        String rcID = br.getRegex("\\?k=([^<>\"/]+)\"").getMatch(0);
         if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         Form rcForm = new Form();
         rcForm.setMethod(MethodType.POST);
         rcForm.put("verify_code", "");
-        rcForm.setAction(downloadLink.getDownloadURL());
+        rcForm.put("captcha", "");
+        rcForm.setAction(downloadLink.getDownloadURL().replace("/dl-start/", "/dl-free/"));
         rc.setForm(rcForm);
         rc.setId(rcID);
         rc.load();
@@ -74,24 +81,25 @@ public class XboxIsoZoneCom extends PluginForHost {
         rc.setCode(c);
         String finallink = br.getRedirectLocation();
         if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (finallink.contains("err/code-invalid/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (finallink.contains("/dl-start/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (finallink.contains("/download-limit-exceeded/")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             String waittime = br.getRegex("You may download again in approximately:<b> (\\d+) Minutes").getMatch(0);
             if (waittime == null) waittime = br.getRegex("You may resume downloading in (\\d+) Minutes").getMatch(0);
             if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
-            if (br.containsHTML("(>Free users may only download a maximum of| is currently downloading a file|If you would like to continue downloading, please abort your current download or wait for it to finish <br|>As it may take a few seconds for our system to update once your download has ceased, Please wait at| Free users may only download 1 file at a time)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-            if (br.containsHTML("(Our system shows you have recently downloaded a file\\.</strong>|The file you attempted to download was <strong>|Free users must wait 5 minutes inbetween downloads\\.)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1001l);
             if (br.containsHTML("(<TITLE>404 Not Found</TITLE>|<H1>Not Found</H1>|<title>404 \\- Not Found</title>|<h1>404 \\- Not Found</h1>|<h1>403 \\- Forbidden</h1>|<title>403 \\- Forbidden</title>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (br.containsHTML("The file you requested could not be found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     // do not add @Override here to keep 0.* compatibility
