@@ -46,7 +46,7 @@ public class LuckyShareNet extends PluginForHost {
 
     public LuckyShareNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("");
+        this.enablePremium("http://luckyshare.net/premium");
     }
 
     @Override

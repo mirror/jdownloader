@@ -99,7 +99,6 @@ public class ChoMikujPl extends PluginForHost {
             if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
         } else {
             br2.postPage("http://chomikuj.pl/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(theLink.getStringProperty("requestverificationtoken")));
-            System.out.println(br2.toString());
             if (br2.containsHTML(PREMIUMONLY)) return false;
             DLLINK = br2.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
             if (DLLINK == null) DLLINK = br2.getRegex("\\\\u003ca href=\\\\\"(.*?)\\\\\"").getMatch(0);
