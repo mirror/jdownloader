@@ -245,7 +245,7 @@ public class ShareOnlineBiz extends PluginForHost {
                 Long ret = noFreeSlot.get(server);
                 if (ret != null) {
                     if (System.currentTimeMillis() - ret < waitNoFreeSlot) {
-                        if (downloadLink.getLinkStatus().getRetryCount() >= getMaxRetries()) {
+                        if (downloadLink.getLinkStatus().getRetryCount() >= 5) {
                             /*
                              * reset counter this error does not cause plugin to
                              * stop

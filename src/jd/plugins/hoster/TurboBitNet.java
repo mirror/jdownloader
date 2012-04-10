@@ -229,12 +229,9 @@ public class TurboBitNet extends PluginForHost {
         String rtUpdate = getPluginConfig().getStringProperty("rtupdate", null);
         boolean isUpdateNeeded = getPluginConfig().getBooleanProperty("isUpdateNeeded", false);
 
-        /** TODO: remove me Jiaz :-) */
-        isUpdateNeeded = false;
-
-        if (isUpdateNeeded) {
+        if (isUpdateNeeded || rtUpdate == null) {
             Browser rt = new Browser();
-            rtUpdate = rt.getPage("http://.../turbobit/update.js");
+            rtUpdate = rt.getPage("http://update0.jdownloader.org/pluginstuff/tbupdate.js");
             getPluginConfig().setProperty("rtupdate", rtUpdate);
             getPluginConfig().setProperty("isUpdateNeeded", false);
             getPluginConfig().save();
@@ -524,7 +521,12 @@ public class TurboBitNet extends PluginForHost {
         s[8] = "fe8cfbfafa57cde31bc2b798df5146ad29c071b6080edbca1a135f6f156984d75982fc6e8800e338";
         s[9] = "ff88";
         s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f181b5b6f143d85d05dd9f86c8b5be73c254755b5ef741d72e5262ecdc19c";
-        return JDHexUtils.toString(LnkCrptWs.IMAGEREGEX(s[i]));
+        /*
+         * we have to load the plugin first! we must not reference a plugin
+         * class without loading it before
+         */
+        JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+        return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
     }
 
 }

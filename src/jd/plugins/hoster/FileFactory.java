@@ -210,11 +210,6 @@ public class FileFactory extends PluginForHost {
     }
 
     @Override
-    public int getMaxRetries() {
-        return 20;
-    }
-
-    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }

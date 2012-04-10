@@ -536,12 +536,6 @@ public class Rapidshare extends PluginForHost {
     }
 
     @Override
-    public String getSessionInfo() {
-        if (this.accName != null) { return this.accName; }
-        return super.getSessionInfo();
-    }
-
-    @Override
     public int getTimegapBetweenConnections() {
         return 100;
     }
