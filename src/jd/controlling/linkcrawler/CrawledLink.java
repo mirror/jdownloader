@@ -431,7 +431,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      * @return the collectingInfo
      */
     public LinkCollectingInformation getCollectingInfo() {
-        return collectingInfo;
+        if (collectingInfo != null || sourceLink == null) return collectingInfo;
+        return sourceLink.getCollectingInfo();
     }
-
 }

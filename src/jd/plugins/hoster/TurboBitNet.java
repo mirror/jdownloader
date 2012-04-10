@@ -496,7 +496,7 @@ public class TurboBitNet extends PluginForHost {
     }
 
     private String getID(String downloadlink) {
-        return new Regex(downloadlink, this.getHost() + "/([^<>/\"]+)\\.html").getMatch(0);
+        return new Regex(downloadlink, "http://.*?/([a-zA-Z0-9]+)").getMatch(0);
     }
 
     @Override
