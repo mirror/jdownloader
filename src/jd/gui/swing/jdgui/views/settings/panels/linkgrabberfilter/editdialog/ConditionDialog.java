@@ -46,6 +46,7 @@ import org.appwork.app.gui.copycutpaste.CutAction;
 import org.appwork.app.gui.copycutpaste.DeleteAction;
 import org.appwork.app.gui.copycutpaste.PasteAction;
 import org.appwork.app.gui.copycutpaste.SelectAction;
+import org.appwork.swing.AutoScroller;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtTextField;
@@ -90,6 +91,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     }
 
     public String getName() {
+
         return txtName.getText();
     }
 
@@ -177,6 +179,12 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         cobType.setSelectedIndex(f.getMatchType().ordinal());
 
         cbRegFileType.setSelected(f.isUseRegex());
+
+    }
+
+    protected boolean isResizable() {
+        // TODO Auto-generated method stub
+        return true;
     }
 
     public FiletypeFilter getFiletypeFilter() {
@@ -266,6 +274,8 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     private ExtCheckBox        cbPlugin;
 
+    private AutoScroller       autoScroller;
+
     public String getIconKey() {
         return iconKey;
     }
@@ -282,6 +292,23 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
     public ConditionDialog() {
         super(0, _GUI._.FilterRuleDialog_FilterRuleDialog_(""), null, _GUI._.literally_save(), null);
 
+    }
+
+    protected void layoutDialog() {
+        super.layoutDialog();
+
+        autoScroller = new AutoScroller(getDialog());
+        autoScroller.start();
+    }
+
+    public void dispose() {
+        super.dispose();
+        try {
+            autoScroller.interrupt();
+            autoScroller = null;
+        } catch (Throwable e) {
+
+        }
     }
 
     @Override
