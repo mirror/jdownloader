@@ -16,6 +16,7 @@ import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.ListCellRenderer;
 import javax.swing.SpinnerNumberModel;
@@ -467,7 +468,10 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         link(cbStart, lblAutostart, cobAutostart);
 
         updateGUI();
-        return ret;
+
+        JScrollPane sp = new JScrollPane(ret);
+        sp.setBorder(null);
+        return sp;
     }
 
     protected JMenu createVariablesMenu(JTextComponent txtPackagename2) {

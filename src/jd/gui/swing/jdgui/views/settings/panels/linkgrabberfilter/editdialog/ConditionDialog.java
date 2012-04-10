@@ -294,6 +294,12 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     }
 
+    public void pack() {
+
+        this.getDialog().pack();
+
+    }
+
     protected void layoutDialog() {
         super.layoutDialog();
 

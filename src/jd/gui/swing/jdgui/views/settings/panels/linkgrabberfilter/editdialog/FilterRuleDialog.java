@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog;
 import java.util.ArrayList;
 
 import javax.swing.JComponent;
+import javax.swing.JScrollPane;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.SingleFilterResultTableModel;
@@ -128,7 +129,9 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
         // "gaptop 10, spanx,growx,pushx");
 
         updateGUI();
-        return ret;
+        JScrollPane sp = new JScrollPane(ret);
+        sp.setBorder(null);
+        return sp;
     }
 
 }

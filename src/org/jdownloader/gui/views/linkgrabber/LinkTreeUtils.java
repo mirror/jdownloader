@@ -109,4 +109,28 @@ public class LinkTreeUtils {
         throw new WTFException("Unknown Type: " + node.getClass());
     }
 
+    public static HashSet<String> getURLs(ArrayList<AbstractNode> links) {
+        HashSet<String> urls = new HashSet<String>();
+        if (links == null) return urls;
+        for (AbstractNode node : links) {
+            DownloadLink link = null;
+            if (node instanceof DownloadLink) {
+                link = (DownloadLink) node;
+            } else if (node instanceof CrawledLink) {
+                link = ((CrawledLink) node).getDownloadLink();
+            }
+            if (link != null) {
+                if (DownloadLink.LINKTYPE_CONTAINER != link.getLinkType()) {
+                    if (link.gotBrowserUrl()) {
+                        urls.add(link.getBrowserUrl());
+                    } else {
+                        urls.add(link.getDownloadURL());
+                    }
+                }
+            }
+
+        }
+        return urls;
+    }
+
 }

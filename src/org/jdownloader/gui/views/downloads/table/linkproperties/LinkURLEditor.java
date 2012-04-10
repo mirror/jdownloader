@@ -1,12 +1,12 @@
 package org.jdownloader.gui.views.downloads.table.linkproperties;
 
 import java.awt.Dimension;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -15,26 +15,25 @@ import jd.controlling.ClipboardMonitoring;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.BasicJDTable;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import net.miginfocom.swing.MigLayout;
 
+import org.appwork.app.gui.MigPanel;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
-import org.jdownloader.gui.views.downloads.table.SubMenuEditor;
+import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 import org.jdownloader.gui.views.linkgrabber.columns.UrlColumn;
 import org.jdownloader.images.NewTheme;
 
-public class LinkURLEditor extends SubMenuEditor {
+public class LinkURLEditor extends MigPanel {
 
-    private ArrayList<DownloadLink> links;
+    private ArrayList<AbstractNode> links;
 
-    public LinkURLEditor(final DownloadLink contextObject, final ArrayList<DownloadLink> links, ArrayList<FilePackage> fps) {
-        super();
-        setLayout(new MigLayout("ins 2,wrap 2", "[grow,fill][]", "[][grow,fill]"));
+    public LinkURLEditor(final DownloadLink contextObject, final ArrayList<AbstractNode> links) {
+        super("ins 2,wrap 2", "[grow,fill][]", "[][grow,fill]");
+
         setOpaque(false);
         this.links = links;
         JLabel lbl = getLbl(_GUI._.LinkURLEditor(), NewTheme.I().getIcon("url", 18));
@@ -121,16 +120,16 @@ public class LinkURLEditor extends SubMenuEditor {
 
             protected boolean onShortcutCopy(final ArrayList<AbstractNode> selectedObjects, final KeyEvent evt) {
                 StringBuilder sb = new StringBuilder();
-                ArrayList<DownloadLink> links = null;
+                ArrayList<AbstractNode> links = null;
                 if (selectedObjects.size() == 0) {
                     links = LinkURLEditor.this.links;
                 } else {
-                    links = new ArrayList<DownloadLink>(selectedObjects.size());
+                    links = new ArrayList<AbstractNode>(selectedObjects.size());
                     for (AbstractNode node : selectedObjects) {
                         if (node instanceof DownloadLink) links.add((DownloadLink) node);
                     }
                 }
-                for (String url : DownloadLink.getURLs(links)) {
+                for (String url : LinkTreeUtils.getURLs(links)) {
                     if (sb.length() > 0) sb.append("\r\n");
                     sb.append(url);
                 }
@@ -143,16 +142,10 @@ public class LinkURLEditor extends SubMenuEditor {
         add(sp, "spanx");
     }
 
-    @Override
-    public Point getDesiredLocation() {
-
-        return new Point(100, 100);
-
-    }
-
-    @Override
-    public void save() {
-
+    private JLabel getLbl(String linkURLEditor, ImageIcon icon) {
+        JLabel ret = new JLabel(linkURLEditor);
+        ret.setIcon(icon);
+        return ret;
     }
 
 }

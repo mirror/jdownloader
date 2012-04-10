@@ -5,8 +5,8 @@ import java.util.ArrayList;
 
 import javax.swing.JComponent;
 
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -19,22 +19,21 @@ import org.jdownloader.images.NewTheme;
 public class URLEditorAction extends AppAction {
 
     private DownloadLink            contextObject;
-    private ArrayList<DownloadLink> links;
-    private ArrayList<FilePackage>  fps;
+    private ArrayList<AbstractNode> links;
 
-    public URLEditorAction(DownloadLink contextObject, ArrayList<DownloadLink> links, ArrayList<FilePackage> fps) {
+    public URLEditorAction(DownloadLink contextObject, ArrayList<AbstractNode> links) {
 
         setName(_GUI._.ContextMenuFactory_createPopup_url());
         setSmallIcon(NewTheme.I().getIcon("url", 20));
         this.contextObject = contextObject;
         this.links = links;
-        this.fps = fps;
+
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         try {
-            final LinkURLEditor comp = new LinkURLEditor(contextObject, links, fps);
+            final LinkURLEditor comp = new LinkURLEditor(contextObject, links);
             Dialog.getInstance().showDialog(new AbstractDialog<Object>(Dialog.STYLE_HIDE_ICON | Dialog.BUTTONS_HIDE_OK, _GUI._.ContextMenuFactory_createPopup_url(), null, _GUI._.literally_save(), null) {
 
                 @Override
@@ -50,10 +49,7 @@ public class URLEditorAction extends AppAction {
 
                 protected void setReturnmask(final boolean b) {
                     super.setReturnmask(b);
-                    if (b) {
 
-                        comp.save();
-                    }
                 }
 
                 @Override

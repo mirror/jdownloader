@@ -22,8 +22,6 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -963,21 +961,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public PluginForHost getPlugin() {
         return this.liveplugin;
-    }
-
-    public static HashSet<String> getURLs(List<DownloadLink> links) {
-        HashSet<String> urls = new HashSet<String>();
-        if (links == null) return urls;
-        for (DownloadLink link : links) {
-            if (DownloadLink.LINKTYPE_CONTAINER != link.getLinkType()) {
-                if (link.gotBrowserUrl()) {
-                    urls.add(link.getBrowserUrl());
-                } else {
-                    urls.add(link.getDownloadURL());
-                }
-            }
-        }
-        return urls;
     }
 
 }

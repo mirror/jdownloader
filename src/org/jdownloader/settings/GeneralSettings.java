@@ -17,8 +17,17 @@ import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
 
 public interface GeneralSettings extends ConfigInterface {
+    class DefaultBrowserCommand extends AbstractDefaultFactory<String[]> {
+
+        @Override
+        public String[] getDefaultValue() {
+            return CrossSystem.isWindows() ? new String[] { "rundll32.exe", "url.dll,FileProtocolHandler", "%s" } : null;
+        }
+
+    }
 
     class DefaultDownloadFolder extends AbstractDefaultFactory<String> {
 
@@ -289,5 +298,12 @@ public interface GeneralSettings extends ConfigInterface {
     void setShowCountdownonAutoStartDownloads(boolean b);
 
     boolean isShowCountdownonAutoStartDownloads();
+
+    @DefaultFactory(DefaultBrowserCommand.class)
+    @AboutConfig
+    @Description("CommandLine to open a link in a browser. Use %s as wildcard for the url")
+    void setBrowserCommandLine(String[] b);
+
+    String[] getBrowserCommandLine();
 
 }

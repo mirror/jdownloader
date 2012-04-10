@@ -411,6 +411,19 @@ public class Launcher {
         } else {
             JDLogger.removeConsoleHandler();
         }
+
+        CFG_GENERAL.BROWSER_COMMAND_LINE.getEventSender().addListener(new GenericConfigEventListener<String[]>() {
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<String[]> keyHandler, String[] invalidValue, ValidationException validateException) {
+            }
+
+            @Override
+            public void onConfigValueModified(KeyHandler<String[]> keyHandler, String[] newValue) {
+                CrossSystem.setBrowserCommandLine(newValue);
+            }
+        });
+        CrossSystem.setBrowserCommandLine(CFG_GENERAL.BROWSER_COMMAND_LINE.getValue());
         /* these can be initiated without a gui */
         final Thread thread = new Thread() {
             @Override

@@ -22,6 +22,7 @@ import org.jdownloader.gui.menu.eventsender.MenuFactoryEvent;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
+import org.jdownloader.gui.views.downloads.table.linkproperties.URLEditorAction;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
@@ -115,11 +116,12 @@ public class ContextMenuFactory {
     public static ArrayList<JMenuItem> fillPropertiesMenu(AbstractNode contextObject, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column) {
         ArrayList<AbstractNode> inteliSelect = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<AbstractNode>());
         ArrayList<JMenuItem> ret = new ArrayList<JMenuItem>();
-        ret.add(new JMenuItem(new SetDownloadFolderAction(contextObject, inteliSelect).toContextMenuAction()));
+        ret.add(new JMenuItem(new EnabledAction(inteliSelect).toContextMenuAction()));
+        ret.add(new JMenuItem(new URLEditorAction(null, inteliSelect)));
+        ret.add(new JMenuItem(new SetDownloadFolderInLinkgrabberAction(contextObject, inteliSelect).toContextMenuAction()));
         ret.add(new JMenuItem(new SetDownloadPassword(contextObject, inteliSelect).toContextMenuAction()));
         ret.add(new JMenuItem(new SetCommentAction(contextObject, inteliSelect).toContextMenuAction()));
 
-        ret.add(new JMenuItem(new EnabledAction(inteliSelect).toContextMenuAction()));
         ret.add(new PrioritySubMenu(selection));
         MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new LinkgrabberTablePropertiesContext(ret, contextObject, selection, column)));
 

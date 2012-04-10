@@ -9,6 +9,7 @@ import java.util.Iterator;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.utils.ClipboardUtils;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
@@ -46,12 +47,12 @@ public class LinkGrabberTransferable extends PackageControllerTableTransferable<
         HashSet<String> urls = new HashSet<String>();
         if (lcontent == null) return urls;
         if (lcontent.getLinks() != null) {
-            urls.addAll(CrawledLink.getURLs(lcontent.getLinks()));
+            urls.addAll(LinkTreeUtils.getURLs(new ArrayList<AbstractNode>(lcontent.getLinks())));
         }
         if (lcontent.getPackages() != null) {
             for (CrawledPackage fp : lcontent.getPackages()) {
                 synchronized (fp) {
-                    urls.addAll(CrawledLink.getURLs(fp.getChildren()));
+                    urls.addAll(LinkTreeUtils.getURLs(new ArrayList<AbstractNode>(fp.getChildren())));
                 }
             }
         }

@@ -7,12 +7,14 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.ClipboardUtils;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferableContent;
+import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 
 public class DownloadsTransferable extends PackageControllerTableTransferable<FilePackage, DownloadLink> {
 
@@ -46,12 +48,12 @@ public class DownloadsTransferable extends PackageControllerTableTransferable<Fi
         HashSet<String> urls = new HashSet<String>();
         if (lcontent == null) return urls;
         if (lcontent.getLinks() != null) {
-            urls.addAll(DownloadLink.getURLs(lcontent.getLinks()));
+            urls.addAll(LinkTreeUtils.getURLs(new ArrayList<AbstractNode>(lcontent.getLinks())));
         }
         if (lcontent.getPackages() != null) {
             for (FilePackage fp : lcontent.getPackages()) {
                 synchronized (fp) {
-                    urls.addAll(DownloadLink.getURLs(fp.getChildren()));
+                    urls.addAll(LinkTreeUtils.getURLs(new ArrayList<AbstractNode>(fp.getChildren())));
                 }
             }
         }

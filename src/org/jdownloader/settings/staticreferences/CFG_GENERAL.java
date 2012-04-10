@@ -8,6 +8,7 @@ import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.ObjectKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
+import org.appwork.storage.config.handler.StringListHandler;
 import org.jdownloader.settings.GeneralSettings;
 
 public class CFG_GENERAL {
@@ -27,6 +28,11 @@ public class CFG_GENERAL {
     public static final IntegerKeyHandler               HTTP_CONNECT_TIMEOUT                          = SH.getKeyHandler("HttpConnectTimeout", IntegerKeyHandler.class);
     // true
     public static final BooleanKeyHandler               LINKCHECK_ENABLED                             = SH.getKeyHandler("LinkcheckEnabled", BooleanKeyHandler.class);
+    // [Ljava.lang.String;@4886b7bb
+    /**
+     * CommandLine to open a link in a browser. Use %s as wildcard for the url
+     **/
+    public static final StringListHandler               BROWSER_COMMAND_LINE                          = SH.getKeyHandler("BrowserCommandLine", StringListHandler.class);
     // false
     public static final BooleanKeyHandler               AUTOADD_LINKS_AFTER_LINKCHECK                 = SH.getKeyHandler("AutoaddLinksAfterLinkcheck", BooleanKeyHandler.class);
     // 15000

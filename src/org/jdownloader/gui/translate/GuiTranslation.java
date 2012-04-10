@@ -3667,4 +3667,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Edit Link/Package Comments" })
     String SetCommentAction_actionPerformed_dialog_title_();
 
+    @Default(lngs = { "en" }, values = { "Custom Speedlimit" })
+    String SpeedLimitator_SpeedLimitator_object_();
+
 }

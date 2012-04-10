@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.linkgrabber.contextmenu;
+package org.jdownloader.gui.views.downloads.context;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -14,12 +14,9 @@ import javax.swing.JLabel;
 import javax.swing.JSeparator;
 
 import jd.controlling.IOEQ;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcollector.VariousCrawledPackage;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.swing.components.ExtTextField;
@@ -37,52 +34,52 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 import org.jdownloader.translate._JDT;
 
-public class SetDownloadFolderAction extends AppAction {
+public class SetDownloadFolderInDownloadTableAction extends AppAction {
 
     /**
      * 
      */
-    private static final long                               serialVersionUID = -6632019767606316873L;
+    private static final long                             serialVersionUID = -6632019767606316873L;
 
-    private boolean                                         retOkay          = false;
+    private boolean                                       retOkay          = false;
 
-    private HashSet<CrawledPackage>                         packages;
-    private HashMap<CrawledPackage, ArrayList<CrawledLink>> newPackages;
+    private HashSet<FilePackage>                          packages;
+    private HashMap<FilePackage, ArrayList<DownloadLink>> newPackages;
 
-    private CrawledPackage                                  pkg;
+    private FilePackage                                   pkg;
 
-    private File                                            path;
+    private File                                          path;
 
     public boolean newValueSet() {
         return retOkay;
     }
 
-    public SetDownloadFolderAction(AbstractNode node, ArrayList<AbstractNode> selectio2) {
+    public SetDownloadFolderInDownloadTableAction(AbstractNode node, ArrayList<AbstractNode> selectio2) {
         if (selectio2 == null) {
             selectio2 = new ArrayList<AbstractNode>();
             selectio2.add(node);
         }
 
-        packages = new HashSet<CrawledPackage>();
+        packages = new HashSet<FilePackage>();
         HashSet<AbstractNode> map = new HashSet<AbstractNode>();
         for (AbstractNode n : selectio2) {
             map.add(n);
-            if (n instanceof CrawledPackage) {
-                if (pkg == null) pkg = (CrawledPackage) n;
-                packages.add((CrawledPackage) n);
+            if (n instanceof FilePackage) {
+                if (pkg == null) pkg = (FilePackage) n;
+                packages.add((FilePackage) n);
             } else {
-                if (pkg == null) pkg = ((CrawledLink) n).getParentNode();
-                packages.add(((CrawledLink) n).getParentNode());
+                if (pkg == null) pkg = ((DownloadLink) n).getParentNode();
+                packages.add(((DownloadLink) n).getParentNode());
             }
 
         }
-        newPackages = new HashMap<CrawledPackage, ArrayList<CrawledLink>>();
-        for (Iterator<CrawledPackage> it = packages.iterator(); it.hasNext();) {
-            CrawledPackage next = it.next();
+        newPackages = new HashMap<FilePackage, ArrayList<DownloadLink>>();
+        for (Iterator<FilePackage> it = packages.iterator(); it.hasNext();) {
+            FilePackage next = it.next();
             boolean allChildren = true;
             boolean noChildren = true;
-            ArrayList<CrawledLink> splitme = new ArrayList<CrawledLink>();
-            for (CrawledLink l : next.getChildren()) {
+            ArrayList<DownloadLink> splitme = new ArrayList<DownloadLink>();
+            for (DownloadLink l : next.getChildren()) {
                 if (!map.contains(l)) {
                     allChildren = false;
 
@@ -169,39 +166,39 @@ public class SetDownloadFolderAction extends AppAction {
 
                 public void run() {
 
-                    for (CrawledPackage pkg : packages) {
-                        pkg.setDownloadFolder(dest[0].getAbsolutePath());
+                    for (FilePackage pkg : packages) {
+
+                        pkg.setDownloadDirectory(dest[0].getAbsolutePath());
                     }
 
-                    for (final Entry<CrawledPackage, ArrayList<CrawledLink>> entry : newPackages.entrySet()) {
-                        if (!(entry.getKey() instanceof VariousCrawledPackage)) {
-                            try {
-                                if (entry.getKey().getDownloadFolder().equals(dest[0].getAbsolutePath())) continue;
-                                Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN,
+                    for (final Entry<FilePackage, ArrayList<DownloadLink>> entry : newPackages.entrySet()) {
 
-                                _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getKey().getName()), _JDT._.SetDownloadFolderAction_msg(entry.getKey().getName(), entry.getValue().size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
-                                entry.getKey().setDownloadFolder(dest[0].getAbsolutePath());
-                                continue;
-                            } catch (DialogClosedException e) {
-                                return;
-                            } catch (DialogCanceledException e) {
+                        try {
+                            if (entry.getKey().getDownloadDirectory().equals(dest[0].getAbsolutePath())) continue;
+                            Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN,
 
-                            }
+                            _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getKey().getName()), _JDT._.SetDownloadFolderAction_msg(entry.getKey().getName(), entry.getValue().size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
+                            entry.getKey().setDownloadDirectory(dest[0].getAbsolutePath());
+                            continue;
+                        } catch (DialogClosedException e) {
+                            return;
+                        } catch (DialogCanceledException e) {
+
                         }
-                        final CrawledPackage pkg = new CrawledPackage();
+
+                        final FilePackage pkg = FilePackage.getInstance();
                         pkg.setExpanded(true);
                         pkg.setCreated(System.currentTimeMillis());
-                        if (entry.getKey() instanceof VariousCrawledPackage) {
-                            pkg.setName(LinknameCleaner.cleanFileName(entry.getValue().get(0).getName()));
-                        } else {
-                            pkg.setName(entry.getKey().getName());
-                        }
-                        pkg.setDownloadFolder(dest[0].getAbsolutePath());
+
+                        pkg.setName(entry.getKey().getName());
+
+                        pkg.setDownloadDirectory(dest[0].getAbsolutePath());
                         IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>() {
 
                             @Override
                             protected Object run() {
-                                LinkCollector.getInstance().addmoveChildren(pkg, entry.getValue(), -1);
+                                // LinkCollector.getInstance().addmoveChildren(pkg,
+                                // entry.getValue(), -1);
                                 return null;
                             }
 
