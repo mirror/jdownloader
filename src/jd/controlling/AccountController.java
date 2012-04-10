@@ -422,7 +422,8 @@ public class AccountController implements AccountControllerListener {
         }
         if (event.isRecheckRequired()) {
             /* event tells us to recheck the account */
-            AccountChecker.getInstance().check(acc, true);
+            acc = event.getParameter();
+            if (acc != null) AccountChecker.getInstance().check(acc, true);
         }
     }
 

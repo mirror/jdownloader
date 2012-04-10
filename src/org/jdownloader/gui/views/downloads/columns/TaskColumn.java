@@ -72,7 +72,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
             DownloadLink dl = (DownloadLink) value;
-            if (!dl.getLinkStatus().isPluginActive()) {
+            if (!dl.getLinkStatus().isPluginActive() && dl.isEnabled()) {
                 ProxyBlock ipTimeout = null;
                 if (dl.getLivePlugin() == null && !dl.getLinkStatus().isPluginActive() && (ipTimeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
                     if (ipTimeout.getLink() == value) {
