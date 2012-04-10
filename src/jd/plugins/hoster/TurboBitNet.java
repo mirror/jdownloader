@@ -39,7 +39,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.LnkCrptWs;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
@@ -125,6 +124,11 @@ public class TurboBitNet extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        /*
+         * we have to load the plugin first! we must not reference a plugin
+         * class without loading it before
+         */
+        JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
         prepareBrowser(UA);
         br.getPage(downloadLink.getDownloadURL());
@@ -208,7 +212,7 @@ public class TurboBitNet extends PluginForHost {
             if (br.getRegex(CAPTCHAREGEX).getMatch(0) != null || br.containsHTML(RECAPTCHATEXT)) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         }
         // Ticket Time
-        String ttt = parseImageUrl(br.getRegex(LnkCrptWs.IMAGEREGEX(null)).getMatch(0), true);
+        String ttt = parseImageUrl(br.getRegex(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(null)).getMatch(0), true);
         int tt = 60;
         if (ttt != null) {
             tt = Integer.parseInt(ttt);
@@ -223,7 +227,7 @@ public class TurboBitNet extends PluginForHost {
 
         String fun = escape(br.toString());
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        String res = parseImageUrl(br.getRegex(LnkCrptWs.IMAGEREGEX(null)).getMatch(0), false);
+        String res = parseImageUrl(br.getRegex(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(null)).getMatch(0), false);
 
         // realtime update
         String rtUpdate = getPluginConfig().getStringProperty("rtupdate", null);
