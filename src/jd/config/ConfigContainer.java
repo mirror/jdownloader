@@ -78,12 +78,7 @@ public class ConfigContainer implements Serializable {
      * @see ConfigEntry#ConfigEntry(int)
      */
     public static final int              TYPE_SEPARATOR      = 6;
-    /**
-     * ConfigElement ist ein Browser für eine Datei
-     * 
-     * @see ConfigEntry#ConfigEntry(int, Property, String, String)
-     */
-    public static final int              TYPE_BROWSEFILE     = 7;
+
     /**
      * ConfigElement ist eine Zahlenkomponente (Spinner)
      * 
@@ -91,12 +86,7 @@ public class ConfigContainer implements Serializable {
      *      int)
      */
     public static final int              TYPE_SPINNER        = 8;
-    /**
-     * ConfigElement ist ein Browser für ein Verzeichnis
-     * 
-     * @see ConfigEntry#ConfigEntry(int, Property, String, String)
-     */
-    public static final int              TYPE_BROWSEFOLDER   = 9;
+
     /**
      * ConfigElement ist ein Textbereich
      * 

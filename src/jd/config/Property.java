@@ -21,8 +21,6 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 
-import jd.controlling.JDLogger;
-
 /**
  * Von dieser Klasse kann abgeleitet werden wenn die Neue Klasse Properties
  * unterstützen soll. Die SimpleGUI elemente nutzen das um einfache
@@ -34,14 +32,13 @@ import jd.controlling.JDLogger;
  */
 public class Property implements Serializable {
 
-    private static final long        serialVersionUID = -6093927038856757256L;
+    private static final long       serialVersionUID = -6093927038856757256L;
     /**
      * Nullvalue used to remove a key completly.
      */
-    public static final Object       NULL             = new Object();
+    public static final Object      NULL             = new Object();
 
-    private HashMap<String, Object>  properties       = null;
-    private HashMap<String, Integer> propertiesHashes = null;
+    private HashMap<String, Object> properties       = null;
 
     public Property() {
     }
@@ -51,35 +48,6 @@ public class Property implements Serializable {
         stream.defaultReadObject();
         if (properties != null && properties.isEmpty()) {
             properties = null;
-        }
-        propertiesHashes = null;
-    }
-
-    /**
-     * Returns the saved object casted to the type of the defaultvalue
-     * <code>def</code>. So no more casts are necessary.
-     * 
-     * @param <E>
-     *            type of the saved object
-     * @param key
-     *            key for the saved object
-     * @param def
-     *            defaultvalue if no object is saved (is used to determine the
-     *            type of the saved object)
-     * @return the saved object casted to its correct type
-     */
-    @SuppressWarnings("unchecked")
-    @Deprecated
-    public <E> E getGenericProperty(final String key, final E def) {
-        final Object r = getProperty(key, def);
-        try {
-            final E ret = (E) r;
-            return ret;
-        } catch (final Exception e) {
-            // logger.finer("Could not cast " + r.getClass().getSimpleName() +
-            // " to " + e.getClass().getSimpleName() + " for key " + key);
-            JDLogger.getLogger().finer("Could not cast " + r.getClass().getSimpleName() + " to " + def.getClass().getSimpleName() + " for key " + key);
-            return def;
         }
     }
 
@@ -200,7 +168,6 @@ public class Property implements Serializable {
      * @param key
      * @return Value for key
      */
-    @Deprecated
     public Object getProperty(final String key) {
         if (properties == null) return null;
         return properties.get(key);
@@ -219,11 +186,7 @@ public class Property implements Serializable {
             /* fix for integer in property map, but long wanted */
             ret = ((Integer) ret).longValue();
         }
-        if (ret == null) {
-            /* FIXME: WHY THE HELL DO WE PUT DEFAULTS INTO HASHMAP?!?!? */
-            // setProperty(key, def);
-            return def;
-        }
+        if (ret == null) { return def; }
         return ret;
     }
 
@@ -259,7 +222,6 @@ public class Property implements Serializable {
      * @param properties
      */
     public void setProperties(final HashMap<String, Object> properties) {
-        propertiesHashes = null;
         if (properties != null && properties.isEmpty()) {
             this.properties = null;
         } else {
@@ -268,12 +230,12 @@ public class Property implements Serializable {
     }
 
     /**
-     * Stores a value.
+     * Stores a value. Warning: DO not store other stuff than
+     * primitives/lists/maps!!
      * 
      * @param key
      * @param value
      */
-    @SuppressWarnings("unchecked")
     public void setProperty(final String key, final Object value) {
         if (value == NULL) {
             if (properties != null && properties.containsKey(key)) {

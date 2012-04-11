@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.HTACCESSController;
@@ -610,7 +611,11 @@ public class DirectHTTP extends PluginForHost {
 
     private void setCustomHeaders(final Browser br, final DownloadLink downloadLink) {
         /* allow customized headers, eg useragent */
-        final ArrayList<String[]> custom = downloadLink.getGenericProperty("customHeader", new ArrayList<String[]>());
+        final Object customRet = downloadLink.getProperty("customHeader");
+        List<String[]> custom = null;
+        if (customRet != null && customRet instanceof List) {
+            custom = (List<String[]>) customRet;
+        }
         if (custom != null && custom.size() > 0) {
             for (final Object header : custom) {
                 /*

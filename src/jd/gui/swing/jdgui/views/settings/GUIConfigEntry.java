@@ -44,7 +44,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.GuiConfigListener;
 import jd.controlling.JDLogger;
-import jd.gui.swing.components.ComboBrowseFile;
 import jd.gui.swing.components.JDLabelContainer;
 import jd.gui.swing.components.JDTextArea;
 import jd.gui.swing.components.JDTextField;
@@ -103,15 +102,6 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
         case ConfigContainer.TYPE_CHECKBOX:
             input = new JCheckBox();
             ((JCheckBox) input).addChangeListener(this);
-            break;
-        case ConfigContainer.TYPE_BROWSEFILE:
-            input = new ComboBrowseFile(configEntry.getPropertyName());
-            ((ComboBrowseFile) input).setEditable(true);
-            break;
-        case ConfigContainer.TYPE_BROWSEFOLDER:
-            input = new ComboBrowseFile(configEntry.getPropertyName());
-            ((ComboBrowseFile) input).setEditable(true);
-            ((ComboBrowseFile) input).setFileSelectionMode(ComboBrowseFile.DIRECTORIES_ONLY);
             break;
         case ConfigContainer.TYPE_SPINNER:
             input = new JSpinner(new SpinnerNumberModel(configEntry.getStart(), configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
@@ -231,9 +221,6 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
                 if (radio.getSelectedObjects() != null && radio.getSelectedObjects()[0] != null) return radio.getSelectedObjects()[0];
             }
             return null;
-        case ConfigContainer.TYPE_BROWSEFOLDER:
-        case ConfigContainer.TYPE_BROWSEFILE:
-            return ((ComboBrowseFile) input).getText();
         case ConfigContainer.TYPE_SPINNER:
             return ((JSpinner) input).getValue();
         case ConfigContainer.TYPE_BUTTON:
@@ -307,10 +294,7 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
                 ((JComboBox) input).setSelectedItem(text);
             }
             break;
-        case ConfigContainer.TYPE_BROWSEFOLDER:
-        case ConfigContainer.TYPE_BROWSEFILE:
-            ((ComboBrowseFile) input).setText(text == null ? "" : text.toString());
-            break;
+
         case ConfigContainer.TYPE_SPINNER:
             int value = text instanceof Integer ? (Integer) text : Integer.parseInt(text.toString());
             try {

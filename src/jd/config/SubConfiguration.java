@@ -50,6 +50,7 @@ public class SubConfiguration extends Property implements Serializable {
                 /* we save memory by NOT using an empty hashmap */
                 if (tmp.isEmpty()) tmp = new HashMap<String, Object>();
                 ((JsonKeyValueStorage) json).getInternalStorageMap().putAll(tmp);
+                this.setProperties(((JsonKeyValueStorage) json).getInternalStorageMap());
             } else {
                 if (props != null) {
                     valid = false;

@@ -264,9 +264,9 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
 
     private void fastLogin(Account acc) throws IOException {
         synchronized (acc) {
-            HashMap<String, String> cookies = acc.getGenericProperty("cookies", (HashMap<String, String>) null);
-            if (cookies != null && !cookies.isEmpty()) {
-                for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+            Object cookies = acc.getProperty("cookies");
+            if (cookies != null && cookies instanceof HashMap && !((Map<String, String>) cookies).isEmpty()) {
+                for (final Map.Entry<String, String> cookieEntry : ((Map<String, String>) cookies).entrySet()) {
                     final String key = cookieEntry.getKey();
                     final String value = cookieEntry.getValue();
                     br.setCookie("fast-debrid.com", key, value);
@@ -278,12 +278,12 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
             String pw = Encoding.urlEncode(acc.getPass());
             String postData = "pseudo=" + user + "&password=" + pw;
             br.postPageRaw("https://www.fast-debrid.com/index.php", postData);
-            cookies = new HashMap<String, String>();
+            HashMap<String, String> cookies2 = new HashMap<String, String>();
             final Cookies cYT = br.getCookies("fast-debrid.com");
             for (final Cookie c : cYT.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
+                cookies2.put(c.getKey(), c.getValue());
             }
-            acc.setProperty("cookies", cookies);
+            acc.setProperty("cookies", cookies2);
         }
     }
 

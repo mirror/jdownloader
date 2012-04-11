@@ -29,7 +29,6 @@ import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.filechooser.FileFilter;
 
-import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import net.miginfocom.swing.MigLayout;
 
@@ -75,9 +74,6 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     }
 
     public ComboBrowseFile(final String string) {
-        final Vector<String> list = SubConfiguration.getConfig("GUI").getGenericProperty(string, new Vector<String>());
-        setFiles(list);
-
         this.setName(string);
         initGUI();
     }
@@ -250,9 +246,6 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
                 // System.out.println("FILES=" + files);
             }
 
-            SubConfiguration guiConfig = SubConfiguration.getConfig("GUI");
-            guiConfig.setProperty(getName(), createSortedVector(files, item, 20));
-            guiConfig.save();
         }
     }
 

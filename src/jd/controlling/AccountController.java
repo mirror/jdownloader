@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import jd.config.Property;
@@ -284,20 +285,37 @@ public class AccountController implements AccountControllerListener {
      */
     private HashMap<String, ArrayList<AccountData>> restore() {
         SubConfiguration sub = SubConfiguration.getConfig("AccountController");
-        HashMap<String, ArrayList<HashMap<String, Object>>> tree = sub.getGenericProperty("accountlist", new HashMap<String, ArrayList<HashMap<String, Object>>>());
         HashMap<String, ArrayList<AccountData>> ret = new HashMap<String, ArrayList<AccountData>>();
-
-        for (Iterator<Entry<String, ArrayList<HashMap<String, Object>>>> it = tree.entrySet().iterator(); it.hasNext();) {
-            Entry<String, ArrayList<HashMap<String, Object>>> next = it.next();
-            if (next.getValue().size() > 0) {
-                ArrayList<AccountData> list = new ArrayList<AccountData>();
-                ret.put(next.getKey(), list);
-                for (HashMap<String, Object> a : next.getValue()) {
-                    AccountData ac;
-                    list.add(ac = new AccountData());
-                    ac.setUser((String) a.get("user"));
-                    ac.setPassword((String) a.get("pass"));
-                    ac.setEnabled("true".equals(a.containsKey("enabled")));
+        Object mapRet = sub.getProperty("accountlist");
+        if (mapRet != null || mapRet instanceof Map) {
+            Map<String, Object> tree = (Map<String, Object>) mapRet;
+            for (Iterator<Entry<String, Object>> it = tree.entrySet().iterator(); it.hasNext();) {
+                Entry<String, Object> next = it.next();
+                if (next.getValue() instanceof ArrayList) {
+                    ArrayList<Object> accList = (ArrayList<Object>) next.getValue();
+                    if (accList.size() > 0) {
+                        ArrayList<AccountData> list = new ArrayList<AccountData>();
+                        ret.put(next.getKey(), list);
+                        if (accList.get(0) instanceof Account) {
+                            ArrayList<Account> accList2 = (ArrayList<Account>) next.getValue();
+                            for (Account a : accList2) {
+                                AccountData ac;
+                                list.add(ac = new AccountData());
+                                ac.setUser(a.getUser());
+                                ac.setPassword(a.getPass());
+                                ac.setEnabled(a.isEnabled());
+                            }
+                        } else if (accList.get(0) instanceof Map) {
+                            ArrayList<Map<String, Object>> accList2 = (ArrayList<Map<String, Object>>) next.getValue();
+                            for (Map<String, Object> a : accList2) {
+                                AccountData ac;
+                                list.add(ac = new AccountData());
+                                ac.setUser((String) a.get("user"));
+                                ac.setPassword((String) a.get("pass"));
+                                ac.setEnabled("true".equals(a.containsKey("enabled")));
+                            }
+                        }
+                    }
                 }
             }
         }

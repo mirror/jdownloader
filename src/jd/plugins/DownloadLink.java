@@ -22,6 +22,7 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -236,7 +237,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
-    public void addSourcePluginPasswordList(ArrayList<String> sourcePluginPasswords) {
+    public void addSourcePluginPasswordList(List<String> sourcePluginPasswords) {
         if (sourcePluginPasswords == null || sourcePluginPasswords.size() == 0) return;
         synchronized (this) {
             for (String pw : sourcePluginPasswords) {
@@ -444,8 +445,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return this.getStringProperty(PROPERTY_COMMENT, null);
     }
 
-    public ArrayList<String> getSourcePluginPasswordList() {
-        return this.getGenericProperty(PROPERTY_PWLIST, (ArrayList<String>) null);
+    public List<String> getSourcePluginPasswordList() {
+        Object ret = this.getProperty(PROPERTY_PWLIST);
+        if (ret != null && ret instanceof List) return (List<String>) ret;
+        return null;
     }
 
     /**

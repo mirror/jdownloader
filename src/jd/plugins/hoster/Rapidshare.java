@@ -22,6 +22,7 @@ import java.lang.reflect.Modifier;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
@@ -799,7 +800,11 @@ public class Rapidshare extends PluginForHost {
              * we can use cookie login if user does not want to get asked before
              * package upgrade. we dont need live traffic stats here
              */
-            HashMap<String, String> cookies = account.getGenericProperty(Rapidshare.COOKIEPROP, (HashMap<String, String>) null);
+            Object cookiesRet = account.getProperty(Rapidshare.COOKIEPROP);
+            Map<String, String> cookies = null;
+            if (cookiesRet != null && cookiesRet instanceof Map) {
+                cookies = (Map<String, String>) cookiesRet;
+            }
             boolean cookieLogin = false;
             if (cookies != null && forceRefresh == false) {
                 cookieLogin = true;

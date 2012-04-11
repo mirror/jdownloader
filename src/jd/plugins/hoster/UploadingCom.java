@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Cookie;
@@ -470,7 +471,11 @@ public class UploadingCom extends PluginForHost {
                 br.setCookie(MAINPAGE, "setlang", "en");
                 br.setCookie(MAINPAGE, "_lang", "en");
                 if (!forceLogin) {
-                    final HashMap<String, String> cookies = account.getGenericProperty("cookies", (HashMap<String, String>) null);
+                    Object cookiesRet = account.getProperty("cookies");
+                    Map<String, String> cookies = null;
+                    if (cookiesRet != null && cookiesRet instanceof Map) {
+                        cookies = (Map<String, String>) cookiesRet;
+                    }
                     if (cookies != null) {
                         if (cookies.containsKey("remembered_user") && account.isValid()) {
                             for (final String key : cookies.keySet()) {

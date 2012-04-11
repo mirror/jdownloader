@@ -317,7 +317,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         if (fp == null) return pwList;
         synchronized (fp) {
             for (DownloadLink element : fp.getChildren()) {
-                ArrayList<String> pws = null;
+                List<String> pws = null;
                 if ((pws = element.getSourcePluginPasswordList()) != null) {
 
                     for (String pw : pws) {

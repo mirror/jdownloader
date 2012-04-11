@@ -17,7 +17,6 @@
 
 package jd;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
@@ -299,14 +298,6 @@ public class Launcher {
             } else if (args[i].equals("-prot")) {
 
                 Launcher.LOG.finer(args[i] + " " + args[i + 1]);
-                i++;
-            } else if (args[i].equals("-lng")) {
-
-                Launcher.LOG.finer(args[i] + " " + args[i + 1]);
-                if (new File(args[i + 1]).exists() && args[i + 1].trim().endsWith(".loc")) {
-                    Launcher.LOG.info("Use custom languagefile: " + args[i + 1]);
-                    JDL.setStaticLocale(args[i + 1]);
-                }
                 i++;
 
             } else if (args[i].equals("--new-instance") || args[i].equals("-n")) {

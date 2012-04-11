@@ -75,7 +75,7 @@ public class AnimeaNet extends PluginForHost {
         if (urls == null || urls.length == 0) { return false; }
         try {
             for (DownloadLink dl : urls) {
-                if (dl.getProperty("fastAdd") == "true") {
+                if ("true".equalsIgnoreCase((String) dl.getProperty("fastAdd"))) {
                     return true;
                 } else {
                     URLConnectionAdapter con = br.openGetConnection(dl.getDownloadURL());
