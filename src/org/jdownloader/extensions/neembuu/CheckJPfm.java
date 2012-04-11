@@ -24,6 +24,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jpfm.FormatterEvent;
+import jpfm.JPfm;
+import jpfm.MountException;
 import jpfm.MountListener;
 import jpfm.fs.SimpleReadOnlyFileSystem;
 import jpfm.mount.Mount;
@@ -34,6 +36,7 @@ import jpfm.operations.readwrite.SimpleReadRequest;
 import jpfm.util.PreferredMountTypeUtil;
 import jpfm.volume.VeryBigFile;
 import jpfm.volume.vector.VectorRootDirectory;
+
 
 /**
  * 
@@ -51,8 +54,9 @@ final class CheckJPfm {
             String mntLoc = System.getProperty("java.io.tmpdir");
             if (mntLoc.endsWith(File.separator))
                 ;
-            else
+            else {
                 mntLoc = mntLoc + File.separatorChar;
+            }
             mntLoc = mntLoc + Math.random() + ".neembuutest";
             File f = new File(mntLoc);
             f.deleteOnExit();
@@ -66,16 +70,8 @@ final class CheckJPfm {
                 throw new IllegalStateException("Mountlocation already exists");
                 // this would never happen
             }
-            Mount m = Mounts.mount(new MountParamsBuilder().set(MountParams.ParamType.MOUNT_LOCATION, mntLoc).set(MountParams.ParamType.FILE_SYSTEM, fs).set(MountParams.ParamType.LISTENER, new MountListener() {
 
-                // @Override
-                public void eventOccurred(FormatterEvent event) {
-                    /*
-                     * logger.log(Level.INFO, event.toString(),
-                     * event.getException());
-                     */
-                }
-            }).build());
+            Mount m = mount(0, mntLoc, fs);
 
             Thread.sleep(100);
 
@@ -88,7 +84,7 @@ final class CheckJPfm {
                     offset = -1;// to avoid read at filesize
                 }
                 offset = 0;// vbf is extremely large. java cannot handle it so
-                           // we read at 0
+                // we read at 0
                 fc.position(offset);
                 int r = fc.read(bb_virtual);
                 if (r == -1) { return false; }
@@ -107,5 +103,43 @@ final class CheckJPfm {
             logger.log(Level.SEVERE, "JPfm not working for some reason", a);
             return false;
         }
+    }
+
+    private static Mount mount(int attempt, String mntLoc, SimpleReadOnlyFileSystem fs) throws Exception {
+        Mount m = null;
+        boolean retry = false;
+        try {
+            m = Mounts.mount(new MountParamsBuilder().set(MountParams.ParamType.MOUNT_LOCATION, mntLoc).set(MountParams.ParamType.FILE_SYSTEM, fs).set(MountParams.ParamType.LISTENER, new MountListener() {
+
+                // @Override
+                public void eventOccurred(FormatterEvent event) {
+                    /*
+                     * logger.log(Level.INFO, event.toString(),
+                     * event.getException());
+                     */
+                }
+            }).build());
+        } catch (NullPointerException ne) {
+            Logger.getGlobal().log(Level.SEVERE, "NullPointerException while test mounting", ne);
+            Throwable e = JPfm.getLastException();
+            if (e != null) {
+                Logger.getGlobal().log(Level.SEVERE, "", e);
+                if (e.getMessage().equalsIgnoreCase("Pismo file mount incorrectly installed or not installed")) {
+                    retry = true;
+                }
+            }
+        }
+
+        if (m != null) { return m; }
+
+        if (retry) {
+            if (attempt < 2) {
+                // TODO : show a gui message informing user that Pismo is being
+                // installed
+                PismoInstaller.tryInstallingPismoFileMount(Logger.getGlobal(), false);
+                return mount(attempt + 1, mntLoc, fs);
+            }
+        }
+        throw new RuntimeException("Neither can use pismo file mount nor can install it. Retried " + attempt + " time(s)");
     }
 }

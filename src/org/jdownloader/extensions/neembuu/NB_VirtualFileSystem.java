@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import jpfm.DirectoryStream;
 import jpfm.fs.SimpleReadOnlyFileSystem;
@@ -84,8 +86,10 @@ public final class NB_VirtualFileSystem extends SimpleReadOnlyFileSystem {
 
         if (mountLoc.exists()) {
             try {
-                java.nio.file.Files.delete(mountLoc.toPath());
+                boolean v = mountLoc.delete();
+                if(!v)throw new Exception();
             } catch (Exception a) {
+                Logger.getGlobal().log(Level.INFO,"Could not mount at preferred mount location",a);
                 mountLoc = new File(mountLoc.toString() + Math.random());
             }
         }
@@ -107,7 +111,8 @@ public final class NB_VirtualFileSystem extends SimpleReadOnlyFileSystem {
         postProcess();
     }
 
-    public boolean sessionsCompleted() throws Exception {
+   
+    public boolean sessionsCompleted()  {
 
         synchronized (sessions) {
             Iterator<DownloadSession> it = sessions.iterator();
@@ -118,7 +123,6 @@ public final class NB_VirtualFileSystem extends SimpleReadOnlyFileSystem {
             // sessions.remove(session);
             // NeembuuExtension.getInstance().getGUI().removeSession(session);
         }
-        unmountAndEndSessions();
         return true;
         // ((VectorRootDirectory)rootDirectoryStream).remove(session.getWatchAsYouDownloadSession().getSeekableConnectionFile());
     }

@@ -33,6 +33,7 @@ import jpfm.mount.MountParams.ParamType;
 import jpfm.mount.MountParamsBuilder;
 import jpfm.mount.Mounts;
 import neembuu.diskmanager.DiskManager;
+import neembuu.diskmanager.DiskManagerParams;
 import neembuu.diskmanager.DiskManagers;
 import neembuu.rangearray.UnsyncRangeArrayCopy;
 import neembuu.vfs.file.MonitoredHttpFile;
@@ -42,6 +43,8 @@ import neembuu.vfs.file.TroubleHandler;
 import neembuu.vfs.progresscontrol.ThrottleFactory;
 import neembuu.vfs.readmanager.ReadRequestState;
 import neembuu.vfs.readmanager.impl.SeekableConnectionFileImplBuilder;
+import org.appwork.utils.net.throttledconnection.ThrottledConnection;
+import org.appwork.utils.net.throttledconnection.ThrottledConnectionHandler;
 
 import org.jdownloader.extensions.neembuu.gui.HttpFilePanel;
 import org.jdownloader.extensions.neembuu.gui.VirtualFilesPanel;
@@ -61,7 +64,6 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
     private final NB_VirtualFileSystem virtualFileSystem;
     private final DownloadSession      jdds;
     private final Object               lock          = new Object();
-
     private volatile long              totalDownload = 0;
 
     static WatchAsYouDownloadSessionImpl makeNew(DownloadSession jdds) throws Exception {
@@ -90,10 +92,10 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
         TroubleHandler troubleHandler = new NBTroubleHandler(jdds);
 
         // JD team might like to change this to something they like.
-        // this default diskmanager saves each chunk in a different file
-        // for this reason, chucks are placed in a directory.
+        // This default diskmanager saves each chunk in a different file
+        // for this reason, chunks are placed in a directory.
         // In the default implementation, I chose not to save in a single file
-        // because that would require to also matin progress information in a
+        // because that would require to also maintain progress information in a
         // separete file. The name of the file contains the offset from which
         // it starts, and size of the file tells us how much was downloaded.
         // Very important logs are also saved along with these files.
@@ -103,7 +105,8 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
         // and one for each file which logs overall working of differnt
         // chunks/regions. For this reason the download folder would contain
         // a lot of files. These logs are highly essential.
-        DiskManager diskManager = DiskManagers.getDefaultManager(new File(jdds.getDownloadLink().getFileOutput()).getParentFile().getAbsolutePath());
+        DiskManagerParams dmp = new DiskManagerParams.Builder().setMaxReadQueueManagerThreadLogSize(2 * 1024 * 1024).setMaxReadHandlerThreadLogSize(100 * 1024).setMaxDownloadThreadLogSize(100 * 1024).setBaseStoragePath(new File(jdds.getDownloadLink().getFileOutput()).getParentFile().getAbsolutePath()).build();
+        DiskManager diskManager = DiskManagers.getDefaultManager(dmp);
 
         // Is used to create new connections at some arbitary offset
         // this is the only thing that neembuu requires JD to provide
@@ -218,7 +221,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
     }
 
     // @Override
-    public void waitForDownloadToFinish() throws Exception {
+    public void waitForDownloadToFinish() throws PluginException {
         jdds.getDownloadInterface().addChunksDownloading(1);
         Chunk ch = jdds.getDownloadInterface().new Chunk(0, 0, null, null) {
             // @Override
@@ -231,17 +234,25 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
         ch.setInProgress(true);
         jdds.getDownloadInterface().getChunks().add(ch);
         jdds.getDownloadLink().getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
-
+        jdds.getDownloadInterface().getManagedConnetionHandler().addThrottledConnection(new FakeThrottledConnection(jdds));
+        
         UPDATE_LOOP: while (totalDownload < jdds.getDownloadLink().getDownloadSize() && jdds.getWatchAsYouDownloadSession().isMounted()) {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ie) {
-
+                ie.printStackTrace(System.err);
             }
 
             updateProgress(ch);
 
             if (jdds.getDownloadInterface().externalDownloadStop()) {
+                // if download of even one of the splits is stopped,
+                // all downloads must stop
+                try {
+                    virtualFileSystem.unmountAndEndSessions();
+                } catch (Exception ex) {
+                    ex.printStackTrace(System.err);
+                }
                 break UPDATE_LOOP;
             }
         }
@@ -256,18 +267,32 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
         }
 
         // wait for other splits to finish
-        WAIT_FOR_SPLITS_TO_FINISH: while (jdds.getWatchAsYouDownloadSession().isMounted()) {
-            if (virtualFileSystem.sessionsCompleted()) {
-                virtualFileSystem.unmountAndEndSessions();
-                break WAIT_FOR_SPLITS_TO_FINISH;
+        try {
+            WAIT_FOR_SPLITS_TO_FINISH: while (jdds.getWatchAsYouDownloadSession().isMounted()) {
+                if (virtualFileSystem.sessionsCompleted()) {
+                    try {
+                        virtualFileSystem.unmountAndEndSessions();
+                    } catch (Exception ex) {
+                        ex.printStackTrace(System.err);
+                    }
+                    break WAIT_FOR_SPLITS_TO_FINISH;
+                }
+                Thread.sleep(1000);
             }
-            Thread.sleep(1000);
+        } catch (InterruptedException ie) {
+            // the stop button pressed
+            ie.printStackTrace(System.err);
         }
 
         if (totalDownload >= jdds.getDownloadLink().getDownloadSize()) {
             jdds.getDownloadLink().getLinkStatus().addStatus(LinkStatus.FINISHED);
 
             final AtomicBoolean done = new AtomicBoolean(false);
+            // the task of completing session done in another thread
+            // When stop button is pressed, this task is aborted as io channels
+            // throw an inturrupt exception. We want to give this sometime to
+            // complete
+            // if it takes too long, we might want to stop it.
             Thread thread = new Thread() {
                 @Override
                 public void run() {
@@ -292,16 +317,47 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
                 jdds.getWatchAsYouDownloadSession().getSeekableConnectionFile().close();
             } catch (final Throwable e) {
             } finally {
-                thread.interrupt();
+                try {
+                    thread.join();
+                } catch (InterruptedException e) {
+                    Logger.getGlobal().log(Level.SEVERE, "Problem in completing session", e);
+                }
             }
             PostProcessors.downloadComplete(jdds.getDownloadLink());
         } else {
-            jdds.getWatchAsYouDownloadSession().getSeekableConnectionFile().getFileStorageManager().close();
+            try {
+                jdds.getWatchAsYouDownloadSession().getSeekableConnectionFile().getFileStorageManager().close();
+            } catch (Exception a) {
+                a.printStackTrace(System.err);
+            }
             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
         }
     }
 
     private void updateProgress(Chunk ch) {
+        totalDownload = getTotalDownloadedFor(jdds);
+
+        //        downloadinterface.setTotalLinkBytesLoaded
+        //	jiaz	or addToTotalLinkBytesLoaded
+        //	jiaz	you have to set those infos in downloadinterface
+        //	Shashaank	k
+        //	jiaz	by addToTotalLinkBytesLoaded or setTotalLinkBytesLoaded you can influence the progress
+        //	jiaz	about speed
+        //	jiaz	you have to add a connection into managedConntectionHandler
+        //	jiaz	of the downloadinterface
+        //	jiaz	getManagedConnetionHandler
+        //	Shashaank	can it be a fake connection ... let me try
+        //	jiaz	and there you can add addThrottledConnection(ThrottledConnection
+        //	jiaz	yes can be fake
+        //	jiaz	the fake connection just have to implement the interface (simple getter)
+        jdds.getDownloadInterface().setTotalLinkBytesLoaded(totalDownload);
+        //jdds.getDownloadLink().setDownloadCurrent(total);
+        //jdds.getDownloadLink().setChunksProgress(new long[] { total });
+        // jdds.getDownloadLink().requestGuiUpdate();
+        // jdds.getDownloadInterface().addToChunksInProgress(total);
+    }
+    
+    public static long getTotalDownloadedFor(DownloadSession jdds){
         UnsyncRangeArrayCopy<ReadRequestState> handlers = jdds.getWatchAsYouDownloadSession().getSeekableConnectionFile().getTotalFileReadStatistics().getReadRequestStates();
         // ReadRequestState is equivalent to a JD Chunk
 
@@ -310,12 +366,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
             total += handlers.get(i).ending() - handlers.get(i).starting() + 1;
         }
 
-        totalDownload = total;
-
-        jdds.getDownloadLink().setDownloadCurrent(total);
-        jdds.getDownloadLink().setChunksProgress(new long[] { total });
-        // jdds.getDownloadLink().requestGuiUpdate();
-        // jdds.getDownloadInterface().addToChunksInProgress(total);
+        return total;
     }
 
 }

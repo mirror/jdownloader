@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jd.controlling.GarbageController;
@@ -1307,7 +1308,13 @@ abstract public class DownloadInterface {
                     org.jdownloader.extensions.neembuu.DownloadSession downloadSession = new org.jdownloader.extensions.neembuu.DownloadSession(downloadLink, this, this.plugin, this.getConnection(), this.browser.cloneBrowser());
                     if (org.jdownloader.extensions.neembuu.NeembuuExtension.tryHandle(downloadSession)) {
                         org.jdownloader.extensions.neembuu.WatchAsYouDownloadSession watchAsYouDownloadSession = downloadSession.getWatchAsYouDownloadSession();
-                        watchAsYouDownloadSession.waitForDownloadToFinish();
+                        try{
+                            watchAsYouDownloadSession.waitForDownloadToFinish();
+                        }catch(Exception a){
+                            logger.log(Level.SEVERE,"Exception in waiting for neembuu watch as you download",a);
+                            // if we do not return, normal download would start.
+                            return false;
+                        }
                         return true;
                     }
                     int o = 0;
@@ -1320,6 +1327,7 @@ abstract public class DownloadInterface {
                     logger.severe("Neembuu could not handle this link/filehost. Using default download system.");
                 }
             } catch (final Throwable e) {
+                logger.log(Level.SEVERE,"Exception in neembuu watch as you download",e);
             }
 
             logger.finer("Start Download");
