@@ -368,7 +368,7 @@ public class LinkStatus implements Serializable {
     }
 
     public boolean isFailed() {
-        return !isActive && !inProgress && !hasOnlyStatus(FINISHED | ERROR_ALREADYEXISTS | ERROR_IP_BLOCKED | TODO | DOWNLOADINTERFACE_IN_PROGRESS | WAITING_USERIO);
+        return !isActive && !inProgress && !hasOnlyStatus(FINISHED | ERROR_ALREADYEXISTS | ERROR_IP_BLOCKED | TODO | DOWNLOADINTERFACE_IN_PROGRESS | WAITING_USERIO | ERROR_PREMIUM);
     }
 
     public boolean isPluginActive() {
