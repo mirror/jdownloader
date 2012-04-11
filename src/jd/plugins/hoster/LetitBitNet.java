@@ -174,52 +174,59 @@ public class LetitBitNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.submitForm(freeForm);
-        Form down = null;
-        Form[] allforms = br.getForms();
-        if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        boolean skipfirst = true;
-        for (Form singleform : allforms) {
-            if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && singleform.getAction().contains("iframe")) {
-                if (skipfirst == false) {
-                    skipfirst = true;
-                    continue;
-                }
-                down = singleform;
-                break;
-            }
-        }
-        if (down == null || down.getAction() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String captchaId = down.getVarsMap().get("uid");
-        down.setMethod(Form.MethodType.POST);
-        if (captchaId != null) down.put("uid2", captchaId);
-        br.submitForm(down);
-        if ("RU".equals(br.getCookie("http://letitbit.net", "country"))) {
-            /*
-             * special handling for RU,seems they get an extra *do you want to
-             * buy or download for free* page
-             */
-            allforms = br.getForms();
-            if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            skipfirst = true;
-            for (Form singleform : allforms) {
-                if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && singleform.getAction().contains("iframe")) {
-                    if (skipfirst == false) {
-                        skipfirst = true;
-                        continue;
-                    }
-                    down = singleform;
-                    break;
-                }
-            }
-            if (down != null) {
-                down.setMethod(Form.MethodType.POST);
-                br.submitForm(down);
-            }
-        }
-        final Form freeContinue = br.getFormbyProperty("id", "d3_form");
-        if (freeContinue == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        freeContinue.remove("uid2");
-        br.submitForm(freeContinue);
+        /** Rev 16219 */
+        // Form down = null;
+        // Form[] allforms = br.getForms();
+        // if (allforms == null) throw new
+        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // boolean skipfirst = true;
+        // for (Form singleform : allforms) {
+        // if (singleform.containsHTML("md5crypt") && singleform.getAction() !=
+        // null && singleform.getAction().contains("iframe")) {
+        // if (skipfirst == false) {
+        // skipfirst = true;
+        // continue;
+        // }
+        // down = singleform;
+        // break;
+        // }
+        // }
+        // if (down == null || down.getAction() == null) throw new
+        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // String captchaId = down.getVarsMap().get("uid");
+        // down.setMethod(Form.MethodType.POST);
+        // if (captchaId != null) down.put("uid2", captchaId);
+        // br.submitForm(down);
+        // if ("RU".equals(br.getCookie("http://letitbit.net", "country"))) {
+        // /*
+        // * special handling for RU,seems they get an extra *do you want to
+        // * buy or download for free* page
+        // */
+        // allforms = br.getForms();
+        // if (allforms == null) throw new
+        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // skipfirst = true;
+        // for (Form singleform : allforms) {
+        // if (singleform.containsHTML("md5crypt") && singleform.getAction() !=
+        // null && singleform.getAction().contains("iframe")) {
+        // if (skipfirst == false) {
+        // skipfirst = true;
+        // continue;
+        // }
+        // down = singleform;
+        // break;
+        // }
+        // }
+        // if (down != null) {
+        // down.setMethod(Form.MethodType.POST);
+        // br.submitForm(down);
+        // }
+        // }
+        // final Form freeContinue = br.getFormbyProperty("id", "d3_form");
+        // if (freeContinue == null) throw new
+        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // freeContinue.remove("uid2");
+        // br.submitForm(freeContinue);
         final String serverPart = br.getRegex("\\$\\.post\\(\"(/ajax/download\\d+\\.php)\"").getMatch(0);
         if (serverPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         int wait = 60;

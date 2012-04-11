@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +27,6 @@ import jd.gui.UserIO;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -36,7 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickr\\.com/photos/[^<>\"/]+((/galleries)?/(\\d+|page\\d+|sets/\\d+))?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickr\\.com/photos/[^<>\"/]+(/galleries)?/(page\\d+|sets/\\d+)" }, flags = { 0 })
 public class FlickrCom extends PluginForDecrypt {
 
     public FlickrCom(PluginWrapper wrapper) {
@@ -64,142 +62,47 @@ public class FlickrCom extends PluginForDecrypt {
         /** Login is not always needed but we force it to get all pictures */
         getUserLogin();
         br.getPage(parameter);
-        if (new Regex(parameter, "http://(www\\.)?flickr\\.com/photos/[a-z0-9_\\-]+/\\d+").matches()) {
-            String filename = getFilename();
-            if (br.containsHTML("(photo\\-div video\\-div|class=\"video\\-wrapper\")")) {
-                final String lq = createGuid();
-                final String secret = br.getRegex("photo_secret=(.*?)\\&").getMatch(0);
-                final String nodeID = br.getRegex("data\\-comment\\-id=\"(\\d+\\-\\d+)\\-").getMatch(0);
-                if (secret == null || nodeID == null || filename == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                br.getPage("http://www.flickr.com/video_playlist.gne?node_id=" + nodeID + "&tech=flash&mode=playlist&lq=" + lq + "&bitrate=700&secret=" + secret + "&rd=video.yahoo.com&noad=1");
-                final Regex parts = br.getRegex("<STREAM APP=\"(http://.*?)\" FULLPATH=\"(/.*?)\"");
-                final String part1 = parts.getMatch(0);
-                final String part2 = parts.getMatch(1);
-                if (part1 == null || part2 == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                filename += ".flv";
-                DownloadLink finalDownloadlink = createDownloadlink(part1 + part2.replace("&amp;", "&"));
-                finalDownloadlink.setFinalFileName(filename);
-                decryptedLinks.add(finalDownloadlink);
-            } else {
-                DownloadLink finalDownloadlink = decryptSingleLink(parameter);
-                if (finalDownloadlink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                decryptedLinks.add(finalDownloadlink);
+        String fpName = br.getRegex("<title>Flickr: ([^<>\"/]+)</title>").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("\"search_default\":\"Search ([^<>\"/]+)\"").getMatch(0);
+        /**
+         * Handling for albums/sets Only decrypt all pages if user did NOT add a
+         * direct page link
+         * */
+        if (!parameter.contains("/page")) {
+            final String[] picpages = br.getRegex("data\\-track=\"page\\-(\\d+)\"").getColumn(0);
+            if (picpages != null && picpages.length != 0) {
+                for (String picpage : picpages)
+                    pages.add(Integer.parseInt(picpage));
             }
-        } else if (new Regex(parameter, "flickr\\.com/photos/[^<>\"/]+/\\d+").matches()) {
-            DownloadLink finalDownloadlink = decryptSingleLink(parameter);
-            if (finalDownloadlink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            decryptedLinks.add(finalDownloadlink);
-        } else {
-            String fpName = br.getRegex("<title>Flickr: ([^<>\"/]+)</title>").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("\"search_default\":\"Search ([^<>\"/]+)\"").getMatch(0);
-            /**
-             * Handling for albums/sets Only decrypt all pages if user did NOT
-             * add a direct page link
-             * */
-            if (!parameter.contains("/page")) {
-                final String[] picpages = br.getRegex("data\\-track=\"page\\-(\\d+)\"").getColumn(0);
-                if (picpages != null && picpages.length != 0) {
-                    for (String picpage : picpages)
-                        pages.add(Integer.parseInt(picpage));
-                }
-            }
-            final int lastPage = pages.get(pages.size() - 1);
-            for (int i = 1; i <= lastPage; i++) {
-                if (i != 1) br.getPage(parameter + "/page" + i);
-                final String[] regexes = { "data\\-track=\"photo\\-click\" href=\"(/photos/[^<>\"\\'/]+/\\d+)" };
-                for (String regex : regexes) {
-                    String[] links = br.getRegex(regex).getColumn(0);
-                    if (links != null && links.length != 0) {
-                        for (String singleLink : links) {
-                            if (!addLinks.contains(singleLink)) addLinks.add(singleLink);
-                        }
+        }
+        final int lastPage = pages.get(pages.size() - 1);
+        for (int i = 1; i <= lastPage; i++) {
+            if (i != 1) br.getPage(parameter + "/page" + i);
+            final String[] regexes = { "data\\-track=\"photo\\-click\" href=\"(/photos/[^<>\"\\'/]+/\\d+)" };
+            for (String regex : regexes) {
+                String[] links = br.getRegex(regex).getColumn(0);
+                if (links != null && links.length != 0) {
+                    for (String singleLink : links) {
+                        if (!addLinks.contains(singleLink)) addLinks.add(singleLink);
                     }
                 }
             }
-            if (addLinks == null || addLinks.size() == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (String singleLink : addLinks) {
-                DownloadLink finalDownloadlink = decryptSingleLink("http://www.flickr.com" + singleLink);
-                if (finalDownloadlink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                decryptedLinks.add(finalDownloadlink);
-            }
-            if (fpName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
-            }
+        }
+        if (addLinks == null || addLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        for (String aLink : addLinks) {
+            DownloadLink dl = createDownloadlink("http://www.flickr.com" + aLink);
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
+        }
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
-    }
-
-    private String createGuid() {
-        String a = "";
-        final String b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._";
-        int c = 0;
-        while (c < 22) {
-            final int index = (int) Math.floor(Math.random() * b.length());
-            a = a + b.substring(index, index + 1);
-            c++;
-        }
-        return a;
-    }
-
-    /** Get single links and set nice filenames */
-    private DownloadLink decryptSingleLink(String parameter) throws IOException {
-        br.getPage(parameter + "/in/photostream");
-        String filename = getFilename();
-        String link = getFinalLink();
-        if (link == null) link = br.getRegex("\"(http://farm\\d+\\.(static\\.flickr|staticflickr)\\.com/\\d+/.*?)\"").getMatch(0);
-        DownloadLink fina = null;
-        if (link != null) {
-            fina = createDownloadlink(link);
-            String ext = link.substring(link.lastIndexOf("."));
-            if (ext != null && filename != null) {
-                if (ext == null || ext.length() > 5) ext = ".jpg";
-                filename = Encoding.htmlDecode(filename.trim() + ext);
-                fina.setFinalFileName(filename);
-            }
-            fina.setFinalFileName(filename);
-        }
-        return fina;
-    }
-
-    private String getFinalLink() {
-        final String[] sizes = { "l", "z", "m", "n", "s", "t", "q", "sq" };
-        String finallink = null;
-        for (String size : sizes) {
-            finallink = br.getRegex(size + ": \\{[\t\n\r ]+url: \\'(http://[^<>\"]*?)\\',[\t\n\r ]+").getMatch(0);
-            if (finallink != null) break;
-        }
-        return finallink;
-    }
-
-    private String getFilename() {
-        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\">").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("class=\"photo\\-title\">(.*?)</h1").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>(.*?) \\| Flickr \\- (F|Ph)otosharing\\!</title>").getMatch(0);
-            }
-        }
-        return filename;
     }
 
     @SuppressWarnings("unchecked")

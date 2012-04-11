@@ -39,7 +39,8 @@ import jd.utils.JDUtilities;
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN    = "vk.com";
-
+    private static final Object LOCK      = new Object();
+    private static boolean      loaded    = false;
     private String              FINALLINK = null;
 
     public VKontakteRuHoster(PluginWrapper wrapper) {
@@ -105,7 +106,18 @@ public class VKontakteRuHoster extends PluginForHost {
          * Decrypter will always have working cookies so we can just get em from
          * // there ;)
          */
-        final PluginForDecrypt vkontakteDecrypter = JDUtilities.getPluginForDecrypt("vkontakte.ru");
+        PluginForDecrypt vkontakteDecrypter = null;
+        if (loaded == false) {
+            synchronized (LOCK) {
+                if (loaded == false) {
+                    /*
+                     * we only have to load this once, to make sure its loaded
+                     */
+                    vkontakteDecrypter = JDUtilities.getPluginForDecrypt("vkontakte.ru");
+                }
+                loaded = true;
+            }
+        }
         final Object ret = vkontakteDecrypter.getPluginConfig().getProperty("cookies", null);
         String albumID = link.getStringProperty("albumid");
         String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
@@ -135,6 +147,7 @@ public class VKontakteRuHoster extends PluginForHost {
             /* large image */
             if (FINALLINK == null || (FINALLINK != null && !linkOk(link))) {
                 String base = new Regex(correctedBR, "\"id\":\"" + photoID + "\",\"base\":\"(http://.*?)\"").getMatch(0);
+                if (base == null) base = "";
                 String section = new Regex(correctedBR, "(\\{\"id\":\"" + photoID + "\",\"base\":\"" + base + ".*?)((,\\{)|$)").getMatch(0);
                 if (base != null) FINALLINK = new Regex(section, "\"id\":\"" + photoID + "\",\"base\":\"" + base + "\".*?\"" + q + "src\":\"(" + base + ".*?)\"").getMatch(0);
             } else {

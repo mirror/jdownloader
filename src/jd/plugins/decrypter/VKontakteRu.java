@@ -39,7 +39,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+)|(photos|id|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+|video_ext\\.php\\?oid=\\d+\\&id=\\d+)|(photos|id|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -88,7 +88,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (parameter.matches(".*?vk\\.com/audio.*?")) {
                     /** Audio playlists */
                     decryptedLinks = decryptAudioAlbum(decryptedLinks, parameter);
-                } else if (parameter.matches(".*?vk\\.com/video(\\-)?\\d+_\\d+")) {
+                } else if (parameter.matches(".*?vk\\.com/(video(\\-)?\\d+_\\d+|video_ext\\.php\\?oid=\\d+\\&id=\\d+)")) {
                     /** Single video */
                     decryptedLinks = decryptSingleVideo(decryptedLinks, parameter);
                 } else if (parameter.matches(".*?(tag|album(\\-)?\\d+_|photos|id)\\d+")) {
@@ -157,8 +157,15 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> decryptSingleVideo(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
+        final Regex vids = new Regex(parameter, "/video_ext\\.php\\?oid=(\\d+)\\&id=(\\d+)");
+        if (vids.getMatches().length == 1) {
+            parameter = "http://vk.com/video" + vids.getMatch(0) + "_" + vids.getMatch(1);
+        }
         br.getPage(parameter);
-        if (br.containsHTML("class=\"button_blue\"><button id=\"msg_back_button\">Wr\\&#243;\\&#263;</button>")) return decryptedLinks;
+        if (br.containsHTML("class=\"button_blue\"><button id=\"msg_back_button\">Wr\\&#243;\\&#263;</button>")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         DownloadLink finallink = findVideolink(parameter);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter + "\n");

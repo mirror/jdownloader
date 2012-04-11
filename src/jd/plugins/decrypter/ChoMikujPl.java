@@ -53,7 +53,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             problem = parameter.substring(parameter.lastIndexOf(","));
         } catch (Exception e) {
         }
-        if (problem != null && problem.endsWith(".avi")) parameter = parameter.replace(problem, "");
+        if (problem != null) parameter = parameter.replace(problem, "");
         parameter = parameter.replace("www.", "");
         // The message used on errors in this plugin
         String error = "Error while decrypting link: " + parameter;
@@ -101,7 +101,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         String folderID = br.getRegex("type=\"hidden\" name=\"FolderId\" value=\"(\\d+)\"").getMatch(0);
         if (folderID == null) folderID = br.getRegex("name=\"folderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
         final String requestVerificationToken = br.getRegex("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"\\']+)\"").getMatch(0);
-        if (folderID == null || fpName == null || requestVerificationToken == null || requestVerificationToken == null) {
+        if (folderID == null || fpName == null || requestVerificationToken == null) {
             logger.warning(error);
             return null;
         }
