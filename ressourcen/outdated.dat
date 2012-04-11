@@ -746,3 +746,5 @@ jd/plugins/decrypter/LnkBCm.class
 jd/plugins/hoster/BatubiaCom.class
 jd/plugins/hoster/MegaFreeKz.class
 jd/plugins/decrypter/FuHdBz.class
+jd/plugins/decrypter/RsLrCm.class
+jd/captcha/methods/rslr
