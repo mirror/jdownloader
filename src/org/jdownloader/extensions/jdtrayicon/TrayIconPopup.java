@@ -83,6 +83,8 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
 
     private transient Thread          hideThread;
 
+    private JDSpinner                 spMaxDlsPerHost;
+
     public TrayIconPopup() {
         // required. JWindow needs a parent to grant a nested Component focus
         super(JDGui.getInstance().getMainFrame());
@@ -102,7 +104,7 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
         content.add(new JSeparator(), "growx, spanx");
         content.add(quickConfigPanel);
         content.add(new JSeparator(), "growx, spanx");
-        content.add(bottomPanel);
+        content.add(bottomPanel, "pushx,growx");
         content.add(new JSeparator(), "growx, spanx");
         content.add(exitPanel);
         content.setBorder(BorderFactory.createLineBorder(content.getBackground().darker()));
@@ -209,16 +211,23 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
         spMaxDls.setToolTipText(T._.gui_tooltip_statusbar_simultan_downloads());
         spMaxDls.getSpinner().addChangeListener(this);
 
+        spMaxDlsPerHost = new JDSpinner(T._.plugins_trayicon_popup_bottom_simdlsperhost(), "width 60!,h 20!,right");
+        spMaxDlsPerHost.getSpinner().setModel(new SpinnerNumberModel(JsonConfig.create(GeneralSettings.class).getMaxSimultaneDownloadsPerHost(), 1, 20, 1));
+        spMaxDlsPerHost.setToolTipText(T._.gui_tooltip_statusbar_simultan_downloads_perhost());
+        spMaxDlsPerHost.getSpinner().addChangeListener(this);
+
         spMaxChunks = new JDSpinner(T._.plugins_trayicon_popup_bottom_simchunks(), "width 60!,h 20!,right");
         spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile(), 1, 20, 1));
         spMaxChunks.setToolTipText(T._.gui_tooltip_statusbar_max_chunks());
         spMaxChunks.getSpinner().addChangeListener(this);
 
-        bottomPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[]2[]2[]"));
+        bottomPanel = new JPanel(new MigLayout("ins 0, wrap 1,debug", "[grow, fill]", "[]2[]2[]2[]"));
         bottomPanel.setOpaque(false);
         bottomPanel.add(spMaxSpeed);
         bottomPanel.add(spMaxDls);
+        bottomPanel.add(spMaxDlsPerHost);
         bottomPanel.add(spMaxChunks);
+
     }
 
     private void addMenuEntry(JPanel panel, AppAction actionId) {

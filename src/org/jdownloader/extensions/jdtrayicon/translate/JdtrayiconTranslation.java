@@ -37,6 +37,9 @@ public interface JdtrayiconTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Simultaneous downloads" })
     String plugins_trayicon_popup_bottom_simdls();
 
+    @Default(lngs = { "en" }, values = { "Simultaneous downloads per Hoster" })
+    String plugins_trayicon_popup_bottom_simdlsperhost();
+
     @Default(lngs = { "en" }, values = { "Enter Password to open from Tray" })
     String plugins_optional_JDLightTray_passwordRequired();
 
@@ -69,6 +72,9 @@ public interface JdtrayiconTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Maximum simultaneous Downloads [1..20]" })
     String gui_tooltip_statusbar_simultan_downloads();
+
+    @Default(lngs = { "en" }, values = { "Maximum simultaneous Downloads per Hoster[1..20]" })
+    String gui_tooltip_statusbar_simultan_downloads_perhost();
 
     @Default(lngs = { "en" }, values = { "Max. Connections/File" })
     String gui_tooltip_statusbar_max_chunks();
@@ -114,4 +120,5 @@ public interface JdtrayiconTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Exit JDownloader" })
     String popup_exit();
+
 }

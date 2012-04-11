@@ -32,6 +32,8 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionControllerListener;
 import org.jdownloader.extensions.LazyExtension;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class AddonsMenu extends JMenu implements ExtensionControllerListener {
@@ -52,8 +54,10 @@ public class AddonsMenu extends JMenu implements ExtensionControllerListener {
 
     private void updateMenu() {
 
-        add(new LogAction());
-
+        JMenu windows = new JMenu(_GUI._.AddonsMenu_updateMenu_windows_());
+        windows.setIcon(NewTheme.I().getIcon("tab", 22));
+        add(windows);
+        windows.add(new LogAction());
         ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsPress = new ArrayList<JMenuItem>();
@@ -85,7 +89,7 @@ public class AddonsMenu extends JMenu implements ExtensionControllerListener {
 
                 if (plg.getShowGuiAction() != null) {
 
-                    itemsToggle.add(new JCheckBoxMenuItem(plg.getShowGuiAction()));
+                    windows.add(new JCheckBoxMenuItem(plg.getShowGuiAction()));
 
                 }
             }

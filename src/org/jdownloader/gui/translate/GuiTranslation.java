@@ -3670,4 +3670,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Custom Speedlimit" })
     String SpeedLimitator_SpeedLimitator_object_();
 
+    @Default(lngs = { "en" }, values = { "Windows" })
+    String AddonsMenu_updateMenu_windows_();
+
 }

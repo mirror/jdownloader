@@ -14,6 +14,7 @@ import javax.swing.JLabel;
 import javax.swing.JSeparator;
 
 import jd.controlling.IOEQ;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -191,12 +192,21 @@ public class SetDownloadFolderInDownloadTableAction extends AppAction {
                         pkg.setCreated(System.currentTimeMillis());
 
                         pkg.setName(entry.getKey().getName());
+                        pkg.setComment(entry.getKey().getComment());
+                        ArrayList<String> pws = new ArrayList<String>();
+                        for (String s : entry.getKey().getPasswordList()) {
+                            pws.add(s);
 
+                        }
+                        pkg.setPasswordList(pws);
+                        pkg.getProperties().putAll(entry.getKey().getProperties());
                         pkg.setDownloadDirectory(dest[0].getAbsolutePath());
                         IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>() {
 
                             @Override
                             protected Object run() {
+
+                                DownloadController.getInstance().addmoveChildren(pkg, entry.getValue(), -1);
                                 // LinkCollector.getInstance().addmoveChildren(pkg,
                                 // entry.getValue(), -1);
                                 return null;

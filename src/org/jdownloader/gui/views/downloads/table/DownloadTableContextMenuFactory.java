@@ -109,7 +109,7 @@ public class DownloadTableContextMenuFactory {
             // NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)));
             // popup.add(m);
         }
-        for (JMenuItem mm : fillPropertiesMenu(contextObject, selection, column, fps)) {
+        for (JMenuItem mm : fillPropertiesMenu(contextObject, selection, column)) {
             properties.add(mm);
         }
         popup.add(new JSeparator());
@@ -158,7 +158,7 @@ public class DownloadTableContextMenuFactory {
         return popup;
     }
 
-    private ArrayList<JMenuItem> fillPropertiesMenu(AbstractNode contextObject, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column, ArrayList<FilePackage> fps) {
+    public static ArrayList<JMenuItem> fillPropertiesMenu(AbstractNode contextObject, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column) {
         ArrayList<AbstractNode> inteliSelect = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<AbstractNode>());
         ArrayList<JMenuItem> ret = new ArrayList<JMenuItem>();
         ret.add(new JMenuItem(new EnabledAction(new ArrayList<AbstractNode>(inteliSelect))));
