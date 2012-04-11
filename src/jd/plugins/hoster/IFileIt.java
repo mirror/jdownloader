@@ -25,7 +25,6 @@ import javax.script.ScriptEngineManager;
 import jd.PluginWrapper;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
@@ -44,7 +43,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifile.it" }, urls = { "http://(www\\.)?ifile\\.it/[a-z0-9]+" }, flags = { 2 })
 public class IFileIt extends PluginForHost {
 
-    private final String        useragent               = RandomUserAgent.generate();
+    private final String        useragent               = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:11.0) Gecko/20100101 Firefox/11.0";
 
     /* must be static so all plugins share same lock */
     private static final Object LOCK                    = new Object();
@@ -178,7 +177,7 @@ public class IFileIt extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         showDialog = true;
         try {
-            loginAPI(account, ai);
+            loginAPI(account, ai, true);
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
@@ -237,8 +236,14 @@ public class IFileIt extends PluginForHost {
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
         showDialog = false;
-        loginAPI(account, null);
+        loginAPI(account, null, false);
         if (account.getProperty("typ", null).equals("free")) {
+            /* without this we always get a captcha! */
+            br = new Browser();
+            updateBrowser(br);
+            loginAPI(account, null, false);
+            /* needed as if_skey seems different without this */
+            br.getPage("http://ifile.it/?t=" + System.currentTimeMillis());
             br.getPage(downloadLink.getDownloadURL());
             doFree(downloadLink, true, true);
         } else {
@@ -269,7 +274,7 @@ public class IFileIt extends PluginForHost {
         return true;
     }
 
-    public void loginAPI(final Account account, AccountInfo ai) throws Exception {
+    public void loginAPI(final Account account, AccountInfo ai, boolean refresh) throws Exception {
         synchronized (LOCK) {
             if (ai == null) {
                 ai = account.getAccountInfo();
@@ -278,31 +283,40 @@ public class IFileIt extends PluginForHost {
                     account.setAccountInfo(ai);
                 }
             }
-            if (account.getProperty("akey", null) != null) { return; }
-            /* login get apikey */
-            br.postPage("https://secure.ifile.it/api-fetch_apikey.api", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            final String[] response = br.getRegex("\\{\"status\":\"(.*?)\",\"(.*?)\":\"(.*?)\"\\}").getRow(0);
-            if (response == null || response.length != 3 || response[0].equals("error")) {
-                if (response[1].equals("message")) {
-                    if (response[2].equals("invalid username and\\/or password")) {
-                        if (showDialog) {
-                            UserIO.getInstance().requestMessageDialog(0, "ifile.it Account Error", "Invalid username '" + account.getUser() + "' and/or password.\r\nPlease check your Account!");
+            updateBrowser(br);
+            if (refresh || account.getProperty("akey", null) == null) {
+                /* login get apikey */
+                br.postPage("https://secure.ifile.it/api-fetch_apikey.api", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                final String[] response = br.getRegex("\\{\"status\":\"(.*?)\",\"(.*?)\":\"(.*?)\"\\}").getRow(0);
+                if (response == null || response.length != 3 || response[0].equals("error")) {
+                    if (response[1].equals("message")) {
+                        if (response[2].equals("invalid username and\\/or password")) {
+                            if (showDialog) {
+                                UserIO.getInstance().requestMessageDialog(0, "ifile.it Account Error", "Invalid username '" + account.getUser() + "' and/or password.\r\nPlease check your Account!");
+                            }
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("akey", response[2]);
             }
-            account.setProperty("name", Encoding.urlEncode(account.getUser()));
-            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-            account.setProperty("akey", response[2]);
+            br.setCookie("http://ifile.it", "if_akey", account.getStringProperty("akey", null));
         }
+    }
+
+    private void updateBrowser(Browser br) {
+        if (br == null) return;
+        br.getHeaders().put("User-Agent", useragent);
+        br.getHeaders().put("Accept-Language", "de,de-de;q=0.7,en;q=0.3");
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
-        br.getHeaders().put("User-Agent", useragent);
+        updateBrowser(br);
         br.setRequestIntervalLimit(getHost(), 250);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -333,7 +347,10 @@ public class IFileIt extends PluginForHost {
     }
 
     private void xmlrequest(final Browser br, final String url, final String postData) throws IOException {
+        br.getHeaders().put("User-Agent", useragent);
+        br.getHeaders().put("Accept-Language", "de,de-de;q=0.7,en;q=0.3");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.postPage(url, postData);
         br.getHeaders().remove("X-Requested-With");
     }

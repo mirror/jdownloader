@@ -59,10 +59,28 @@ public class ShurLoadEs extends PluginForHost {
             if (aa == null || !aa.isValid()) { return false; }
             login(aa);
             for (DownloadLink dl : urls) {
-                URLConnectionAdapter con = br.openGetConnection(dl.getDownloadURL());
-                dl.setFinalFileName(getFileNameFromHeader(con));
-                dl.setDownloadSize(con.getLongContentLength());
-                dl.setAvailable(true);
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openGetConnection(dl.getDownloadURL());
+                    if (!con.isContentDisposition()) {
+                        br.followConnection();
+                        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.php")) {
+                            aa.setValid(false);
+                            aa.setEnabled(false);
+                            return false;
+                        } else {
+                            dl.setAvailable(false);
+                        }
+                    }
+                    dl.setFinalFileName(getFileNameFromHeader(con));
+                    dl.setDownloadSize(con.getLongContentLength());
+                    dl.setAvailable(true);
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
             }
         } catch (Exception e) {
             return false;
@@ -91,12 +109,12 @@ public class ShurLoadEs extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MIN_VALUE;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return 10;
     }
 
     @Override
