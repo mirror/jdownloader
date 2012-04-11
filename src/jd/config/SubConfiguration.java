@@ -63,7 +63,6 @@ public class SubConfiguration extends Property implements Serializable {
     public void save() {
         if (valid) {
             json.save();
-            changes = false;
         }
     }
 

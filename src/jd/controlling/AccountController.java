@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.http.Browser;
@@ -237,6 +238,7 @@ public class AccountController implements AccountControllerListener {
         }
         logger.logInto(JDLogger.getLogger());
         return ai;
+
     }
 
     public static AccountController getInstance() {
@@ -369,13 +371,64 @@ public class AccountController implements AccountControllerListener {
         return list(null);
     }
 
-    /* checks for available accounts for given host */
+    /* do we have accounts for this host */
     public boolean hasAccounts(final String host) {
         ArrayList<Account> ret = null;
         synchronized (hosteraccounts) {
             ret = hosteraccounts.get(host);
+            if (ret != null) {
+                for (Account acc : ret) {
+                    if (acc.isEnabled() && acc.isValid()) return true;
+                }
+            }
         }
-        return (ret != null && ret.size() > 0);
+        return false;
+    }
+
+    /* do we have multihost accounts for this host */
+    public boolean hasMultiHostAccounts(final String host) {
+        synchronized (hosteraccounts) {
+            Iterator<Entry<String, ArrayList<Account>>> it = hosteraccounts.entrySet().iterator();
+            while (it.hasNext()) {
+                Entry<String, ArrayList<Account>> next = it.next();
+                if (next.getKey().equalsIgnoreCase(host)) {
+                    /* we dont't want account from same host */
+                    continue;
+                }
+                for (Account acc : next.getValue()) {
+                    if (!acc.isEnabled() || !acc.isValid()) {
+                        /*
+                         * we remove every invalid/disabled/tempdisabled/blocked
+                         * account
+                         */
+                        continue;
+                    }
+                    AccountInfo ai = acc.getAccountInfo();
+                    if (ai == null) continue;
+                    Object supported = null;
+                    synchronized (ai) {
+                        /*
+                         * synchronized on accountinfo because properties are
+                         * not threadsafe
+                         */
+                        supported = ai.getProperty("multiHostSupport", Property.NULL);
+                    }
+                    if (Property.NULL == supported || supported == null) continue;
+                    synchronized (supported) {
+                        /*
+                         * synchronized on list because plugins can change the
+                         * list in runtime
+                         */
+                        if (supported instanceof ArrayList) {
+                            for (String sup : (ArrayList<String>) supported) {
+                                if (host.equalsIgnoreCase(sup)) { return true; }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     public void addAccount(final Account account) {
@@ -452,7 +505,55 @@ public class AccountController implements AccountControllerListener {
         return ret;
     }
 
-    @SuppressWarnings("unchecked")
+    public LinkedList<Account> getMultiHostAccounts(final String host) {
+        LinkedList<Account> ret = new LinkedList<Account>();
+        synchronized (hosteraccounts) {
+            Iterator<Entry<String, ArrayList<Account>>> it = hosteraccounts.entrySet().iterator();
+            while (it.hasNext()) {
+                Entry<String, ArrayList<Account>> next = it.next();
+                if (next.getKey().equalsIgnoreCase(host)) {
+                    /* we dont't want account from same host */
+                    continue;
+                }
+                for (Account acc : next.getValue()) {
+                    if (!acc.isEnabled() || !acc.isValid() || acc.isTempDisabled()) {
+                        /*
+                         * we remove every invalid/disabled/tempdisabled/blocked
+                         * account
+                         */
+                        continue;
+                    }
+                    AccountInfo ai = acc.getAccountInfo();
+                    if (ai == null) continue;
+                    Object supported = null;
+                    synchronized (ai) {
+                        /*
+                         * synchronized on accountinfo because properties are
+                         * not threadsafe
+                         */
+                        supported = ai.getProperty("multiHostSupport", Property.NULL);
+                    }
+                    if (Property.NULL == supported || supported == null) continue;
+                    synchronized (supported) {
+                        /*
+                         * synchronized on list because plugins can change the
+                         * list in runtime
+                         */
+                        if (supported instanceof ArrayList) {
+                            for (String sup : (ArrayList<String>) supported) {
+                                if (sup.equalsIgnoreCase(host)) {
+                                    ret.add(acc);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return ret;
+    }
+
     @Deprecated
     public ArrayList<Account> getAllAccounts(String string) {
         return (ArrayList<Account>) list(string);

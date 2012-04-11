@@ -21,9 +21,7 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.utils.JDUtilities;
 
 /**
  * Von dieser Klasse kann abgeleitet werden wenn die Neue Klasse Properties
@@ -45,8 +43,6 @@ public class Property implements Serializable {
     private HashMap<String, Object>  properties       = null;
     private HashMap<String, Integer> propertiesHashes = null;
 
-    protected transient boolean      changes          = false;
-
     public Property() {
     }
 
@@ -55,8 +51,8 @@ public class Property implements Serializable {
         stream.defaultReadObject();
         if (properties != null && properties.isEmpty()) {
             properties = null;
-            propertiesHashes = null;
         }
+        propertiesHashes = null;
     }
 
     /**
@@ -195,12 +191,6 @@ public class Property implements Serializable {
                 }
                 dest.properties.putAll(this.properties);
             }
-            if (propertiesHashes != null) {
-                if (dest.propertiesHashes == null) {
-                    dest.propertiesHashes = new HashMap<String, Integer>();
-                }
-                dest.propertiesHashes.putAll(this.propertiesHashes);
-            }
         }
     }
 
@@ -269,12 +259,11 @@ public class Property implements Serializable {
      * @param properties
      */
     public void setProperties(final HashMap<String, Object> properties) {
+        propertiesHashes = null;
         if (properties != null && properties.isEmpty()) {
             this.properties = null;
-            propertiesHashes = null;
         } else {
             this.properties = properties;
-            propertiesHashes = new HashMap<String, Integer>();
         }
     }
 
@@ -286,57 +275,21 @@ public class Property implements Serializable {
      */
     @SuppressWarnings("unchecked")
     public void setProperty(final String key, final Object value) {
-        final JDController controller = JDUtilities.getController();
         if (value == NULL) {
             if (properties != null && properties.containsKey(key)) {
                 properties.remove(key);
-                propertiesHashes.remove(key);
-                this.changes = true;
             }
             return;
         }
         if (properties == null) {
             properties = new HashMap<String, Object>();
         }
-        if (propertiesHashes == null) {
-            propertiesHashes = new HashMap<String, Integer>();
-        }
-
         final Object old = getProperty(key);
         if (old == null && value == null) {
             /* old and new values are null , so nothing changed */
             return;
         }
         properties.put(key, value);
-
-        final Integer oldHash = propertiesHashes.get(key);
-
-        /*
-         * check for null to avoid nullpointer due to .toString() method
-         */
-        propertiesHashes.put(key, (value == null) ? null : value.toString().hashCode());
-
-        if (controller != null) {
-            try {
-                if (old == null && value != null) {
-                    this.changes = true;
-                } else if (value instanceof Comparable) {
-                    if (((Comparable<Comparable<?>>) value).compareTo((Comparable<?>) old) != 0) {
-                        this.changes = true;
-                    }
-                } else {
-                    if (!value.equals(old) || oldHash != value.hashCode()) {
-                        this.changes = true;
-                    }
-                }
-            } catch (final Exception e) {
-                this.changes = true;
-            }
-        }
-    }
-
-    public boolean hasChanges() {
-        return changes;
     }
 
     /**

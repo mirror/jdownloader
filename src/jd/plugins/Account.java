@@ -110,6 +110,9 @@ public class Account extends Property {
 
     public void setValid(final boolean b) {
         valid = b;
+        if (valid == false) {
+            this.setEnabled(false);
+        }
     }
 
     public long lastUpdateTime() {

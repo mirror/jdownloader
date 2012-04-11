@@ -12,34 +12,24 @@ public class CompiledPluginStatusFiler extends PluginStatusFilter {
     }
 
     public boolean matches(CrawledLink link) {
+        /* TODO: do we want to check all accounts for hasCaptcha!? */
         switch (getMatchType()) {
         case IS:
             switch (getPluginStatus()) {
             case PREMIUM:
-                // TODO
-                return AccountController.getInstance().hasAccounts(link.getHost());
+                if (AccountController.getInstance().hasAccounts(link.getHost())) return true;
+                if (AccountController.getInstance().hasMultiHostAccounts(link.getHost())) return true;
             case AUTOCAPTCHA:
-                // TODO
-
-                return !link.hasCaptcha() || link.hasAutoCaptcha();
-
+                return link.hasAutoCaptcha() || !link.hasCaptcha(null);
             }
         case ISNOT:
-
             switch (getPluginStatus()) {
             case PREMIUM:
-                // TODO
-                return !AccountController.getInstance().hasAccounts(link.getHost());
-
+                if (!AccountController.getInstance().hasAccounts(link.getHost()) && !AccountController.getInstance().hasMultiHostAccounts(link.getHost())) return true;
             case AUTOCAPTCHA:
-                // TODO
-                return link.hasCaptcha() && !link.hasAutoCaptcha();
-
+                return !link.hasAutoCaptcha() && link.hasCaptcha(null);
             }
-
         }
-
         return false;
     }
-
 }

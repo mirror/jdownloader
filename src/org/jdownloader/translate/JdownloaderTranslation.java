@@ -213,6 +213,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Premium Error" })
     String downloadlink_status_error_premium();
 
+    @Default(lngs = { "en" }, values = { "No suitable account available" })
+    String downloadlink_status_error_premium_noacc();
+
     @Default(lngs = { "en" }, values = { "various" })
     String gui_linkgrabber_package_unsorted();
 

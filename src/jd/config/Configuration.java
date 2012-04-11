@@ -50,7 +50,6 @@ public class Configuration extends SubConfiguration implements Serializable {
     @Override
     public void save() {
         JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, this);
-        this.changes = false;
     }
 
     @Override

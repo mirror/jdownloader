@@ -13,12 +13,7 @@ import jd.gui.swing.laf.LookAndFeelWrapper;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonKeyValueStorage;
 import org.appwork.storage.Storage;
-import org.appwork.storage.StorageEvent;
-import org.appwork.storage.StorageKeyAddedEvent;
-import org.appwork.storage.StorageKeyRemovedEvent;
-import org.appwork.storage.StorageValueChangeEvent;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.reflection.Clazz;
 
@@ -29,7 +24,7 @@ import org.appwork.utils.reflection.Clazz;
  * @author thomas
  * 
  */
-public class JSonWrapper extends Property implements DefaultEventListener<StorageEvent<?>> {
+public class JSonWrapper extends Property {
     /**
      * 
      */
@@ -42,7 +37,6 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
 
     private JSonWrapper(Storage json) {
         this.storage = json;
-        storage.getEventSender().addListener(this);
         String str = ((JsonKeyValueStorage) storage).getFile().getAbsolutePath();
         path = str.substring(0, str.length() - (str.endsWith(".json") ? 5 : 4));
         plain = ((JsonKeyValueStorage) storage).isPlain();
@@ -247,28 +241,9 @@ public class JSonWrapper extends Property implements DefaultEventListener<Storag
         return new File(path + "." + key + (plain ? ".json" : ".ejs"));
     }
 
-    public boolean hasChanges() {
-        return changes;
-    }
-
     @Override
     public String toString() {
         return storage.toString();
-    }
-
-    public void onEvent(StorageEvent<?> event) {
-        // delegate events
-        if (event instanceof StorageKeyAddedEvent) {
-
-        } else if (event instanceof StorageValueChangeEvent) {
-            if (((StorageValueChangeEvent<?>) event).hasChanged()) {
-                changes = true;
-
-            }
-        } else if (event instanceof StorageKeyRemovedEvent) {
-            changes = true;
-
-        }
     }
 
     public void save() {

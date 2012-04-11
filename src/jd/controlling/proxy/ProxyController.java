@@ -568,10 +568,9 @@ public class ProxyController {
         if (removed) eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.REMOVED, proxy));
     }
 
-    public ProxyInfo getProxyForDownload(DownloadLink link, Account acc, boolean byPassMaxSimultanDownload) {
-        PluginForHost plugin = link.getDefaultPlugin();
-        final String host = plugin.getHost();
-        final int maxactive = plugin.getMaxSimultanDownload(acc);
+    public ProxyInfo getProxyForDownload(PluginForHost plugin, DownloadLink link, Account acc, boolean byPassMaxSimultanDownload) {
+        final String host = link.getHost();
+        final int maxactive = plugin.getMaxSimultanDownload(link, acc);
         if (acc != null) {
             /* an account must be used or waittime must be over */
             /*

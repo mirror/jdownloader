@@ -503,7 +503,13 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     }
 
     protected void onErrorPremium() {
-        if (linkStatus.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
+        if (linkStatus.getValue() == PluginException.VALUE_ID_PREMIUM_ONLY) {
+            linkStatus.addStatus(LinkStatus.TODO);
+            String text = linkStatus.getErrorMessage();
+            if (text == null) text = _JDT._.downloadlink_status_error_premium_noacc();
+            linkStatus.setStatusText(text);
+            return;
+        } else if (linkStatus.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
             logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
             account.setTempDisabled(true);
             account.getAccountInfo().setTrafficLeft(0);

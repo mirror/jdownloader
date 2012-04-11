@@ -156,13 +156,6 @@ public class LinkStatus implements Serializable {
         this.inProgress = false;
     }
 
-    /**
-     * Beispiel:HTTP-Plugin Ein als HTTP-Direktlink erkannter Link verweist auf
-     * den contenttype text/html was bedeutet, dass es sich wahrscheinlich um
-     * ein Hosting Service handelt für das es noch kein Plugin gibt.
-     */
-    public static final int                 ERROR_PLUGIN_NEEDED       = 1 << 30;
-
     public static final int                 NOT_ENOUGH_HARDDISK_SPACE = 1 << 31;
 
     private static HashMap<Integer, String> toStringHelper            = new HashMap<Integer, String>();
@@ -219,12 +212,13 @@ public class LinkStatus implements Serializable {
 
     private String getDefaultErrorMessage() {
         switch (lastestStatus) {
+        case LinkStatus.TODO:
+            if (statusText != null) return statusText;
+            return null;
         case LinkStatus.ERROR_RETRY:
             return _JDT._.downloadlink_status_error_retry();
         case LinkStatus.ERROR_PLUGIN_DEFECT:
             return _JDT._.downloadlink_status_error_defect();
-        case LinkStatus.ERROR_PLUGIN_NEEDED:
-            return _JDT._.downloadlink_status_error_no_plugin_available();
         case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
             return _JDT._.downloadlink_status_incomplete();
         case LinkStatus.ERROR_ALREADYEXISTS:
@@ -243,6 +237,8 @@ public class LinkStatus implements Serializable {
         case LinkStatus.ERROR_NO_CONNECTION:
             return _JDT._.downloadlink_status_error_no_connection();
         case LinkStatus.ERROR_PREMIUM:
+            if (errorMessage != null) return errorMessage;
+            if (PluginException.VALUE_ID_PREMIUM_ONLY == value) return _JDT._.downloadlink_status_error_premium_noacc();
             return _JDT._.downloadlink_status_error_premium();
         case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
             return _JDT._.downloadlink_status_error_temp_unavailable();

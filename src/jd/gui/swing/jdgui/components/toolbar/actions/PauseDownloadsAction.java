@@ -78,6 +78,9 @@ public class PauseDownloadsAction extends AbstractToolbarAction {
                 } else if (DownloadWatchDog.RUNNING_STATE == event.getNewState()) {
                     setEnabled(true);
                     setSelected(false);
+                } else if (DownloadWatchDog.PAUSE_STATE == event.getNewState()) {
+                    setEnabled(true);
+                    setSelected(true);
                 }
             }
         });

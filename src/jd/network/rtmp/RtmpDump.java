@@ -222,8 +222,8 @@ public class RtmpDump extends RTMPDownload {
                     // autoresuming when FMS sends NetStatus.Play.Stop and
                     // progress less than 100%
                     if (progressFloat < 99.8) {
-                        System.out.println("Versuch Nr.: " + downloadLink.getLinkStatus().getRetryCount() + " ::: " + plugin.getMaxRetries());
-                        if (downloadLink.getLinkStatus().getRetryCount() >= plugin.getMaxRetries()) {
+                        System.out.println("Versuch Nr.: " + downloadLink.getLinkStatus().getRetryCount() + " ::: " + plugin.getMaxRetries(downloadLink, null));
+                        if (downloadLink.getLinkStatus().getRetryCount() >= plugin.getMaxRetries(downloadLink, null)) {
                             downloadLink.getLinkStatus().setRetryCount(0);
                         }
                         downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);

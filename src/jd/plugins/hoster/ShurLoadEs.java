@@ -56,6 +56,19 @@ public class ShurLoadEs extends PluginForHost {
         if (urls == null || urls.length == 0) { return false; }
         try {
             Account aa = AccountController.getInstance().getValidAccount(this);
+            if (aa == null) {
+                try {
+                    for (DownloadLink dl : urls) {
+                        dl.getLinkStatus().setValue(PluginException.VALUE_ID_PREMIUM_ONLY);
+                        dl.getLinkStatus().setErrorMessage("Download only works with an account");
+                        dl.getLinkStatus().addStatus(LinkStatus.ERROR_PREMIUM);
+                        dl.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+                    }
+                    return true;
+                } catch (final Throwable e) {
+                    /* VALUE_ID_PREMIUM_ONLY not existing in old stable */
+                }
+            }
             if (aa == null || !aa.isValid()) { return false; }
             login(aa);
             for (DownloadLink dl : urls) {
@@ -71,10 +84,11 @@ public class ShurLoadEs extends PluginForHost {
                         } else {
                             dl.setAvailable(false);
                         }
+                    } else {
+                        dl.setFinalFileName(getFileNameFromHeader(con));
+                        dl.setDownloadSize(con.getLongContentLength());
+                        dl.setAvailable(true);
                     }
-                    dl.setFinalFileName(getFileNameFromHeader(con));
-                    dl.setDownloadSize(con.getLongContentLength());
-                    dl.setAvailable(true);
                 } finally {
                     try {
                         con.disconnect();
@@ -82,7 +96,7 @@ public class ShurLoadEs extends PluginForHost {
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return false;
         }
         return true;
@@ -109,6 +123,7 @@ public class ShurLoadEs extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
+        /* no downloads possible as free user */
         return Integer.MIN_VALUE;
     }
 
@@ -117,9 +132,26 @@ public class ShurLoadEs extends PluginForHost {
         return 10;
     }
 
+    /* no override to keep plugin compatible */
+    public boolean canHandle(final DownloadLink dl, final Account account) {
+        if (account == null) {
+            /* this host only supports premium downloads */
+            dl.getLinkStatus().setValue(PluginException.VALUE_ID_PREMIUM_ONLY);
+            dl.getLinkStatus().setErrorMessage("Download only works with an account");
+            dl.getLinkStatus().addStatus(LinkStatus.ERROR_PREMIUM);
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        try {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Download only works with an account", PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            /* not existing in old stable */
+        }
         throw new PluginException(LinkStatus.ERROR_FATAL, "Download only works with an account");
     }
 

@@ -560,7 +560,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                  * reset not if already exist, offline or finished. plugin
                  * errors will be reset here because plugin can be fixed again
                  */
-                localLink.getLinkStatus().resetStatus(LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED, LinkStatus.ERROR_FATAL);
+                localLink.getLinkStatus().resetStatus(LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED, LinkStatus.ERROR_FATAL, LinkStatus.TODO);
 
                 /* assign defaultPlugin matching the hostname */
                 try {

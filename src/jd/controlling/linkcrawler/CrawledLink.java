@@ -8,6 +8,7 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.http.Browser;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -377,8 +378,8 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return true;
     }
 
-    public boolean hasCaptcha() {
-        if (gethPlugin() != null) { return gethPlugin().hasCaptcha(); }
+    public boolean hasCaptcha(Account acc) {
+        if (gethPlugin() != null) { return gethPlugin().hasCaptcha(dlLink, acc); }
         return false;
     }
 

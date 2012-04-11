@@ -406,6 +406,14 @@ public abstract class PluginForHost extends Plugin {
         return ret;
     }
 
+    /*
+     * finer controlling if we can download the link with given account, eg link
+     * is only downloadable for premium ones
+     */
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+        return true;
+    }
+
     public void handle(final DownloadLink downloadLink, final Account account) throws Exception {
         try {
             while (waitForNextStartAllowed(downloadLink)) {
@@ -453,6 +461,14 @@ public abstract class PluginForHost extends Plugin {
          * 
          * in fetchAccountInfo we don't have to synchronize because we create a
          * new instance of AccountInfo and fill it
+         * 
+         * if you need customizable maxDownloads, please use
+         * getMaxSimultanDownload to handle this you are in multihost when
+         * account host does not equal link host!
+         * 
+         * 
+         * 
+         * will update this doc about error handling
          */
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
