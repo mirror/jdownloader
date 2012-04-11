@@ -35,10 +35,12 @@ import jd.nutils.io.JDIO;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
+import jd.utils.JDUtilities;
 
 import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
@@ -54,17 +56,15 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
 
-public class SingleDownloadController extends BrowserSettingsThread implements StateMachineInterface {
+public class SingleDownloadController extends BrowserSettingsThread implements StateMachineInterface, IOPermission {
 
     private static final Object             DUPELOCK          = new Object();
 
     private boolean                         aborted           = false;
     private boolean                         handling          = false;
 
-    /**
-     * Das Plugin, das den aktuellen Download steuert
-     */
-    private PluginForHost                   currentPlugin     = null;
+    private PluginForHost                   originalPlugin    = null;
+    private PluginForHost                   livePlugin        = null;
 
     private DownloadLink                    downloadLink;
 
@@ -131,6 +131,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         this.setCurrentProxy(proxy);
     }
 
+    public Account getAccount() {
+        return account;
+    }
+
     /**
      * Bricht den Downloadvorgang ab.
      */
@@ -172,21 +176,43 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     private void handlePlugin() {
         try {
             linkStatus.setStatusText(_JDT._.gui_download_create_connection());
-            currentPlugin.init();
-            if ((downloadLink.getLinkStatus().getRetryCount()) <= currentPlugin.getMaxRetries()) {
+            if ((downloadLink.getLinkStatus().getRetryCount()) <= livePlugin.getMaxRetries(downloadLink, getAccount())) {
                 final long sizeBefore = Math.max(0, downloadLink.getDownloadCurrent());
                 long traffic = 0;
                 try {
                     try {
+                        handling = true;
                         try {
+                            if (originalPlugin != livePlugin) {
+                                /*
+                                 * 2 different plugins -> multihoster
+                                 * 
+                                 * let's use original one to do a linkcheck and
+                                 * then use livePlugin(multihost service) to
+                                 * download the link
+                                 */
+                                /*
+                                 * make sure the current Thread uses the
+                                 * PluginClassLoaderChild of the Plugin in use
+                                 */
+                                this.setContextClassLoader(originalPlugin.getLazyP().getClassLoader());
+                                originalPlugin.init();
+                                originalPlugin.requestFileInformation(downloadLink);
+                                if (AvailableStatus.FALSE == downloadLink.getAvailableStatus()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            }
                             /*
                              * make sure the current Thread uses the
                              * PluginClassLoaderChild of the Plugin in use
                              */
-                            this.setContextClassLoader(currentPlugin.getLazyP().getClassLoader());
-                            handling = true;
-                            currentPlugin.handle(downloadLink, account);
+                            this.setContextClassLoader(livePlugin.getLazyP().getClassLoader());
+                            livePlugin.init();
+                            livePlugin.handle(downloadLink, account);
                         } catch (BrowserException e) {
+                            try {
+                                /* make sure we close current connection */
+                                e.getConnection().disconnect();
+                            } catch (final Throwable e3) {
+                            }
                             /*
                              * damit browserexceptions korrekt weitergereicht
                              * werden
@@ -327,17 +353,17 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             logger.info(JDLogger.getStackTrace(exception));
         }
         long rev = downloadLink.getLivePlugin() == null ? -1 : downloadLink.getLivePlugin().getVersion();
-        logger.warning("The Plugin for " + currentPlugin.getHost() + " seems to be out of date(rev" + rev + "). Please inform the Support-team http://jdownloader.org/support.");
+        logger.warning("The Plugin for " + livePlugin.getHost() + " seems to be out of date(rev" + rev + "). Please inform the Support-team http://jdownloader.org/support.");
         if (downloadLink.getLinkStatus().getErrorMessage() != null) {
             logger.warning(downloadLink.getLinkStatus().getErrorMessage());
         }
         /* show last browser request headers+content in logfile */
         try {
-            logger.finest(currentPlugin.getBrowser().getRequest().getHttpConnection() + "");
+            logger.finest(livePlugin.getBrowser().getRequest().getHttpConnection() + "");
         } catch (Throwable e2) {
         }
         try {
-            logger.finest(currentPlugin.getBrowser() + "");
+            logger.finest(livePlugin.getBrowser() + "");
         } catch (Throwable e2) {
         }
         String orgMessage = downloadLink.getLinkStatus().getErrorMessage();
@@ -364,12 +390,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         if (linkStatus.getValue() > 0) {
             linkStatus.setStatusText(null);
         }
-        if ((r = linkStatus.getRetryCount()) <= currentPlugin.getMaxRetries()) {
+        if ((r = linkStatus.getRetryCount()) <= livePlugin.getMaxRetries(downloadLink, getAccount())) {
             linkStatus.reset();
             linkStatus.setRetryCount(r + 1);
             linkStatus.setErrorMessage(null);
             try {
-                currentPlugin.sleep(Math.max((int) linkStatus.getValue(), 2000), downloadLink);
+                livePlugin.sleep(Math.max((int) linkStatus.getValue(), 2000), downloadLink);
             } catch (PluginException e) {
                 linkStatus.setStatusText(null);
             }
@@ -582,10 +608,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         JDPluginLogger llogger = null;
         try {
             stateMachine.setStatus(RUNNING_STATE);
-            /**
-             * Das Plugin, das den aktuellen Download steuert
-             */
-
+            llogger = new JDPluginLogger(downloadLink.getHost() + ":Download:" + downloadLink.getName());
+            super.setLogger(llogger);
             linkStatus.setStatusText(null);
             linkStatus.setErrorMessage(null);
             linkStatus.resetWaitTime();
@@ -593,17 +617,29 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
              * we are going to download this link, create new liveplugin
              * instance here
              */
-            downloadLink.setLivePlugin(downloadLink.getDefaultPlugin().getNewInstance());
-            currentPlugin = downloadLink.getLivePlugin();
-            currentPlugin.setIOPermission(ioP);
-            currentPlugin.setLogger(llogger = new JDPluginLogger(downloadLink.getHost() + ":Download:" + downloadLink.getName()));
-            super.setLogger(llogger);
+            originalPlugin = downloadLink.getDefaultPlugin().getNewInstance();
+            if (account != null && !account.getHoster().equalsIgnoreCase(downloadLink.getHost())) {
+                /* another plugin to handle this download! ->multihoster */
+                downloadLink.setLivePlugin(JDUtilities.getNewPluginForHostInstance(account.getHoster()));
+            } else {
+                downloadLink.setLivePlugin(originalPlugin);
+            }
+            livePlugin = downloadLink.getLivePlugin();
+            livePlugin.setIOPermission(ioP);
+            livePlugin.setLogger(llogger);
             /*
              * handle is only called in download situation, that why we create a
              * new browser instance here
              */
-            currentPlugin.setBrowser(new Browser());
-            if (currentPlugin != null) {
+            livePlugin.setBrowser(new Browser());
+            if (originalPlugin != livePlugin) {
+                /* we have 2 different plugins -> multihoster */
+                originalPlugin.setBrowser(new Browser());
+                originalPlugin.setIOPermission(ioP);
+                originalPlugin.setLogger(llogger);
+                originalPlugin.setDownloadLink(downloadLink);
+            }
+            if (livePlugin != null) {
                 if (downloadLink.getDownloadURL() == null) {
                     downloadLink.getLinkStatus().setStatusText(_JDT._.controller_status_containererror());
                     downloadLink.getLinkStatus().setErrorMessage(_JDT._.controller_status_containererror());
@@ -643,24 +679,37 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 llogger.logInto(JDLogger.getLogger());
             }
         } finally {
-            if (llogger != null) llogger.clear();
+            if (llogger != null) {
+                llogger.clear();
+            }
             try {
                 linkStatus.setInProgress(false);
                 /* cleanup the DownloadInterface/Controller references */
                 downloadLink.setDownloadLinkController(null);
                 downloadLink.setDownloadInstance(null);
-                if (currentPlugin != null) {
-                    currentPlugin.clean();
-                    currentPlugin.setBrowser(null);
-                    /* clear log history for this download */
-                    currentPlugin.getLogger().clear();
-                    currentPlugin.setDownloadLink(null);
-                    currentPlugin = null;
-                }
                 downloadLink.setLivePlugin(null);
+                if (originalPlugin != livePlugin) {
+                    /* we have 2 different plugins */
+                    originalPlugin.getBrowser().disconnect();
+                    originalPlugin.setBrowser(null);
+                    originalPlugin.getLogger().clear();
+                    originalPlugin.setDownloadLink(null);
+                    originalPlugin.clean();
+                }
+                if (livePlugin != null) {
+                    livePlugin.getBrowser().disconnect();
+                    livePlugin.setBrowser(null);
+                    livePlugin.getLogger().clear();
+                    livePlugin.setDownloadLink(null);
+                    livePlugin.clean();
+                }
             } finally {
                 linkStatus.setActive(false);
                 stateMachine.setStatus(FINAL_STATE);
+                linkStatus = null;
+                exception = null;
+                livePlugin = null;
+                originalPlugin = null;
             }
         }
     }
@@ -674,8 +723,24 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         return stateMachine;
     }
 
-    public void setIOPermission(IOPermission ioP) {
+    protected void setIOPermission(IOPermission ioP) {
         this.ioP = ioP;
+    }
+
+    @Override
+    public boolean isCaptchaAllowed(String hoster) {
+        IOPermission lIOP = ioP;
+        if (lIOP != null) return lIOP.isCaptchaAllowed(hoster);
+        return true;
+    }
+
+    @Override
+    public void setCaptchaAllowed(String hoster, CAPTCHA mode) {
+        IOPermission lIOP = ioP;
+        if (lIOP != null) {
+            lIOP.setCaptchaAllowed(hoster, mode);
+            return;
+        }
     }
 
 }
