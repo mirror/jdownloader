@@ -3,7 +3,6 @@ package jd.controlling.linkcollector;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
-import org.jdownloader.settings.GeneralSettings;
 
 public class LinknameCleaner {
     public static final Pattern   pat0     = Pattern.compile("(.*)(\\.|_|-)pa?r?t?\\.?[0-9]+.(rar|exe)$", Pattern.CASE_INSENSITIVE);
@@ -50,19 +49,33 @@ public class LinknameCleaner {
     }
 
     public static String cleanFileName(String name, boolean splitUpperLowerCase) {
-        /** remove rar extensions */
+        return cleanFileName(name, splitUpperLowerCase, false);
+    }
+
+    public static String cleanFileName(String name, boolean splitUpperLowerCase, boolean ignoreArchiveFilters) {
+        boolean extensionStilExists = true;
         String before = name;
-        for (Pattern Pat : rarPats) {
-            name = getNameMatch(name, Pat);
-            if (!before.equalsIgnoreCase(name)) break;
-        }
-        /**
-         * remove 7zip/zip and hjmerge extensions
-         */
-        before = name;
-        for (Pattern Pat : zipPats) {
-            name = getNameMatch(name, Pat);
-            if (!before.equalsIgnoreCase(name)) break;
+        if (!ignoreArchiveFilters) {
+            /** remove rar extensions */
+
+            for (Pattern Pat : rarPats) {
+                name = getNameMatch(name, Pat);
+                if (!before.equalsIgnoreCase(name)) {
+                    extensionStilExists = false;
+                    break;
+                }
+            }
+            /**
+             * remove 7zip/zip and hjmerge extensions
+             */
+            before = name;
+            for (Pattern Pat : zipPats) {
+                name = getNameMatch(name, Pat);
+                if (!before.equalsIgnoreCase(name)) {
+                    extensionStilExists = false;
+                    break;
+                }
+            }
         }
         /**
          * remove isz extensions
@@ -70,12 +83,15 @@ public class LinknameCleaner {
         before = name;
         for (Pattern Pat : iszPats) {
             name = getNameMatch(name, Pat);
-            if (!before.equalsIgnoreCase(name)) break;
+            if (!before.equalsIgnoreCase(name)) {
+                extensionStilExists = false;
+                break;
+            }
         }
-
-        /* xtremsplit */
-        name = getNameMatch(name, pat17);
-
+        if (!ignoreArchiveFilters) {
+            /* xtremsplit */
+            name = getNameMatch(name, pat17);
+        }
         /**
          * FFSJ splitted files
          * 
@@ -84,7 +100,10 @@ public class LinknameCleaner {
             before = name;
             for (Pattern Pat : ffsjPats) {
                 name = getNameMatch(name, Pat);
-                if (!before.equalsIgnoreCase(name)) break;
+                if (!before.equalsIgnoreCase(name)) {
+                    extensionStilExists = false;
+                    break;
+                }
             }
         }
 
@@ -97,12 +116,14 @@ public class LinknameCleaner {
         if (tmpname.length() > 3) name = tmpname;
 
         /* remove extension */
-        int lastPoint = name.lastIndexOf(".");
-        if (lastPoint <= 0) lastPoint = name.lastIndexOf("_");
-        if (lastPoint > 0) {
-            int extLength = (name.length() - (lastPoint + 1));
-            if (extLength <= 3) {
-                name = name.substring(0, lastPoint);
+        if (extensionStilExists) {
+            int lastPoint = name.lastIndexOf(".");
+            if (lastPoint <= 0) lastPoint = name.lastIndexOf("_");
+            if (lastPoint > 0) {
+                int extLength = (name.length() - (lastPoint + 1));
+                if (extLength <= 3) {
+                    name = name.substring(0, lastPoint);
+                }
             }
         }
         /* remove ending ., - , _ */
