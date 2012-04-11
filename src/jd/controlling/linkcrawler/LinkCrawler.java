@@ -56,7 +56,6 @@ public class LinkCrawler implements IOPermission {
     private static ThreadPoolExecutor   threadPool                  = null;
 
     private HashSet<String>             captchaBlockedHoster        = new HashSet<String>();
-    private boolean                     captchaBlockedAll           = false;
     private LinkCrawlerFilter           filter                      = null;
     private volatile boolean            allowCrawling               = true;
     private AtomicInteger               crawlerGeneration           = new AtomicInteger(0);
@@ -1131,7 +1130,7 @@ public class LinkCrawler implements IOPermission {
      */
     public synchronized boolean isCaptchaAllowed(String hoster) {
         if (this.parentCrawler != null) return this.parentCrawler.isCaptchaAllowed(hoster);
-        if (captchaBlockedAll) return false;
+        if (captchaBlockedHoster.contains(null)) return false;
         return !captchaBlockedHoster.contains(hoster);
     }
 
@@ -1151,11 +1150,10 @@ public class LinkCrawler implements IOPermission {
                 captchaBlockedHoster.remove(hoster);
             } else {
                 captchaBlockedHoster.clear();
-                captchaBlockedAll = false;
             }
             break;
         case BLOCKALL:
-            captchaBlockedAll = true;
+            captchaBlockedHoster.add(null);
             break;
         case BLOCKHOSTER:
             captchaBlockedHoster.add(hoster);

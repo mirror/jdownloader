@@ -1304,14 +1304,18 @@ abstract public class DownloadInterface {
         try {
             linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
+                downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(connectionHandler);
+            } catch (final Throwable e) {
+            }
+            try {
                 if (downloadLink.getFilePackage().getProperty(org.jdownloader.extensions.neembuu.NeembuuExtension.WATCH_AS_YOU_DOWNLOAD_KEY, false).equals(true)) {
                     org.jdownloader.extensions.neembuu.DownloadSession downloadSession = new org.jdownloader.extensions.neembuu.DownloadSession(downloadLink, this, this.plugin, this.getConnection(), this.browser.cloneBrowser());
                     if (org.jdownloader.extensions.neembuu.NeembuuExtension.tryHandle(downloadSession)) {
                         org.jdownloader.extensions.neembuu.WatchAsYouDownloadSession watchAsYouDownloadSession = downloadSession.getWatchAsYouDownloadSession();
-                        try{
+                        try {
                             watchAsYouDownloadSession.waitForDownloadToFinish();
-                        }catch(Exception a){
-                            logger.log(Level.SEVERE,"Exception in waiting for neembuu watch as you download",a);
+                        } catch (Exception a) {
+                            logger.log(Level.SEVERE, "Exception in waiting for neembuu watch as you download", a);
                             // if we do not return, normal download would start.
                             return false;
                         }
@@ -1327,9 +1331,8 @@ abstract public class DownloadInterface {
                     logger.severe("Neembuu could not handle this link/filehost. Using default download system.");
                 }
             } catch (final Throwable e) {
-                logger.log(Level.SEVERE,"Exception in neembuu watch as you download",e);
+                logger.log(Level.SEVERE, "Exception in neembuu watch as you download", e);
             }
-
             logger.finer("Start Download");
             if (!connected) connect();
             if (connection != null && connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
@@ -1361,10 +1364,6 @@ abstract public class DownloadInterface {
                 return false;
             }
             if (preDownloadCheckFailed(downloadLink)) return false;
-            try {
-                downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(connectionHandler);
-            } catch (final Throwable e) {
-            }
             setupChunks();
             /* download in progress so file should be online ;) */
             downloadLink.setAvailable(true);

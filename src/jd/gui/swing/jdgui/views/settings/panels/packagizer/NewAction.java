@@ -15,13 +15,10 @@ public class NewAction extends AbstractAddAction {
     /**
      * 
      */
-    private static final long     serialVersionUID = 1L;
-
-    private PackagizerFilterTable table;
+    private static final long serialVersionUID = 1L;
 
     public NewAction(PackagizerFilterTable table) {
         super();
-        this.table = table;
 
     }
 
@@ -34,9 +31,7 @@ public class NewAction extends AbstractAddAction {
             IOEQ.add(new Runnable() {
 
                 public void run() {
-
                     PackagizerController.getInstance().add(rule);
-
                 }
 
             }, true);
