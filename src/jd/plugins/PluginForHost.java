@@ -305,10 +305,6 @@ public abstract class PluginForHost extends Plugin {
      */
     public abstract AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception;
 
-    public int getMaxRetries() {
-        return JsonConfig.create(GeneralSettings.class).getMaxPluginRetries();
-    }
-
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
@@ -317,7 +313,16 @@ public abstract class PluginForHost extends Plugin {
         return -1;
     }
 
-    public int getMaxSimultanDownload(final Account account) {
+    /*
+     * Integer.Min_Value will result in no download at all (eg no free
+     * supported)
+     * 
+     * <=0 will result in unlimited
+     * 
+     * return max possible simultan downloads for given link and
+     * account,overwrite this if you want special handling, eg for multihost
+     */
+    public int getMaxSimultanDownload(DownloadLink link, final Account account) {
         int max;
         if (account == null) {
             max = getMaxSimultanFreeDownloadNum();
@@ -331,8 +336,8 @@ public abstract class PluginForHost extends Plugin {
                 return max;
             }
         }
-        if (max <= 0) return Integer.MAX_VALUE;
         if (max == Integer.MIN_VALUE) return 0;
+        if (max <= 0) return Integer.MAX_VALUE;
         return max;
     }
 
@@ -369,9 +374,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        final LinkStatus linkStatus = link.getLinkStatus();
-        linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
-        linkStatus.setErrorMessage(_JDT._.plugins_hoster_nopremiumsupport());
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     public abstract void handleFree(DownloadLink link) throws Exception;
@@ -414,7 +417,11 @@ public abstract class PluginForHost extends Plugin {
         try {
             if (account != null) {
                 /* with account */
-                handlePremium(downloadLink, account);
+                if (account.getHoster().equalsIgnoreCase(downloadLink.getHost())) {
+                    handlePremium(downloadLink, account);
+                } else {
+                    handleMultiHost(downloadLink, account);
+                }
             } else {
                 /* without account */
                 handleFree(downloadLink);
@@ -436,6 +443,20 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
+    public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
+        /*
+         * fetchAccountInfo must fill ai.setProperty("multiHostSupport",
+         * ArrayList<String>); to signal all supported multiHosts
+         * 
+         * please synchronized on accountinfo and the ArrayList<String> when you
+         * change something in the handleMultiHost function
+         * 
+         * in fetchAccountInfo we don't have to synchronize because we create a
+         * new instance of AccountInfo and fill it
+         */
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
     /**
      * Stellt das Plugin in den Ausgangszustand zurueck (variablen intialisieren
      * etc)
@@ -444,6 +465,7 @@ public abstract class PluginForHost extends Plugin {
 
     public abstract void resetDownloadlink(DownloadLink link);
 
+    @Deprecated
     public void resetPluginGlobals() {
     }
 
@@ -527,15 +549,6 @@ public abstract class PluginForHost extends Plugin {
         return enablePremium;
     }
 
-    /**
-     * returns hosterspecific infos. for example the downloadserver
-     * 
-     * @return
-     */
-    public String getSessionInfo() {
-        return getHost();
-    }
-
     public void setDownloadLink(DownloadLink link) {
         this.link = link;
     }
@@ -577,10 +590,16 @@ public abstract class PluginForHost extends Plugin {
         return DomainInfo.getInstance(host);
     }
 
-    public boolean hasCaptcha() {
+    /* can we expect a captcha if we try to load link with acc */
+    public boolean hasCaptcha(DownloadLink link, Account acc) {
+        /* you must distinguish between different acc types! */
+        /* acc=null is no account */
+        /* best save the information in accountinformation! */
         return false;
     }
 
+    /* do we have anticaptcha available for this host */
+    /* ONLY override if you have customized this */
     public boolean hasAutoCaptcha() {
         return JACMethod.hasMethod(getHost());
     }
@@ -782,6 +801,10 @@ public abstract class PluginForHost extends Plugin {
      * @param downloadLink
      */
     public void extendLinkgrabberTablePropertiesMenu(JMenu m, CrawledLink crawledLink) {
+    }
+
+    public int getMaxRetries(DownloadLink link, Account acc) {
+        return JsonConfig.create(GeneralSettings.class).getMaxPluginRetries();
     }
 
 }

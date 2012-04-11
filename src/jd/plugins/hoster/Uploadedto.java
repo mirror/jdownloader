@@ -469,14 +469,17 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasAutoCaptcha() {
-        return true;
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(DownloadLink link, Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if ("true".equalsIgnoreCase(acc.getStringProperty("free", "true"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
     }
 
     private void login(Account account) throws Exception {
