@@ -137,12 +137,6 @@ public class FilePremiercom extends PluginForHost implements JDPremInterface {
         if (plugin != null) plugin.clean();
     }
 
-    @Override
-    public int getMaxRetries() {
-        if (plugin != null) return plugin.getMaxRetries();
-        return 3;
-    }
-
     private boolean handleFilePremier(DownloadLink link) throws Exception {
         Account acc = null;
         synchronized (LOCK) {
@@ -205,7 +199,7 @@ public class FilePremiercom extends PluginForHost implements JDPremInterface {
                      * after x retries we disable this host and retry with
                      * normal plugin
                      */
-                    if (link.getLinkStatus().getRetryCount() >= getMaxRetries()) {
+                    if (link.getLinkStatus().getRetryCount() >= 3) {
                         synchronized (LOCK) {
                             premiumHosts.remove(link.getHost());
                         }
@@ -213,7 +207,7 @@ public class FilePremiercom extends PluginForHost implements JDPremInterface {
                         link.getLinkStatus().setRetryCount(0);
                         return false;
                     }
-                    String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + getMaxRetries() + ")";
+                    String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
                 }
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 0);
@@ -351,12 +345,6 @@ public class FilePremiercom extends PluginForHost implements JDPremInterface {
     }
 
     @Override
-    public String getSessionInfo() {
-        if (proxyused || plugin == null) return infostring;
-        return plugin.getSessionInfo();
-    }
-
-    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         if (plugin != null) plugin.correctDownloadLink(link);
     }
@@ -371,25 +359,6 @@ public class FilePremiercom extends PluginForHost implements JDPremInterface {
     public int getMaxSimultanPremiumDownloadNum() {
         if (plugin != null) return plugin.getMaxSimultanPremiumDownloadNum();
         return super.getMaxSimultanPremiumDownloadNum();
-    }
-
-    @Override
-    public int getMaxSimultanDownload(final Account account) {
-        if (plugin != null) {
-            if (PremiumCompoundExtension.preferLocalAccounts() && account != null) {
-                /* user prefers usage of local account */
-                return plugin.getMaxSimultanDownload(account);
-            } else if (PremiumCompoundExtension.isStaticEnabled() && enabled) {
-                /* FilePremier */
-                synchronized (LOCK) {
-                    // if (premiumHosts.contains(plugin.getHost()) &&
-                    // AccountController.getInstance().getValidAccount("filepremier.com")
-                    // != null) return Integer.MAX_VALUE;
-                }
-            }
-            return plugin.getMaxSimultanDownload(account);
-        }
-        return 0;
     }
 
     @Override

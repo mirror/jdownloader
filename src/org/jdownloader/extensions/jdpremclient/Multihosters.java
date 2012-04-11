@@ -320,44 +320,8 @@ public class Multihosters extends PluginForHost implements JDPremInterface {
     }
 
     @Override
-    public String getSessionInfo() {
-        if (proxyused || plugin == null) return infostring;
-        return plugin.getSessionInfo();
-    }
-
-    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         if (plugin != null) plugin.correctDownloadLink(link);
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        if (plugin != null) return plugin.getMaxSimultanFreeDownloadNum();
-        return super.getMaxSimultanFreeDownloadNum();
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        if (plugin != null) return plugin.getMaxSimultanPremiumDownloadNum();
-        return super.getMaxSimultanPremiumDownloadNum();
-    }
-
-    @Override
-    public int getMaxSimultanDownload(final Account account) {
-        if (plugin != null) {
-            if (PremiumCompoundExtension.preferLocalAccounts() && account != null) {
-                /* user prefers usage of local account */
-                return plugin.getMaxSimultanDownload(account);
-            } else if (PremiumCompoundExtension.isStaticEnabled() && enabled) {
-                synchronized (LOCK) {
-                    // if (premiumHosts.contains(plugin.getHost()) &&
-                    // AccountController.getInstance().getValidAccount("multihosters.com")
-                    // != null) return Integer.MAX_VALUE;
-                }
-            }
-            return plugin.getMaxSimultanDownload(account);
-        }
-        return 0;
     }
 
     @Override

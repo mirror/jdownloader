@@ -304,12 +304,6 @@ public class Fireloadorg extends PluginForHost implements JDPremInterface {
     }
 
     @Override
-    public String getSessionInfo() {
-        if (proxyused || plugin == null) return infostring;
-        return plugin.getSessionInfo();
-    }
-
-    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         if (plugin != null) plugin.correctDownloadLink(link);
     }
@@ -324,26 +318,6 @@ public class Fireloadorg extends PluginForHost implements JDPremInterface {
     public int getMaxSimultanPremiumDownloadNum() {
         if (plugin != null) return plugin.getMaxSimultanPremiumDownloadNum();
         return super.getMaxSimultanPremiumDownloadNum();
-    }
-
-    @Override
-    public int getMaxSimultanDownload(final Account account) {
-        if (plugin != null) {
-            if (PremiumCompoundExtension.preferLocalAccounts() && account != null) {
-                /* user prefers usage of local account */
-                return plugin.getMaxSimultanDownload(account);
-            } else if (PremiumCompoundExtension.isStaticEnabled() && enabled) {
-                /* Fireload */
-                synchronized (LOCK) {
-                    // if (currentRunning.get() < MAXDOWNLOADS &&
-                    // premiumHosts.contains(plugin.getHost()) &&
-                    // AccountController.getInstance().getValidAccount("fireload.org")
-                    // != null) return MAXDOWNLOADS;
-                }
-            }
-            return plugin.getMaxSimultanDownload(account);
-        }
-        return 0;
     }
 
     @Override
