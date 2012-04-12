@@ -23,7 +23,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import javax.mail.internet.InternetAddress;
+
 import jd.PluginWrapper;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -117,7 +120,17 @@ public class LetitBitNet extends PluginForHost {
         return url;
     }
 
-    private String getFinalLink(String s) throws IOException {
+    private boolean validateEmail(String email) {
+        boolean result = false;
+        try {
+            new InternetAddress(email, true).validate();
+            result = true;
+        } catch (Throwable e) {
+        }
+        return result;
+    }
+
+    private String getLinkViaSkymonkDownloadMethod(String s) throws IOException {
         Browser skymonk = new Browser();
         skymonk.getHeaders().put("Pragma", null);
         skymonk.getHeaders().put("Cache-Control", null);
@@ -128,18 +141,60 @@ public class LetitBitNet extends PluginForHost {
         skymonk.getHeaders().put("User-Agent", null);
         skymonk.getHeaders().put("Referer", null);
         skymonk.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        skymonk.postPage("http://api.letitbit.net/internal/index2.php", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&appid=" + JDHash.getMD5(String.valueOf(Math.random())) + "&version=1.71");
-        String[] result = skymonk.getRegex("([^\r\n]+)").getColumn(0);
-        if (result == null || result.length == 0) return null;
+        String[] result = null;
+
+        for (int a = 0; a < 2; a++) {
+            String appId = getPluginConfig().getStringProperty("APPID", null);
+            boolean validate = getPluginConfig().getBooleanProperty("APPIDVALIDATE", false);
+            appId = appId == null ? JDHash.getMD5(String.valueOf(Math.random())) : appId;
+
+            skymonk.postPage("http://api.letitbit.net/internal/index2.php", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&appid=" + appId + "&version=1.76");
+            result = skymonk.getRegex("([^\r\n]+)").getColumn(0);
+            if (result == null || result.length == 0) return null;
+
+            if ("NO".equals(result[0].trim())) {
+                if (result.length > 1) {
+                    if ("activation".equals(result[1].trim()) && !validate) {
+                        String email = null;
+                        for (int i = 0; i < 5; i++) {
+                            email = UserIO.getInstance().requestInputDialog(0, "The SkyMonk method without waittime and captcha needs an activation!", "Enter E-Mail for activation");
+                            if (validateEmail(email)) break;
+                        }
+                        if (!validateEmail(email)) {
+                            logger.warning("E-Mail not valid! Execute fallback method with captcha and waittime.");
+                        } else {
+                            skymonk.postPage("http://skymonk.net/?page=activate", "act=get_activation_key&phone=+49" + String.valueOf((int) (Math.random() * (999999999 - 1111111111) + 1111111111)) + "&email=" + email + "&app_id=" + appId + "&app_version=1.76");
+                            String msg = skymonk.getRegex("content:\'(.*?)\'").getMatch(0);
+                            if (skymonk.containsHTML("status:\'error\'")) {
+                                msg = msg == null ? "Error occured!" : msg;
+                                logger.warning("SkyMonk server answer: " + msg);
+                                return null;
+                            } else if (skymonk.containsHTML("status:\'ok\'")) {
+                                if (skymonk.containsHTML("activation code has been sent to your e\\-mail")) {
+                                    getPluginConfig().setProperty("APPID", appId);
+                                    getPluginConfig().setProperty("APPIDVALIDATE", true);
+                                    getPluginConfig().save();
+                                    logger.info("SkyMonk server answer: E-Mail accepted!");
+                                } else {
+                                    msg = msg == null ? "OK!" : msg;
+                                    logger.info("SkyMonk server answer: " + msg);
+                                }
+                            }
+                        }
+                    }
+                }
+            } else
+                break;
+        }
+
         ArrayList<String> res = new ArrayList<String>();
         for (String r : result) {
             if (r.startsWith("http")) {
                 res.add(r);
             }
         }
-        if (res.isEmpty()) return null;
         if (res.size() > 1) return res.get(1);
-        return res.get(0);
+        return res.size() == 1 ? res.get(0) : null;
     }
 
     @Override
@@ -150,7 +205,7 @@ public class LetitBitNet extends PluginForHost {
             /* only available after 0.9xx version */
         }
         requestFileInformation(downloadLink);
-        String url = getFinalLink(downloadLink.getDownloadURL());
+        String url = getLinkViaSkymonkDownloadMethod(downloadLink.getDownloadURL());
         url = url == null ? handleFreeFallback(downloadLink) : url;
         if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
