@@ -16,7 +16,6 @@
 
 package org.jdownloader.extensions.jdtrayicon;
 
-import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.MouseInfo;
@@ -34,14 +33,11 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
+import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.JWindow;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.swing.components.JDSpinner;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.toolbar.actions.AutoReconnectToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ClipBoardToggleAction;
@@ -53,19 +49,21 @@ import jd.gui.swing.jdgui.components.toolbar.actions.ReconnectAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StartDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.StopDownloadsAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
+import jd.gui.swing.jdgui.menu.ChunksEditor;
+import jd.gui.swing.jdgui.menu.ParalellDownloadsEditor;
+import jd.gui.swing.jdgui.menu.ParallelDownloadsPerHostEditor;
+import jd.gui.swing.jdgui.menu.SpeedlimitEditor;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GeneralSettings;
 
 //final, because the constructor calls Thread.start(),
 //see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
-public final class TrayIconPopup extends JWindow implements MouseListener, ChangeListener {
+public final class TrayIconPopup extends JWindow implements MouseListener {
 
     private static final long         serialVersionUID  = 2623190748929934409L;
 
@@ -73,17 +71,13 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
     private JPanel                    quickConfigPanel;
     private JPanel                    bottomPanel;
     private boolean                   enteredPopup;
-    private JDSpinner                 spMaxSpeed;
-    private JDSpinner                 spMaxDls;
-    private JDSpinner                 spMaxChunks;
+
     private boolean                   hideThreadrunning = false;
 
     private JPanel                    exitPanel;
     private ArrayList<AbstractButton> resizecomps;
 
     private transient Thread          hideThread;
-
-    private JDSpinner                 spMaxDlsPerHost;
 
     public TrayIconPopup() {
         // required. JWindow needs a parent to grant a nested Component focus
@@ -200,33 +194,13 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
     }
 
     private void initBottomPanel() {
-        spMaxSpeed = new JDSpinner(T._.plugins_trayicon_popup_bottom_speed(), "width 60!,h 20!,right");
-        spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(JsonConfig.create(GeneralSettings.class).isDownloadSpeedLimitEnabled() ? JsonConfig.create(GeneralSettings.class).getDownloadSpeedLimit() : 0, 0, Integer.MAX_VALUE, 50));
-        spMaxSpeed.setToolTipText(T._.gui_tooltip_statusbar_speedlimiter());
-        spMaxSpeed.getSpinner().addChangeListener(this);
-        colorizeSpinnerSpeed();
 
-        spMaxDls = new JDSpinner(T._.plugins_trayicon_popup_bottom_simdls(), "width 60!,h 20!,right");
-        spMaxDls.getSpinner().setModel(new SpinnerNumberModel(JsonConfig.create(GeneralSettings.class).getMaxSimultaneDownloads(), 1, 20, 1));
-        spMaxDls.setToolTipText(T._.gui_tooltip_statusbar_simultan_downloads());
-        spMaxDls.getSpinner().addChangeListener(this);
-
-        spMaxDlsPerHost = new JDSpinner(T._.plugins_trayicon_popup_bottom_simdlsperhost(), "width 60!,h 20!,right");
-        spMaxDlsPerHost.getSpinner().setModel(new SpinnerNumberModel(JsonConfig.create(GeneralSettings.class).getMaxSimultaneDownloadsPerHost(), 1, 20, 1));
-        spMaxDlsPerHost.setToolTipText(T._.gui_tooltip_statusbar_simultan_downloads_perhost());
-        spMaxDlsPerHost.getSpinner().addChangeListener(this);
-
-        spMaxChunks = new JDSpinner(T._.plugins_trayicon_popup_bottom_simchunks(), "width 60!,h 20!,right");
-        spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile(), 1, 20, 1));
-        spMaxChunks.setToolTipText(T._.gui_tooltip_statusbar_max_chunks());
-        spMaxChunks.getSpinner().addChangeListener(this);
-
-        bottomPanel = new JPanel(new MigLayout("ins 0, wrap 1,debug", "[grow, fill]", "[]2[]2[]2[]"));
-        bottomPanel.setOpaque(false);
-        bottomPanel.add(spMaxSpeed);
-        bottomPanel.add(spMaxDls);
-        bottomPanel.add(spMaxDlsPerHost);
-        bottomPanel.add(spMaxChunks);
+        bottomPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[]2[]2[]2[]"));
+        bottomPanel.add(new ChunksEditor());
+        bottomPanel.add(new ParalellDownloadsEditor());
+        bottomPanel.add(new ParallelDownloadsPerHostEditor());
+        bottomPanel.add(new SpeedlimitEditor());
+        bottomPanel.add(new JTextField());
 
     }
 
@@ -307,32 +281,6 @@ public final class TrayIconPopup extends JWindow implements MouseListener, Chang
     }
 
     public void mouseReleased(MouseEvent e) {
-    }
-
-    public void stateChanged(ChangeEvent e) {
-        if (e.getSource() == spMaxSpeed.getSpinner()) {
-            int value = spMaxSpeed.getValue();
-
-            JsonConfig.create(GeneralSettings.class).setDownloadSpeedLimit(value);
-            colorizeSpinnerSpeed();
-        } else if (e.getSource() == spMaxDls.getSpinner()) {
-            int value = spMaxDls.getValue();
-
-            JsonConfig.create(GeneralSettings.class).setMaxSimultaneDownloads(value);
-        } else if (e.getSource() == spMaxChunks.getSpinner()) {
-            int value = spMaxChunks.getValue();
-
-            JsonConfig.create(GeneralSettings.class).setMaxChunksPerFile(value);
-        }
-    }
-
-    /** färbt den spinner ein, falls speedbegrenzung aktiv */
-    private void colorizeSpinnerSpeed() {
-        if (spMaxSpeed.getValue() > 0) {
-            spMaxSpeed.setColor(new Color(255, 12, 3));
-        } else {
-            spMaxSpeed.setColor(null);
-        }
     }
 
 }
