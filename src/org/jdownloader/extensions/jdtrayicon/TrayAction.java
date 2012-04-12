@@ -4,6 +4,8 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
+import jd.gui.swing.jdgui.components.toolbar.actions.AbstractToolbarToggleAction;
+
 import org.jdownloader.actions.AppAction;
 
 public class TrayAction extends AppAction {
@@ -28,7 +30,13 @@ public class TrayAction extends AppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        action.actionPerformed(e);
+        if (action instanceof AbstractToolbarToggleAction) {
+            ((AbstractToolbarToggleAction) action).setSelected(!((AbstractToolbarToggleAction) action).isSelected());
+            action.actionPerformed(e);
+        } else {
+            action.actionPerformed(e);
+        }
+
     }
 
 }
