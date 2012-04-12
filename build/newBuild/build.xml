@@ -102,6 +102,22 @@
 		<mkdir dir="${dist}/java" />
 		<mkdir dir="${dist}/tmp" />
 
+
+
+		<mkdir dir="${dist}/translations" />
+		
+		<copy todir="${dist}/translations">
+			<fileset dir="${dep.awu}/src" includes="**/*.lng" />
+			<fileset dir="${dep.updateclient}/src" includes="**/*.lng" />
+			<fileset dir="${dep.browser}/src" includes="**/*.lng" />
+			<fileset dir="src" includes="**/*.lng" />
+			<fileset dir="${dep.browser}/src" includes="**/*.lng" />
+		</copy>
+		<copy todir="${dist}">
+
+			<fileset dir="translations" includes="**/*.lng" />
+
+		</copy>
 		<loadfile property="svn.revision" srcFile=".svn/entries">
 			<filterchain>
 				<headfilter lines="1" skip="3" />
@@ -189,7 +205,7 @@
 			</fileset>
 			<fileset dir="${dep.awu}/src">
 				<include name="images/*.png" />
-				<include name="**/*.lng" />
+
 
 			</fileset>
 		</jar>
@@ -212,8 +228,8 @@
 			</fileset>
 			<fileset dir="${cls}">
 				<include name="**/*.class" />
-				<include name="**/*.txt" />		
-			
+				<include name="**/*.txt" />
+
 				<exclude name="jd/controlling/reconnect/plugins/*/**/*" />
 				<exclude name="jd/captcha/**" />
 				<exclude name="org/appwork/**/*" />
