@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import jd.controlling.IOEQ;
 import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
 
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
@@ -75,18 +76,8 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         return true;
     }
 
-    /**
-     * Checks if the extracted file(s) has enough space. Only works with Java 6
-     * or higher.
-     * 
-     * @return True if it's enough space.
-     */
-    private boolean checkSize() {
-        return DownloadWatchDog.getInstance().checkFreeDiskSpace(archive.getExtractTo(), archive.getSize());
-    }
-
     private boolean checkPassword(String pw) {
-        if (pw == null || pw.equals("")) return false;
+        if (pw == null || "".equals(pw)) return false;
         // workaround for bug
         // http://sourceforge.net/projects/sevenzipjbind/forums/forum/757965/topic/5152496
         // <br>
@@ -129,10 +120,10 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             archive.setExtractTo(dl);
 
             if (extractor.prepare()) {
-                if (!checkSize()) {
+                DISKSPACECHECK check = DownloadWatchDog.getInstance().checkFreeDiskSpace(archive.getExtractTo(), archive.getSize());
+                if (DISKSPACECHECK.FAILED.equals(check) || DISKSPACECHECK.INVALIDFOLDER.equals(check)) {
                     fireEvent(ExtractionEvent.Type.NOT_ENOUGH_SPACE);
                     logger.info("Not enough harddisk space for unpacking archive " + archive.getFirstArchiveFile().getFilePath());
-                    extractor.close();
                     return null;
                 }
 
@@ -182,7 +173,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         if (!checkPassword(archive.getPassword())) {
                             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                             logger.info("No password found for " + archive);
-                            extractor.close();
                             return null;
                         }
                         /* avoid duplicates */
@@ -257,15 +247,17 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 }
                 return null;
             } else {
-                extractor.close();
                 fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
             }
         } catch (Exception e) {
-            extractor.close();
             this.exception = e;
             JDLogger.exception(e);
             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
         } finally {
+            try {
+                extractor.close();
+            } catch (final Throwable e) {
+            }
             fireEvent(ExtractionEvent.Type.CLEANUP);
         }
         return null;

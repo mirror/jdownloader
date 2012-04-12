@@ -288,6 +288,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 if (handler.handleDownloadLink(downloadLink, account)) return;
             }
             switch (linkStatus.getLatestStatus()) {
+            case LinkStatus.TEMP_IGNORE:
+                onTempIgnore();
+                break;
             case LinkStatus.ERROR_LOCAL_IO:
                 onErrorLocalIO();
                 break;
@@ -339,6 +342,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             logger.severe(JDLogger.getStackTrace(e));
             logger.severe("Error in Plugin Version: " + downloadLink.getLivePlugin().getVersion());
         }
+    }
+
+    private void onTempIgnore() {
     }
 
     protected void onErrorCaptcha() {
@@ -504,10 +510,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
 
     protected void onErrorPremium() {
         if (linkStatus.getValue() == PluginException.VALUE_ID_PREMIUM_ONLY) {
-            linkStatus.addStatus(LinkStatus.TODO);
-            String text = linkStatus.getErrorMessage();
-            if (text == null) text = _JDT._.downloadlink_status_error_premium_noacc();
-            linkStatus.setStatusText(text);
+            linkStatus.addStatus(LinkStatus.TEMP_IGNORE);
+            linkStatus.setValue(LinkStatus.TEMP_IGNORE_REASON_NO_SUITABLE_ACCOUNT_FOUND);
             return;
         } else if (linkStatus.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
             logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");

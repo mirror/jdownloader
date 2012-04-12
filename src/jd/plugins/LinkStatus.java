@@ -156,9 +156,14 @@ public class LinkStatus implements Serializable {
         this.inProgress = false;
     }
 
-    public static final int                 NOT_ENOUGH_HARDDISK_SPACE = 1 << 31;
+    /* temporarily ignore this link, use value to signal why */
+    public static final int                 TEMP_IGNORE                                     = 1 << 31;
 
-    private static HashMap<Integer, String> toStringHelper            = new HashMap<Integer, String>();
+    public static final int                 TEMP_IGNORE_REASON_NOT_ENOUGH_HARDDISK_SPACE    = 1;
+    public static final int                 TEMP_IGNORE_REASON_NO_SUITABLE_ACCOUNT_FOUND    = 2;
+    public static final int                 TEMP_IGNORE_REASON_INVALID_DOWNLOAD_DESTINATION = 3;
+
+    private static HashMap<Integer, String> toStringHelper                                  = new HashMap<Integer, String>();
     static {
         final Field[] fields = LinkStatus.class.getDeclaredFields();
         for (final Field field : fields) {
@@ -172,17 +177,16 @@ public class LinkStatus implements Serializable {
         }
     }
 
-    private static final long               serialVersionUID          = 3885661829491436448L;
+    private static final long               serialVersionUID                                = 3885661829491436448L;
 
     private final DownloadLink              downloadLink;
     private String                          errorMessage;
-    private int                             lastestStatus             = TODO;
-    private int                             status                    = TODO;
-    private String                          statusText                = null;
-    private long                            totalWaitTime             = 0;
-    private long                            value                     = 0;
-    private long                            waitUntil                 = 0;
-    private int                             retryCount                = 0;
+    private int                             lastestStatus                                   = TODO;
+    private int                             status                                          = TODO;
+    private String                          statusText                                      = null;
+    private long                            value                                           = 0;
+    private long                            waitUntil                                       = 0;
+    private int                             retryCount                                      = 0;
 
     private ImageIcon                       statusIcon;
 
@@ -238,7 +242,6 @@ public class LinkStatus implements Serializable {
             return _JDT._.downloadlink_status_error_no_connection();
         case LinkStatus.ERROR_PREMIUM:
             if (errorMessage != null) return errorMessage;
-            if (PluginException.VALUE_ID_PREMIUM_ONLY == value) return _JDT._.downloadlink_status_error_premium_noacc();
             return _JDT._.downloadlink_status_error_premium();
         case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
             return _JDT._.downloadlink_status_error_temp_unavailable();
@@ -248,8 +251,12 @@ public class LinkStatus implements Serializable {
             return _JDT._.downloadlink_status_error_fatal();
         case LinkStatus.WAITING_USERIO:
             return _JDT._.downloadlink_status_waitinguserio();
-        case LinkStatus.NOT_ENOUGH_HARDDISK_SPACE:
-            return _JDT._.downloadlink_status_error();
+        case LinkStatus.TEMP_IGNORE:
+            if (TEMP_IGNORE_REASON_NOT_ENOUGH_HARDDISK_SPACE == value) {
+                return _JDT._.downloadlink_status_error();
+            } else if (TEMP_IGNORE_REASON_NO_SUITABLE_ACCOUNT_FOUND == value) {
+                return _JDT._.downloadlink_status_error_premium_noacc();
+            } else if (TEMP_IGNORE_REASON_INVALID_DOWNLOAD_DESTINATION == value) { return _JDT._.downloadlink_status_error_invalid_dest(); }
         }
         return null;
     }
@@ -368,7 +375,7 @@ public class LinkStatus implements Serializable {
     }
 
     public boolean isFailed() {
-        return !isActive && !inProgress && !hasOnlyStatus(FINISHED | ERROR_ALREADYEXISTS | ERROR_IP_BLOCKED | TODO | DOWNLOADINTERFACE_IN_PROGRESS | WAITING_USERIO | ERROR_PREMIUM);
+        return !isActive && !inProgress && !hasOnlyStatus(FINISHED | ERROR_ALREADYEXISTS | ERROR_IP_BLOCKED | TODO | DOWNLOADINTERFACE_IN_PROGRESS | WAITING_USERIO | TEMP_IGNORE);
     }
 
     public boolean isPluginActive() {
@@ -406,7 +413,6 @@ public class LinkStatus implements Serializable {
     }
 
     public void resetWaitTime() {
-        totalWaitTime = 0;
         waitUntil = 0;
     }
 
@@ -461,7 +467,6 @@ public class LinkStatus implements Serializable {
 
     public void setWaitTime(final long milliSeconds) {
         waitUntil = System.currentTimeMillis() + milliSeconds;
-        totalWaitTime = milliSeconds;
     }
 
     public static String toString(final int status) {

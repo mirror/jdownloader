@@ -80,6 +80,7 @@ public interface GeneralSettings extends ConfigInterface {
     @AboutConfig
     @Description("Force Jdownloader to always keep a certain amount of MB Diskspace free")
     @DefaultIntValue(512)
+    @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
     int getForcedFreeSpaceOnDisk();
 
     @AboutConfig

@@ -72,9 +72,9 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
             DownloadLink dl = (DownloadLink) value;
-            if (!dl.getLinkStatus().isPluginActive() && dl.isEnabled()) {
+            if (!dl.getLinkStatus().isPluginActive() && dl.isEnabled() && dl.getLivePlugin() == null) {
                 ProxyBlock ipTimeout = null;
-                if (dl.getLivePlugin() == null && !dl.getLinkStatus().isPluginActive() && (ipTimeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
+                if ((ipTimeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
                     if (ipTimeout.getLink() == value) {
                         return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(ipTimeout.getBlockedTimeout() / 1000));
                     } else {
@@ -82,7 +82,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                     }
                 }
                 ProxyBlock hostTimeout = null;
-                if (dl.getLivePlugin() == null && !dl.getLinkStatus().isPluginActive() && (hostTimeout = ProxyController.getInstance().getHostBlockedTimeout(dl.getHost())) != null) {
+                if ((hostTimeout = ProxyController.getInstance().getHostBlockedTimeout(dl.getHost())) != null) {
                     if (hostTimeout.getLink() == value) {
                         return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(hostTimeout.getBlockedTimeout() / 1000));
                     } else {

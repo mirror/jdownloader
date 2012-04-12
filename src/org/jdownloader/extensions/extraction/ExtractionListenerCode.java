@@ -84,12 +84,7 @@ public class ExtractionListenerCode implements ExtractionListener {
             ex.onFinished(controller);
             break;
         case FINISHED:
-            File[] files = new File[controller.getArchiv().getExtractedFiles().size()];
-            int i = 0;
-            for (File f : controller.getArchiv().getExtractedFiles()) {
-                files[i++] = f;
-            }
-            FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.NEW_FILES, files));
+            FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.NEW_FILES, controller.getArchiv().getExtractedFiles().toArray(new File[controller.getArchiv().getExtractedFiles().size()])));
 
             if (ex.getSettings().isDeleteInfoFilesAfterExtraction()) {
                 File fileOutput = new File(controller.getArchiv().getFirstArchiveFile().getFilePath());
@@ -105,9 +100,7 @@ public class ExtractionListenerCode implements ExtractionListener {
             for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                 if (link == null) continue;
                 link.setStatus(ArchiveFile.Status.ERROR_NOT_ENOUGH_SPACE);
-
             }
-
             ex.onFinished(controller);
             break;
         case CLEANUP:

@@ -172,22 +172,16 @@ public class ExtractionListenerList implements ExtractionListener {
             ex.onFinished(controller);
             break;
         case FINISHED:
-            File[] files = new File[controller.getArchiv().getExtractedFiles().size()];
-            int i = 0;
-            for (File f : controller.getArchiv().getExtractedFiles()) {
-                files[i++] = f;
+            try {
+                FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.NEW_FILES, controller.getArchiv().getExtractedFiles().toArray(new File[controller.getArchiv().getExtractedFiles().size()])));
+                for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
+                    if (link == null) continue;
+                    link.setStatus(ArchiveFile.Status.SUCCESSFUL);
+                }
+            } finally {
+                controller.getArchiv().setActive(false);
+                ex.onFinished(controller);
             }
-
-            FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.NEW_FILES, files));
-
-            for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
-                if (link == null) continue;
-                link.setStatus(ArchiveFile.Status.SUCCESSFUL);
-
-            }
-
-            controller.getArchiv().setActive(false);
-            ex.onFinished(controller);
             break;
         case NOT_ENOUGH_SPACE:
             for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {

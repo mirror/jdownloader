@@ -116,6 +116,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         RANDOM;
     }
 
+    public static enum DISKSPACECHECK {
+        UNKNOWN,
+        OK,
+        INVALIDFOLDER,
+        FAILED
+    }
+
     private final LinkedList<SingleDownloadController>                 DownloadControllers    = new LinkedList<SingleDownloadController>();
     private final LinkedList<DownloadLink>                             forcedLinks            = new LinkedList<DownloadLink>();
 
@@ -233,25 +240,22 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * @param dlLink
      * @return
      */
-    public boolean checkFreeDiskSpace(final File file2Root, long diskspace) {
-        if (Application.getJavaVersion() < 16000000) {
+    public synchronized DISKSPACECHECK checkFreeDiskSpace(File file2Root, long diskspace) {
+        if (Application.getJavaVersion() < Application.JAVA16) {
             /*
              * File.getUsableSpace is 1.6 only
              */
-            return true;
+            return DISKSPACECHECK.UNKNOWN;
         }
-        File f = file2Root.getParentFile();
-        if (f == null) {
-            /* no parent folder, seems user set an invalid folder?! */
-            return false;
+        if (file2Root != null && file2Root.isFile()) {
+            file2Root = file2Root.getParentFile();
         }
-        while (!f.exists()) {
-            f = f.getParentFile();
-            if (f == null) { return false; }
+        while (file2Root != null && !file2Root.exists()) {
+            file2Root = file2Root.getParentFile();
         }
-        /* Set 500MB extra Buffer */
-
-        long spaceneeded = 1024l * 1024 * config.getForcedFreeSpaceOnDisk();
+        if (file2Root == null) { return DISKSPACECHECK.INVALIDFOLDER; }
+        /* Set 500MB(default) extra Buffer */
+        long spaceneeded = 1024l * 1024 * Math.max(0, config.getForcedFreeSpaceOnDisk());
         /* calc the needed space for the current running downloads */
         synchronized (this.DownloadControllers) {
             for (final SingleDownloadController con : this.DownloadControllers) {
@@ -260,8 +264,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
         }
         /* enough space for needed diskspace */
-        if (f.getUsableSpace() < (spaceneeded + diskspace)) { return false; }
-        return true;
+        if (file2Root.getUsableSpace() < (spaceneeded + diskspace)) { return DISKSPACECHECK.FAILED; }
+        return DISKSPACECHECK.OK;
     }
 
     /**
@@ -281,7 +285,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                          * exist or pluginerror (because only plugin updates can
                          * fix this)
                          */
-                        link.getLinkStatus().resetStatus(LinkStatus.ERROR_FATAL | LinkStatus.ERROR_PLUGIN_DEFECT | LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED, LinkStatus.TODO);
+                        link.getLinkStatus().resetStatus(LinkStatus.ERROR_FATAL | LinkStatus.ERROR_PLUGIN_DEFECT | LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED);
                     }
                 }
             }
@@ -401,7 +405,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         try {
             retryLoop: while (true) {
                 linkLoop: for (DownloadLink nextDownloadLink : possibleLinks) {
-                    if (nextDownloadLink.getDefaultPlugin() == null || !nextDownloadLink.isEnabled() || nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) || nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.NOT_ENOUGH_HARDDISK_SPACE)) {
+                    if (nextDownloadLink.getDefaultPlugin() == null || !nextDownloadLink.isEnabled() || nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) || nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE)) {
                         /*
                          * no plugin available, download not enabled,link temp
                          * unavailable
@@ -483,6 +487,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                         if (!plugin.canHandle(nextDownloadLink, acc)) {
                             /* plugin can't download given link with acc */
+                            if (acc == null) {
+                                /*
+                                 * we tried last account and noone could handle
+                                 * this link, so temp ignore it this session
+                                 */
+                                nextDownloadLink.getLinkStatus().addStatus(LinkStatus.TEMP_IGNORE);
+                                nextDownloadLink.getLinkStatus().setValue(LinkStatus.TEMP_IGNORE_REASON_NO_SUITABLE_ACCOUNT_FOUND);
+                            }
                             continue accLoop;
                         }
                         synchronized (downloadControlHistory) {
@@ -878,13 +890,25 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 break;
             }
             DownloadLink dlLink = dci.link;
-            if (!this.checkFreeDiskSpace(new File(dlLink.getFileOutput()), (dlLink.getDownloadSize() - dlLink.getDownloadCurrent()))) {
-                Log.L.info("Could not start " + dci + ": not enough diskspace free");
-                dci.link.getLinkStatus().setStatus(LinkStatus.NOT_ENOUGH_HARDDISK_SPACE);
-            } else {
+            String dlFolder = dlLink.getFilePackage().getDownloadDirectory();
+            DISKSPACECHECK check = this.checkFreeDiskSpace(new File(dlFolder), (dlLink.getDownloadSize() - dlLink.getDownloadCurrent()));
+            switch (check) {
+            case OK:
+            case UNKNOWN:
                 Log.L.info("Start " + dci);
                 this.activateSingleDownloadController(dci);
                 ret++;
+                break;
+            case FAILED:
+                Log.L.info("Could not start " + dci + ": not enough diskspace free");
+                dci.link.getLinkStatus().setStatus(LinkStatus.TEMP_IGNORE);
+                dci.link.getLinkStatus().setValue(LinkStatus.TEMP_IGNORE_REASON_NOT_ENOUGH_HARDDISK_SPACE);
+                break;
+            case INVALIDFOLDER:
+                Log.L.info("Could not start " + dci + ": invalid downloadfolder->" + dlFolder);
+                dci.link.getLinkStatus().setStatus(LinkStatus.TEMP_IGNORE);
+                dci.link.getLinkStatus().setValue(LinkStatus.TEMP_IGNORE_REASON_INVALID_DOWNLOAD_DESTINATION);
+                break;
             }
             maxLoops--;
         }
@@ -1048,7 +1072,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                         for (FilePackage fp : DownloadController.getInstance().getPackages()) {
                                             synchronized (fp) {
                                                 for (DownloadLink fpLink : fp.getChildren()) {
-                                                    if (fpLink.getDefaultPlugin() == null || !fpLink.isEnabled() || (fpLink.getAvailableStatus() == AvailableStatus.FALSE) || fpLink.getLinkStatus().isFinished() || fpLink.getLinkStatus().hasStatus(LinkStatus.NOT_ENOUGH_HARDDISK_SPACE)) continue;
+                                                    if (fpLink.getDefaultPlugin() == null || !fpLink.isEnabled() || (fpLink.getAvailableStatus() == AvailableStatus.FALSE) || fpLink.getLinkStatus().isFinished() || fpLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE)) continue;
                                                     long prio = fpLink.getPriority();
                                                     ArrayList<DownloadLink> list = optimizedList.get(prio);
                                                     if (list == null) {

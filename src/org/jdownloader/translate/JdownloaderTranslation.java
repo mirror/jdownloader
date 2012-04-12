@@ -543,6 +543,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Not enough harddiskspace" })
     String downloadlink_status_error();
 
+    @Default(lngs = { "en" }, values = { "Invalid download directory" })
+    String downloadlink_status_error_invalid_dest();
+
     @Default(lngs = { "en" }, values = { "Temp. unavailable" })
     String downloadlink_status_error_temp_unavailable();
 

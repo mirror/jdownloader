@@ -233,7 +233,8 @@ public class GrooveShark extends PluginForHost {
     public GrooveShark(final PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(2000l + (long) 1000 * (int) Math.round(Math.random() * 3 + Math.random() * 3));
-        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+        String timeZone = System.getProperty("user.timezone");
+        if (timeZone != null && timeZone.contains("Berlin")) {
             setConfigElements();
         }
     }
@@ -308,19 +309,15 @@ public class GrooveShark extends PluginForHost {
 
     private void gsProxy(final boolean b) {
         if (getPluginConfig().getBooleanProperty("STATUS")) {
-            final org.appwork.utils.net.httpconnection.HTTPProxy proxy = org.appwork.utils.net.httpconnection.HTTPProxy.parseHTTPProxy("http://" + getPluginConfig().getStringProperty("PROXYSERVER") + ":" + getPluginConfig().getIntegerProperty("PROXYPORT"));
-            if (b) {
-                if (proxy.getHost() != null || proxy.getHost() != "" && proxy.getPort() > 0) {
+            String proxyString = getPluginConfig().getStringProperty("PROXYSERVERSTRING");
+            if (proxyString != null) {
+                final org.appwork.utils.net.httpconnection.HTTPProxy proxy = org.appwork.utils.net.httpconnection.HTTPProxy.parseHTTPProxy(proxyString);
+                if (b && proxy != null && proxy.getHost() != null) {
                     br.setProxy(proxy);
                 }
-            } else {
-                /*
-                 * use null, so the plugin uses global set proxy again, setting
-                 * it to none will disable global proxy if set
-                 */
-                br.setProxy(null);
             }
         }
+        br.setProxy(br.getThreadProxy());
     }
 
     private void handleDownload(final DownloadLink downloadLink, final String sid) throws IOException, Exception, PluginException {
@@ -526,10 +523,9 @@ public class GrooveShark extends PluginForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDL.L("plugins.hoster.grooveshark.configlabel", "Proxy Configuration")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "STATUS", JDL.L("plugins.hoster.grooveshark.status", "Use Proxy-Server?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "STATUS", JDL.L("plugins.hoster.grooveshark.status", "Use Proxy-Server?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "PROXYSERVER", JDL.L("plugins.hoster.grooveshark.proxyhost", "Host:")));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "PROXYPORT", JDL.L("plugins.hoster.grooveshark.proxyport", "Port:")));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "PROXYSERVERSTRING", JDL.L("plugins.hoster.grooveshark.proxy", "Proxy:")));
     }
 
 }

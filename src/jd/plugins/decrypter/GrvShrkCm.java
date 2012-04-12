@@ -366,21 +366,16 @@ public class GrvShrkCm extends PluginForDecrypt {
     }
 
     private void gsProxy(final boolean b) {
-        final SubConfiguration cfg = SubConfiguration.getConfig("grooveshark.com");
-        if (cfg.getBooleanProperty("STATUS")) {
-            final org.appwork.utils.net.httpconnection.HTTPProxy proxy = org.appwork.utils.net.httpconnection.HTTPProxy.parseHTTPProxy("http://" + cfg.getStringProperty("PROXYSERVER") + ":" + cfg.getIntegerProperty("PROXYPORT"));
-            if (b) {
-                if (proxy.getHost() != null || proxy.getHost() != "" && proxy.getPort() > 0) {
+        if (getPluginConfig().getBooleanProperty("STATUS")) {
+            String proxyString = getPluginConfig().getStringProperty("PROXYSERVERSTRING");
+            if (proxyString != null) {
+                final org.appwork.utils.net.httpconnection.HTTPProxy proxy = org.appwork.utils.net.httpconnection.HTTPProxy.parseHTTPProxy(proxyString);
+                if (b && proxy != null && proxy.getHost() != null) {
                     br.setProxy(proxy);
                 }
-            } else {
-                /*
-                 * use null, so the plugin uses global set proxy again, setting
-                 * it to none will disable global proxy if set
-                 */
-                br.setProxy(null);
             }
         }
+        br.setProxy(br.getThreadProxy());
     }
 
     private String makeNewRandomizer() {
