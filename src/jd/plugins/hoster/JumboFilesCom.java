@@ -172,6 +172,7 @@ public class JumboFilesCom extends PluginForHost {
                 dlForm = br.getFormbyProperty("name", "F1");
                 continue;
             } else if (dllink == null && !br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\"")) {
+                handleErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 break;
@@ -179,9 +180,6 @@ public class JumboFilesCom extends PluginForHost {
         }
         boolean resume = true;
         int chunks = 0;
-        if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false)) {
-            resume = false;
-        }
         if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) || resume == false) {
             chunks = 1;
         }
@@ -239,11 +237,17 @@ public class JumboFilesCom extends PluginForHost {
             if (dllink == null) dllink = getDllink();
         }
         if (dllink == null) {
+            handleErrors();
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        int chunks = -5;
+        boolean resume = true;
+        if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) || resume == false) {
+            chunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, chunks);
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
@@ -252,7 +256,30 @@ public class JumboFilesCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+                if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
+                    downloadLink.setChunksProgress(null);
+                    downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            } else {
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(DirectHTTP.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        }
+        ;
+    }
+
+    private void handleErrors() throws PluginException {
+        if (br.containsHTML(">Error happened when generating Download Link.<br>Please try again or Contact administrator")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l); }
     }
 
     private void login(final Account account) throws Exception {

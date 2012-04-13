@@ -20,31 +20,66 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediahide.com" }, urls = { "http://(www\\.)?mediahide\\.com/\\?[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediahide.com" }, urls = { "http://(www\\.)?mediahide\\.com/(\\?[A-Za-z0-9]+|paste/\\?p=\\d+)" }, flags = { 0 })
 public class MediaHideCom extends PluginForDecrypt {
 
     public MediaHideCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String PASSCODETEXT = ">This post is password protected";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://mediahide.com/get.php?do=getlink", "url=" + new Regex(parameter, "mediahide\\.com/\\?(.+)").getMatch(0) + "&pass=");
-        String finallink = br.getRegex("req\":\"(http:.*?)\"").getMatch(0);
-        if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        if (parameter.matches("http://(www\\.)?mediahide\\.com/\\?[A-Za-z0-9]+")) {
+            br.setFollowRedirects(false);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage("http://mediahide.com/get.php?do=getlink", "url=" + new Regex(parameter, "mediahide\\.com/\\?(.+)").getMatch(0) + "&pass=");
+            String finallink = br.getRegex("req\":\"(http:.*?)\"").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            finallink = finallink.replace("\\", "");
+            decryptedLinks.add(createDownloadlink(finallink));
+        } else {
+            br.setFollowRedirects(true);
+            br.getPage(parameter);
+            if (br.containsHTML(PASSCODETEXT)) {
+                for (int i = 0; i <= 3; i++) {
+                    String passCode = getUserInput("Enter password for: " + parameter, param);
+                    br.postPage("http://mediahide.com/paste/wp-pass.php", "post_password=" + Encoding.urlEncode(passCode) + "&Submit=Submit");
+                    if (br.containsHTML(PASSCODETEXT)) continue;
+                    break;
+                }
+                if (br.containsHTML(PASSCODETEXT)) throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+            String fpName = br.getRegex("<h2>Protected: ([^<>\"]*?)</h2>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?) \\- MediaHide Paste[\t\n\r ]+</title>").getMatch(0);
+            String[] links = HTMLParser.getHttpLinks(br.toString(), "");
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String singleLink : links)
+                if (!singleLink.matches("http://(www\\.)?mediahide\\.com/(\\?[A-Za-z0-9]+|paste/\\?p=\\d+)")) decryptedLinks.add(createDownloadlink(singleLink));
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
+            }
         }
-        finallink = finallink.replace("\\", "");
-        decryptedLinks.add(createDownloadlink(finallink));
 
         return decryptedLinks;
     }

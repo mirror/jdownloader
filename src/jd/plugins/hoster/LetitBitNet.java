@@ -371,10 +371,11 @@ public class LetitBitNet extends PluginForHost {
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
             dlUrl = getUrl(account);
-            if (dlUrl == null && br.containsHTML("callback_file_unavailable")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
+            if (dlUrl == null && br.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l);
+            // Maybe invalid or free account
             if (dlUrl == null && br.containsHTML("If you already have a premium")) {
-                /* no url found, maybe our login/php session expired */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server or Session error", 2 * 60 * 1000l);
+                logger.info("Disabling letitbit.net account: It's either a free account or logindata invalid!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             if (dlUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

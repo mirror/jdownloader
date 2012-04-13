@@ -51,10 +51,10 @@ public class DBankComFolder extends PluginForDecrypt {
             }
         }
         boolean details = true;
-        String[][] links = br.getRegex("(\"(http://(www\\.)?dbank\\.com/download/([^/<>]+)\\?f=[a-z0-9]+\\&i=\\d+\\&h=\\d+\\&v=[a-z0-9]+)\" class=\"gbtn btn\\-xz\" style=\"display:none\">下载</a>[\t\n\r ]+<a title=\"删除\" name=\"delete_Icon\" onclick=\"deleteLinkFile\\(this\\);\" class=\"gbtn btn\\-sc\" style=\"display:none\">删除</a>[\t\n\r ]+</span>[\t\n\r ]+<strong>([^<>\"]+)</strong>)").getMatches();
+        String[][] links = br.getRegex("\"(http://(www\\.)?dbank\\.com/download/([^/<>]+)\\?f=[a-z0-9]+\\&i=\\d+\\&h=\\d+\\&v=[a-z0-9]+)(\\&ip=[0-9\\.]+)?\" class=\"gbtn btn\\-xz\">下载</a>[\t\n\r ]+<em title=\"[^<>\"/]+\" name=\"delete_Icon\" onclick=\"deleteLinkFile\\(this\\);\" class=\"gbtn btn\\-sc\">删除</em>[\t\n\r ]+</span>[\t\n\r ]+<strong>([^<>\"]*?)</strong>").getMatches();
         if (links == null || links.length == 0) {
             details = false;
-            links = br.getRegex("\"(http://(www\\.)?dbank\\.com/download/.*?\\?f=[a-z0-9]+\\&i=\\d+\\&h=\\d+\\&v=[a-z0-9]+)\"").getMatches();
+            links = br.getRegex("\"(http://(www\\.)?dbank\\.com/download/[^/<>]+\\?f=[a-z0-9]+\\&i=\\d+\\&h=\\d+\\&v=[a-z0-9]+)(\\&ip=[0-9\\.]+)?\"").getMatches();
         }
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -62,9 +62,9 @@ public class DBankComFolder extends PluginForDecrypt {
         }
         if (details) {
             for (String singleLink[] : links) {
-                DownloadLink dl = createDownloadlink(singleLink[1]);
+                DownloadLink dl = createDownloadlink(singleLink[0]);
                 dl.setDownloadSize(SizeFormatter.getSize(singleLink[4] + "b"));
-                dl.setFinalFileName(Encoding.htmlDecode(singleLink[3]));
+                dl.setFinalFileName(Encoding.htmlDecode(singleLink[2].trim()));
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }

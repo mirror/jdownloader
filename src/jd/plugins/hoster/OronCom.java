@@ -54,6 +54,8 @@ public class OronCom extends PluginForHost {
     private static final String  ONLY4PREMIUMERROR1 = "This file can only be downloaded by Premium Users";
     private static final String  FILEINCOMPLETE     = "File incomplete on server, please contact oron support!";
     private final static String  ua                 = RandomUserAgent.generate();
+    private static final String  MAINTENANCE        = "class=\"err\">Site maintenance mode";
+    private static final String  SERVERERROR        = "";
 
     public OronCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,7 +69,8 @@ public class OronCom extends PluginForHost {
 
     public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
         // Some waittimes...
-        if (brbefore.contains("class=\"err\">Site maintenance mode")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Site maintenance mode", 10 * 60 * 1000l); }
+        if (brbefore.contains(MAINTENANCE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Site maintenance mode", 10 * 60 * 1000l); }
+        if (br.containsHTML(SERVERERROR)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l); }
         if (brbefore.contains("err\">Expired session<\"")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
         if (brbefore.contains("files sized up to 1024 Mb")) throw new PluginException(LinkStatus.ERROR_FATAL, "Free Users can only download files sized up to 1024 Mb");
         if (brbefore.contains("You have to wait")) {
@@ -117,7 +120,8 @@ public class OronCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
-        if (br.containsHTML("class=\"err\">Site maintenance mode")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Site maintenance mode", 10 * 60 * 1000l); }
+        if (br.containsHTML(MAINTENANCE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Site maintenance mode", 10 * 60 * 1000l); }
+        if (br.containsHTML(SERVERERROR)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l); }
         if (brbefore.contains(ONLY4PREMIUMERROR0) || brbefore.contains(ONLY4PREMIUMERROR1)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
         br.setFollowRedirects(true);
         if (brbefore.contains("\"download1\"")) br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Free+Download");
@@ -310,7 +314,8 @@ public class OronCom extends PluginForHost {
             } else {
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    if (br.containsHTML("class=\"err\">Site maintenance mode")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Site maintenance mode", 10 * 60 * 1000l); }
+                    if (br.containsHTML(MAINTENANCE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Site maintenance mode", 10 * 60 * 1000l); }
+                    if (br.containsHTML(SERVERERROR)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l); }
                     if (br.containsHTML("File could not be found due to its possible expiration")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                     if (br.containsHTML("You have reached the download")) {
                         String errormessage = "You have reached the download limit!";
@@ -505,8 +510,12 @@ public class OronCom extends PluginForHost {
         }
         if (filename != null) link.setName(filename);
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (br.containsHTML("class=\"err\">Site maintenance mode")) {
+        if (br.containsHTML(MAINTENANCE)) {
             link.getLinkStatus().setStatusText("Site maintenance");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.containsHTML(SERVERERROR)) {
+            link.getLinkStatus().setStatusText("Server error");
             return AvailableStatus.UNCHECKABLE;
         }
         return AvailableStatus.TRUE;

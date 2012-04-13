@@ -37,7 +37,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extabit.com" }, urls = { "http://(www\\.)?(u\\d+\\.extabit\\.com/go/[a-z0-9]+|extabit\\.com/(file/[a-z0-9]+|file_[a-z0-9]{13}/[a-z0-9]{13}))" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extabit.com" }, urls = { "http://(www\\.)?(u\\d+\\.extabit\\.com/go/[a-z0-9]+|extabit\\.com/(file/[a-z0-9]+(/[^<>\"/\t\n\r]+)?|file_[a-z0-9]{13}/[a-z0-9]{13}))" }, flags = { 2 })
 public class ExtaBitCom extends PluginForHost {
 
     private static final String NOTAVAILABLETEXT = "(>File is temporary unavailable<|temporary unavailable<br/>)";
@@ -62,6 +62,35 @@ public class ExtaBitCom extends PluginForHost {
             if (finallink == null) finallink = "http://extabit.com/file/fileofflineblablabla";
             link.setUrlDownload(finallink);
         }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        this.setBrowserExclusive();
+        // To get the english version of the page
+        br.setCookie("http://extabit.com", "language", "en");
+        br.setFollowRedirects(true);
+        br.setCustomCharset("utf-8");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("(File not found|Such file doesn\\'t exsist)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?)download Extabit.com \\- file hosting</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("download_filename\".*?>(.*?)</div").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("extabit\\.com/file/.*?'>(.*?)</a>").getMatch(0);
+                if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
+        String filesize = br.getRegex("class=\"download_filesize(_en)\">.*?\\[(.*?)\\]").getMatch(1);
+        if (filesize == null) filesize = br.getRegex("Size:.*?class=\"col-fileinfo\">(.*?)</").getMatch(0);
+        downloadLink.setName(filename.trim());
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.containsHTML(PREMIUMONLY))
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.Only4Premium", "This file is only available for premium users"));
+        else if (br.containsHTML(NOTAVAILABLETEXT))
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.TempUnavailable", "This file is temporary unavailable"));
+        else if (br.containsHTML(NOMIRROR)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.NoMirror", "Extabit error: \"No download mirror\", contact extabit support."));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -130,7 +159,7 @@ public class ExtaBitCom extends PluginForHost {
         }
         // If the waittime was forced it yould be here but it isn't!
         // Re Captcha handling
-        final String fileID = new Regex(link.getDownloadURL(), "extabit\\.com/file/(.+)").getMatch(0);
+        final String fileID = new Regex(link.getDownloadURL(), "extabit\\.com/file/(.+)(/.+)?").getMatch(0);
         Browser xmlbrowser = br.cloneBrowser();
         xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
@@ -230,7 +259,7 @@ public class ExtaBitCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -244,35 +273,6 @@ public class ExtaBitCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.postPage("http://extabit.com/login.jsp", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&remember=1&auth_submit_login.x=" + new Random().nextInt(10) + "&auth_submit_login.y=" + new Random().nextInt(10) + "&auth_submit_login=Enter");
         if (br.getCookie("http://extabit.com/", "auth_uid") == null || br.getCookie("http://extabit.com/", "auth_hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        this.setBrowserExclusive();
-        // To get the english version of the page
-        br.setCookie("http://extabit.com", "language", "en");
-        br.setFollowRedirects(true);
-        br.setCustomCharset("utf-8");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(File not found|Such file doesn\\'t exsist)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)download Extabit.com \\- file hosting</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("download_filename\".*?>(.*?)</div").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("extabit\\.com/file/.*?'>(.*?)</a>").getMatch(0);
-                if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        }
-        String filesize = br.getRegex("class=\"download_filesize(_en)\">.*?\\[(.*?)\\]").getMatch(1);
-        if (filesize == null) filesize = br.getRegex("Size:.*?class=\"col-fileinfo\">(.*?)</").getMatch(0);
-        downloadLink.setName(filename.trim());
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (br.containsHTML(PREMIUMONLY))
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.Only4Premium", "This file is only available for premium users"));
-        else if (br.containsHTML(NOTAVAILABLETEXT))
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.TempUnavailable", "This file is temporary unavailable"));
-        else if (br.containsHTML(NOMIRROR)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ExtaBitCom.errors.NoMirror", "Extabit error: \"No download mirror\", contact extabit support."));
-        return AvailableStatus.TRUE;
     }
 
     @Override
