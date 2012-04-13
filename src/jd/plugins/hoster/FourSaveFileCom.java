@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -178,25 +176,7 @@ public class FourSaveFileCom extends PluginForHost {
                     logger.info("The downloadlink seems to be password protected.");
                 }
                 /* Captcha START */
-                if (correctedBR.contains(";background:#ccc;text-align")) {
-                    logger.info("Detected captcha method \"plaintext captchas\" for this host");
-                    /** Captcha method by ManiacMansion */
-                    String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(\\d)</span>").getMatches();
-                    if (letters == null || letters.length == 0) {
-                        logger.warning("plaintext captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
-                    for (String[] letter : letters) {
-                        capMap.put(Integer.parseInt(letter[0]), letter[1]);
-                    }
-                    StringBuilder code = new StringBuilder();
-                    for (String value : capMap.values()) {
-                        code.append(value);
-                    }
-                    dlForm.put("code", code.toString());
-                    logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
-                } else if (correctedBR.contains("/captchas/")) {
+                if (correctedBR.contains("/captchas/")) {
                     logger.info("Detected captcha method \"Standard captcha\" for this host");
                     String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
                     String captchaurl = null;

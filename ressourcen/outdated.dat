@@ -748,3 +748,12 @@ jd/plugins/hoster/MegaFreeKz.class
 jd/plugins/decrypter/FuHdBz.class
 jd/plugins/decrypter/RsLrCm.class
 jd/captcha/methods/rslr
+jd/plugins/hoster/Uploading4UCom.class
+jd/plugins/hoster/ZShareNet.class
+jd/plugins/hoster/CumCom.class
+jd/plugins/hoster/Megauploadcom.class
+jd/plugins/hoster/MegaVideo.class
+jd/captcha/methods/mgpld
+jd/plugins/decrypter/MgpldCmFldr.class
+jd/plugins/decrypter/Load2Me.class
+jd/plugins/hoster/FilePlanetComUa.class

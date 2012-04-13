@@ -79,11 +79,6 @@ public class MystereTvComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externalLink));
             return decryptedLinks;
         }
-        if (externalLink == null) externalLink = br.getRegex("\"(http://(www\\.)?megavideo\\.com/v/.*?)\"").getMatch(0);
-        if (externalLink != null) {
-            decryptedLinks.add(createDownloadlink(externalLink));
-            return decryptedLinks;
-        }
         decryptedLinks.add(createDownloadlink(parameter.replace("mystere-tv.com/", "decryptedmystere-tv.com/")));
         return decryptedLinks;
     }

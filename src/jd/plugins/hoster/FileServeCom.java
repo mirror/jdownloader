@@ -53,12 +53,14 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://(www\\.)?fileserve\\.com/file/[a-zA-Z0-9]+" }, flags = { 2 })
 public class FileServeCom extends PluginForHost {
 
-    public String               FILEIDREGEX = "fileserve\\.com/file/([a-zA-Z0-9]+)(http:.*)?";
-    public static String        agent       = RandomUserAgent.generate();
+    public String               FILEIDREGEX         = "fileserve\\.com/file/([a-zA-Z0-9]+)(http:.*)?";
+    public static String        agent               = RandomUserAgent.generate();
     // public static String agent =
     // "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:8.0) Gecko/20100101 Firefox/8.0";
-    private static final Object LOCK        = new Object();
-    private static final String COOKIE_HOST = "http://fileserve.com/";
+    private static final Object LOCK                = new Object();
+    private static final String COOKIE_HOST         = "http://fileserve.com/";
+    private static final String DLYOURFILESUSERTEXT = "You can only download files which YOU uploaded!";
+    private static final String DLYOURFILESTEXT     = "(>FileServe can only be used to download and retrieve files that you have uploaded personally|>If this file belongs to you, please login to download it directly from your file manager)";
 
     public FileServeCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -70,7 +72,6 @@ public class FileServeCom extends PluginForHost {
      * because it was broken (error 500)
      */
     public boolean checkLinks(final DownloadLink[] urls) {
-        if (true) return false;
         if (urls == null || urls.length == 0) { return false; }
         boolean seemsOkay = false;
         try {
@@ -133,6 +134,7 @@ public class FileServeCom extends PluginForHost {
                         seemsOkay = true;
                         dl.setAvailable(true);
                     }
+                    dl.getLinkStatus().setStatusText(DLYOURFILESUSERTEXT);
                     dl.setName(filename);
                     if (filesize != null) {
                         if (filesize.contains(",") && filesize.contains(".")) {
@@ -174,6 +176,7 @@ public class FileServeCom extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink, boolean direct) throws Exception, PluginException {
+        if (true) throw new PluginException(LinkStatus.ERROR_FATAL, DLYOURFILESUSERTEXT);
         sleep(new Random().nextInt(11) * 1000l, downloadLink);
         String dllink = null;
         if (direct) {
@@ -306,10 +309,6 @@ public class FileServeCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        if (true) {
-            account.setValid(false);
-            return ai;
-        }
         try {
             loginAPI(br, account);
         } catch (PluginException e) {
@@ -456,7 +455,11 @@ public class FileServeCom extends PluginForHost {
         String id = getID(link);
         br.postPage("http://app.fileserve.com/api/download/premium/", "username=" + username + "&password=" + password + "&shorten=" + id);
         String code = br.getRegex("error_code\":(\\d+)").getMatch(0);
-        if ("305".equalsIgnoreCase(code) || "500".equalsIgnoreCase(code)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l); }
+        // Disabled because file(s) can still be downloaded via alternative
+        // errorhandling
+        // if ("305".equalsIgnoreCase(code) || "500".equalsIgnoreCase(code)) {
+        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
+        // "ServerError", 30 * 60 * 1000l); }
         if ("403".equalsIgnoreCase(code) || "605".equalsIgnoreCase(code)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
         if ("606".equalsIgnoreCase(code) || "607".equalsIgnoreCase(code) || "608".equalsIgnoreCase(code)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String dllink = null;
@@ -476,7 +479,10 @@ public class FileServeCom extends PluginForHost {
             br.getPage(link.getDownloadURL());
             dllink = br.getRedirectLocation();
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            if (br.containsHTML(DLYOURFILESTEXT)) throw new PluginException(LinkStatus.ERROR_FATAL, DLYOURFILESUSERTEXT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.replaceAll("\\\\/", "/");
         br.setFollowRedirects(true);
         // Sometimes slow servers
@@ -606,7 +612,6 @@ public class FileServeCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        if (true) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         correctHeaders(this.br);
         if (this.checkLinks(new DownloadLink[] { link }) == false) {
             /* linkcheck broken */

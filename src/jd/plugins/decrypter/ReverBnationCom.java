@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "http://(www\\.)?reverbnation\\.com/artist/artist_songs/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "http://(www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|[^<>\"/]+)" }, flags = { 0 })
 public class ReverBnationCom extends PluginForDecrypt {
 
     public ReverBnationCom(final PluginWrapper wrapper) {
@@ -39,8 +39,15 @@ public class ReverBnationCom extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        final String fpName = br.getRegex("<title>([^<>\"]*?) \\- ReverbNation</title>").getMatch(0);
-        String[][] allInfo = br.getRegex("class=\"artist_backpage_songs_row clearfix \" data\\-url=\"/artist/artist_song/(\\d+)\\?song_id=(\\d+)\">[\t\n\r ]+<a href=\"#\" class=\" standard_play_button song\\-action play\" data\\-song\\-id=\"\\d+\" title=\"Play \\&quot;([^<>\"]*?)\\&quot;\"").getMatches();
+        String fpName = null;
+        String[][] allInfo = null;
+        if (parameter.matches("http://(www\\.)?reverbnation\\.com/artist/artist_songs/\\d+")) {
+            fpName = br.getRegex("<title>([^<>\"]*?) \\- ReverbNation</title>").getMatch(0);
+            allInfo = br.getRegex("class=\"artist_backpage_songs_row clearfix \" data\\-url=\"/artist/artist_song/(\\d+)\\?song_id=(\\d+)\">[\t\n\r ]+<a href=\"#\" class=\" standard_play_button song\\-action play\" data\\-song\\-id=\"\\d+\" title=\"Play \\&quot;([^<>\"]*?)\\&quot;\"").getMatches();
+        } else {
+            fpName = br.getRegex("<h1 class=\"profile_user_name\">([^<>\"]*?)</h1>").getMatch(0);
+            allInfo = br.getRegex("class=\"song_name\"><a href=\"/artist/artist_songs/(\\d+)\\?song_id=(\\d+)\">([^<>\"]*?)</a>").getMatches();
+        }
         if (allInfo == null || allInfo.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

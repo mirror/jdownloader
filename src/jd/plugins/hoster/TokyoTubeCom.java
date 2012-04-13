@@ -75,32 +75,38 @@ public class TokyoTubeCom extends PluginForHost {
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.tokyo-tube.com/media/player/config.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "tokyo\\-tube\\.com/video/(\\d+)").getMatch(0));
-        // Prefer HD
-        DLLINK = br.getRegex("<hd>(http://[^<>]+)</hd>").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("<src>(http://[^<>]+)</src>").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null) ext = ".flv";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        final String[] types = { "hd", "src" };
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return AvailableStatus.TRUE;
+            for (String type : types) {
+                DLLINK = br.getRegex("<" + type + ">(http://[^<>]+)</" + type + ">").getMatch(0);
+                if (DLLINK != null) {
+                    DLLINK = Encoding.htmlDecode(DLLINK);
+                    con = br2.openGetConnection(DLLINK);
+                    if (!con.getContentType().contains("html")) {
+                        downloadLink.setDownloadSize(con.getLongContentLength());
+                        break;
+                    } else {
+                        continue;
+                    }
+                }
+            }
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            filename = filename.trim();
+            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            if (ext == null) ext = ".flv";
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override

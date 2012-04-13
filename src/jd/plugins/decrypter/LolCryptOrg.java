@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -35,7 +34,6 @@ public class LolCryptOrg extends PluginForDecrypt {
         super(wrapper);
     }
 
-    /** Only works for megaupload links at the moment */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -68,39 +66,10 @@ public class LolCryptOrg extends PluginForDecrypt {
         }
         for (final String singleLink : links) {
             br.getPage("http://lolcrypt.org" + singleLink);
-            /**
-             * Schauen, ob es ein megaupload Link ist
-             */
-            String finallink = br.getRegex("href=\"javascript:clipboardcopy\\(\\'(http://(www\\.)?megaupload\\.com/\\?d=[A-Z0-9]+)\\'\\)").getMatch(0);
-            if (finallink == null) finallink = br.getRedirectLocation();
+            String finallink = br.getRedirectLocation();
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
-            }
-            final Boolean mu = finallink.contains("megaupload") ? true : false;
-            /**
-             * Megaupload Direktlink holen
-             */
-
-            if (mu) {
-                URLConnectionAdapter con = null;
-                try {
-                    finallink = br.getRegex("id=\"dlbuttondisabled\"></a> [\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
-                    con = br.openGetConnection(finallink);
-                    finallink = br.getRedirectLocation();
-                    finallink = finallink == null ? br.getRequest().getHttpConnection().getHeaderField("etag").replace("\"", "") : finallink;
-                    if (finallink == null) {
-                        continue;
-                    }
-                    if (!finallink.startsWith("http")) {
-                        finallink = "http://www.megaupload.com/?d=" + finallink;
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
             }
             decryptedLinks.add(createDownloadlink(finallink));
         }

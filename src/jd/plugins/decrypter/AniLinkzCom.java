@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision: 13155 $", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://[\\w\\.]*?anilinkz\\.com/(?!get|img|dsa).+/.+" }, flags = { 0 })
 public class AniLinkzCom extends PluginForDecrypt {
 
-    private static final Pattern PATTERN_SUPPORTED_HOSTER         = Pattern.compile("(zshare\\.net|megavideo\\.com|youtube\\.com|veoh\\.com)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_SUPPORTED_HOSTER         = Pattern.compile("(youtube\\.com|veoh\\.com)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_UNSUPPORTED_HOSTER       = Pattern.compile("(facebook\\.com|google\\.com)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_SUPPORTED_FILE_EXTENSION = Pattern.compile("(\\.mp4|\\.flv|\\.fll)", Pattern.CASE_INSENSITIVE);
 
@@ -101,13 +101,6 @@ public class AniLinkzCom extends PluginForDecrypt {
                                 break;
                             }
                         }
-                        if (dllink.contains("megavideo.com") && dllink.contains("v=")) {
-                            final String id = dllink.substring(dllink.lastIndexOf("=") + 1);
-                            dllink = "http://www.megavideo.com/v/" + id;
-                            if (id == null) {
-                                break;
-                            }
-                        }
                         if (dllink.contains("upload2.com")) {
                             br2.getPage(dllink);
                             dllink = br2.getRegex("video=(.*?)&rating").getMatch(0);
@@ -122,13 +115,6 @@ public class AniLinkzCom extends PluginForDecrypt {
                             if (dllink != null) {
                                 dllink = dllink.replace("v/", "watch?v=");
                             } else {
-                                break;
-                            }
-                        }
-                        if (dllink.contains("zshare.net")) {
-                            br2.getPage(dllink);
-                            dllink = br2.getRegex("\\s+<a href=\"(.*?)\".*Download Video").getMatch(0);
-                            if (dllink == null) {
                                 break;
                             }
                         }

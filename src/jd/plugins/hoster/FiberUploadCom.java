@@ -268,9 +268,17 @@ public class FiberUploadCom extends PluginForHost {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             correctBR();
-            if (br.containsHTML("(The download should start momentarily, if it does not|<meta http\\-equiv=\"refresh\" content=\"\\d+\")")) {
-                dllink = br.getRegex("url=([^\"]+)").getMatch(0);
-                if (dllink == null) dllink = br.getRegex("click <a href=\"([^\"]+)").getMatch(0);
+            if (br.containsHTML("http\\-equiv=\"refresh\" content=\"3")) {
+                // This waittime is sometimes forced, sometimes skippable so we
+                // wait it
+                int wait = 5;
+                final String waittime = br.getRegex("in (\\d+) seconds").getMatch(0);
+                if (waittime != null) wait = Integer.parseInt(waittime);
+                sleep(wait * 1001l, downloadLink);
+                br.getPage(dllink);
+                dllink = br.getRegex("url=([^\"]*?)\"").getMatch(0);
+                if (dllink == null) dllink = br.getRegex("click <a href=\"([^\"]*?)\"").getMatch(0);
+                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
                 if (dl.getConnection().getContentType().contains("html")) {
                     logger.warning("The final dllink seems not to be a file!");
