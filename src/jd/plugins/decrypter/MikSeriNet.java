@@ -91,8 +91,8 @@ public class MikSeriNet extends PluginForDecrypt {
     }
 
     private DownloadLink getSingleLink(String iD) throws IOException {
-        br.getPage("http://www.mikseri.net/music/play.php?id=" + iD + "&type=dl");
-        String finallink = br.getRedirectLocation();
+        br.getPage("http://www.mikseri.net/player/songlist.php?newsession=1&type=1&parameter=" + iD);
+        String finallink = br.getRegex("<SongUrl>(http://[^<>\"]*?)</SongUrl>").getMatch(0);
         if (finallink == null) return null;
         return createDownloadlink("directhttp://" + finallink);
 

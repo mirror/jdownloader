@@ -21,11 +21,9 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirorii.com" }, urls = { "http://[\\w\\.]*?mirorii\\.com/fichier/\\d+/\\d+/" }, flags = { 0 })
 public class MiroriiCom extends PluginForDecrypt {
@@ -39,9 +37,18 @@ public class MiroriiCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setCustomCharset("utf-8");
         br.getPage(parameter);
-        if (br.containsHTML("<h1>Désolé ce fichier est introuvable\\.</h1>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML(">Désolé mais ce fichier n\\'est pas ou plus disponible")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String[] links = br.getRegex("\"><a href=\"(.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            if (br.containsHTML("/img/heb/miroriii\\.png\"")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            return null;
+        }
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
 

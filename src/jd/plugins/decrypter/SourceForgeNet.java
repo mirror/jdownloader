@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sourceforge.net" }, urls = { "http://[\\w\\.]*?(sourceforge\\.net/projects/(.*?/files/extras/.*?/download|.+)|downloads\\.sourceforge\\.net/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sourceforge.net" }, urls = { "http://(www\\.)?(sourceforge\\.net/projects/(.*?/files/extras/.*?/download|.+)|downloads\\.sourceforge\\.net/.+)" }, flags = { 0 })
 public class SourceForgeNet extends PluginForDecrypt {
 
     public SourceForgeNet(PluginWrapper wrapper) {
@@ -51,8 +51,11 @@ public class SourceForgeNet extends PluginForDecrypt {
                 link = br.getRegex("Please use this([\n\t\r ]+)?<a href=\"(.*?)\"").getMatch(1);
                 if (link == null) link = br.getRegex("\"(http://downloads\\.sourceforge\\.net/project/.*?/extras/.*?/.*?use_mirror=.*?)\"").getMatch(0);
             } else {
-                String continuelink = br.getRegex("href=\"(http://sourceforge\\.net/projects/[A-Za-z0-9_-]+/files/.*?/download)\"").getMatch(0);
-                if (continuelink == null) return null;
+                String continuelink = br.getRegex("\"(/projects/" + new Regex(parameter, "sourceforge\\.net/projects/(.*?)/").getMatch(0) + "/files/latest/download)\"").getMatch(0);
+                if (continuelink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
                 br.getPage(continuelink);
                 if (br.containsHTML("(<h1>Error encountered</h1>|>We apologize\\. It appears an error has occurred\\.)")) {
                     logger.info("Servererror for link: " + parameter);
