@@ -757,3 +757,4 @@ jd/captcha/methods/mgpld
 jd/plugins/decrypter/MgpldCmFldr.class
 jd/plugins/decrypter/Load2Me.class
 jd/plugins/hoster/FilePlanetComUa.class
+jd/plugins/decrypter/MdfBtCom.class
