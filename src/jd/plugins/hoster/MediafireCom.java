@@ -61,6 +61,8 @@ import org.w3c.dom.html2.HTMLCollection;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n)" }, flags = { 2 })
 public class MediafireCom extends PluginForHost {
+    private static final String PRIVATEFILE = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
+
     public static abstract class PasswordSolver {
 
         protected Browser       br;
@@ -81,12 +83,13 @@ public class MediafireCom extends PluginForHost {
 
         // do not add @Override here to keep 0.* compatibility
         public boolean hasAutoCaptcha() {
-            return true;
+            return false;
         }
 
         // do not add @Override here to keep 0.* compatibility
         public boolean hasCaptcha() {
-            return true;
+            // Usually not
+            return false;
         }
 
         abstract protected boolean isCorrect();
@@ -401,6 +404,7 @@ public class MediafireCom extends PluginForHost {
                 break;
             }
             this.requestFileInformation(downloadLink);
+            if (downloadLink.getBooleanProperty("privatefile")) throw new PluginException(LinkStatus.ERROR_FATAL, PRIVATEFILE);
             try {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
@@ -686,7 +690,12 @@ public class MediafireCom extends PluginForHost {
                     }
 
                     redirectURL = this.br.getRedirectLocation();
-                    if (redirectURL != null && redirectURL.indexOf(MediafireCom.ERROR_PAGE) > 0) {
+                    if (redirectURL != null && redirectURL.contains("mediafire.com/error.php?errno=999")) {
+                        downloadLink.getLinkStatus().setStatusText(PRIVATEFILE);
+                        final String name = new Regex(url, "download\\.php\\?(.+)").getMatch(0);
+                        if (name != null) downloadLink.setName(name);
+                        downloadLink.setProperty("privatefile", "true");
+                    } else if (redirectURL != null && redirectURL.indexOf(MediafireCom.ERROR_PAGE) > 0) {
                         /* check for offline status */
                         status = AvailableStatus.FALSE;
                         final String errorCode = redirectURL.substring(redirectURL.indexOf("=") + 1, redirectURL.length());
@@ -694,34 +703,35 @@ public class MediafireCom extends PluginForHost {
                             logger.warning("The requested file ['" + url + "'] is invalid");
                         }
                         break;
-                    }
-                    String name = br.getRegex("<div class=\"download_file_title\"> (.*?) </div>").getMatch(0);
-                    String size = br.getRegex(" <input type=\"hidden\" id=\"sharedtabsfileinfo1-fs\" value=\"(.*?)\">").getMatch(0);
-                    if (size == null) size = br.getRegex("(?i)\\(([\\d\\.]+ (KB|MB|GB|TB))\\)").getMatch(0);
-                    if (name != null) {
-                        downloadLink.setFinalFileName(Encoding.htmlDecode(name.trim()));
-                        downloadLink.setDownloadSize(SizeFormatter.getSize(size));
-                        return AvailableStatus.TRUE;
-                    }
-                    if (!downloadLink.getStringProperty("origin", "").equalsIgnoreCase("decrypter")) {
-                        downloadLink.setName(Plugin.extractFileNameFromURL(redirectURL));
-                    }
-                    con = null;
-                    try {
-                        con = br.cloneBrowser().openGetConnection(redirectURL);
-                        if (con.isContentDisposition()) {
-                            downloadLink.setProperty("type", "direct");
-                            dlURL = redirectURL;
-                            downloadLink.setDownloadSize(con.getLongContentLength());
-                            downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(con));
+                    } else {
+                        String name = br.getRegex("<div class=\"download_file_title\"> (.*?) </div>").getMatch(0);
+                        String size = br.getRegex(" <input type=\"hidden\" id=\"sharedtabsfileinfo1-fs\" value=\"(.*?)\">").getMatch(0);
+                        if (size == null) size = br.getRegex("(?i)\\(([\\d\\.]+ (KB|MB|GB|TB))\\)").getMatch(0);
+                        if (name != null) {
+                            downloadLink.setFinalFileName(Encoding.htmlDecode(name.trim()));
+                            downloadLink.setDownloadSize(SizeFormatter.getSize(size));
                             return AvailableStatus.TRUE;
-                        } else {
-                            return AvailableStatus.FALSE;
                         }
-                    } finally {
+                        if (!downloadLink.getStringProperty("origin", "").equalsIgnoreCase("decrypter")) {
+                            downloadLink.setName(Plugin.extractFileNameFromURL(redirectURL));
+                        }
+                        con = null;
                         try {
-                            con.disconnect();
-                        } catch (final Throwable e) {
+                            con = br.cloneBrowser().openGetConnection(redirectURL);
+                            if (con.isContentDisposition()) {
+                                downloadLink.setProperty("type", "direct");
+                                dlURL = redirectURL;
+                                downloadLink.setDownloadSize(con.getLongContentLength());
+                                downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(con));
+                                return AvailableStatus.TRUE;
+                            } else {
+                                return AvailableStatus.FALSE;
+                            }
+                        } finally {
+                            try {
+                                con.disconnect();
+                            } catch (final Throwable e) {
+                            }
                         }
                     }
                 }
@@ -736,21 +746,21 @@ public class MediafireCom extends PluginForHost {
                     status = AvailableStatus.FALSE;
                 }
             }
+            if (status == AvailableStatus.FALSE) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (this.br.getRegex(MediafireCom.offlinelink).matches()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            String filename = this.br.getRegex("id=\"sharedtabsfileinfo1\\-fn\" value=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = this.br.getRegex("<title>(.*?)<\\/title>").getMatch(0);
+            }
+            String filesize = this.br.getRegex("<input type=\"hidden\" id=\"sharedtabsfileinfo1-fs\" value=\"(.*?)\">").getMatch(0);
+            if (filesize == null) {
+                filesize = this.br.getRegex("<input type=\"hidden\" id=\"sharedtabsfileinfo-fs\" value=\"(.*?)\">").getMatch(0);
+            }
+            if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+            status = AvailableStatus.TRUE;
         }
-        if (status == AvailableStatus.FALSE) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (this.br.getRegex(MediafireCom.offlinelink).matches()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = this.br.getRegex("id=\"sharedtabsfileinfo1\\-fn\" value=\"(.*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = this.br.getRegex("<title>(.*?)<\\/title>").getMatch(0);
-        }
-        String filesize = this.br.getRegex("<input type=\"hidden\" id=\"sharedtabsfileinfo1-fs\" value=\"(.*?)\">").getMatch(0);
-        if (filesize == null) {
-            filesize = this.br.getRegex("<input type=\"hidden\" id=\"sharedtabsfileinfo-fs\" value=\"(.*?)\">").getMatch(0);
-        }
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        status = AvailableStatus.TRUE;
         return status;
     }
 

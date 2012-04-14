@@ -34,7 +34,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ziddu.com" }, urls = { "http://[\\w\\.]*?ziddu\\.com/((download(file)?/\\d+/.+)|(download\\.php\\?uid=.+))" }, flags = { 0 })
 public class ZidduCom extends PluginForHost {
 
-    private static final String FILEOFFLINE = "(may be deleted by the user or by the Adminstrator|src=images/oops\\.gif|The requested URL  was not found on this server)";
+    private static final String FILEOFFLINE = "(may be deleted by the user or by the Administrator|src=images/oops\\.gif|The requested URL  was not found on this server)";
 
     public ZidduCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,6 +48,24 @@ public class ZidduCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        String Url = downloadLink.getDownloadURL();
+        br.setDebug(true);
+        br.setFollowRedirects(true);
+        br.getPage(Url);
+        if (br.containsHTML(FILEOFFLINE) || br.getURL().contains("msg=File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("top\\.document\\.title=\"Download (.*?) in Ziddu\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("download/\\d+/(.*?)\\.html").getMatch(0);
+        String filesize = br.getRegex(">File Size :</span></td>[\t\n\r ]+<td height=\"\\d+\" align=\"left\" class=\"fontfamilyverdana normal12blue\"><span class=\"fontfamilyverdana normal12black\">(.*?)</span>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(Encoding.htmlDecode(filename));
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        br.setFollowRedirects(false);
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -84,22 +102,9 @@ public class ZidduCom extends PluginForHost {
         return true;
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        String Url = downloadLink.getDownloadURL();
-        br.setDebug(true);
-        br.setFollowRedirects(true);
-        br.getPage(Url);
-        if (br.containsHTML(FILEOFFLINE) || br.getURL().contains("msg=File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("top\\.document\\.title=\"Download (.*?) in Ziddu\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("download/\\d+/(.*?)\\.html").getMatch(0);
-        String filesize = br.getRegex(">File Size :</span></td>[\t\n\r ]+<td height=\"\\d+\" align=\"left\" class=\"fontfamilyverdana normal12blue\"><span class=\"fontfamilyverdana normal12black\">(.*?)</span>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(Encoding.htmlDecode(filename));
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        br.setFollowRedirects(false);
-        return AvailableStatus.TRUE;
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return true;
     }
 
     @Override

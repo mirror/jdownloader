@@ -65,6 +65,7 @@ public class DdlStorageCom extends PluginForHost {
 
     // XfileSharingProBasic Version 2.5.3.5, modified some stuff, free limits
     // untested (except resume) so set to standard
+    // Captcha: reCaptcha
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
@@ -136,7 +137,7 @@ public class DdlStorageCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -230,7 +231,7 @@ public class DdlStorageCom extends PluginForHost {
                 logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                 dlForm = rc.getForm();
                 /** wait time is often skippable for reCaptcha handling */
-                // skipWaittime = true;
+                skipWaittime = true;
             }
             /* Captcha END */
             if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
@@ -261,7 +262,7 @@ public class DdlStorageCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     /** This removes fake messages which can kill the plugin */

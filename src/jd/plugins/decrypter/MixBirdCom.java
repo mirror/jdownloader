@@ -28,7 +28,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixbird.com" }, urls = { "http://(www\\.)?mixbird\\.com/mixtapes/(listen|download)/[a-z0-9_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixbird.com" }, urls = { "http://(www\\.)?mixbird\\.com/mixtapes/(listen|download)/[a-z0-9_\\-]+" }, flags = { 0 })
 public class MixBirdCom extends PluginForDecrypt {
 
     public MixBirdCom(PluginWrapper wrapper) {
