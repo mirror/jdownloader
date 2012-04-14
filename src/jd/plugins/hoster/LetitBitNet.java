@@ -144,7 +144,7 @@ public class LetitBitNet extends PluginForHost {
         String appId = getPluginConfig().getStringProperty("APPID", null);
         boolean validate = getPluginConfig().getBooleanProperty("APPIDVALIDATE", false);
 
-        if (!validate && !getPluginConfig().getBooleanProperty("STATUS", false)) return null;
+        if (!validate || !getPluginConfig().getBooleanProperty("STATUS", false)) return null;
         Browser skymonk = new Browser();
         skymonk.getHeaders().put("Pragma", null);
         skymonk.getHeaders().put("Cache-Control", null);
