@@ -106,7 +106,7 @@ public class ShareFilesCo extends PluginForHost {
             if (filename == null) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = new Regex(correctedBR, "(?i)(File)?name ?:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(2);
+                    filename = new Regex(correctedBR, ">Filename:</b></td><td class=\"fname\">([^<>\"]*?)</td>").getMatch(0);
                 }
             }
         }
