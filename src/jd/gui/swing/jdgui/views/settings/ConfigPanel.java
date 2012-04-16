@@ -17,6 +17,7 @@
 package jd.gui.swing.jdgui.views.settings;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.logging.Logger;
 
 import javax.swing.Icon;
@@ -200,7 +201,7 @@ public abstract class ConfigPanel extends SwitchPanel {
      * Saves the ConfigEntries in THIS panel.
      */
     private final void saveConfigEntries() {
-        ArrayList<SubConfiguration> subs = new ArrayList<SubConfiguration>();
+        HashSet<SubConfiguration> subs = new HashSet<SubConfiguration>();
         for (GUIConfigEntry akt : entries) {
             if (akt.getConfigEntry().getPropertyInstance() instanceof SubConfiguration && !subs.contains(akt.getConfigEntry().getPropertyInstance())) {
                 subs.add((SubConfiguration) akt.getConfigEntry().getPropertyInstance());

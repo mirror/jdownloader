@@ -101,7 +101,7 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
             break;
         case ConfigContainer.TYPE_CHECKBOX:
             input = new JCheckBox();
-            ((JCheckBox) input).addChangeListener(this);
+            ((JCheckBox) input).addActionListener(this);
             break;
         case ConfigContainer.TYPE_SPINNER:
             input = new JSpinner(new SpinnerNumberModel(configEntry.getStart(), configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
@@ -333,10 +333,15 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
      * updates config --> gui
      */
     public void load() {
-        if (configEntry.getPropertyInstance() != null && configEntry.getPropertyName() != null) {
-            setData(configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName(), configEntry.getDefaultValue()));
-        } else if (configEntry.getListController() != null) {
-            setData(configEntry.getListController().getList());
+        configEntry.setNotifyChanges(false);
+        try {
+            if (configEntry.getPropertyInstance() != null && configEntry.getPropertyName() != null) {
+                setData(configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName(), configEntry.getDefaultValue()));
+            } else if (configEntry.getListController() != null) {
+                setData(configEntry.getListController().getList());
+            }
+        } finally {
+            configEntry.setNotifyChanges(true);
         }
     }
 

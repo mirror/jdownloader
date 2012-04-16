@@ -37,7 +37,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://[a-z0-9]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://[a-z0-9\\-]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
 
     private static AtomicInteger maxPrem        = new AtomicInteger(1);
@@ -74,13 +74,16 @@ public class OneFichierCom extends PluginForHost {
         String filename = br.getRegex("\">File name :</th><td>([^<>\"]*?)</td>").getMatch(0);
         if (filename == null) filename = br.getRegex("Download of ([^<>\"]*?)<br/>[\t\n\r ]+<br/>").getMatch(0);
         String filesize = br.getRegex("<th>File size :</th><td>([^<>\"]*?)</td></tr>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
+        if (filename != null) link.setName(filename.trim());
         if (filesize != null) {
             filesize = filesize.replace("Go", "Gb").replace("Mo", "Mb").replace("Ko", "Kb");
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        if (br.containsHTML(PASSWORDTEXT)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onefichiercom.passwordprotected", "This link is password protected"));
+        if (br.containsHTML(PASSWORDTEXT)) {
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onefichiercom.passwordprotected", "This link is password protected"));
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return AvailableStatus.TRUE;
     }
 
@@ -89,9 +92,20 @@ public class OneFichierCom extends PluginForHost {
         if (br.containsHTML(">Software error:<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         if (br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
         String passCode = null;
-        // Their limit is just very short so a 30 second waittime for all
-        // downloads will remove the limit
-        br.postPage(downloadLink.getDownloadURL(), "submit=Download+the+file");
+        if (br.containsHTML(PASSWORDTEXT)) {
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+            br.postPage(br.getURL(), "pass=" + passCode);
+            if (br.containsHTML(PASSWORDTEXT)) throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
+        } else {
+            // Their limit is just very short so a 30 second waittime for all
+            // downloads will remove the limit
+            br.postPage(downloadLink.getDownloadURL(), "submit=Download+the+file");
+        }
         String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /* server has issues with range requests ->result in broken file */

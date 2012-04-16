@@ -30,6 +30,7 @@ import javax.mail.internet.InternetAddress;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.GuiConfigListener;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -505,13 +506,21 @@ public class LetitBitNet extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "STATUS", JDL.L("plugins.hoster.letitbit.status", "Use SkyMonk?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "SKYMONKEMAIL", JDL.L("plugins.hoster.letitbit.email", "E-Mail:")));
+        final ConfigEntry configEntry;
+        getConfig().addEntry(configEntry = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "SKYMONKEMAIL", JDL.L("plugins.hoster.letitbit.email", "E-Mail:")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             @Override
             public void actionPerformed(ActionEvent e) {
+                GuiConfigListener listener = configEntry.getGuiListener();
                 String email = getPluginConfig().getStringProperty("SKYMONKEMAIL", null);
+                if (listener != null) {
+                    try {
+                        email = (String) listener.getText();
+                    } catch (final Throwable e2) {
+                    }
+                }
                 String emailChanged = getPluginConfig().getStringProperty("SKYMONKEMAILCHANGED", null);
                 if (!email.equalsIgnoreCase(emailChanged)) {
                     getPluginConfig().setProperty("APPID", null);
@@ -563,5 +572,4 @@ public class LetitBitNet extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
 
     }
-
 }

@@ -238,7 +238,7 @@ public class Property implements Serializable {
      */
     public void setProperty(final String key, final Object value) {
         if (value == NULL) {
-            if (properties != null && properties.containsKey(key)) {
+            if (properties != null) {
                 properties.remove(key);
             }
             return;
