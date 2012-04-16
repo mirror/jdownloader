@@ -28,20 +28,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu" }, urls = { "http://(www\\.)?(nowvideo\\.eu/(video/|player\\.php\\?v=)|embed\\.nowvideo\\.eu/embed\\.php\\?v=)[a-z0-9]+" }, flags = { 0 })
-public class NowVideoEu extends PluginForHost {
+import org.appwork.utils.formatter.SizeFormatter;
 
-    public NowVideoEu(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebig.net" }, urls = { "http://(www\\.)?filebig\\.net/files/[A-Za-z0-9]+" }, flags = { 0 })
+public class FileBigNet extends PluginForHost {
+
+    public FileBigNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.nowvideo.eu/terms.php";
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.nowvideo.eu/player.php?v=" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        return "http://www.filebig.net/static/agreement.php";
     }
 
     @Override
@@ -49,22 +47,23 @@ public class NowVideoEu extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>This file no longer exists on our servers|>Possible reasons:)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"video_details radius\\d+\" style=\"height:125px;position:relative;\">[\t\n\r ]+<h4>([^<>\"]*?)</h4>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        if (br.containsHTML("(>File not found<|>File has been deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<p>File: <strong>([^<>\"]*?)</strong>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>Download ([^<>\"]*?) file</title>").getMatch(0);
+        String filesize = br.getRegex("Size: <strong>(\\d+)</strong> bytes</p>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize + "bytes"));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*?)\"").getMatch(0);
-        if (fKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://www.nowvideo.eu/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey));
-        String dllink = br.getRegex("url=(http://[^<>\"]*?\\.flv)\\&title").getMatch(0);
+        String dllink = br.getRegex("type=\"hidden\" name=\"t\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dllink = "http://www.filebig.net/files/" + new Regex(downloadLink.getDownloadURL(), "filebig\\.net/files/(.+)").getMatch(0) + "?t=" + dllink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

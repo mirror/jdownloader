@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,43 +27,43 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu" }, urls = { "http://(www\\.)?(nowvideo\\.eu/(video/|player\\.php\\?v=)|embed\\.nowvideo\\.eu/embed\\.php\\?v=)[a-z0-9]+" }, flags = { 0 })
-public class NowVideoEu extends PluginForHost {
+import org.appwork.utils.formatter.SizeFormatter;
 
-    public NowVideoEu(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dwn.so" }, urls = { "http://(www\\.)?dwn\\.so/show\\-file/[a-z0-9]+/\\d+/[^<>\"/]+\\.html" }, flags = { 0 })
+public class DwnSo extends PluginForHost {
+
+    public DwnSo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.nowvideo.eu/terms.php";
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.nowvideo.eu/player.php?v=" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        return "http://dwn.so/rules.html";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCookie("http://dwn.so/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>This file no longer exists on our servers|>Possible reasons:)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"video_details radius\\d+\" style=\"height:125px;position:relative;\">[\t\n\r ]+<h4>([^<>\"]*?)</h4>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        if (br.getURL().contains("dwn.so/?error=not_found") || br.containsHTML("<title>Upload Files \\- DwnShare</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>([^<>\"]*?) \\- Download File \\- DwnShare</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("class=\"link_download\" href=\"#\"><b>([^<>\"]*?)</b></a></div>").getMatch(0);
+        String filesize = br.getRegex("class=\"result\">File Size ([^<>\"]*?), uploaded").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*?)\"").getMatch(0);
-        if (fKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://www.nowvideo.eu/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey));
-        String dllink = br.getRegex("url=(http://[^<>\"]*?\\.flv)\\&title").getMatch(0);
+        String dllink = br.getRegex("\\{\\$\\(\\'\\.link_download\\'\\)\\.attr\\(\\'href\\',\\'(http://[^<>\"]*?)\\'\\)").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\\'(http://s\\d+\\.dwnshare\\.com/download\\-file\\-directly/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/\\d+/[^<>\"]*?)\\'").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

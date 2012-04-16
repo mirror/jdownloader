@@ -56,6 +56,7 @@ public class PeeJeCom extends PluginForHost {
     }
 
     private static final String PASSWORDTEXT = ">This file is password\\-protected";
+    private static final String SLOTSFILLED  = ">All download slots for this file are currently filled";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -65,7 +66,7 @@ public class PeeJeCom extends PluginForHost {
         if (br.containsHTML(">The file you requested does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fileInfo = br.getRegex("<br />File information:<b> (.*?) \\- (\\d+.*?) </b>");
         String filename = null;
-        if (br.containsHTML(PASSWORDTEXT)) {
+        if (br.containsHTML(PASSWORDTEXT) || br.containsHTML(SLOTSFILLED)) {
             filename = br.getRegex("var RELPATH = \"([^<>\"]*?)(\\.html)?\"").getMatch(0);
         } else {
             filename = fileInfo.getMatch(0);
@@ -81,6 +82,7 @@ public class PeeJeCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(SLOTSFILLED)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No slots available", 10 * 60 * 1000l);
         String passCode = downloadLink.getStringProperty("pass", null);
         if (br.containsHTML(PASSWORDTEXT)) {
             if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);

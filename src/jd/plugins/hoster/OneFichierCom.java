@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -37,7 +38,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://[a-z0-9\\-]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://(?!www\\.)[a-z0-9\\-]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
 
     private static AtomicInteger maxPrem        = new AtomicInteger(1);
@@ -88,7 +89,6 @@ public class OneFichierCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
-        System.out.println(br.toString());
         if (br.containsHTML(">Software error:<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         if (br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
         String passCode = null;
@@ -100,7 +100,10 @@ public class OneFichierCom extends PluginForHost {
                 passCode = downloadLink.getStringProperty("pass", null);
             }
             br.postPage(br.getURL(), "pass=" + passCode);
-            if (br.containsHTML(PASSWORDTEXT)) throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
+            if (br.containsHTML(PASSWORDTEXT)) {
+                downloadLink.setProperty("pass", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
+            }
         } else {
             // Their limit is just very short so a 30 second waittime for all
             // downloads will remove the limit

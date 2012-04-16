@@ -68,15 +68,16 @@ public class EcoStreamTv extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL() + "?ss=1");
+        br.postPage(downloadLink.getDownloadURL() + "?ss=1", "ss=1");
         // No way to directly find out of it's online or not so let's just try
-        Regex importantVars = br.getRegex("setTimeout\\(\"lc\\(\\'([a-z0-9]+)\\',\\'([a-z0-9]+)\\',\\'([a-z0-9]+)\\'\\)");
+        Regex importantVars = br.getRegex("\\(\"lc\\(\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\'\\)");
         String var1 = importantVars.getMatch(0);
         String var2 = importantVars.getMatch(1);
         String var3 = importantVars.getMatch(2);
-        if (var1 == null || var2 == null || var3 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String var4 = importantVars.getMatch(3);
+        if (var1 == null || var2 == null || var3 == null || var4 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("http://www.ecostream.tv/object.php?s=" + var1 + "&k=" + var2 + "&t=" + var3);
+        br.postPage("http://www.ecostream.tv/objec.php?s=" + var1 + "&k=" + var2 + "&t=" + var3 + "&key=" + var4, "");
         DLLINK = br.getRegex("flashvars=\"file=(http://[^\"\\']+)\\&image=").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);

@@ -140,7 +140,7 @@ public class FileKingCo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, true);
+        doFree(downloadLink, true, -2, true);
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean getLinkWithoutLogin) throws Exception, PluginException {

@@ -62,11 +62,6 @@ public class UpToBoxCom extends PluginForHost {
     private static final Object LOCK                = new Object();
 
     // XfileSharingProBasic Version 2.5.0.8
-    /**
-     * This is only for developers to easily implement hosters using the
-     * "xfileshare(pro)" script (more informations can be found on
-     * xfilesharing.net)!
-     */
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -281,7 +276,7 @@ public class UpToBoxCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
