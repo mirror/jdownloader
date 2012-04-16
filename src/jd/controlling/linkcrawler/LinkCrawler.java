@@ -681,7 +681,7 @@ public class LinkCrawler implements IOPermission {
             }
 
             fpi.setAutoExtractionEnabled(dp.isPostProcessing());
-            fpi.setName(LinknameCleaner.cleanFileName(dp.getName()));
+            fpi.setName(LinknameCleaner.cleanFileName(dp.getName(), false, true));
             if (Boolean.FALSE.equals(dp.getBooleanProperty(ALLOW_MERGE, false))) {
                 fpi.setUniqueId(dp.getUniqueID());
             }
