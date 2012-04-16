@@ -1,12 +1,19 @@
 package jd.gui.swing.jdgui.components.toolbar.actions;
 
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 
+import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.UserIF.Panels;
+import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
+import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
 import org.jdownloader.translate._JDT;
 
 public class StartDownloadsAction extends AbstractToolbarAction {
@@ -31,7 +38,18 @@ public class StartDownloadsAction extends AbstractToolbarAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        DownloadWatchDog.getInstance().startDownloads();
+        if (JDGui.getInstance().isCurrentPanel(Panels.LINKGRABBER)) {
+            IOEQ.add(new Runnable() {
+                public void run() {
+                    ArrayList<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
+                    ConfirmAction ca = new ConfirmAction(true, packages);
+                    ca.setAutostart(true);
+                    ca.actionPerformed(null);
+                }
+            }, true);
+        } else {
+            DownloadWatchDog.getInstance().startDownloads();
+        }
     }
 
     @Override

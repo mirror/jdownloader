@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import jd.controlling.IOEQ;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
@@ -24,10 +25,14 @@ public class CheckStatusAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
+        if (!isEnabled()) return;
         IOEQ.add(new Runnable() {
 
             public void run() {
                 final LinkChecker<DownloadLink> lc = new LinkChecker<DownloadLink>(true);
+                for (DownloadLink l : links) {
+                    l.setAvailableStatus(AvailableStatus.UNCHECKED);
+                }
                 lc.check(links);
             }
 

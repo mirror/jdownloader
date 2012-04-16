@@ -45,8 +45,16 @@ public class ConfirmAction extends AppAction {
     private ArrayList<AbstractNode> values;
     private boolean                 autostart;
 
+    public boolean isAutostart() {
+        return autostart;
+    }
+
+    public void setAutostart(boolean autostart) {
+        this.autostart = autostart;
+    }
+
     public ConfirmAction(boolean autostart, ArrayList<AbstractNode> arrayList) {
-        if ((org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue() && !autostart) || (autostart && !org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue())) {
+        if (autostart != org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue()) {
             setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_start());
             Image add = NewTheme.I().getImage("media-playback-start", 20);
             Image play = NewTheme.I().getImage("add", 14);

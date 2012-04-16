@@ -597,4 +597,15 @@ public class JDGui extends SwingGui {
 
     }
 
+    @Override
+    public boolean isCurrentPanel(Panels panelID) {
+        switch (panelID) {
+        case DOWNLOADLIST:
+            return JDGui.this.downloadView == mainTabbedPane.getSelectedComponent();
+        case LINKGRABBER:
+            return JDGui.this.linkgrabberView == mainTabbedPane.getSelectedComponent();
+        }
+        return false;
+    }
+
 }

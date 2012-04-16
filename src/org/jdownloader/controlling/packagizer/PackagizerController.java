@@ -251,6 +251,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     public void runByFile(CrawledLink link) {
+        if (!org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
         ArrayList<PackagizerRuleWrapper> lfileFilter = fileFilter;
         for (PackagizerRuleWrapper lgr : lfileFilter) {
             try {
@@ -275,6 +276,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     public void runByUrl(CrawledLink link) {
+        if (!org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
         ArrayList<PackagizerRuleWrapper> lurlFilter = urlFilter;
         for (PackagizerRuleWrapper lgr : lurlFilter) {
             try {
@@ -363,6 +365,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     public void onNewFile(Object caller, File[] fileList) {
+        if (!org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
         if (caller instanceof SingleDownloadController) {
             // do nothing
             return;

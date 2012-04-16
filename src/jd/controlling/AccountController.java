@@ -303,6 +303,7 @@ public class AccountController implements AccountControllerListener {
                                 list.add(ac = new AccountData());
                                 ac.setUser(a.getUser());
                                 ac.setPassword(a.getPass());
+                                ac.setValid(a.isEnabled());
                                 ac.setEnabled(a.isEnabled());
                             }
                         } else if (accList.get(0) instanceof Map) {
@@ -313,6 +314,7 @@ public class AccountController implements AccountControllerListener {
                                 ac.setUser((String) a.get("user"));
                                 ac.setPassword((String) a.get("pass"));
                                 ac.setEnabled("true".equals(a.containsKey("enabled")));
+                                ac.setValid(ac.isEnabled());
                             }
                         }
                     }

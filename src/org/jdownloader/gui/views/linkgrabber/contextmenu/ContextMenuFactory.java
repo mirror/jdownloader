@@ -48,6 +48,16 @@ public class ContextMenuFactory {
         JPopupMenu p = new JPopupMenu();
         JMenu m;
 
+        p.add(new ConfirmAction(isShift, selection).toContextMenuAction());
+
+        if (selection == null || selection.size() == 0) {
+            p.add(new AddLinksAction().toContextMenuAction());
+            return p;
+        } else if (JsonConfig.create(LinkgrabberSettings.class).isContextMenuAddLinksActionAlwaysVisible()) {
+            p.add(new AddLinksAction().toContextMenuAction());
+
+        }
+        p.add(new JSeparator());
         JMenu properties = new JMenu(_GUI._.ContextMenuFactory_createPopup_properties_package());
         p.add(properties);
         p.add(new JSeparator());
@@ -67,16 +77,6 @@ public class ContextMenuFactory {
 
         for (JMenuItem mm : fillPropertiesMenu(contextObject, selection, column)) {
             properties.add(mm);
-        }
-
-        p.add(new ConfirmAction(isShift, selection).toContextMenuAction());
-
-        if (selection == null || selection.size() == 0) {
-            p.add(new AddLinksAction().toContextMenuAction());
-            return p;
-        } else if (JsonConfig.create(LinkgrabberSettings.class).isContextMenuAddLinksActionAlwaysVisible()) {
-            p.add(new AddLinksAction().toContextMenuAction());
-
         }
 
         p.add(new JSeparator());

@@ -34,4 +34,10 @@ public class NoUserIF extends UserIF {
         System.out.println("NoUserIF set!");
     }
 
+    @Override
+    public boolean isCurrentPanel(Panels panelID) {
+        System.out.println("NoUserIF set!");
+        return false;
+    }
+
 }

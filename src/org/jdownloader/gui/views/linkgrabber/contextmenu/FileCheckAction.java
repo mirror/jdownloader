@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
+import jd.controlling.IOEQ;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerHandler;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -26,20 +27,31 @@ public class FileCheckAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        LinkChecker<CrawledLink> linkChecker = new LinkChecker<CrawledLink>();
-        ArrayList<CrawledLink> links = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<CrawledLink>());
-        for (CrawledLink l : links) {
-            l.getDownloadLink().setAvailableStatus(AvailableStatus.UNCHECKED);
-        }
-        LinkGrabberTableModel.getInstance().refreshModel(false);
-        linkChecker.setLinkCheckHandler(new LinkCheckerHandler<CrawledLink>() {
+        if (!isEnabled()) return;
+        IOEQ.add(new Runnable() {
+            @Override
+            public void run() {
+                LinkChecker<CrawledLink> linkChecker = new LinkChecker<CrawledLink>(true);
+                ArrayList<CrawledLink> links = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<CrawledLink>());
+                for (CrawledLink l : links) {
+                    l.getDownloadLink().setAvailableStatus(AvailableStatus.UNCHECKED);
+                }
+                LinkGrabberTableModel.getInstance().refreshModel(false);
+                linkChecker.setLinkCheckHandler(new LinkCheckerHandler<CrawledLink>() {
 
-            public void linkCheckDone(CrawledLink link) {
-                LinkGrabberTableModel.getInstance().refreshModel(true);
+                    public void linkCheckDone(CrawledLink link) {
+                        LinkGrabberTableModel.getInstance().refreshModel(true);
+                    }
+                });
+
+                linkChecker.check(links);
             }
-        });
+        }, true);
+    }
 
-        linkChecker.check(links);
+    @Override
+    public boolean isEnabled() {
+        return selection != null && selection.size() > 0;
     }
 
 }

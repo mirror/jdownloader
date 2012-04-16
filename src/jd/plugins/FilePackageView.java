@@ -6,6 +6,7 @@ import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.ChildrenView;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.DomainInfo;
@@ -26,6 +27,9 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     protected long              lastStatusVersion = -1;
     protected boolean           isEnabled         = false;
     protected long              finishedDate      = -1;
+
+    private int                 offline           = 0;
+    private int                 online            = 0;
 
     protected long              lastStatsUpdate   = -1;
     protected static final long GUIUPDATETIMEOUT  = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
@@ -110,12 +114,21 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         long newSize = 0;
         long newDone = 0;
         long newFinishedDate = -1;
+        int newOffline = 0;
+        int newOnline = 0;
         boolean newEnabled = false;
         lastStatusVersion = statusVersion;
         lastStatsUpdate = System.currentTimeMillis();
         HashSet<String> names = new HashSet<String>();
         synchronized (fp) {
             for (DownloadLink link : fp.getChildren()) {
+                if (AvailableStatus.FALSE == link.getAvailableStatus()) {
+                    // offline
+                    newOffline++;
+                } else if (AvailableStatus.TRUE == link.getAvailableStatus()) {
+                    // online
+                    newOnline++;
+                }
                 if (!link.isEnabled()) continue;
                 newEnabled = true;
                 if (names.add(link.getName())) {
@@ -128,6 +141,8 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         done = newDone;
         isEnabled = newEnabled;
         finishedDate = newFinishedDate;
+        offline = newOffline;
+        online = newOnline;
     }
 
     public boolean isFinished() {
@@ -159,5 +174,13 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     @Override
     public List<DownloadLink> getItems() {
         return fp.getChildren();
+    }
+
+    public int getOfflineCount() {
+        return offline;
+    }
+
+    public int getOnlineCount() {
+        return online;
     }
 }

@@ -8,6 +8,7 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
@@ -81,8 +82,15 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
             if (off == size) return offline;
             if ((off == 0 && on == 0) || (on == 0 && off > 0)) { return unknown; }
             return mixed;
+        } else if (value instanceof FilePackage) {
+            int size = ((FilePackage) value).getView().getItems().size();
+            int off = ((FilePackage) value).getView().getOfflineCount();
+            int on = ((FilePackage) value).getView().getOnlineCount();
+            if (on == size) return online;
+            if (off == size) return offline;
+            if ((off == 0 && on == 0) || (on == 0 && off > 0)) { return unknown; }
+            return mixed;
         }
-
         return null;
     }
 
@@ -143,6 +151,7 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public String getStringValue(AbstractNode value) {
         if (value instanceof CrawledPackage) { return _GUI._.AvailabilityColumn_getStringValue_object_(((CrawledPackage) value).getView().getOnlineCount(), ((CrawledPackage) value).getView().getItems().size()); }
+        if (value instanceof FilePackage) { return _GUI._.AvailabilityColumn_getStringValue_object_(((FilePackage) value).getView().getOnlineCount(), ((FilePackage) value).getView().getItems().size()); }
         return nothing;
     }
 
