@@ -19,25 +19,18 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -49,28 +42,25 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 16030 $", interfaceVersion = 2, names = { "albafile.com" }, urls = { "https?://(www\\.)?albafile\\.com/[a-z0-9]{12}" }, flags = { 2 })
-public class AlbaFileCom extends PluginForHost {
+@HostPlugin(revision = "$Revision: 16216 $", interfaceVersion = 2, names = { "filenuke.com" }, urls = { "https?://(www\\.)?filenuke\\.com/[a-z0-9]{12}" }, flags = { 0 })
+public class FileNukeCom extends PluginForHost {
 
-    private String               correctedBR         = "";
-    private static final String  PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String  COOKIE_HOST         = "http://albafile.com";
-    private static final String  MAINTENANCE         = ">This server is in maintenance mode";
-    private static final String  MAINTENANCEUSERTEXT = "This server is under Maintenance";
-    private static final String  ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static final Object  LOCK                = new Object();
-    private static AtomicInteger maxPrem             = new AtomicInteger(1);
+    private String              correctedBR         = "";
+    private static final String PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
+    private static final String COOKIE_HOST         = "http://filenuke.com";
+    private static final String MAINTENANCE         = ">This server is in maintenance mode";
+    private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
+    private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.5.5.0-raz
-    // mods: null
-    // non account: 1 chunk (still allows resume), 1 max dl
-    // free account: not tested, set as non account
-    // premium account: 20 chunk * unlimited
+    // XfileSharingProBasic Version 2.5.5.3-raz
+    // mods:
+    // non account: 2 * unlimited?
+    // free account:
+    // premium account:
     // protocol: no https
-    // captchatype: 4dignum
+    // captchatype: null
     // other: no redirects
 
     @Override
@@ -83,26 +73,32 @@ public class AlbaFileCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public AlbaFileCom(PluginWrapper wrapper) {
+    public FileNukeCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(COOKIE_HOST + "/premium.html");
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
-        return true;
+        return false;
+    }
+
+    public void prepBrowser() {
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.setCookie(COOKIE_HOST, "lang", "english");
+        prepBrowser();
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
@@ -114,6 +110,11 @@ public class AlbaFileCom extends PluginForHost {
             filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
             if (filename == null) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                if (filename == null) {
+                    // generic regex will pick up false positives (html)
+                    // adjust to make work with COOKIE_HOST
+                    filename = new Regex(correctedBR, "(?i)Filename: ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                }
             }
         }
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
@@ -144,7 +145,7 @@ public class AlbaFileCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 1, "freelink");
+        doFree(downloadLink, true, -2, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -274,7 +275,7 @@ public class AlbaFileCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     /** Remove HTML code which could break the plugin */
@@ -307,11 +308,14 @@ public class AlbaFileCom extends PluginForHost {
                 if (dllink == null) {
                     dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                        if (cryptedScripts != null && cryptedScripts.length != 0) {
-                            for (String crypted : cryptedScripts) {
-                                dllink = decodeDownloadLink(crypted);
-                                if (dllink != null) break;
+                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>Click to Download").getMatch(0);
+                        if (dllink == null) {
+                            String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                            if (cryptedScripts != null && cryptedScripts.length != 0) {
+                                for (String crypted : cryptedScripts) {
+                                    dllink = decodeDownloadLink(crypted);
+                                    if (dllink != null) break;
+                                }
                             }
                         }
                     }
@@ -457,152 +461,6 @@ public class AlbaFileCom extends PluginForHost {
             }
         }
         return dllink;
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        String space = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>").getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim() + " Mb");
-        account.setValid(true);
-        String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
-        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-        if (account.getBooleanProperty("nopremium")) {
-            ai.setStatus("Registered (free) User");
-            try {
-                maxPrem.set(1);
-                account.setMaxSimultanDownloads(1);
-            } catch (final Throwable e) {
-            }
-        } else {
-            String expire = new Regex(correctedBR, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
-            if (expire == null) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
-            } else {
-                expire = expire.replaceAll("(<b>|</b>)", "");
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
-                try {
-                    maxPrem.set(-1);
-                    account.setMaxSimultanDownloads(-1);
-                } catch (final Throwable e) {
-                }
-            }
-            ai.setStatus("Premium User");
-        }
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        String passCode = null;
-        requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
-        String dllink = null;
-        if (account.getBooleanProperty("nopremium")) {
-            getPage(link.getDownloadURL());
-            doFree(link, true, 1, "freelink2");
-        } else {
-            dllink = checkDirectLink(link, "premlink");
-            if (dllink == null) {
-                getPage(link.getDownloadURL());
-                dllink = getDllink();
-                if (dllink == null) {
-                    checkErrors(link, true, passCode);
-                    Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    if (new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, dlform, link);
-                    sendForm(dlform);
-                    dllink = getDllink();
-                    checkErrors(link, true, passCode);
-                }
-            }
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                correctBR();
-                checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (passCode != null) link.setProperty("pass", passCode);
-            link.setProperty("premlink", dllink);
-            dl.startDownload();
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
-        synchronized (LOCK) {
-            try {
-                /** Load cookies */
-                br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        return;
-                    }
-                }
-                // clear values each time we run.
-                account.setProperty("nopremium", "false");
-                br.setCookie(COOKIE_HOST, "lang", "english");
-                getPage(COOKIE_HOST + "/login.html");
-                Form loginform = br.getForm(0);
-                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                sendForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                getPage(COOKIE_HOST + "/?op=my_account");
-                if (!new Regex(correctedBR, "(?i)(Premium(\\-| )Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!new Regex(correctedBR, "(?i)(Premium(\\-| )Account expire|>Renew premium<)").matches()) account.setProperty("nopremium", "true");
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-            } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                throw e;
-            }
-        }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
     }
 
     @Override

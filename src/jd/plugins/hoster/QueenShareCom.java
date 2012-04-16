@@ -86,7 +86,7 @@ public class QueenShareCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -111,16 +111,13 @@ public class QueenShareCom extends PluginForHost {
             filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
             if (filename == null) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                if (filename == null) {
-                    filename = new Regex(correctedBR, "(?i)(File)?name ?:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(2);
-                }
             }
         }
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
-                filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(GB|MB))").getMatch(0);
+                filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
@@ -259,7 +256,7 @@ public class QueenShareCom extends PluginForHost {
                 logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                 dlForm = rc.getForm();
                 /** wait time is often skippable for reCaptcha handling */
-                // skipWaittime = true;
+                skipWaittime = true;
             }
             /* Captcha END */
             if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
@@ -354,12 +351,14 @@ public class QueenShareCom extends PluginForHost {
         }
         /** Wait time reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait)").matches()) {
-            String tmphrs = new Regex(correctedBR, "\\s+(\\d+)\\s+hours?").getMatch(0);
+            // adjust this regex to catch the wait time string for COOKIE_HOST
+            String WAIT = new Regex(correctedBR, "((You have reached the download\\-limit|You have to wait)[^<>]+)").getMatch(0);
+            String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
-            String tmpmin = new Regex(correctedBR, "\\s+(\\d+)\\s+minutes?").getMatch(0);
+            String tmpmin = new Regex(WAIT, "\\s+(\\d+)\\s+minutes?").getMatch(0);
             if (tmpmin == null) tmpmin = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
-            String tmpsec = new Regex(correctedBR, "\\s+(\\d+)\\s+seconds?").getMatch(0);
-            String tmpdays = new Regex(correctedBR, "\\s+(\\d+)\\s+days?").getMatch(0);
+            String tmpsec = new Regex(WAIT, "\\s+(\\d+)\\s+seconds?").getMatch(0);
+            String tmpdays = new Regex(WAIT, "\\s+(\\d+)\\s+days?").getMatch(0);
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
                 logger.info("Waittime regexes seem to be broken");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
@@ -558,6 +557,8 @@ public class QueenShareCom extends PluginForHost {
                         return;
                     }
                 }
+                // clear values each time we run.
+                account.setProperty("nopremium", "false");
                 br.setCookie(COOKIE_HOST, "lang", "english");
                 br.getPage(COOKIE_HOST + "/login.html");
                 Form loginform = br.getForm(0);
@@ -568,8 +569,8 @@ public class QueenShareCom extends PluginForHost {
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 br.getPage(COOKIE_HOST + "/?op=my_account");
                 doSomething();
-                if (!new Regex(correctedBR, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!new Regex(correctedBR, "(Premium\\-Account expire|>Renew premium<)").matches()) account.setProperty("nopremium", "true");
+                if (!new Regex(correctedBR, "(?i)(Premium(\\-| )Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!new Regex(correctedBR, "(?i)(Premium(\\-| )Account expire|>Renew premium<)").matches()) account.setProperty("nopremium", "true");
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);

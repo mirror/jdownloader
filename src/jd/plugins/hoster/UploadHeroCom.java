@@ -89,7 +89,7 @@ public class UploadHeroCom extends PluginForHost {
         final String captchaLink = br.getRegex("\"(/captchadl\\.php\\?[a-z0-9]+)\"").getMatch(0);
         if (captchaLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String code = getCaptchaCode("http://uploadhero.com" + captchaLink, downloadLink);
-        br.getPage("http://www.uploadhero.com/dl/dCYhooWE?code=" + code);
+        br.getPage(downloadLink.getDownloadURL() + "?code=" + code);
         if (!br.containsHTML("\"dddl\"")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String dllink = getDllink();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

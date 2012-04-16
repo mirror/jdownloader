@@ -28,11 +28,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 15695 $", interfaceVersion = 2, names = { "XFileShareProFolder" }, urls = { "http://(www\\.)?(mojofile\\.com|fileduct\\.com)/(users/[a-z0-9_]+/.+|folder/\\d+/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 15695 $", interfaceVersion = 2, names = { "XFileShareProFolder" }, urls = { "http://(www\\.)?(allmyvideos\\.net|dragonuploadz\\.com|movdivx\\.com|filenuke\\.com|(flashstream\\.in|xvidstage\\.com|xvidstream\\.net)|ginbig\\.com|vidbux\\.com|divxbase\\.com|batshare\\.com|queenshare\\.com|filesabc\\.com|((fiberupload|bulletupload)\\.com)|edoc\\.com|easybytez\\.com|filesabc\\.com|mojofile\\.com|fileduct\\.com)/(users/[a-z0-9_]+/.+|folder/\\d+/.+)" }, flags = { 0 })
 public class XFileShareProFolder extends PluginForDecrypt {
 
     // DEV NOTES
     // other: keep last /.+ for fpName. Not needed otherwise.
+    // other: group sister sites or aliased domains together for easy of
+    // maintance.
     // TODO: add spanning folders + page support, at this stage it's not
     // important.
     // TODO: remove old xfileshare folder plugins after next major update.
@@ -43,6 +45,12 @@ public class XFileShareProFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
+    public void prepBrowser() {
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.setCookie("http://" + HOST, "lang", "english");
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -51,8 +59,8 @@ public class XFileShareProFolder extends PluginForDecrypt {
             logger.warning("Failure finding HOST : " + parameter);
             return null;
         }
+        prepBrowser();
         br.setFollowRedirects(true);
-        br.setCookie("http://" + HOST, "lang", "english");
         br.getPage(parameter);
         if (br.containsHTML("No such user exist")) {
             logger.warning("Incorrect URL or Invalid user : " + parameter);
