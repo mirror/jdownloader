@@ -144,6 +144,7 @@ public class Rapidshare extends PluginForHost {
     private static long          RS_API_WAIT       = 0;
 
     private static final String  COOKIEPROP        = "cookiesv2";
+    private static final String  COOKIEPROPENC     = "cookiesv2enc";
 
     private static final Account dummyAccount      = new Account("TRAFSHARE", "TRAFSHARE");
 
@@ -267,7 +268,7 @@ public class Rapidshare extends PluginForHost {
                 }
                 final String req = "https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1";
 
-                this.queryAPI(null, req, null);
+                this.queryAPI(null, req);
 
                 if (this.br.containsHTML("access flood")) {
                     logger.warning("RS API flooded! Will not check again the next 5 minutes!");
@@ -607,7 +608,7 @@ public class Rapidshare extends PluginForHost {
             if (link.getSecTimout() != null) {
                 query += "&seclinktimeout=" + link.getSecTimout();
             }
-            this.queryAPI(this.br, query, null);
+            this.queryAPI(this.br, query);
             this.handleErrors(this.br);
             // RS URL wird aufgerufen
             // this.br.getPage(link);
@@ -696,12 +697,12 @@ public class Rapidshare extends PluginForHost {
         try {
             this.br.forceDebug(true);
 
-            final Request request = null;
-
             this.accName = account.getUser();
             /* synchronized check of account, package handling */
+            String cookie = null;
             synchronized (Rapidshare.LOCK) {
                 this.br = this.login(account, false);
+                cookie = "" + account.getProperty(COOKIEPROPENC);
             }
             this.br.setFollowRedirects(false);
 
@@ -712,7 +713,8 @@ public class Rapidshare extends PluginForHost {
                 /* invalid link format */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String query = "https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download&try=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + account.getProperty("cookie");
+
+            String query = "https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download&try=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + cookie;
             /* needed for secured links */
             if (link.getSecMD5() != null) {
                 query += "&seclinkmd5=" + link.getSecMD5();
@@ -720,52 +722,67 @@ public class Rapidshare extends PluginForHost {
             if (link.getSecTimout() != null) {
                 query += "&seclinktimeout=" + link.getSecTimout();
             }
-            this.queryAPI(this.br, query, account);
+            this.queryAPI(this.br, query);
             this.handleErrors(this.br);
-
+            boolean retry = true;
             String host = this.br.getRegex("DL:(.*?),").getMatch(0);
+            while (true) {
 
-            // this might bypass some isps limit restrictions on rapidshare host
-            // names
-            if (this.getPluginConfig().getBooleanProperty(Rapidshare.PRE_RESOLVE, false)) {
-                try {
-                    logger.fine("Try to resolve adress " + host);
-                    final InetAddress inetAddress = InetAddress.getByName(host);
-                    host = inetAddress.getHostAddress();
-                } catch (final Exception e) {
-                    JDLogger.exception(e);
+                // this might bypass some isps limit restrictions on rapidshare
+                // host
+                // names
+                if (this.getPluginConfig().getBooleanProperty(Rapidshare.PRE_RESOLVE, false)) {
+                    try {
+                        logger.fine("Try to resolve adress " + host);
+                        final InetAddress inetAddress = InetAddress.getByName(host);
+                        host = inetAddress.getHostAddress();
+                    } catch (final Throwable e) {
+                        JDLogger.exception(e);
+                    }
                 }
-            }
-            String directurl = "https://" + host + "/cgi-bin/rsapi.cgi?sub=download&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + account.getProperty("cookie");
-            /* needed for secured links */
-            if (link.getSecMD5() != null) {
-                directurl += "&seclinkmd5=" + link.getSecMD5();
-            }
-            if (link.getSecTimout() != null) {
-                directurl += "&seclinktimeout=" + link.getSecTimout();
-            }
+                String directurl = "https://" + host + "/cgi-bin/rsapi.cgi?sub=download&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + cookie;
+                /* needed for secured links */
+                if (link.getSecMD5() != null) {
+                    directurl += "&seclinkmd5=" + link.getSecMD5();
+                }
+                if (link.getSecTimout() != null) {
+                    directurl += "&seclinktimeout=" + link.getSecTimout();
+                }
 
-            this.br.setFollowRedirects(true);
-            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, directurl, true, 0);
-            final URLConnectionAdapter urlConnection = this.dl.getConnection();
-            /*
-             * Download starten prüft ob ein content disposition header
-             * geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei
-             * oder eine Fehlerseite. BIldfiles haben keinen Cache-Control
-             * Header
-             */
-            if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
-                // Lädt die zuletzt aufgebaute vernindung
-                this.br.setRequest(request);
-                this.br.followConnection();
-
-                // Fehlerbehanldung
+                this.br.setFollowRedirects(true);
+                this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, directurl, true, 0);
+                final URLConnectionAdapter urlConnection = this.dl.getConnection();
                 /*
-                 * Achtung! keine Parsing arbeiten an diesem String!!!
+                 * Download starten prüft ob ein content disposition header
+                 * geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei
+                 * oder eine Fehlerseite. BIldfiles haben keinen Cache-Control
+                 * Header
                  */
+                if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
+                    // Lädt die zuletzt aufgebaute vernindung
+                    this.br.followConnection();
+                    if (retry) {
+                        /* in case we get anther DL hoster */
+                        host = this.br.getRegex("DL:(.*?),").getMatch(0);
+                        if (host != null) {
+                            retry = false;
+                            continue;
+                        }
+                    }
+                    // Fehlerbehanldung
+                    /*
+                     * Achtung! keine Parsing arbeiten an diesem String!!!
+                     */
 
-                this.reportUnknownError(this.br.toString(), 6);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                    this.reportUnknownError(this.br.toString(), 6);
+                    synchronized (Rapidshare.LOCK) {
+                        /* we retry and fetch new cookies */
+                        account.setProperty(COOKIEPROP, null);
+                        account.setProperty(COOKIEPROPENC, null);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                break;
             }
             this.dl.startDownload();
         } finally {
@@ -801,6 +818,7 @@ public class Rapidshare extends PluginForHost {
              * package upgrade. we dont need live traffic stats here
              */
             Object cookiesRet = account.getProperty(Rapidshare.COOKIEPROP);
+            Object cookieEnc = account.getProperty(Rapidshare.COOKIEPROPENC);
             Map<String, String> cookies = null;
             if (cookiesRet != null && cookiesRet instanceof Map) {
                 cookies = (Map<String, String>) cookiesRet;
@@ -808,6 +826,9 @@ public class Rapidshare extends PluginForHost {
             boolean cookieLogin = false;
             if (cookies != null && forceRefresh == false) {
                 cookieLogin = true;
+            }
+            if (cookieEnc == null || !(cookieEnc instanceof String)) {
+                cookieLogin = false;
             }
             /* cookie login or not? */
             if (cookieLogin && cookies != null && cookies.get("enc") != null && cookies.get("enc").length() != 0) {
@@ -818,45 +839,49 @@ public class Rapidshare extends PluginForHost {
                 return br;
             } else {
                 account.setProperty(Rapidshare.COOKIEPROP, null);
+                account.setProperty(Rapidshare.COOKIEPROPENC, null);
             }
-
-            final String req = prtotcol + "://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails&withcookie=1&type=prem&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-            this.queryAPI(br, req, account);
-            final String error = br.getRegex("ERROR:(.*)").getMatch(0);
-            if (error != null) {
+            try {
+                final String req = prtotcol + "://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails&withcookie=1&type=prem&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                this.queryAPI(br, req);
+                final String error = br.getRegex("ERROR:(.*)").getMatch(0);
+                if (error != null) {
+                    logger.severe("10 " + br.toString());
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, error, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (br.containsHTML("Login failed")) {
+                    logger.severe("1 " + br.toString());
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (br.containsHTML("access flood")) {
+                    logger.warning("RS API flooded! will not check again the next 15 minutes!");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    logger.finer("API Login");
+                    final String cookie = br.getRegex("cookie=([A-Z0-9]+)").getMatch(0);
+                    br.setCookie("http://rapidshare.com", "enc", cookie);
+                }
+                final String cookie = br.getCookie("http://rapidshare.com", "enc");
+                if (cookie == null) {
+                    logger.severe("2 " + br.toString());
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    cookies = new HashMap<String, String>();
+                    cookies.put("enc", cookie);
+                    account.setProperty(Rapidshare.COOKIEPROP, cookies);
+                    account.setProperty(Rapidshare.COOKIEPROPENC, cookie);
+                }
+                // put all accountproperties
+                for (final String[] m : br.getRegex("(\\w+)=([^\r^\n]+)").getMatches()) {
+                    account.setProperty(m[0].trim(), m[1].trim());
+                }
+                this.updateAccountInfo(account, br);
+                return br;
+            } catch (PluginException e) {
                 account.setProperty(Rapidshare.COOKIEPROP, null);
-                logger.severe("10 " + br.toString());
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, error, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                account.setProperty(Rapidshare.COOKIEPROPENC, null);
+                throw e;
             }
-            if (br.containsHTML("Login failed")) {
-                account.setProperty(Rapidshare.COOKIEPROP, null);
-                logger.severe("1 " + br.toString());
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            if (br.containsHTML("access flood")) {
-                logger.warning("RS API flooded! will not check again the next 15 minutes!");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            } else {
-                logger.finer("API Login");
-                final String cookie = br.getRegex("cookie=([A-Z0-9]+)").getMatch(0);
-                br.setCookie("http://rapidshare.com", "enc", cookie);
-            }
-            final String cookie = br.getCookie("http://rapidshare.com", "enc");
-            if (cookie == null) {
-                account.setProperty(Rapidshare.COOKIEPROP, null);
-                logger.severe("2 " + br.toString());
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                cookies = new HashMap<String, String>();
-                cookies.put("enc", cookie);
-                account.setProperty(Rapidshare.COOKIEPROP, cookies);
-            }
-            // put all accountproperties
-            for (final String[] m : br.getRegex("(\\w+)=([^\r^\n]+)").getMatches()) {
-                account.setProperty(m[0].trim(), m[1].trim());
-            }
-            this.updateAccountInfo(account, br);
-            return br;
         }
     }
 
@@ -868,7 +893,7 @@ public class Rapidshare extends PluginForHost {
      * @param req
      * @throws Exception
      */
-    private void queryAPI(Browser br, String req, final Account account) throws Exception {
+    private void queryAPI(Browser br, String req) throws Exception {
 
         if (br == null) {
             br = this.br;
