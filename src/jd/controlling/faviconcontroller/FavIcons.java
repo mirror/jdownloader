@@ -15,6 +15,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -264,22 +265,8 @@ public class FavIcons {
                 try {
                     /* try first with iconloader */
                     List<BufferedImage> ret = ICODecoder.read(inputStream);
-                    if (ret != null && ret.size() > 0) {
-                        BufferedImage img = null;
-                        int size = -1;
-                        for (BufferedImage img2 : ret) {
-                            /*
-                             * loop through all available images to find best
-                             * resolution
-                             */
-                            if (img2 == null) continue;
-                            if (img == null || img2.getHeight() * img2.getWidth() > size) {
-                                img = img2;
-                                size = img.getHeight() * img.getWidth();
-                            }
-                        }
-                        if (img != null && img.getHeight() > 1 && img.getWidth() > 1) return img;
-                    }
+                    BufferedImage img = returnBestImage(ret);
+                    if (img != null) return img;
                     throw new Throwable("Try again with other ImageLoader");
                 } catch (Throwable e) {
                     /* retry with normal image download */
@@ -300,6 +287,41 @@ public class FavIcons {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    /*
+     * dirty hack to count number of unique colors, use only for small images
+     * like favicons!
+     */
+    private static int countColors(BufferedImage image) {
+        HashSet<Integer> color = new HashSet<Integer>();
+        for (int x = 0; x < image.getWidth(); x++) {
+            for (int y = 0; y < image.getHeight(); y++) {
+                color.add(image.getRGB(x, y));
+            }
+        }
+        return color.size();
+    }
+
+    private static BufferedImage returnBestImage(List<BufferedImage> images) {
+        if (images != null && images.size() > 0) {
+            BufferedImage img = null;
+            int size = -1;
+            int colors = -1;
+            for (BufferedImage img2 : images) {
+                /*
+                 * loop through all available images to find best resolution
+                 */
+                if (img2 == null) continue;
+                if (img == null || (img2.getHeight() * img2.getWidth()) > size || countColors(img2) > colors) {
+                    img = img2;
+                    size = img.getHeight() * img.getWidth();
+                    colors = countColors(img);
+                }
+            }
+            if (img != null && img.getHeight() > 1 && img.getWidth() > 1) return img;
+        }
+        return null;
     }
 
     private static BufferedImage download_FavIconTag(String host) throws IOException {
@@ -342,10 +364,8 @@ public class FavIcons {
                     try {
                         /* try first with iconloader */
                         List<BufferedImage> ret = ICODecoder.read(inputStream);
-                        if (ret.size() > 0) {
-                            BufferedImage img = ret.get(0);
-                            if (img != null && img.getHeight() > 1 && img.getWidth() > 1) return img;
-                        }
+                        BufferedImage img = returnBestImage(ret);
+                        if (img != null) return img;
                         throw new Throwable("Try again with other ImageLoader");
                     } catch (Throwable e) {
                         /* retry with normal image download */
