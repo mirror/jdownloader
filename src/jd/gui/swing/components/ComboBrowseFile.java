@@ -22,6 +22,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JButton;
@@ -29,9 +30,11 @@ import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.filechooser.FileFilter;
 
+import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.gui.translate._GUI;
 
@@ -55,7 +58,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
     private File                      currentPath;
 
-    private Vector<String>            files;
+    private Vector<String>            files                 = null;
 
     private int                       fileSelectionMode     = UserIO.FILES_ONLY;
 
@@ -64,6 +67,8 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     private boolean                   dispatchingDisabled   = false;
 
     private Integer                   dialogType            = null;
+
+    private String                    ID;
 
     public Integer getDialogType() {
         return dialogType;
@@ -75,11 +80,22 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
     public ComboBrowseFile(final String string) {
         this.setName(string);
+        this.ID = "combo" + string;
+        Object list = SubConfiguration.getConfig("GUI").getProperty(ID);
+        if (list != null && list instanceof List) {
+            try {
+                setFiles(new Vector<String>((List<String>) list));
+            } catch (final Throwable e) {
+                Log.exception(e);
+            }
+        }
+        if (files == null) setFiles(new Vector<String>());
         initGUI();
     }
 
     public ComboBrowseFile(final Vector<String> files) {
         super();
+        this.ID = null;
         setFiles(files == null ? new Vector<String>() : files);
         initGUI();
     }
@@ -245,7 +261,10 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
                 cmboInput.insertItemAt(item, 0);
                 // System.out.println("FILES=" + files);
             }
-
+            if (ID != null) {
+                SubConfiguration guiConfig = SubConfiguration.getConfig("GUI");
+                guiConfig.setProperty(ID, new ArrayList<String>(createSortedVector(files, item, 20)));
+            }
         }
     }
 
