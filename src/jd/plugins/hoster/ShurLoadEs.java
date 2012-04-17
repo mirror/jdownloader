@@ -150,6 +150,7 @@ public class ShurLoadEs extends PluginForHost {
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Download only works with an account", PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
+            if (e instanceof PluginException) throw (PluginException) e;
             /* not existing in old stable */
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, "Download only works with an account");

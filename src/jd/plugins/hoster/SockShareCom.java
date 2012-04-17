@@ -26,6 +26,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -41,6 +42,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 /** Works exactly like putlocker.com */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sockshare.com" }, urls = { "http://(www\\.)?sockshare.com/(mobile/)?(file|embed)/[A-Z0-9]+" }, flags = { 2 })
 public class SockShareCom extends PluginForHost {
+
+    private static final String UA = "User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:11.0) Gecko/20100101 Firefox/11.0";
 
     public SockShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -100,6 +103,15 @@ public class SockShareCom extends PluginForHost {
         // if (waittime != null) wait = Integer.parseInt(waittime);
         // sleep(wait * 1001l, downloadLink);
         br.postPage(br.getURL(), "hash=" + hash + "&confirm=Continue+as+Free+User");
+        if (br.containsHTML("This file failed to convert")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Download only works with an account", PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+                /* not existing in old stable */
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Download only works with an account");
+        }
         if (br.containsHTML(SERVERUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily disabled!", 2 * 60 * 60 * 1000l);
         String streamID = br.getRegex("\"(/get_file\\.php.*?)\"").getMatch(0);
         if (streamID == null) {
@@ -124,37 +136,65 @@ public class SockShareCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
+    private void login(Account account, boolean fetchInfo) throws Exception {
         synchronized (LOCK) {
             try {
-                // Load cookies
+                /** Load cookies */
+                br.getHeaders().put("User-Agent", UA);
+                br.getHeaders().put("Accept-Language", "de,de-de;q=0.7,en;q=0.3");
+                br.getHeaders().put("Accept-Charset", null);
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
+                boolean cookiesSet = false;
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (acmatch && ret != null && ret instanceof Map<?, ?>) {
+                    final Map<String, String> cookies = (Map<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(MAINPAGE, key, value);
+                            cookiesSet = true;
                         }
+                    }
+                }
+                if (!fetchInfo && cookiesSet) return;
+                String proActive = null;
+                if (cookiesSet) {
+                    br.getPage("http://www.sockshare.com/profile.php?pro");
+                    proActive = br.getRegex("Pro  Status<[^>]+>[\r\n\t ]+<[^>]+>(Active)").getMatch(0);
+                    if (proActive == null) {
+                        logger.severe("No longer Pro-Status, try to fetch new cookie!\r\n" + br.toString());
+                    } else {
                         return;
                     }
                 }
                 br.setFollowRedirects(true);
                 br.getPage("http://www.sockshare.com/authenticate.php?login");
-                final String captchaLink = br.getRegex("\"(/include/captcha\\.php\\?_CAPTCHA[^<>\"]*?)\"").getMatch(0);
-                if (captchaLink == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                DownloadLink dummy = new DownloadLink(this, null, null, null, true);
-                final String code = getCaptchaCode("http://www.sockshare.com" + Encoding.htmlDecode(captchaLink), dummy);
-                br.postPage("http://www.sockshare.com/authenticate.php?login", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&captcha_code=" + Encoding.urlEncode(code) + "&remember=1&login_submit=Login");
-                System.out.println(br.getURL());
-                System.out.println(br.toString());
-                if (br.getCookie(MAINPAGE, "auth") == null || !br.containsHTML("class=pro_user>\\( Pro \\)<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                // Save cookies
+                Form login = br.getForm(0);
+                if (login == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (br.containsHTML("captcha.php\\?")) {
+                    String captchaIMG = br.getRegex("<img src=\"(/include/captcha.php\\?[^\"]+)\" />").getMatch(0);
+                    if (captchaIMG == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    DownloadLink dummyLink = new DownloadLink(this, "Account", "sockshare.com", "http://sockshare.com", true);
+                    String captcha = getCaptchaCode(captchaIMG, dummyLink);
+                    if (captcha != null) login.put("captcha_code", Encoding.urlEncode(captcha));
+                }
+                login.put("user", Encoding.urlEncode(account.getUser()));
+                login.put("pass", Encoding.urlEncode(account.getPass()));
+                login.put("remember", "1");
+                br.submitForm(login);
+                // no auth = not logged / invalid account.
+                if (br.getCookie(MAINPAGE, "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // finish off more code here
+                br.getPage("http://www.sockshare.com/profile.php?pro");
+                proActive = br.getRegex("Pro  Status<[^>]+>[\r\n\t ]+<[^>]+>(Active)").getMatch(0);
+                if (proActive == null) {
+                    logger.severe(br.toString());
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
                 for (final Cookie c : add.getCookies()) {

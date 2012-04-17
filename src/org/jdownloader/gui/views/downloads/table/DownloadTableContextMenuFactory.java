@@ -65,6 +65,7 @@ public class DownloadTableContextMenuFactory {
     }
 
     public JPopupMenu create(DownloadsTable downloadsTable, JPopupMenu popup, AbstractNode contextObject, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent ev) {
+        if (selection == null && contextObject == null) return popup;
         final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         final ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
         if (selection != null) {
@@ -83,6 +84,7 @@ public class DownloadTableContextMenuFactory {
                 }
             }
         }
+
         JMenu properties = new JMenu(_GUI._.ContextMenuFactory_createPopup_properties_package());
         popup.add(properties);
         if (contextObject instanceof AbstractPackageNode) {
@@ -113,6 +115,7 @@ public class DownloadTableContextMenuFactory {
             properties.add(mm);
         }
         popup.add(new JSeparator());
+
         // properties.add(new DownloadFolderEditorAction((DownloadLink)
         // contextObject, links, fps));
 
