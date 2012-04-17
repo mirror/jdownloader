@@ -55,7 +55,7 @@ public class OronCom extends PluginForHost {
     private static final String  FILEINCOMPLETE     = "File incomplete on server, please contact oron support!";
     private final static String  ua                 = RandomUserAgent.generate();
     private static final String  MAINTENANCE        = "class=\"err\">Site maintenance mode";
-    private static final String  SERVERERROR        = "";
+    private static final String  SERVERERROR        = "server error to be added";
 
     public OronCom(PluginWrapper wrapper) {
         super(wrapper);
