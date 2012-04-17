@@ -44,6 +44,8 @@ public class JumboFilesCom extends PluginForHost {
 
     private String              BRBEFORE    = "";
     private static final String COOKIE_HOST = "http://jumbofiles.com";
+    private static final String NOCHUNKS    = null;
+    private static final String NORESUME    = null;
     private static String       UA          = RandomUserAgent.generate();
 
     public JumboFilesCom(final PluginWrapper wrapper) {
@@ -180,7 +182,7 @@ public class JumboFilesCom extends PluginForHost {
         }
         boolean resume = true;
         int chunks = 0;
-        if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) || resume == false) {
+        if (downloadLink.getBooleanProperty(JumboFilesCom.NOCHUNKS, false) || resume == false) {
             chunks = 1;
         }
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, chunks);
@@ -190,15 +192,15 @@ public class JumboFilesCom extends PluginForHost {
             } catch (final Throwable e) {
             }
             if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
-                if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
+                if (downloadLink.getBooleanProperty(JumboFilesCom.NORESUME, false) == false) {
                     downloadLink.setChunksProgress(null);
-                    downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.valueOf(true));
+                    downloadLink.setProperty(JumboFilesCom.NORESUME, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             } else {
                 /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(DirectHTTP.NOCHUNKS, Boolean.valueOf(true));
+                if (downloadLink.getBooleanProperty(JumboFilesCom.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(JumboFilesCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
@@ -244,7 +246,7 @@ public class JumboFilesCom extends PluginForHost {
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         int chunks = -5;
         boolean resume = true;
-        if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) || resume == false) {
+        if (downloadLink.getBooleanProperty(JumboFilesCom.NOCHUNKS, false) || resume == false) {
             chunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, chunks);
@@ -262,15 +264,15 @@ public class JumboFilesCom extends PluginForHost {
             } catch (final Throwable e) {
             }
             if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
-                if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
+                if (downloadLink.getBooleanProperty(JumboFilesCom.NORESUME, false) == false) {
                     downloadLink.setChunksProgress(null);
-                    downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.valueOf(true));
+                    downloadLink.setProperty(JumboFilesCom.NORESUME, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             } else {
                 /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(DirectHTTP.NOCHUNKS, Boolean.valueOf(true));
+                if (downloadLink.getBooleanProperty(JumboFilesCom.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(JumboFilesCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }

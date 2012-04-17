@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tumblr.com" }, urls = { "http://[\\w\\.]*?tumblr\\.com/post/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tumblr.com" }, urls = { "http://[\\w\\.\\-]*?tumblr\\.com/post/\\d+" }, flags = { 0 })
 public class TumblrCom extends PluginForHost {
 
     private String dllink = null;
@@ -77,13 +77,18 @@ public class TumblrCom extends PluginForHost {
         if (br.containsHTML("The URL you requested could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = new Regex(br.getURL(), "tumblr\\.com/post/\\d+/(.+)").getMatch(0);
         if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), "tumblr\\.com/post/(\\d+)").getMatch(0);
-        getDllink();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = Encoding.htmlDecode(dllink.trim());
         filename = filename.trim();
-        String ext = dllink.substring(dllink.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp3";
-        downloadLink.setFinalFileName(filename + ext);
+        if (br.containsHTML(">renderVideo\\(")) {
+            dllink = br.getRegex("\\'(http://[^<>\"/]*?\\.tumblr\\.com/video_file/\\d+/[^<>\"/]*?)\\'").getMatch(0);
+            downloadLink.setFinalFileName(filename + ".mp4");
+        } else {
+            getDllink();
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = Encoding.htmlDecode(dllink.trim());
+            String ext = dllink.substring(dllink.lastIndexOf("."));
+            if (ext == null || ext.length() > 5) ext = ".mp3";
+            downloadLink.setFinalFileName(filename + ext);
+        }
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

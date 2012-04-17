@@ -106,7 +106,7 @@ public class VKontakteRuHoster extends PluginForHost {
          * Decrypter will always have working cookies so we can just get em from
          * // there ;)
          */
-        PluginForDecrypt vkontakteDecrypter = null;
+        PluginForDecrypt vkontakteDecrypter = JDUtilities.getPluginForDecrypt("vkontakte.ru");
         if (loaded == false) {
             synchronized (LOCK) {
                 if (loaded == false) {
