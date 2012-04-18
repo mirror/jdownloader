@@ -34,7 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickr\\.com/photos/[^<>\"/]+(/galleries)?/(page\\d+|sets/\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickr\\.com/photos/([^<>\"/]+/\\d+|[^<>\"/]+(/galleries)?/(page\\d+|sets/\\d+)|[^<>\"/]+)" }, flags = { 0 })
 public class FlickrCom extends PluginForDecrypt {
 
     public FlickrCom(PluginWrapper wrapper) {
@@ -54,6 +54,13 @@ public class FlickrCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.setCookie(MAINPAGE, "localization", "en-us%3Bde%3Bde");
+        // Check if link is for hosterplugin
+        if (parameter.matches("http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+")) {
+            final DownloadLink dl = createDownloadlink(parameter.replace("flickr.com/", "flickrdecrypted.com/"));
+            dl.setProperty("cookiesneeded", "false");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         br.getPage(parameter);
         if (br.containsHTML("Page Not Found<")) {
             logger.info("Link offline: " + parameter);
@@ -93,8 +100,9 @@ public class FlickrCom extends PluginForDecrypt {
             return null;
         }
         for (String aLink : addLinks) {
-            DownloadLink dl = createDownloadlink("http://www.flickr.com" + aLink);
+            final DownloadLink dl = createDownloadlink("http://www.flickrdecrypted.com" + aLink);
             dl.setAvailable(true);
+            dl.setProperty("cookiesneeded", "true");
             decryptedLinks.add(dl);
         }
         if (fpName != null) {

@@ -27,7 +27,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "altervideo.net" }, urls = { "http://(www\\.)?altervideo\\.net/video/[a-z0-9]+" }, flags = { 0 })
 public class AlterVideoNet extends PluginForHost {
@@ -70,31 +69,8 @@ public class AlterVideoNet extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        boolean resume = true;
-        int chunks = 0;
-        if (downloadLink.getBooleanProperty(AlterVideoNet.NOCHUNKS, false) || resume == false) {
-            chunks = 1;
-        }
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resume, chunks);
-        if (!this.dl.startDownload()) {
-            try {
-                if (dl.externalDownloadStop()) return;
-            } catch (final Throwable e) {
-            }
-            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
-                if (downloadLink.getBooleanProperty(AlterVideoNet.NORESUME, false) == false) {
-                    downloadLink.setChunksProgress(null);
-                    downloadLink.setProperty(AlterVideoNet.NORESUME, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            } else {
-                /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(AlterVideoNet.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(AlterVideoNet.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        }
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
+        dl.startDownload();
     }
 
     @Override

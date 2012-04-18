@@ -96,6 +96,7 @@ public class TwoSharedCom extends PluginForHost {
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("The file link that you requested is not valid")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Form pwform = br.getForm(0);
         if (pwform != null && pwform.containsHTML("password") && !pwform.getAction().contains("paypal")) {
             String passCode = downloadLink.getStringProperty("pass", null);
@@ -126,7 +127,7 @@ public class TwoSharedCom extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex("class=\"bodytitle\">Loading image \\((.*?)\\)\\.\\.\\. Please wait").getMatch(0);
         }
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",|\\.", "")));
         return AvailableStatus.TRUE;

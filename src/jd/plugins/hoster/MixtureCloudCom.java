@@ -22,6 +22,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -30,6 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -52,6 +54,10 @@ public class MixtureCloudCom extends PluginForHost {
         link.setUrlDownload("http://file.mixturecloud.com/download=" + uid);
     }
 
+    private static final String PREMIUMONLY         = "File access is limited to users with unlimited account<";
+    // Neuer lang String für jedes lugin mit sonem Handling? Doof!
+    private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.mixturecloudcom", "Only downloadable for premium users");
+
     @Override
     public String getAGBLink() {
         return "http://file.mixturecloud.com/terms";
@@ -73,8 +79,56 @@ public class MixtureCloudCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCookie("http://mixturecloud.com/", "lang", "de");
+        br.setCookie("http://mixturecloud.com/", "cc", "DE");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>404 Not Found<|The requested document was not found on this server|<h3>Keine Seite unter dieser Adresse</h3>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = null;
+        String filesize = null;
+        if (br.containsHTML(PREMIUMONLY)) {
+            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?) \\- MixtureCloud\\.com").getMatch(0);
+            filesize = br.getRegex("<h5>Size : ([^<>\"]*?)</h5>").getMatch(0);
+            try {
+                // for old stable
+                link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
+                // new
+                link.setProperty("onlypremium", "true");
+                link.getLinkStatus().setValue(PluginException.VALUE_ID_PREMIUM_ONLY);
+                link.getLinkStatus().addStatus(LinkStatus.ERROR_PREMIUM);
+            } catch (final Throwable e) {
+                /* VALUE_ID_PREMIUM_ONLY not existing in old stable */
+            }
+        } else {
+            link.setProperty("onlypremium", "false");
+            filename = br.getRegex("(?i)<meta property=\"og:title\" content=\"(.*?) mixturecloud\\.com \"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("(?i)<title>(.*?) - mixturecloud\\.com</title>").getMatch(0);
+                if (filename == null) filename = br.getRegex("<h2>[\r\n\t]+(.*?)[\r\n\t]+</h2>").getMatch(0);
+            }
+            filesize = br.getRegex("Originalgröße : <span style=\"font\\-weight:bold\">(.*?)</span>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("(?i)([\\d\\.]+ (MB|GB))").getMatch(0);
+            }
+        }
+        if (filesize == null) {
+            logger.warning("MixtureCloud: Couldn't find filesize. Please report this to the JDownloader Development Team.");
+            logger.warning("MixtureCloud: Continuing...");
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        // Old handling
+        if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         br.postPage(downloadLink.getDownloadURL(), "slow_download=1");
         String reconnectWait = br.getRegex(">Warten auf (\\d+) Sekunden").getMatch(0);
         if (reconnectWait == null) reconnectWait = br.getRegex(">Sie haben bis (\\d+) Sekunden warten").getMatch(0);
@@ -115,32 +169,12 @@ public class MixtureCloudCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCookie("http://mixturecloud.com/", "lang", "de");
-        br.setCookie("http://mixturecloud.com/", "cc", "DE");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>404 Not Found<|The requested document was not found on this server|<h3>Keine Seite unter dieser Adresse</h3>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("(?i)<meta property=\"og:title\" content=\"(.*?) mixturecloud\\.com \"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("(?i)<title>(.*?) - mixturecloud\\.com</title>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<h2>[\r\n\t]+(.*?)[\r\n\t]+</h2>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public boolean canHandle(final DownloadLink dl, final Account account) {
+        if (account == null && dl.getBooleanProperty("onlypremium")) {
+            /* this host only supports premium downloads */
+            return false;
         }
-        String filesize = br.getRegex("Originalgröße : <span style=\"font\\-weight:bold\">(.*?)</span>").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("(?i)([\\d\\.]+ (MB|GB))").getMatch(0);
-            if (filesize == null) {
-                logger.warning("MixtureCloud: Couldn't find filesize. Please report this to the JDownloader Development Team.");
-                logger.warning("MixtureCloud: Continuing...");
-            }
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (br.containsHTML("/buy\">Access only to Premium or register user\\.</a>")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium or registered users!");
-        return AvailableStatus.TRUE;
+        return true;
     }
 
     @Override

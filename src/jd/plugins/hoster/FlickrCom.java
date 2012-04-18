@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickrdecrypted\\.com/photos/[^<>\"/]+/\\d+" }, flags = { 0 })
 public class FlickrCom extends PluginForHost {
 
     public FlickrCom(PluginWrapper wrapper) {
@@ -50,6 +50,10 @@ public class FlickrCom extends PluginForHost {
 
     private static final Object LOCK   = new Object();
     private static boolean      loaded = false;
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("flickrdecrypted.com/", "flickr.com/"));
+    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -68,14 +72,15 @@ public class FlickrCom extends PluginForHost {
             }
         }
         final Object ret = flickrDecrypter.getPluginConfig().getProperty("cookies", null);
-        if (ret == null) {
+        if (downloadLink.getBooleanProperty("cookiesneeded") && ret == null) {
             // This should never happen
-            logger.warning("A property couldn't be found!");
+            logger.info("A property couldn't be found!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-        for (Map.Entry<String, String> entry : cookies.entrySet()) {
-            this.br.setCookie("http://flickr.com", entry.getKey(), entry.getValue());
+        } else if (downloadLink.getBooleanProperty("cookiesneeded")) {
+            final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+            for (Map.Entry<String, String> entry : cookies.entrySet()) {
+                this.br.setCookie("http://flickr.com", entry.getKey(), entry.getValue());
+            }
         }
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());

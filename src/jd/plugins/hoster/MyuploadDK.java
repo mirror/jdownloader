@@ -24,7 +24,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myupload.dk" }, urls = { "http://[\\w\\.]*?myupload\\.(dk|uk)/showfile/[0-9a-fA-F]+" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myupload.dk" }, urls = { "http://(www\\.)?myupload\\.(dk|uk)/showfile/[0-9a-zA-Z]+" }, flags = { 0 })
 public class MyuploadDK extends PluginForHost {
 
     public MyuploadDK(PluginWrapper wrapper) {
@@ -33,7 +35,7 @@ public class MyuploadDK extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("myupload\\.uk", "myupload.dk"));
+        link.setUrlDownload(link.getDownloadURL().replace("myupload.uk/", "myupload.dk/"));
     }
 
     @Override
@@ -43,17 +45,14 @@ public class MyuploadDK extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        String url = br.getRegex("to download <a href='(/download/.*?)'>.*?</a><br />").getMatch(0);
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
-        br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL().replace("/showfile/", "/download/"), false, 1);
         dl.startDownload();
     }
 
@@ -62,21 +61,20 @@ public class MyuploadDK extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://www.myupload.dk", "lang", "en");
         br.getPage(parameter.getDownloadURL());
-        String filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex(">File name:</td><td class=\"downloadTblRight\">([^<>\"]*?)</td>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>Download ([^<>\"]*?) \\| myUpload\\.dk</title>").getMatch(0);
+        String filesize = br.getRegex(">Size:</td><td class=\"downloadTblRight\">([^<>\"]*?)</td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setDownloadSize(SizeFormatter.getSize(filesize));
         parameter.setName(filename);
+        String md5 = br.getRegex(">MD5 value:</td><td class=\"downloadTblRight\">([a-z0-9]{32})</td>").getMatch(0);
+        if (md5 != null) parameter.setMD5Hash(md5);
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void reset() {
     }
-
-    /*
-     * public String getVersion() { return getVersion("$Revision$");
-     * 
-     * }
-     */
 
     @Override
     public void resetDownloadlink(DownloadLink link) {

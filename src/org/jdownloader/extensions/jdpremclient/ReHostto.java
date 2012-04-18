@@ -311,17 +311,13 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
 
     private boolean resumePossible(String hoster) {
         if (hoster != null) {
-            if (hoster.contains("megaupload.com")) return true;
             if (hoster.contains("rapidshare.com")) return true;
             if (hoster.contains("oron.com")) return true;
             if (hoster.contains("netload.in")) return true;
             if (hoster.contains("uploaded.to")) return true;
-            if (hoster.contains("x7.to")) return true;
             if (hoster.contains("freakshare.")) return true;
             if (hoster.contains("filesonic")) return true;
             if (hoster.contains("easy-share")) return true;
-            if (hoster.contains("megaupload")) return true;
-            if (hoster.contains("megavideo")) return true;
             if (hoster.contains("fileserve.com")) return true;
             if (hoster.contains("bitshare.com")) return true;
             if (hoster.contains("hotfile.com")) return true;

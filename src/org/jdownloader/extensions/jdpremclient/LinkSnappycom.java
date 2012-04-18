@@ -370,12 +370,10 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
 
     private boolean resumePossible(String hoster) {
         if (hoster != null) {
-            if (hoster.contains("megaupload.com")) return true;
             if (hoster.contains("rapidshare.com")) return true;
             if (hoster.contains("oron.com")) return true;
             if (hoster.contains("netload.in")) return true;
             if (hoster.contains("uploaded.to")) return true;
-            if (hoster.contains("x7.to")) return true;
             if (hoster.contains("shragle.com")) return true;
             if (hoster.contains("freakshare.")) return true;
             if (hoster.contains("fileserve.com")) return true;
