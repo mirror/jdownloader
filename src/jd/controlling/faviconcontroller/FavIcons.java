@@ -341,8 +341,8 @@ public class FavIcons {
                  * workaround for hoster with not complete url, eg
                  * rapidshare.com
                  */
-                url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=.*?//([^>'\"]*?)('|\")").getMatch(3);
-                if (url != null && url.length() > 0 && !url.equalsIgnoreCase(host)) url = "http://" + url;
+                url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=[^>]*?//([^>'\"]*?)('|\")").getMatch(3);
+                if (!StringUtils.isEmpty(url) && !url.equalsIgnoreCase(host)) url = "http://" + url;
             }
             if (url != null && url.equalsIgnoreCase(host)) url = null;
             if (url == null && "rapidshare.com".equalsIgnoreCase(host)) {
@@ -352,7 +352,7 @@ public class FavIcons {
                  */
                 url = "http://images3.rapidshare.com/img/favicon.ico";
             }
-            if (url != null && url.length() > 0) {
+            if (!StringUtils.isEmpty(url)) {
                 /* favicon tag with ico extension */
                 favBr.setFollowRedirects(false);
                 favBr.getHeaders().put("Accept-Encoding", "");

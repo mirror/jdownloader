@@ -74,6 +74,7 @@ public class TokyoTubeCom extends PluginForHost {
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = filename.trim();
         br.getPage("http://www.tokyo-tube.com/media/player/config.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "tokyo\\-tube\\.com/video/(\\d+)").getMatch(0));
         final String[] types = { "hd", "src" };
         Browser br2 = br.cloneBrowser();
@@ -84,19 +85,24 @@ public class TokyoTubeCom extends PluginForHost {
             for (String type : types) {
                 DLLINK = br.getRegex("<" + type + ">(http://[^<>]+)</" + type + ">").getMatch(0);
                 if (DLLINK != null) {
+                    DLLINK = DLLINK.trim();
                     DLLINK = Encoding.htmlDecode(DLLINK);
+                    DLLINK = DLLINK.replaceAll("%0D%0A", "").trim();
                     con = br2.openGetConnection(DLLINK);
                     if (!con.getContentType().contains("html")) {
                         downloadLink.setDownloadSize(con.getLongContentLength());
                         break;
                     } else {
+                        try {
+                            con.disconnect();
+                        } catch (Throwable e) {
+                        }
                         continue;
                     }
                 }
             }
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            filename = filename.trim();
             String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
             if (ext == null) ext = ".flv";
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);

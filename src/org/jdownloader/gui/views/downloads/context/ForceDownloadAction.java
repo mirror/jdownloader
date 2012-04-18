@@ -34,6 +34,7 @@ public class ForceDownloadAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
+        if (!isEnabled()) return;
         DownloadWatchDog.getInstance().forceDownload(links);
     }
 

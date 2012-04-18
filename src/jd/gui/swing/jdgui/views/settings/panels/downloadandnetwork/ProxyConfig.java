@@ -82,7 +82,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
 
     @Override
     public ImageIcon getIcon() {
-        return NewTheme.I().getIcon("proxy", ConfigPanel.ICON_SIZE);
+        return NewTheme.I().getIcon("proxy_rotate", ConfigPanel.ICON_SIZE);
     }
 
     @Override

@@ -38,7 +38,7 @@ public class AdBlocker implements AdBlockerInterface {
     }
 
     public boolean doBlockRequest(Request request) {
-        String url = request.getUrl().toExternalForm();
+        String url = request.getUrl();
         for (Pattern p : whiteList) {
             if (p.matcher(url).matches()) {
                 //

@@ -164,7 +164,7 @@ public class DownloadTableContextMenuFactory {
     public static ArrayList<JMenuItem> fillPropertiesMenu(AbstractNode contextObject, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column) {
         ArrayList<AbstractNode> inteliSelect = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<AbstractNode>());
         ArrayList<JMenuItem> ret = new ArrayList<JMenuItem>();
-        ret.add(new JMenuItem(new EnabledAction(new ArrayList<AbstractNode>(inteliSelect))));
+        ret.add(new JMenuItem(new EnabledAction(inteliSelect)));
         ret.add(new JMenuItem(new URLEditorAction(null, inteliSelect)));
 
         ret.add(new JMenuItem(new SetDownloadFolderInDownloadTableAction(contextObject, inteliSelect).toContextMenuAction()));

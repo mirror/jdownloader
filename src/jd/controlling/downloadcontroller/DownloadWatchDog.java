@@ -399,9 +399,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * 
      * @return
      */
-    public DownloadControlInfo getNextDownloadLink(List<DownloadLink> possibleLinks) {
-        HashMap<String, ArrayList<Account>> accountCache = new HashMap<String, ArrayList<Account>>();
-        HashMap<String, PluginForHost> pluginCache = new HashMap<String, PluginForHost>();
+    public DownloadControlInfo getNextDownloadLink(List<DownloadLink> possibleLinks, HashMap<String, ArrayList<Account>> accountCache, HashMap<String, PluginForHost> pluginCache) {
+        if (accountCache == null) accountCache = new HashMap<String, ArrayList<Account>>();
+        if (pluginCache == null) pluginCache = new HashMap<String, PluginForHost>();
         try {
             retryLoop: while (true) {
                 linkLoop: for (DownloadLink nextDownloadLink : possibleLinks) {
@@ -880,11 +880,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         int ret = 0;
         int maxDownloads = config.getMaxSimultaneDownloads();
         int maxLoops = Math.max(possibleLinks.size(), forcedLinks.size());
+        HashMap<String, ArrayList<Account>> accountCache = new HashMap<String, ArrayList<Account>>();
+        HashMap<String, PluginForHost> pluginCache = new HashMap<String, PluginForHost>();
         while ((this.forcedLinksWaiting() || getActiveDownloads() < maxDownloads) && maxLoops >= 0) {
             if (!this.newDLStartAllowed() || this.isStopMarkReached()) {
                 break;
             }
-            dci = this.getNextDownloadLink(possibleLinks);
+            dci = this.getNextDownloadLink(possibleLinks, accountCache, pluginCache);
             if (dci == null) {
                 /* no next possible download found */
                 break;

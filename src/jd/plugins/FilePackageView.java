@@ -120,6 +120,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         lastStatusVersion = statusVersion;
         lastStatsUpdate = System.currentTimeMillis();
         HashSet<String> names = new HashSet<String>();
+        boolean allFinished = true;
         synchronized (fp) {
             for (DownloadLink link : fp.getChildren()) {
                 if (AvailableStatus.FALSE == link.getAvailableStatus()) {
@@ -129,18 +130,40 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     // online
                     newOnline++;
                 }
-                if (!link.isEnabled()) continue;
-                newEnabled = true;
+                if (link.isEnabled()) {
+                    /*
+                     * we still have enabled links, so package must be enabled
+                     * too
+                     */
+                    newEnabled = true;
+                }
                 if (names.add(link.getName())) {
+                    /* only counts unique filenames */
                     newSize += link.getDownloadSize();
                     newDone += link.getDownloadCurrent();
+                }
+                if (!link.getLinkStatus().isFinished() && link.isEnabled()) {
+                    /* we still have an enabled link which is not finished */
+                    allFinished = false;
+                } else if (allFinished && link.getFinishedDate() > newFinishedDate) {
+                    /*
+                     * we can set latest finished date because all links till
+                     * now are finished
+                     */
+                    newFinishedDate = link.getFinishedDate();
                 }
             }
         }
         size = newSize;
         done = newDone;
         isEnabled = newEnabled;
-        finishedDate = newFinishedDate;
+        if (allFinished) {
+            /* all links have reached finished state */
+            finishedDate = newFinishedDate;
+        } else {
+            /* not all have finished */
+            finishedDate = -1;
+        }
         offline = newOffline;
         online = newOnline;
     }

@@ -23,7 +23,6 @@ import jd.gui.swing.jdgui.views.settings.components.Spinner;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.translate._JDT;
 
 public class GUISettings extends AbstractConfigPanel {
@@ -39,7 +38,9 @@ public class GUISettings extends AbstractConfigPanel {
         super();
         captchaSize = new Spinner(org.jdownloader.settings.staticreferences.CFG_GUI.CAPTCHA_SCALE_FACTOR);
         captchaSize.setFormat("#'%'");
-        this.addHeader(getTitle(), NewTheme.I().getIcon("barrierfreesettings", 32));
+        this.addHeader(getTitle(), NewTheme.I().getIcon("gui", 32));
+        // this.addHeader(getTitle(),
+        // NewTheme.I().getIcon("barrierfreesettings", 32));
         this.addDescription(_JDT._.gui_settings_barrierfree_description());
         this.addPair(_GUI._.gui_config_barrierfree_captchasize(), null, captchaSize);
 
