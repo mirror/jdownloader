@@ -27,6 +27,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
     private ImageIcon         updateIcon;
     private ImageIcon         trueIcon;
     private ImageIcon         falseIcon;
+    private ImageIcon         infoIcon;
 
     @Override
     public int getDefaultWidth() {
@@ -47,6 +48,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         this.updateIcon = NewTheme.I().getIcon("update", 16);
         this.trueIcon = NewTheme.I().getIcon("true", 16);
         this.falseIcon = NewTheme.I().getIcon("false", 16);
+        this.infoIcon = NewTheme.I().getIcon("info", 16);
     }
 
     @Override
@@ -61,6 +63,8 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                 return ls.getStatusIcon();
             } else if (ls.isFinished()) {
                 return trueIcon;
+            } else if (ls.hasStatus(LinkStatus.TEMP_IGNORE)) {
+                return infoIcon;
             } else if (ls.isFailed() || dl.getAvailableStatus() == AvailableStatus.FALSE) { return falseIcon; }
         } else if (value instanceof FilePackage) {
             if (((FilePackage) value).getView().isFinished()) { return trueIcon; }

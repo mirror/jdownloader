@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -89,20 +90,27 @@ public class MixtureCloudCom extends PluginForHost {
         String filename = null;
         String filesize = null;
         if (br.containsHTML(PREMIUMONLY)) {
+            /* you must put a boolean into it and not a string ;) */
+            link.setProperty("onlypremium", true);
             filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?) \\- MixtureCloud\\.com").getMatch(0);
             filesize = br.getRegex("<h5>Size : ([^<>\"]*?)</h5>").getMatch(0);
+            if (filename != null) {
+                link.setName(Encoding.htmlDecode(filename.trim()));
+            }
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
             try {
-                // for old stable
-                link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
-                // new
-                link.setProperty("onlypremium", "true");
-                link.getLinkStatus().setValue(PluginException.VALUE_ID_PREMIUM_ONLY);
-                link.getLinkStatus().addStatus(LinkStatus.ERROR_PREMIUM);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Download only works with an account", PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
                 /* VALUE_ID_PREMIUM_ONLY not existing in old stable */
             }
+            /* fallback old method */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Download only works with an account");
         } else {
-            link.setProperty("onlypremium", "false");
+            /* remove the property */
+            link.setProperty("onlypremium", Property.NULL);
             filename = br.getRegex("(?i)<meta property=\"og:title\" content=\"(.*?) mixturecloud\\.com \"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("(?i)<title>(.*?) - mixturecloud\\.com</title>").getMatch(0);
@@ -118,7 +126,6 @@ public class MixtureCloudCom extends PluginForHost {
             logger.warning("MixtureCloud: Continuing...");
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
         link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -127,8 +134,6 @@ public class MixtureCloudCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        // Old handling
-        if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         br.postPage(downloadLink.getDownloadURL(), "slow_download=1");
         String reconnectWait = br.getRegex(">Warten auf (\\d+) Sekunden").getMatch(0);
         if (reconnectWait == null) reconnectWait = br.getRegex(">Sie haben bis (\\d+) Sekunden warten").getMatch(0);

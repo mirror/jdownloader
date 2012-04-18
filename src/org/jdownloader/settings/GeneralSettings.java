@@ -280,6 +280,7 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isClosedWithRunningDownloads();
 
     @DefaultIntValue(10)
+    @SpinnerValidator(min = 0, max = 120)
     @Description("AutoStart Downloads will show a Countdown Dialog after Startup. Set the countdown time to 0 to remove this dialog. @see showCountdownonAutoStartDownloads")
     int getAutoStartCountdownSeconds();
 
