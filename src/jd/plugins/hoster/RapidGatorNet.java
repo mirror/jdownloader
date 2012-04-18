@@ -69,6 +69,7 @@ public class RapidGatorNet extends PluginForHost {
         requestFileInformation(downloadLink);
         /** They sometimes got slow downloadservers */
         br.setReadTimeout(3 * 60 * 1000);
+        if (br.containsHTML("You have reached your daily downloads limit. Please try")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily downloads limit", 60 * 60 * 1000l);
         if (br.containsHTML("(You can`t download not more than 1 file at a time in free mode\\.<|>Wish to remove the restrictions\\?)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
         final String freedlsizelimit = br.getRegex("(?i)\\'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
         if (freedlsizelimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.rapidgatornet.only4premium", "No free download link for this file"));
@@ -91,12 +92,13 @@ public class RapidGatorNet extends PluginForHost {
         if (!br2.containsHTML("\"state\":\"done\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         URLConnectionAdapter con = br.openGetConnection("http://rapidgator.net/download/captcha");
         if (con.getResponseCode() == 500) {
-            con.disconnect();
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
         }
         br.followConnection();
-        con.disconnect();
-        br.getPage("http://rapidgator.net/download/captcha");
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         for (int i = 0; i <= 5; i++) {
