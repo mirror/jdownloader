@@ -16,6 +16,7 @@
 
 package jd.controlling;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,6 +29,9 @@ import java.util.Map.Entry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
 import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -228,6 +232,21 @@ public class AccountController implements AccountControllerListener {
                         return ai;
                     }
                 }
+            } else if (e instanceof IOException) {
+                /* network exception, lets temp disable the account */
+                BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck(true);
+                try {
+                    onlineCheck.getExternalIP();
+                } catch (final OfflineException e2) {
+                    /*
+                     * we are offline, so lets just return without any account
+                     * update
+                     */
+                    logger.clear();
+                    logger.info("It seems Computer is currently offline, skipped Accountcheck for " + whoAmI);
+                    return ai;
+                } catch (final IPCheckException e2) {
+                }
             }
             logger.severe("AccountCheck: Failed because of exception");
             logger.severe(JDLogger.getStackTrace(e));
@@ -236,10 +255,10 @@ public class AccountController implements AccountControllerListener {
             account.setEnabled(false);
             account.setValid(false);
             this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.INVALID, account));
+        } finally {
+            logger.logInto(JDLogger.getLogger());
         }
-        logger.logInto(JDLogger.getLogger());
         return ai;
-
     }
 
     public static AccountController getInstance() {

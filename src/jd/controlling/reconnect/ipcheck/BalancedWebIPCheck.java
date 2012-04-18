@@ -40,19 +40,18 @@ public class BalancedWebIPCheck implements IPCheckProvider {
 
     private final Pattern                   pattern;
 
-    private static final BalancedWebIPCheck INSTANCE = new BalancedWebIPCheck();
+    private static final BalancedWebIPCheck INSTANCE = new BalancedWebIPCheck(false);
     private final Object                    LOCK     = new Object();
 
     private boolean                         checkOnlyOnce;
 
-    private BalancedWebIPCheck() {
-
+    public BalancedWebIPCheck(boolean useGlobalProxy) {
         this.servicesInUse = new ArrayList<String>();
         setOnlyUseWorkingServices(false);
         this.pattern = Pattern.compile("(\\d+\\.\\d+\\.\\d+\\.\\d+)");
         Collections.shuffle(this.servicesInUse);
         this.br = new Browser();
-        this.br.setProxy(HTTPProxy.NONE);
+        if (!useGlobalProxy) this.br.setProxy(HTTPProxy.NONE);
         this.br.setConnectTimeout(JsonConfig.create(ReconnectConfig.class).getIPCheckConnectTimeout());
         this.br.setReadTimeout(JsonConfig.create(ReconnectConfig.class).getIPCheckReadTimeout());
     }
@@ -76,6 +75,10 @@ public class BalancedWebIPCheck implements IPCheckProvider {
                         if (matcher.groupCount() > 0) { return IP.getInstance(matcher.group(1)); }
                     }
                 } catch (final Throwable e2) {
+                    try {
+                        br.disconnect();
+                    } catch (final Throwable e) {
+                    }
                     JDLogger.getLogger().info(e2.getMessage());
 
                 }

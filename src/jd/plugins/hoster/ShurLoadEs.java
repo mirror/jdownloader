@@ -136,9 +136,6 @@ public class ShurLoadEs extends PluginForHost {
     public boolean canHandle(final DownloadLink dl, final Account account) {
         if (account == null) {
             /* this host only supports premium downloads */
-            dl.getLinkStatus().setValue(PluginException.VALUE_ID_PREMIUM_ONLY);
-            dl.getLinkStatus().setErrorMessage("Download only works with an account");
-            dl.getLinkStatus().addStatus(LinkStatus.ERROR_PREMIUM);
             return false;
         }
         return true;
