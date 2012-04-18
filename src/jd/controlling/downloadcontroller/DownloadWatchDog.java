@@ -399,13 +399,22 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * 
      * @return
      */
-    public DownloadControlInfo getNextDownloadLink(List<DownloadLink> possibleLinks, HashMap<String, ArrayList<Account>> accountCache, HashMap<String, PluginForHost> pluginCache) {
+    public DownloadControlInfo getNextDownloadLink(List<DownloadLink> possibleLinks, HashMap<String, ArrayList<Account>> accountCache, HashMap<String, PluginForHost> pluginCache, boolean forceDownload) {
         if (accountCache == null) accountCache = new HashMap<String, ArrayList<Account>>();
         if (pluginCache == null) pluginCache = new HashMap<String, PluginForHost>();
         try {
             retryLoop: while (true) {
                 linkLoop: for (DownloadLink nextDownloadLink : possibleLinks) {
-                    if (nextDownloadLink.getDefaultPlugin() == null || !nextDownloadLink.isEnabled() || nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) || nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE)) {
+                    if (nextDownloadLink.getDefaultPlugin() == null) {
+                        /* no plugin available, lets skip the link */
+                        continue linkLoop;
+                    }
+                    if (!forceDownload && !nextDownloadLink.isEnabled()) {
+                        /* ONLY when not forced */
+                        /* link is disabled, lets skip it */
+                        continue linkLoop;
+                    }
+                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) || nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE)) {
                         /*
                          * no plugin available, download not enabled,link temp
                          * unavailable
@@ -416,7 +425,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         /* download is already in progress or not todo */
                         continue linkLoop;
                     }
-                    if (activeDownloadsbyHosts(nextDownloadLink.getHost()) >= this.getSimultanDownloadNumPerHost()) {
+                    if (!forceDownload && activeDownloadsbyHosts(nextDownloadLink.getHost()) >= this.getSimultanDownloadNumPerHost()) {
+                        /* ONLY when not forced! */
                         /* max downloads per host reached */
                         continue linkLoop;
                     }
@@ -879,17 +889,38 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         DownloadControlInfo dci = null;
         int ret = 0;
         int maxDownloads = config.getMaxSimultaneDownloads();
-        int maxLoops = Math.max(possibleLinks.size(), forcedLinks.size());
+        int maxLoops = possibleLinks.size();
         HashMap<String, ArrayList<Account>> accountCache = new HashMap<String, ArrayList<Account>>();
         HashMap<String, PluginForHost> pluginCache = new HashMap<String, PluginForHost>();
-        while ((this.forcedLinksWaiting() || getActiveDownloads() < maxDownloads) && maxLoops >= 0) {
+        ArrayList<DownloadLink> forcedLink = new ArrayList<DownloadLink>(1);
+        startLoop: while (this.forcedLinksWaiting() || ((getActiveDownloads() < maxDownloads) && maxLoops >= 0)) {
             if (!this.newDLStartAllowed() || this.isStopMarkReached()) {
                 break;
             }
-            dci = this.getNextDownloadLink(possibleLinks, accountCache, pluginCache);
-            if (dci == null) {
-                /* no next possible download found */
-                break;
+            forcedLink.clear();
+            synchronized (forcedLinks) {
+                if (forcedLinks.size() > 0) {
+                    /*
+                     * we remove the first one of forcedLinks list into local
+                     * array which holds only 1 downloadLink
+                     */
+                    forcedLink.add(forcedLinks.removeFirst());
+                }
+            }
+            if (forcedLink.size() > 0) {
+                /* we try to force the link in forcedLink array */
+                dci = this.getNextDownloadLink(forcedLink, accountCache, pluginCache, true);
+                if (dci == null) {
+                    /* we could not start the forced link */
+                    continue startLoop;
+                }
+            } else {
+                /* we try to find next possible normal download */
+                dci = this.getNextDownloadLink(possibleLinks, accountCache, pluginCache, false);
+                if (dci == null) {
+                    /* no next possible download found */
+                    break;
+                }
             }
             DownloadLink dlLink = dci.link;
             String dlFolder = dlLink.getFilePackage().getDownloadDirectory();
@@ -990,7 +1021,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * @param dci
      */
     private void activateSingleDownloadController(final DownloadControlInfo dci) {
-        Log.L.info("Start new Download: " + dci.link.getHost() + ":" + dci.link.getName() + ":" + dci.proxy);
+        Log.L.info("Start new Download: Host:" + dci.link.getHost() + "|:Name" + dci.link.getName() + "|Proxy:" + dci.proxy);
+        /* we enable link in case it's a forced disabled link */
+        dci.link.setEnabled(true);
         final SingleDownloadController download = new SingleDownloadController(dci.link, dci.account, dci.proxy, this.dsm);
         if (dci.byPassSimultanDownloadNum == false && dci.proxy != null) {
             /*
@@ -1249,10 +1282,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                             }
                             stateMachine.setStatus(STOPPING_STATE);
-                            /* clear forcedLinks list */
-                            synchronized (forcedLinks) {
-                                forcedLinks.clear();
-                            }
                             Log.L.info("DownloadWatchDog: stopping");
                             /* stop all remaining downloads */
                             abortAllSingleDownloadControllers();
@@ -1266,10 +1295,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 /* remove stopsign if it has been reached */
                                 setStopMark(STOPMARK.NONE);
                             }
+                        } catch (final Throwable e) {
+                            Log.exception(e);
+                            stateMachine.setStatus(STOPPING_STATE);
                         } finally {
                             /* full stop reached */
                             Log.L.info("DownloadWatchDog: stopped");
-                            stateMachine.setStatus(STOPPED_STATE);
                             synchronized (DownloadWatchDog.this) {
                                 watchDogThread = null;
                             }
@@ -1277,6 +1308,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             synchronized (downloadControlHistory) {
                                 downloadControlHistory.clear();
                             }
+                            /* clear forcedLinks list */
+                            synchronized (forcedLinks) {
+                                forcedLinks.clear();
+                            }
+                            stateMachine.setStatus(STOPPED_STATE);
                         }
                     }
                 };
