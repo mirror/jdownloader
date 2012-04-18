@@ -280,7 +280,7 @@ public class Srnnks extends PluginForDecrypt {
                                 System.out.println("CAPTCHA!!!");
                                 // only each 5 link needs captchas
                                 if (!captchaLink.toLowerCase().startsWith("http://")) {
-                                    captchaLink = "http://" + this.br.getHost() + captchaLink;
+                                    captchaLink = "http://download.serienjunkies.org" + captchaLink;
                                 }
 
                                 crawlStatus = br.getRegex("<TITLE>.* - (.*?)</TITLE>").getMatch(0);
