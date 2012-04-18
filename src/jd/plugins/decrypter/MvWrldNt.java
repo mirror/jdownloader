@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net" }, urls = { "http://(www\\.)?mov-world\\.net/(\\?id=\\d+|.*?/.*?.html)", "http://(www\\.)?xxx-4-free\\.net/.*?/.*?.html" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net" }, urls = { "http://(www\\.)?mov-world\\.net/(?!news/)(\\?id=\\d+|.*?/.*?.html)", "http://(www\\.)?xxx-4-free\\.net/.*?/.*?.html" }, flags = { 0, 0 })
 public class MvWrldNt extends PluginForDecrypt {
 
     public MvWrldNt(final PluginWrapper wrapper) {

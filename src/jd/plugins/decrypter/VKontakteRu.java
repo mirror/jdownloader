@@ -68,8 +68,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 /* this call can refesh the login */
                 br.getPage(parameter);
                 /** Retry if login failed */
-                if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com") || br.containsHTML("(method=\"post\" name=\"login\" id=\"login\"|name=\"login\" id=\"quick_login_form\")")) {
-                    logger.info("Retrying vk.com login...");
+                if (br.containsHTML(">Security Check<")) {
+                    logger.info("Refreshing vk.com cookies");
                     this.getPluginConfig().setProperty("logincounter", "-1");
                     this.getPluginConfig().save();
                     br.clearCookies(DOMAIN);
@@ -422,6 +422,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     @SuppressWarnings("unchecked")
     private boolean getUserLogin() throws Exception {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:11.0) Gecko/20100101 Firefox/11.0");
         br.setFollowRedirects(true);
         String username = null;
         String password = null;
