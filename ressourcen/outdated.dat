@@ -759,3 +759,8 @@ jd/plugins/decrypter/Load2Me.class
 jd/plugins/hoster/FilePlanetComUa.class
 jd/plugins/decrypter/MdfBtCom.class
 jd/plugins/decrypter/MscPrtsOrg.class
+jd/plugins/decrypter/MultiFileAm.class
+jd/plugins/decrypter/MllGnCm.class
+jd/plugins/decrypter/IshareIaskSinaComCnFolder.class
+jd/plugins/hoster/IshareIaskSinaComCn.class
+jd/plugins/decrypter/MgcMsCm.class

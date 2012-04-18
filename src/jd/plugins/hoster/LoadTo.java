@@ -72,19 +72,10 @@ public class LoadTo extends PluginForHost {
         } catch (final Throwable e) {
         }
         URLConnectionAdapter con = dl.getConnection();
-        /* Überprüfung auf serverprobleme, nach 6 versuchen geben wir auf */
         if (con.getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("file not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            int count = downloadLink.getIntegerProperty("error", 0);
-            count++;
-            downloadLink.setProperty("error", count);
-            con.disconnect();
-            if (count > 6) {
-                logger.info("file failed too often, so its offline ;)");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, count * 600 * 1000l);
+            if (br.containsHTML("file not exist")) logger.info("File maybe offline");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
         }
         if (!con.isContentDisposition()) {
             br.followConnection();

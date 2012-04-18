@@ -46,11 +46,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filejungle.com" }, urls = { "http://(www\\.)?filejungle\\.com/f/[A-Za-z0-9]+" }, flags = { 2 })
 public class FileJungleCom extends PluginForHost {
 
-    private static final String CAPTCHAFAILED = "\"error\":\"incorrect\\-captcha\\-sol\"";
-
-    private static final String MAINPAGE      = "http://filejungle.com/";
-
-    private static final Object LOCK          = new Object();
+    private static final String CAPTCHAFAILED       = "\"error\":\"incorrect\\-captcha\\-sol\"";
+    private static final String MAINPAGE            = "http://filejungle.com/";
+    private static final Object LOCK                = new Object();
+    private static final String DLYOURFILESUSERTEXT = "You can only download files which YOU uploaded!";
+    private static final String DLYOURFILESTEXT     = "(>You can only retrieve files from FileJungle after logging in to your file manager|>Only files you have uploaded personally can be retrieved)";
 
     public FileJungleCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -120,6 +120,7 @@ public class FileJungleCom extends PluginForHost {
                     } else {
                         dl.setAvailable(true);
                     }
+                    dl.getLinkStatus().setStatusText(DLYOURFILESUSERTEXT);
                     dl.setName(filename);
                     if (filesize != null) {
                         if (filesize.contains(",") && filesize.contains(".")) {
@@ -189,6 +190,7 @@ public class FileJungleCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
+        if (true) throw new PluginException(LinkStatus.ERROR_FATAL, DLYOURFILESUSERTEXT);
         final String damnLanding = br.getRegex("\"(/landing/L\\d+/download_captcha\\.js\\?\\d+)\"").getMatch(0);
         final String id = br.getRegex("var reCAPTCHA_publickey=\\'([^\\'\"<>]+)\\'").getMatch(0);
         final String rcShortenCode = br.getRegex("id=\"recaptcha_shortencode_field\" name=\"recaptcha_shortencode_field\" value=\"([^\\'\"<>]+)\"").getMatch(0);
@@ -256,6 +258,7 @@ public class FileJungleCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML(DLYOURFILESTEXT)) throw new PluginException(LinkStatus.ERROR_FATAL, DLYOURFILESUSERTEXT);
         // There is also another way to download (not via direct redirect) but
         // it didn't work when i changed it in the accountsettings
         String dllink = br.getRedirectLocation();
