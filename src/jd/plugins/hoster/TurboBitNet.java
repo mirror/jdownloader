@@ -281,6 +281,13 @@ public class TurboBitNet extends PluginForHost {
         if (dllink == null) {
             if (br.containsHTML("Our service is currently unavailable in your country.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Our service is currently unavailable in your country."); }
             logger.warning("dllink equals null, plugin seems to be broken!");
+            if (br.getCookie("http://turbobit.net", "user_isloggedin") == null || "deleted".equalsIgnoreCase(br.getCookie("http://turbobit.net", "user_isloggedin"))) {
+                synchronized (LOCK) {
+                    account.setProperty("UA", null);
+                    account.setProperty("cookies", null);
+                }
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!dllink.contains("turbobit.net")) {
@@ -318,7 +325,16 @@ public class TurboBitNet extends PluginForHost {
             // Load cookies
             try {
                 setBrowserExclusive();
-                br.getHeaders().put("User-Agent", UA);
+                String ua = null;
+                if (force == false) {
+                    /*
+                     * we have to reuse old UA, else the cookie will become
+                     * invalid
+                     */
+                    ua = account.getStringProperty("UA", null);
+                }
+                if (ua == null) ua = UA;
+                br.getHeaders().put("User-Agent", ua);
                 br.setCookie(MAINPAGE, "set_user_lang_change", "en");
                 br.setCustomCharset("UTF-8");
                 br.setFollowRedirects(true);
@@ -351,7 +367,9 @@ public class TurboBitNet extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+                account.setProperty("UA", UA);
             } catch (final PluginException e) {
+                account.setProperty("UA", null);
                 account.setProperty("cookies", null);
                 throw e;
             }

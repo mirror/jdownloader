@@ -122,6 +122,7 @@ public class Multi extends IExtraction {
                                                                                                                                          ;
     private static final String      TAR$                                                        = "\\.tar$";
 
+    private static final String      REGEX_ZIP$                                                  = "(?i).*\\.zip$";
     private static final String      ZIP$                                                        = "\\.zip$";
     private int                      crack;
     private ArrayList<String>        filter                                                      = new ArrayList<String>();
@@ -160,7 +161,6 @@ public class Multi extends IExtraction {
             archive.setArchiveFiles(link.createPartFileList(pattern));
             canBeSingleType = false;
         } else if (file.matches(REGEX_ENDS_WITH_DOT_RAR)) {
-
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.rar$", "")) + REGEX_FIND_PART_EXTENSION_AND_PARTNUMBER;
             archive.setArchiveFiles(link.createPartFileList(pattern));
             archive.getArchiveFiles().add(link);
@@ -171,7 +171,12 @@ public class Multi extends IExtraction {
             canBeSingleType = false;
         } else if (file.matches(REGEX_ANY_7ZIP_PART)) {
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.7z\\.\\d+$", "")) + _7Z_D;
+            archive.setArchiveFiles(link.createPartFileList(pattern));
             canBeSingleType = false;
+        } else if (file.matches(REGEX_ZIP$)) {
+            pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.zip$", ""));
+            archive.setArchiveFiles(link.createPartFileList(pattern));
+            canBeSingleType = true;
         } else {
             archive.setArchiveFiles(link.createPartFileList(pattern));
             archive.getArchiveFiles().add(link);

@@ -449,9 +449,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     }
 
     void fireEvent(ExtractionEvent event) {
-        synchronized (broadcaster) {
-            broadcaster.fireEvent(event);
-        }
+        broadcaster.fireEvent(event);
     }
 
     @Override

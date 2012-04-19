@@ -84,17 +84,20 @@ public class ExtractionListenerCode implements ExtractionListener {
             ex.onFinished(controller);
             break;
         case FINISHED:
-            FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.NEW_FILES, controller.getArchiv().getExtractedFiles().toArray(new File[controller.getArchiv().getExtractedFiles().size()])));
+            try {
+                FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.NEW_FILES, controller.getArchiv().getExtractedFiles().toArray(new File[controller.getArchiv().getExtractedFiles().size()])));
 
-            if (ex.getSettings().isDeleteInfoFilesAfterExtraction()) {
-                File fileOutput = new File(controller.getArchiv().getFirstArchiveFile().getFilePath());
-                File infoFiles = new File(fileOutput.getParentFile(), fileOutput.getName().replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$", "") + ".info");
-                if (infoFiles.exists() && infoFiles.delete()) {
-                    logger.info(infoFiles.getName() + " removed");
+                if (ex.getSettings().isDeleteInfoFilesAfterExtraction()) {
+                    File fileOutput = new File(controller.getArchiv().getFirstArchiveFile().getFilePath());
+                    File infoFiles = new File(fileOutput.getParentFile(), fileOutput.getName().replaceFirst("(?i)(\\.pa?r?t?\\.?[0-9]+\\.rar|\\.rar)$", "") + ".info");
+                    if (infoFiles.exists() && infoFiles.delete()) {
+                        logger.info(infoFiles.getName() + " removed");
+                    }
                 }
+            } finally {
+                controller.getArchiv().setActive(false);
+                ex.onFinished(controller);
             }
-            controller.getArchiv().setActive(false);
-            ex.onFinished(controller);
             break;
         case NOT_ENOUGH_SPACE:
             for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {

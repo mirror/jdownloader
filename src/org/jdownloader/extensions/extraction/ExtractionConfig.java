@@ -122,7 +122,7 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
 
     @AboutConfig
     @Description("max buffer size for write operations in kb")
-    @SpinnerValidator(min = 100, max = 10240)
+    @SpinnerValidator(min = 100, max = 102400)
     @DefaultIntValue(2000)
     int getBufferSize();
 
