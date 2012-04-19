@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "modovideo.com" }, urls = { "http://(www\\.)?modovideo\\.com/video\\?v=[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "modovideo.com" }, urls = { "http://(www\\.)?modovideo\\.com/video(\\.php)?\\?v=[a-z0-9]+" }, flags = { 0 })
 public class ModoVideoCom extends PluginForHost {
 
     public ModoVideoCom(PluginWrapper wrapper) {
@@ -37,6 +37,10 @@ public class ModoVideoCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.modovideo.com/termsandconditions.php";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/video.php", "/video?"));
     }
 
     @Override
