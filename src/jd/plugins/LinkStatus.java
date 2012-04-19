@@ -17,13 +17,9 @@
 package jd.plugins;
 
 import java.io.Serializable;
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map.Entry;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.plugins.download.DownloadInterface;
@@ -157,38 +153,24 @@ public class LinkStatus implements Serializable {
     }
 
     /* temporarily ignore this link, use value to signal why */
-    public static final int                 TEMP_IGNORE                                     = 1 << 31;
+    public static final int    TEMP_IGNORE                                     = 1 << 31;
 
-    public static final int                 TEMP_IGNORE_REASON_NOT_ENOUGH_HARDDISK_SPACE    = 1;
-    public static final int                 TEMP_IGNORE_REASON_NO_SUITABLE_ACCOUNT_FOUND    = 2;
-    public static final int                 TEMP_IGNORE_REASON_INVALID_DOWNLOAD_DESTINATION = 3;
+    public static final int    TEMP_IGNORE_REASON_NOT_ENOUGH_HARDDISK_SPACE    = 1;
+    public static final int    TEMP_IGNORE_REASON_NO_SUITABLE_ACCOUNT_FOUND    = 2;
+    public static final int    TEMP_IGNORE_REASON_INVALID_DOWNLOAD_DESTINATION = 3;
 
-    private static HashMap<Integer, String> toStringHelper                                  = new HashMap<Integer, String>();
-    static {
-        final Field[] fields = LinkStatus.class.getDeclaredFields();
-        for (final Field field : fields) {
-            if (field.getModifiers() == 25) {
-                try {
-                    toStringHelper.put(field.getInt(LinkStatus.class), field.getName());
-                } catch (Exception e) {
-                    JDLogger.exception(e);
-                }
-            }
-        }
-    }
+    private static final long  serialVersionUID                                = 3885661829491436448L;
 
-    private static final long               serialVersionUID                                = 3885661829491436448L;
+    private final DownloadLink downloadLink;
+    private String             errorMessage;
+    private int                lastestStatus                                   = TODO;
+    private int                status                                          = TODO;
+    private String             statusText                                      = null;
+    private long               value                                           = 0;
+    private long               waitUntil                                       = 0;
+    private int                retryCount                                      = 0;
 
-    private final DownloadLink              downloadLink;
-    private String                          errorMessage;
-    private int                             lastestStatus                                   = TODO;
-    private int                             status                                          = TODO;
-    private String                          statusText                                      = null;
-    private long                            value                                           = 0;
-    private long                            waitUntil                                       = 0;
-    private int                             retryCount                                      = 0;
-
-    private ImageIcon                       statusIcon;
+    private ImageIcon          statusIcon;
 
     public LinkStatus(final DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
@@ -469,25 +451,10 @@ public class LinkStatus implements Serializable {
         waitUntil = System.currentTimeMillis() + milliSeconds;
     }
 
-    public static String toString(final int status) {
-        return toStringHelper.get(status);
-    }
-
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append(StringFormatter.fillString(Integer.toBinaryString(status), "0", "", 32) + " < Statuscode\r\n");
-        String latest = "";
-        for (Entry<Integer, String> entry : toStringHelper.entrySet()) {
-            int value = entry.getKey();
-            if (hasStatus(value)) {
-                if (value == lastestStatus) latest = "Latest: " + entry.getValue() + "\r\n";
-                sb.append(StringFormatter.fillString(Integer.toBinaryString(value), "0", "", 32)).append(" | ").append(entry.getValue()).append("\r\n");
-            }
-        }
-
-        final StringBuilder ret = new StringBuilder(latest);
-        ret.append(sb.toString());
+        final StringBuilder ret = new StringBuilder();
+        ret.append(StringFormatter.fillString(Integer.toBinaryString(status), "0", "", 32) + " < Statuscode\r\n");
 
         if (statusText != null) {
             ret.append("StatusText: ").append(statusText).append("\r\n");

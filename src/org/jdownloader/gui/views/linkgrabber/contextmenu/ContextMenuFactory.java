@@ -90,12 +90,11 @@ public class ContextMenuFactory {
 
         p.add(new JSeparator());
         p.add(new SortAction(contextObject, selection, column).toContextMenuAction());
-        if (isLinkContext) {
-
-            p.add(new OpenUrlAction(link).toContextMenuAction());
-
-        }
         p.add(new JSeparator());
+        if (isLinkContext) {
+            p.add(new OpenUrlAction(link).toContextMenuAction());
+            p.add(new JSeparator());
+        }
         int count = p.getComponentCount();
         MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new LinkgrabberTableContext(table, p, contextObject, selection, column, event)));
         if (p.getComponentCount() > count) p.add(new JSeparator());

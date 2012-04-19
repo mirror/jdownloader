@@ -64,6 +64,7 @@ public class NekakaCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("(?i)invalid file link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("(?i)<nobr>([^<>]+) ?</nobr>").getMatch(0);
         if (filename == null) {

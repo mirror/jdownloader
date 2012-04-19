@@ -140,33 +140,30 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     fireEvent(ExtractionEvent.Type.START_CRACK_PASSWORD);
                     logger.info("Start password finding for " + archive);
 
+                    String correctPW = null;
                     for (String password : passwordList) {
                         if (checkPassword(password)) {
+                            correctPW = password;
                             break;
                         }
                     }
 
-                    if (archive.getPassword().equals("")) {
-                        for (String password : pwList) {
-                            if (checkPassword(password)) {
-                                break;
-                            }
-                        }
+                    if (correctPW == null) {
+                        /* no correctPW found */
 
-                        if (archive.getPassword().equals("")) {
-                            passwordList.clear();
-                            //
-                            passwordList.add(archive.getName());
-                            passwordList.addAll(archive.getFactory().getPasswordList(archive));
-                            for (String password : passwordList) {
-                                if (checkPassword(password)) {
-                                    break;
-                                }
+                        passwordList.clear();
+                        //
+                        passwordList.add(archive.getName());
+                        passwordList.addAll(archive.getFactory().getPasswordList(archive));
+                        for (String password : passwordList) {
+                            if (checkPassword(password)) {
+                                correctPW = password;
+                                break;
                             }
                         }
                     }
 
-                    if (archive.getPassword().equals("")) {
+                    if (correctPW == null) {
                         fireEvent(ExtractionEvent.Type.PASSWORD_NEEDED_TO_CONTINUE);
                         logger.info("Found no password in passwordlist " + archive);
 

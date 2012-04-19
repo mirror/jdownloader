@@ -31,28 +31,27 @@ public class LinkTreeUtils {
         return ret;
     }
 
-    public static ArrayList<CrawledPackage> getPackages(AbstractNode contextObject, ArrayList<AbstractNode> selection) {
-
-        HashSet<CrawledPackage> ret = new HashSet<CrawledPackage>();
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public static <T extends AbstractNode> ArrayList<T> getPackages(AbstractNode contextObject, ArrayList<AbstractNode> selection, ArrayList<T> container) {
+        HashSet<T> ret = new HashSet<T>();
         if (contextObject != null) {
-            if (contextObject instanceof CrawledPackage) {
-                ret.add((CrawledPackage) contextObject);
+            if (contextObject instanceof AbstractPackageNode) {
+                ret.add((T) contextObject);
             } else {
-                ret.add((CrawledPackage) ((CrawledLink) contextObject).getParentNode());
+                ret.add((T) ((AbstractPackageChildrenNode) contextObject).getParentNode());
             }
-
         }
         if (selection != null) {
             for (AbstractNode a : selection) {
-
-                if (a instanceof CrawledPackage) {
-                    ret.add((CrawledPackage) a);
+                if (a instanceof AbstractPackageNode) {
+                    ret.add((T) a);
                 } else {
-                    ret.add((CrawledPackage) ((CrawledLink) a).getParentNode());
+                    ret.add((T) ((AbstractPackageChildrenNode) a).getParentNode());
                 }
             }
         }
-        return new ArrayList<CrawledPackage>(ret);
+        container.addAll(ret);
+        return container;
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })

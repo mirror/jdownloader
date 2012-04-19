@@ -40,6 +40,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.PrioritySubMenu;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetCommentAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadPassword;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.SortAction;
 import org.jdownloader.images.NewTheme;
 
 public class DownloadTableContextMenuFactory {
@@ -131,23 +132,20 @@ public class DownloadTableContextMenuFactory {
         popup.add(new CreateDLCAction(links));
 
         popup.add(new JSeparator());
-
+        popup.add(new SortAction(contextObject, selection, column).toContextMenuAction());
         popup.add(new JSeparator());
         if (contextObject instanceof FilePackage) {
-
             popup.add(new PackageNameAction(fps));
-
+            popup.add(new JSeparator());
         } else if (contextObject instanceof DownloadLink) {
-
             if (CrossSystem.isOpenFileSupported()) {
                 popup.add(new OpenFileAction(new File(((DownloadLink) contextObject).getFileOutput())));
+                popup.add(new JSeparator());
             }
         }
-        popup.add(new JSeparator());
-
+        int count = popup.getComponentCount();
         MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new DownloadTableContext(downloadsTable, popup, contextObject, selection, column, ev)));
-
-        popup.add(new JSeparator());
+        if (popup.getComponentCount() > count) popup.add(new JSeparator());
 
         /* remove menu */
         JMenu m = new JMenu(_GUI._.ContextMenuFactory_createPopup_cleanup());

@@ -673,14 +673,18 @@ public class Multi extends IExtraction {
             final BooleanHelper passwordfound = new BooleanHelper();
             String folder = "";
             for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
-                if (item.isFolder() || item.getSize() == 0) {
+                if (item.isFolder() || (item.getSize() == 0 && item.getPackedSize() == 0)) {
+                    /*
+                     * we also check for items with size ==0, they should have a
+                     * packedsize>0
+                     */
                     continue;
                 }
 
                 if (!passwordfound.getBoolean()) {
                     try {
                         final String path = item.getPath();
-                        item.extractSlow(new ISequentialOutStream() {
+                        ExtractOperationResult result = item.extractSlow(new ISequentialOutStream() {
                             public int write(byte[] data) throws SevenZipException {
                                 if (passwordExtracting) {
                                     passwordfound.found();
@@ -718,15 +722,25 @@ public class Multi extends IExtraction {
                                 return 0;
                             }
                         }, password);
-
                         passwordExtracting = true;
-                        return false;
-
+                        if (!ExtractOperationResult.OK.equals(result)) {
+                            /* we get no okay result, so pw might be wrong */
+                            return false;
+                        }
+                        passwordfound.found();
                     } catch (SevenZipException e) {
-                        // An error will be thrown if the write method returns
+                        // An error will be thrown if the write method
+                        // returns
                         // 0.
                         // It's not a problem, because it only signals the a
                         // password was accepted.
+                        if (!passwordfound.getBoolean()) {
+                            /*
+                             * passwordfound is still false, so no valid
+                             * password found
+                             */
+                            return false;
+                        }
                     }
                 }
 

@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 
 import jd.controlling.IOEQ;
-import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
@@ -22,14 +21,16 @@ public class SortAction extends AppAction {
     /**
      * 
      */
-    private static final long         serialVersionUID = -3883739313644803093L;
-    private ExtColumn<AbstractNode>   column;
-    private ArrayList<CrawledPackage> selection        = null;
-    private static String             sortOrder        = null;
+    private static final long       serialVersionUID = -3883739313644803093L;
+    private ExtColumn<AbstractNode> column;
+    private ArrayList<AbstractNode> selection2;
+    private AbstractNode            contextObject;
+    private static String           sortOrder        = null;
 
     public SortAction(AbstractNode contextObject, ArrayList<AbstractNode> selection2, ExtColumn<AbstractNode> column2) {
         this.column = column2;
-        this.selection = LinkTreeUtils.getPackages(contextObject, selection2);
+        this.selection2 = selection2;
+        this.contextObject = contextObject;
         setIconKey("sort");
         setName(_GUI._.SortAction_SortAction_object_(column.getName()));
 
@@ -42,6 +43,7 @@ public class SortAction extends AppAction {
             @SuppressWarnings({ "rawtypes", "unchecked" })
             @Override
             protected Void run() throws RuntimeException {
+                ArrayList<AbstractPackageNode> selection = LinkTreeUtils.getPackages(contextObject, selection2, new ArrayList<AbstractPackageNode>());
                 if (sortOrder == null || ExtColumn.SORT_DESC == sortOrder) {
                     sortOrder = ExtColumn.SORT_ASC;
                 } else {
@@ -72,8 +74,6 @@ public class SortAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-
-        return selection != null && selection.size() > 0;
+        return contextObject != null && selection2 != null && selection2.size() > 0;
     }
-
 }

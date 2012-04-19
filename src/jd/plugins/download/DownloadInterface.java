@@ -1040,7 +1040,7 @@ abstract public class DownloadInterface {
         /* if we recieved external stop, then we dont have to handle errors */
         if (externalDownloadStop()) return;
 
-        logger.severe("Error occured (" + id + "): " + LinkStatus.toString(id));
+        logger.severe("Error occured (" + id + "): ");
 
         if (errors.indexOf(id) < 0) errors.add(id);
         if (fatalErrorOccured) return;
