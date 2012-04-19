@@ -96,7 +96,8 @@ public class FsxHu extends PluginForHost {
     }
 
     public void handleFree0(final DownloadLink downloadLink) throws Exception {
-        if (!br.containsHTML("/?kep\\.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String captcha = br.getRegex("/?(kep(\\d+)?\\.php)").getMatch(0);
+        if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         ArrayList<String> gifs = new ArrayList<String>();
         final String gif[] = br.getRegex("img/(.*?)\\.gif").getColumn(-1);
         if (gif != null && gif.length != 0) {
@@ -116,12 +117,12 @@ public class FsxHu extends PluginForHost {
             }
         }
         for (int i = 0; i <= 3; i++) {
-            final String code = getCaptchaCode("http://www.fsx.hu/kep.php", downloadLink);
+            final String code = getCaptchaCode("http://www.fsx.hu/" + captcha, downloadLink);
             br.postPage("http://www.fsx.hu/download.php?i=1", "capcha=" + code);
-            if (br.containsHTML("/?kep\\.php")) continue;
+            if (br.containsHTML("/?(kep(\\d+)?\\.php)")) continue;
             break;
         }
-        if (br.containsHTML("/?kep\\.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("/?(kep(\\d+)?\\.php)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (br.containsHTML("(>Az FSX szerverekről 24 óra alatt maximum|>Ingyenesen ekkor tölthetsz le legközelebb)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         for (int i = 0; i <= 50; i++) {
             String place = br.getRegex("<span style=\"color:#dd0000;font\\-weight:bold;\">(\\d+)</span>").getMatch(0);
