@@ -174,7 +174,7 @@ public class Multi extends IExtraction {
             archive.setArchiveFiles(link.createPartFileList(pattern));
             canBeSingleType = false;
         } else if (file.matches(REGEX_ZIP$)) {
-            pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.zip$", ""));
+            pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.zip$", "")) + ZIP$;
             archive.setArchiveFiles(link.createPartFileList(pattern));
             canBeSingleType = true;
         } else {
