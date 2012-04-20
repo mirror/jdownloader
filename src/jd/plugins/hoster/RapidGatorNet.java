@@ -86,10 +86,16 @@ public class RapidGatorNet extends PluginForHost {
         else
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final String sid = br2.getRegex("\"sid\":\"(.*?)\"").getMatch(0);
-        if (sid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (sid == null) {
+            logger.info(br2.toString());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         sleep(wait * 1001l, downloadLink);
         br2.getPage("http://rapidgator.net/download/AjaxGetDownloadLink?sid=" + sid);
-        if (!br2.containsHTML("\"state\":\"done\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!br2.containsHTML("\"state\":\"done\"")) {
+            logger.info(br2.toString());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         URLConnectionAdapter con = br.openGetConnection("http://rapidgator.net/download/captcha");
         if (con.getResponseCode() == 500) {
             try {

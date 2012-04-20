@@ -37,7 +37,7 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
     // @Override
     // public int getMaxWidth() {
     //
-    // return 85;
+    // return 85;line
     // }
     @Override
     protected boolean isDefaultResizable() {
@@ -62,20 +62,26 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
                 long speed = ((DownloadLink) value).getDownloadSpeed();
                 if (speed > 0) {
                     if (((DownloadLink) value).getDownloadSize() < 0) {
-                        return _JDT._.gui_download_filesize_unknown();
+                        return _JDT._.gui_download_filesize_unknown() + " \u221E";
                     } else {
                         long remainingBytes = ((DownloadLink) value).getDownloadSize() - ((DownloadLink) value).getDownloadCurrent();
                         long eta = remainingBytes / speed;
-                        return Formatter.formatSeconds((int) eta);
+                        return Formatter.formatSeconds(eta);
                     }
                 } else {
                     return _JDT._.gui_download_create_connection();
                 }
-
             }
-
         } else if (value instanceof FilePackage) {
-
+            long eta = ((FilePackage) value).getView().getETA();
+            if (eta > 0) {
+                return Formatter.formatSeconds(eta);
+            } else if (eta == Integer.MIN_VALUE) {
+                /*
+                 * no size known, no eta,show infinite symbol
+                 */
+                return "\u221E";
+            }
         }
         return null;
     }

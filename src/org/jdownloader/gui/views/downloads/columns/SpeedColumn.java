@@ -61,8 +61,9 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
     public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
             if (((DownloadLink) value).getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                if (((DownloadLink) value).getDownloadSpeed() > 0) {
-                    return Formatter.formatReadable(((DownloadLink) value).getDownloadSpeed()) + "/s";
+                long speed = 0;
+                if ((speed = ((DownloadLink) value).getDownloadSpeed()) > 0) {
+                    return Formatter.formatReadable(speed) + "/s";
                 } else {
                     return _JDT._.gui_download_create_connection();
                 }

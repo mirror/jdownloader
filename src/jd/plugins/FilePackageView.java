@@ -26,7 +26,9 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     protected long              statusVersion     = 0;
     protected long              lastStatusVersion = -1;
     protected boolean           isEnabled         = false;
+    protected boolean           lastRunningState  = false;
     protected long              finishedDate      = -1;
+    protected long              estimatedETA      = -1;
 
     private int                 offline           = 0;
     private int                 online            = 0;
@@ -110,6 +112,22 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         return done;
     }
 
+    public long getETA() {
+        boolean guiUpdate = false;
+        if (fp.isEnabled() && System.currentTimeMillis() - lastStatsUpdate > GUIUPDATETIMEOUT) {
+            guiUpdate = DownloadWatchDog.getInstance().hasRunningDownloads(fp);
+        }
+        if (lastStatusVersion == statusVersion && guiUpdate == lastRunningState && !guiUpdate) return estimatedETA;
+        synchronized (this) {
+            if (guiUpdate && System.currentTimeMillis() - lastStatsUpdate < GUIUPDATETIMEOUT) {
+                guiUpdate = false;
+            }
+            if (lastStatusVersion == statusVersion && guiUpdate == lastRunningState && !guiUpdate) return estimatedETA;
+            updateStatus();
+        }
+        return estimatedETA;
+    }
+
     private synchronized void updateStatus() {
         long newSize = 0;
         long newDone = 0;
@@ -117,6 +135,12 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         int newOffline = 0;
         int newOnline = 0;
         boolean newEnabled = false;
+
+        long fpETA = -1;
+        long fpTODO = 0;
+        long fpSPEED = 0;
+        boolean sizeKnown = false;
+        boolean fpRunning = false;
         lastStatusVersion = statusVersion;
         lastStatsUpdate = System.currentTimeMillis();
         HashSet<String> names = new HashSet<String>();
@@ -141,6 +165,37 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     /* only counts unique filenames */
                     newSize += link.getDownloadSize();
                     newDone += link.getDownloadCurrent();
+                    /* ETA calculation */
+                    if (link.isEnabled() && !link.getLinkStatus().isFinished()) {
+                        /* link must be enabled and not finished state */
+                        boolean linkRunning = link.getLinkStatus().isPluginActive();
+                        if (linkRunning) {
+                            fpRunning = true;
+                        }
+                        if (link.getDownloadMax() >= 0) {
+                            /* we know at least one filesize */
+                            sizeKnown = true;
+                        }
+                        long linkTodo = Math.max(0, link.getDownloadSize() - link.getDownloadCurrent());
+                        long linkSpeed = link.getDownloadSpeed();
+                        fpSPEED += linkSpeed;
+                        fpTODO += linkTodo;
+                        if (fpSPEED > 0) {
+                            /* we have ongoing downloads, lets calculate ETA */
+                            fpETA = fpTODO / fpSPEED;
+                        }
+                        if (linkSpeed > 0) {
+                            /* link is running,lets calc ETA for single link */
+                            long currentETA = linkTodo / linkSpeed;
+                            if (currentETA > fpETA) {
+                                /*
+                                 * ETA for single link is bigger than ETA for
+                                 * all, so we use the bigger one
+                                 */
+                                fpETA = currentETA;
+                            }
+                        }
+                    }
                 }
                 if (!link.getLinkStatus().isFinished() && link.isEnabled()) {
                     /* we still have an enabled link which is not finished */
@@ -163,6 +218,19 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         } else {
             /* not all have finished */
             finishedDate = -1;
+        }
+        lastRunningState = fpRunning;
+        if (fpRunning) {
+            if (sizeKnown && fpSPEED > 0) {
+                /* we could calc an ETA because at least one filesize is known */
+                estimatedETA = fpETA;
+            } else {
+                /* no filesize is known, we use Integer.Min_value to signal this */
+                estimatedETA = Integer.MIN_VALUE;
+            }
+        } else {
+            /* no download running */
+            estimatedETA = -1;
         }
         offline = newOffline;
         online = newOnline;

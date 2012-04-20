@@ -85,12 +85,21 @@ public class NekakaCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        doFree(downloadLink, false);
     }
 
-    public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void doFree(DownloadLink downloadLink, boolean fetchAgain) throws Exception, PluginException {
+        if (fetchAgain) {
+            /*
+             * we need to fetch page again, because on first getpage, the login
+             * cookie might not be set
+             */
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+        }
         String dllink = br.getRegex("(?i)(https?://([\\w\\-\\.]+)?nekaka\\.com/files/download/\\d+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        sleep(2000, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -158,7 +167,7 @@ public class NekakaCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        doFree(link);
+        doFree(link, true);
     }
 
     @Override
