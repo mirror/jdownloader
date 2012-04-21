@@ -50,7 +50,7 @@ public class MtlAreRg extends PluginForDecrypt {
         br.setFollowRedirects(false);
         if (!getUserLogin(parameter)) return null;
         // Filter links in hide(s)
-        String pagepieces[] = br.getRegex("<!--HideBegin-->(.*?)<!--HideEnd-->").getColumn(0);
+        String pagepieces[] = br.getRegex("<\\!\\-\\-HideBegin\\-\\->(.*?)<\\!\\-\\-HideEnd\\-\\->").getColumn(0);
         if (pagepieces == null || pagepieces.length == 0) return null;
         for (String pagepiece : pagepieces) {
             String[] links = HTMLParser.getHttpLinks(pagepiece, "");
@@ -92,6 +92,7 @@ public class MtlAreRg extends PluginForDecrypt {
 
             }
         }
+        logger.info("Wrong logindata!f");
         throw new DecrypterException("Login or/and password wrong");
     }
 

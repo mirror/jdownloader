@@ -285,7 +285,10 @@ public class LetitBitNet extends PluginForHost {
         br.getHeaders().put("X-Requested-With", null);
         /* we need to remove the newline in old browser */
         final String resp = br.toString().replaceAll("%0D%0A", "").trim();
-        if (!"1".equals(resp)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!"1".equals(resp)) {
+            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DecimalFormat df = new DecimalFormat("0000");
         Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");

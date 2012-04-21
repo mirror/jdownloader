@@ -42,7 +42,8 @@ public class ListaLinksCom extends PluginForDecrypt {
         br.getPage(parameter);
         final Regex info = br.getRegex("<FONT CLASS=\"result\">(<b>)?([^<>\"]+)(</b>)?<br />(.*?)<DIV ID=\"secundario\">");
         final String fpName = info.getMatch(1);
-        final String linktext = info.getMatch(3);
+        String linktext = info.getMatch(3);
+        if (linktext == null) linktext = br.getRegex("<FONT CLASS=\"result\"><br />(.*?)<DIV ID=\"secundario\">").getMatch(0);
         if (linktext == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
