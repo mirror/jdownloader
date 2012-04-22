@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -46,13 +44,22 @@ public class YourFreePornUs extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        // 2 downloads, each 3 connections is max
-        return 2;
+        return 1;
     }
+
+    private static final String VIDEOTHERE = "video\\-frame\"";
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (!br.containsHTML(VIDEOTHERE)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        br.getPage("http://www.yourfreeporn.us/media/player/config.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "yourfreeporn\\.us/video/(\\d+)").getMatch(0));
+        DLLINK = br.getRegex("<src>(http://.*?)</src>").getMatch(0);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = Encoding.htmlDecode(DLLINK);
+        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (ext == null) ext = ".flv";
+        downloadLink.setFinalFileName(downloadLink.getName() + ext);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -3);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -73,38 +80,15 @@ public class YourFreePornUs extends PluginForHost {
          * Limit reached? We don't care, we can get the filename from the url
          * and still start the download
          */
-        if (br.containsHTML("<div align=\"center\"><a href=\"/signup\\.php\"")) {
+        if (!br.containsHTML(VIDEOTHERE)) {
             filename = new Regex(downloadLink.getDownloadURL(), "yourfreeporn\\.us/video/\\d+/([a-z0-9\\-_]+)").getMatch(0);
             if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), "yourfreeporn\\.us/video/(\\d+)").getMatch(0);
         } else {
             filename = br.getRegex("<title>(.*?) \\- Free Videos Adult Sex Tube \\- yourfreeporn\\.us</title>").getMatch(0);
             if (filename == null) filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         }
-        br.getPage("http://www.yourfreeporn.us/media/player/config.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "yourfreeporn\\.us/video/(\\d+)").getMatch(0));
-        DLLINK = br.getRegex("<src>(http://.*?)</src>").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null) ext = ".flv";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+        downloadLink.setName(Encoding.htmlDecode(filename));
+        return AvailableStatus.TRUE;
     }
 
     @Override

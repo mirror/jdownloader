@@ -92,7 +92,7 @@ public class MtlAreRg extends PluginForDecrypt {
 
             }
         }
-        logger.info("Wrong logindata!f");
+        logger.info("Wrong logindata!");
         throw new DecrypterException("Login or/and password wrong");
     }
 

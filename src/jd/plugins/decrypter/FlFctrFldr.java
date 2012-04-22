@@ -63,7 +63,7 @@ public class FlFctrFldr extends PluginForDecrypt {
     }
 
     private void add(ArrayList<DownloadLink> declinks, ProgressController progress) {
-        String links[] = br.getRegex(Pattern.compile("<td class=\"name\"><a href=\".*?(/file/.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        String links[] = br.getRegex(Pattern.compile("class=\"ffFileName\"><a href=\"(http://[^<>\"]*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.increase(links.length);
         for (String element : links) {
             declinks.add(createDownloadlink("http://www.filefactory.com" + element));

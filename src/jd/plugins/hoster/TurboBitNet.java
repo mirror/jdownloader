@@ -492,7 +492,7 @@ public class TurboBitNet extends PluginForHost {
                     final Regex fileInfo = br.getRegex("<td>" + linkID + "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\"><img src=\"/img/icon/(done|error)\\.png\"");
                     if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
                         dllink.setAvailable(false);
-                        logger.warning("Linkchecker broken for " + this.getHost());
+                        logger.warning("Linkchecker broken for " + this.getHost() + " Example link: " + dllink.getDownloadURL());
                     } else {
                         if (fileInfo.getMatch(1).equals("error")) {
                             dllink.setAvailable(false);

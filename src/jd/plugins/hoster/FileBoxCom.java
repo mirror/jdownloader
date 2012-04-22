@@ -258,6 +258,7 @@ public class FileBoxCom extends PluginForHost {
             if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
             if (!skipWaittime) waitTime(timeBefore, downloadLink);
             br.submitForm(dlForm);
+            System.out.println(br.toString());
             logger.info("Submitted DLForm");
             doSomething();
             checkErrors(downloadLink, true, passCode);
@@ -324,7 +325,7 @@ public class FileBoxCom extends PluginForHost {
                             if (dllink == null) {
                                 dllink = new Regex(correctedBR, "class=\"getpremium_heading4\"><a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
                                 if (dllink == null) {
-                                    dllink = new Regex(br, "(http://[a-z0-9]+\\.filebox\\.com:\\d+/d/[a-z0-9]+/[^<>\"\\']+)").getMatch(0);
+                                    dllink = new Regex(br, "(http://([a-z0-9]+\\.)?(filebox\\.com|\\d+\\.\\d+\\.\\d+\\.\\d+):\\d+/d/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
                                     if (dllink == null) {
                                         String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                                         if (cryptedScripts != null && cryptedScripts.length != 0) {

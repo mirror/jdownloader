@@ -20,13 +20,12 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "http://(www\\.)?xhamster\\.com/photos/gallery/[0-9]+/.*?\\.html" }, flags = { 0 })
 public class XHamsterGallery extends PluginForDecrypt {
@@ -37,30 +36,35 @@ public class XHamsterGallery extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        ArrayList<String> allPages = new ArrayList<String>();
+        allPages.add("1");
+        final String parameter = param.toString().replace("www.", "");
+        final String parameterWihoutHtml = parameter.replace(".html", "");
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("Sorry, no photos found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String fpname = br.getRegex("title\\'Start SlideShow\\'></a><h1>(.*?)</h1>").getMatch(0);
+        if (br.containsHTML("Sorry, no photos found")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        String fpname = br.getRegex("title=\\'Start SlideShow\\'></a><h1>([^<>\"]*?)</h1>").getMatch(0);
         if (fpname == null) fpname = br.getRegex("<title>(.*?) \\- \\d+ Pics \\- xHamster\\.com</title>").getMatch(0);
-        String[] redirectLinks = br.getRegex("\"(http://xhamster.com/photos/view/.*?\\.html)\"").getColumn(0);
-        if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("<div class=\\'galleryItem  galleryItemList imgItem \\' id=\\'i_\\d+\\'>[\t\n\r ]+<table cellpadding=\"0\" cellspacing=\"0\" class=\\'img\\'>[\t\n\r ]+<tr><td valign=\"middle\" align=\"center\" width=\"100%\">[\t\n\r ]+<a href=\"(http://.*?)\"").getColumn(0);
-        if (redirectLinks == null || redirectLinks.length == 0) return null;
-        progress.setRange(redirectLinks.length);
-        for (String link : redirectLinks) {
-            br.getPage(link);
-            String finallink = br.getRegex("title=\\'Click to Next Photo \\&gt\\&gt\\'>[\t\n\r ]+<img  src=\\'(http://.*?)\\'").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("valign=\"middle\" align=\"center\" id=\\'slideTd\\'>[\t\n\r ]+<img src=\\'(http://.*?)\\'").getMatch(0);
-                if (finallink == null) {
-                    finallink = br.getRegex("\\'(http://p\\d+\\-\\d+\\.xhamster\\.com/\\d+/\\d+/.*?)\\'").getMatch(0);
-                }
+        String[] pagesTemp = br.getRegex("\\'" + parameterWihoutHtml + "-\\d+\\.html\\'>(\\d+)</a>").getColumn(0);
+        if (pagesTemp != null && pagesTemp.length != 0) {
+            for (String aPage : pagesTemp)
+                if (!allPages.contains(aPage)) allPages.add(aPage);
+        }
+        for (String currentPage : allPages) {
+            br.getPage(parameterWihoutHtml + "-" + currentPage + ".html");
+            final String[] thumbNails = br.getRegex("\"(http://p\\d+\\.xhamster\\.com/\\d+/\\d+/\\d+/\\d+_160\\.jpg)\"").getColumn(0);
+            if (thumbNails == null || thumbNails.length == 0) {
+                logger.warning("Decrypter failed on page " + currentPage + " for link: " + parameter);
+                return null;
             }
-            if (finallink == null) return null;
-            DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
-            progress.increase(1);
+            for (String thumbNail : thumbNails) {
+                DownloadLink dl = createDownloadlink("directhttp://http://up.xhamster.com/" + new Regex(thumbNail, "http://p\\d+\\.xhamster\\.com/(\\d+/\\d+/\\d+/\\d+_)160\\.jpg").getMatch(0) + "1000.jpg");
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
         }
         if (fpname != null) {
             FilePackage fp = FilePackage.getInstance();
