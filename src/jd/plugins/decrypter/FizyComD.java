@@ -18,7 +18,11 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,6 +38,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fizy.com" }, urls = { "http://(((?!www).*)\\.)?fizy\\.com/?(#?(s|p|u)/(s/)?\\w+)?" }, flags = { 0 })
 public class FizyComD extends PluginForDecrypt {
@@ -71,11 +77,11 @@ public class FizyComD extends PluginForDecrypt {
         return res;
     }
 
-    private int[] letTheUserSelectPlayLists(String[][] playListsTest) {
+    private int[] letTheUserSelectPlayLists(String[][] pL) {
         int count = 0;
         int[] indices = null;
         StringBuilder sb = new StringBuilder();
-        for (String[] s : playListsTest) {
+        for (String[] s : pL) {
             count = new Regex(s[0], "order").count();
             if (count == 0) continue;
             sb.append(Encoding.htmlDecode(decodeUnicode(s[1].trim())) + " (" + String.valueOf(count) + ")");
@@ -120,22 +126,40 @@ public class FizyComD extends PluginForDecrypt {
                 logger.severe("Server error! Message: " + e);
                 return null;
             }
-            playLists = playLists.replaceAll(":\\s", ":");
-            playLists = playLists.replaceAll(",\\s\"", ",\"");
 
             /*
              * TODO: parsing content(JSON) after 0.9xx through
              * org.codehaus.jackson.JsonNode class
              */
+            playLists = playLists.replaceAll(":\\s", ":");
+            playLists = playLists.replaceAll(",\\s\"", ",\"");
+            playLists = playLists.replaceAll("\"(is_shuffle_on|style|itemstyle|itemhoverstyle)\":.*?,", "");
 
             final HashMap<String, String> ret = new HashMap<String, String>();
+
             // alle Playlisten des Users
-            String[][] playListsTest = new Regex(playLists, "\"songs\":\\[(.+?)\\],\"is_shuffle_on\":\\d+,\"order\":\\d+,\"title\":\"(.*?)\"\\}").getMatches();
-            if (playListsTest == null || playListsTest.length == 0) return null;
+            String[][] playListsTmp = new Regex(playLists, "\"playlist\":\\[\\{\"title\":\"(.+?)\",\"order\":\\d\\.\\d,\"songs\":\\[(.+?)\\]\\},|\\{\"songs\":\\[(.+?)\\],\"order\":\\d+,\"title\":\"(.+?)\"\\}").getMatches();
+            if (playListsTmp == null || playListsTmp.length == 0) return null;
+
+            String[][] allPlayLists = new String[playListsTmp.length][2];
+            for (int i = 0; i < playListsTmp.length; i++) {
+                int z = 0;
+                for (int j = 0; j < playListsTmp[i].length; j++) {
+                    if (playListsTmp[i][j] == null) continue;
+                    allPlayLists[i][z++] = playListsTmp[i][j];
+                }
+                // reverse Array
+                if (!allPlayLists[i][0].startsWith("{\"title\":")) {
+                    List<String> t = new LinkedList<String>(Arrays.asList(allPlayLists[i]));
+                    Collections.reverse(t);
+                    allPlayLists[i] = t.toArray(new String[0]);
+                }
+            }
+            if (allPlayLists == null || allPlayLists.length == 0) return null;
             // selektiere bestimmte Playlisten
             int[] selectedPlayListIndices = null;
-            if (playListsTest.length > 1) {
-                selectedPlayListIndices = letTheUserSelectPlayLists(playListsTest);
+            if (allPlayLists.length > 1) {
+                selectedPlayListIndices = letTheUserSelectPlayLists(allPlayLists);
                 if (selectedPlayListIndices[0] == -1) {
                     logger.info("Aborted by user!");
                     return decryptedLinks;
@@ -143,7 +167,7 @@ public class FizyComD extends PluginForDecrypt {
             }
 
             int i = 0, j = 0;
-            for (final String[] playList : playListsTest) {
+            for (final String[] playList : allPlayLists) {
                 if (selectedPlayListIndices != null) {
                     if (j > selectedPlayListIndices.length - 1) break;
                     if (i != selectedPlayListIndices[j]) {
@@ -181,6 +205,7 @@ public class FizyComD extends PluginForDecrypt {
                     } catch (final Throwable e) {
                         /* does not exist in 09581 */
                     }
+                    progress.increase(1);
                     decryptedLinks.add(dlLink);
                 }
             }
@@ -269,7 +294,7 @@ public class FizyComD extends PluginForDecrypt {
         final DownloadLink tmp = createDownloadlink(clipUrl);
         tmp.setFinalFileName(Encoding.htmlDecode(decodeUnicode(filename.trim())) + "." + ext);
         if (duration != null) {
-            tmp.setDownloadSize(Integer.parseInt(duration) * 16 * 1024);
+            tmp.setDownloadSize(SizeFormatter.getSize(duration) * 16 * 1024);
         }
         return tmp;
     }

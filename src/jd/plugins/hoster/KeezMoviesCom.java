@@ -16,11 +16,21 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.net.URL;
+import java.security.InvalidKeyException;
+import java.util.Arrays;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
+import jd.gui.UserIO;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -29,10 +39,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 10931 $", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://(www\\.)?keezmovies\\.com/video/[\\w\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://(www\\.)?keezmovies\\.com/video/[\\w\\-]+" }, flags = { 2 })
 public class KeezMoviesCom extends PluginForHost {
 
-    private String DLLINK = null;
+    private String DLLINK    = null;
+    private String FLASHVARS = null;
 
     public KeezMoviesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,8 +70,12 @@ public class KeezMoviesCom extends PluginForHost {
         dl.startDownload();
     }
 
+    private String getValue(String s) {
+        return new Regex(FLASHVARS, "\\&" + s + "=(.*?)(\\&|$)").getMatch(0);
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         // Set cookie so we can watch all videos ;)
@@ -69,10 +84,18 @@ public class KeezMoviesCom extends PluginForHost {
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h1 class=\"title\">(.*?)</h1>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) - KeezMovies\\.com</title>").getMatch(0);
-        String flashVars = br.getRegex("<param name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
-        if (flashVars == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        flashVars = Encoding.htmlDecode(flashVars);
-        DLLINK = new Regex(flashVars, "video_url=(http://.*?)\\&postroll_url").getMatch(0);
+        FLASHVARS = br.getRegex("<param name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
+        if (FLASHVARS == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        FLASHVARS = Encoding.htmlDecode(FLASHVARS);
+        String isEncrypted = getValue("encrypted");
+        if ("1".equals(isEncrypted) || Boolean.parseBoolean(isEncrypted)) {
+            DLLINK = AESCounterModeDecrypt(getValue("video_url"), getValue("video_title"), 256);
+            if (DLLINK.startsWith("Error:")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, DLLINK); }
+        } else {
+            DLLINK = getValue("video_url");
+        }
+
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setFinalFileName(filename.trim() + ".flv");
         DLLINK = Encoding.htmlDecode(DLLINK);
@@ -88,6 +111,64 @@ public class KeezMoviesCom extends PluginForHost {
             try {
                 con.disconnect();
             } catch (Throwable e) {
+            }
+        }
+    }
+
+    /**
+     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in
+     * JavaScript by Chris Veness
+     * 
+     * @see <a
+     *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
+     */
+    private String AESCounterModeDecrypt(String cipherText, String key, int nBits) {
+        if (!(nBits == 128 || nBits == 192 || nBits == 256)) { return "Error: Must be a key mode of either 128, 192, 256 bits"; }
+        if (cipherText == null || key == null) { return "Error: cipher and/or key equals null"; }
+        String res = null;
+        nBits = nBits / 8;
+        byte[] data = Base64.decode(cipherText.toCharArray());
+        byte[] k = Arrays.copyOf(key.getBytes(), nBits);
+        try {
+            final Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+            SecretKey secretKey = generateSecretKey(k, nBits);
+            byte[] nonceBytes = Arrays.copyOf(Arrays.copyOf(data, 8), nBits / 2);
+            IvParameterSpec nonce = new IvParameterSpec(nonceBytes);
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, nonce);
+            res = new String(cipher.doFinal(data, 8, data.length - 8));
+        } catch (Throwable e) {
+        }
+        return res;
+    }
+
+    private SecretKey generateSecretKey(byte[] keyBytes, int nBits) throws Exception {
+        try {
+            SecretKey secretKey = new SecretKeySpec(keyBytes, "AES");
+            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+            keyBytes = cipher.doFinal(keyBytes);
+        } catch (final InvalidKeyException e) {
+            if (e.getMessage().contains("Illegal key size")) {
+                getPolicyFiles();
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unlimited Strength JCE Policy Files needed!");
+        } catch (Throwable e1) {
+            return null;
+        }
+        System.arraycopy(keyBytes, 0, keyBytes, nBits / 2, nBits / 2);
+        return new SecretKeySpec(keyBytes, "AES");
+    }
+
+    private void getPolicyFiles() throws Exception {
+        int ret = -100;
+        UserIO.setCountdownTime(120);
+        ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_LARGE, "Java Cryptography Extension (JCE) Error: 32 Byte keylength is not supported!", "At the moment your Java version only supports a maximum keylength of 16 Bytes but the keezmovies plugin needs support for 32 byte keys.\r\nFor such a case Java offers so called \"Policy Files\" which increase the keylength to 32 bytes. You have to copy them to your Java-Home-Directory to do this!\r\nExample path: \"jre6\\lib\\security\\\". The path is different for older Java versions so you might have to adapt it.\r\n\r\nBy clicking on CONFIRM a browser instance will open which leads to the downloadpage of the file.\r\n\r\nThanks for your understanding.", null, "CONFIRM", "Cancel");
+        if (ret != -100) {
+            if (UserIO.isOK(ret)) {
+                LocalBrowser.openDefaultURL(new URL("http://www.oracle.com/technetwork/java/javase/downloads/jce-6-download-429243.html"));
+                LocalBrowser.openDefaultURL(new URL("http://h10.abload.de/img/jcedp50.png"));
+            } else {
+                return;
             }
         }
     }
