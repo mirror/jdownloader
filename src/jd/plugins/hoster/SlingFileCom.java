@@ -80,7 +80,7 @@ public class SlingFileCom extends PluginForHost {
         if (br.containsHTML(">Please enable cookies to use this website")) br.getPage(downloadLink.getDownloadURL());
         if ("http://www.slingfile.com/".equals(br.getRedirectLocation())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.getRedirectLocation() == null) {
-            downloadLink.setProperty("directlink", "FALSE");
+            downloadLink.setProperty("directlink", false);
             String filename = br.getRegex("<h3>Downloading <span>(.*?)</span></h3>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<title>(.*?) \\- SlingFile \\- Free File Hosting \\& Online Storage</title>").getMatch(0);
@@ -95,7 +95,7 @@ public class SlingFileCom extends PluginForHost {
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
             return AvailableStatus.TRUE;
         } else if (br.getRedirectLocation() != null) {
-            downloadLink.setProperty("directlink", "TRUE");
+            downloadLink.setProperty("directlink", true);
             URLConnectionAdapter con = br.openGetConnection(br.getRedirectLocation());
             downloadLink.setFinalFileName(getFileNameFromHeader(con));
             downloadLink.setDownloadSize(con.getLongContentLength());
@@ -109,7 +109,7 @@ public class SlingFileCom extends PluginForHost {
         String dllink = null;
         requestFileInformation(downloadLink);
         // traditional downloading
-        if (downloadLink.getStringProperty("directlink") == "FALSE") {
+        if (Boolean.FALSE.equals(downloadLink.getBooleanProperty("directlink"))) {
             String waitthat = br.getRegex("Please wait for another (\\d+) minutes to download another file").getMatch(0);
             if (waitthat != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waitthat) * 60 * 1001l);
             // int wait = 30;
@@ -140,7 +140,7 @@ public class SlingFileCom extends PluginForHost {
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // direct link support
-        else if (downloadLink.getStringProperty("directlink") == "TRUE") {
+        else if (downloadLink.getBooleanProperty("directlink")) {
             dllink = br.getURL();
         }
         // error?
@@ -235,7 +235,7 @@ public class SlingFileCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         String dllink = null;
         // traditional downloading
-        if (link.getStringProperty("directlink") == "FALSE") {
+        if (Boolean.FALSE.equals(link.getBooleanProperty("directlink"))) {
             dllink = br.getRegex("<td valign=\\'middle\\' align=\\'center\\' colspan=\\'2\\'>[\t\n\r ]+<a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\"(http://sf\\d+\\-\\d+\\.slingfile\\.com/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
             if (dllink == null) {
@@ -244,7 +244,7 @@ public class SlingFileCom extends PluginForHost {
             }
         }
         // direct link support
-        else if (link.getStringProperty("directlink") == "TRUE") {
+        else if (link.getBooleanProperty("directlink")) {
             dllink = br.getURL();
         }
         // error?

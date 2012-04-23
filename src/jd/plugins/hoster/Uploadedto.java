@@ -235,7 +235,7 @@ public class Uploadedto extends PluginForHost {
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
-            account.setProperty("free", "true");
+            account.setProperty("free", true);
         } else {
             String traffic = br.getMatch("traffic: (\\d+)");
             String expire = br.getMatch("expire: (\\d+)");
@@ -391,7 +391,7 @@ public class Uploadedto extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
-        if (account.getProperty("free") != null) {
+        if (account.getBooleanProperty("free")) {
             br.getPage(downloadLink.getDownloadURL());
             doFree(downloadLink);
         } else {

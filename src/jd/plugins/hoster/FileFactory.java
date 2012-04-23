@@ -162,7 +162,7 @@ public class FileFactory extends PluginForHost {
         if (!br.containsHTML("\"greenText\">Premium member until<")) {
             ai.setStatus("Registered (free) User");
             ai.setUnlimitedTraffic();
-            account.setProperty("freeAccount", "true");
+            account.setProperty("freeAccount", true);
             try {
                 maxPrem.set(1);
                 account.setMaxSimultanDownloads(1);
@@ -170,7 +170,7 @@ public class FileFactory extends PluginForHost {
             } catch (final Throwable e) {
             }
         } else {
-            account.setProperty("freeAccount", null);
+            account.setProperty("freeAccount", false);
             String expire = this.br.getMatch("Premium member until.*?datetime=\"(.*?)\"");
             if (expire == null) {
                 account.setValid(false);
@@ -352,7 +352,7 @@ public class FileFactory extends PluginForHost {
         this.login(account, false);
         this.br.setFollowRedirects(false);
         this.br.getPage(downloadLink.getDownloadURL());
-        if (account.getProperty("freeAccount") != null) {
+        if (account.getBooleanProperty("freeAccount")) {
             this.handleFree0(downloadLink);
         } else {
             this.br.setFollowRedirects(true);

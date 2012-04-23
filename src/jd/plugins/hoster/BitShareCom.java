@@ -331,7 +331,7 @@ public class BitShareCom extends PluginForHost {
                 br.setCookie(MAINPAGE, "language_selection", "EN");
                 br.postPage("http://bitshare.com/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&rememberlogin=&submit=Login");
                 if (br.containsHTML(">Free</a></b>")) {
-                    account.setProperty("freeaccount", "true");
+                    account.setProperty("freeaccount", true);
                 } else if (br.containsHTML("\\(<b>Premium</b>\\)")) {
                     account.setProperty("freeaccount", Property.NULL);
                 } else {
@@ -347,6 +347,7 @@ public class BitShareCom extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
+                account.setProperty("freeaccount", Property.NULL);
                 account.setProperty("cookies", Property.NULL);
                 throw e;
             }

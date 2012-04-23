@@ -557,7 +557,7 @@ public class MediafireCom extends PluginForHost {
                 protected void handlePassword(final String password) throws Exception {
                     curPw = password;
                     final Form form = this.br.getFormbyProperty("name", "form_password");
-                    form.put("downloadp", password);
+                    form.put("downloadp", curPw);
                     this.br.submitForm(form);
                 }
 
@@ -690,11 +690,12 @@ public class MediafireCom extends PluginForHost {
                     }
 
                     redirectURL = this.br.getRedirectLocation();
+                    downloadLink.setProperty("privatefile", false);
                     if (redirectURL != null && redirectURL.contains("mediafire.com/error.php?errno=999")) {
                         downloadLink.getLinkStatus().setStatusText(PRIVATEFILE);
                         final String name = new Regex(url, "download\\.php\\?(.+)").getMatch(0);
                         if (name != null) downloadLink.setName(name);
-                        downloadLink.setProperty("privatefile", "true");
+                        downloadLink.setProperty("privatefile", true);
                     } else if (redirectURL != null && redirectURL.indexOf(MediafireCom.ERROR_PAGE) > 0) {
                         /* check for offline status */
                         status = AvailableStatus.FALSE;

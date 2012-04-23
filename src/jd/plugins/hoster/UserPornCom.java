@@ -77,7 +77,7 @@ public class UserPornCom extends PluginForHost {
         }
         final String tempName = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         downloadLink.setFinalFileName(downloadLink.getName().replace(".flv", tempName.substring(tempName.lastIndexOf("."))));
-        downloadLink.setProperty("nameok", "true");
+        downloadLink.setProperty("nameok", true);
         dl.startDownload();
     }
 
@@ -99,7 +99,7 @@ public class UserPornCom extends PluginForHost {
         String filename = br.getRegex("<title>(.*?) \\- Userporn \\- Your Best Private Porn Site</title>").getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         filename = filename.trim();
-        if (downloadLink.getStringProperty("nameok") == null) {
+        if (Boolean.FALSE.equals(downloadLink.getBooleanProperty("nameok"))) {
             downloadLink.setName(Encoding.htmlDecode(filename) + ".flv");
         }
         return AvailableStatus.TRUE;

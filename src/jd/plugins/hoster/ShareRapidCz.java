@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -93,7 +92,7 @@ public class ShareRapidCz extends PluginForHost {
              */
             ai.setStatus("Premium User" + trafficleft);
             /** Remove property in case account was a free acount but changes to */
-            account.setProperty("freeaccount", Property.NULL);
+            account.setProperty("freeaccount", false);
             final String maxSimultanDownloads = br.getRegex("<td>Max\\. počet paralelních stahování: </td><td>(\\d+) <a href").getMatch(0);
             if (maxSimultanDownloads != null) {
                 try {
@@ -117,7 +116,7 @@ public class ShareRapidCz extends PluginForHost {
             }
         } else {
             ai.setStatus("Registered (free) User");
-            account.setProperty("freeaccount", "true");
+            account.setProperty("freeaccount", true);
             try {
                 account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(false);
@@ -174,7 +173,7 @@ public class ShareRapidCz extends PluginForHost {
                 nonTrafficPremium = true;
             }
         }
-        if (nonTrafficPremium == true || (dllink == null && account.getStringProperty("freeaccount") != null)) {
+        if (nonTrafficPremium == true || (dllink == null && account.getBooleanProperty("freeaccount"))) {
             final Browser br2 = new Browser();
             br2.getHeaders().put("User-Agent", "share-rapid downloader");
             br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
@@ -207,7 +206,7 @@ public class ShareRapidCz extends PluginForHost {
             br.followConnection();
             if (br.containsHTML("(was not found on this server|No htmlCode read)")) {
                 /** Show other errormessage if free account was used */
-                if (account.getStringProperty("freeaccount") != null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharerapidcz.maybenofreedownloadpossible", "Error: Maybe this file cannot be downloaded as a freeuser: Buy traffic or try again later"), 60 * 60 * 1000);
+                if (account.getBooleanProperty("freeaccount")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharerapidcz.maybenofreedownloadpossible", "Error: Maybe this file cannot be downloaded as a freeuser: Buy traffic or try again later"), 60 * 60 * 1000);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
