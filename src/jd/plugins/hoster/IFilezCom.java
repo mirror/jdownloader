@@ -98,6 +98,10 @@ public class IFilezCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML(ONLY4PREMIUM)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT));
+        String dlLimit = br.getRegex("(?i)(>Free users can download up to \\d+ ?Gb? per day\\. You downloaded: \\d+ Gb\\.<)").getMatch(0);
+        if (dlLimit != null) {
+            if (new Regex(dlLimit, "(?i)>Free users can download up to (\\d+) ?Gb? per day\\.").getMatch(0) == new Regex(dlLimit, "(?i)You downloaded: (\\d+) ?Gb\\.<").getMatch(0)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily download limit reached", 4 * 60 * 60 * 1000l);
+        }
         String verifycode = br.getRegex("name=\"vvcid\" value=\"(\\d+)\"").getMatch(0);
         if (verifycode == null) verifycode = br.getRegex("\\?vvcid=(\\d+)\"").getMatch(0);
         if (!br.containsHTML(CAPTCHATEXT) || verifycode == null) {

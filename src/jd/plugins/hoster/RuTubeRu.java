@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rutube.ru" }, urls = { "http://[\\w\\.]*?rutube\\.ru/tracks/\\d+\\.html" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rutube.ru" }, urls = { "http://[\\w\\.]*?rutube\\.ru/(tracks/\\d+\\.html|[a-z0-9]{32})" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class RuTubeRu extends PluginForHost {
 
     public RuTubeRu(final PluginWrapper wrapper) {
@@ -102,6 +102,20 @@ public class RuTubeRu extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
+        // embeded links (md5 hash)
+        if (downloadLink.getDownloadURL().matches("http://[\\w\\.]*?rutube\\.ru/[a-z0-9]{32}")) {
+            if (br.getRedirectLocation() != null) {
+                String redirect = Encoding.urlDecode(new Regex(br.getRedirectLocation(), "(.*)").getMatch(0), false);
+                String xml = new Regex(redirect, "xurl=(http[^\\&]+)").getMatch(0);
+                if (xml == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.getPage(xml);
+                String trackURL = br.getRegex("<location_url>(https?://([\\w\\.]+)?rutube\\.ru/tracks/\\d+\\.html)").getMatch(0);
+                if (trackURL == null) trackURL = br.getRegex("<track_url>(https?://([\\w\\.]+)?rutube\\.ru/tracks/\\d+\\.html)").getMatch(0);
+                if (trackURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.getPage(trackURL);
+            } else
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (br.getRedirectLocation() != null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final String fsk18 = br.getRegex("<p><b>.*?18.*?href=\"(http://rutube.ru/.*?confirm=.*?)\"").getMatch(0);
         if (fsk18 != null) br.getPage(fsk18);

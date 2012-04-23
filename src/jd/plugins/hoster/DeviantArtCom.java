@@ -90,7 +90,7 @@ public class DeviantArtCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        if (downloadLink.getProperty("ratedContent") == "false") {
+        if (Boolean.FALSE.equals(downloadLink.getProperty("ratedContent"))) {
             String dllink = downloadLink.getDownloadURL();
             if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
@@ -169,7 +169,9 @@ public class DeviantArtCom extends PluginForHost {
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("remember_me", "1");
                 br.submitForm(loginform);
-                if (!br.getRedirectLocation().contains("/users/loggedin")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getRedirectLocation() != null) {
+                    if (!br.getRedirectLocation().contains("/users/loggedin")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(COOKIE_HOST);

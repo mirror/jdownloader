@@ -28,6 +28,7 @@ import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -249,10 +250,14 @@ public class U115Com extends PluginForHost {
                     return;
                 }
             }
-            br.setFollowRedirects(false);
-            br.getPage(MAINPAGE);
-            br.postPage("http://passport.115.com/?ac=login", "login%5Baccount%5D=" + Encoding.urlEncode(account.getUser()) + "&login%5Bpasswd%5D=" + Encoding.urlEncode(account.getPass()) + "&login%5Btime%5D=on&back=http%3A%2F%2Fwww.115.com&goto=http%3A%2F%2F115.com");
-            if (br.getCookie(MAINPAGE, "LACK1") == null || br.getCookie(MAINPAGE, "LCCK") == null || br.getCookie(MAINPAGE, "OOFL") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            br.setFollowRedirects(true);
+            br.getPage("https://passport.115.com");
+            Form login = br.getForm(0);
+            if (login == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            login.put("login%5Baccount%5D", Encoding.urlEncode(account.getUser()));
+            login.put("login%5Bpasswd%5D", Encoding.urlEncode(account.getPass()));
+            br.submitForm(login);
+            if (br.getCookie(MAINPAGE, "OOFL") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(MAINPAGE);
