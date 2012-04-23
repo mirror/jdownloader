@@ -561,6 +561,7 @@ public class CraMitIn extends PluginForHost {
             // Load cookies
             try {
                 br.setCookiesExclusive(true);
+                br.setCookie(COOKIE_HOST, "lang", "english");
                 final Object ret = account.getProperty("cookies", null);
                 Object noPrem = account.getProperty("nopremium", (Boolean) null);
                 if (noPrem != null) {

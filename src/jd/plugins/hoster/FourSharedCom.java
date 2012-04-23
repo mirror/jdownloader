@@ -349,7 +349,7 @@ public class FourSharedCom extends PluginForHost {
         if ("FREE".equalsIgnoreCase(accType)) {
             ai.setStatus("Registered (free) User");
             account.setValid(true);
-            account.setProperty("nopremium", "true");
+            account.setProperty("nopremium", true);
         } else {
             ai.setStatus(accType);
             account.setValid(true);
