@@ -574,7 +574,7 @@ public class FileForthCom extends PluginForHost {
                     }
                 }
                 // clear values each time we run.
-                account.setProperty("nopremium", "false");
+                account.setProperty("nopremium", false);
                 br.setCookie(COOKIE_HOST, "lang", "english");
                 br.getPage(COOKIE_HOST + "/login.html");
                 Form loginform = br.getForm(0);

@@ -57,7 +57,7 @@ public class FlickrCom extends PluginForDecrypt {
         // Check if link is for hosterplugin
         if (parameter.matches("http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("flickr.com/", "flickrdecrypted.com/"));
-            dl.setProperty("cookiesneeded", "false");
+            dl.setProperty("cookiesneeded", false);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

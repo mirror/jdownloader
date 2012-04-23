@@ -573,7 +573,7 @@ public class FileSomeCom extends PluginForHost {
                     }
                 }
                 // clear values each time we run.
-                account.setProperty("nopremium", "false");
+                account.setProperty("nopremium", false);
                 br.setCookie(COOKIE_HOST, "lang", "english");
                 getPage(COOKIE_HOST + "/login.html");
                 Form loginform = br.getForm(0);
@@ -584,7 +584,11 @@ public class FileSomeCom extends PluginForHost {
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/?op=my_account");
                 if (!new Regex(br, "(?i)(Premium(\\-| )Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (new Regex(br, "(?i)(Account Type: <br />[\r\n\t ]+<span>Registered</span>)").matches()) {account.setProperty("nopremium", true);                } else {                    account.setProperty("nopremium", false);               }
+                if (new Regex(br, "(?i)(Account Type: <br />[\r\n\t ]+<span>Registered</span>)").matches()) {
+                    account.setProperty("nopremium", true);
+                } else {
+                    account.setProperty("nopremium", false);
+                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);
