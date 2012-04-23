@@ -172,7 +172,12 @@ public class ShareOnlineBiz extends PluginForHost {
         if (br.getURL().contains("failure/ip")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already loading", 15 * 60 * 1000l); }
         if (br.getURL().contains("failure/size")) { throw new PluginException(LinkStatus.ERROR_FATAL, "File too big. Premium needed!"); }
         if (br.getURL().contains("failure/expired") || br.getURL().contains("failure/session")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait for new ticket", 60 * 1000l); }
-        if (br.getURL().contains("failure/cookie")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "CookieError", 5 * 60 * 1000l); }
+        if (br.getURL().contains("failure/cookie")) {
+            synchronized (LOCK) {
+                if (acc != null) ACCOUNTINFOS.remove(acc);
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "CookieError", 5 * 60 * 1000l);
+        }
     }
 
     @Override

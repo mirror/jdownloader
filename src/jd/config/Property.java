@@ -67,7 +67,7 @@ public class Property implements Serializable {
             Object r = getProperty(key, def);
             if (!(r instanceof Boolean)) {
                 r = r + "";
-                if (((String) r).equals("false")) {
+                if ("false".equalsIgnoreCase(((String) r))) {
                     r = false;
                 } else {
                     r = ((String) r).length() > 0;
