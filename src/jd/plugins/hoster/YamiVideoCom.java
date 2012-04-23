@@ -28,17 +28,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-//Same code as YamiVideoCom and FlashVidsOrg
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rocketfiles.net" }, urls = { "http://(www\\.)?rocketfiles\\.net/video/[a-z0-9]+" }, flags = { 0 })
-public class RocketFilesNet extends PluginForHost {
+//Same code as RocketFilesNet and FlashVidsOrg
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yamivideo.com" }, urls = { "http://(www\\.)?yamivideo\\.com/video/[a-z0-9]+" }, flags = { 0 })
+public class YamiVideoCom extends PluginForHost {
 
-    public RocketFilesNet(PluginWrapper wrapper) {
+    public YamiVideoCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://rocketfiles.net/contact";
+        return "http://yamivideo.com/contact";
     }
 
     @Override
@@ -58,7 +58,7 @@ public class RocketFilesNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML("I AM HUMAN")) br.postPage(downloadLink.getDownloadURL(), "submit_human=I+AM+HUMAN");
-        br.postPage("http://" + this.getHost() + "/Xajax/saveaction/", "xjxfun=load_player_eng&xjxr=" + System.currentTimeMillis() + "&xjxargs[]=S" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&xjxargs%5B%5D=N4");
+        br.postPage("http://" + this.getHost() + "/Xajax/saveaction/", "xjxfun=load_player_eng&xjxr=" + System.currentTimeMillis() + "&xjxargs[]=S" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&xjxargs%5B%5D=N1");
         final String dllink = br.getRegex("\\&file=(http://[a-z0-9]+\\." + this.getHost() + "/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
@@ -76,7 +76,7 @@ public class RocketFilesNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 2;
     }
 
     @Override

@@ -258,7 +258,6 @@ public class FileBoxCom extends PluginForHost {
             if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
             if (!skipWaittime) waitTime(timeBefore, downloadLink);
             br.submitForm(dlForm);
-            System.out.println(br.toString());
             logger.info("Submitted DLForm");
             doSomething();
             checkErrors(downloadLink, true, passCode);

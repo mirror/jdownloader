@@ -28,17 +28,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-//Same code as YamiVideoCom and FlashVidsOrg
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rocketfiles.net" }, urls = { "http://(www\\.)?rocketfiles\\.net/video/[a-z0-9]+" }, flags = { 0 })
-public class RocketFilesNet extends PluginForHost {
+import org.appwork.utils.formatter.SizeFormatter;
 
-    public RocketFilesNet(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rabitfiles.com" }, urls = { "http://(www\\.)?rabidfiles\\.com/(?!faq|terms|register)[A-Za-z0-9]+" }, flags = { 0 })
+public class RabitFilesCom extends PluginForHost {
+
+    public RabitFilesCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://rocketfiles.net/contact";
+        return "http://www.rabidfiles.com/terms.html";
     }
 
     @Override
@@ -46,25 +47,25 @@ public class RocketFilesNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">404 Page not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h2 style=\"font\\-size:20px\">([^<>\"]*?)</h2>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) video</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        if (br.getURL().contains("rabidfiles.com/index.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final Regex infoRegex = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>([^<>\"]*?) \\((\\d+(\\.\\d+)? [A-Za-z]+)\\)<br/");
+        String filename = infoRegex.getMatch(0);
+        String filesize = infoRegex.getMatch(1);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("I AM HUMAN")) br.postPage(downloadLink.getDownloadURL(), "submit_human=I+AM+HUMAN");
-        br.postPage("http://" + this.getHost() + "/Xajax/saveaction/", "xjxfun=load_player_eng&xjxr=" + System.currentTimeMillis() + "&xjxargs[]=S" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&xjxargs%5B%5D=N4");
-        final String dllink = br.getRegex("\\&file=(http://[a-z0-9]+\\." + this.getHost() + "/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
+        String waittime = br.getRegex("var seconds = (\\d+);").getMatch(0);
+        int wait = waittime == null ? 60 : Integer.parseInt(waittime);
+        sleep(wait * 1001l, downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "?d=1", false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -76,7 +77,7 @@ public class RocketFilesNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override

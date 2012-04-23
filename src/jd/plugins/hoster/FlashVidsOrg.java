@@ -28,17 +28,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-//Same code as YamiVideoCom and FlashVidsOrg
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rocketfiles.net" }, urls = { "http://(www\\.)?rocketfiles\\.net/video/[a-z0-9]+" }, flags = { 0 })
-public class RocketFilesNet extends PluginForHost {
+//Same code as RocketFilesNet and YamiVideoCom
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashvids.org" }, urls = { "http://(www\\.)?flashvids\\.org/video/[a-z0-9]+" }, flags = { 0 })
+public class FlashVidsOrg extends PluginForHost {
 
-    public RocketFilesNet(PluginWrapper wrapper) {
+    public FlashVidsOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://rocketfiles.net/contact";
+        return "http://flashvids.org/contact";
     }
 
     @Override
@@ -58,7 +58,7 @@ public class RocketFilesNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML("I AM HUMAN")) br.postPage(downloadLink.getDownloadURL(), "submit_human=I+AM+HUMAN");
-        br.postPage("http://" + this.getHost() + "/Xajax/saveaction/", "xjxfun=load_player_eng&xjxr=" + System.currentTimeMillis() + "&xjxargs[]=S" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&xjxargs%5B%5D=N4");
+        br.postPage("http://" + this.getHost() + "/Xajax/saveaction/", "xjxfun=load_player_eng&xjxr=" + System.currentTimeMillis() + "&xjxargs[]=S" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&xjxargs%5B%5D=N3");
         final String dllink = br.getRegex("\\&file=(http://[a-z0-9]+\\." + this.getHost() + "/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
