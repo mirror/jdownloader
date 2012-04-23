@@ -17,8 +17,8 @@
 package org.jdownloader.extensions.neembuu.postprocess;
 
 import java.util.List;
-import jpfm.fs.BasicFileSystem;
 import org.jdownloader.extensions.neembuu.DownloadSession;
+import org.jdownloader.extensions.neembuu.NB_VirtualFileSystem;
 
 /**
  * 
@@ -27,5 +27,5 @@ import org.jdownloader.extensions.neembuu.DownloadSession;
 public interface PostProcessor {
     boolean canHandle(List<DownloadSession> sessions);
 
-    boolean handle(List<DownloadSession> sessions, BasicFileSystem bfs, String mountLocation);
+    boolean handle(List<DownloadSession> sessions, NB_VirtualFileSystem bfs, String mountLocation);
 }

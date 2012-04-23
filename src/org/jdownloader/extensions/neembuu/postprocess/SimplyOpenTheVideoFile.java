@@ -26,6 +26,7 @@ import jpfm.FileType;
 import jpfm.fs.BasicFileSystem;
 
 import org.jdownloader.extensions.neembuu.DownloadSession;
+import org.jdownloader.extensions.neembuu.NB_VirtualFileSystem;
 import org.jdownloader.extensions.neembuu.NeembuuExtension;
 /**
  * 
@@ -41,7 +42,7 @@ public class SimplyOpenTheVideoFile implements PostProcessor {
     }
 
     // @Override
-    public boolean handle(List<DownloadSession> sessions, BasicFileSystem bfs, String mountLocation) {
+    public boolean handle(List<DownloadSession> sessions, NB_VirtualFileSystem bfs, String mountLocation) {
         DirectoryStream root = (DirectoryStream) bfs.getRootAttributes();
 
         String vlcPath = null;// todo : put internal vlc path here

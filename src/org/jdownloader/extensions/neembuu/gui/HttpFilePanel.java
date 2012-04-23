@@ -64,13 +64,13 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
     // ,new
     // ImageIcon(HttpFilePanel.class.getResource("activate.png")),SwingConstants.CENTER
     private final RangeArrayElementColorProvider downloadedRegionColorProvider = new DownloadedRegionColorProvider();
-
-    private static final class DownloadedRegionColorProvider implements RangeArrayElementColorProvider {
+    
+    private final class DownloadedRegionColorProvider implements RangeArrayElementColorProvider {
 
         // @Override
         public Color getColor(Color defaultColor, Range element, SelectionState selectionState) {
             RegionHandler rh = (RegionHandler) element.getProperty();
-            Color base = defaultColor;
+            Color base = defaultColor;            
             try {
                 if (rh.isAlive()) {
                     base = new Color(102, 93, 149);
@@ -89,7 +89,9 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
                     base = new Color(138, 170, 231);
                 }
             }
-
+            if(file.getDownloadConstrainHandler().isComplete()){
+                base = new Color(185,198,222); // download completed
+            }
             switch (selectionState) {
             case LIST:
                 base = RangeArrayComponent.lightenColor(base, 0.9f);
@@ -144,7 +146,7 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
     };
 
     final Timer updateGraphTimer = new Timer(500, new ActionListener() {
-
+                                     int x = 0;
                                      // @Override
                                      public void actionPerformed(ActionEvent e) {
                                          double d = file.getTotalFileReadStatistics().getTotalAverageDownloadSpeedProvider().getDownloadSpeed_KiBps(),r=file.getTotalFileReadStatistics().getTotalAverageRequestSpeedProvider().getRequestSpeed_KiBps();
@@ -160,6 +162,10 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
                                              graphJFluid.speedChanged(currentlySelectedRegion.getThrottleStatistics().getDownloadSpeed_KiBps(), currentlySelectedRegion.getThrottleStatistics().getRequestSpeed_KiBps());
                                          }
                                          throttleStateLable.setText(currentlySelectedRegion.getThrottleStatistics().getThrottleState().toString());
+                                         if(x%8==0){
+                                            regionDownloadedBar.repaint();
+                                            regionRequestedBar.repaint();
+                                         }x++;
                                      }
                                  });
 
@@ -481,7 +487,12 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
     private void killConnectionActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_killConnectionActionPerformed
         System.err.println("kill button pressed for region=" + lastRegionSelected);
         try {
-            ((neembuu.vfs.readmanager.impl.BasicRegionHandler) lastRegionSelected.getProperty()).getConnection().abort();
+            if(file.getParams().getConnectionProvider().estimateCreationTime(0)>=Integer.MAX_VALUE){
+                JOptionPane.showMessageDialog(this, "This connection cannot be resumed,\nwhich is why this should not be killed.","Cannot kill connection",JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            neembuu.vfs.readmanager.impl.BasicRegionHandler regionHandler = ((neembuu.vfs.readmanager.impl.BasicRegionHandler) lastRegionSelected.getProperty());
+            regionHandler.getConnection().abort();
         } catch (Exception any) {
             LOGGER.log(Level.SEVERE, "Connection killing exception", any);
         }

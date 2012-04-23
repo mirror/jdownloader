@@ -32,22 +32,22 @@ import org.jdownloader.gui.translate._GUI;
  */
 public class WatchAsYouDownloadAction extends ContextMenuAction {
 
-    private final ArrayList<FilePackage>  fps;
-    private final boolean                 canHandle;
-    private final ArrayList<DownloadLink> dls = new ArrayList<DownloadLink>();
+    private final ArrayList<FilePackage> fps;
+    private final boolean                canHandle;
 
     public WatchAsYouDownloadAction(ArrayList<FilePackage> fps) {
         this.fps = fps;
+        boolean canH = false;
         if (fps != null && fps.size() > 0) {
-            canHandle = NeembuuExtension.canHandle(fps);
             for (FilePackage fp : fps) {
                 if (fp == null) continue;// ignore empty entries.
-                fp.setProperty(NeembuuExtension.WATCH_AS_YOU_DOWNLOAD_KEY, canHandle);
-                dls.addAll(fp.getChildren());
+                if (fp.getProperty(NeembuuExtension.WATCH_AS_YOU_DOWNLOAD_KEY, false) == Boolean.FALSE) break;
             }
+            canH = true;
         } else
-            canHandle = false;
+            canH = false;
 
+        canHandle = canH;
         init();
     }
 
@@ -62,7 +62,28 @@ public class WatchAsYouDownloadAction extends ContextMenuAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        DownloadWatchDog.getInstance().forceDownload(dls);
+        for (FilePackage fp : fps) {
+            if (fp == null) continue;// ignore empty entries.
+            fp.setProperty(org.jdownloader.extensions.neembuu.NeembuuExtension.INITIATED_BY_WATCH_ACTION, true);
+            
+            // resetting all links, everytime, to ensure that not even one file is ignored
+            for (DownloadLink link : fp.getChildren()) {
+                if (link.getLinkStatus().isPluginActive()) {
+                    /*
+                     * download is still active, let DownloadWatchdog
+                     * handle the reset
+                     */
+                    DownloadWatchDog.getInstance().resetSingleDownloadController(link.getDownloadLinkController());
+                } else {
+                    /* we can do the reset ourself */
+                    DownloadWatchDog.getInstance().removeIPBlockTimeout(link);
+                    DownloadWatchDog.getInstance().removeTempUnavailTimeout(link);
+                    link.reset();
+                }
+            }
+            
+            DownloadWatchDog.getInstance().forceDownload((ArrayList<DownloadLink>) fp.getChildren());
+        }
     }
 
     @Override

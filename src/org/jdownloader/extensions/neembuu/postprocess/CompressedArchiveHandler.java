@@ -20,7 +20,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import jpfm.FileAttributesProvider;
-import jpfm.fs.BasicFileSystem;
 import jpfm.fs.splitfs.CascadableSplitFS;
 import jpfm.volume.vector.VectorRootDirectory;
 import org.jdownloader.extensions.neembuu.DownloadSession;
@@ -85,7 +84,7 @@ public class CompressedArchiveHandler implements PostProcessor{
     }
 
     // @Override
-    public boolean handle(List<DownloadSession> sessions, BasicFileSystem bfs, String mntLoc) {
+    public boolean handle(List<DownloadSession> sessions, NB_VirtualFileSystem fileSystem, String mntLoc) {
         if (!canHandle(sessions)) { throw new IllegalArgumentException("Cannot handle"); }
 
         Set<FileAttributesProvider> files = new LinkedHashSet<FileAttributesProvider>();
@@ -100,11 +99,10 @@ public class CompressedArchiveHandler implements PostProcessor{
 
         CascadableSplitFS.CascadableSplitFSProvider cascadableSplitFS = new CascadableSplitFS.CascadableSplitFSProvider(files, name);
 
-        bfs.cascadeMount(cascadableSplitFS);
+        fileSystem.cascadeMount(cascadableSplitFS);
 
-        // remove splited files .001 , .002 ... from virtual folder
+        // remove splited files .part1.rar , .part2.rar ... from virtual folder
         // to avoid confusion
-        NB_VirtualFileSystem fileSystem = (NB_VirtualFileSystem) bfs;
         VectorRootDirectory vrd = (VectorRootDirectory) fileSystem.getRootDirectory();
         synchronized (sessions) {
             for (DownloadSession jdds : sessions) {

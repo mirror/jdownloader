@@ -40,5 +40,8 @@ public interface WatchAsYouDownloadSession {
 
     void waitForDownloadToFinish() throws Exception;
 
-    long getTotalDownload();
+    /**
+     * @return number of bytes already downloaded for this given file.
+     */
+    long getTotalDownloaded();
 }

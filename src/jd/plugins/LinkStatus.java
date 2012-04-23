@@ -142,6 +142,19 @@ public class LinkStatus implements Serializable {
 
     public static final int   VALUE_FAILED_HASH                    = 1 << 27;
 
+    /**
+     * When user is watching and downloading a series of file like
+     * somemovie.avi.001 , somemovie.avi.002 ... all these downloads are
+     * required to finish together
+     */
+    public static final int   WAITING_FOR_OTHER_SPLITS_TO_FINISH   = 1 << 28;
+
+    /**
+     * This link can only be Watch as you downloaded, it cannot be simply
+     * downloaded. Later in future, this might be made possible.
+     */
+    public static final int   ERROR_CANNOT_BE_SIMPLY_DOWNLOADED    = 1 << 29;
+
     private transient boolean isActive                             = false;
     private transient boolean inProgress                           = false;
 
@@ -239,6 +252,10 @@ public class LinkStatus implements Serializable {
             } else if (TEMP_IGNORE_REASON_NO_SUITABLE_ACCOUNT_FOUND == value) {
                 return _JDT._.downloadlink_status_error_premium_noacc();
             } else if (TEMP_IGNORE_REASON_INVALID_DOWNLOAD_DESTINATION == value) { return _JDT._.downloadlink_status_error_invalid_dest(); }
+        case LinkStatus.WAITING_FOR_OTHER_SPLITS_TO_FINISH:
+            return _JDT._.downloadlink_status_waiting_neembuu();
+        case LinkStatus.ERROR_CANNOT_BE_SIMPLY_DOWNLOADED:
+            return _JDT._.downloadlink_status_error_onlywatchallowed();
         }
         return null;
     }

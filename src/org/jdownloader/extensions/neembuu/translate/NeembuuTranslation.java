@@ -49,12 +49,12 @@ public interface NeembuuTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Are you sure you want to unmount?" })
     String unmountConfirm();
 
-    @Default(lngs = { "en" }, values = { "Neembuu could not handle this link"})
+    @Default(lngs = { "en" }, values = { "Neembuu could not handle this link" })
     String neembuu_could_not_handle_title();
-    
-    @Default(lngs = { "en" }, values = { "Do you want to download this file instead ?"})
+
+    @Default(lngs = { "en" }, values = { "Do you want to download this file instead ?" })
     String neembuu_could_not_handle_message();
-    
+
     @Default(lngs = { "en" }, values = { "Do you wish to watch as you download this file?" })
     String approve_WatchAsYouDownload_Message();
 
@@ -72,13 +72,13 @@ public interface NeembuuTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Neembuu watch as you download is powered by <b>Pismo File Mount</b>" })
     String poweredByPismo();
-    
-    @Default(lngs = { "en" }, values = { "Neembuu Watch as you download works best with vlc"})
+
+    @Default(lngs = { "en" }, values = { "Neembuu Watch as you download works best with vlc" })
     String worksBestWithVlc();
-    
-    @Default(lngs = { "en" }, values = { "You can set vlc\'s location (this is not compulsary) so that vlc may be used to play videos while they are downloaded."})
+
+    @Default(lngs = { "en" }, values = { "You can set vlc\'s location (this is not compulsary) so that vlc may be used to play videos while they are downloaded." })
     String vlcPathOption();
-    
+
     @Default(lngs = { "en" }, values = { "Link" })
     String filePanel_link();
 
@@ -133,13 +133,13 @@ public interface NeembuuTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "<html>Speed (KiB/s)</html>" })
     String filePanel_graph_yaxis();
 
-    @Default(lngs = { "en" }, values = { "Cannot create a new connection, unmounting as we already retried" })
+    @Default(lngs = { "en" }, values = { "Cannot create a new connection, unmounting as we already retried " })
     String troubleHandler_retriedConnection();
 
     @Default(lngs = { "en" }, values = { " times" })
     String troubleHandler_retriedConnection_times();
 
-    @Default(lngs = { "en" }, values = { "Cannot create a new connection, unmounting as we already retried" })
+    @Default(lngs = { "en" }, values = { "Cannot create a new connection, unmounting as we already retried " })
     String troubleHandler_pendingRequests();
 
     @Default(lngs = { "en" }, values = { " minute(s)" })

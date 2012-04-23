@@ -56,6 +56,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
     private String                                       vlcLoc                     = null;
     private final LinkedList<WatchAsYouDownloadSession>  watchAsYouDownloadSessions = new LinkedList<WatchAsYouDownloadSession>();
     public static final String                           WATCH_AS_YOU_DOWNLOAD_KEY  = "WATCH_AS_YOU_DOWNLOAD";
+    public static final String                           INITIATED_BY_WATCH_ACTION  = "INITIATED_BY_WATCH_ACTION";
     private final Map<FilePackage, NB_VirtualFileSystem> virtualFileSystems         = new HashMap<FilePackage, NB_VirtualFileSystem>();
     private final Map<DownloadLink, DownloadSession>     downloadSessions           = new HashMap<DownloadLink, DownloadSession>();
 
@@ -123,12 +124,11 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
             if (fp == null) continue;// ignore empty entries
             for (DownloadLink dl : fp.getChildren()) {
                 // todo : make this better. Check other features of host to
-                // ensure
-                // it can support watch as you download. It would be best if
-                // hosts
+                // ensure it can support watch as you download.
+                // It would be best if hosts
                 // that have been tested successfully/unsuccessfully are added
-                // to
-                // a whitelist/blacklist.
+                // to a whitelist/blacklist.
+                if(true)return true;// testing single connection watchAYD
                 int c = dl.getDefaultPlugin().getMaxSimultanPremiumDownloadNum();
                 if (c < 5 && c != -1) return false;
             }
@@ -336,13 +336,13 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
             if (context.getSelectedObjects() != null) {
                 for (final AbstractNode node : context.getSelectedObjects()) {
                     if (node instanceof FilePackage) {
-
-                        fps.add((FilePackage) node);
-
+                        if( (Boolean)((FilePackage)node).getProperty(WATCH_AS_YOU_DOWNLOAD_KEY,false)==true )
+                            fps.add((FilePackage) node);
                     }
                 }
             }
-            context.getMenu().add(new WatchAsYouDownloadAction(new ArrayList<FilePackage>(fps)));
+            if(fps.size()>0)
+                context.getMenu().add(new WatchAsYouDownloadAction(new ArrayList<FilePackage>(fps)));
         }
 
     }

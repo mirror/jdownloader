@@ -4,21 +4,18 @@
  */
 package org.jdownloader.extensions.neembuu;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import jd.controlling.JDLogger;
 import jd.http.Browser;
-import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-import org.appwork.utils.Exceptions;
+
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 
 /**
@@ -26,20 +23,7 @@ import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
  * @author Shashank Tulsyan
  */
 public final class NBUtils {
-    public static URLConnectionAdapter copyConnection(DownloadLink downloadLink, DownloadInterface di, PluginForHost plugin, long startByte, Browser b, URLConnectionAdapter connection) {
-        // try {
-        // while
-        // (/*downloadLink.getLivePlugin()*/plugin.waitForNextConnectionAllowed())
-        // {
-        // }
-        // /*downloadLink.getLivePlugin()*/plugin.putLastConnectionTime(System.currentTimeMillis());
-        // } catch (InterruptedException e) {
-        // return null;
-        // } catch (NullPointerException npe){
-        // npe.printStackTrace(System.err);
-        // //ignore
-        // }
-
+    public static URLConnectionAdapter copyConnection(DownloadLink downloadLink, DownloadInterface di, PluginForHost plugin, long startByte, Browser b, URLConnectionAdapter connection, int retriesMade) {
         long start = startByte;
         // String end = (endByte > 0 ? endByte + 1 : "") + "";
 
@@ -47,11 +31,14 @@ public final class NBUtils {
          * if (start == 0) { di.logger.finer("Takeover 0 Connection"); return
          * connection; }
          */
-        if (connection.getRange() != null && connection.getRange()[0] == (start)) {
-            di.logger.finer("Takeover connection at " + connection.getRange()[0]);
+        long oldConnectionStart = 0; // assumption :-x
+        if (connection.getRange() != null) oldConnectionStart = connection.getRange()[0];
+        if (oldConnectionStart == (start) && retriesMade < 6) {
+            // if retried this a number of times,
+            // we must try making a newconnection.
+            di.logger.finer("Takeover connection at " + oldConnectionStart);
             return connection;
         }
-
         try {
             /* only forward referer if referer already has been sent! */
             boolean forwardReferer = /* plugin.getBrowser() */b.getHeaders().contains("Referer");

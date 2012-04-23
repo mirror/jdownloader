@@ -75,7 +75,7 @@ public final class JD_HTTP_Download_Manager implements NewConnectionProvider {
                     connectionsRequested();
                     c.connectAndSupply();
                 } catch (Exception e) {
-                    Log.L.log(Level.INFO, "Problem in new connection ", e);
+                    Logger.getGlobal().log(Level.INFO, "Problem in new connection ", e);
                 }
             }
         }
@@ -85,7 +85,15 @@ public final class JD_HTTP_Download_Manager implements NewConnectionProvider {
 
     // @Override
     public final long estimateCreationTime(long offset) {
-        return averageConnectionCreationTime();
+        int c = jdds.getDownloadLink().getDefaultPlugin().getMaxSimultanFreeDownloadNum();
+        if(c<0) c = Integer.MAX_VALUE; // unlimited con allowed
+        // TODO : replace above code to get exact time it will take
+        // to create a new connection right now with the account user is using.
+        if(c < 5 && offset!=0){
+            return Integer.MAX_VALUE;
+        }else {
+            return averageConnectionCreationTime();
+        }
     }
 
     private long averageConnectionCreationTime() {

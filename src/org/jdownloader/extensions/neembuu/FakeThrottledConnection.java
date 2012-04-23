@@ -53,7 +53,7 @@ public class FakeThrottledConnection implements SpeedMeterInterface, ThrottledCo
     }
 
     public long transfered() {
-        return WatchAsYouDownloadSessionImpl.getTotalDownloadedFor(jdds);
+        return jdds.getWatchAsYouDownloadSession().getTotalDownloaded();
     }
     
     public void resetSpeedMeter() {

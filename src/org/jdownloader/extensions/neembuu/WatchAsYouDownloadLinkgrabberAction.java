@@ -95,6 +95,7 @@ public class WatchAsYouDownloadLinkgrabberAction extends AppAction {
                     for (FilePackage fp : fpkgs) {
                         if (fp == null) continue;// ignore empty entries.
                         fp.setProperty(NeembuuExtension.WATCH_AS_YOU_DOWNLOAD_KEY, canHandle);
+                        fp.setProperty(NeembuuExtension.INITIATED_BY_WATCH_ACTION, canHandle);
                     }
                 } else
                     canHandle = false;

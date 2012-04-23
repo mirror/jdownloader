@@ -51,7 +51,8 @@ public final class JD_HTTP_Connection extends AbstractConnection {
         InputStream is = null;
 
         while (firstByte == -1) {
-            urlca = NBUtils.copyConnection(jddm.jdds.getDownloadLink(), jddm.jdds.getDownloadInterface(), jddm.jdds.getPluginForHost(), cp.getOffset(), jddm.jdds.getBrowser(), jddm.jdds.getURLConnectionAdapter());
+            cp.getDownloadThreadLogger().log(Level.INFO, "copying connection : "+jddm.jdds.getURLConnectionAdapter().getURL());
+            urlca = NBUtils.copyConnection(jddm.jdds.getDownloadLink(), jddm.jdds.getDownloadInterface(), jddm.jdds.getPluginForHost(), getAdjustedOffset(), jddm.jdds.getBrowser(), jddm.jdds.getURLConnectionAdapter(),retriesMade);
             if (urlca != null) {
                 is = urlca.getInputStream();
                 firstByte = is.read();

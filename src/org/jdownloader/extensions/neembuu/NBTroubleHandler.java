@@ -18,6 +18,7 @@ package org.jdownloader.extensions.neembuu;
 
 import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -25,6 +26,7 @@ import javax.swing.SwingUtilities;
 import jpfm.operations.readwrite.ReadRequest;
 import neembuu.vfs.connection.NewConnectionParams;
 import neembuu.vfs.file.TroubleHandler;
+
 import org.jdownloader.extensions.neembuu.translate._NT;
 
 /**
@@ -50,12 +52,12 @@ public final class NBTroubleHandler implements TroubleHandler {
             }
         });
 
-        jdds.getDownloadInterface().logger.log(Level.SEVERE, mess + " " + mess2);
+        Logger.getGlobal().log(Level.SEVERE, mess + " " + mess2);
 
         try {
             jdds.getWatchAsYouDownloadSession().getVirtualFileSystem().unmountAndEndSessions();
         } catch (Exception a) {
-            jdds.getDownloadInterface().logger.log(Level.SEVERE, "unmounting problem", a);
+            Logger.getGlobal().log(Level.SEVERE, "unmounting problem", a);
         }
     }
 
@@ -64,7 +66,7 @@ public final class NBTroubleHandler implements TroubleHandler {
         long maxMillisecWait = atleastMillisec;
         for (ReadRequest rr : pendingReadRequest) {
             if (!rr.isCompleted()) {
-                long pendingSince = rr.getCreationTime() - System.currentTimeMillis();
+                long pendingSince = System.currentTimeMillis() - rr.getCreationTime();
                 maxMillisecWait = Math.max(maxMillisecWait, pendingSince);
             }
         }
@@ -72,7 +74,7 @@ public final class NBTroubleHandler implements TroubleHandler {
         final String mess = _NT._.troubleHandler_pendingRequests() + (maxMillisecWait / 60000d) + _NT._.troubleHandler_pendingRequests_minutes();
         final String mess2 = _NT._.troubleHandler_pendingRequests_Solution();
 
-        jdds.getDownloadInterface().logger.log(Level.SEVERE, mess);
+        Logger.getGlobal().log(Level.SEVERE, mess, new Throwable());
 
         if (maxMillisecWait > 3 * 60 * 1000) { // if a request is pending since
                                                // last 3 mintues ... we better
@@ -84,12 +86,12 @@ public final class NBTroubleHandler implements TroubleHandler {
                 }
             });
 
-            jdds.getDownloadInterface().logger.log(Level.SEVERE, mess2);
+            Logger.getGlobal().log(Level.SEVERE, mess2);
 
             try {
                 jdds.getWatchAsYouDownloadSession().getVirtualFileSystem().unmountAndEndSessions();
             } catch (Exception a) {
-                jdds.getDownloadInterface().logger.log(Level.SEVERE, "unmounting problem", a);
+                Logger.getGlobal().log(Level.SEVERE, "unmounting problem", a);
             }
         }
     }

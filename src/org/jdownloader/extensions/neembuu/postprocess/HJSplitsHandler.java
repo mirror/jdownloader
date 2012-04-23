@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Set;
 
 import jpfm.FileAttributesProvider;
-import jpfm.fs.BasicFileSystem;
 import jpfm.fs.splitfs.CascadableSplitFS;
 import jpfm.volume.vector.VectorRootDirectory;
 
@@ -56,7 +55,7 @@ public class HJSplitsHandler implements PostProcessor {
     }
 
     // @Override
-    public boolean handle(List<DownloadSession> sessions, BasicFileSystem bfs, String mntLoc) {
+    public boolean handle(List<DownloadSession> sessions, NB_VirtualFileSystem bfs, String mntLoc) {
         if (!canHandle(sessions)) { throw new IllegalArgumentException("Cannot handle"); }
 
         Set<FileAttributesProvider> files = new LinkedHashSet<FileAttributesProvider>();
