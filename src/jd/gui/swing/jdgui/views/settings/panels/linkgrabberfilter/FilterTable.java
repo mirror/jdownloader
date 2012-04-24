@@ -48,7 +48,7 @@ public class FilterTable extends AbstractFilterTable {
     }
 
     @Override
-    protected void onDoubleClick(MouseEvent e, LinkgrabberFilterRule obj) {
+    protected boolean onDoubleClick(MouseEvent e, LinkgrabberFilterRule obj) {
         try {
             Dialog.getInstance().showDialog(new FilterRuleDialog(obj));
         } catch (DialogClosedException e1) {
@@ -58,6 +58,7 @@ public class FilterTable extends AbstractFilterTable {
         }
         getExtTableModel().fireTableDataChanged();
         LinkFilterController.getInstance().update();
+        return false;
     }
 
     /*

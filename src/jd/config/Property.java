@@ -81,30 +81,6 @@ public class Property implements Serializable {
     }
 
     /**
-     * Gibt einen Doublewert zu key zurück. Es wird versuchtden Wert zu einem
-     * passendem Wert umzuformen
-     * 
-     * @param key
-     * @return
-     */
-    public Double getDoubleProperty(final String key) {
-        return getDoubleProperty(key, -1.0);
-    }
-
-    public Double getDoubleProperty(final String key, final Double def) {
-        try {
-            Object r = getProperty(key, def);
-            if (r instanceof String) {
-                r = Double.parseDouble((String) r);
-            }
-            final Double ret = (Double) r;
-            return ret;
-        } catch (final Exception e) {
-            return def;
-        }
-    }
-
-    /**
      * Gibt einen Integerwert zu key zurück. Es wird versucht, den Wert zu einem
      * passendem Integer umzuformen
      * 

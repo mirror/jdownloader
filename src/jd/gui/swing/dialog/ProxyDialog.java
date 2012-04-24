@@ -35,7 +35,7 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
     private JLabel         lblHost;
 
     public ProxyDialog() {
-        super(0, _GUI._.jd_gui_swing_dialog_ProxyDialog_title(), NewTheme.I().getIcon("proxy", 32), null, null);
+        super(0, _GUI._.jd_gui_swing_dialog_ProxyDialog_title(), NewTheme.I().getIcon("proxy_rotate", 32), null, null);
     }
 
     @Override

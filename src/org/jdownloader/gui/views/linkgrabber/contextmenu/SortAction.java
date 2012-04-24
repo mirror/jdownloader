@@ -13,8 +13,8 @@ import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
-import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 
 public class SortAction extends AppAction {
 

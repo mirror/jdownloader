@@ -172,7 +172,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     }
 
     @Override
-    protected void onDoubleClick(MouseEvent e, AbstractNode value) {
+    protected boolean onDoubleClick(MouseEvent e, AbstractNode value) {
         DomainInfo[] infos = null;
         if (value instanceof AbstractPackageNode) {
             infos = ((AbstractPackageNode<?, ?>) value).getView().getDomainInfos();
@@ -200,6 +200,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
                 });
             }
         }
+        return false;
     }
 
     @Override

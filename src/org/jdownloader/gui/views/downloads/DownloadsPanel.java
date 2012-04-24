@@ -34,12 +34,11 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
 
     public DownloadsPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
-        tableModel = new DownloadsTableModel();
+        tableModel = DownloadsTableModel.getInstance();
         table = new DownloadsTable(tableModel);
         tableScrollPane = new JScrollPane(table);
         tableScrollPane.setBorder(null);
         bottomBar = new BottomBar(table);
-
         layoutComponents();
 
         // org.jdownloader.settings.statics.GUI.DOWNLOAD_VIEW_SIDEBAR_ENABLED.getEventSender().addListener(this);

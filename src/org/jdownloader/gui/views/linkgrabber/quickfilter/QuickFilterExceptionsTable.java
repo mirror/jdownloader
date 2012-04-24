@@ -125,7 +125,7 @@ public class QuickFilterExceptionsTable extends FilterTable {
 
     }
 
-    protected void onDoubleClick(final MouseEvent e, final Filter obj) {
+    protected boolean onDoubleClick(final MouseEvent e, final Filter obj) {
         // JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
         // SwingGui.getInstance().setContent(ConfigurationView.getInstance(),
         // true);
@@ -149,10 +149,10 @@ public class QuickFilterExceptionsTable extends FilterTable {
                 } catch (DialogCanceledException e1) {
                     e1.printStackTrace();
                 }
-                return;
+                return false;
             }
         }
-
+        return false;
     }
 
     private void setup(ArrayList<LinkgrabberFilterRuleWrapper> fileFilter) {

@@ -51,14 +51,14 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
         return obj.isEnabled();
     }
 
-    protected void onDoubleClick(final MouseEvent e, final AbstractNode obj) {
+    protected boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
         SwingUtilities.invokeLater(new Runnable() {
 
             public void run() {
                 ToolTipController.getInstance().show(getModel().getTable().createExtTooltip(null));
             }
         });
-
+        return false;
     }
 
     public ExtTooltip createToolTip(final Point position, final AbstractNode obj) {

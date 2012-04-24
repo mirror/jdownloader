@@ -3,7 +3,9 @@ package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog;
 import java.util.ArrayList;
 
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.SingleFilterResultTableModel;
@@ -12,12 +14,14 @@ import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
 
@@ -51,6 +55,18 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
         } catch (DialogCanceledException e) {
             e.printStackTrace();
         }
+
+    }
+
+    @Override
+    protected MigPanel createHeader(String string) {
+        MigPanel ret = new MigPanel("ins 0", "[21,fill][][grow,fill]", "[]");
+        ret.add(new JSeparator());
+        JLabel label;
+        ret.add(SwingUtils.toBold(label = new JLabel(string)));
+        label.setIcon(NewTheme.I().getIcon("linkgrabber", 14));
+        ret.add(new JSeparator());
+        return ret;
     }
 
     public static void main(String[] args) {

@@ -64,24 +64,20 @@ import org.xml.sax.InputSource;
  */
 public class JDUtilities {
 
-    private static final Logger      LOGGER              = JDLogger.getLogger();
+    private static final Logger      LOGGER        = JDLogger.getLogger();
 
     /**
      * Die Konfiguration
      */
-    private static Configuration     CONFIGURATION       = null;
+    private static Configuration     CONFIGURATION = null;
 
-    private static DatabaseConnector DB_CONNECT          = null;
+    private static DatabaseConnector DB_CONNECT    = null;
 
-    public static final int          RUNTYPE_LOCAL       = 1;
-
-    public static final int          RUNTYPE_LOCAL_JARED = 2;
-
-    private static File              JD_HOME             = null;
+    private static File              JD_HOME       = null;
 
     private static String            REVISION;
 
-    private static long              REVISIONINT         = -1;
+    private static long              REVISIONINT   = -1;
 
     /**
      * Diese Klasse fuegt eine Komponente einem Container hinzu
@@ -184,7 +180,6 @@ public class JDUtilities {
         if (JD_HOME != null) {
             return JD_HOME;
         } else {
-            Application.setApplication(".jd_home");
             // do not use hardcoded classpathes if possible
             URL ressource = Thread.currentThread().getContextClassLoader().getResource(Launcher.class.getName().replace(".", "/") + ".class");
 
@@ -262,11 +257,6 @@ public class JDUtilities {
         }
         final long rev2 = Formatter.getRevision("$Revision$");
         return (REVISIONINT = Math.max(rev2, rev));
-    }
-
-    public static int getRunType() {
-        final String caller = (Thread.currentThread().getContextClassLoader().getResource("jd") + "");
-        return (caller.matches("jar\\:.*\\.jar\\!.*")) ? RUNTYPE_LOCAL_JARED : RUNTYPE_LOCAL;
     }
 
     /**

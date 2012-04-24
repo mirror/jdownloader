@@ -18,12 +18,11 @@ public class ResultTable extends BasicJDTable<CrawledLink> {
     }
 
     @Override
-    protected void onDoubleClick(MouseEvent e, CrawledLink obj) {
+    protected boolean onDoubleClick(MouseEvent e, CrawledLink obj) {
         if (obj.getMatchingFilter() != null && obj.getMatchingFilter() instanceof LinkgrabberFilterRule) {
             LinkgrabberFilterRule rule = (LinkgrabberFilterRule) obj.getMatchingFilter();
             owner.edit(rule);
-
         }
-
+        return false;
     }
 }

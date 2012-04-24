@@ -33,8 +33,8 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
-import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 import org.jdownloader.translate._JDT;
 
 public class SetDownloadFolderInLinkgrabberAction extends AppAction {
@@ -70,7 +70,7 @@ public class SetDownloadFolderInLinkgrabberAction extends AppAction {
             if (n instanceof CrawledPackage) {
                 if (pkg == null) pkg = (CrawledPackage) n;
                 packages.add((CrawledPackage) n);
-            } else {
+            } else if (n instanceof CrawledLink) {
                 if (pkg == null) pkg = ((CrawledLink) n).getParentNode();
                 packages.add(((CrawledLink) n).getParentNode());
             }
@@ -176,7 +176,9 @@ public class SetDownloadFolderInLinkgrabberAction extends AppAction {
                     for (final Entry<CrawledPackage, ArrayList<CrawledLink>> entry : newPackages.entrySet()) {
                         if (!(entry.getKey() instanceof VariousCrawledPackage)) {
                             try {
-                                if (entry.getKey().getDownloadFolder().equals(dest[0].getAbsolutePath())) continue;
+                                File oldPath = LinkTreeUtils.getDownloadDirectory(entry.getKey().getDownloadFolder());
+                                File newPath = dest[0];
+                                if (oldPath.equals(newPath)) continue;
                                 Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN,
 
                                 _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getKey().getName()), _JDT._.SetDownloadFolderAction_msg(entry.getKey().getName(), entry.getValue().size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
@@ -185,7 +187,7 @@ public class SetDownloadFolderInLinkgrabberAction extends AppAction {
                             } catch (DialogClosedException e) {
                                 return;
                             } catch (DialogCanceledException e) {
-
+                                /* user clicked no */
                             }
                         }
                         final CrawledPackage pkg = new CrawledPackage();
@@ -196,6 +198,7 @@ public class SetDownloadFolderInLinkgrabberAction extends AppAction {
                         } else {
                             pkg.setName(entry.getKey().getName());
                         }
+                        pkg.setComment(entry.getKey().getComment());
                         pkg.setDownloadFolder(dest[0].getAbsolutePath());
                         IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>() {
 
@@ -208,8 +211,12 @@ public class SetDownloadFolderInLinkgrabberAction extends AppAction {
                             @Override
                             protected void postRun() {
                                 // add to set selection later
-                                packages.add(pkg);
-                                LinkGrabberTableModel.getInstance().setSelectedObjects(new ArrayList<AbstractNode>(packages));
+                                ArrayList<AbstractNode> lpackages = null;
+                                synchronized (packages) {
+                                    packages.add(pkg);
+                                    lpackages = new ArrayList<AbstractNode>(packages);
+                                }
+                                LinkGrabberTableModel.getInstance().setSelectedObjects(lpackages);
                             }
 
                         });
@@ -224,11 +231,7 @@ public class SetDownloadFolderInLinkgrabberAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-
-        if (newPackages.size() > 0 || packages.size() > 0) { return true;
-
-        }
-        return false;
+        return newPackages.size() > 0 || packages.size() > 0;
     }
 
     /**

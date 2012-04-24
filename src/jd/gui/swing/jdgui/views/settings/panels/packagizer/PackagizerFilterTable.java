@@ -92,7 +92,7 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
     }
 
     @Override
-    protected void onDoubleClick(MouseEvent e, PackagizerRule obj) {
+    protected boolean onDoubleClick(MouseEvent e, PackagizerRule obj) {
         try {
             Dialog.getInstance().showDialog(new PackagizerFilterRuleDialog(obj));
         } catch (DialogClosedException e1) {
@@ -102,6 +102,7 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
         }
         getExtTableModel().fireTableDataChanged();
         PackagizerController.getInstance().update();
+        return false;
     }
 
     /*

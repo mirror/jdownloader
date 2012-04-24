@@ -18,13 +18,16 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.logging.Log;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEvent;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.components.packagetable.context.CheckStatusAction;
 import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
+import org.jdownloader.gui.views.components.packagetable.context.SetCommentAction;
 import org.jdownloader.gui.views.downloads.table.linkproperties.URLEditorAction;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
-import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
@@ -39,7 +42,6 @@ public class ContextMenuFactory {
     }
 
     public JPopupMenu createPopup(AbstractNode contextObject, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent event) {
-
         boolean isLinkContext = contextObject instanceof CrawledLink;
         boolean isShift = event.isShiftDown();
         boolean isPkgContext = contextObject instanceof CrawledPackage;
@@ -62,26 +64,23 @@ public class ContextMenuFactory {
         p.add(properties);
         p.add(new JSeparator());
         if (contextObject instanceof AbstractPackageNode) {
-
             Image back = (((AbstractPackageNode<?, ?>) contextObject).isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) : NewTheme.I().getImage("tree_package_closed", 32));
             properties.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)));
-
         } else if (contextObject instanceof CrawledLink) {
-
             Image back = (((CrawledLink) contextObject).getDownloadLink().getIcon().getImage());
             properties.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)));
-
-            ((CrawledLink) contextObject).getDownloadLink().getDefaultPlugin().extendLinkgrabberTablePropertiesMenu(properties, ((CrawledLink) contextObject));
-
+            int count = p.getComponentCount();
+            try {
+                ((CrawledLink) contextObject).getDownloadLink().getDefaultPlugin().extendLinkgrabberTablePropertiesMenu(properties, ((CrawledLink) contextObject));
+            } catch (final Throwable e) {
+                Log.exception(e);
+            }
+            if (p.getComponentCount() > count) p.add(new JSeparator());
         }
-
         for (JMenuItem mm : fillPropertiesMenu(contextObject, selection, column)) {
             properties.add(mm);
         }
-
-        p.add(new JSeparator());
-
-        p.add(new FileCheckAction(selection).toContextMenuAction());
+        p.add(new CheckStatusAction(selection).toContextMenuAction());
         p.add(new CreateDLCAction(selection).toContextMenuAction());
 
         p.add(new JSeparator());
@@ -120,10 +119,8 @@ public class ContextMenuFactory {
         ret.add(new JMenuItem(new SetDownloadFolderInLinkgrabberAction(contextObject, inteliSelect).toContextMenuAction()));
         ret.add(new JMenuItem(new SetDownloadPassword(contextObject, inteliSelect).toContextMenuAction()));
         ret.add(new JMenuItem(new SetCommentAction(contextObject, inteliSelect).toContextMenuAction()));
-
         ret.add(new PrioritySubMenu(selection));
         MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new LinkgrabberTablePropertiesContext(ret, contextObject, selection, column)));
-
         return ret;
     }
 }

@@ -15,6 +15,7 @@ import jd.controlling.linkcollector.VariousCrawledPackage;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.action.BasicAction;
@@ -27,7 +28,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderInLinkgrabberAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
@@ -81,10 +82,11 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
             public void actionPerformed(ActionEvent e) {
                 noset = true;
-
-                CrossSystem.openFile(LinkTreeUtils.getDownloadDirectory(editing));
-
-                DownloadFolderColumn.this.stopCellEditing();
+                try {
+                    CrossSystem.openFile(LinkTreeUtils.getDownloadDirectory(editing));
+                } finally {
+                    DownloadFolderColumn.this.stopCellEditing();
+                }
             }
         });
         // bt.setRolloverEffectEnabled(true);
@@ -102,13 +104,9 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
         this.editing = value;
         noset = false;
         boolean enabled = false;
-        if (CrossSystem.isOpenFileSupported() && value != null && value instanceof CrawledPackage) {
-            File file = new File(((CrawledPackage) value).getDownloadFolder());
-            if (file.exists() && file.isDirectory()) enabled = true;
-        } else if (CrossSystem.isOpenFileSupported() && value != null && value instanceof CrawledLink) {
-            value = ((CrawledLink) value).getParentNode();
-            File file = new File(((CrawledPackage) value).getDownloadFolder());
-            if (file.exists() && file.isDirectory()) enabled = true;
+        if (CrossSystem.isOpenFileSupported() && value != null) {
+            File ret = LinkTreeUtils.getDownloadDirectory(value);
+            if (ret != null && ret.exists() && ret.isDirectory()) enabled = true;
         }
         open.setEnabled(enabled);
     }
@@ -123,9 +121,14 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
         return true;
     }
 
-    @Override
-    protected void onDoubleClick(MouseEvent e, AbstractNode obj) {
+    protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
+        /* needed so we can edit even is row is disabled */
+        return isEditable(obj);
+    }
 
+    @Override
+    protected boolean onDoubleClick(MouseEvent e, AbstractNode obj) {
+        return false;
     }
 
     @Override
@@ -134,27 +137,41 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     }
 
     @Override
-    protected void setStringValue(String value, AbstractNode object) {
-        if (StringUtils.isEmpty(value)) return;
+    protected void setStringValue(final String value, final AbstractNode object) {
+        if (StringUtils.isEmpty(value) || object == null) return;
+        File oldPath = LinkTreeUtils.getDownloadDirectory(object);
+        File newPath = LinkTreeUtils.getDownloadDirectory(value);
+        if (oldPath.equals(newPath)) {
+            /* both pathes are same, so nothing to do */
+            return;
+        }
         if (object instanceof CrawledPackage) {
-            ((CrawledPackage) object).setDownloadFolder(value);
+            IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
+                @Override
+                protected Object run() {
+                    ((CrawledPackage) object).setDownloadFolder(value);
+                    return null;
+                }
+            });
+            return;
         } else if (object instanceof CrawledLink) {
-
-            CrawledPackage p = ((CrawledLink) object).getParentNode();
-            if (new File(value).equals(new File(p.getDownloadFolder()))) return;
+            final CrawledPackage p = ((CrawledLink) object).getParentNode();
             if (!(p instanceof VariousCrawledPackage)) {
                 try {
-                    if (p.getDownloadFolder().equals(value)) return;
-                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN,
-
-                    _JDT._.SetDownloadFolderAction_actionPerformed_(p.getName()), _JDT._.SetDownloadFolderAction_msg(p.getName(), 1), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
-                    p.setDownloadFolder(value);
-                    LinkCollector.getInstance().refreshData();
+                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.SetDownloadFolderAction_actionPerformed_(p.getName()), _JDT._.SetDownloadFolderAction_msg(p.getName(), 1), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
+                    IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
+                        @Override
+                        protected Object run() {
+                            p.setDownloadFolder(value);
+                            LinkCollector.getInstance().refreshData();
+                            return null;
+                        }
+                    });
                     return;
                 } catch (DialogClosedException e) {
                     return;
                 } catch (DialogCanceledException e) {
-
+                    /* user clicked no */
                 }
             }
             final CrawledPackage pkg = new CrawledPackage();
@@ -165,7 +182,9 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             } else {
                 pkg.setName(p.getName());
             }
+            pkg.setComment(p.getComment());
             pkg.setDownloadFolder(value);
+            pkg.getExtractionPasswords().addAll(p.getExtractionPasswords());
             final ArrayList<CrawledLink> links = new ArrayList<CrawledLink>();
             links.add((CrawledLink) object);
             IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
@@ -177,54 +196,20 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
                 }
 
             });
-
         }
     }
 
     @Override
     public boolean isEnabled(final AbstractNode obj) {
-        if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
+        if (obj instanceof AbstractPackageNode) { return ((AbstractPackageNode) obj).getView().isEnabled(); }
         return obj.isEnabled();
-    }
-
-    protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
-
-        return isEditable(obj);
     }
 
     @Override
     public String getStringValue(AbstractNode value) {
-        if (value instanceof CrawledPackage) {
-            String folder = ((CrawledPackage) value).getDownloadFolder();
-
-            if (isAbsolute(folder)) {
-                return folder;
-            } else {
-                return new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), folder).toString();
-            }
-        } else if (value instanceof CrawledLink) {
-            value = ((CrawledLink) value).getParentNode();
-            if (value != null) {
-                String folder = ((CrawledPackage) value).getDownloadFolder();
-                if (isAbsolute(folder)) {
-                    return folder;
-                } else {
-                    return new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), folder).toString();
-                }
-            }
-        }
-
+        File ret = LinkTreeUtils.getDownloadDirectory(value);
+        if (ret != null) return ret.toString();
         return null;
-
-    }
-
-    private boolean isAbsolute(String path) {
-        if (StringUtils.isEmpty(path)) return false;
-
-        if (CrossSystem.isWindows() && path.matches(".:/.*")) return true;
-        if (CrossSystem.isWindows() && path.matches(".:\\\\.*")) return true;
-        if (path.startsWith("/")) return true;
-        return false;
     }
 
 }

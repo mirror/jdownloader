@@ -78,7 +78,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     }
 
     @Override
-    protected void onDoubleClick(final MouseEvent e, final AbstractNode obj) {
+    protected boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
         JPopupMenu m = new JPopupMenu();
 
         if (obj instanceof AbstractPackageNode) {
@@ -101,6 +101,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
             m.add(mm);
         }
         m.show(this, e.getPoint().x, e.getPoint().y);
+        return false;
     }
 
     @Override

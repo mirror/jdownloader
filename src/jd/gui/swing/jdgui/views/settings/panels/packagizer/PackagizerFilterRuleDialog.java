@@ -43,6 +43,7 @@ import org.appwork.swing.components.pathchooser.PathChooser;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -472,6 +473,17 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         JScrollPane sp = new JScrollPane(ret);
         sp.setBorder(null);
         return sp;
+    }
+
+    @Override
+    protected MigPanel createHeader(String string) {
+        MigPanel ret = new MigPanel("ins 0", "[21,fill][][grow,fill]", "[]");
+        ret.add(new JSeparator());
+        JLabel label;
+        ret.add(SwingUtils.toBold(label = new JLabel(string)));
+        label.setIcon(NewTheme.I().getIcon("packagizer", 14));
+        ret.add(new JSeparator());
+        return ret;
     }
 
     protected JMenu createVariablesMenu(JTextComponent txtPackagename2) {

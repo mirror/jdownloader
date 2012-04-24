@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.linkgrabber;
+package org.jdownloader.gui.views.components.packagetable;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
@@ -36,8 +36,6 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.SearchCategory;
-import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
-import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 

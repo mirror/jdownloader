@@ -29,6 +29,7 @@ import javax.swing.JFrame;
 import jd.controlling.JDLogger;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTHelper;
 
 /**
@@ -50,7 +51,7 @@ public final class Utilities {
     }
 
     public static boolean isLoggerActive() {
-        return JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL;
+        return Application.isJared(Utilities.class);
     }
 
     public static boolean checkJumper(final int x, final int from, final int to) {

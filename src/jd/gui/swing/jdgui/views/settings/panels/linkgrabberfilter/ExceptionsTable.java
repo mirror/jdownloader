@@ -48,7 +48,7 @@ public class ExceptionsTable extends AbstractFilterTable {
     }
 
     @Override
-    protected void onDoubleClick(MouseEvent e, LinkgrabberFilterRule obj) {
+    protected boolean onDoubleClick(MouseEvent e, LinkgrabberFilterRule obj) {
         try {
             Dialog.getInstance().showDialog(new ExceptionsRuleDialog(obj));
         } catch (DialogClosedException e1) {
@@ -58,6 +58,7 @@ public class ExceptionsTable extends AbstractFilterTable {
         }
         getExtTableModel().fireTableDataChanged();
         LinkFilterController.getInstance().update();
+        return false;
     }
 
     /*

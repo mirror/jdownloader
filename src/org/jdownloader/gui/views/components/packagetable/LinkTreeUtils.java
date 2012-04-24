@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.linkgrabber;
+package org.jdownloader.gui.views.components.packagetable;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -14,6 +14,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.utils.os.CrossSystem;
 
 public class LinkTreeUtils {
 
@@ -98,14 +99,29 @@ public class LinkTreeUtils {
     }
 
     public static File getDownloadDirectory(AbstractNode node) {
+        String directory = null;
         if (node instanceof DownloadLink) {
-            return new File(((DownloadLink) node).getFilePackage().getDownloadDirectory());
+            FilePackage parent = ((DownloadLink) node).getFilePackage();
+            if (parent != null) directory = parent.getDownloadDirectory();
         } else if (node instanceof FilePackage) {
-            return new File(((FilePackage) node).getDownloadDirectory());
+            directory = ((FilePackage) node).getDownloadDirectory();
         } else if (node instanceof CrawledLink) {
-            return new File(((CrawledLink) node).getParentNode().getDownloadFolder());
-        } else if (node instanceof CrawledPackage) { return new File(((CrawledPackage) node).getDownloadFolder()); }
-        throw new WTFException("Unknown Type: " + node.getClass());
+            CrawledPackage parent = ((CrawledLink) node).getParentNode();
+            if (parent != null) directory = parent.getDownloadFolder();
+        } else if (node instanceof CrawledPackage) {
+            directory = ((CrawledPackage) node).getDownloadFolder();
+        } else
+            throw new WTFException("Unknown Type: " + node.getClass());
+        return getDownloadDirectory(directory);
+    }
+
+    public static File getDownloadDirectory(String path) {
+        if (path == null) return null;
+        if (CrossSystem.isAbsolutePath(path)) {
+            return new File(path);
+        } else {
+            return new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), path);
+        }
     }
 
     public static HashSet<String> getURLs(ArrayList<AbstractNode> links) {

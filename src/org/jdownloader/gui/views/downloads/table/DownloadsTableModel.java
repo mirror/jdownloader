@@ -5,9 +5,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
+import org.jdownloader.gui.views.components.packagetable.columns.CommentColumn;
 import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.gui.views.downloads.columns.ConnectionColumn;
+import org.jdownloader.gui.views.downloads.columns.DownloadFolderColumn;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.downloads.columns.FinishedDateColumn;
@@ -23,35 +25,33 @@ import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 
 public class DownloadsTableModel extends PackageControllerTableModel<FilePackage, DownloadLink> {
 
-    private static final long serialVersionUID = -198189279671615981L;
+    private static final long                serialVersionUID = -198189279671615981L;
 
-    public DownloadsTableModel() {
+    private static final DownloadsTableModel INSTANCE         = new DownloadsTableModel();
+
+    public static DownloadsTableModel getInstance() {
+        return INSTANCE;
+    }
+
+    private DownloadsTableModel() {
         super(DownloadController.getInstance(), "downloadstable3");
 
     }
 
     @Override
     protected void initColumns() {
-        // addColumn(new ExtTextColumn<PackageLinkNode>("TEst") {
-        //
-        // @Override
-        // public String getStringValue(PackageLinkNode value) {
-        // return value + "";
-        // }
-        // });
         this.addColumn(new FileColumn());
         this.addColumn(new SizeColumn());
         this.addColumn(new HosterColumn());
-        addColumn(new ConnectionColumn());
+        this.addColumn(new ConnectionColumn());
         this.addColumn(new TaskColumn());
         this.addColumn(new RemainingColumn());
-        // this.addColumn(new CommentColumn());
 
         this.addColumn(new AddedDateColumn());
         this.addColumn(new FinishedDateColumn());
 
-        addColumn(new SpeedColumn());
-        addColumn(new ETAColumn());
+        this.addColumn(new SpeedColumn());
+        this.addColumn(new ETAColumn());
 
         this.addColumn(new LoadedColumn());
         this.addColumn(new ProgressColumn());
@@ -59,6 +59,8 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
         this.addColumn(new PriorityColumn());
         this.addColumn(new StopSignColumn());
         this.addColumn(new AvailabilityColumn());
+        this.addColumn(new DownloadFolderColumn());
+        this.addColumn(new CommentColumn());
         // reset sort
 
     }

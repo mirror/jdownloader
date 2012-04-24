@@ -235,6 +235,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         return "check.info";
     }
 
+    private String getJDRootFileName() {
+        return "jdroot.path";
+    }
+
     /**
      * return a list of all DownloadLinks from a given FilePackage with status
      * 
@@ -636,6 +640,16 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     }
                     String check = System.currentTimeMillis() + ":" + packages.size() + ":" + HexFormatter.byteArrayToHex(md.digest());
                     zip.addByteArry(check.getBytes("UTF-8"), true, "", getCheckFileName());
+                    try {
+                        /*
+                         * add current JDRoot directory to savefile so we can
+                         * convert pathes if needed
+                         */
+                        String currentROOT = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
+                        zip.addByteArry(currentROOT.getBytes("UTF-8"), true, "", getJDRootFileName());
+                    } catch (final Throwable e) {
+                        Log.exception(e);
+                    }
                     /* close ZipIOWriter, so we can rename tmp file now */
                     try {
                         zip.close();

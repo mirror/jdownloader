@@ -272,7 +272,7 @@ public class Launcher {
         PARAMETERS.parse(null);
         RestartController.getInstance().setStartArguments(PARAMETERS.getRawArguments());
 
-        if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
+        if (!Application.isJared(Launcher.class)) {
             JDInitFlags.SWITCH_DEBUG = true;
         }
 
@@ -586,7 +586,7 @@ public class Launcher {
         Launcher.GUI_COMPLETE.setReached();
         Launcher.LOG.info("Initialisation finished");
         Launcher.LOG.info("Revision: " + JDUtilities.getRevision());
-        Launcher.LOG.info("Runtype: " + JDUtilities.getRunType());
+        Launcher.LOG.info("Jared: " + Application.isJared(Launcher.class));
         Launcher.INIT_COMPLETE.setReached();
 
         // init statsmanager

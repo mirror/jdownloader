@@ -308,4 +308,12 @@ public interface GeneralSettings extends ConfigInterface {
 
     String[] getBrowserCommandLine();
 
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    @RequiresRestart
+    @Description("Correct pathes relative to JDownloader root")
+    void setConvertRelativePathesJDRoot(boolean b);
+
+    boolean isConvertRelativePathesJDRoot();
+
 }

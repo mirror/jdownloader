@@ -31,6 +31,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
@@ -40,6 +41,7 @@ import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -60,9 +62,11 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.uiserio.NewUIO;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
 
@@ -689,7 +693,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         FilePackage ret = FilePackage.getInstance();
         /* set values */
         ret.setName(pkg.getName());
-        ret.setDownloadDirectory(pkg.getDownloadFolder());
+        /* FilePackage contains full absolute path! */
+        ret.setDownloadDirectory(LinkTreeUtils.getDownloadDirectory(pkg).toString());
         ret.setCreated(pkg.getCreated());
         ret.setExpanded(pkg.isExpanded());
         ret.setComment(pkg.getComment());
@@ -1104,6 +1109,52 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 for (Integer position : positions) {
                     ret2.add(map.get(position));
                 }
+                if (JsonConfig.create(GeneralSettings.class).isConvertRelativePathesJDRoot()) {
+                    try {
+                        ZipEntry jdRoot = zip.getZipFile(getJDRootFileName());
+                        String oldJDRoot = null;
+                        if (jdRoot != null) {
+                            /* parse jdRoot.path if it exists */
+                            InputStream checkIS = null;
+                            try {
+                                checkIS = zip.getInputStream(jdRoot);
+                                byte[] checkbyte = IO.readStream(1024, checkIS);
+                                oldJDRoot = new String(checkbyte, "UTF-8");
+                                checkbyte = null;
+                            } finally {
+                                try {
+                                    checkIS.close();
+                                } catch (final Throwable e) {
+                                }
+                            }
+                            jdRoot = null;
+                        }
+                        if (!StringUtils.isEmpty(oldJDRoot)) {
+                            String newRoot = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
+                            /*
+                             * convert pathes relative to JDownloader root,only
+                             * in jared version
+                             */
+                            for (CrawledPackage pkg : ret2) {
+                                if (!CrossSystem.isAbsolutePath(pkg.getDownloadFolder())) {
+                                    /* no need to convert relative pathes */
+                                    continue;
+                                }
+                                String pkgPath = LinkTreeUtils.getDownloadDirectory(pkg).toString();
+                                if (pkgPath.startsWith(oldJDRoot)) {
+                                    /*
+                                     * folder is inside JDRoot, lets update it
+                                     */
+                                    String restPath = pkgPath.substring(oldJDRoot.length());
+                                    String newPath = new File(newRoot, restPath).toString();
+                                    pkg.setDownloadFolder(newPath);
+                                }
+                            }
+                        }
+                    } catch (final Throwable e) {
+                        Log.exception(e);
+                    }
+                }
                 map = null;
                 positions = null;
                 ret = new LinkedList<CrawledPackage>(ret2);
@@ -1174,6 +1225,16 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         }
                         String check = System.currentTimeMillis() + ":" + packages.size() + ":" + HexFormatter.byteArrayToHex(md.digest());
                         zip.addByteArry(check.getBytes("UTF-8"), true, "", getCheckFileName());
+                        try {
+                            /*
+                             * add current JDRoot directory to savefile so we
+                             * can convert pathes if needed
+                             */
+                            String currentROOT = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
+                            zip.addByteArry(currentROOT.getBytes("UTF-8"), true, "", getJDRootFileName());
+                        } catch (final Throwable e) {
+                            Log.exception(e);
+                        }
                         /* close ZipIOWriter, so we can rename tmp file now */
                         try {
                             zip.close();
@@ -1205,6 +1266,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 return null;
             }
         });
+    }
+
+    private String getJDRootFileName() {
+        return "jdroot.path";
     }
 
     /**

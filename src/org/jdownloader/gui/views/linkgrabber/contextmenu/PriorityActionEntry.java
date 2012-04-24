@@ -9,7 +9,7 @@ import jd.plugins.DownloadLink;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.Priority;
-import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 
 public class PriorityActionEntry extends AppAction {
 

@@ -12,9 +12,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.ClipboardUtils;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferableContent;
-import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
 
 public class DownloadsTransferable extends PackageControllerTableTransferable<FilePackage, DownloadLink> {
 

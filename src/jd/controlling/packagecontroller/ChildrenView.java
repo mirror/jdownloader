@@ -19,4 +19,6 @@ public abstract class ChildrenView<T> {
 
     abstract public List<T> getItems();
 
+    abstract public boolean isEnabled();
+
 }

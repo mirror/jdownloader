@@ -54,7 +54,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
     }
 
-    protected void onDoubleClick(final MouseEvent e, final AbstractNode obj) {
+    protected boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
         JPopupMenu m = new JPopupMenu();
 
         if (obj instanceof AbstractPackageNode) {
@@ -77,6 +77,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             m.add(mm);
         }
         m.show(this, e.getPoint().x, e.getPoint().y);
+        return false;
     }
 
     @Override

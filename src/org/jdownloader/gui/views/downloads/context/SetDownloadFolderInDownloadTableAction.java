@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.downloads.context;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -31,8 +32,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
-import org.jdownloader.gui.views.linkgrabber.LinkTreeUtils;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.translate._JDT;
 
 public class SetDownloadFolderInDownloadTableAction extends AppAction {
@@ -168,14 +168,15 @@ public class SetDownloadFolderInDownloadTableAction extends AppAction {
                 public void run() {
 
                     for (FilePackage pkg : packages) {
-
                         pkg.setDownloadDirectory(dest[0].getAbsolutePath());
                     }
 
                     for (final Entry<FilePackage, ArrayList<DownloadLink>> entry : newPackages.entrySet()) {
 
                         try {
-                            if (entry.getKey().getDownloadDirectory().equals(dest[0].getAbsolutePath())) continue;
+                            File oldPath = LinkTreeUtils.getDownloadDirectory(entry.getKey().getDownloadDirectory());
+                            File newPath = dest[0];
+                            if (oldPath.equals(newPath)) continue;
                             Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN,
 
                             _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getKey().getName()), _JDT._.SetDownloadFolderAction_msg(entry.getKey().getName(), entry.getValue().size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
@@ -184,41 +185,23 @@ public class SetDownloadFolderInDownloadTableAction extends AppAction {
                         } catch (DialogClosedException e) {
                             return;
                         } catch (DialogCanceledException e) {
-
+                            /* user clicked no */
                         }
 
                         final FilePackage pkg = FilePackage.getInstance();
                         pkg.setExpanded(true);
                         pkg.setCreated(System.currentTimeMillis());
-
                         pkg.setName(entry.getKey().getName());
                         pkg.setComment(entry.getKey().getComment());
-                        ArrayList<String> pws = new ArrayList<String>();
-                        for (String s : entry.getKey().getPasswordList()) {
-                            pws.add(s);
-
-                        }
-                        pkg.setPasswordList(pws);
+                        pkg.setPasswordList(new ArrayList<String>(Arrays.asList(entry.getKey().getPasswordList())));
                         pkg.getProperties().putAll(entry.getKey().getProperties());
                         pkg.setDownloadDirectory(dest[0].getAbsolutePath());
                         IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>() {
-
                             @Override
                             protected Object run() {
-
                                 DownloadController.getInstance().addmoveChildren(pkg, entry.getValue(), -1);
-                                // LinkCollector.getInstance().addmoveChildren(pkg,
-                                // entry.getValue(), -1);
                                 return null;
                             }
-
-                            @Override
-                            protected void postRun() {
-                                // add to set selection later
-                                packages.add(pkg);
-                                LinkGrabberTableModel.getInstance().setSelectedObjects(new ArrayList<AbstractNode>(packages));
-                            }
-
                         });
                     }
                 }
@@ -231,11 +214,7 @@ public class SetDownloadFolderInDownloadTableAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-
-        if (newPackages.size() > 0 || packages.size() > 0) { return true;
-
-        }
-        return false;
+        return newPackages.size() > 0 || packages.size() > 0;
     }
 
     /**

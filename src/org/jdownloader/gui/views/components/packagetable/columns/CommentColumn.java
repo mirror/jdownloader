@@ -1,8 +1,9 @@
-package org.jdownloader.gui.views.downloads.columns;
+package org.jdownloader.gui.views.components.packagetable.columns;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -27,12 +28,12 @@ public class CommentColumn extends ExtTextAreaColumn<AbstractNode> {
 
     @Override
     public boolean isEnabled(final AbstractNode obj) {
-        if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
+        if (obj instanceof AbstractPackageNode) { return ((AbstractPackageNode) obj).getView().isEnabled(); }
         return obj.isEnabled();
     }
 
     protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
-
+        /* needed so we can edit even is row is disabled */
         return isEditable(obj);
     }
 
@@ -58,7 +59,6 @@ public class CommentColumn extends ExtTextAreaColumn<AbstractNode> {
             dl.setComment(value);
             return;
         }
-
     }
 
     @Override
