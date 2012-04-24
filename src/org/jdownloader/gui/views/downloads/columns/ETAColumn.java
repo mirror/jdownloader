@@ -87,7 +87,7 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
                     } else {
                         return _JDT._.gui_download_create_connection();
                     }
-                } else if (dlLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && (time = dlLink.getLinkStatus().getRemainingWaittime()) > 0) { return Formatter.formatSeconds(time); }
+                } else if (dlLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && (time = dlLink.getLinkStatus().getRemainingWaittime()) > 0) { return Formatter.formatSeconds(time / 1000); }
             }
         } else if (value instanceof FilePackage) {
             long eta = ((FilePackage) value).getView().getETA();
