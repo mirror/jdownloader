@@ -92,6 +92,7 @@ public class NeembuuGui extends AddonPanel<NeembuuExtension> {
         JLabel vlc_option = new JLabel(_NT._.vlcPathOption());
         settingsPanel.add(vlc_option, "span");
         final JTextField vlcPath = new JTextField();
+
         vlcPath.setEditable(false);
         JButton browseVlc = new JButton(_NT._.browse());
         settingsPanel.add(vlcPath, "width 200::");

@@ -19,4 +19,6 @@ public interface NeembuuConfig extends ExtensionConfigInterface {
     int getBlaNum();
 
     void setBlaNum(int num);
+
+    String getVlcPath();
 }

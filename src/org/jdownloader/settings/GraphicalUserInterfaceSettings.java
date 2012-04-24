@@ -75,11 +75,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @DefaultBooleanValue(true)
     boolean isBalloonNotificationEnabled();
 
-    @AboutConfig
-    @Description("If enabled, the background of captchas will be removed to fit to the rest of the design (transparency)")
-    @DefaultBooleanValue(true)
-    boolean isCaptchaBackgroundCleanupEnabled();
-
     @DefaultBooleanValue(false)
     boolean isConfigViewVisible();
 
@@ -186,8 +181,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setAnimationEnabled(boolean b);
 
     void setBalloonNotificationEnabled(boolean b);
-
-    void setCaptchaBackgroundCleanupEnabled(boolean b);
 
     void setCaptchaScaleFactor(int b);
 

@@ -102,7 +102,13 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
                 f = f | Dialog.LOGIC_COUNTDOWN;
             }
 
-            this.dialog = new CaptchaDialog(f, captchaController.getPlugin() instanceof PluginForHost ? DialogType.HOSTER : DialogType.CRAWLER, getHost(), IconIO.getImageIcon(captchaController.getCaptchafile().toURI().toURL()), def, captchaController.getExplain());
+            if (captchaController.getCaptchafile().getName().toLowerCase().endsWith("gif")) {
+                this.dialog = new CaptchaDialog(f, captchaController.getPlugin() instanceof PluginForHost ? DialogType.HOSTER : DialogType.CRAWLER, getHost(), CaptchaDialog.getGifImages(captchaController.getCaptchafile().toURI().toURL()), def, captchaController.getExplain());
+
+            } else {
+                this.dialog = new CaptchaDialog(f, captchaController.getPlugin() instanceof PluginForHost ? DialogType.HOSTER : DialogType.CRAWLER, getHost(), IconIO.getImage(captchaController.getCaptchafile().toURI().toURL()), def, captchaController.getExplain());
+
+            }
             dialog.setPlugin(captchaController.getPlugin());
 
             dialog.setMethodName(captchaController.getMethodname());

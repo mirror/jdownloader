@@ -28,11 +28,7 @@ public class CFG_GUI {
      **/
     public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                       = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
     // true
-    /**
-     * If enabled, the background of captchas will be removed to fit to the rest
-     * of the design (transparency)
-     **/
-    public static final BooleanKeyHandler                              CAPTCHA_BACKGROUND_CLEANUP_ENABLED        = SH.getKeyHandler("CaptchaBackgroundCleanupEnabled", BooleanKeyHandler.class);
+
     // jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings
     public static final StringKeyHandler                               ACTIVE_CONFIG_PANEL                       = SH.getKeyHandler("ActiveConfigPanel", StringKeyHandler.class);
     // true
