@@ -182,7 +182,10 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                         fpTODO += linkTodo;
                         if (fpSPEED > 0) {
                             /* we have ongoing downloads, lets calculate ETA */
-                            fpETA = fpTODO / fpSPEED;
+                            long newfpETA = fpTODO / fpSPEED;
+                            if (newfpETA > fpETA) {
+                                fpETA = newfpETA;
+                            }
                         }
                         if (linkSpeed > 0) {
                             /* link is running,lets calc ETA for single link */
