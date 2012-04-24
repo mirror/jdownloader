@@ -45,7 +45,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         return isEnabled;
     }
 
-    protected FilePackageView(FilePackage fp) {
+    public FilePackageView(FilePackage fp) {
         this.fp = fp;
     }
 

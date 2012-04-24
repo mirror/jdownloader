@@ -10,6 +10,7 @@ import jd.gui.swing.jdgui.views.settings.components.Spinner;
 import jd.gui.swing.jdgui.views.settings.components.TextArea;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -124,7 +125,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         }
         s.setSubpathEnabledIfAllFilesAreInAFolder(toggleUseSubpathOnlyIfNotFoldered.getComponent().isSelected());
         s.setBlacklistPatterns(blacklist.getComponent().getText().split(System.getProperty("line.separator")));
-        String[] list = passwordlist.getComponent().getText().split(System.getProperty("line.separator"));
+        String[] list = Regex.getLines(passwordlist.getComponent().getText());
         ArrayList<String> passwords = new ArrayList<String>(list.length);
         for (String ss : list) {
             if (passwords.contains(ss)) continue;

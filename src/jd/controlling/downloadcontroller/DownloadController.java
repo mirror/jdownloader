@@ -55,6 +55,7 @@ import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.settings.CleanAfterDownloadAction;
 
 public class DownloadController extends PackageController<FilePackage, DownloadLink> {
 
@@ -552,14 +553,15 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         FilePackage fp;
         while (iterator.hasNext()) {
             fp = iterator.next();
-            if (fp.getChildren().size() == 0) {
-                /* remove empty packages */
-                iterator.remove();
-                continue;
-            }
+            ArrayList<DownloadLink> removeList = new ArrayList<DownloadLink>();
             it = fp.getChildren().iterator();
             while (it.hasNext()) {
                 localLink = it.next();
+                if (CleanAfterDownloadAction.CLEANUP_ONCE_AT_STARTUP.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) && localLink.getLinkStatus().isFinished()) {
+                    Log.L.info("Remove " + localLink.getName() + " because Finished and CleanupOnStartup!");
+                    removeList.add(localLink);
+                    continue;
+                }
                 /*
                  * reset not if already exist, offline or finished. plugin
                  * errors will be reset here because plugin can be fixed again
@@ -596,6 +598,14 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 } else {
                     Log.L.severe("Could not find plugin " + localLink.getHost() + " for " + localLink.getName());
                 }
+            }
+            if (removeList.size() > 0) {
+                fp.getChildren().retainAll(removeList);
+            }
+            if (fp.getChildren().size() == 0) {
+                /* remove empty packages */
+                iterator.remove();
+                continue;
             }
         }
     }

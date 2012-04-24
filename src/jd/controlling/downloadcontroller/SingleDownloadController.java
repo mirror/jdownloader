@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.controlling.AccountController;
@@ -36,6 +37,8 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
@@ -52,6 +55,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.uiserio.NewUIO;
+import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
@@ -684,6 +688,18 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     llogger.finest("\r\nFinished- " + downloadLink.getLinkStatus());
                     llogger.info("\r\nFinished- " + downloadLink.getName() + "->" + downloadLink.getFileOutput());
                     FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.NEW_FILES, new File[] { new File(downloadLink.getFileOutput()) }));
+                    if (CleanAfterDownloadAction.CLEANUP_IMMEDIATELY.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction())) {
+                        Log.L.info("Remove Link " + downloadLink.getName() + " because Finished and CleanupImmediately!");
+                        ArrayList<DownloadLink> remove = new ArrayList<DownloadLink>();
+                        remove.add(downloadLink);
+                        DownloadController.getInstance().removeChildren(remove);
+                    } else if (CleanAfterDownloadAction.CLEANUP_AFTER_PACKAGE_HAS_FINISHED.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction())) {
+                        FilePackage fp = downloadLink.getFilePackage();
+                        if (new FilePackageView(fp).isFinished()) {
+                            Log.L.info("Remove Package " + fp.getName() + " because Finished and CleanupPackageFinished!");
+                            DownloadController.getInstance().removePackage(fp);
+                        }
+                    }
                 }
                 /* move download log into global log */
                 llogger.logInto(JDLogger.getLogger());
