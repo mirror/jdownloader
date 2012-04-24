@@ -33,6 +33,8 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
         return INSTANCE;
     }
 
+    private StopSignColumn stopSignColumn;
+
     private DownloadsTableModel() {
         super(DownloadController.getInstance(), "downloadstable3");
 
@@ -57,12 +59,16 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
         this.addColumn(new ProgressColumn());
 
         this.addColumn(new PriorityColumn());
-        this.addColumn(new StopSignColumn());
         this.addColumn(new AvailabilityColumn());
         this.addColumn(new DownloadFolderColumn());
         this.addColumn(new CommentColumn());
+        this.addColumn(stopSignColumn = new StopSignColumn());
         // reset sort
 
+    }
+
+    public void setStopSignColumnVisible(boolean b) {
+        this.setColumnVisible(stopSignColumn, b);
     }
 
 }

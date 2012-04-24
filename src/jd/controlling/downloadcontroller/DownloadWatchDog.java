@@ -62,6 +62,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.uiserio.NewUIO;
+import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
@@ -1372,6 +1373,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 } else {
                     /* set new stopmark */
                     DownloadWatchDog.this.setStopMark(entry);
+                    DownloadsTableModel.getInstance().setStopSignColumnVisible(true);
                 }
             }
         }, true);
