@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.linkgrabber;
+package org.jdownloader.gui.views.components.packagetable.columns;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;

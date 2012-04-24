@@ -1308,8 +1308,8 @@ abstract public class DownloadInterface {
             } catch (final Throwable e) {
             }
             try {
-                boolean watchAsYouDownloadTypeLink = (Boolean)downloadLink.getFilePackage().getProperty(org.jdownloader.extensions.neembuu.NeembuuExtension.WATCH_AS_YOU_DOWNLOAD_KEY, false);
-                boolean initiatedByWatchAsYouDownloadAction = (Boolean)downloadLink.getFilePackage().getProperty(org.jdownloader.extensions.neembuu.NeembuuExtension.INITIATED_BY_WATCH_ACTION, false);
+                boolean watchAsYouDownloadTypeLink = (Boolean) downloadLink.getFilePackage().getProperty(org.jdownloader.extensions.neembuu.NeembuuExtension.WATCH_AS_YOU_DOWNLOAD_KEY, false);
+                boolean initiatedByWatchAsYouDownloadAction = (Boolean) downloadLink.getFilePackage().getProperty(org.jdownloader.extensions.neembuu.NeembuuExtension.INITIATED_BY_WATCH_ACTION, false);
                 if (watchAsYouDownloadTypeLink && initiatedByWatchAsYouDownloadAction) {
                     org.jdownloader.extensions.neembuu.DownloadSession downloadSession = new org.jdownloader.extensions.neembuu.DownloadSession(downloadLink, this, this.plugin, this.getConnection(), this.browser.cloneBrowser());
                     if (org.jdownloader.extensions.neembuu.NeembuuExtension.tryHandle(downloadSession)) {
@@ -1331,15 +1331,19 @@ abstract public class DownloadInterface {
                     }
                     if (o == Dialog.RETURN_CANCEL) return false;
                     logger.severe("Neembuu could not handle this link/filehost. Using default download system.");
-                } else if(watchAsYouDownloadTypeLink && !initiatedByWatchAsYouDownloadAction) {
-                    // Neembuu downloads should start if and only if user clicks watch as you download
-                    // action in the context menu. We don't want neembuu to start when user pressed 
+                } else if (watchAsYouDownloadTypeLink && !initiatedByWatchAsYouDownloadAction) {
+                    // Neembuu downloads should start if and only if user clicks
+                    // watch as you download
+                    // action in the context menu. We don't want neembuu to
+                    // start when user pressed
                     // forced download, or simple download button.
-                    // We shall skip this link and disable all in this filepackage
-                    for(DownloadLink dl : downloadLink.getFilePackage().getChildren()){
+                    // We shall skip this link and disable all in this
+                    // filepackage
+                    for (DownloadLink dl : downloadLink.getFilePackage().getChildren()) {
                         dl.setEnabled(false);
                     }
-                    throw new PluginException(LinkStatus.ERROR_CANNOT_BE_SIMPLY_DOWNLOADED);
+                    /* TODO: change me */
+                    throw new PluginException(LinkStatus.ERROR_FATAL);
                 }
             } catch (final Throwable e) {
                 logger.log(Level.SEVERE, "Exception in neembuu watch as you download", e);

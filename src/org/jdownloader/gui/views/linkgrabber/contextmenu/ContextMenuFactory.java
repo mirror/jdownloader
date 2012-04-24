@@ -56,12 +56,10 @@ public class ContextMenuFactory {
             p.add(new JSeparator());
         }
 
-        if (selection == null || selection.size() == 0) {
-            p.add(new AddLinksAction().toContextMenuAction());
-            return p;
-        } else if (JsonConfig.create(LinkgrabberSettings.class).isContextMenuAddLinksActionAlwaysVisible()) {
+        if (selection == null || selection.size() == 0 || JsonConfig.create(LinkgrabberSettings.class).isContextMenuAddLinksActionAlwaysVisible()) {
             p.add(new AddLinksAction().toContextMenuAction());
             p.add(new AddContainerAction().toContextMenuAction());
+            if (selection == null || selection.size() == 0) { return p; }
             p.add(new JSeparator());
         }
 

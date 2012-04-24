@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.SwingConstants;
 
 import jd.controlling.packagecontroller.AbstractNode;
@@ -11,6 +12,7 @@ import jd.plugins.LinkStatus;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class ETAColumn extends ExtTextColumn<AbstractNode> {
@@ -19,6 +21,9 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
      * 
      */
     private static final long serialVersionUID = 1L;
+    private long              time;
+    private ImageIcon         download;
+    private ImageIcon         wait;
 
     @Override
     public int getDefaultWidth() {
@@ -47,30 +52,42 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
     public ETAColumn() {
         super(_GUI._.ETAColumn_ETAColumn());
         rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
+        this.download = NewTheme.I().getIcon("download", 16);
+        this.wait = NewTheme.I().getIcon("wait", 16);
     }
 
     @Override
     protected Icon getIcon(AbstractNode value) {
-
+        if (value instanceof DownloadLink) {
+            DownloadLink dlLink = ((DownloadLink) value);
+            if (dlLink.isEnabled()) {
+                if (dlLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                    return download;
+                } else if (dlLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && (time = dlLink.getLinkStatus().getRemainingWaittime()) > 0) { return wait; }
+            }
+        }
         return null;
     }
 
     @Override
     public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
-            if (((DownloadLink) value).getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                long speed = ((DownloadLink) value).getDownloadSpeed();
-                if (speed > 0) {
-                    if (((DownloadLink) value).getDownloadSize() < 0) {
-                        return _JDT._.gui_download_filesize_unknown() + " \u221E";
+            DownloadLink dlLink = ((DownloadLink) value);
+            if (dlLink.isEnabled()) {
+                if (dlLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                    long speed = dlLink.getDownloadSpeed();
+                    if (speed > 0) {
+                        if (dlLink.getDownloadSize() < 0) {
+                            return _JDT._.gui_download_filesize_unknown() + " \u221E";
+                        } else {
+                            long remainingBytes = (dlLink.getDownloadSize() - dlLink.getDownloadCurrent());
+                            long eta = remainingBytes / speed;
+                            return Formatter.formatSeconds(eta);
+                        }
                     } else {
-                        long remainingBytes = ((DownloadLink) value).getDownloadSize() - ((DownloadLink) value).getDownloadCurrent();
-                        long eta = remainingBytes / speed;
-                        return Formatter.formatSeconds(eta);
+                        return _JDT._.gui_download_create_connection();
                     }
-                } else {
-                    return _JDT._.gui_download_create_connection();
-                }
+                } else if (dlLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && (time = dlLink.getLinkStatus().getRemainingWaittime()) > 0) { return Formatter.formatSeconds(time); }
             }
         } else if (value instanceof FilePackage) {
             long eta = ((FilePackage) value).getView().getETA();
@@ -85,5 +102,4 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
         }
         return null;
     }
-
 }

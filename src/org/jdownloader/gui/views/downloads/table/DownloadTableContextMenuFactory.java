@@ -151,7 +151,8 @@ public class DownloadTableContextMenuFactory {
         ret.add(new JMenuItem(new SetDownloadFolderInDownloadTableAction(contextObject, inteliSelect).toContextMenuAction()));
         ret.add(new JMenuItem(new SetDownloadPassword(contextObject, inteliSelect).toContextMenuAction()));
         ret.add(new JMenuItem(new SetCommentAction(contextObject, selection).toContextMenuAction()));
-        ret.add(new JMenuItem(new SpeedLimitAction(contextObject, inteliSelect)));
+        // ret.add(new JMenuItem(new SpeedLimitAction(contextObject,
+        // inteliSelect)));
         ret.add(new PrioritySubMenu(inteliSelect));
         MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new DownloadTablePropertiesContext(ret, contextObject, selection, column)));
         return ret;

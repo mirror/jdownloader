@@ -14,7 +14,6 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
@@ -29,8 +28,6 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
     private DownloadsTableModel tableModel;
     private ScheduledFuture<?>  timer            = null;
     private BottomBar           bottomBar;
-    private HeaderScrollPane    sidebarScrollPane;
-    private DownloadViewSidebar sidebar;
 
     public DownloadsPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));

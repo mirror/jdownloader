@@ -257,9 +257,7 @@ public class IPController extends ArrayList<IPConnectionState> {
      * @throws InterruptedException
      */
     public boolean validateAndWait(final int waitForIPTime, int waitForOfflineTime, final int ipCheckInterval) throws InterruptedException {
-        if (!this.invalidated) {
-
-        return true; }
+        if (!this.invalidated) { return true; }
         if (JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled()) {
             Thread.sleep(waitForIPTime);
             // IP check disabled. each validate request is successful

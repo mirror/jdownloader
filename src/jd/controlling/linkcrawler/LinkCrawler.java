@@ -728,7 +728,6 @@ public class LinkCrawler implements IOPermission {
             if (props != null && !props.isEmpty()) {
                 dl.setProperties(new HashMap<String, Object>(props));
             }
-            dl.getLinkStatus().setStatusText(source.getLinkStatus().getStatusString());
             dl.setDownloadSize(source.getDownloadSize());
         }
     }

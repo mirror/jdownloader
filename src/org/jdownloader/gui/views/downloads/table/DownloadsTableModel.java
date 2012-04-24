@@ -6,6 +6,7 @@ import jd.plugins.FilePackage;
 
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.columns.CommentColumn;
+import org.jdownloader.gui.views.components.packagetable.columns.DownloadPasswordColumn;
 import org.jdownloader.gui.views.downloads.columns.AddedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.gui.views.downloads.columns.ConnectionColumn;
@@ -62,6 +63,7 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
         this.addColumn(new AvailabilityColumn());
         this.addColumn(new DownloadFolderColumn());
         this.addColumn(new CommentColumn());
+        this.addColumn(new DownloadPasswordColumn());
         this.addColumn(stopSignColumn = new StopSignColumn());
         // reset sort
 

@@ -33,7 +33,11 @@ import jpfm.mount.Mount;
 import jpfm.mount.MountParams.ParamType;
 import jpfm.mount.MountParamsBuilder;
 import jpfm.mount.Mounts;
-import neembuu.diskmanager.*;
+import neembuu.diskmanager.DiskManager;
+import neembuu.diskmanager.DiskManagerParams;
+import neembuu.diskmanager.DiskManagers;
+import neembuu.diskmanager.RegionStorageManager;
+import neembuu.diskmanager.ResumeStateCallback;
 import neembuu.rangearray.UnsyncRangeArrayCopy;
 import neembuu.vfs.file.MonitoredHttpFile;
 import neembuu.vfs.file.SeekableConnectionFile;
@@ -79,7 +83,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
             jdds.getDownloadInterface().logger.info("Using new filesystem " + fileSystem);
         } else {
             jdds.getDownloadInterface().logger.info("Using previous created filesystem " + fileSystem);
-        }        
+        }
         // read the javadoc to know what this does
         // Briefly : sometimes the filesystem is hung because of big sized
         // requests or because a new connection cannot
@@ -94,19 +98,18 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
         // The same logic may be used to make a NewConnecitonProvider
         // for FTP and other protocols as the case maybe.
         final JD_HTTP_Download_Manager newConnectionProvider = new JD_HTTP_Download_Manager(jdds);
-        
+
         ResumeStateCallback resumeStateCallback = new ResumeStateCallback() {
             public boolean resumeState(List<RegionStorageManager> previouslyDownloadedData) {
-                if(newConnectionProvider.estimateCreationTime(1)>=Integer.MAX_VALUE)
-                    return false; 
-                // for rapidshare type of links clean the 
-                //download directory and start fresh
-                
-                //retain stuff for others
+                if (newConnectionProvider.estimateCreationTime(1) >= Integer.MAX_VALUE) return false;
+                // for rapidshare type of links clean the
+                // download directory and start fresh
+
+                // retain stuff for others
                 return true;
             }
         };
-        
+
         // JD team might like to change this to something they like.
         // This default diskmanager saves each chunk in a different file
         // for this reason, chunks are placed in a directory.
@@ -123,7 +126,6 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
         // a lot of files. These logs are highly essential.
         DiskManagerParams dmp = new DiskManagerParams.Builder().setMaxReadQueueManagerThreadLogSize(2 * 1024 * 1024).setMaxReadHandlerThreadLogSize(100 * 1024).setMaxDownloadThreadLogSize(100 * 1024).setBaseStoragePath(new File(jdds.getDownloadLink().getFileOutput()).getParentFile().getAbsolutePath()).setResumeStateCallback(resumeStateCallback).build();
         DiskManager diskManager = DiskManagers.getDefaultManager(dmp);
-
 
         // throttle is a very unique speed measuring, and controlling unit.
         // Limiting download speed is crucial to prevent starvation of regions
@@ -263,7 +265,6 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
         }
 
         jdds.getDownloadLink().getLinkStatus().removeStatus(LinkStatus.FINISHED);
-        jdds.getDownloadLink().getLinkStatus().addStatus(LinkStatus.WAITING_FOR_OTHER_SPLITS_TO_FINISH);
         jdds.getDownloadLink().setDownloadInstance(null);
         // jdds.getDownloadLink().getLinkStatus().setStatusText(null);
         ch.setInProgress(false);
@@ -287,7 +288,6 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
             ie.printStackTrace(System.err);
         }
 
-        jdds.getDownloadLink().getLinkStatus().removeStatus(LinkStatus.WAITING_FOR_OTHER_SPLITS_TO_FINISH);
         jdds.getDownloadLink().getFilePackage().setProperty(NeembuuExtension.INITIATED_BY_WATCH_ACTION, false);
         if (virtualFileSystem.allFilesCompletelyDownloaded()) {
             // mark any one link as finished only when all finish
@@ -295,7 +295,6 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
             // pressed.
             // the split which is completed will also be mounted.
             // all splits must be mounted for user to be able watch the video.
-            jdds.getDownloadLink().getLinkStatus().removeStatus(LinkStatus.WAITING_FOR_OTHER_SPLITS_TO_FINISH);
             jdds.getDownloadLink().getLinkStatus().addStatus(LinkStatus.FINISHED);
 
             final AtomicBoolean done = new AtomicBoolean(false);
@@ -345,7 +344,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
         } catch (final Throwable e) {
             Logger.getGlobal().log(Level.SEVERE, "could not close virtual file", e);
         }
-        try{
+        try {
             vf.closeCompletely();
         } catch (final Throwable e) {
             Logger.getGlobal().log(Level.SEVERE, "could not completely close virtual file", e);

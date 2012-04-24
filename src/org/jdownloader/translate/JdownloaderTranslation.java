@@ -543,12 +543,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Not enough harddiskspace" })
     String downloadlink_status_error();
 
-    @Default(lngs = { "en" }, values = { "Waiting for other splits to finish downloading" })
-    String downloadlink_status_waiting_neembuu();
-
-    @Default(lngs = { "en" }, values = { "This link cannot only be simply downloaded. You must watch and download it." })
-    String downloadlink_status_error_onlywatchallowed();
-
     @Default(lngs = { "en" }, values = { "Invalid download directory" })
     String downloadlink_status_error_invalid_dest();
 

@@ -20,11 +20,9 @@ import java.io.Serializable;
 
 import javax.swing.ImageIcon;
 
-import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
-import jd.plugins.download.DownloadInterface;
+import jd.plugins.DownloadLink.AvailableStatus;
 
-import org.appwork.utils.Exceptions;
 import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.translate._JDT;
 
@@ -142,19 +140,6 @@ public class LinkStatus implements Serializable {
 
     public static final int   VALUE_FAILED_HASH                    = 1 << 27;
 
-    /**
-     * When user is watching and downloading a series of file like
-     * somemovie.avi.001 , somemovie.avi.002 ... all these downloads are
-     * required to finish together
-     */
-    public static final int   WAITING_FOR_OTHER_SPLITS_TO_FINISH   = 1 << 28;
-
-    /**
-     * This link can only be Watch as you downloaded, it cannot be simply
-     * downloaded. Later in future, this might be made possible.
-     */
-    public static final int   ERROR_CANNOT_BE_SIMPLY_DOWNLOADED    = 1 << 29;
-
     private transient boolean isActive                             = false;
     private transient boolean inProgress                           = false;
 
@@ -205,15 +190,15 @@ public class LinkStatus implements Serializable {
         notifyChanges();
     }
 
-    public void exceptionToErrorMessage(Exception e) {
-        setErrorMessage(Exceptions.getStackTrace(e));
-    }
-
-    private String getDefaultErrorMessage() {
+    public String getMessage() {
         switch (lastestStatus) {
+        /* first we check for LinkStatus */
+        case LinkStatus.FINISHED:
         case LinkStatus.TODO:
             if (statusText != null) return statusText;
             return null;
+        case LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS:
+            return _JDT._.download_connection_normal();
         case LinkStatus.ERROR_RETRY:
             return _JDT._.downloadlink_status_error_retry();
         case LinkStatus.ERROR_PLUGIN_DEFECT:
@@ -231,6 +216,8 @@ public class LinkStatus implements Serializable {
         case LinkStatus.ERROR_FILE_NOT_FOUND:
             return _JDT._.downloadlink_status_error_file_not_found();
         case LinkStatus.ERROR_POST_PROCESS:
+            if (errorMessage != null) return errorMessage;
+            if (statusText != null) return statusText;
             return _JDT._.downloadlink_status_error_post_process();
         case LinkStatus.ERROR_TIMEOUT_REACHED:
         case LinkStatus.ERROR_NO_CONNECTION:
@@ -239,6 +226,7 @@ public class LinkStatus implements Serializable {
             if (errorMessage != null) return errorMessage;
             return _JDT._.downloadlink_status_error_premium();
         case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
+            if (errorMessage != null) return errorMessage;
             return _JDT._.downloadlink_status_error_temp_unavailable();
         case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
             return _JDT._.downloadlink_status_error_hoster_temp_unavailable();
@@ -252,23 +240,10 @@ public class LinkStatus implements Serializable {
             } else if (TEMP_IGNORE_REASON_NO_SUITABLE_ACCOUNT_FOUND == value) {
                 return _JDT._.downloadlink_status_error_premium_noacc();
             } else if (TEMP_IGNORE_REASON_INVALID_DOWNLOAD_DESTINATION == value) { return _JDT._.downloadlink_status_error_invalid_dest(); }
-        case LinkStatus.WAITING_FOR_OTHER_SPLITS_TO_FINISH:
-            return _JDT._.downloadlink_status_waiting_neembuu();
-        case LinkStatus.ERROR_CANNOT_BE_SIMPLY_DOWNLOADED:
-            return _JDT._.downloadlink_status_error_onlywatchallowed();
+            return null;
         }
+        if (downloadLink.getAvailableStatus() == AvailableStatus.FALSE) return _JDT._.gui_download_onlinecheckfailed();
         return null;
-    }
-
-    public String getLongErrorMessage() {
-        String ret = errorMessage;
-        if (ret == null) {
-            ret = getDefaultErrorMessage();
-        }
-        if (ret == null) {
-            ret = _JDT._.downloadlink_status_error_unexpected();
-        }
-        return ret;
     }
 
     public int getLatestStatus() {
@@ -283,76 +258,6 @@ public class LinkStatus implements Serializable {
         final long now = System.currentTimeMillis();
         final long ab = waitUntil - now;
         return Math.max(0l, ab);
-    }
-
-    /**
-     * Erstellt den Statustext, fügt eine eventl Wartezeit hzin und gibt diesen
-     * Statusstrin (bevorzugt an die GUI) zurück
-     * 
-     * @return Statusstring mit eventl Wartezeit
-     */
-    public String getStatusString() {
-        final StringBuilder ret = new StringBuilder();
-        if (hasStatus(LinkStatus.ERROR_POST_PROCESS)) {
-            if (getErrorMessage() != null) {
-                ret.append(getErrorMessage());
-            } else if (getStatusText() != null) {
-                ret.append(getStatusText());
-            } else {
-                ret.append(_JDT._.gui_downloadlink_errorpostprocess3());
-            }
-            return ret.toString();
-        }
-        if (hasStatus(LinkStatus.FINISHED)) return this.getStatusText() != null ? " > " + this.getStatusText() : "";
-        if (hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) return this.getLongErrorMessage();
-
-        if (!downloadLink.isEnabled() && !hasStatus(LinkStatus.FINISHED)) {
-            if (downloadLink.isAborted() && (statusText == null || statusText.trim().length() == 0)) {
-                ret.append(_JDT._.gui_downloadlink_aborted()).append(' ');
-            } else if (downloadLink.isAborted()) {
-                ret.append(statusText);
-            }
-            if (errorMessage != null) {
-                if (ret.length() > 0) ret.append(new char[] { ':', ' ' });
-                ret.append(errorMessage);
-            }
-            return ret.toString();
-        }
-
-        /* temp unavail */
-        if (hasStatus(ERROR_TEMPORARILY_UNAVAILABLE) && getRemainingWaittime() > 0) {
-            ret.append(_JDT._.gui_download_waittime_status2(Formatter.formatSeconds(getRemainingWaittime() / 1000)));
-            if (errorMessage != null) return errorMessage + " " + ret.toString();
-            return ret.toString();
-        }
-
-        if (isFailed()) return getLongErrorMessage();
-        final DownloadInterface dli = downloadLink.getDownloadInstance();
-        if (dli == null && hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-            removeStatus(DOWNLOADINTERFACE_IN_PROGRESS);
-        }
-        if (hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-            final long speed = downloadLink.getDownloadSpeed();
-            String chunkString = "";
-            if (dli != null && dli.getChunkNum() > 1) chunkString = " (" + dli.getChunksDownloading() + "/" + dli.getChunkNum() + ")";
-
-            if (speed > 0) {
-                if (downloadLink.getDownloadSize() < 0) {
-                    return Formatter.formatReadable(speed) + "/s " + _JDT._.gui_download_filesize_unknown();
-                } else {
-                    long remainingBytes = downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent();
-                    long eta = remainingBytes / speed;
-                    return "ETA " + Formatter.formatSeconds((int) eta) + " @ " + Formatter.formatReadable(speed) + "/s" + chunkString;
-                }
-            } else {
-                return _JDT._.gui_download_create_connection() + chunkString;
-            }
-        }
-
-        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) return _JDT._.gui_download_onlinecheckfailed();
-        if (errorMessage != null) return errorMessage;
-        if (statusText != null) return statusText;
-        return "";
     }
 
     public long getValue() {

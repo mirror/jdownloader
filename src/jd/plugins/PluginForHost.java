@@ -681,7 +681,6 @@ public abstract class PluginForHost extends Plugin {
             for (DownloadLink next : dlinks) {
 
                 if (downloadLink == next) {
-
                     continue;
                 }
 
@@ -692,20 +691,18 @@ public abstract class PluginForHost extends Plugin {
                 prototypesplit = cache != null ? (String) cache.get(pattern) : null;
                 String prototypeName = next.getNameSetbyPlugin();
                 if (prototypeName.equals(originalFilename)) {
-
                     continue;
                 }
 
                 if (prototypesplit == null) {
                     if (pattern != null) {
                         prototypesplit = new Regex(prototypeName, pattern).getMatch(0);
-                    } else {
-                        prototypesplit = prototypeName;
                     }
+                    if (prototypesplit == null) prototypesplit = prototypeName;
+
                     if (cache != null) cache.put(pattern, prototypesplit);
 
                 }
-
                 if (prototypesplit.equalsIgnoreCase(multiPart[0])) {
                     newName = fixCase(cache, originalFilename, prototypeName);
                     if (newName != null) {

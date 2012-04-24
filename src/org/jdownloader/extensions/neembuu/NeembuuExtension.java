@@ -128,7 +128,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
                 // It would be best if hosts
                 // that have been tested successfully/unsuccessfully are added
                 // to a whitelist/blacklist.
-                if(true)return true;// testing single connection watchAYD
+                if (true) return true;// testing single connection watchAYD
                 int c = dl.getDefaultPlugin().getMaxSimultanPremiumDownloadNum();
                 if (c < 5 && c != -1) return false;
             }
@@ -336,13 +336,11 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
             if (context.getSelectedObjects() != null) {
                 for (final AbstractNode node : context.getSelectedObjects()) {
                     if (node instanceof FilePackage) {
-                        if( (Boolean)((FilePackage)node).getProperty(WATCH_AS_YOU_DOWNLOAD_KEY,false)==true )
-                            fps.add((FilePackage) node);
+                        if ((Boolean) ((FilePackage) node).getProperty(WATCH_AS_YOU_DOWNLOAD_KEY, false) == true) fps.add((FilePackage) node);
                     }
                 }
             }
-            if(fps.size()>0)
-                context.getMenu().add(new WatchAsYouDownloadAction(new ArrayList<FilePackage>(fps)));
+            if (fps.size() > 0) context.getMenu().add(new WatchAsYouDownloadAction(new ArrayList<FilePackage>(fps)));
         }
 
     }

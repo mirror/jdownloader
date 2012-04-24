@@ -57,10 +57,11 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             DownloadLink dl = (DownloadLink) value;
             LinkStatus ls = dl.getLinkStatus();
             PluginProgress prog = dl.getPluginProgress();
+            ImageIcon icon = null;
             if (prog != null && prog.getPercent() > 0.0 && prog.getPercent() < 100.0) {
                 return updateIcon;
-            } else if (ls.getStatusIcon() != null) {
-                return ls.getStatusIcon();
+            } else if ((icon = ls.getStatusIcon()) != null) {
+                return icon;
             } else if (ls.isFinished()) {
                 return trueIcon;
             } else if (ls.hasStatus(LinkStatus.TEMP_IGNORE)) {
@@ -77,6 +78,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         if (value instanceof DownloadLink) {
             DownloadLink dl = (DownloadLink) value;
             if (!dl.getLinkStatus().isPluginActive() && dl.isEnabled() && dl.getLivePlugin() == null) {
+                /* enabled links that are not running */
                 ProxyBlock ipTimeout = null;
                 if ((ipTimeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
                     if (ipTimeout.getLink() == value) {
@@ -94,10 +96,11 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                     }
                 }
             }
-            return dl.getLinkStatus().getStatusString();
+            return dl.getLinkStatus().getMessage();
 
         } else if (value instanceof FilePackage) {
             if (((FilePackage) value).getView().isFinished()) { return "Finished"; }
+            if (((FilePackage) value).getView().getETA() != -1) { return "Working"; }
         }
         return "";
     }

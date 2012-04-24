@@ -357,7 +357,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     }
 
     protected void onErrorPluginDefect() {
-        logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
         if (exception != null) {
             /* show stacktrace where the exception happened */
             logger.info(JDLogger.getStackTrace(exception));
@@ -522,7 +521,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             account.setTempDisabled(true);
             account.getAccountInfo().setTrafficLeft(0);
         } else if (linkStatus.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
-            logger.severe("Premium Account " + account.getUser() + ": expired:" + linkStatus.getLongErrorMessage());
+            logger.severe("Premium Account " + account.getUser() + ": expired");
             account.setEnabled(false);
         } else {
             logger.severe("Premium Account " + account.getUser() + ": exception");

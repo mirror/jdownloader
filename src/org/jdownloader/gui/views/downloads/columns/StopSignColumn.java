@@ -33,10 +33,14 @@ public class StopSignColumn extends ExtTextColumn<AbstractNode> {
                 setText(null);
                 return this;
             }
-
         };
 
         return ret;
+    }
+
+    @Override
+    public boolean isSortable(AbstractNode obj) {
+        return false;
     }
 
     /**
