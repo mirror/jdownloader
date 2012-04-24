@@ -25,8 +25,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import javax.mail.internet.InternetAddress;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -37,6 +35,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -132,13 +131,7 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private boolean validateEmail(String email) {
-        boolean result = false;
-        try {
-            new InternetAddress(email, true).validate();
-            result = true;
-        } catch (Throwable e) {
-        }
-        return result;
+        return new Regex(email, ".+@.+\\.[a-z]+").matches();
     }
 
     private String getLinkViaSkymonkDownloadMethod(String s) throws IOException {
@@ -520,13 +513,14 @@ public class LetitBitNet extends PluginForHost {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                GuiConfigListener listener = configEntry.getGuiListener();
                 String email = getPluginConfig().getStringProperty("SKYMONKEMAIL", null);
-                if (listener != null) {
-                    try {
+                try {
+                    GuiConfigListener listener = configEntry.getGuiListener();
+                    if (listener != null) {
                         email = (String) listener.getText();
-                    } catch (final Throwable e2) {
                     }
+                } catch (Throwable e2) {
+                    /* does not exist in 09581 */
                 }
                 String emailChanged = getPluginConfig().getStringProperty("SKYMONKEMAILCHANGED", null);
                 if (!email.equalsIgnoreCase(emailChanged)) {
@@ -543,6 +537,7 @@ public class LetitBitNet extends PluginForHost {
                     return;
                 }
                 if (!validateEmail(email)) {
+                    logger.warning("E-Mail is no valid --> " + email);
                     UserIO.getInstance().requestMessageDialog("E-Mail is not valid!");
                     return;
                 }
@@ -577,6 +572,6 @@ public class LetitBitNet extends PluginForHost {
             }
         }, "Activation", null, null));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-
     }
+
 }
