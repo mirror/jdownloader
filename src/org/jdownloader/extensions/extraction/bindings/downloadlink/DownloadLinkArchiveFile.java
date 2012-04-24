@@ -9,6 +9,7 @@ import jd.plugins.PluginProgress;
 
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.translate.T;
+import org.jdownloader.images.NewTheme;
 
 public class DownloadLinkArchiveFile implements ArchiveFile {
 
@@ -113,7 +114,10 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                 progress.setColor(color);
                 progress.setTotal(max);
             } else {
-                getDownloadLink().setPluginProgress(new PluginProgress(value, max, color));
+                progress = new PluginProgress(value, max, color);
+                progress.setIcon(NewTheme.I().getIcon("update", 16));
+                progress.setProgressSource(this);
+                getDownloadLink().setPluginProgress(progress);
             }
 
         }

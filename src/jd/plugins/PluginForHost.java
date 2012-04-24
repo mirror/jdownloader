@@ -48,6 +48,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
@@ -523,9 +524,14 @@ public abstract class PluginForHost extends Plugin {
 
     public void sleep(long i, DownloadLink downloadLink, String message) throws PluginException {
         SingleDownloadController dlc = downloadLink.getDownloadLinkController();
+        PluginProgress progress = new PluginProgress(i, i, null);
+        progress.setIcon(NewTheme.I().getIcon("wait", 16));
+        progress.setProgressSource(this);
+        downloadLink.setPluginProgress(progress);
         try {
             while (i > 0 && dlc != null && !dlc.isAborted()) {
                 i -= 1000;
+                progress.setCurrent(i);
                 downloadLink.getLinkStatus().setStatusText(message + _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(i / 1000)));
                 synchronized (this) {
                     this.wait(1000);
@@ -533,8 +539,11 @@ public abstract class PluginForHost extends Plugin {
             }
         } catch (InterruptedException e) {
             throw new PluginException(LinkStatus.TODO);
+        } finally {
+            downloadLink.setPluginProgress(null);
+            downloadLink.getLinkStatus().setStatusText(null);
         }
-        downloadLink.getLinkStatus().setStatusText(null);
+
     }
 
     /**

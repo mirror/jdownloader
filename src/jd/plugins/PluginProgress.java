@@ -18,13 +18,17 @@ package jd.plugins;
 
 import java.awt.Color;
 
+import javax.swing.ImageIcon;
+
 public class PluginProgress {
 
-    private long total;
+    private long      total;
 
-    private long current;
+    private long      current;
 
-    private Color color;
+    private Color     color;
+    private ImageIcon icon           = null;
+    private Object    progressSource = null;
 
     public PluginProgress(final long current, final long total, final Color color) {
         this.total = total;
@@ -58,6 +62,22 @@ public class PluginProgress {
 
     public void setTotal(final long total) {
         this.total = total;
+    }
+
+    public ImageIcon getIcon() {
+        return icon;
+    }
+
+    public void setIcon(ImageIcon icon) {
+        this.icon = icon;
+    }
+
+    public Object getProgressSource() {
+        return progressSource;
+    }
+
+    public void setProgressSource(Object progressSource) {
+        this.progressSource = progressSource;
     }
 
 }

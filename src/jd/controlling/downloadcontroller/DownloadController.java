@@ -600,7 +600,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 }
             }
             if (removeList.size() > 0) {
-                fp.getChildren().retainAll(removeList);
+                fp.getChildren().removeAll(removeList);
             }
             if (fp.getChildren().size() == 0) {
                 /* remove empty packages */

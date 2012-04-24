@@ -28,7 +28,6 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.GuiConfigListener;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -515,7 +514,7 @@ public class LetitBitNet extends PluginForHost {
             public void actionPerformed(ActionEvent e) {
                 String email = getPluginConfig().getStringProperty("SKYMONKEMAIL", null);
                 try {
-                    GuiConfigListener listener = configEntry.getGuiListener();
+                    jd.config.GuiConfigListener listener = configEntry.getGuiListener();
                     if (listener != null) {
                         email = (String) listener.getText();
                     }

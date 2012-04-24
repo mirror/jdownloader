@@ -5,10 +5,13 @@ import javax.swing.ImageIcon;
 import javax.swing.SwingConstants;
 
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.proxy.ProxyBlock;
+import jd.controlling.proxy.ProxyController;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginProgress;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
@@ -21,9 +24,10 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
      * 
      */
     private static final long serialVersionUID = 1L;
-    private long              time;
+
     private ImageIcon         download;
     private ImageIcon         wait;
+    private ImageIcon         icon2Use;
 
     @Override
     public int getDefaultWidth() {
@@ -58,15 +62,45 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected Icon getIcon(AbstractNode value) {
+        icon2Use = null;
         if (value instanceof DownloadLink) {
             DownloadLink dlLink = ((DownloadLink) value);
             if (dlLink.isEnabled()) {
                 if (dlLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                    return download;
-                } else if (dlLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && (time = dlLink.getLinkStatus().getRemainingWaittime()) > 0) { return wait; }
+                    icon2Use = download;
+                } else {
+                    getWaitingTimeout(dlLink);
+                }
             }
         }
-        return null;
+        return icon2Use;
+    }
+
+    private long getWaitingTimeout(DownloadLink dlLink) {
+        if (dlLink.isEnabled()) {
+            long time;
+            if (dlLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && (time = dlLink.getLinkStatus().getRemainingWaittime()) > 0) {
+                icon2Use = wait;
+                return time;
+            }
+            if (!dlLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && !dlLink.getLinkStatus().isFinished()) {
+                ProxyBlock timeout = null;
+                if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dlLink.getHost())) != null && timeout.getLink() == dlLink) {
+                    icon2Use = wait;
+                    return timeout.getBlockedTimeout();
+                }
+                if ((timeout = ProxyController.getInstance().getHostBlockedTimeout(dlLink.getHost())) != null && timeout.getLink() == dlLink) {
+                    icon2Use = wait;
+                    return timeout.getBlockedTimeout();
+                }
+            }
+            PluginProgress progress = null;
+            if ((progress = dlLink.getPluginProgress()) != null) {
+                icon2Use = progress.getIcon();
+                return Math.max(0, progress.getCurrent());
+            }
+        }
+        return -1;
     }
 
     @Override
@@ -87,7 +121,10 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
                     } else {
                         return _JDT._.gui_download_create_connection();
                     }
-                } else if (dlLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && (time = dlLink.getLinkStatus().getRemainingWaittime()) > 0) { return Formatter.formatSeconds(time / 1000); }
+                } else {
+                    long ret = getWaitingTimeout(dlLink);
+                    if (ret > 0) return Formatter.formatSeconds(ret / 1000);
+                }
             }
         } else if (value instanceof FilePackage) {
             long eta = ((FilePackage) value).getView().getETA();

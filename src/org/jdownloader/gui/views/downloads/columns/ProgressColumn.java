@@ -19,6 +19,8 @@ import jd.controlling.proxy.ProxyController;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 
 import org.appwork.swing.components.multiprogressbar.MultiProgressBar;
@@ -157,9 +159,10 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
             return null;
         } else {
             DownloadLink dLink = (DownloadLink) value;
+            PluginProgress progress;
             if (dLink.getDefaultPlugin() == null) {
                 return _GUI._.gui_treetable_error_plugin();
-            } else if (dLink.getPluginProgress() != null) { return (dLink.getPluginProgress().getPercent() + " %"); }
+            } else if ((progress = dLink.getPluginProgress()) != null && !(progress.getProgressSource() instanceof PluginForHost)) { return (progress.getPercent() + " %"); }
         }
         return null;
     }
@@ -178,12 +181,12 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
             PluginProgress progress = null;
             if (dLink.getDefaultPlugin() == null) {
                 return 100;
-            } else if ((progress = dLink.getPluginProgress()) != null) {
+            } else if ((progress = dLink.getPluginProgress()) != null && !(progress.getProgressSource() instanceof PluginForHost)) {
                 return (progress.getTotal());
-            } else if (block != null && !dLink.getLinkStatus().isPluginActive()) {
-                return block.getBlockedUntil();
             } else if (dLink.getLinkStatus().isFinished()) {
                 return 100;
+            } else if (block != null && !dLink.getLinkStatus().isPluginActive() && !dLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && dLink.isEnabled()) {
+                return block.getBlockedUntil();
             } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) { return (dLink.getDownloadSize());
 
             }
@@ -217,12 +220,12 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
             PluginProgress progress = null;
             if (dLink.getDefaultPlugin() == null) {
                 return -1;
-            } else if ((progress = dLink.getPluginProgress()) != null) {
+            } else if ((progress = dLink.getPluginProgress()) != null && !(progress.getProgressSource() instanceof PluginForHost)) {
                 return (progress.getCurrent());
-            } else if (block != null && !dLink.getLinkStatus().isPluginActive()) {
-                return block.getBlockedTimeout();
             } else if (dLink.getLinkStatus().isFinished()) {
-                return (100);
+                return 100;
+            } else if (block != null && !dLink.getLinkStatus().isPluginActive() && !dLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && dLink.isEnabled()) {
+                return block.getBlockedTimeout();
             } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) { return (dLink.getDownloadCurrent()); }
         }
         return -1;

@@ -24,7 +24,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
      * 
      */
     private static final long serialVersionUID = 1L;
-    private ImageIcon         updateIcon;
+
     private ImageIcon         trueIcon;
     private ImageIcon         falseIcon;
     private ImageIcon         infoIcon;
@@ -45,7 +45,6 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
     public TaskColumn() {
         super(_GUI._.StatusColumn_StatusColumn());
-        this.updateIcon = NewTheme.I().getIcon("update", 16);
         this.trueIcon = NewTheme.I().getIcon("true", 16);
         this.falseIcon = NewTheme.I().getIcon("false", 16);
         this.infoIcon = NewTheme.I().getIcon("info", 16);
@@ -59,7 +58,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             PluginProgress prog = dl.getPluginProgress();
             ImageIcon icon = null;
             if (prog != null && prog.getPercent() > 0.0 && prog.getPercent() < 100.0) {
-                return updateIcon;
+                return prog.getIcon();
             } else if ((icon = ls.getStatusIcon()) != null) {
                 return icon;
             } else if (ls.isFinished()) {
@@ -78,21 +77,22 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         if (value instanceof DownloadLink) {
             DownloadLink dl = (DownloadLink) value;
             if (!dl.getLinkStatus().isPluginActive() && dl.isEnabled() && dl.getLivePlugin() == null) {
-                /* enabled links that are not running */
-                ProxyBlock ipTimeout = null;
-                if ((ipTimeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
-                    if (ipTimeout.getLink() == value) {
-                        return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(ipTimeout.getBlockedTimeout() / 1000));
-                    } else {
-                        return _JDT._.gui_downloadlink_hosterwaittime();
+                if (!dl.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && !dl.getLinkStatus().isFinished()) {
+                    /* enabled links that are not running */
+                    ProxyBlock timeout = null;
+                    if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
+                        if (timeout.getLink() == value) {
+                            return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(timeout.getBlockedTimeout() / 1000));
+                        } else {
+                            return _JDT._.gui_downloadlink_hosterwaittime();
+                        }
                     }
-                }
-                ProxyBlock hostTimeout = null;
-                if ((hostTimeout = ProxyController.getInstance().getHostBlockedTimeout(dl.getHost())) != null) {
-                    if (hostTimeout.getLink() == value) {
-                        return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(hostTimeout.getBlockedTimeout() / 1000));
-                    } else {
-                        return _JDT._.gui_downloadlink_hostertempunavail();
+                    if ((timeout = ProxyController.getInstance().getHostBlockedTimeout(dl.getHost())) != null) {
+                        if (timeout.getLink() == value) {
+                            return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(timeout.getBlockedTimeout() / 1000));
+                        } else {
+                            return _JDT._.gui_downloadlink_hostertempunavail();
+                        }
                     }
                 }
             }
