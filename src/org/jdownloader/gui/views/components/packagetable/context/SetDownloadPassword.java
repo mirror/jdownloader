@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.linkgrabber.contextmenu;
+package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -31,9 +31,9 @@ public class SetDownloadPassword extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        ArrayList<AbstractNode> newSelection = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<AbstractNode>());
+        final ArrayList<AbstractNode> newSelection = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<AbstractNode>());
         String defaultPW = "";
-        AbstractNode node = selection.get(0);
+        AbstractNode node = newSelection.get(0);
         if (node instanceof DownloadLink) {
             defaultPW = ((DownloadLink) node).getDownloadPassword();
         } else if (node instanceof CrawledLink) {
@@ -44,7 +44,7 @@ public class SetDownloadPassword extends AppAction {
             IOEQ.add(new Runnable() {
 
                 public void run() {
-                    for (AbstractNode l : selection) {
+                    for (AbstractNode l : newSelection) {
                         DownloadLink dl = null;
                         if (l instanceof CrawledLink) {
                             dl = ((CrawledLink) l).getDownloadLink();

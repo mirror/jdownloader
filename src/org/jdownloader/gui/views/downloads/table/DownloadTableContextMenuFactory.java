@@ -27,6 +27,7 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.context.CheckStatusAction;
 import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetCommentAction;
+import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
 import org.jdownloader.gui.views.downloads.context.CreateDLCAction;
 import org.jdownloader.gui.views.downloads.context.DeleteAction;
 import org.jdownloader.gui.views.downloads.context.DeleteFromDiskAction;
@@ -40,7 +41,6 @@ import org.jdownloader.gui.views.downloads.context.SetDownloadFolderInDownloadTa
 import org.jdownloader.gui.views.downloads.context.StopsignAction;
 import org.jdownloader.gui.views.downloads.table.linkproperties.URLEditorAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.PrioritySubMenu;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadPassword;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SortAction;
 import org.jdownloader.images.NewTheme;
 

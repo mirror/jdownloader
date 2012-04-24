@@ -24,6 +24,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.Request;
@@ -97,26 +98,17 @@ public class MediafireCom extends PluginForHost {
         public void run() throws Exception {
             while (this.currentTry++ < this.maxTries) {
                 String password = null;
-                if (this.dlink.getStringProperty("pass", null) != null) {
-                    password = this.dlink.getStringProperty("pass", null);
-                } else if (this.plg.getPluginConfig().getStringProperty("pass", null) != null) {
-                    password = this.plg.getPluginConfig().getStringProperty("pass", null);
-
+                if ((password = this.dlink.getStringProperty("pass", null)) != null) {
                 } else {
                     password = Plugin.getUserInput(JDL.LF("PasswordSolver.askdialog", "Downloadpassword for %s/%s", this.plg.getHost(), this.dlink.getName()), this.dlink);
-
                 }
                 if (password == null) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong")); }
                 this.handlePassword(password);
                 if (!this.isCorrect()) {
-                    this.dlink.setProperty("pass", null);
-                    this.plg.getPluginConfig().setProperty("pass", null);
-                    this.plg.getPluginConfig().save();
+                    this.dlink.setProperty("pass", Property.NULL);
                     continue;
                 } else {
                     this.dlink.setProperty("pass", password);
-                    this.plg.getPluginConfig().setProperty("pass", password);
-                    this.plg.getPluginConfig().save();
                     return;
                 }
 
