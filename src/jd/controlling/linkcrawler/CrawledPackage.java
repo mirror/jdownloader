@@ -40,6 +40,14 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         view = new CrawledPackageView();
     }
 
+    public void copyPropertiesTo(CrawledPackage dest) {
+        if (dest == null || dest == this) return;
+        dest.name = name;
+        dest.comment = comment;
+        if (this.isDownloadFolderSet()) dest.setDownloadFolder(getRawDownloadFolder());
+        dest.getExtractionPasswords().addAll(extractionPasswords);
+    }
+
     public List<CrawledLink> getChildren() {
         return children;
     }

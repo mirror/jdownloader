@@ -143,7 +143,11 @@ public class RapidGatorNet extends PluginForHost {
         br.setCustomCharset("UTF-8");
         br.setCookie("http://rapidgator.net/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("File not found")) {
+            String filenameFromURL = new Regex(link.getDownloadURL(), ".+/(.+)\\.html").getMatch(0);
+            if (filenameFromURL != null) link.setName(filenameFromURL);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String freedlsizelimit = br.getRegex("(?i)\\'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
         if (freedlsizelimit != null) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.rapidgatornet.only4premium", "No free download link for this file"));
         String filename = br.getRegex("Downloading:[\t\n\r ]+</strong>([^<>\"]+)</p>").getMatch(0);

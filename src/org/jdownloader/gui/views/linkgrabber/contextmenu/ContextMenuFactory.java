@@ -28,6 +28,7 @@ import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetCommentAction;
 import org.jdownloader.gui.views.downloads.table.linkproperties.URLEditorAction;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
@@ -50,16 +51,20 @@ public class ContextMenuFactory {
         JPopupMenu p = new JPopupMenu();
         JMenu m;
 
-        p.add(new ConfirmAction(isShift, selection).toContextMenuAction());
+        if (selection != null && selection.size() > 0) {
+            p.add(new ConfirmAction(isShift, selection).toContextMenuAction());
+            p.add(new JSeparator());
+        }
 
         if (selection == null || selection.size() == 0) {
             p.add(new AddLinksAction().toContextMenuAction());
             return p;
         } else if (JsonConfig.create(LinkgrabberSettings.class).isContextMenuAddLinksActionAlwaysVisible()) {
             p.add(new AddLinksAction().toContextMenuAction());
-
+            p.add(new AddContainerAction().toContextMenuAction());
+            p.add(new JSeparator());
         }
-        p.add(new JSeparator());
+
         JMenu properties = new JMenu(_GUI._.ContextMenuFactory_createPopup_properties_package());
         p.add(properties);
         p.add(new JSeparator());
