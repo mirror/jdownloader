@@ -44,6 +44,8 @@ public class FsxHu extends PluginForHost {
         this.enablePremium("http://fsx.hu/index.php?o=dijcsomagok");
     }
 
+    private static final String REGISTEREDONLY = JDL.L("plugins.hoster.fsxhu.errors.onlyregistered", "Only registered users can download this file");
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -116,6 +118,8 @@ public class FsxHu extends PluginForHost {
                 }
             }
         }
+        br.getPage("http://www.fsx.hu/download.php?vr=1");
+        if (br.containsHTML("Felhívjuk figyelmedet az <a class=\"txt\" href=\\'")) throw new PluginException(LinkStatus.ERROR_FATAL, REGISTEREDONLY);
         for (int i = 0; i <= 3; i++) {
             final String code = getCaptchaCode("http://www.fsx.hu/" + captcha, downloadLink);
             br.postPage("http://www.fsx.hu/download.php?i=1", "capcha=" + code);

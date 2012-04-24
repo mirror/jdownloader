@@ -44,6 +44,8 @@ public class VideoMediasetIt extends PluginForHost {
         return "http://www.licensing.mediaset.it/";
     }
 
+    // Important info: Can only handle normal videos, NO
+    // "Microsoft Silverlight forced" videos!
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
