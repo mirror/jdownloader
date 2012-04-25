@@ -32,10 +32,10 @@ import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
@@ -127,19 +127,24 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
      * @return
      */
     public static Image[] getGifImages(URL url) {
+        InputStream is = null;
         try {
-
             GifDecoder decoder = new GifDecoder();
-
-            decoder.read(url.openStream());
+            decoder.read(is = url.openStream());
             BufferedImage[] ret = new BufferedImage[decoder.getFrameCount()];
             for (int i = 0; i < decoder.getFrameCount(); i++) {
                 ret[i] = decoder.getFrame(i);
-                ImageIO.write(ret[i], "png", Application.getResource("img_" + i + ".png"));
+                // ImageIO.write(ret[i], "png", Application.getResource("img_" +
+                // i + ".png"));
             }
             return ret;
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (final Throwable e) {
+            }
         }
         return null;
     }
