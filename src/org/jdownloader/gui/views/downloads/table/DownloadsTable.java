@@ -180,4 +180,9 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         return true;
     }
 
+    @Override
+    public ExtColumn<AbstractNode> getExpandCollapseColumn() {
+        return DownloadsTableModel.getInstance().expandCollapse;
+    }
+
 }

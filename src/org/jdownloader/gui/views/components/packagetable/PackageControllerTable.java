@@ -27,7 +27,6 @@ import org.appwork.utils.logging.Log;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel.TOGGLEMODE;
-import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
@@ -418,12 +417,14 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         return moveUpAction;
     }
 
+    public abstract ExtColumn<AbstractNode> getExpandCollapseColumn();
+
     @Override
     protected boolean onSingleClick(MouseEvent e, final AbstractNode obj) {
         if (obj instanceof AbstractPackageNode) {
             final ExtColumn<AbstractNode> column = this.getExtColumnAtPoint(e.getPoint());
 
-            if (FileColumn.class == column.getClass()) {
+            if (column == getExpandCollapseColumn()) {
                 Rectangle bounds = column.getBounds();
                 if (e.getPoint().x - bounds.x < 30) {
                     if (e.isControlDown() && !e.isShiftDown()) {

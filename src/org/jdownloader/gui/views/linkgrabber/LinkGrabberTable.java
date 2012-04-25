@@ -40,13 +40,11 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     public LinkGrabberTable(final LinkGrabberTableModel tableModel) {
         super(tableModel);
-
         this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
         this.setTransferHandler(new LinkGrabberTableTransferHandler(this));
         this.setDragEnabled(true);
         this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
         contextMenuFactory = new ContextMenuFactory(this);
-
     }
 
     @Override
@@ -138,4 +136,8 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         return true;
     }
 
+    @Override
+    public ExtColumn<AbstractNode> getExpandCollapseColumn() {
+        return LinkGrabberTableModel.getInstance().expandCollapse;
+    }
 }

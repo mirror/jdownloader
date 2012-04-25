@@ -29,7 +29,8 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
         return INSTANCE;
     }
 
-    private boolean autoConfirm;
+    private boolean      autoConfirm;
+    protected FileColumn expandCollapse;
 
     private LinkGrabberTableModel() {
         super(LinkCollector.getInstance(), "LinkGrabberTableModel");
@@ -61,7 +62,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
 
     @Override
     protected void initColumns() {
-        this.addColumn(new FileColumn());
+        this.addColumn(expandCollapse = new FileColumn());
 
         this.addColumn(new UrlColumn());
         this.addColumn(new DownloadFolderColumn());

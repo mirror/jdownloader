@@ -36,6 +36,8 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
 
     private StopSignColumn stopSignColumn;
 
+    protected FileColumn   expandCollapse;
+
     private DownloadsTableModel() {
         super(DownloadController.getInstance(), "downloadstable3");
 
@@ -43,7 +45,7 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
 
     @Override
     protected void initColumns() {
-        this.addColumn(new FileColumn());
+        this.addColumn(expandCollapse = new FileColumn());
         this.addColumn(new SizeColumn());
         this.addColumn(new HosterColumn());
         this.addColumn(new ConnectionColumn());
