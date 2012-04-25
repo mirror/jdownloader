@@ -56,7 +56,6 @@ public class VKontakteRu extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(false);
         br.setReadTimeout(3 * 60 * 1000);
         String parameter = param.toString().replace("vkontakte.ru/", "vk.com/");
         br.setCookiesExclusive(false);
@@ -176,8 +175,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> decryptPhotoAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter, ProgressController progress) throws IOException {
-        int overallCounter = 1;
-        DecimalFormat df = new DecimalFormat("00000");
+        final String type = "singlephotoalbum";
         if (parameter.contains("#/album"))
             parameter = "http://vk.com/album" + new Regex(parameter, "#/album((\\-)?\\d+_\\d+)").getMatch(0);
         else if (parameter.matches(".*?vk\\.com/(photos|id)\\d+")) parameter = parameter.replaceAll("vk\\.com/(photos|id)", "vk.com/album") + "_0";
@@ -197,40 +195,17 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        /**
-         * Find out how many times we have to reload images. Take the number of
-         * pictures - 80 (because without any request we already got 80) and
-         * divide it by 40 (every reload we get 40)
-         */
-        int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntrys) - 80) / 40);
-        if (maxLoops < 0) maxLoops = 0;
-        int offset = 80;
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        progress.setRange(maxLoops);
-        for (int i = 0; i <= maxLoops; i++) {
-            if (i > 0) {
-                br.postPage(parameter, "al=1&offset=" + offset + "&part=1");
-                offset += 40;
-            }
-            String correctedBR = br.toString().replace("\\", "");
-            String[] photoIDs = new Regex(correctedBR, "><a href=\"/photo((\\-)?\\d+_\\d+(\\?tag=\\d+)?)\"").getColumn(0);
-            if (photoIDs == null || photoIDs.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter + "\n");
-                logger.warning("Decrypter couldn't find photoIDs!");
-                return null;
-            }
-            String albumID = new Regex(parameter, "/(album.+)").getMatch(0);
-            for (String photoID : photoIDs) {
-                if (albumID == null) albumID = "tag" + new Regex(photoID, "\\?tag=(\\d+)").getMatch(0);
-                /** Pass those goodies over to the hosterplugin */
-                DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + photoID);
-                dl.setAvailable(true);
-                dl.setProperty("albumid", albumID);
-                decryptedLinks.add(dl);
-                logger.info("Decrypted link number " + df.format(overallCounter) + " : " + albumID + "_" + photoID);
-                overallCounter++;
-            }
-            progress.increase(1);
+        final String[][] regexesPage1 = { { "><a href=\"/photo((\\-)?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
+        final String[][] regexesAllOthers = { { "><a href=\"/photo((\\-)?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
+        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 40, 40, 80, parameter, "al=1&part=1&offset=");
+        String albumID = new Regex(parameter, "/(album.+)").getMatch(0);
+        for (String element : decryptedData) {
+            if (albumID == null) albumID = "tag" + new Regex(element, "\\?tag=(\\d+)").getMatch(0);
+            /** Pass those goodies over to the hosterplugin */
+            DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + element);
+            dl.setAvailable(true);
+            dl.setProperty("albumid", albumID);
+            decryptedLinks.add(dl);
         }
         FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(parameter, "/(album|tag)(.+)").getMatch(1));
@@ -251,80 +226,43 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> decryptPhotoAlbums(ArrayList<DownloadLink> decryptedLinks, String parameter, ProgressController progress) throws IOException {
-        int overallCounter = 1;
-        DecimalFormat df = new DecimalFormat("00000");
+        final String type = "multiplephotoalbums";
         if (parameter.matches(".*?vk\\.com/id\\d+\\?z=albums\\d+")) parameter = "http://vk.com/albums" + new Regex(parameter, "(\\d+)$").getMatch(0);
         br.getPage(parameter);
-        /** Photo regexes, last regex is for albums */
-        final String[] regexes = { "class=\"photo_album_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)\"", "<div class=\\\\\"photo_album_row\\\\\" id=\\\\\"(tag\\d+|album(\\-)?\\d+_\\d+)\\\\\"", "<div class=\\\\\"photo_row\\\\\" id=\\\\\"(tag\\d+|album(\\-)?\\d+_\\d+)\\\\\"" };
-        for (String regex : regexes) {
-            String[] photoAlbums = br.getRegex(regex).getColumn(0);
-            if (photoAlbums == null || photoAlbums.length == 0) continue;
-            for (String photoAlbum : photoAlbums) {
-                String decryptedLink = "http://vk.com/" + photoAlbum;
-
-                decryptedLinks.add(createDownloadlink(decryptedLink));
-                logger.info("Decrypted link number " + df.format(overallCounter) + " : " + decryptedLink);
-                overallCounter++;
-            }
-        }
         final String numberOfEntrys = br.getRegex("\\| (\\d+) albums?</title>").getMatch(0);
-        if (numberOfEntrys == null && (decryptedLinks == null || decryptedLinks.size() == 0)) {
+        if (numberOfEntrys == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        if (numberOfEntrys != null) {
-            /**
-             * Find out how many times we have to reload images. Take the number
-             * of albums - 40 (because without any request we already got 20)
-             * and divide it by 20 (every reload we get 20)
-             */
-            int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntrys) - 40) / 12);
-            if (maxLoops < 0) maxLoops = 0;
-            int offset = 22;
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            progress.setRange(maxLoops);
-            final String postPage = parameter;
-            /** Photos are placed in different locations, find them all */
-            // Dev note: similar process as above with the offset:
-            // http://vk.com/albums3793387, al=1&offset=40&part=1
-            for (int i = 0; i <= maxLoops; i++) {
-                if (i > 0) {
-                    offset += 12;
-                    br.postPage(postPage, "al=1&offset=" + offset + "&part=1");
-                }
-                String[] photoAlbums = br.getRegex("class=\"photo(_album)?_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)").getColumn(1);
-                if (photoAlbums == null || photoAlbums.length == 0) continue;
-                for (String photoAlbum : photoAlbums) {
-                    final String decryptedLink = "http://vk.com/" + photoAlbum;
-                    decryptedLinks.add(createDownloadlink(decryptedLink));
-                    logger.info("Decrypted link number " + df.format(overallCounter) + " : " + decryptedLink);
-                    overallCounter++;
-                }
-            }
-        }
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        /** Photos are placed in different locations, find them all */
+        final String[][] regexesPage1 = { { "class=\"photo_album_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)\"", "0" }, { "<div class=\"photo_album_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)\"", "0" }, { "<div class=\"photo_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)\"", "0" } };
+        final String[][] regexesAllOthers = { { "class=\"photo(_album)?_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)", "1" } };
+        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 22, 12, 40, parameter, "al=1&part=1&offset=");
+        for (String element : decryptedData) {
+            final String decryptedLink = "http://vk.com/" + element;
+            decryptedLinks.add(createDownloadlink(decryptedLink));
         }
         return decryptedLinks;
     }
 
     private ArrayList<DownloadLink> decryptVideoAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter, ProgressController progress) throws IOException {
-        int overallCounter = 1;
-        DecimalFormat df = new DecimalFormat("00000");
+        final String type = "multiplevideoalbums";
         br.getPage(parameter);
-        String[] allVideos = br.getRegex("<td class=\"video_thumb\"><a href=\"/video(\\d+_\\d+)\"").getColumn(0);
-        if (allVideos == null || allVideos.length == 0) allVideos = br.getRegex("<div class=\"video_info_cont\">[\t\n\r ]+<a href=\"/video(\\d+_\\d+)\"").getColumn(0);
-        if (allVideos == null || allVideos.length == 0) {
-            logger.warning("Couldn't find any videos for link: " + parameter);
+        final String numberOfEntrys = br.getRegex("(\\d+) videos<").getMatch(0);
+        if (numberOfEntrys == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        progress.setRange(allVideos.length);
+        // Regexes 1 + 2 are for stuff from the first page, rest is for pages
+        // 2-end
+        final String[][] regexesPage1 = { { "<td class=\"video_thumb\"><a href=\"/video(\\d+_\\d+)\"", "0" } };
+        final String[][] regexesAllOthers = { { "\\[(\\d+, \\d+), \\'", "0" } };
+        final String oid = new Regex(parameter, "(\\d+)$").getMatch(0);
+        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 0, 12, 40, "http://vk.com/al_video.php", "act=load_videos_silent&al=1&oid=" + oid + "&offset=");
         int counter = 1;
-        logger.info("Found " + allVideos.length + " videos, decrypting...");
-        for (String singleVideo : allVideos) {
-            logger.info("Decrypting video " + counter + " / " + allVideos.length);
+        for (String singleVideo : decryptedData) {
+            singleVideo = singleVideo.replace(", ", "_");
+            logger.info("Decrypting video " + counter + " / " + numberOfEntrys);
             String completeVideolink = "http://vk.com/video" + singleVideo;
             br.getPage(completeVideolink);
             // Invalid link
@@ -338,9 +276,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.warning("stopped at: " + completeVideolink);
                 return null;
             }
-            logger.info("Decrypted link number " + df.format(overallCounter) + " : " + completeVideolink);
             decryptedLinks.add(finallink);
-            progress.increase(1);
             counter++;
         }
         return decryptedLinks;
@@ -418,6 +354,45 @@ public class VKontakteRu extends PluginForDecrypt {
             dl.setFinalFileName(Encoding.htmlDecode(videoName).replaceAll("(»|\")", "").trim() + quality.substring(quality.length() - 4, quality.length()));
         }
         return dl;
+    }
+
+    private ArrayList<String> decryptMultiplePages(final String parameter, final String type, final String numberOfEntrys, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, final int increase, int alreadyOnPage, final String postPage, final String postData) throws IOException {
+        ArrayList<String> decryptedData = new ArrayList<String>();
+        int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntrys) - alreadyOnPage) / increase);
+        if (maxLoops < 0) maxLoops = 0;
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        for (int i = 0; i <= maxLoops; i++) {
+            if (i > 0) {
+                offset += increase;
+                br.postPage(postPage, postData + offset);
+                System.out.println(br.toString());
+                for (String regex[] : regexesAllOthers) {
+                    String correctedBR = br.toString().replace("\\", "");
+                    String[] theData = new Regex(correctedBR, regex[0]).getColumn(Integer.parseInt(regex[1]));
+                    if (theData == null || theData.length == 0) continue;
+                    for (String data : theData) {
+                        decryptedData.add(data);
+                    }
+                }
+            } else {
+                for (String regex[] : regexesAllOthers) {
+                    String correctedBR = br.toString().replace("\\", "");
+                    String[] theData = new Regex(correctedBR, regex[0]).getColumn(Integer.parseInt(regex[1]));
+                    if (theData == null || theData.length == 0) continue;
+                    for (String data : theData) {
+                        decryptedData.add(data);
+                    }
+                }
+            }
+        }
+        if (decryptedData == null || decryptedData.size() == 0) {
+            logger.warning("Decrypter couldn't find theData for linktype: " + type);
+            logger.warning("Decrypter broken for link: " + parameter + "\n");
+            return null;
+        }
+        logger.info("Found " + decryptedData.size() + " links for linktype: " + type);
+
+        return decryptedData;
     }
 
     @SuppressWarnings("unchecked")

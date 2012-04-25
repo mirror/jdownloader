@@ -55,7 +55,12 @@ public class XHamsterGallery extends PluginForDecrypt {
         }
         for (String currentPage : allPages) {
             br.getPage(parameterWihoutHtml + "-" + currentPage + ".html");
-            final String[] thumbNails = br.getRegex("\"(http://p\\d+\\.xhamster\\.com/\\d+/\\d+/\\d+/\\d+_160\\.jpg)\"").getColumn(0);
+            final String allLinks = br.getRegex("<small>\\[\\d+ pictures\\]</small></td></tr></table></div>(.*?)<table cellpadding=\"0\" cellspacing=\"0\" class=\\'listDescr\\' width=\"97%\">[\t\n\r ]+<colgroup><col width=\"160\"><col></colgroup>").getMatch(0);
+            if (allLinks == null) {
+                logger.warning("Decrypter failed on page " + currentPage + " for link: " + parameter);
+                return null;
+            }
+            final String[] thumbNails = new Regex(allLinks, "\"(http://p\\d+\\.xhamster\\.com/\\d+/\\d+/\\d+/\\d+_160\\.jpg)\"").getColumn(0);
             if (thumbNails == null || thumbNails.length == 0) {
                 logger.warning("Decrypter failed on page " + currentPage + " for link: " + parameter);
                 return null;
@@ -74,5 +79,4 @@ public class XHamsterGallery extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }

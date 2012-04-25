@@ -102,7 +102,7 @@ public class FlickrCom extends PluginForDecrypt {
         for (String aLink : addLinks) {
             final DownloadLink dl = createDownloadlink("http://www.flickrdecrypted.com" + aLink);
             dl.setAvailable(true);
-            dl.setProperty("cookiesneeded", "true");
+            dl.setProperty("cookiesneeded", true);
             decryptedLinks.add(dl);
         }
         if (fpName != null) {

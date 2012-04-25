@@ -68,6 +68,8 @@ public class DlFreeFr extends PluginForHost {
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.setForm(captchaForm);
             String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\\'").getMatch(0);
+            // No captcha displayed but we have to tner it->Hoster bug
+            if (id == null && br.containsHTML("Valider et t\\&eacute;l\\&eacute;charger le fichier")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
             rc.setId(id);
             rc.load();
             rc.getForm().put("_ayl_captcha_engine", "recaptcha");
