@@ -231,6 +231,8 @@ public class LinkStatus implements Serializable {
         case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
             return _JDT._.downloadlink_status_error_hoster_temp_unavailable();
         case LinkStatus.ERROR_FATAL:
+            if (errorMessage != null) return errorMessage;
+            if (statusText != null) return statusText;
             return _JDT._.downloadlink_status_error_fatal();
         case LinkStatus.WAITING_USERIO:
             return _JDT._.downloadlink_status_waitinguserio();

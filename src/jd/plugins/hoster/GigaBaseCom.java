@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -55,7 +56,17 @@ public class GigaBaseCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex(">Download types</span><br/><span class=\"c3\"><a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/down/[^<>]+)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            Form dlForm = br.getForm(2);
+            if (dlForm != null) {
+                br.submitForm(dlForm);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = br.getRegex(">Download types</span><br/><span class=\"c3\"><a href=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/down/[^<>]+)\"").getMatch(0);
+            if (dllink == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "File seems not downloadable!"); }
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
