@@ -42,7 +42,7 @@ public class OpenDefaultDownloadFolderAction extends AbstractToolbarAction {
 
     @Override
     public String createIconKey() {
-        return "package_open";
+        return "save";
     }
 
     @Override

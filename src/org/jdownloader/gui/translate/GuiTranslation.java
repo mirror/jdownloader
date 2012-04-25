@@ -3673,4 +3673,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Windows" })
     String AddonsMenu_updateMenu_windows_();
 
+    @Default(lngs = { "en" }, values = { "Import Proxies" })
+    String ProxyConfig_actionPerformed_import_title_();
+
+    @Default(lngs = { "en" }, values = { "Enter one or more Proxyserver(s). \r\nFormat: (socks4|socks5|http)://[<user>:<pass>]@<host>:<port> - line seperated" })
+    String ProxyConfig_actionPerformed_import_proxies_explain_();
+
+    @Default(lngs = { "en" }, values = { "Export Proxies" })
+    String ProxyTable_copy_export_title_();
+
+    @Default(lngs = { "en" }, values = { "Socks 4 Proxy" })
+    String gui_column_proxytype_socks4();
+
 }

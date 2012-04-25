@@ -1,6 +1,8 @@
 package jd.gui.swing.dialog;
 
 import java.awt.event.ActionEvent;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -10,11 +12,17 @@ import javax.swing.JTextField;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 
+import jd.controlling.ClipboardMonitoring;
 import jd.controlling.JDLogger;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.utils.BinaryLogic;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
@@ -22,17 +30,18 @@ import org.jdownloader.images.NewTheme;
 
 public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListener {
 
-    private JComboBox      cmbType;
-    private JTextField     txtHost;
-    private JTextField     txtPort;
-    private JTextField     txtUser;
-    private JTextField     txtPass;
+    private JComboBox       cmbType;
+    private ExtTextField    txtHost;
+    private JTextField      txtPort;
+    private JTextField      txtUser;
+    private JTextField      txtPass;
 
-    private final String[] types = new String[] { _GUI._.jd_gui_swing_dialog_ProxyDialog_http(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks4() };
-    private JLabel         lblUser;
-    private JLabel         lblPass;
-    private JLabel         lblPort;
-    private JLabel         lblHost;
+    private final String[]  types = new String[] { _GUI._.jd_gui_swing_dialog_ProxyDialog_http(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks4() };
+    private JLabel          lblUser;
+    private JLabel          lblPass;
+    private JLabel          lblPort;
+    private JLabel          lblHost;
+    private DelayedRunnable delayer;
 
     public ProxyDialog() {
         super(0, _GUI._.jd_gui_swing_dialog_ProxyDialog_title(), NewTheme.I().getIcon("proxy_rotate", 32), null, null);
@@ -46,10 +55,36 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
         panel.add(cmbType = new JComboBox(types), "spanx");
         cmbType.addActionListener(this);
         panel.add(lblHost = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostport()));
-        panel.add(txtHost = new JTextField());
+        panel.add(txtHost = new ExtTextField() {
+            @Override
+            public void onChanged() {
+
+                delayer.resetAndStart();
+
+            }
+
+        });
+
+        this.delayer = new DelayedRunnable(ToolTipController.EXECUTER, 2000) {
+
+            @Override
+            public void delayedrun() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        set(txtHost.getText());
+
+                    }
+                };
+
+            }
+
+        };
         txtHost.addCaretListener(this);
         panel.add(lblPort = new JLabel(":"));
         panel.add(txtPort = new JTextField(), "shrinkx");
+        txtPort.setText("8080");
         txtPort.addCaretListener(this);
 
         panel.add(lblUser = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_username()));
@@ -58,19 +93,83 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
         panel.add(lblPass = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_password()));
         panel.add(txtPass = new JTextField(), "spanx");
         this.okButton.setEnabled(false);
+        set(ClipboardMonitoring.getINSTANCE().getCurrentContent());
+
         return panel;
+    }
+
+    public void dispose() {
+        super.dispose();
+        delayer.stop();
+    }
+
+    protected void set(final String text) {
+
+        int carPos = txtHost.getCaretPosition();
+        String myText = text;
+        if (myText.endsWith(":")) return;
+        for (int i = 0; i < 2; i++) {
+            try {
+
+                URL url = new URL(myText);
+                txtHost.setText(url.getHost());
+                if (url.getPort() > 0) {
+                    txtPort.setText(url.getPort() + "");
+                }
+                String userInfo = url.getUserInfo();
+                if (userInfo != null) {
+                    int in = userInfo.indexOf(":");
+                    if (in >= 0) {
+                        txtUser.setText(userInfo.substring(0, in));
+                        txtPass.setText(userInfo.substring(in + 1));
+                    } else {
+                        txtUser.setText(userInfo);
+                    }
+                }
+                return;
+            } catch (MalformedURLException e) {
+                if (text.contains(":")) {
+                    myText = "http://" + myText;
+                }
+            }
+        }
+
+        txtHost.setCaretPosition(carPos);
+
     }
 
     @Override
     public void actionPerformed(final ActionEvent e) {
         if (e.getSource() == cmbType) {
-            if (cmbType.getSelectedIndex() == 2) {
-                txtPass.setVisible(false);
-                lblPass.setVisible(false);
-            } else {
+
+            switch (cmbType.getSelectedIndex()) {
+            case 0:
+
+                // http
                 txtPass.setVisible(true);
                 lblPass.setVisible(true);
+                if (StringUtils.isEmpty(txtPort.getText())) {
+                    txtPort.setText("8080");
+                }
+                break;
+            case 1:
+                // socks5
+                txtPass.setVisible(true);
+                lblPass.setVisible(true);
+
+                if (StringUtils.isEmpty(txtPort.getText())) {
+                    txtPort.setText("1080");
+                }
+                break;
+            default:
+                txtPass.setVisible(false);
+                lblPass.setVisible(false);
+                if (StringUtils.isEmpty(txtPort.getText())) {
+                    txtPort.setText("1080");
+                }
+
             }
+
         } else {
             super.actionPerformed(e);
         }

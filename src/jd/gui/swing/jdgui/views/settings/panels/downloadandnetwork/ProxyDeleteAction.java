@@ -54,6 +54,7 @@ public class ProxyDeleteAction extends AbstractRemoveAction {
                 for (ProxyInfo proxy : selected) {
                     ProxyController.getInstance().remove(proxy);
                 }
+                selected = null;
             }
         });
 

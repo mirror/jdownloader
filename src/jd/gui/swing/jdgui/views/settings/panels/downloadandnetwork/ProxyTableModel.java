@@ -34,7 +34,7 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
     @Override
     protected void initColumns() {
 
-        DefaultComboBoxModel model = new DefaultComboBoxModel(new String[] { _GUI._.gui_column_proxytype_http(), _GUI._.gui_column_proxytype_socks5() });
+        DefaultComboBoxModel model = new DefaultComboBoxModel(new String[] { _GUI._.gui_column_proxytype_http(), _GUI._.gui_column_proxytype_socks5(), _GUI._.gui_column_proxytype_socks4() });
         this.addColumn(new ExtComboColumn<ProxyInfo>(_GUI._.gui_column_proxytype(), model) {
 
             @Override
@@ -114,6 +114,9 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
 
                 case SOCKS5:
                     return 1;
+
+                case SOCKS4:
+                    return 2;
                 default:
                     throw new RuntimeException("Unknown Proxy Type");
                 }
@@ -139,6 +142,9 @@ public class ProxyTableModel extends ExtTableModel<ProxyInfo> {
                     return;
                 case 1:
                     object.setType(HTTPProxy.TYPE.SOCKS5);
+                    return;
+                case 2:
+                    object.setType(HTTPProxy.TYPE.SOCKS4);
                     return;
                 default:
                     throw new RuntimeException("Unknown Proxy Type");

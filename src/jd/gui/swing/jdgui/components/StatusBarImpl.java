@@ -98,6 +98,7 @@ public class StatusBarImpl extends JPanel {
                 Reconnecter.getInstance().getStateMachine().addListener(new StateEventListener() {
 
                     public void onStateChange(StateEvent event) {
+                        System.out.println(event + " - " + event.getNewState());
                         boolean r = false;
                         if (event.getNewState() == Reconnecter.RECONNECT_RUNNING) {
                             r = true;

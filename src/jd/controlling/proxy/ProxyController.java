@@ -530,11 +530,15 @@ public class ProxyController {
                     if (info.sameProxy(newP)) continue main;
                 }
                 nproxies.add(new ProxyInfo(newP));
+
             }
             proxies = nproxies;
             if (changes != nproxies.size()) changes = -1;
         }
-        if (changes == -1) eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.REFRESH, null));
+        if (changes == -1) {
+            eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.ADDED, null));
+            eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.REFRESH, null));
+        }
     }
 
     /**

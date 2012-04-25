@@ -29,7 +29,6 @@ import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging.Log;
-import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 public final class Reconnecter implements StateMachineInterface {
@@ -190,7 +189,9 @@ public final class Reconnecter implements StateMachineInterface {
     public boolean doReconnect() {
         if (!this.statemachine.isStartState()) { return false; }
         boolean ret = false;
+        long startTime = System.currentTimeMillis();
         try {
+
             this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.Type.BEFORE));
             Reconnecter.LOG.info("Try to reconnect...");
             this.statemachine.setStatus(Reconnecter.RECONNECT_RUNNING);
@@ -232,6 +233,12 @@ public final class Reconnecter implements StateMachineInterface {
         } catch (Throwable e) {
             Log.exception(e);
 
+        }
+     //reconnect takes at least 1000ms
+        try {
+            Thread.sleep((Math.max(0, 1000 - System.currentTimeMillis() + startTime)));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
         this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.Type.AFTER, ret));
 
@@ -319,7 +326,9 @@ public final class Reconnecter implements StateMachineInterface {
         if (!IPController.getInstance().isInvalidated()) { return false; }
         boolean ret = false;
         try {
+
             ret = this.doReconnect();
+
             if (ret) {
                 Reconnecter.LOG.info("Reconnect successful!");
             } else {

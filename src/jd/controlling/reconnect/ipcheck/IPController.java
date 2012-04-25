@@ -292,12 +292,12 @@ public class IPController extends ArrayList<IPConnectionState> {
             }
             if (!hasBeenOffline && System.currentTimeMillis() >= endOfflineTime) {
                 // break
-                Log.L.info("Not offline after " + endOfflineTime + " seconds");
+                Log.L.info("Not offline after " + waitForOfflineTime + " seconds");
                 break;
 
             }
             if (System.currentTimeMillis() >= endTime) {
-                Log.L.info("Not reconnected after " + endTime + " seconds");
+                Log.L.info("Not reconnected after " + waitForIPTime + " seconds");
                 break;
             }
             Thread.sleep(Math.max(250, ipCheckInterval * 1000));
