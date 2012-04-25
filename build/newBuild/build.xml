@@ -327,6 +327,7 @@
 		<buildAddon package="Extraction" include="extraction/**/*" />
 		<buildAddon package="folderwatch" include="folderwatch/**/*" />
 		<buildAddon package="webinterface" include="webinterface/**/*" />
+		<buildAddon package="neembuu" include="neembuu/**/*" />
 		<delete file="${dist}/Manifest.MF" failonerror="false" />
 	</target>
 
