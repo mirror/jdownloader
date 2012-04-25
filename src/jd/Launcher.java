@@ -283,12 +283,12 @@ public class Launcher {
             if (args[i].equalsIgnoreCase("-branch")) {
 
                 if (args[i + 1].equalsIgnoreCase("reset")) {
-                    JDUpdater.getInstance().setBranchInUse(null);
+                    JDUpdater.getInstance().setForcedBranch(null);
 
                     Launcher.LOG.info("Switching back to default JDownloader branch");
 
                 } else {
-                    JDUpdater.getInstance().setBranchInUse(args[i + 1]);
+                    JDUpdater.getInstance().setForcedBranch(args[i + 1]);
 
                     Launcher.LOG.info("Switching to " + args[i + 1] + " JDownloader branch");
 
