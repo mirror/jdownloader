@@ -30,15 +30,14 @@ import java.util.ArrayList;
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
-import javax.swing.JWindow;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.toolbar.actions.AutoReconnectToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ClipBoardToggleAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.ExitToolbarAction;
@@ -63,7 +62,7 @@ import org.jdownloader.images.NewTheme;
 
 //final, because the constructor calls Thread.start(),
 //see http://findbugs.sourceforge.net/bugDescriptions.html#SC_START_IN_CTOR
-public final class TrayIconPopup extends JWindow implements MouseListener {
+public final class TrayIconPopup extends JFrame implements MouseListener {
 
     private static final long         serialVersionUID  = 2623190748929934409L;
 
@@ -80,12 +79,12 @@ public final class TrayIconPopup extends JWindow implements MouseListener {
     private transient Thread          hideThread;
 
     public TrayIconPopup() {
-        // required. JWindow needs a parent to grant a nested Component focus
-        super(JDGui.getInstance().getMainFrame());
+        super();
         resizecomps = new ArrayList<AbstractButton>();
         setVisible(false);
         setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
         addMouseListener(this);
+        this.setUndecorated(true);
         initEntryPanel();
         initQuickConfigPanel();
         initBottomPanel();
