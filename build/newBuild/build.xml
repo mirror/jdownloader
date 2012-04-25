@@ -105,7 +105,7 @@
 
 
 		<mkdir dir="${dist}/translations" />
-		
+
 		<copy todir="${dist}/translations">
 			<fileset dir="${dep.awu}/src" includes="**/*.lng" />
 			<fileset dir="${dep.updateclient}/src" includes="**/*.lng" />
@@ -215,14 +215,21 @@
 				<fileset dir="${dist}/libs" includes="**/*.jar" />
 			</path>
 			<mapper type="regexp" from="[\\/]dist[\\/](libs[\\/].*)" to="\1" />
-			<mapper type="regexp" from="([\\/]extension[\\/].*)" to="\1" />
+
 		</pathconvert>
+		<pathconvert pathsep=" " dirsep="/" property="class-path-extensions">
+			<path>
+				<fileset dir="${dist}/extensions" includes="**/*.jar" />
+			</path>
+			<mapper type="regexp" from="[\\/]dist[\\/](extensions[\\/].*)" to="\1" />
+		</pathconvert>
+		<echo message="ClassPath ${class-path}  ${class-path-extensions}" />
 		<manifest file="${dist}/Manifest.MF">
 			<attribute name="Created-By" value="JD-Team and AppWork GmbH" />
 			<attribute name="Main-Class" value="jd.Main" />
 			<!-- plugins that serialize own classes have to be put in the classpath -->
-			<attribute name="Class-Path" value="${class-path}" />
-			<echo message="Creating @{class-path}" />
+			<attribute name="Class-Path" value="${class-path} ${class-path-extensions}" />
+
 		</manifest>
 		<jar file="${dist}/JDownloader.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${working}">
@@ -378,7 +385,7 @@
 	<target name="all" depends="clean,compile,copy_res,jarMain,copy_compiled,jarReconnectOptionals,jarOptionals,sign">
 		<echo message="Finished." />
 	</target>
-	<target name="withoutsign" depends="clean,compile,copy_res,jarMain,copy_compiled,jarReconnectOptionals,jarOptionals">
+	<target name="withoutsign" depends="clean,compile,copy_res,jarReconnectOptionals,jarOptionals,jarMain,copy_compiled">
 		<echo message="Finished." />
 	</target>
 	<target name="updater" depends="clean,compile,copy_compiled">
