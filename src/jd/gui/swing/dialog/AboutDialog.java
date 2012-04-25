@@ -121,7 +121,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         contentpane.add(new JLabel(NewTheme.I().getIcon("logo/jd_logo_128_128", -1)), "aligny center, spany 6");
 
         contentpane.add(lbl, "split 2");
-        contentpane.add(new JLabel("(" + branch + ")"), "pushx,growx");
+        contentpane.add(new JLabel(org.appwork.utils.StringUtils.isEmpty(branch) ? "" : "(" + branch + ")"), "pushx,growx");
 
         MigPanel stats = new MigPanel("ins 0,wrap 2", "[][grow,align right]", "[]");
 
