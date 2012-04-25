@@ -19,14 +19,21 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -37,11 +44,30 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserving.com" }, urls = { "http://(www\\.)?fileserving\\.com/files/[a-zA-Z0-9_\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserving.com" }, urls = { "http://(www\\.)?fileserving\\.com/files/[a-zA-Z0-9_\\-]+" }, flags = { 2 })
 public class FileServingCom extends PluginForHost {
+
+    public String                FILEIDREGEX   = "fileserving\\.com/files/([a-zA-Z0-9_\\-]+)(http:.*)?";
+    private static final String  FILEOFFLINE   = "(<h1>File not available</h1>|<b>The file could not be found\\. Please check the download link)";
+    private boolean              isRegistered  = false;
+    private static boolean       accDebugShown = false;
+    private static AtomicInteger maxDls        = new AtomicInteger(-1);
+    private static final Object  LOCK          = new Object();
+
+    // DEV NOTES
+    // other: unsure about the expire time, if it only shows days or what...
+    // only had one account to play with.
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        // All links should look the same to get no problems with regexing them
+        // later
+        link.setUrlDownload("http://www.fileserving.com/files/" + getID(link));
+    }
 
     public FileServingCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://www.fileserving.com/Public/premium");
     }
 
     @Override
@@ -49,13 +75,14 @@ public class FileServingCom extends PluginForHost {
         return "http://www.fileserving.com/Public/term";
     }
 
-    public String FILEIDREGEX = "fileserving\\.com/files/([a-zA-Z0-9_\\-]+)(http:.*)?";
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return false;
+    }
 
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        // All links should look the same to get no problems with regexing them
-        // later
-        link.setUrlDownload("http://www.fileserving.com/files/" + getID(link));
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
     }
 
     private String getID(final DownloadLink link) {
@@ -117,6 +144,11 @@ public class FileServingCom extends PluginForHost {
         }
         downloadLink.setProperty("freelink", dllink);
         dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -216,12 +248,143 @@ public class FileServingCom extends PluginForHost {
     }
 
     @Override
-    public void reset() {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        if (!isRegistered) {
+            br.setFollowRedirects(false);
+            br.getPage(link.getDownloadURL());
+            final String dllink = br.getRedirectLocation();
+            // not sure about below, but can't hurt either way
+            if (dllink == null) {
+                if (br.containsHTML(FILEOFFLINE)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        } else {
+            handleFree(link);
+        }
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (final PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("(?i)Expire in <b>(\\d+)</b>[\r\n\t ]+days\\.\\)").getMatch(0);
+        if (expire == null) {
+            // ai.setExpired(true);
+            isRegistered = true;
+            ai.setStatus("Free User");
+            try {
+                maxDls.set(-1);
+                account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable noin09581Stable) {
+            }
+        } else {
+            try {
+                maxDls.set(-1);
+                account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable noin09581Stable) {
+            }
+            ai.setValidUntil(System.currentTimeMillis() + (Integer.parseInt(expire) * 24 * 60 * 60 * 1000l));
+            ai.setStatus("Premium User");
+        }
+        return ai;
+    }
+
+    private void login(final Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            // Load cookies
+            try {
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie("http://www.fileserving.com", key, value);
+                        }
+                        return;
+                    }
+                }
+
+                /* reset maxPrem workaround on every fetchaccount info */
+                maxDls.set(1);
+                br.setFollowRedirects(true);
+                setBrowserExclusive();
+                br.setCustomCharset("utf-8");
+                br.getPage("http://www.fileserving.com/Public/login");
+                Form login = br.getForm(0);
+                if (login == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                login.put("username", Encoding.urlEncode(account.getUser()));
+                login.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(login);
+                if (br.containsHTML(">Wrong Password<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!br.getURL().contains("/My/index")) {
+                    br.getPage("http://www.fileserving.com/My/index");
+                    if (!br.getURL().contains("/My/index")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (!br.containsHTML("Expire in <b>\\d+") || !br.containsHTML("(?i)Account Type: <span>Premium</span>")) {
+                    if (account.getBooleanProperty("premium", false) == true && accDebugShown) {
+                        logger.info("DEBUG: " + br.toString());
+                        accDebugShown = true;
+                    }
+                    // ai.setExpired(true);
+                    isRegistered = true;
+                    try {
+                        maxDls.set(1);
+                        account.setMaxSimultanDownloads(1);
+                        account.setConcurrentUsePossible(false);
+                    } catch (final Throwable noin09581Stable) {
+                    }
+                } else {
+                    account.setProperty("premium", true);
+                    try {
+                        maxDls.set(-1);
+                        account.setMaxSimultanDownloads(-1);
+                        account.setConcurrentUsePossible(true);
+                    } catch (final Throwable noin09581Stable) {
+                    }
+                }
+                // Save cookies
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies("http://www.fileserving.com");
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", null);
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override

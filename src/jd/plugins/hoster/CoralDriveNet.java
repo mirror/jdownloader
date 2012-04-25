@@ -1,18 +1,18 @@
-//jDownloader - Downloadmanager
-//Copyright (C) 2012  JD-Team support@jdownloader.org
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
-//This program is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
 //
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//GNU General Public License for more details.
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
 //
-//You should have received a copy of the GNU General Public License
-//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -51,12 +51,12 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadbaz.com" }, urls = { "https?://(www\\.)?uploadbaz\\.com/[a-z0-9]{12}" }, flags = { 2 })
-public class UploadBazCom extends PluginForHost {
+@HostPlugin(revision = "$Revision: 16378 $", interfaceVersion = 2, names = { "coraldrive.net" }, urls = { "https?://(www\\.)?coraldrive\\.net/[a-z0-9]{12}" }, flags = { 2 })
+public class CoralDriveNet extends PluginForHost {
 
     private String               correctedBR         = "";
     private static final String  PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST         = "http://uploadbaz.com";
+    private static final String  COOKIE_HOST         = "http://coraldrive.net";
     private static final String  MAINTENANCE         = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -68,12 +68,12 @@ public class UploadBazCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.5-raz
     // mods:
-    // non account: 10 * unlimited?
-    // free account: same as above, not tested
-    // premium account: 10 * unlimited
+    // non account: 1 * 1, no resume
+    // free account: same as above.
+    // premium account: 20 * unlimited
     // protocol: no https
-    // captchatype: recaptcha
-    // other: no redirects, over 10 chunks for any user becomes unstable.
+    // captchatype: 4dignum
+    // other: no redirects
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -85,14 +85,14 @@ public class UploadBazCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public UploadBazCom(PluginWrapper wrapper) {
+    public CoralDriveNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return false;
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -104,6 +104,8 @@ public class UploadBazCom extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
     }
 
     @Override
@@ -121,7 +123,7 @@ public class UploadBazCom extends PluginForHost {
         if (filename == null) {
             filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
             if (filename == null) {
-                filename = new Regex(correctedBR, "<h2>(.*?)</h2>").getMatch(0);
+                filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
             }
         }
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
@@ -151,7 +153,7 @@ public class UploadBazCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -15, "freelink");
+        doFree(downloadLink, false, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -277,7 +279,7 @@ public class UploadBazCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     /** Remove HTML code which could break the plugin */
@@ -488,8 +490,8 @@ public class UploadBazCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
             try {
-                maxPrem.set(-1);
-                account.setMaxSimultanDownloads(-1);
+                maxPrem.set(1);
+                account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
@@ -523,7 +525,7 @@ public class UploadBazCom extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             getPage(link.getDownloadURL());
-            doFree(link, true, -10, "freelink2");
+            doFree(link, false, 1, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
@@ -544,7 +546,7 @@ public class UploadBazCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();

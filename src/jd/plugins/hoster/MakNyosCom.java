@@ -42,7 +42,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "maknyos.com" }, urls = { "http://[\\w\\.]*?maknyos\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "maknyos.com" }, urls = { "http://[\\w\\.]*?maknyos\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class MakNyosCom extends PluginForHost {
 
     private String              brbefore      = "";
