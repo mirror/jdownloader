@@ -75,7 +75,7 @@ import org.jdownloader.extensions.chat.settings.ChatConfigPanel;
 import org.jdownloader.extensions.chat.translate.T;
 import org.schwering.irc.lib.IRCConnection;
 
-public class ChatExtension extends AbstractExtension<ChatConfig> {
+public class ChatExtension extends AbstractExtension<ChatConfig> implements ReconnecterListener {
     private static final long                AWAY_TIMEOUT         = 15 * 60 * 1000;
     private static final Pattern             CMD_ACTION           = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
     private static final Pattern             CMD_CONNECT          = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);
@@ -1004,7 +1004,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
 
     @Override
     protected void stop() throws StopException {
-
+        Reconnecter.getInstance().getEventSender().removeListener(this);
         this.NAMES.clear();
         this.pms.clear();
         this.setLoggedIn(false);
@@ -1022,7 +1022,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
 
     @Override
     protected void start() throws StartException {
-
+        Reconnecter.getInstance().getEventSender().addListener(this);
     }
 
     @Override
@@ -1051,6 +1051,27 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
         return view;
     }
 
+    public void onReconnectSettingsUpdated(ReconnecterEvent event) {
+    }
+
+    public void onBeforeReconnect(ReconnecterEvent event) {
+        // sendMessage(CHANNEL, "/me is reconnecting...");
+        if (ChatExtension.this.conn != null && ChatExtension.this.conn.isConnected()) {
+            ChatExtension.this.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, "closing connection due to requested reconnect.");
+            ChatExtension.this.conn.doPart(getCurrentChannel(), "reconnecting...");
+            ChatExtension.this.conn.close();
+            ChatExtension.this.conn = null;
+        }
+    }
+
+    public void onAfterReconnect(ReconnecterEvent event) {
+        if (SwingGui.getInstance().getMainFrame().isActive() && !ChatExtension.this.nickaway) {
+            ChatExtension.this.initIRC();
+        } else {
+            ChatExtension.this.addToText(null, ChatExtension.STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
+        }
+    }
+
     @Override
     protected void initExtension() throws StartException {
 
@@ -1067,29 +1088,6 @@ public class ChatExtension extends AbstractExtension<ChatConfig> {
         ChatExtension.COMMANDS.add("/join ");
         configPanel = new ChatConfigPanel(this, getSettings());
 
-        Reconnecter.getInstance().getEventSender().addListener(new ReconnecterListener() {
-
-            public void onReconnectSettingsUpdated(ReconnecterEvent event) {
-            }
-
-            public void onBeforeReconnect(ReconnecterEvent event) {
-                // sendMessage(CHANNEL, "/me is reconnecting...");
-                if (ChatExtension.this.conn != null && ChatExtension.this.conn.isConnected()) {
-                    ChatExtension.this.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, "closing connection due to requested reconnect.");
-                    ChatExtension.this.conn.doPart(getCurrentChannel(), "reconnecting...");
-                    ChatExtension.this.conn.close();
-                    ChatExtension.this.conn = null;
-                }
-            }
-
-            public void onAfterReconnect(ReconnecterEvent event) {
-                if (SwingGui.getInstance().getMainFrame().isActive() && !ChatExtension.this.nickaway) {
-                    ChatExtension.this.initIRC();
-                } else {
-                    ChatExtension.this.addToText(null, ChatExtension.STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
-                }
-            }
-        });
         new EDTHelper<Object>() {
 
             @Override

@@ -34,7 +34,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
-import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -199,7 +198,6 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
         bottomPanel.add(new ParalellDownloadsEditor());
         bottomPanel.add(new ParallelDownloadsPerHostEditor());
         bottomPanel.add(new SpeedlimitEditor());
-        bottomPanel.add(new JTextField());
 
     }
 
