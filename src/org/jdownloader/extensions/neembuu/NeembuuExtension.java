@@ -52,8 +52,6 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
     private NeembuuGui                                   tab;
     private int                                          number_of_retries          = 0;                                                                                                                         // 0=not
     // checked, 1=checked once but failed ... -1 =works :)
-    private String                                       basicMntLoc                = new java.io.File(System.getProperty("user.home") + java.io.File.separator + "NeembuuWatchAsYouDownload").getAbsolutePath();
-    private String                                       vlcLoc                     = null;
     private final LinkedList<WatchAsYouDownloadSession>  watchAsYouDownloadSessions = new LinkedList<WatchAsYouDownloadSession>();
     public static final String                           WATCH_AS_YOU_DOWNLOAD_KEY  = "WATCH_AS_YOU_DOWNLOAD";
     public static final String                           INITIATED_BY_WATCH_ACTION  = "INITIATED_BY_WATCH_ACTION";
@@ -66,15 +64,25 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
     }
 
     public String getBasicMountLocation() {
+        String basicMntLoc = getSettings().getBasicMountLocation();
+        if(basicMntLoc==null){
+            java.io.File basicmntLocfile = new java.io.File(System.getProperty("user.home") + java.io.File.separator + "NeembuuWatchAsYouDownload");
+            if(!basicmntLocfile.exists()){
+                basicmntLocfile.mkdir();
+            }
+            basicMntLoc = basicmntLocfile.getAbsolutePath();
+            getSettings().setBasicMountLocation(basicMntLoc);
+            return getBasicMountLocation();
+        }
         return basicMntLoc;
     }
 
     public String getVlcLocation() {
-        return vlcLoc;
+        return getSettings().getVLCPath();
     }
 
     public void setVlcLocation(String vlcl) {
-        this.vlcLoc = vlcl;
+        getSettings().setVLCPath(vlcl);
     }
 
     public void setBasicMountLocation(String basicMntLoc) throws Exception {
@@ -95,7 +103,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
             java.nio.file.Files.delete(f_test.toPath());
         }
 
-        this.basicMntLoc = basicMntLoc;
+        getSettings().setBasicMountLocation(basicMntLoc);
     }
 
     public synchronized final boolean isUsable() {

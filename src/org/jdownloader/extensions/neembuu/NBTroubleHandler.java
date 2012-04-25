@@ -18,7 +18,6 @@ package org.jdownloader.extensions.neembuu;
 
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -26,6 +25,7 @@ import javax.swing.SwingUtilities;
 import jpfm.operations.readwrite.ReadRequest;
 import neembuu.vfs.connection.NewConnectionParams;
 import neembuu.vfs.file.TroubleHandler;
+import org.appwork.utils.logging.Log;
 
 import org.jdownloader.extensions.neembuu.translate._NT;
 
@@ -52,12 +52,12 @@ public final class NBTroubleHandler implements TroubleHandler {
             }
         });
 
-        Logger.getGlobal().log(Level.SEVERE, mess + " " + mess2);
+        Log.L.log(Level.SEVERE, mess + " " + mess2);
 
         try {
             jdds.getWatchAsYouDownloadSession().getVirtualFileSystem().unmountAndEndSessions();
         } catch (Exception a) {
-            Logger.getGlobal().log(Level.SEVERE, "unmounting problem", a);
+            Log.L.log(Level.SEVERE, "unmounting problem", a);
         }
     }
 
@@ -74,7 +74,7 @@ public final class NBTroubleHandler implements TroubleHandler {
         final String mess = _NT._.troubleHandler_pendingRequests() + (maxMillisecWait / 60000d) + _NT._.troubleHandler_pendingRequests_minutes();
         final String mess2 = _NT._.troubleHandler_pendingRequests_Solution();
 
-        Logger.getGlobal().log(Level.SEVERE, mess, new Throwable());
+        Log.L.log(Level.SEVERE, mess, new Throwable());
 
         if (maxMillisecWait > 3 * 60 * 1000) { // if a request is pending since
                                                // last 3 mintues ... we better
@@ -86,12 +86,12 @@ public final class NBTroubleHandler implements TroubleHandler {
                 }
             });
 
-            Logger.getGlobal().log(Level.SEVERE, mess2);
+            Log.L.log(Level.SEVERE, mess2);
 
             try {
                 jdds.getWatchAsYouDownloadSession().getVirtualFileSystem().unmountAndEndSessions();
             } catch (Exception a) {
-                Logger.getGlobal().log(Level.SEVERE, "unmounting problem", a);
+                Log.L.log(Level.SEVERE, "unmounting problem", a);
             }
         }
     }

@@ -94,6 +94,7 @@ public class NeembuuGui extends AddonPanel<NeembuuExtension> {
         final JTextField vlcPath = new JTextField();
 
         vlcPath.setEditable(false);
+        vlcPath.setText(getExtension().getVlcLocation());
         JButton browseVlc = new JButton(_NT._.browse());
         settingsPanel.add(vlcPath, "width 200::");
         settingsPanel.add(browseVlc, "wrap");
@@ -165,10 +166,7 @@ public class NeembuuGui extends AddonPanel<NeembuuExtension> {
                     } catch (Exception a) {
                         JOptionPane.showMessageDialog(panel, jfc.getSelectedFile() + "\nCannot be used. Reason :" + a.getMessage(), "Cannot set basic mount location", JOptionPane.ERROR_MESSAGE);
                     }
-                } else {
-                    getExtension().setVlcLocation(null);
-                    vlcPath.setText(getExtension().getVlcLocation());
-                }
+                } 
             }
         });
         openBml.addActionListener(new ActionListener() {

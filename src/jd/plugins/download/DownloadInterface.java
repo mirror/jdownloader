@@ -50,6 +50,7 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
@@ -1346,7 +1347,7 @@ abstract public class DownloadInterface {
                     throw new PluginException(LinkStatus.ERROR_FATAL);
                 }
             } catch (final Throwable e) {
-                logger.log(Level.SEVERE, "Exception in neembuu watch as you download", e);
+                Log.L.log(Level.SEVERE, "Exception in neembuu watch as you download", e);
             }
             logger.finer("Start Download");
             if (!connected) connect();

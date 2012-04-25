@@ -36,6 +36,7 @@ import jpfm.operations.readwrite.SimpleReadRequest;
 import jpfm.util.PreferredMountTypeUtil;
 import jpfm.volume.VeryBigFile;
 import jpfm.volume.vector.VectorRootDirectory;
+import org.appwork.utils.logging.Log;
 
 
 /**
@@ -120,10 +121,10 @@ final class CheckJPfm {
                 }
             }).build());
         } catch (NullPointerException ne) {
-            Logger.getGlobal().log(Level.SEVERE, "NullPointerException while test mounting", ne);
+            Log.L.log(Level.SEVERE, "NullPointerException while test mounting", ne);
             Throwable e = JPfm.getLastException();
             if (e != null) {
-                Logger.getGlobal().log(Level.SEVERE, "", e);
+                Log.L.log(Level.SEVERE, "", e);
                 if (e.getMessage().equalsIgnoreCase("Pismo file mount incorrectly installed or not installed")) {
                     retry = true;
                 }
@@ -136,7 +137,7 @@ final class CheckJPfm {
             if (attempt < 2) {
                 // TODO : show a gui message informing user that Pismo is being
                 // installed
-                PismoInstaller.tryInstallingPismoFileMount(Logger.getGlobal(), false);
+                PismoInstaller.tryInstallingPismoFileMount(Log.L, false);
                 return mount(attempt + 1, mntLoc, fs);
             }
         }

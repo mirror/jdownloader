@@ -18,12 +18,13 @@ package org.jdownloader.extensions.neembuu.postprocess;
 
 import java.io.File;
 import java.util.List;
-import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import jpfm.DirectoryStream;
 import jpfm.FileAttributesProvider;
 import jpfm.FileType;
 import jpfm.fs.BasicFileSystem;
+import org.appwork.utils.logging.Log;
 
 import org.jdownloader.extensions.neembuu.DownloadSession;
 import org.jdownloader.extensions.neembuu.NB_VirtualFileSystem;
@@ -56,7 +57,7 @@ public class SimplyOpenTheVideoFile implements PostProcessor {
     }
 
     private boolean findAndOpenVideo(DirectoryStream ds, String path, BasicFileSystem bfs) {
-        Logger.getGlobal().info(" inside " + ds);
+        Log.L.info(" inside " + ds);
         for (FileAttributesProvider fap : ds) {
             if (fap.getFileType() == FileType.FOLDER) {
                 return findAndOpenVideo((DirectoryStream) fap, path + File.separatorChar + fap.getName(), bfs);
@@ -67,11 +68,11 @@ public class SimplyOpenTheVideoFile implements PostProcessor {
                         java.awt.Desktop.getDesktop().open(f);
                     return true;
                 } catch (Exception a) {
-                    a.printStackTrace();
+                    Log.L.log(Level.SEVERE,"Could not open the file",a);
                     return false;
                 }
             } else {
-                Logger.getGlobal().info("cannot open " + fap.getName());
+                Log.L.info("cannot open " + fap.getName());
             }
         }
         return false;

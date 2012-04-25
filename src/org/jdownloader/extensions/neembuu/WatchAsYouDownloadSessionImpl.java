@@ -46,6 +46,7 @@ import neembuu.vfs.file.TroubleHandler;
 import neembuu.vfs.progresscontrol.ThrottleFactory;
 import neembuu.vfs.readmanager.ReadRequestState;
 import neembuu.vfs.readmanager.impl.SeekableConnectionFileImplBuilder;
+import org.appwork.utils.logging.Log;
 
 import org.jdownloader.extensions.neembuu.gui.HttpFilePanel;
 import org.jdownloader.extensions.neembuu.gui.VirtualFilesPanel;
@@ -246,7 +247,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ie) {
-                ie.printStackTrace(System.err);
+                Log.L.log(Level.FINE,"updateloop interrupted",ie);
             }
 
             jdds.getDownloadInterface().setTotalLinkBytesLoaded(getTotalDownloaded());
@@ -258,7 +259,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
                 try {
                     virtualFileSystem.unmountAndEndSessions();
                 } catch (Exception ex) {
-                    ex.printStackTrace(System.err);
+                    Log.L.log(Level.INFO,"Error in Unmount and end session ",ex);
                 }
                 break UPDATE_LOOP;
             }
@@ -277,7 +278,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
                     try {
                         virtualFileSystem.unmountAndEndSessions();
                     } catch (Exception ex) {
-                        ex.printStackTrace(System.err);
+                        Log.L.log(Level.INFO,"Error in Unmount and end session ",ex);
                     }
                     break WAIT_FOR_SPLITS_TO_FINISH;
                 }
@@ -285,7 +286,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
             }
         } catch (InterruptedException ie) {
             // the stop button pressed
-            ie.printStackTrace(System.err);
+            Log.L.log(Level.FINE,"Stop button pressed",ie);
         }
 
         jdds.getDownloadLink().getFilePackage().setProperty(NeembuuExtension.INITIATED_BY_WATCH_ACTION, false);
@@ -309,7 +310,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
                     try {
                         jdds.getWatchAsYouDownloadSession().getSeekableConnectionFile().getFileStorageManager().completeSession(new File(jdds.getDownloadLink().getFileOutput()), jdds.getDownloadLink().getDownloadSize());
                     } catch (Exception i) {
-                        Logger.getGlobal().log(Level.SEVERE, "Problem in completing session", i);
+                        Log.L.log(Level.SEVERE, "Problem in completing session", i);
                     } finally {
                         done.set(true);
                     }
@@ -342,18 +343,18 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
                 jdds.getWatchAsYouDownloadSession().getSeekableConnectionFile().close();
             }
         } catch (final Throwable e) {
-            Logger.getGlobal().log(Level.SEVERE, "could not close virtual file", e);
+            Log.L.log(Level.SEVERE, "could not close virtual file", e);
         }
         try {
             vf.closeCompletely();
         } catch (final Throwable e) {
-            Logger.getGlobal().log(Level.SEVERE, "could not completely close virtual file", e);
+            Log.L.log(Level.SEVERE, "could not completely close virtual file", e);
         }
 
         try {
             jdds.getWatchAsYouDownloadSession().getSeekableConnectionFile().getFileStorageManager().close();
         } catch (Exception a) {
-            Logger.getGlobal().log(Level.SEVERE, "could not close filestoragemanager", a);
+            Log.L.log(Level.SEVERE, "could not close filestoragemanager", a);
         }
         NeembuuExtension.getInstance().getVirtualFileSystems().remove(jdds.getDownloadLink().getFilePackage());
         virtualFileSystem.removeSession(jdds);

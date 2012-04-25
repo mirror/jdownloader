@@ -22,12 +22,14 @@ import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.logging.Level;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import net.miginfocom.swing.MigLayout;
+import org.appwork.utils.logging.Log;
 import org.jdownloader.extensions.neembuu.DownloadSession;
 import org.jdownloader.extensions.neembuu.NeembuuExtension;
 import org.jdownloader.extensions.neembuu.translate._NT;
@@ -51,7 +53,7 @@ public class VirtualFilesPanel extends JPanel {
             virtualFilesPanel = jdds.getWatchAsYouDownloadSession().getVirtualFileSystem().getVirtualFilesPanel();
             //virtualFilesPanel = NeembuuExtension.getInstance().getVirtualFileSystems().get(jdds.getDownloadLink().getFilePackage());//.getProperty("virtualFilesPanel");
         } catch (Exception e) {
-            e.printStackTrace(System.err);
+            Log.L.log(Level.SEVERE, "Could not get virtual files panel",e);
         }
         if (virtualFilesPanel == null) {
             virtualFilesPanel = new VirtualFilesPanel(new BorderLayout());

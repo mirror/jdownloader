@@ -75,7 +75,7 @@ public final class JD_HTTP_Download_Manager implements NewConnectionProvider {
                     connectionsRequested();
                     c.connectAndSupply();
                 } catch (Exception e) {
-                    Logger.getGlobal().log(Level.INFO, "Problem in new connection ", e);
+                    Log.L.log(Level.INFO, "Problem in new connection ", e);
                 }
             }
         }
@@ -110,7 +110,6 @@ public final class JD_HTTP_Download_Manager implements NewConnectionProvider {
         return ((totalTime) / i);
     }
 
-    long[] totalProgress = { 0 };
 
     @Override
     public String toString() {

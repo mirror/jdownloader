@@ -22,6 +22,7 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,10 +37,13 @@ import neembuu.rangearray.RangeUtils;
 import neembuu.rangearray.UnsyncRangeArrayCopy;
 import neembuu.swing.RangeArrayComponent;
 import neembuu.swing.RangeArrayElementColorProvider;
+import neembuu.swing.RangeArrayElementColorProvider.SelectionState;
+import neembuu.swing.RangeArrayElementToolTipTextProvider;
 import neembuu.swing.RangeSelectedListener;
 import neembuu.util.logging.LoggerUtil;
 import neembuu.vfs.file.MonitoredHttpFile;
 import neembuu.vfs.readmanager.RegionHandler;
+import org.appwork.utils.logging.Log;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdownloader.extensions.neembuu.translate._NT;
@@ -50,20 +54,21 @@ import org.jdownloader.extensions.neembuu.translate._NT;
  */
 public final class HttpFilePanel extends javax.swing.JPanel implements RangeSelectedListener {
 
-    private final MonitoredHttpFile              file;
-    private SpeedGraphJFluid                     graphJFluid                   = null;
-    private volatile String                      virtualPathOfFile             = null;
-    private static final Logger                  LOGGER                        = LoggerUtil.getLogger();
-    private volatile Range                       lastRegionSelected            = null;
-    private volatile RegionHandler               lastRegionHandler             = null;
+    private final MonitoredHttpFile                 file;
+    private SpeedGraphJFluid                        graphJFluid                     = null;
+    private volatile String                         virtualPathOfFile               = null;
+    private static final Logger                     LOGGER                          = LoggerUtil.getLogger();
+    private volatile Range                          lastRegionSelected              = null;
+    private volatile RegionHandler                  lastRegionHandler               = null;
     // private final Object rangeSelectedLock = new Object();
-    RegionHandler                                previousRegionOfInterest;
+    RegionHandler                                   previousRegionOfInterest;
     // Map<Long,Color> rm = new
-    private final RequestedRegionColorProvider   requestedRegionColorProvider  = new RequestedRegionColorProvider();
-    private final JLabel                         activateLable                 = new JLabel(_NT._.filePanel_graph_noRegionSelected());
+    private final RequestedRegionColorProvider      requestedRegionColorProvider    = new RequestedRegionColorProvider();
+    private final JLabel                            activateLable                   = new JLabel(_NT._.filePanel_graph_noRegionSelected());
     // ,new
     // ImageIcon(HttpFilePanel.class.getResource("activate.png")),SwingConstants.CENTER
-    private final RangeArrayElementColorProvider downloadedRegionColorProvider = new DownloadedRegionColorProvider();
+    private final RangeArrayElementColorProvider    downloadedRegionColorProvider   = new DownloadedRegionColorProvider();
+    private final DownloadedRegionToolTipProvider   downloadedRegionToolTipProvider = new DownloadedRegionToolTipProvider();
     
     private final class DownloadedRegionColorProvider implements RangeArrayElementColorProvider {
 
@@ -144,6 +149,22 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
             return base;
         }
     };
+    
+    private final class DownloadedRegionToolTipProvider implements RangeArrayElementToolTipTextProvider{
+
+        public String getToolTipText(Range element, SelectionState selectionState) {
+            if(!(element.getProperty() instanceof RegionHandler))return "";
+            RegionHandler regionHandler = (RegionHandler)element.getProperty();
+            String toRet = "";
+            if(file.getDownloadConstrainHandler().isComplete()){
+                toRet = "File completely downloaded \n";
+            }
+            return toRet + NumberFormat.getInstance().format( regionHandler.getThrottleStatistics().getDownloadSpeed_KiBps())+" KBps \n"+
+                    " RequestSpeed = " + NumberFormat.getInstance().format( regionHandler.getThrottleStatistics().getRequestSpeed_KiBps())+" KBps \n"+
+                    (regionHandler.isAlive()?"alive":"dead")+" "+(regionHandler.isMainDirectionOfDownload()?"main":"notmain")  ;
+        }
+        
+    }
 
     final Timer updateGraphTimer = new Timer(500, new ActionListener() {
                                      int x = 0;
@@ -232,7 +253,7 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
         openFile = new javax.swing.JButton();
         autoCompleteEnabledButton = new javax.swing.JToggleButton();
         jPanel1 = new javax.swing.JPanel();
-        regionDownloadedBar = new neembuu.swing.RangeArrayComponent(file.getRegionHandlers(),downloadedRegionColorProvider,true);
+        regionDownloadedBar = new neembuu.swing.RangeArrayComponent(file.getRegionHandlers(),downloadedRegionColorProvider,true,downloadedRegionToolTipProvider);
         jPanel2 = new javax.swing.JPanel();
         regionRequestedBar = new neembuu.swing.RangeArrayComponent(file.getRequestedRegion(),requestedRegionColorProvider,true);
         graphAndAdvancedPanel = new JXCollapsiblePane();
@@ -519,7 +540,7 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
             java.awt.Desktop.getDesktop().open(new java.io.File(virtualPathOfFile));
         } catch (Exception a) {
             JOptionPane.showMessageDialog(this, "Could not show the file");
-            a.printStackTrace(System.err);
+            Log.L.log(Level.SEVERE,"Could not show the file",a);
         }
     }// GEN-LAST:event_openFileActionPerformed
 
