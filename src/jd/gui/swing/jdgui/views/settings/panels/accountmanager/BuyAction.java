@@ -124,19 +124,21 @@ public class BuyAction extends AbstractAction {
                             combo.addActionListener(new ActionListener() {
 
                                 public void actionPerformed(ActionEvent e) {
-                                    if (NewTheme.I().hasIcon("fav/big." + DomainInfo.getInstance(((LazyHostPlugin) combo.getSelectedItem()).getDisplayName()).getTld())) {
-                                        //
-                                        Image ic = NewTheme.I().getImage("fav/big." + DomainInfo.getInstance(((LazyHostPlugin) combo.getSelectedItem()).getDisplayName()).getTld(), -1);
+                                    DomainInfo domainInfo = DomainInfo.getInstance(((LazyHostPlugin) combo.getSelectedItem()).getDisplayName());
+                                    String tld = domainInfo.getTld();
+                                    Image ic = null;
+                                    if (NewTheme.I().hasIcon("fav/big." + tld)) {
+                                        ic = NewTheme.I().getImage("fav/big." + tld, -1);
+                                    }
+                                    if (ic == null && NewTheme.I().hasIcon("fav/" + tld)) {
+                                        ic = NewTheme.I().getImage("fav/" + tld, -1);
+                                    }
+                                    if (ic != null) {
                                         _this.setIcon(new ImageIcon(IconIO.getScaledInstance(ic, Math.min(ic.getWidth(null), 32), Math.min(ic.getHeight(null), 32), Interpolation.BILINEAR, true)));
                                         return;
+                                    } else {
+                                        _this.setIcon(domainInfo.getFavIcon());
                                     }
-                                    if (NewTheme.I().hasIcon("fav/" + DomainInfo.getInstance(((LazyHostPlugin) combo.getSelectedItem()).getDisplayName()).getTld())) {
-                                        //
-                                        Image ic = NewTheme.I().getImage("fav/" + DomainInfo.getInstance(((LazyHostPlugin) combo.getSelectedItem()).getDisplayName()).getTld(), -1);
-                                        _this.setIcon(new ImageIcon(IconIO.getScaledInstance(ic, Math.min(ic.getWidth(null), 32), Math.min(ic.getHeight(null), 32), Interpolation.BILINEAR, true)));
-                                        return;
-                                    }
-                                    _this.setIcon(DomainInfo.getInstance(((LazyHostPlugin) combo.getSelectedItem()).getDisplayName()).getFavIcon());
                                 }
                             });
                             combo.setSelectedItem(defaultSelection);

@@ -6,11 +6,13 @@ import javax.swing.Icon;
 import javax.swing.SwingConstants;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginForHost;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -29,10 +31,12 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
      * 
      */
     private static final long serialVersionUID = 1L;
+    private boolean           warningEnabled;
 
     public SpeedColumn() {
         super(_GUI._.SpeedColumn_SpeedColumn());
         rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
+        warningEnabled = CFG_GENERAL.SPEED_WARNING_IN_DOWNLOADTABLE_ENABLED.isEnabled();
     }
 
     public boolean isPaintWidthLockIcon() {
@@ -62,30 +66,34 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected Icon getIcon(AbstractNode value) {
-
         if (isSpeedWarning(value)) { return NewTheme.I().getIcon("warning", 16); }
-
         return null;
     }
 
     private boolean isSpeedWarning(AbstractNode value) {
-        if (!CFG_GENERAL.SPEED_WARNING_IN_DOWNLOADTABLE_ENABLED.isEnabled()) return false;
+        if (warningEnabled == false) return false;
         if (value instanceof DownloadLink) {
-            if (((DownloadLink) value).getDownloadLinkController() == null || ((DownloadLink) value).getDownloadLinkController().getAccount() != null) return false;
-
-            if (((DownloadLink) value).getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) && ((DownloadLink) value).getDownloadCurrent() > 100 * 1024) {
-                // show speedwarning
+            DownloadLink dl = (DownloadLink) value;
+            SingleDownloadController dlc = dl.getDownloadLinkController();
+            if (dlc == null || dlc.getAccount() != null) return false;
+            PluginForHost plugin = dl.getDefaultPlugin();
+            if (plugin == null || !plugin.isPremiumEnabled()) {
+                /* no account support yet for this plugin */
+                return false;
+            }
+            long limit = dlc.getConnectionHandler().getLimit();
+            if (limit > 0 && limit < 50 * 1024) {
+                /* we have an active limit that is smaller than our warn speed */
+                return false;
+            }
+            if (dl.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) && ((DownloadLink) value).getDownloadCurrent() > 100 * 1024) {
                 if (((DownloadLink) value).getDownloadSpeed() < 50 * 1024) { return true; }
             }
-
         }
-
         return false;
-
     }
 
     protected boolean onSingleClick(final MouseEvent e, final AbstractNode obj) {
-
         if (isSpeedWarning(obj)) {
 
             try {

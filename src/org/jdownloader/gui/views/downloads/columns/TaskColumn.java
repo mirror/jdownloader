@@ -13,6 +13,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
@@ -68,6 +69,11 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
             if (!dl.getLinkStatus().isPluginActive() && dl.isEnabled() && dl.getLivePlugin() == null) {
                 if (!dl.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && !dl.getLinkStatus().isFinished()) {
+                    PluginForHost plugin = dl.getDefaultPlugin();
+                    if (plugin == null || !plugin.isPremiumEnabled()) {
+                        /* no account support yet for this plugin */
+                        return false;
+                    }
                     /* enabled links that are not running */
                     ProxyBlock timeout = null;
                     if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {

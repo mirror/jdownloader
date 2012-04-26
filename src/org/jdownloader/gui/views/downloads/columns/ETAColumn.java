@@ -13,6 +13,7 @@ import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
@@ -86,8 +87,12 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
     protected boolean onSingleClick(final MouseEvent e, final AbstractNode value) {
         if (value instanceof DownloadLink) {
             DownloadLink dlLink = (DownloadLink) value;
-
             if (!dlLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && !dlLink.getLinkStatus().isFinished()) {
+                PluginForHost plugin = dlLink.getDefaultPlugin();
+                if (plugin == null || !plugin.isPremiumEnabled()) {
+                    /* no account support yet for this plugin */
+                    return false;
+                }
                 ProxyBlock timeout = null;
                 if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dlLink.getHost())) != null && timeout.getLink() == dlLink) {
                     try {
@@ -103,9 +108,7 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
                         e1.printStackTrace();
                     }
                 }
-
             }
-
         }
         return false;
     }

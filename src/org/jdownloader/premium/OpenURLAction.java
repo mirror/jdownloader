@@ -26,7 +26,6 @@ public class OpenURLAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-
         CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(info.getTld(), id));
     }
 }
