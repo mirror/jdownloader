@@ -122,7 +122,10 @@ public class FavIcons {
             /* check if we already have a favicon? */
             if (NewTheme.I().hasIcon("fav/" + host)) {
                 image = NewTheme.I().getIcon("fav/" + host, -1);
+            } else if (NewTheme.I().hasIcon("fav/big." + host)) {
+                image = NewTheme.I().getIcon("fav/big." + host, -1);
             }
+
         }
         if (image == null) {
             /* add to queue list */

@@ -36,10 +36,12 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
     private DomainInfo       info;
     private ExtTextField     user;
     private ExtPasswordField pass;
+    private String           id;
 
-    public BuyAndAddPremiumAccount(DomainInfo info) {
-        super(0, "", null, null, null);
+    public BuyAndAddPremiumAccount(DomainInfo info, String id) {
+        super(0, _GUI._.BuyAndAddPremiumAccount_BuyAndAddPremiumAccount_title_(), null, null, null);
         this.info = info;
+        this.id = id;
     }
 
     @Override
@@ -101,7 +103,7 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
         try {
             Launcher.statics();
 
-            cp = new BuyAndAddPremiumAccount(DomainInfo.getInstance("filesonic.com"));
+            cp = new BuyAndAddPremiumAccount(DomainInfo.getInstance("filesonic.com"), "test");
 
             LookAndFeelController.getInstance().setUIManager();
 
@@ -126,12 +128,12 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
         }
 
         ret.add(header(_GUI._.BuyAndAddPremiumAccount_layoutDialogContent_get()), "gapleft 15,pushx,growx");
-        ExtButton bt = new ExtButton(new OpenURLAction(info));
+        ExtButton bt = new ExtButton(new OpenURLAction(info, id == null ? "BuyAndAddDialog" : id));
         ret.add(bt, "gapleft 27");
         ret.add(header(_GUI._.BuyAndAddPremiumAccount_layoutDialogContent_enter()), "gapleft 15,pushx,growx");
         user = new ExtTextField();
         pass = new ExtPasswordField();
-        user.setHelpText(_GUI._.BuyAndAddPremiumAccount_layoutDialogContent_username(info.getName()));
+        user.setHelpText(_GUI._.BuyAndAddPremiumAccount_layoutDialogContent_username(info.getTld()));
         pass.setHelpText(_GUI._.BuyAndAddPremiumAccount_layoutDialogContent_pass());
         ret.add(user, "gapleft 27");
         ret.add(pass, "gapleft 27");

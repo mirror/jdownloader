@@ -316,4 +316,11 @@ public interface GeneralSettings extends ConfigInterface {
 
     boolean isConvertRelativePathesJDRoot();
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @Description("Set to false to hide the Speed Warning Icons in the SpeedColumn")
+    boolean isSpeedWarningInDownloadtableEnabled();
+
+    void setSpeedWarningInDownloadtableEnabled(boolean b);
+
 }

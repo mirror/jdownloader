@@ -1,9 +1,6 @@
 package org.jdownloader;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.HashMap;
 
 import javax.swing.ImageIcon;
@@ -13,9 +10,7 @@ import jd.controlling.faviconcontroller.FavIcons;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.MinTimeWeakReference;
-import org.appwork.utils.Application;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
 import org.jdownloader.images.NewTheme;
@@ -112,26 +107,6 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
         }
     }
 
-    public AffiliateSettings getAffiliateSettings() {
-        URL url = Application.getRessourceURL("cfg/aff." + getTld() + ".json");
-        if (url != null && url.getProtocol().equals("file")) {
-            try {
-                File path = new File(new File(url.toURI()).getParentFile(), "aff." + getTld());
-                return JsonConfig.create(path, AffiliateSettings.class);
-            } catch (URISyntaxException e) {
-                return JsonConfig.create(AffiliateSettings.class);
-            }
-        } else {
-            return JsonConfig.create(AffiliateSettings.class);
-        }
-    }
-
-    public String getName() {
-        String name = getAffiliateSettings().getName();
-        if (name == null) return getTld();
-        return name;
-    }
-
     /**
      * returns a high quality icon for this domain. most domains do not support
      * this and will return null; the icon is NOT cached. use with care
@@ -142,8 +117,11 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
     public ImageIcon getIcon(int size) {
 
         ImageIcon ret = null;
+        if (NewTheme.I().hasIcon("fav/big." + getTld())) {
+            ret = NewTheme.I().getIcon("fav/big." + getTld(), -1);
+        }
 
-        if (NewTheme.I().hasIcon("fav/" + getTld())) {
+        if (ret == null && NewTheme.I().hasIcon("fav/" + getTld())) {
             ret = NewTheme.I().getIcon("fav/" + getTld(), -1);
         }
 

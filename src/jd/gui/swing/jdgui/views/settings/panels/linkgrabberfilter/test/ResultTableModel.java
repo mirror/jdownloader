@@ -235,7 +235,7 @@ public class ResultTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             public String getStringValue(CrawledLink value) {
-                return value.getDomainInfo().getName();
+                return value.getDomainInfo().getTld();
             }
         });
 

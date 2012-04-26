@@ -28,7 +28,7 @@ public class CFG_GENERAL {
     public static final IntegerKeyHandler               HTTP_CONNECT_TIMEOUT                          = SH.getKeyHandler("HttpConnectTimeout", IntegerKeyHandler.class);
     // true
     public static final BooleanKeyHandler               LINKCHECK_ENABLED                             = SH.getKeyHandler("LinkcheckEnabled", BooleanKeyHandler.class);
-    // [Ljava.lang.String;@4886b7bb
+    // [Ljava.lang.String;@60e9ebe1
     /**
      * CommandLine to open a link in a browser. Use %s as wildcard for the url
      **/
@@ -91,6 +91,16 @@ public class CFG_GENERAL {
      * showCountdownonAutoStartDownloads
      **/
     public static final IntegerKeyHandler               AUTO_START_COUNTDOWN_SECONDS                  = SH.getKeyHandler("AutoStartCountdownSeconds", IntegerKeyHandler.class);
+    // true
+    /**
+     * Correct pathes relative to JDownloader root
+     **/
+    public static final BooleanKeyHandler               CONVERT_RELATIVE_PATHES_JDROOT                = SH.getKeyHandler("ConvertRelativePathesJDRoot", BooleanKeyHandler.class);
+    // true
+    /**
+     * Set to false to hide the Speed Warning Icons in the SpeedColumn
+     **/
+    public static final BooleanKeyHandler               SPEED_WARNING_IN_DOWNLOADTABLE_ENABLED        = SH.getKeyHandler("SpeedWarningInDownloadtableEnabled", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler               MAX_DOWNLOADS_PER_HOST_ENABLED                = SH.getKeyHandler("MaxDownloadsPerHostEnabled", BooleanKeyHandler.class);
     // true

@@ -151,7 +151,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
 
     public CaptchaDialog(int flag, DialogType type, DomainInfo domainInfo, Image[] images, String defaultValue, String explain) {
 
-        super(flag | Dialog.STYLE_HIDE_ICON, _GUI._.gui_captchaWindow_askForInput(domainInfo.getName()), null, null, null);
+        super(flag | Dialog.STYLE_HIDE_ICON, _GUI._.gui_captchaWindow_askForInput(domainInfo.getTld()), null, null, null);
         this.hosterInfo = domainInfo;
         this.images = images;
 
@@ -201,7 +201,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         premium.setRolloverEffectEnabled(true);
         // premium.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0,
         // premium.getForeground()));
-        if (hosterInfo.getAffiliateSettings().isCaptchaDialog()) ret.add(premium);
+        ret.add(premium);
         SwingUtils.setOpaque(premium, false);
         return ret;
     }

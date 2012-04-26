@@ -41,7 +41,7 @@ public class TinyProgressBar extends JLabel {
         this.domainInfo = domainInfo;
         this.setIcon(domainInfo.getFavIcon());
         this.setVisible(true);
-        this.setToolTipText(domainInfo.getName());
+        this.setToolTipText(domainInfo.getTld());
     }
 
     /**

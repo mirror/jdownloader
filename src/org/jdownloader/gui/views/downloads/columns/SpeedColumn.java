@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import java.awt.event.MouseEvent;
+
 import javax.swing.Icon;
 import javax.swing.SwingConstants;
 
@@ -11,7 +13,14 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.premium.PremiumInfoDialog;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 
 public class SpeedColumn extends ExtTextColumn<AbstractNode> {
@@ -42,7 +51,7 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public int getDefaultWidth() {
-        return 100;
+        return 130;
     }
 
     // @Override
@@ -54,7 +63,45 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
     @Override
     protected Icon getIcon(AbstractNode value) {
 
+        if (isSpeedWarning(value)) { return NewTheme.I().getIcon("warning", 16); }
+
         return null;
+    }
+
+    private boolean isSpeedWarning(AbstractNode value) {
+        if (!CFG_GENERAL.SPEED_WARNING_IN_DOWNLOADTABLE_ENABLED.isEnabled()) return false;
+        if (value instanceof DownloadLink) {
+            if (((DownloadLink) value).getDownloadLinkController() == null || ((DownloadLink) value).getDownloadLinkController().getAccount() != null) return false;
+
+            if (((DownloadLink) value).getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) && ((DownloadLink) value).getDownloadCurrent() > 100 * 1024) {
+                // show speedwarning
+                if (((DownloadLink) value).getDownloadSpeed() < 50 * 1024) { return true; }
+            }
+
+        }
+
+        return false;
+
+    }
+
+    protected boolean onSingleClick(final MouseEvent e, final AbstractNode obj) {
+
+        if (isSpeedWarning(obj)) {
+
+            try {
+                Dialog.getInstance().showDialog(new PremiumInfoDialog(DomainInfo.getInstance(((DownloadLink) obj).getHost()), _GUI._.SpeedColumn_onSingleClick_object_(((DownloadLink) obj).getHost()), "SpeedColumn") {
+                    protected String getDescription(DomainInfo info2) {
+                        return _GUI._.SpeedColumn_getDescription_object_(info2.getTld());
+                    }
+                });
+            } catch (DialogClosedException e1) {
+                e1.printStackTrace();
+            } catch (DialogCanceledException e1) {
+                e1.printStackTrace();
+            }
+        }
+
+        return false;
     }
 
     @Override

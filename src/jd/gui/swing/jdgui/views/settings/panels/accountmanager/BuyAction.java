@@ -1,5 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -8,12 +9,16 @@ import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 
+import jd.controlling.AccountController;
 import jd.controlling.IOEQ;
 import jd.plugins.Account;
 
 import org.appwork.swing.components.searchcombo.SearchComboBox;
+import org.appwork.utils.images.IconIO;
+import org.appwork.utils.images.Interpolation;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -21,9 +26,12 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.premium.BuyAndAddPremiumAccount;
+import org.jdownloader.premium.BuyAndAddPremiumDialogInterface;
 
 public class BuyAction extends AbstractAction {
     /**
@@ -69,7 +77,7 @@ public class BuyAction extends AbstractAction {
                     }
                 }
                 if (plg == null) {
-                    plg = HostPluginController.getInstance().get("filepost.com");
+                    plg = HostPluginController.getInstance().get("uploaded.to");
                 }
                 final LazyHostPlugin defaultSelection = plg;
                 try {
@@ -82,6 +90,11 @@ public class BuyAction extends AbstractAction {
                             super.packed();
                             combo.requestFocus();
 
+                        }
+
+                        protected String getIconConstraints() {
+                            // TODO Auto-generated method stub
+                            return "gapright 10,gaptop 2,width 32!,height 32!,alignx center, aligny center";
                         }
 
                         @Override
@@ -97,7 +110,9 @@ public class BuyAction extends AbstractAction {
                                 @Override
                                 protected Icon getIconForValue(LazyHostPlugin value) {
 
-                                    return isPopupVisible() ? DomainInfo.getInstance(value.getDisplayName()).getFavIcon() : null;
+                                    if (!isPopupVisible()) return null;
+
+                                    return DomainInfo.getInstance(value.getDisplayName()).getFavIcon();
                                 }
 
                                 @Override
@@ -109,6 +124,18 @@ public class BuyAction extends AbstractAction {
                             combo.addActionListener(new ActionListener() {
 
                                 public void actionPerformed(ActionEvent e) {
+                                    if (NewTheme.I().hasIcon("fav/big." + DomainInfo.getInstance(((LazyHostPlugin) combo.getSelectedItem()).getDisplayName()).getTld())) {
+                                        //
+                                        Image ic = NewTheme.I().getImage("fav/big." + DomainInfo.getInstance(((LazyHostPlugin) combo.getSelectedItem()).getDisplayName()).getTld(), -1);
+                                        _this.setIcon(new ImageIcon(IconIO.getScaledInstance(ic, Math.min(ic.getWidth(null), 32), Math.min(ic.getHeight(null), 32), Interpolation.BILINEAR, true)));
+                                        return;
+                                    }
+                                    if (NewTheme.I().hasIcon("fav/" + DomainInfo.getInstance(((LazyHostPlugin) combo.getSelectedItem()).getDisplayName()).getTld())) {
+                                        //
+                                        Image ic = NewTheme.I().getImage("fav/" + DomainInfo.getInstance(((LazyHostPlugin) combo.getSelectedItem()).getDisplayName()).getTld(), -1);
+                                        _this.setIcon(new ImageIcon(IconIO.getScaledInstance(ic, Math.min(ic.getWidth(null), 32), Math.min(ic.getHeight(null), 32), Interpolation.BILINEAR, true)));
+                                        return;
+                                    }
                                     _this.setIcon(DomainInfo.getInstance(((LazyHostPlugin) combo.getSelectedItem()).getDisplayName()).getFavIcon());
                                 }
                             });
@@ -121,7 +148,15 @@ public class BuyAction extends AbstractAction {
 
                     Dialog.getInstance().showDialog(d);
                     LazyHostPlugin buyIt = options[d.getReturnValue()];
-                    CrossSystem.openURLOrShowMessage(buyIt.getPrototype().getBuyPremiumUrl());
+                    CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(buyIt.getPrototype().getBuyPremiumUrl(), "accountmanager" + (table == null ? "/context" : "/table")));
+                    try {
+                        NewUIO.I().show(BuyAndAddPremiumDialogInterface.class, new BuyAndAddPremiumAccount(DomainInfo.getInstance(buyIt.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));
+                    } catch (DialogClosedException e1) {
+                        e1.printStackTrace();
+                    } catch (DialogCanceledException e1) {
+                        e1.printStackTrace();
+                    }
+
                 } catch (DialogClosedException e1) {
                     e1.printStackTrace();
                 } catch (DialogCanceledException e1) {

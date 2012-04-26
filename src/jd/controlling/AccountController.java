@@ -33,6 +33,7 @@ import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.OfflineException;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.LinkStatus;
@@ -596,5 +597,10 @@ public class AccountController implements AccountControllerListener {
     @Deprecated
     public ArrayList<Account> getAllAccounts(String string) {
         return (ArrayList<Account>) list(string);
+    }
+
+    public static String createFullBuyPremiumUrl(String buyPremiumUrl, String id) {
+
+        return "http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + Encoding.urlEncode(buyPremiumUrl) + "&" + Encoding.urlEncode(id);
     }
 }

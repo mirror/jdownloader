@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import java.awt.event.MouseEvent;
+
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.SwingConstants;
@@ -14,8 +16,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginProgress;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.premium.PremiumInfoDialog;
 import org.jdownloader.translate._JDT;
 
 public class ETAColumn extends ExtTextColumn<AbstractNode> {
@@ -74,6 +81,33 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
             }
         }
         return icon2Use;
+    }
+
+    protected boolean onSingleClick(final MouseEvent e, final AbstractNode value) {
+        if (value instanceof DownloadLink) {
+            DownloadLink dlLink = (DownloadLink) value;
+
+            if (!dlLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && !dlLink.getLinkStatus().isFinished()) {
+                ProxyBlock timeout = null;
+                if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dlLink.getHost())) != null && timeout.getLink() == dlLink) {
+                    try {
+                        Dialog.getInstance().showDialog(new PremiumInfoDialog(DomainInfo.getInstance(((DownloadLink) value).getHost()), _GUI._.TaskColumn_onSingleClick_object_(((DownloadLink) value).getHost()), "TaskColumnReconnect") {
+                            protected String getDescription(DomainInfo info2) {
+                                return _GUI._.TaskColumn_getDescription_object_(info2.getTld());
+                            }
+                        });
+                        return true;
+                    } catch (DialogClosedException e1) {
+                        e1.printStackTrace();
+                    } catch (DialogCanceledException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+
+            }
+
+        }
+        return false;
     }
 
     private long getWaitingTimeout(DownloadLink dlLink) {

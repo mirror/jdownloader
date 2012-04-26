@@ -1,5 +1,8 @@
 package org.jdownloader.jdserv;
 
+import java.util.logging.Level;
+
+import org.appwork.utils.logging.Log;
 import org.jdownloader.remotecall.RemoteClient;
 
 public class JD_SERV_CONSTANTS {
@@ -10,6 +13,7 @@ public class JD_SERV_CONSTANTS {
     public static final InstallerInterface INSTALLER = CLIENT.create(InstallerInterface.class);
 
     public static void main(String[] args) {
+        Log.L.setLevel(Level.ALL);
         // System.out.println("\"DE\"".substring(1, 3));
         // // CounterInterface.INST.inc("test");
         // // System.out.println(CounterInterface.INST.getValue("test"));#
@@ -21,12 +25,9 @@ public class JD_SERV_CONSTANTS {
         // System.out.println("Country Code: " + GEO.getCountryCodebyIP(ip));
         // System.out.println("Country Name: " + GEO.getCountryNameByIP(ip));
         // CLIENT.create(RedirectInterface.class).redirect("google.de?q=affenschauckel");
-        CLIENT.create(CounterInterface.class).inc("a");
-        System.out.println(CLIENT.create(CounterInterface.class).getValue("a"));
+        // CLIENT.create(CounterInterface.class).inc("a");
+        // System.out.println(CLIENT.create(CounterInterface.class).getValue("a"));
+        System.out.println(CLIENT.create(BuyPremiumInterface.class).list());
 
-    }
-
-    public static String redirect(String buyPremiumLink) {
-        return buyPremiumLink.replace("http://", "http://" + HOST + "/redirect?");
     }
 }

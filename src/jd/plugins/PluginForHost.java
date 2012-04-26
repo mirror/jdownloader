@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.JMenu;
 
 import jd.PluginWrapper;
@@ -47,6 +48,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -827,6 +829,18 @@ public abstract class PluginForHost extends Plugin {
 
     public int getMaxRetries(DownloadLink link, Account acc) {
         return JsonConfig.create(GeneralSettings.class).getMaxPluginRetries();
+    }
+
+    /**
+     * If a plugin want's to define it's one premium info dialog or premiuminfo
+     * panel. overwrite this methods
+     * 
+     * @param dialog
+     * @return
+     */
+    public JComponent layoutPremiumInfoPanel(AbstractDialog dialog) {
+
+        return null;
     }
 
 }

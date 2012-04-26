@@ -3685,4 +3685,25 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Socks 4 Proxy" })
     String gui_column_proxytype_socks4();
 
+    @Default(lngs = { "en" }, values = { "Add a Premium Account" })
+    String BuyAndAddPremiumAccount_BuyAndAddPremiumAccount_title_();
+
+    @Default(lngs = { "en" }, values = { "JDownloader downloads as fast as possible.\r\nHowever, %s1 seems to limit the speed in free mode.\r\nTo download without interruptions and full speed, we recommend to use %s1's Premium Mode." })
+    String SpeedColumn_getDescription_object_(String tld);
+
+    @Default(lngs = { "en" }, values = { "Speed Alarm for %s1" })
+    String SpeedColumn_onSingleClick_object_(String host);
+
+    @Default(lngs = { "en" }, values = { "Finished" })
+    String TaskColumn_getStringValue_finished_();
+
+    @Default(lngs = { "en" }, values = { "Running" })
+    String TaskColumn_getStringValue_running_();
+
+    @Default(lngs = { "en" }, values = { "Current IP is blocked by %s1" })
+    String TaskColumn_onSingleClick_object_(String host);
+
+    @Default(lngs = { "en" }, values = { "%s1 blocked your current IP (Internet Address).\r\nIn many cases, JDownloader us able to do a Reconnect and get a new IP.\r\nIf this is not possible, we recommend to use %s1's Premium Mode." })
+    String TaskColumn_getDescription_object_(String tld);
+
 }
