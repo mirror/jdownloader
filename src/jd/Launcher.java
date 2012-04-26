@@ -492,7 +492,7 @@ public class Launcher {
                         });
                         /* check for available updates */
                         // activate auto checker only if we are in jared mode
-                        if (JsonConfig.create(WebupdateSettings.class).isAutoUpdateCheckEnabled() && Application.isJared(Launcher.class) || true) {
+                        if (JsonConfig.create(WebupdateSettings.class).isAutoUpdateCheckEnabled() && Application.isJared(Launcher.class)) {
                             JDUpdater.getInstance().startChecker();
                         }
                         /* start downloadwatchdog */
