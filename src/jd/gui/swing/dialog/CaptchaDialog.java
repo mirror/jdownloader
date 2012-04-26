@@ -68,6 +68,8 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.premium.PremiumInfoDialog;
 
 /**
@@ -75,27 +77,25 @@ import org.jdownloader.premium.PremiumInfoDialog;
  */
 public class CaptchaDialog extends AbstractDialog<String> implements ActionListener, WindowListener, MouseListener, CaptchaDialogInterface {
 
-    private static final String FILESONIC = "filesonic.com";
-    private static final String WUPLOAD   = "filesonic.com";
-    private ExtTextField        textField;
+    private ExtTextField textField;
 
-    private final String        defaultValue;
+    private final String defaultValue;
 
-    private final String        explain;
+    private final String explain;
 
-    private DomainInfo          hosterInfo;
+    private DomainInfo   hosterInfo;
 
-    private DialogType          type;
+    private DialogType   type;
 
-    private String              methodName;
+    private String       methodName;
 
-    private JComponent          iconPanel;
+    private JComponent   iconPanel;
 
-    private Plugin              plugin;
-    private Image[]             images;
-    private int                 fps;
-    protected int               frame     = 0;
-    private Timer               paintTimer;
+    private Plugin       plugin;
+    private Image[]      images;
+    private int          fps;
+    protected int        frame = 0;
+    private Timer        paintTimer;
 
     public static void main(String[] args) {
         CaptchaDialog cp;
@@ -162,13 +162,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
     }
 
     private void adaptMethod() {
-        if (FILESONIC.equals(methodName) || WUPLOAD.equals(methodName)) {
 
-            // recaptcha
-            // imagefile = new
-            // ImageIcon(IconIO.colorRangeToTransparency((BufferedImage)
-            // imagefile.getImage(), new Color(0xfcfcfc), Color.WHITE));
-        }
     }
 
     @Override
@@ -201,7 +195,10 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         premium.setRolloverEffectEnabled(true);
         // premium.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0,
         // premium.getForeground()));
-        ret.add(premium);
+        LazyHostPlugin plg = HostPluginController.getInstance().get(hosterInfo.getTld());
+        if (plg != null && plg.isPremium()) {
+            ret.add(premium);
+        }
         SwingUtils.setOpaque(premium, false);
         return ret;
     }
