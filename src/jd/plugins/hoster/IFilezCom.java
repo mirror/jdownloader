@@ -166,7 +166,7 @@ public class IFilezCom extends PluginForHost {
             // Set English language
             br.setCookie(MAINPAGE, "sdlanguageid", "2");
             br.setCustomCharset("utf-8");
-            br.postPage(MAINPAGE, "login=login&loginusername=" + Encoding.urlEncode(account.getUser()) + "&loginpassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&rememberme=on");
+            br.postPage(MAINPAGE, "login=login&loginemail=" + Encoding.urlEncode(account.getUser()) + "&loginpassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&rememberme=on");
             // Language not English? Change setting and go on!
             if (!"2".equals(br.getCookie(MAINPAGE, "sdlanguageid"))) {
                 br.setCookie(MAINPAGE, "sdlanguageid", "2");

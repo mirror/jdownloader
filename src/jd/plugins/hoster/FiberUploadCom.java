@@ -114,9 +114,7 @@ public class FiberUploadCom extends PluginForHost {
             if (filename == null) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    // generic regex will pick up false positives (html)
-                    // adjust to make work with COOKIE_HOST
-                    filename = new Regex(correctedBR, "(?i)((File)?name|Download File) ?:? ?(<[^>]+> ?)+?([^<>\"\\']+) \\- \\d").getMatch(3);
+                    filename = new Regex(correctedBR, "(?i)Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                 }
             }
         }
@@ -124,9 +122,6 @@ public class FiberUploadCom extends PluginForHost {
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
-                // generic regex picks up false positives (premium ads above
-                // filesize)
-                // adjust accordingly to make work with COOKIE_HOST
                 filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
             }
         }
@@ -268,17 +263,21 @@ public class FiberUploadCom extends PluginForHost {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             correctBR();
-            if (br.containsHTML("http\\-equiv=\"refresh\" content=\"3")) {
-                // This waittime is sometimes forced, sometimes skippable so we
-                // wait it
-                int wait = 5;
-                final String waittime = br.getRegex("in (\\d+) seconds").getMatch(0);
-                if (waittime != null) wait = Integer.parseInt(waittime);
-                sleep(wait * 1001l, downloadLink);
-                br.getPage(dllink);
+            if (br.containsHTML("http\\-equiv=\"refresh\" content=\"\\d+")) {
+                // all they seem to add generated_unque_id/GO/filename
+                dllink = null;
                 dllink = br.getRegex("url=([^\"]*?)\"").getMatch(0);
                 if (dllink == null) dllink = br.getRegex("click <a href=\"([^\"]*?)\"").getMatch(0);
-                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dllink == null) {
+                    int wait = 10;
+                    final String waittime = br.getRegex("in (\\d+) seconds").getMatch(0);
+                    if (waittime != null) wait = Integer.parseInt(waittime);
+                    sleep(wait * 1001l, downloadLink);
+                    br.getPage(dllink);
+                    dllink = br.getRegex("url=([^\"]*?)\"").getMatch(0);
+                    if (dllink == null) dllink = br.getRegex("click <a href=\"([^\"]*?)\"").getMatch(0);
+                    if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
                 if (dl.getConnection().getContentType().contains("html")) {
                     logger.warning("The final dllink seems not to be a file!");
