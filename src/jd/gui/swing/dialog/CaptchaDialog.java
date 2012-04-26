@@ -181,7 +181,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
 
             public void actionPerformed(ActionEvent e) {
                 cancel();
-                PremiumInfoDialog d = new PremiumInfoDialog(hosterInfo);
+                PremiumInfoDialog d = new PremiumInfoDialog(hosterInfo, _GUI._.PremiumInfoDialog_PremiumInfoDialog_(hosterInfo.getTld()), "CaptchaDialog");
                 try {
                     Dialog.getInstance().showDialog(d);
                 } catch (DialogClosedException e1) {
