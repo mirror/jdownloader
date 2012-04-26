@@ -12,6 +12,7 @@ import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.exchange.UpdateFile;
 import org.appwork.update.inapp.AppUpdater;
 import org.appwork.update.inapp.RestartController;
@@ -26,6 +27,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.settings.GeneralSettings;
 
 public class JDUpdater extends AppUpdater {
     private static final JDUpdater INSTANCE = new JDUpdater();
@@ -242,6 +244,13 @@ public class JDUpdater extends AppUpdater {
             public void onLog(String parameter) {
             }
         });
+
+    }
+
+    protected void onDownloadsAreAvailableForInstallation() {
+        if (!JsonConfig.create(GeneralSettings.class).isSilentUpdateEnabled()) {
+            super.onDownloadsAreAvailableForInstallation();
+        }
 
     }
 

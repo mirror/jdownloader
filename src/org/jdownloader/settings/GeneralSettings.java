@@ -324,4 +324,18 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setSpeedWarningInDownloadtableEnabled(boolean b);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @Description("If true, JDownloader performs updates automatically without user interaction")
+    boolean isSilentUpdateEnabled();
+
+    void setSilentUpdateEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @Description("If false, JDownloader will autorestart to finish a update silently")
+    boolean isSilentUpdateWithRestartEnabled();
+
+    void setSilentUpdateWithRestartEnabled(boolean b);
+
 }
