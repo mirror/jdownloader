@@ -305,7 +305,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public long getDownloadCurrent() {
         DownloadInterface dli = downloadInstance;
-        if (dli != null) return dli.getTotaleLinkBytesLoaded();
+        if (dli != null) return dli.getTotalLinkBytesLoadedLive();
         return downloadCurrent;
     }
 

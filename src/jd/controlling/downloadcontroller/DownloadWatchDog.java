@@ -1404,8 +1404,22 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             return;
         }
         if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
+            String dialogTitle = _JDT._.DownloadWatchDog_onShutdownRequest_();
+            synchronized (this.DownloadControllers) {
+                for (final SingleDownloadController con : DownloadControllers) {
+                    DownloadLink link = con.getDownloadLink();
+                    if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                        DownloadInterface dl = link.getDownloadInstance();
+                        if (dl != null && !dl.isResumable()) {
+                            dialogTitle = _JDT._.DownloadWatchDog_onShutdownRequest_nonresumable();
+                            break;
+                        }
+                    }
+                }
+            }
+
             try {
-                NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.DownloadWatchDog_onShutdownRequest_(), _JDT._.DownloadWatchDog_onShutdownRequest_msg(), NewTheme.I().getIcon("download", 32), _JDT._.literally_yes(), null);
+                NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, dialogTitle, _JDT._.DownloadWatchDog_onShutdownRequest_msg(), NewTheme.I().getIcon("download", 32), _JDT._.literally_yes(), null);
                 config.setClosedWithRunningDownloads(true);
                 return;
             } catch (DialogNoAnswerException e) {

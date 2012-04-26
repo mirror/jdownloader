@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -318,6 +319,7 @@ abstract public class DownloadInterface {
                             if (read > 0) {
                                 /* we read some data */
                                 towrite += read;
+                                totalLinkBytesLoadedLive.getAndAdd(read);
                                 buffer.setUsed(towrite);
                             } else if (read == -1) {
                                 /* we reached EOF */
@@ -693,7 +695,7 @@ abstract public class DownloadInterface {
          */
         public void setLoaded(long loaded) {
             loaded = Math.max(0, loaded);
-            addToTotalLinkBytesLoaded(loaded);
+            setTotalLinkBytesLoaded(loaded);
         }
 
         public void startChunk() {
@@ -758,10 +760,11 @@ abstract public class DownloadInterface {
 
     private boolean                           allowFilenameFromURL             = false;
 
-    protected long                            totaleLinkBytesLoaded            = 0;
+    protected long                            totalLinkBytesLoaded             = 0;
+    protected AtomicLong                      totalLinkBytesLoadedLive         = new AtomicLong(0);
 
-    public long getTotaleLinkBytesLoaded() {
-        return totaleLinkBytesLoaded;
+    public long getTotalLinkBytesLoadedLive() {
+        return totalLinkBytesLoadedLive.get();
     }
 
     private boolean          waitFlag          = true;
@@ -1026,11 +1029,12 @@ abstract public class DownloadInterface {
     }
 
     protected synchronized void addToTotalLinkBytesLoaded(long block) {
-        totaleLinkBytesLoaded += block;
+        totalLinkBytesLoaded += block;
     }
 
     public synchronized void setTotalLinkBytesLoaded(long loaded) {
-        totaleLinkBytesLoaded = loaded;
+        totalLinkBytesLoaded = loaded;
+        totalLinkBytesLoadedLive.set(loaded);
     }
 
     /**
@@ -1134,21 +1138,21 @@ abstract public class DownloadInterface {
      */
     public boolean handleErrors() {
         if (externalDownloadStop()) return false;
-        if (this.doFileSizeCheck && (totaleLinkBytesLoaded <= 0 || totaleLinkBytesLoaded != fileSize && fileSize > 0)) {
-            if (totaleLinkBytesLoaded > fileSize) {
+        if (this.doFileSizeCheck && (totalLinkBytesLoaded <= 0 || totalLinkBytesLoaded != fileSize && fileSize > 0)) {
+            if (totalLinkBytesLoaded > fileSize) {
                 /*
                  * workaround for old bug deep in this downloadsystem. more data
                  * got loaded (maybe just counting bug) than filesize. but in
                  * most cases the file is okay! WONTFIX because new
                  * downloadsystem is on its way
                  */
-                logger.severe("Filesize: " + fileSize + " Loaded: " + totaleLinkBytesLoaded);
+                logger.severe("Filesize: " + fileSize + " Loaded: " + totalLinkBytesLoaded);
                 if (!linkStatus.isFailed()) {
                     linkStatus.setStatus(LinkStatus.FINISHED);
                 }
                 return true;
             }
-            logger.severe("Filesize: " + fileSize + " Loaded: " + totaleLinkBytesLoaded);
+            logger.severe("Filesize: " + fileSize + " Loaded: " + totalLinkBytesLoaded);
             logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");
             error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete());
             return false;
@@ -1464,7 +1468,8 @@ abstract public class DownloadInterface {
                 }
                 waitFlag = true;
             }
-            downloadLink.setDownloadCurrent(totaleLinkBytesLoaded);
+            /* set the *real loaded* bytes here */
+            downloadLink.setDownloadCurrent(totalLinkBytesLoaded);
         } catch (Throwable e) {
             JDLogger.exception(e);
         }

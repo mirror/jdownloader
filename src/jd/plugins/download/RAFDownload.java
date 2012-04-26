@@ -216,7 +216,7 @@ public class RAFDownload extends DownloadInterface {
 
     private void setupVirginStart() throws FileNotFoundException {
         Chunk chunk;
-        totaleLinkBytesLoaded = 0;
+        totalLinkBytesLoaded = 0;
         downloadLink.setDownloadCurrent(0);
         long partSize = fileSize / getChunkNum();
         if (connection.getRange() != null) {

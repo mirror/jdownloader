@@ -264,7 +264,7 @@ public class RtmpDump extends RTMPDownload {
     }
 
     @Override
-    public long getTotaleLinkBytesLoaded() {
+    public long getTotalLinkBytesLoadedLive() {
         return BYTESLOADED;
     }
 

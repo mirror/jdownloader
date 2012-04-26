@@ -234,7 +234,7 @@ public final class Reconnecter implements StateMachineInterface {
             Log.exception(e);
 
         }
-     //reconnect takes at least 1000ms
+        // reconnect takes at least 1000ms
         try {
             Thread.sleep((Math.max(0, 1000 - System.currentTimeMillis() + startTime)));
         } catch (InterruptedException e) {
@@ -301,7 +301,11 @@ public final class Reconnecter implements StateMachineInterface {
      * @return
      */
     public boolean isReconnectAllowed() {
-        boolean ret = org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.getValue();
+        boolean ret = org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.isEnabled();
+        if (ret == false) {
+            /* auto reconnect is disabled */
+            return false;
+        }
         /* TODO: check for running linkcrawler and linkchecker */
         ret &= DownloadWatchDog.getInstance().getForbiddenReconnectDownloadNum() == 0;
         return ret;

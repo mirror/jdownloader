@@ -203,65 +203,37 @@ public class LetitBitNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.submitForm(freeForm);
-        /** Rev 16219 */
-        // Form down = null;
-        // Form[] allforms = br.getForms();
-        // if (allforms == null) throw new
-        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // boolean skipfirst = true;
-        // for (Form singleform : allforms) {
-        // if (singleform.containsHTML("md5crypt") && singleform.getAction() !=
-        // null && singleform.getAction().contains("iframe")) {
-        // if (skipfirst == false) {
-        // skipfirst = true;
-        // continue;
-        // }
-        // down = singleform;
-        // break;
-        // }
-        // }
-        // if (down == null || down.getAction() == null) throw new
-        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // String captchaId = down.getVarsMap().get("uid");
-        // down.setMethod(Form.MethodType.POST);
-        // if (captchaId != null) down.put("uid2", captchaId);
-        // br.submitForm(down);
-        // if ("RU".equals(br.getCookie("http://letitbit.net", "country"))) {
-        // /*
-        // * special handling for RU,seems they get an extra *do you want to
-        // * buy or download for free* page
-        // */
-        // allforms = br.getForms();
-        // if (allforms == null) throw new
-        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // skipfirst = true;
-        // for (Form singleform : allforms) {
-        // if (singleform.containsHTML("md5crypt") && singleform.getAction() !=
-        // null && singleform.getAction().contains("iframe")) {
-        // if (skipfirst == false) {
-        // skipfirst = true;
-        // continue;
-        // }
-        // down = singleform;
-        // break;
-        // }
-        // }
-        // if (down != null) {
-        // down.setMethod(Form.MethodType.POST);
-        // br.submitForm(down);
-        // }
-        // }
-        // final Form freeContinue = br.getFormbyProperty("id", "d3_form");
-        // if (freeContinue == null) throw new
-        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // freeContinue.remove("uid2");
-        // br.submitForm(freeContinue);
-        final String serverPart = br.getRegex("\\$\\.post\\(\"(/ajax/download\\d+\\.php)\"").getMatch(0);
+        if ("RU".equals(br.getCookie("http://letitbit.net", "country"))) {
+            /*
+             * special handling for RU,seems they get an extra *do you want to
+             * buy or download for free* page...man i hate fixing this ;) find
+             * ru proxies here http://spys.ru/free-proxy-list/RU/
+             */
+            Form[] allforms = br.getForms();
+            if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            Form down = null;
+            for (Form singleform : allforms) {
+                if (singleform.containsHTML("md5crypt") && singleform.getAction() != null) {
+                    down = singleform;
+                    break;
+                }
+            }
+            if (down != null) {
+                down.setMethod(Form.MethodType.POST);
+                br.submitForm(down);
+            }
+            allforms = br.getForms();
+            if (allforms != null) br.submitForm(allforms[allforms.length - 1]);
+        }
+        String serverPart = br.getRegex("\\$\\.post\\(\"(/ajax/download\\d+\\.php)\"").getMatch(0);
         if (serverPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        serverPart = br.getRegex("(https?://(s\\d+\\.)?letitbit.net)/ajax/download").getMatch(0);
+        if (serverPart == null) serverPart = "http://letitbit.net";
         int wait = 60;
         String waittime = br.getRegex("id=\"seconds\" style=\"font\\-size:18px\">(\\d+)</span>").getMatch(0);
+        if (waittime == null) waittime = br.getRegex("seconds = (\\d+)").getMatch(0);
         if (waittime != null) {
-            logger.info("Waittime found, waittime is " + waittime + " seconds.");
+            logger.info("Waittime found, waittime is " + waittime + " seconds .");
             wait = Integer.parseInt(waittime);
         } else {
             logger.info("No waittime found, continuing...");
@@ -285,9 +257,9 @@ public class LetitBitNet extends PluginForHost {
         Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         for (int i = 0; i <= 5; i++) {
-            String code = getCaptchaCode("letitbitnew", "http://letitbit.net/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
+            String code = getCaptchaCode("letitbitnew", serverPart + "/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
             sleep(2000, downloadLink);
-            br2.postPage("http://letitbit.net/ajax/check_captcha.php", "code=" + Encoding.urlEncode(code));
+            br2.postPage(serverPart + "/ajax/check_captcha.php", "code=" + Encoding.urlEncode(code));
             if (br2.toString().length() < 2 || br2.toString().contains("No htmlCode read")) continue;
             break;
         }
