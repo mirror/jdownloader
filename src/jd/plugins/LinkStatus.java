@@ -190,7 +190,12 @@ public class LinkStatus implements Serializable {
         notifyChanges();
     }
 
-    public String getMessage() {
+    public String getMessage(boolean customizedMessageOnly) {
+        if (customizedMessageOnly) {
+            if (errorMessage != null) return errorMessage;
+            if (statusText != null) return statusText;
+            return null;
+        }
         switch (lastestStatus) {
         /* first we check for LinkStatus */
         case LinkStatus.FINISHED:
@@ -227,8 +232,11 @@ public class LinkStatus implements Serializable {
             return _JDT._.downloadlink_status_error_premium();
         case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
             if (errorMessage != null) return errorMessage;
+            if (statusText != null) return statusText;
             return _JDT._.downloadlink_status_error_temp_unavailable();
         case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
+            if (errorMessage != null) return errorMessage;
+            if (statusText != null) return statusText;
             return _JDT._.downloadlink_status_error_hoster_temp_unavailable();
         case LinkStatus.ERROR_FATAL:
             if (errorMessage != null) return errorMessage;

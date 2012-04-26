@@ -36,9 +36,7 @@ import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.http.Browser;
-import jd.nutils.io.JDIO;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -724,8 +722,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      *            Neuer Name des Downloads
      */
     public void setName(String name) {
-        if (name != null && name.length() > 0) {
-            this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
+        if (!StringUtils.isEmpty(name)) {
+            this.name = CrossSystem.alleviatePathParts(name);
         }
         this.setIcon(null);
         notifyChanges();
@@ -735,9 +733,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * use this function to force a name, it has highest priority
      */
     public void forceFileName(String name) {
-        if (name == null) {
+        if (StringUtils.isEmpty(name)) {
             this.setProperty(PROPERTY_FORCEDFILENAME, Property.NULL);
         } else {
+            name = CrossSystem.alleviatePathParts(name);
             this.setProperty(PROPERTY_FORCEDFILENAME, name);
         }
         setIcon(null);
@@ -786,12 +785,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setFinalFileName(String newfinalFileName) {
         setName(newfinalFileName);
-        if (newfinalFileName != null && newfinalFileName.length() > 0) {
+        if (!StringUtils.isEmpty(newfinalFileName)) {
             if (new Regex(newfinalFileName, Pattern.compile("r..\\.htm.?$", Pattern.CASE_INSENSITIVE)).matches()) {
                 logger.info("Use Workaround for stupid >>rar.html<< uploaders!");
                 newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - new Regex(newfinalFileName, Pattern.compile("r..(\\.htm.?)$", Pattern.CASE_INSENSITIVE)).getMatch(0).length());
             }
-            this.setProperty(PROPERTY_FINALFILENAME, JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(newfinalFileName)));
+            this.setProperty(PROPERTY_FINALFILENAME, CrossSystem.alleviatePathParts(newfinalFileName));
         } else {
             this.setProperty(PROPERTY_FINALFILENAME, Property.NULL);
         }
@@ -900,7 +899,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public ImageIcon getIcon() {
         if (icon == null) {
-            String ext = JDIO.getFileExtension(getFileOutput());
+            String ext = CrossSystem.getFileExtension(getName());
             if (ext != null) {
                 try {
                     icon = CrossSystem.getMime().getFileIcon(ext, 16, 16);

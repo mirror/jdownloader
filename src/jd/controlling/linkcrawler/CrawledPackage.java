@@ -9,6 +9,7 @@ import jd.controlling.packagecontroller.PackageController;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -70,7 +71,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     public String getDownloadFolder() {
 
         // replace variables in downloadfolder
-        return downloadFolder.replace(PACKAGETAG, getName());
+        return downloadFolder.replace(PACKAGETAG, CrossSystem.alleviatePathParts(getName()));
     }
 
     public HashSet<String> getExtractionPasswords() {

@@ -80,8 +80,10 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                 if (!dl.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && !dl.getLinkStatus().isFinished()) {
                     /* enabled links that are not running */
                     ProxyBlock timeout = null;
+                    String message = null;
                     if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dl.getHost())) != null) {
                         if (timeout.getLink() == value) {
+                            if ((message = dl.getLinkStatus().getMessage(true)) != null) return message;
                             return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(timeout.getBlockedTimeout() / 1000));
                         } else {
                             return _JDT._.gui_downloadlink_hosterwaittime();
@@ -89,6 +91,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                     }
                     if ((timeout = ProxyController.getInstance().getHostBlockedTimeout(dl.getHost())) != null) {
                         if (timeout.getLink() == value) {
+                            if ((message = dl.getLinkStatus().getMessage(true)) != null) return message;
                             return _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(timeout.getBlockedTimeout() / 1000));
                         } else {
                             return _JDT._.gui_downloadlink_hostertempunavail();
@@ -96,7 +99,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                     }
                 }
             }
-            return dl.getLinkStatus().getMessage();
+            return dl.getLinkStatus().getMessage(false);
 
         } else if (value instanceof FilePackage) {
             if (((FilePackage) value).getView().isFinished()) { return "Finished"; }

@@ -63,6 +63,7 @@ import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.os.CrossSystem;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -458,7 +459,7 @@ public class JAntiCaptcha {
         try {
             File file = JDUtilities.getResourceFile(this.srcFile);
             file.getParentFile().mkdirs();
-            String ext = JDIO.getFileExtension(this.srcFile);
+            String ext = CrossSystem.getFileExtension(file.getName());
             ImageIO.write(toBufferedImage(this.sourceImage), ext, file);
         } catch (Exception e) {
             JDLogger.exception(e);

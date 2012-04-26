@@ -28,11 +28,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Pattern;
-
-import javax.swing.JFileChooser;
 
 import jd.controlling.JDLogger;
 
@@ -99,28 +95,6 @@ public final class JDIO {
         }
     }
 
-    public static String validateFileandPathName(final String name) {
-        if (name == null) return null;
-        return name.replaceAll("([\\\\|<|>|\\||\"|:|\\*|\\?|/|\\x00])+", "_");
-    }
-
-    /**
-     * Speichert ein byteArray in ein file.
-     * 
-     * @param file
-     * @param bytearray
-     * @return Erfolg true/false
-     */
-    public static boolean saveToFile(final File file, final byte[] b) {
-        try {
-            IO.writeToFile(file, b);
-            return true;
-        } catch (Exception e) {
-            JDLogger.exception(e);
-            return false;
-        }
-    }
-
     /**
      * Speichert ein Objekt
      * 
@@ -143,9 +117,6 @@ public final class JDIO {
         }
 
         fileOutput.getParentFile().mkdirs();
-
-        JDIO.waitOnObject(fileOutput);
-        JDIO.saveReadObject.add(fileOutput);
 
         if (fileOutput.exists()) {
             fileOutput.delete();
@@ -173,21 +144,6 @@ public final class JDIO {
             } catch (final Throwable e) {
             }
         }
-        JDIO.saveReadObject.remove(fileOutput);
-    }
-
-    public static Vector<File> saveReadObject = new Vector<File>();
-
-    public static void waitOnObject(final File file) {
-        int c = 0;
-        while (saveReadObject.contains(file)) {
-            if (c++ > 1000) return;
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                JDLogger.exception(e);
-            }
-        }
     }
 
     /**
@@ -208,8 +164,6 @@ public final class JDIO {
 
         Object objectLoaded = null;
 
-        waitOnObject(fileInput);
-        saveReadObject.add(fileInput);
         FileInputStream fis = null;
         try {
             fis = new FileInputStream(fileInput);
@@ -226,7 +180,6 @@ public final class JDIO {
             fis.close();
             buff.close();
 
-            saveReadObject.remove(fileInput);
             return objectLoaded;
         } catch (Exception e) {
             JDLogger.exception(e);
@@ -236,7 +189,7 @@ public final class JDIO {
             } catch (final Throwable e) {
             }
         }
-        saveReadObject.remove(fileInput);
+
         return null;
     }
 
@@ -257,39 +210,6 @@ public final class JDIO {
             return "";
         }
 
-    }
-
-    /**
-     * Gibt die Endung einer FIle zurück oder null
-     * 
-     * @param ret
-     * @return
-     */
-    public static String getFileExtension(final File ret) {
-        if (ret == null) return null;
-        return getFileExtension(ret.getAbsolutePath());
-    }
-
-    public static String getFileExtension(final String str) {
-        if (str == null) return null;
-
-        final int i3 = str.lastIndexOf(".");
-
-        if (i3 > 0) return str.substring(i3 + 1);
-        return null;
-    }
-
-    public static String getFileType(String ext) {
-        File file = null;
-        try {
-            file = File.createTempFile("icon", "." + ext);
-
-            return new JFileChooser().getTypeDescription(file);
-        } catch (IOException e) {
-            return "." + ext;
-        } finally {
-            if (file != null) file.delete();
-        }
     }
 
     /**
@@ -320,27 +240,6 @@ public final class JDIO {
             }
         }
         return dir.delete();
-    }
-
-    /**
-     * Runs recursive through the dir (directory) and list all files. returns
-     * null if dir is a file.
-     * 
-     * @param dir
-     * @return
-     */
-    public static ArrayList<File> listFiles(final File dir) {
-        if (!dir.isDirectory()) return null;
-        final ArrayList<File> ret = new ArrayList<File>();
-
-        for (final File f : dir.listFiles()) {
-            if (f.isDirectory()) {
-                ret.addAll(listFiles(f));
-            } else {
-                ret.add(f);
-            }
-        }
-        return ret;
     }
 
     /**

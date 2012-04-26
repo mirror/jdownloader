@@ -101,15 +101,22 @@ public class DlFreeFr extends PluginForHost {
         this.setBrowserExclusive();
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
-        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
-        if (con.isContentDisposition()) {
-            downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(con));
-            downloadLink.setDownloadSize(con.getLongContentLength());
-            con.disconnect();
-            return AvailableStatus.TRUE;
-        } else {
-            br.followConnection();
-            HTML = true;
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(downloadLink.getDownloadURL());
+            if (con.isContentDisposition()) {
+                downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(con));
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                return AvailableStatus.TRUE;
+            } else {
+                br.followConnection();
+                HTML = true;
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
         }
         String filename = br.getRegex(Pattern.compile("Fichier:</td>.*?<td.*?>(.*?)<", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)soit", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);

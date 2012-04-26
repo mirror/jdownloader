@@ -149,6 +149,9 @@ public class IFilezCom extends PluginForHost {
         synchronized (LOCK) {
             // Load cookies
             br.setCookiesExclusive(true);
+            br.setCustomCharset("utf-8");
+            // Set English language
+            br.setCookie(MAINPAGE, "sdlanguageid", "2");
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
             if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -163,9 +166,6 @@ public class IFilezCom extends PluginForHost {
                     return;
                 }
             }
-            // Set English language
-            br.setCookie(MAINPAGE, "sdlanguageid", "2");
-            br.setCustomCharset("utf-8");
             br.postPage(MAINPAGE, "login=login&loginemail=" + Encoding.urlEncode(account.getUser()) + "&loginpassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&rememberme=on");
             // Language not English? Change setting and go on!
             if (!"2".equals(br.getCookie(MAINPAGE, "sdlanguageid"))) {

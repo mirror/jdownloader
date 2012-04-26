@@ -30,9 +30,10 @@ import java.util.Set;
 import jd.config.Property;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
-import jd.nutils.io.JDIO;
-import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging.Log;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.UniqueSessionID;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
@@ -373,11 +374,14 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * 
      * @param subFolder
      */
-    public void setDownloadDirectory(String subFolder) {
-        downloadDirectory = JDUtilities.removeEndingPoints(subFolder);
-        if (downloadDirectory == null) {
-            downloadDirectory = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+    public void setDownloadDirectory(String folder) {
+        if (StringUtils.isEmpty(folder)) {
+            folder = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+        } else if (!CrossSystem.isAbsolutePath(folder)) {
+            Log.L.severe("FilePackage: setDownloadDirectory only allows absolute pathes! Using default one!");
+            folder = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         }
+        downloadDirectory = folder;
     }
 
     /**
@@ -386,12 +390,10 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * @param name
      */
     public void setName(String name) {
-        if (name == null || name.length() == 0) {
-            this.name = JDUtilities.removeEndingPoints(_JDT._.controller_packages_defaultname());
-        } else {
-            this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
+        if (StringUtils.isEmpty(name)) {
+            name = _JDT._.controller_packages_defaultname();
         }
-        this.name = this.name.trim();
+        this.name = name.trim();
     }
 
     /**

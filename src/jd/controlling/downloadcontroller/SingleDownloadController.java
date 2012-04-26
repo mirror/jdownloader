@@ -32,7 +32,6 @@ import jd.controlling.proxy.ProxyInfo;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettingsThread;
-import jd.nutils.io.JDIO;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -51,6 +50,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
@@ -445,44 +445,53 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             }
             break;
         }
-        switch (doAction) {
-        case SKIP_FILE:
-            linkStatus.setErrorMessage(_JDT._.controller_status_fileexists_skip());
-            downloadLink.setEnabled(false);
-            break;
-        case AUTO_RENAME:
-            // auto rename
-            linkStatus.reset();
-            File file = new File(downloadLink.getFileOutput());
-            String filename = file.getName();
-            String extension = JDIO.getFileExtension(file);
-            String name = filename.substring(0, filename.length() - extension.length() - 1);
-            int copy = 2;
-            try {
-                /*
-                 * TODO: please do this without forcing a different name, do
-                 * this without getFileOutput
-                 */
-                String[] num = new Regex(name, "(.*)_(\\d+)").getRow(0);
-                copy = Integer.parseInt(num[1]) + 1;
-                downloadLink.forceFileName(name + "_" + copy + "." + extension);
-                while (new File(downloadLink.getFileOutput()).exists()) {
-                    copy++;
-                    downloadLink.forceFileName(name + "_" + copy + "." + extension);
-                }
-            } catch (Exception e) {
-                copy = 2;
-                downloadLink.forceFileName(name + "_" + copy + "." + extension);
-            }
-            break;
-        default:
-            if (new File(downloadLink.getFileOutput()).delete()) {
-                /* delete local file and retry = overwrite */
-                linkStatus.reset();
-            } else {
-                /* delete failed */
-                linkStatus.setErrorMessage(_JDT._.controller_status_fileexists_overwritefailed() + downloadLink.getFileOutput());
+        synchronized (DUPELOCK) {
+            /* we synchronize here to avoid ugly concurrency issues */
+            switch (doAction) {
+            case SKIP_FILE:
+                linkStatus.setErrorMessage(_JDT._.controller_status_fileexists_skip());
                 downloadLink.setEnabled(false);
+                break;
+            case AUTO_RENAME:
+                // auto rename
+                String splitName[] = CrossSystem.splitFileName(downloadLink.getName());
+                String downloadPath = downloadLink.getFilePackage().getDownloadDirectory();
+                String extension = splitName[1];
+                if (extension == null) {
+                    extension = "";
+                } else {
+                    extension = "." + extension;
+                }
+                String name = splitName[0];
+                long duplicateFilenameCounter = 2;
+                String alreadyDuplicated = new Regex(name, ".*_(\\d+)$").getMatch(0);
+                if (alreadyDuplicated != null) {
+                    /* it seems the file already got auto renamed! */
+                    duplicateFilenameCounter = Long.parseLong(alreadyDuplicated) + 1;
+                    name = new Regex(name, "(.*)_\\d+$").getMatch(0);
+                }
+                String newName = null;
+                try {
+                    newName = name + "_" + duplicateFilenameCounter + extension;
+                    while (new File(downloadPath, newName).exists()) {
+                        newName = name + "_" + (++duplicateFilenameCounter) + extension;
+                    }
+                    downloadLink.forceFileName(newName);
+                } catch (Throwable e) {
+                    logger.severe(JDLogger.getStackTrace(e));
+                    downloadLink.forceFileName(null);
+                }
+                linkStatus.reset();
+                break;
+            default:
+                if (new File(downloadLink.getFileOutput()).delete()) {
+                    /* delete local file and retry = overwrite */
+                    linkStatus.reset();
+                } else {
+                    /* delete failed */
+                    linkStatus.setErrorMessage(_JDT._.controller_status_fileexists_overwritefailed() + downloadLink.getFileOutput());
+                    downloadLink.setEnabled(false);
+                }
             }
         }
 

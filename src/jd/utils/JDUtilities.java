@@ -313,19 +313,6 @@ public class JDUtilities {
         JDUtilities.CONFIGURATION = configuration;
     }
 
-    public static String removeEndingPoints(final String name) {
-        if (name == null) return null;
-        String ret = name.trim();
-        while (true) {
-            if (ret.endsWith(".")) {
-                ret = ret.substring(0, ret.length() - 1);
-            } else {
-                break;
-            }
-        }
-        return ret;
-    }
-
     public synchronized static DatabaseConnector getDatabaseConnector() {
         if (DB_CONNECT != null) return DB_CONNECT;
         if (DB_CONNECT == null) {
@@ -408,7 +395,7 @@ public class JDUtilities {
 
     @Deprecated
     public static void openExplorer(File file) {
-        CrossSystem.openFile(file);
+        if (CrossSystem.isOpenBrowserSupported()) CrossSystem.openFile(file);
     }
 
 }
