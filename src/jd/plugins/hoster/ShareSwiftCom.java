@@ -292,13 +292,8 @@ public class ShareSwiftCom extends PluginForHost {
     }
 
     public String getDllink() {
-        String dllink = new Regex(brbefore, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = new Regex(brbefore, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
-            if (dllink == null) {
-                dllink = new Regex(brbefore, "Download: <a href=\"(.*?)\"").getMatch(0);
-            }
-        }
+        String dllink = new Regex(brbefore, "class=\"r2_button\" onClick=\"location\\.href=\\'(http://[^<>\"]*?)\\'\"").getMatch(0);
+        if (dllink == null) dllink = new Regex(brbefore, "(http://media\\d+\\.shareswift\\.com/files/[^<>\"]*?)\\'\"").getMatch(0);
         return dllink;
     }
 
@@ -346,29 +341,11 @@ public class ShareSwiftCom extends PluginForHost {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(brbefore, "fname\" value=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = new Regex(brbefore, "<h2>Download File(.*?)</h2>").getMatch(0);
-                if (filename == null) {
-                    filename = new Regex(brbefore, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
-                    if (filename == null) {
-                        filename = new Regex(brbefore, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
-                        if (filename == null) {
-                            filename = new Regex(brbefore, "File Name.*?nowrap>(.*?)</td").getMatch(0);
-                        }
-                    }
-                }
-            }
-        }
-        String filesize = new Regex(brbefore, "<small>\\((.*?)\\)</small>").getMatch(0);
-        if (filesize == null) {
-            filesize = new Regex(brbefore, "\\(([0-9]+ bytes)\\)").getMatch(0);
-            if (filesize == null) {
-                filesize = new Regex(brbefore, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
-            }
-        }
+        final Regex info = new Regex(brbefore, "<br><br>[\t\n\r ]+<div>([^<>\"]*?)\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;<b>([^<>\"]*?)</b>");
+        String filename = info.getMatch(0);
+        if (filename == null) filename = new Regex(brbefore, "<b>Filename:</b></td><td nowrap>([^<>\"]*?)</div>").getMatch(0);
+        String filesize = info.getMatch(1);
+        if (filesize == null) filesize = new Regex(brbefore, "\\((\\d+ bytes)\\)").getMatch(0);
         if (filename == null || filename.equals("")) {
             if (brbefore.contains("You have reached the download-limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
