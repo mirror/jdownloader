@@ -4,6 +4,7 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.inapp.RestartController;
 import org.appwork.update.inapp.RestartViaUpdaterEvent;
+import org.appwork.update.inapp.SilentUpdaterEvent;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.update.JDUpdater;
 
@@ -26,6 +27,7 @@ public class JDRestartController extends RestartController {
             super.onShutdown();
         } else {
             if (JDUpdater.getInstance().hasWaitingUpdates() && !ShutdownController.getInstance().hasShutdownEvent(RestartViaUpdaterEvent.getInstance())) {
+                SilentUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());
                 runUpdaterOnAppExit();
             }
         }

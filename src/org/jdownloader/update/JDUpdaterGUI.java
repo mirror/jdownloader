@@ -57,15 +57,12 @@ public class JDUpdaterGUI extends UpdaterGUI {
 
     protected void onInstallRequest() {
 
-        if (JsonConfig.create(GeneralSettings.class).isSilentUpdateEnabled()) {
+        if (!isVisible() && JsonConfig.create(GeneralSettings.class).isSilentUpdateEnabled()) {
+            // if dialog is visible the user can decide on his own what to do.
             if (JsonConfig.create(GeneralSettings.class).isSilentUpdateWithRestartEnabled()) {
-
                 JDRestartController.getInstance().bootstrapRestartASAP();
-
             } else {
-
                 SilentUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());
-
             }
         } else {
             super.onInstallRequest();
