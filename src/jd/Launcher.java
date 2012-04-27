@@ -197,7 +197,7 @@ public class Launcher {
      * @throws IOException
      */
 
-    public static void main(final String args[]) {
+    public static void mainStart(final String args[]) {
 
         try {
             Dynamic.runMain(args);

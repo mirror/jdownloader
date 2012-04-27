@@ -5,6 +5,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Locale;
 
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
@@ -42,6 +43,7 @@ public class JDUpdater extends AppUpdater {
     }
 
     private UpdateProgress icon;
+    private boolean        jars;
 
     public void run() {
 
@@ -53,15 +55,35 @@ public class JDUpdater extends AppUpdater {
         return super.canUnInstallDirect(localFile, ifile);
     }
 
+    public ArrayList<File> getFilesToInstallDirect(ArrayList<File> filesToInstall) {
+
+        // check if there are jars to update
+        jars = false;
+        for (File f : filesToInstall) {
+
+            if (f.getName().toLowerCase(Locale.ENGLISH).endsWith(".jar")) {
+                jars = true;
+                break;
+            }
+
+        }
+
+        return filesToInstall;
+    }
+
     @Override
     public boolean canInstallDirect(File next, UpdateFile uf) {
 
         // try to install plugins without restart
-        String p = next.getAbsolutePath();
-        String[] matches = new Regex(p, ".*[\\\\/]jd[\\\\/]plugins[\\\\/](.*?)[\\\\/](.+?)\\.class").getRow(0);
-        if (matches != null && "hoster".equalsIgnoreCase(matches[0])) {
-            return true;
-        } else if (matches != null && "decrypter".equalsIgnoreCase(matches[0])) { return true; }
+        if (!jars) {
+            // only direct update class files if all jars are up2date
+            String p = next.getAbsolutePath();
+
+            String[] matches = new Regex(p, ".*[\\\\/]jd[\\\\/]plugins[\\\\/](.*?)[\\\\/](.+?)\\.class").getRow(0);
+            if (matches != null && "hoster".equalsIgnoreCase(matches[0])) {
+                return true;
+            } else if (matches != null && "decrypter".equalsIgnoreCase(matches[0])) { return true; }
+        }
         return super.canInstallDirect(next, uf);
     }
 

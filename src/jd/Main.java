@@ -26,7 +26,7 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-            jd.Launcher.main(args);
+            jd.Launcher.mainStart(args);
         } catch (Throwable e) {
             e.printStackTrace();
             try {
