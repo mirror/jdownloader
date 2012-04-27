@@ -17,62 +17,52 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidfolder.com" }, urls = { "http://[\\w\\.]*?rapidfolder\\.com/\\?\\w+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidfolder.com" }, urls = { "http://[\\w\\.]*?rapidfolder\\.com/\\??[\\w\\-]+" }, flags = { 0 })
 public class RpdFldrCm extends PluginForDecrypt {
-    private static final Pattern PATTERN_SUPPORTED = Pattern.compile("http://[\\w\\.]*?rapidfolder\\.com/\\?(\\w+)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_REDIRECT_URL = Pattern.compile("action=\"(http://.+?)\">");
-    // private static final Pattern PATTERN_DOWNLOADLINK = Pattern.compile(
-    // "<input type=\"button\" value=\"Download\" onClick=\"window.open\\('./download.php?id=\\w+&subid=\\d+',"
-    // );
-    private static final String DOWNLOAD_PHP = "http://rapidfolder.com/download.php?id={id}&subid={subid}";
+
+    // DEV NOTES
+    // has redirects from old link type to new.
+    // all links are present within page
+    // no folder name/title only shown as 'Title: No information.'
 
     public RpdFldrCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
-        br.setFollowRedirects(false);
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String id = new Regex(cryptedLink.getCryptedUrl(), PATTERN_SUPPORTED).getMatch(0);
-        // Um kein neues String Objekt zu erzeugen wird hier einfach ein schon
-        // vorhandenes referenziert.
-        // Es könnte genauso gut = ""; im Source stehen!
-        String redirectUrl = DOWNLOAD_PHP;
-        String downloadUrl;
-        int count = 0;
-        boolean running = true;
-        while (running) {
-            downloadUrl = DOWNLOAD_PHP.replaceAll("\\{id\\}", id).replaceAll("\\{subid\\}", String.valueOf(count));
-            // Bei manchen Downloads ist page == ""; Dann gibt es eine
-            // redirectUrl, bei anderen Downloads steht die RedirectUrl im html
-            // source.
-            if (br.getPage(downloadUrl).equals("")) {
-                redirectUrl = br.getRedirectLocation();
-            } else {
-                redirectUrl = br.getRegex(PATTERN_REDIRECT_URL).getMatch(0);
-            }
-            running = !(redirectUrl == null || redirectUrl.equals("http://"));
-            if (running) {
-                decryptedLinks.add(createDownloadlink(redirectUrl));
-                count++;
-            }
-
-        }
-
-        return decryptedLinks;
+    public void prepBrowser() {
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.setCookie("http://rapidfolder.com", "lang", "english");
+        br.setFollowRedirects(true);
     }
 
     // @Override
-
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+        prepBrowser();
+        br.getPage(parameter);
+        if (!br.containsHTML(">Choose the files you want to download:<")) {
+            logger.warning("Invalid URL: " + parameter);
+            return null;
+        }
+        String[] links = br.getRegex("window\\.open\\(\\'(https?[^\\']+)").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Possible Plugin error, with finding links: " + parameter);
+            return null;
+        }
+        if (links != null && links.length != 0) {
+            for (String link : links)
+                decryptedLinks.add(createDownloadlink(link));
+        }
+        return decryptedLinks;
+    }
 }

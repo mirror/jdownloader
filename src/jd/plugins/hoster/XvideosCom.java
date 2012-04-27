@@ -35,7 +35,7 @@ public class XvideosCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://info.xvideos.com/contact/";
+        return "http://info.xvideos.com/legal/tos/";
     }
 
     @Override
@@ -50,7 +50,6 @@ public class XvideosCom extends PluginForHost {
         String dllink = br.getRegex("flv_url=(.*?)\\&").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = Encoding.htmlDecode(dllink);
-        link.setFinalFileName(null);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         dl.startDownload();
     }
@@ -64,13 +63,12 @@ public class XvideosCom extends PluginForHost {
             parameter.setUrlDownload(br.getRedirectLocation());
             br.getPage(parameter.getDownloadURL());
         }
-        if (br.containsHTML("This video has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("Page not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(This video has been deleted|Page not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("Video exist and loaded\\. Video exist OK\\. +\\-\\->[\t\n\r ]+<strong>([^/<>\"]+)</strong>").getMatch(0);
         if (filename == null) filename = br.getRegex("font\\-size: [0-9]+px;\">.*?<strong>(.*?)</strong>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.trim() + ".flv";
-        parameter.setName(filename.trim());
+        parameter.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 

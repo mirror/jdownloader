@@ -30,8 +30,10 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rabitfiles.com" }, urls = { "http://(www\\.)?rabidfiles\\.com/(?!faq|terms|register)[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rabidfiles.com" }, urls = { "http://(www\\.)?rabidfiles\\.com/(?!faq|terms|register)[A-Za-z0-9]+" }, flags = { 0 })
 public class RabitFilesCom extends PluginForHost {
+
+    // TODO: refactor (rename) plugin when jd2 becomes stable
 
     public RabitFilesCom(PluginWrapper wrapper) {
         super(wrapper);

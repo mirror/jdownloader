@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoooster.com", "picsapart.com", "imgur.com", "imgchili.com", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "pixhost.info", "picturedumper.com", "imagetwist.com", "sharenxs.com", "9gag.com" }, urls = { "http://(www\\.)?hoooster\\.com/showimage/\\d+/[^<>\"\\']+", "http://(www\\.)?picsapart\\.com/photo/\\d+", "http://(www\\.)?imgur\\.com(/gallery)?/[A-Za-z0-9]+", "http://(www\\.)?imgchili\\.com/show/\\d+/[a-z0-9_\\.]+", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?img\\d+\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+", "http://[\\w\\.]*?imagebam\\.com/(image|gallery)/[a-z0-9]+",
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoooster.com", "picsapart.com", "imgur.com", "imgchili.com", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "pixhost.info", "picturedumper.com", "imagetwist.com", "sharenxs.com", "9gag.com" }, urls = { "http://(www\\.)?hoooster\\.com/showimage/\\d+/[^<>\"\\']+", "http://(www\\.)?picsapart\\.com/photo/\\d+", "http://(www\\.)?imgur\\.com(/gallery|/a)?/[A-Za-z0-9]{5,}", "http://(www\\.)?imgchili\\.com/show/\\d+/[a-z0-9_\\.]+", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?img\\d+\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+", "http://[\\w\\.]*?imagebam\\.com/(image|gallery)/[a-z0-9]+",
         "http://[\\w\\.]*?media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?pixhost\\.info/pictures/\\d+", "http://(www\\.)?picturedumper\\.com/picture/\\d+/[a-z0-9]+/", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+", "https?://(www\\.)?9gag\\.com/gag/\\d+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class ImageHosterDecrypter extends PluginForDecrypt {
 
@@ -170,6 +170,33 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         } else if (parameter.contains("9gag.com/")) {
             br.getPage(parameter);
             finallink = br.getRegex("<a href=\"/random\">[\r\n\t]+<img src=\"(.*?)\"").getMatch(0);
+        } else if (parameter.contains("imgur.com/a/")) {
+            br.getPage(parameter);
+            String fpName = br.getRegex("<title>(.*?) - Imgur").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("data-title=\"([^\"]+)").getMatch(0);
+                if (fpName == null) {
+                    fpName = new Regex(parameter, "/a/([A-Za-z0-9]{5,})").getMatch(0);
+                }
+            }
+            String[] links = br.getRegex("title=\"[^\"]+\" alt=\"[^\"]+\" data\\-src=\"(https?://[^\"]+)\" data-index=\"\\d+").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Possible Error, please make sure link is valid within browser.");
+                logger.warning("If plugin is out of date please report issue to JDownloader Developement : " + parameter);
+            }
+            if (links != null && links.length != 0) {
+                for (String link : links)
+                    if (link.endsWith("s.jpg"))
+                        decryptedLinks.add(createDownloadlink("directhttp://" + link.replaceAll("s.jpg", ".jpg")));
+                    else
+                        decryptedLinks.add(createDownloadlink("directhttp://" + link));
+            }
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName.trim());
+                fp.addLinks(decryptedLinks);
+            }
+            return decryptedLinks;
         } else if (parameter.contains("imgur.com/")) {
             br.getPage(parameter.replace("gallery/", ""));
             finallink = br.getRegex("<link rel=image_src href=(http://[^<>\"\\']+) />").getMatch(0);
