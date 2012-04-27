@@ -29,52 +29,55 @@ import org.jdownloader.translate._JDT;
 public class LinkStatus implements Serializable {
 
     /**
-     * Controlling: Link muß noch bearbeitet werden.
+     * Controlling: Link is in queue and is waiting for beeing processed
      */
     public static final int   TODO                                 = 1 << 0;
 
     /**
-     * Controlling & Downloadinterface: Link wurde erfolgreich heruntergeladen
+     * Controlling & Downloadinterface: Link has been downloaded
      */
     public final static int   FINISHED                             = 1 << 1;
 
     /**
-     * Plugins: Ein unbekannter Fehler ist aufgetreten
+     * Plugins: a unknown error occured
      */
     public final static int   ERROR_RETRY                          = 1 << 2;
 
     /**
-     * Plugins: Captcha Text war falsch
+     * Plugins: captcha input has been wrong
      */
     public final static int   ERROR_CAPTCHA                        = 1 << 3;
 
     /**
-     * Plugins: Download Limit wurde erreicht
+     * Plugins: Download Limit has been reached. Ip is blocked
      */
     public final static int   ERROR_IP_BLOCKED                     = 1 << 4;
 
     /**
-     * Plugins & Downloadinterface: Die Datei konnte nicht gefunden werden
+     * Plugins & Downloadinterface: File not found - file not available any more
      */
     public final static int   ERROR_FILE_NOT_FOUND                 = 1 << 5;
 
     /**
-     * Plugins & Controlling: zeigt einen Premiumspezifischen fehler an
+     * Plugins & Controlling: A Premium error occured. check value flag for
+     * further details
      */
     public static final int   ERROR_PREMIUM                        = 1 << 8;
 
     /**
-     * Downloadinterface: Zeigt an dass der Link nicht vollständig geladen wurde
+     * Downloadinterface: The download started, but has not been finished
+     * successfully
      */
     public static final int   ERROR_DOWNLOAD_INCOMPLETE            = 1 << 9;
 
     /**
-     * Controlling: Zeigt an, dass der Link gerade heruntergeladen wird
+     * Controlling: DownloadLink is in progress. Download or plugin is running
      */
     public static final int   DOWNLOADINTERFACE_IN_PROGRESS        = 1 << 10;
 
     /**
-     * Plugins: Der download ist zur Zeit nicht möglich
+     * Plugins:Download is not possible right now. May be back later. Maybe
+     * server problems or anything like this
      */
     public static final int   ERROR_TEMPORARILY_UNAVAILABLE        = 1 << 11;
 
@@ -84,60 +87,60 @@ public class LinkStatus implements Serializable {
     public static final int   ERROR_HOSTER_TEMPORARILY_UNAVAILABLE = 1 << 12;
 
     /**
-     * Controlling & Downloadinterface: Zeigt an, dass die Datei auf der
-     * Festplatte schon existiert
+     * Controlling & Downloadinterface: The destination file already exists on
+     * harddisk
      */
     public static final int   ERROR_ALREADYEXISTS                  = 1 << 13;
 
     /**
-     * Downloadinterface: Zeigt an dass der Eigentliche Download im
-     * Downloadinterface fehlgeschlagen ist. z.B. Misslungender Chunkload
+     * Downloadinterface: The actual download failed. Example: Chunkerrors
      */
     public static final int   ERROR_DOWNLOAD_FAILED                = 1 << 14;
 
     /**
-     * DownloadInterface: Zeigt an dass es einen Timeout gab und es scheinbar
-     * keine Verbindung emhr zum internet gibt
+     * DownloadInterface: A Connection Timeout occured. Maybe no connection to
+     * the internet?
      */
     public static final int   ERROR_NO_CONNECTION                  = 1 << 15;
 
     /**
-     * Plugins & Downloadinterface: Schwerwiegender fehler. Der Download wird
-     * sofort abgebrochen. Es werden keine weiteren versuche mehr gestartet
+     * Plugins & Downloadinterface: Serious fatal error. No retry. Download will
+     * be canceled finally.
      */
     public static final int   ERROR_FATAL                          = 1 << 17;
 
     /**
-     * Controlling: Zeigt an, dass das zugehörige Plugin den link gerade
-     * bearbeitet
+     * Controlling: The plugin is in progress.
      */
     public static final int   PLUGIN_IN_PROGRESS                   = 1 << 18;
 
     /**
-     * DownloadINterface & Controlling zeigt an dass es zu einem plugintimeout
-     * gekommen ist
+     * DownloadINterface & Controlling a timeout occured
      */
     public static final int   ERROR_TIMEOUT_REACHED                = 1 << 20;
 
     /**
-     * Downloadinterface LOCAL Input output Fehler. Es kann nicht geschrieben
-     * werden etc.
+     * Downloadinterface Local IO problem. we could not write to harddisk
      */
     public static final int   ERROR_LOCAL_IO                       = 1 << 21;
 
     /**
-     * Plugins Wird bei schweren Parsing Fehler eingesetzt. Über diesen Code
-     * kann das Plugin mitteilen dass es defekt ist und aktualisiert werden muss
+     * Plugin out of date. This flag says that the plugin noticed parsing
+     * problems and might be out of date.
      */
     public static final int   ERROR_PLUGIN_DEFECT                  = 1 << 22;
 
     /**
-     * Zeigt an, das auf User-Eingaben gewartet wird
+     * We are waiting for user input.
      */
     public static final int   WAITING_USERIO                       = 1 << 23;
-
+    /**
+     * Error in post processing. for example downloading
+     */
     public static final int   ERROR_POST_PROCESS                   = 1 << 24;
-
+    /**
+     * Hash Check failed after download process
+     */
     public static final int   VALUE_FAILED_HASH                    = 1 << 27;
 
     private transient boolean isActive                             = false;
