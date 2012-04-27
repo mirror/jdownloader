@@ -25,7 +25,7 @@ public class JDRestartController extends RestartController {
         if (!JsonConfig.create(GeneralSettings.class).isSilentUpdateEnabled()) {
             super.onShutdown();
         } else {
-            if (!ShutdownController.getInstance().hasShutdownEvent(RestartViaUpdaterEvent.getInstance())) {
+            if (JDUpdater.getInstance().hasWaitingUpdates() && !ShutdownController.getInstance().hasShutdownEvent(RestartViaUpdaterEvent.getInstance())) {
                 runUpdaterOnAppExit();
             }
         }
