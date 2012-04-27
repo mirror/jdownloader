@@ -1,5 +1,10 @@
 package org.jdownloader.controlling;
 
+import java.awt.AWTEvent;
+import java.awt.EventQueue;
+import java.awt.Toolkit;
+import java.awt.event.MouseEvent;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.inapp.RestartController;
@@ -34,25 +39,42 @@ public class JDRestartController extends RestartController {
 
     }
 
+    private long lastMouseActivity;
+
     /**
      * Create a new instance of JDRestartController. This is a singleton class.
      * Access the only existing instance by using {@link #getInstance()}.
      */
     private JDRestartController() {
         super();
+        lastMouseActivity = System.currentTimeMillis();
+        Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EventQueue() {
+
+            protected void dispatchEvent(AWTEvent event) {
+                if (event instanceof MouseEvent) {
+
+                    lastMouseActivity = System.currentTimeMillis();
+                    System.out.println(event);
+                }
+                super.dispatchEvent(event);
+            }
+        });
     }
 
     public void bootstrapRestartASAP() {
 
         new Thread("Wait For Restart") {
             public void run() {
-                RestartViaUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());
-                setSilentShutDownEnabled(true);
-                restartViaUpdater(false);
-                setSilentShutDownEnabled(false);
-                RestartViaUpdaterEvent.getInstance().setBootstrappath(null);
+                if (System.currentTimeMillis() - lastMouseActivity > 20000) {
+                    // wait until there is no mousevent
+                    RestartViaUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());
+                    setSilentShutDownEnabled(true);
+                    restartViaUpdater(false);
+                    // setSilentShutDownEnabled(false);
+                    // RestartViaUpdaterEvent.getInstance().setBootstrappath(null);
+                }
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

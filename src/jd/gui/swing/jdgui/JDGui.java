@@ -349,6 +349,7 @@ public class JDGui extends SwingGui {
     private void layoutComponents() {
         final JPanel contentPane = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]0[shrink]"));
         contentPane.add(this.mainTabbedPane);
+
         // contentPane.add(new
         // org.jdownloader.gui.views.linkgrabber.LinkGrabberPanel());
 
