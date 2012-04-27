@@ -10,6 +10,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.inapp.RestartController;
 import org.appwork.update.inapp.RestartViaUpdaterEvent;
 import org.appwork.update.inapp.SilentUpdaterEvent;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.update.JDUpdater;
 
@@ -48,36 +49,51 @@ public class JDRestartController extends RestartController {
     private JDRestartController() {
         super();
         lastMouseActivity = System.currentTimeMillis();
-        Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EventQueue() {
 
-            protected void dispatchEvent(AWTEvent event) {
-                if (event != null && event instanceof MouseEvent) {
-                    lastMouseActivity = System.currentTimeMillis();
-                }
-                super.dispatchEvent(event);
-            }
-        });
     }
 
     public void bootstrapRestartASAP() {
-
+        System.out.println(1);
         new Thread("Wait For Restart") {
             public void run() {
-                if (System.currentTimeMillis() - lastMouseActivity > 20000) {
-                    // wait until there is no mousevent
-                    RestartViaUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());
-                    setSilentShutDownEnabled(true);
-                    restartViaUpdater(false);
-                    // setSilentShutDownEnabled(false);
-                    // RestartViaUpdaterEvent.getInstance().setBootstrappath(null);
-                }
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                while (true) {
+                    if (System.currentTimeMillis() - lastMouseActivity > 20000) {
+                        // wait until there is no mousevent
+                        RestartViaUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());
+                        setSilentShutDownEnabled(true);
+                        restartViaUpdater(false);
+                        // setSilentShutDownEnabled(false);
+                        // RestartViaUpdaterEvent.getInstance().setBootstrappath(null);
+                    }
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }.start();
 
+    }
+
+    public void initMouseObserver() {
+
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EventQueue() {
+
+                    protected void dispatchEvent(AWTEvent event) {
+                        if (event != null && event instanceof MouseEvent) {
+                            lastMouseActivity = System.currentTimeMillis();
+
+                        }
+
+                        super.dispatchEvent(event);
+                    }
+                });
+            }
+        };
     }
 }
