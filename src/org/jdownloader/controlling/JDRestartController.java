@@ -39,7 +39,7 @@ public class JDRestartController extends RestartController {
 
     }
 
-    private long lastMouseActivity;
+    private volatile long lastMouseActivity;
 
     /**
      * Create a new instance of JDRestartController. This is a singleton class.
@@ -51,10 +51,8 @@ public class JDRestartController extends RestartController {
         Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EventQueue() {
 
             protected void dispatchEvent(AWTEvent event) {
-                if (event instanceof MouseEvent) {
-
+                if (event != null && event instanceof MouseEvent) {
                     lastMouseActivity = System.currentTimeMillis();
-                    System.out.println(event);
                 }
                 super.dispatchEvent(event);
             }
