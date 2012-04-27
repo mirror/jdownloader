@@ -31,7 +31,6 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.event.WindowStateListener;
-import java.util.ArrayList;
 
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
@@ -214,7 +213,26 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
             trayIconTooltip = new TrayIconTooltip();
             systemTray.add(trayIcon);
         } catch (Throwable e) {
+            /*
+             * on Gnome3, Unity, this can happen because icon might be
+             * blacklisted, see here
+             * http://www.webupd8.org/2011/04/how-to-re-enable
+             * -notification-area.html
+             * 
+             * dconf-editor", then navigate to desktop > unity > panel and
+             * whitelist JDownloader
+             * 
+             * also see
+             * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
+             * 
+             * TODO: maybe add dialog to inform user
+             */
             JDLogger.exception(e);
+            try {
+                setEnabled(false);
+            } catch (final Throwable e1) {
+            }
+            return;
         }
         Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
@@ -554,7 +572,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     @Override
-    public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
+    public void onShutdownVeto(ShutdownVetoException[] shutdownVetoExceptions) {
     }
 
     @Override

@@ -94,13 +94,6 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
         } catch (InterruptedException e) {
             return;
         }
-        putLastTimeStarted(System.currentTimeMillis());
-        /* try fast-debrid.com first */
-        if (account == null) {
-            if (handleFastDebrid(downloadLink)) return;
-        } else if (!PremiumCompoundExtension.preferLocalAccounts()) {
-            if (handleFastDebrid(downloadLink)) return;
-        }
 
         plugin.handle(downloadLink, account);
     }
@@ -143,7 +136,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
         Account acc = null;
         synchronized (LOCK) {
             /* jdpremium enabled */
-            if (!PremiumCompoundExtension.isStaticEnabled() || !enabled) return false;
+
             /* premium available for this host */
             if (!premiumHosts.contains(link.getHost())) return false;
             // acc =

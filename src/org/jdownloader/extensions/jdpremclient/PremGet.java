@@ -104,12 +104,7 @@ public class PremGet extends PluginForHost implements JDPremInterface {
             return;
         }
         putLastTimeStarted(System.currentTimeMillis());
-        /* try premget.pl first */
-        if (account == null) {
-            if (handlePremGet(downloadLink)) return;
-        } else if (!PremiumCompoundExtension.preferLocalAccounts()) {
-            if (handlePremGet(downloadLink)) return;
-        }
+
         if (proxyused = true) {
             /* failed, now try normal */
             proxyused = false;
@@ -156,7 +151,7 @@ public class PremGet extends PluginForHost implements JDPremInterface {
         Account acc = null;
         synchronized (LOCK) {
             /* jdpremium enabled */
-            if (!PremiumCompoundExtension.isStaticEnabled() || !enabled) return false;
+
             /* premium available for this host */
             if (!premiumHosts.contains(link.getHost())) return false;
             // acc =

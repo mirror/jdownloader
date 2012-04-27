@@ -89,11 +89,7 @@ public class Premium4me extends PluginForHost implements JDPremInterface {
         }
         putLastTimeStarted(System.currentTimeMillis());
         /* try premium4me first */
-        if (account == null) {
-            if (handlePremium4me(downloadLink)) return;
-        } else if (!PremiumCompoundExtension.preferLocalAccounts()) {
-            if (handlePremium4me(downloadLink)) return;
-        }
+
         if (proxyused = true) {
             /* failed, now try normal */
             proxyused = false;
@@ -140,7 +136,7 @@ public class Premium4me extends PluginForHost implements JDPremInterface {
         Account acc = null;
         synchronized (LOCK) {
             /* jdpremium enabled */
-            if (!PremiumCompoundExtension.isStaticEnabled() || !enabled) return false;
+
             /* premium available for this host */
             if (!premiumHosts.contains(link.getHost())) return false;
             // acc =

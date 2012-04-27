@@ -88,11 +88,7 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
         }
         putLastTimeStarted(System.currentTimeMillis());
         /* try rehost.to first */
-        if (account == null) {
-            if (handleReHost(downloadLink)) return;
-        } else if (!PremiumCompoundExtension.preferLocalAccounts()) {
-            if (handleReHost(downloadLink)) return;
-        }
+
         if (proxyused = true) {
             /* failed, now try normal */
             proxyused = false;
@@ -139,7 +135,7 @@ public class ReHostto extends PluginForHost implements JDPremInterface {
         Account acc = null;
         synchronized (LOCK) {
             /* jdpremium enabled */
-            if (!PremiumCompoundExtension.isStaticEnabled() || !enabled) return false;
+
             /* premium available for this host */
             if (!premiumHosts.contains(link.getHost())) return false;
             // acc =

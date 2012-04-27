@@ -109,22 +109,27 @@ public class BuyAction extends AbstractAction {
 
                                 @Override
                                 protected Icon getIconForValue(LazyHostPlugin value) {
-
-                                    if (!isPopupVisible()) return null;
-
+                                    if (value == null) return null;
                                     return DomainInfo.getInstance(value.getDisplayName()).getFavIcon();
                                 }
 
                                 @Override
                                 protected String getTextForValue(LazyHostPlugin value) {
+                                    if (value == null) return null;
                                     return value.getDisplayName();
                                 }
+
                             };
                             final ComboBoxDialog _this = this;
                             combo.addActionListener(new ActionListener() {
 
                                 public void actionPerformed(ActionEvent e) {
-                                    DomainInfo domainInfo = DomainInfo.getInstance(((LazyHostPlugin) combo.getSelectedItem()).getDisplayName());
+                                    Object item = combo.getSelectedItem();
+                                    if (item == null) {
+                                        _this.setIcon(null);
+                                        return;
+                                    }
+                                    DomainInfo domainInfo = DomainInfo.getInstance(((LazyHostPlugin) item).getDisplayName());
                                     String tld = domainInfo.getTld();
                                     Image ic = null;
                                     if (NewTheme.I().hasIcon("fav/big." + tld)) {
@@ -142,14 +147,15 @@ public class BuyAction extends AbstractAction {
                                 }
                             });
                             combo.setSelectedItem(defaultSelection);
-
                             return combo;
                         }
 
                     };
 
                     Dialog.getInstance().showDialog(d);
+                    if (d.getReturnValue() < 0) return;
                     LazyHostPlugin buyIt = options[d.getReturnValue()];
+                    if (buyIt == null) return;
                     CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(buyIt.getPrototype().getBuyPremiumUrl(), "accountmanager" + (table == null ? "/context" : "/table")));
                     try {
                         NewUIO.I().show(BuyAndAddPremiumDialogInterface.class, new BuyAndAddPremiumAccount(DomainInfo.getInstance(buyIt.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));

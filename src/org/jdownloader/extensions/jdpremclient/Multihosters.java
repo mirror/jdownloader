@@ -90,11 +90,7 @@ public class Multihosters extends PluginForHost implements JDPremInterface {
             return;
         }
         putLastTimeStarted(System.currentTimeMillis());
-        if (account == null) {
-            if (handleMultihosters(downloadLink)) return;
-        } else if (!PremiumCompoundExtension.preferLocalAccounts()) {
-            if (handleMultihosters(downloadLink)) return;
-        }
+
         if (proxyused = true) {
             /* failed, now try normal */
             proxyused = false;
@@ -141,7 +137,7 @@ public class Multihosters extends PluginForHost implements JDPremInterface {
         Account acc = null;
         synchronized (LOCK) {
             /* jdpremium enabled */
-            if (!PremiumCompoundExtension.isStaticEnabled() || !enabled) return false;
+
             /* premium available for this host */
             if (!premiumHosts.contains(link.getHost())) return false;
             // acc =

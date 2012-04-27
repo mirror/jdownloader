@@ -92,16 +92,7 @@ public class Fireloadorg extends PluginForHost implements JDPremInterface {
         }
         putLastTimeStarted(System.currentTimeMillis());
         /* try fireload.org first */
-        if (account == null) {
-            if (handleFireload(downloadLink)) return;
-        } else if (!PremiumCompoundExtension.preferLocalAccounts()) {
-            if (handleFireload(downloadLink)) return;
-        }
-        if (proxyused = true) {
-            /* failed, now try normal */
-            proxyused = false;
 
-        }
         plugin.handle(downloadLink, account);
     }
 
@@ -152,7 +143,7 @@ public class Fireloadorg extends PluginForHost implements JDPremInterface {
             Account acc = null;
             synchronized (LOCK) {
                 /* jdpremium enabled */
-                if (!PremiumCompoundExtension.isStaticEnabled() || !enabled) return false;
+
                 /* premium available for this host */
                 if (!premiumHosts.contains(link.getHost())) return false;
                 // acc =

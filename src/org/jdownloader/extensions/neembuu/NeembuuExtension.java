@@ -50,7 +50,7 @@ import org.jdownloader.images.NewTheme;
 public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implements MenuFactoryListener {
 
     private NeembuuGui                                   tab;
-    private int                                          number_of_retries          = 0;                                                                                                                         // 0=not
+    private int                                          number_of_retries          = 0;                                               // 0=not
     // checked, 1=checked once but failed ... -1 =works :)
     private final LinkedList<WatchAsYouDownloadSession>  watchAsYouDownloadSessions = new LinkedList<WatchAsYouDownloadSession>();
     public static final String                           WATCH_AS_YOU_DOWNLOAD_KEY  = "WATCH_AS_YOU_DOWNLOAD";
@@ -65,9 +65,9 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
 
     public String getBasicMountLocation() {
         String basicMntLoc = getSettings().getBasicMountLocation();
-        if(basicMntLoc==null){
+        if (basicMntLoc == null) {
             java.io.File basicmntLocfile = new java.io.File(System.getProperty("user.home") + java.io.File.separator + "NeembuuWatchAsYouDownload");
-            if(!basicmntLocfile.exists()){
+            if (!basicmntLocfile.exists()) {
                 basicmntLocfile.mkdir();
             }
             basicMntLoc = basicmntLocfile.getAbsolutePath();
@@ -263,7 +263,8 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
 
     @Override
     public boolean isDefaultEnabled() {
-        return true;
+        /* only default enabled if java >= 1.7 installed */
+        return Application.getJavaVersion() >= Application.JAVA17;
     }
 
     @Override

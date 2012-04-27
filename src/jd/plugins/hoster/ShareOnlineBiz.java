@@ -157,6 +157,14 @@ public class ShareOnlineBiz extends PluginForHost {
             downloadLink.setChunksProgress(null);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "MaxChunks Error", 10 * 60 * 1000l);
         }
+        if (br.getURL().contains("failure/freelimit")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "File too big, limited by the file owner.");
+        }
         if (br.getURL().contains("failure/bandwidth")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
         if (br.getURL().contains("failure/filenotfound")) {
             try {
