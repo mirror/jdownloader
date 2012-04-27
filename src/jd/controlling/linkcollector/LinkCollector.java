@@ -122,8 +122,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
 
             @Override
-            public void onShutdownRequest(int vetos) throws ShutdownVetoException {
-                if (vetos > 0) {
+            public void onShutdownVetoRequest(ShutdownVetoException[] vetos) throws ShutdownVetoException {
+                if (vetos.length > 0) {
                     /* we already abort shutdown, no need to ask again */
                     return;
                 }
@@ -141,6 +141,15 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             @Override
             public void onShutdown() {
             }
+
+            @Override
+            public void onSilentShutdownVetoRequest(ShutdownVetoException[] vetos) throws ShutdownVetoException {
+
+                if (LinkChecker.isChecking() || LinkCrawler.isCrawling()) {
+
+                throw new ShutdownVetoException("LinkCollector is still running"); }
+            }
+
         });
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 

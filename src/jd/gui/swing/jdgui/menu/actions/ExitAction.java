@@ -18,7 +18,6 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import org.appwork.update.inapp.RestartController;
 import org.jdownloader.gui.translate._GUI;
 
 public class ExitAction extends ActionAdapter {
@@ -31,7 +30,7 @@ public class ExitAction extends ActionAdapter {
 
     @Override
     public void onAction(ActionEvent e) {
-        RestartController.getInstance().exit(true);
+        org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
     }
 
     @Override

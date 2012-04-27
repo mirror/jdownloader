@@ -64,7 +64,6 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.update.inapp.RestartController;
 import org.appwork.update.inapp.RlyExitListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
@@ -563,7 +562,7 @@ public class JDGui extends SwingGui {
                 }.start();
                 return;
             }
-            RestartController.getInstance().exit(true);
+            org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
         }
     }
 

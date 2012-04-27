@@ -18,7 +18,6 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import org.appwork.update.inapp.RestartController;
 import org.jdownloader.gui.translate._GUI;
 
 public class RestartAction extends ActionAdapter {
@@ -41,7 +40,7 @@ public class RestartAction extends ActionAdapter {
         // {
         //
         // public void run() {
-        // RestartController.getInstance().restartViaUpdater(true);
+        // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(true);
         // }
         //
         // }, JDUpdater.getInstance());
@@ -52,7 +51,7 @@ public class RestartAction extends ActionAdapter {
         //
         // }
         // }
-        RestartController.getInstance().directRestart(true);
+        org.jdownloader.controlling.JDRestartController.getInstance().directRestart(true);
         // }
     }
 

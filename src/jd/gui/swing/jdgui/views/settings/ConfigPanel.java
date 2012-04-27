@@ -37,7 +37,6 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.shutdown.ShutdownController;
-import org.appwork.update.inapp.RestartController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -173,7 +172,7 @@ public abstract class ConfigPanel extends SwitchPanel {
             if (!ShutdownController.getInstance().isShutDownRequested()) {
                 int answer = UserIO.getInstance().requestConfirmDialog(0, _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_title(), _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion(), null, _GUI._.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_ok(), null);
                 if (UserIO.isOK(answer)) {
-                    RestartController.getInstance().directRestart(true);
+                    org.jdownloader.controlling.JDRestartController.getInstance().directRestart(true);
                 }
             }
         }

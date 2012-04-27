@@ -8,11 +8,11 @@ import javax.swing.JFrame;
 import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.update.inapp.RestartController;
 import org.appwork.update.inapp.SilentUpdaterEvent;
 import org.appwork.update.inapp.UpdaterGUI;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.JDRestartController;
 import org.jdownloader.settings.GeneralSettings;
 
 public class JDUpdaterGUI extends UpdaterGUI {
@@ -59,16 +59,13 @@ public class JDUpdaterGUI extends UpdaterGUI {
 
         if (JsonConfig.create(GeneralSettings.class).isSilentUpdateEnabled()) {
             if (JsonConfig.create(GeneralSettings.class).isSilentUpdateWithRestartEnabled()) {
-                // RlyExitListener.getInstance().setEnabled(false);
-                // RestartController.getInstance().restartViaUpdater(true);
-                RestartController.getInstance().setUpdateDialogOnExitEnabled(false);
-                RestartController.getInstance().runUpdaterOnAppExit();
+
+                JDRestartController.getInstance().bootstrapRestartASAP();
 
             } else {
-                RestartController.getInstance().setUpdateDialogOnExitEnabled(false);
-                RestartController.getInstance().runUpdaterOnAppExit();
 
                 SilentUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());
+
             }
         } else {
             super.onInstallRequest();

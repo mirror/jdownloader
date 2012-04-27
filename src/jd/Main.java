@@ -41,7 +41,7 @@ public class Main {
             } catch (Throwable e2) {
             }
             try {
-                org.appwork.update.inapp.RestartController.getInstance().restartViaUpdater(false);
+                org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
             } catch (Throwable e2) {
             }
         }

@@ -549,12 +549,16 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     @Override
-    public void onShutdownRequest(int vetos) throws ShutdownVetoException {
+    public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
 
     }
 
     @Override
     public void onShutdownVeto(ArrayList<ShutdownVetoException> vetos) {
+    }
+
+    @Override
+    public void onSilentShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
     }
 
 }

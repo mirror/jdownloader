@@ -1398,7 +1398,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     }
 
-    public void onShutdownRequest(final int vetos) throws ShutdownVetoException {
+    public void onShutdownVetoRequest(final int vetos) throws ShutdownVetoException {
         if (vetos > 0) {
             /* we already abort shutdown, no need to ask again */
             return;
@@ -1474,4 +1474,32 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(sb.toString()));
         }
     }
+
+    @Override
+    public void onSilentShutdownVetoRequest(ShutdownVetoException[] vetos) throws ShutdownVetoException {
+
+        if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
+
+            synchronized (this.DownloadControllers) {
+                for (final SingleDownloadController con : DownloadControllers) {
+                    DownloadLink link = con.getDownloadLink();
+                    if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                        DownloadInterface dl = link.getDownloadInstance();
+                        if (dl != null && !dl.isResumable()) {
+
+                        throw new ShutdownVetoException("DownloadWatchDog is still running");
+
+                        }
+                    }
+                }
+            }
+
+        }
+
+    }
+
+    @Override
+    public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
+    }
+
 }

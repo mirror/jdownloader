@@ -123,7 +123,7 @@ public class JDUpdater extends AppUpdater {
             }
         });
 
-        RestartController.getInstance().setUpdater(this);
+        org.jdownloader.controlling.JDRestartController.getInstance().setUpdater(this);
         this.getEventSender().addListener(new UpdaterListener() {
 
             private int currentStepSize = 0;

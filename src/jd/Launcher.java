@@ -62,7 +62,6 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.jackson.JacksonMapper;
-import org.appwork.update.inapp.RestartController;
 import org.appwork.update.inapp.RlyExitListener;
 import org.appwork.update.inapp.WebupdateSettings;
 import org.appwork.utils.Application;
@@ -100,7 +99,7 @@ public class Launcher {
             statics();
         } catch (Throwable e) {
             e.printStackTrace();
-            RestartController.getInstance().restartViaUpdater(false);
+            org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
             // TODO: call Updater.jar
         }
     }
@@ -168,10 +167,10 @@ public class Launcher {
 
         NewUIO.setUserIO(new JDSwingUserIO());
         RlyExitListener.getInstance().setEnabled(true);
-        RestartController.getInstance().setApp("JDownloader.app");
-        RestartController.getInstance().setExe("JDownloader.exe");
-        RestartController.getInstance().setJar("JDownloader.jar");
-        RestartController.getInstance().setUpdaterJar("Updater.jar");
+        org.jdownloader.controlling.JDRestartController.getInstance().setApp("JDownloader.app");
+        org.jdownloader.controlling.JDRestartController.getInstance().setExe("JDownloader.exe");
+        org.jdownloader.controlling.JDRestartController.getInstance().setJar("JDownloader.jar");
+        org.jdownloader.controlling.JDRestartController.getInstance().setUpdaterJar("Updater.jar");
     }
 
     /**
@@ -270,7 +269,7 @@ public class Launcher {
             }
         });
         PARAMETERS.parse(null);
-        RestartController.getInstance().setStartArguments(PARAMETERS.getRawArguments());
+        org.jdownloader.controlling.JDRestartController.getInstance().setStartArguments(PARAMETERS.getRawArguments());
 
         if (!Application.isJared(Launcher.class)) {
             JDInitFlags.SWITCH_DEBUG = true;
@@ -492,7 +491,7 @@ public class Launcher {
                         });
                         /* check for available updates */
                         // activate auto checker only if we are in jared mode
-                        if (JsonConfig.create(WebupdateSettings.class).isAutoUpdateCheckEnabled() && Application.isJared(Launcher.class)) {
+                        if ((JsonConfig.create(WebupdateSettings.class).isAutoUpdateCheckEnabled() && Application.isJared(Launcher.class)) || PARAMETERS.hasCommandSwitch("autoupdate")) {
                             JDUpdater.getInstance().startChecker();
                         }
                         /* start downloadwatchdog */
@@ -570,7 +569,7 @@ public class Launcher {
                     Log.exception(e);
                     Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
 
-                    RestartController.getInstance().restartViaUpdater(false);
+                    org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
                 }
                 return null;
             }

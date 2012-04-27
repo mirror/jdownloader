@@ -426,8 +426,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             }
 
             @Override
-            public void onShutdownRequest(int vetos) throws ShutdownVetoException {
-                if (vetos > 0) {
+            public void onShutdownVetoRequest(ShutdownVetoException[] vetos) throws ShutdownVetoException {
+                if (vetos.length > 0) {
                     /* we already abort shutdown, no need to ask again */
                     return;
                 }
@@ -445,6 +445,14 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             @Override
             public void onShutdown() {
             }
+
+            @Override
+            public void onSilentShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
+                if (!extractionQueue.isEmpty() || extractionQueue.getCurrentQueueEntry() != null) {
+
+                throw new ShutdownVetoException("ExtractionExtension is still running"); }
+            }
+
         });
     }
 

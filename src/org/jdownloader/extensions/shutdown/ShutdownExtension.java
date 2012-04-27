@@ -79,7 +79,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
 
     private void closejd() {
         logger.info("close jd");
-        RestartController.getInstance().exit(true);
+        org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
     }
 
     private void shutdown() {

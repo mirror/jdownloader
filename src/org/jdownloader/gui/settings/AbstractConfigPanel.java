@@ -65,7 +65,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
     protected void showRestartRequiredMessage() {
         try {
             Dialog.getInstance().showConfirmDialog(0, _JDT._.dialog_optional_showRestartRequiredMessage_title(), _JDT._.dialog_optional_showRestartRequiredMessage_msg(), null, _JDT._.basics_yes(), _JDT._.basics_no());
-            RestartController.getInstance().exit(true);
+            org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
         } catch (DialogClosedException e) {
         } catch (DialogCanceledException e) {
         }

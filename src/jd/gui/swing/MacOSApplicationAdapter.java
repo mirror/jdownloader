@@ -97,7 +97,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
     public void handleQuitRequestWith(QuitEvent e, final QuitResponse response) {
         quitResponse = response;
-        RestartController.getInstance().exit(true);
+        org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
     }
 
     public void handlePreferences(PreferencesEvent e) {
