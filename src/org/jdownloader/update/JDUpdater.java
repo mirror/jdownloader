@@ -4,8 +4,12 @@ import java.awt.Color;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map.Entry;
 
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
@@ -16,13 +20,15 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.exchange.UpdateFile;
 import org.appwork.update.inapp.AppUpdater;
-import org.appwork.update.inapp.RestartController;
 import org.appwork.update.inapp.UpdaterGUI;
+import org.appwork.update.updateclient.Actions;
 import org.appwork.update.updateclient.InstalledFile;
+import org.appwork.update.updateclient.Parameters;
 import org.appwork.update.updateclient.UpdaterState;
 import org.appwork.update.updateclient.event.UpdaterEvent;
 import org.appwork.update.updateclient.event.UpdaterListener;
 import org.appwork.update.updateclient.translation.T;
+import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
@@ -85,6 +91,22 @@ public class JDUpdater extends AppUpdater {
             } else if (matches != null && "decrypter".equalsIgnoreCase(matches[0])) { return true; }
         }
         return super.canInstallDirect(next, uf);
+    }
+
+    protected String getUrl(Actions action, Parameters[] parameters) throws UnsupportedEncodingException {
+        String ret = super.getUrl(action, parameters);
+        HashMap<String, String> build = JSonStorage.restoreFrom(Application.getResource("build.json"), new HashMap<String, String>());
+        StringBuilder sb = new StringBuilder();
+        sb.append(ret);
+
+        for (Entry<String, String> e : build.entrySet()) {
+            sb.append("&");
+            sb.append(e.getKey());
+            sb.append("=");
+            sb.append(URLEncoder.encode(e.getValue(), "UTF-8"));
+
+        }
+        return sb.toString();
     }
 
     /**
