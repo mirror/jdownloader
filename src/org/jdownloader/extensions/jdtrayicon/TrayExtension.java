@@ -563,7 +563,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     @Override
-    public void onShutdown() {
+    public void onShutdown(boolean silent) {
     }
 
     @Override

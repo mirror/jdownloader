@@ -78,7 +78,7 @@ public class GUIUtils {
      * @param y
      * @return
      */
-    private static GraphicsDevice getScreenDevice(int x, int y) {
+    public static GraphicsDevice getScreenDevice(int x, int y) {
         // search screen device for this location
         final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         final GraphicsDevice[] screens = ge.getScreenDevices();
@@ -96,25 +96,6 @@ public class GUIUtils {
 
         }
         return null;
-    }
-
-    public static void saveLastDimension(Component child) {
-        String key = child.getName();
-
-        boolean max = false;
-        if (child instanceof JFrame) {
-            STORAGE.put("extendedstate." + key, ((JFrame) child).getExtendedState());
-
-            if (((JFrame) child).getExtendedState() != JFrame.NORMAL) {
-                max = true;
-            }
-        }
-        // do not save dimension if frame is not in normal state
-        if (!max) {
-            STORAGE.put("dimension." + key + ".width", child.getSize().width);
-            STORAGE.put("dimension." + key + ".height", child.getSize().height);
-        }
-
     }
 
     public static void saveLastLocation(Component parent) {

@@ -27,10 +27,10 @@ public class JDRestartController extends RestartController {
         return JDRestartController.INSTANCE;
     }
 
-    public void onShutdown() {
+    public void onShutdown(boolean silent) {
 
         if (!JsonConfig.create(GeneralSettings.class).isSilentUpdateEnabled()) {
-            super.onShutdown();
+            super.onShutdown(silent);
         } else {
             if (JDUpdater.getInstance().hasWaitingUpdates() && !ShutdownController.getInstance().hasShutdownEvent(RestartViaUpdaterEvent.getInstance())) {
                 if (JDUpdater.getInstance().getBranch() != null && !JDUpdater.getInstance().isSelfUpdateRequested()) {

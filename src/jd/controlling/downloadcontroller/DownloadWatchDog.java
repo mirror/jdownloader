@@ -1383,7 +1383,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         return this.stateMachine;
     }
 
-    public void onShutdown() {
+    public void onShutdown(boolean silent) {
         IOEQ.getQueue().addWait(new IOEQAction() {
 
             public void ioeqRun() {

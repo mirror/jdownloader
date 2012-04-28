@@ -82,6 +82,8 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.FrameStatus;
+import org.jdownloader.settings.FrameStatus.ExtendedState;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class JDGui extends SwingGui {
@@ -134,6 +136,7 @@ public class JDGui extends SwingGui {
         Dialog.getInstance().setParentOwner(this.mainFrame);
         this.initLocationAndDimension();
         this.mainFrame.setVisible(true);
+
         if (this.mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
             ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) this.mainFrame.getRootPane().getUI()).setMaximizedBounds(this.mainFrame);
         }
@@ -179,13 +182,11 @@ public class JDGui extends SwingGui {
 
                             @Override
                             public Object edtRun() {
+
                                 JDGui.this.mainTabbedPane.onClose();
-                                try {
-                                    GUIUtils.saveLastLocation(mainFrame);
-                                    GUIUtils.saveLastDimension(mainFrame);
-                                } catch (final Throwable e) {
-                                    Log.exception(e);
-                                }
+
+                                JsonConfig.create(GraphicalUserInterfaceSettings.class).setLastFrameStatus(FrameStatus.create(mainFrame, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus()));
+
                                 JDGui.this.getMainFrame().setVisible(false);
                                 JDGui.this.getMainFrame().dispose();
                                 return null;
@@ -271,15 +272,44 @@ public class JDGui extends SwingGui {
      * restores the dimension and location to the window
      */
     private void initLocationAndDimension() {
-        Dimension dim = GUIUtils.getLastDimension(this.mainFrame);
+
+        FrameStatus status = JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus();
+
+        if (status == null) {
+
+            status = new FrameStatus();
+        }
+        Dimension dim = null;
+        if (status.getWidth() > 0 && status.getHeight() > 0) {
+            dim = new Dimension(status.getWidth(), status.getHeight());
+        }
         if (dim == null) {
             dim = new Dimension(1024, 728);
         }
         this.mainFrame.setPreferredSize(dim);
         this.mainFrame.setSize(dim);
         this.mainFrame.setMinimumSize(new Dimension(400, 100));
+        if (status.isSilentShutdown() && Application.getJavaVersion() >= 17000000) {
+            try {
+                mainFrame.setAutoRequestFocus(false);
+            } catch (Throwable e) {
+
+                Log.exception(e);
+            }
+        }
         Point loc = GUIUtils.getLastLocation(null, this.mainFrame);
-        this.mainFrame.setLocation(loc);
+
+        if (!status.isLocationSet()) {
+            this.mainFrame.setLocation(Screen.getCenterOfComponent(null, mainFrame));
+        } else {
+            GraphicsDevice screen = GUIUtils.getScreenDevice(status.getX(), status.getY());
+            if (screen != null) {
+                mainFrame.setLocation(new Point(status.getX(), status.getY()));
+            } else {
+                this.mainFrame.setLocation(Screen.getCenterOfComponent(null, mainFrame));
+            }
+        }
+
         // try to find offscreen
         final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         final GraphicsDevice[] screens = ge.getScreenDevices();
@@ -321,11 +351,27 @@ public class JDGui extends SwingGui {
             loc = Screen.getCenterOfComponent(null, mainFrame);
             this.mainFrame.setLocation(loc);
         }
+        if (Application.getJavaVersion() >= 17000000) {
+            // we can ope frames in background
+            if (status.getExtendedState() == ExtendedState.ICONIFIED) {
+                this.mainFrame.setExtendedState(Frame.NORMAL);
+            } else {
+                this.mainFrame.setExtendedState(status.getExtendedState().getId());
+            }
 
-        if (GUIUtils.STORAGE.get("extendedstate." + mainFrame.getName(), JFrame.NORMAL) == Frame.ICONIFIED) {
-            this.mainFrame.setExtendedState(Frame.NORMAL);
         } else {
-            this.mainFrame.setExtendedState(GUIUtils.STORAGE.get("extendedstate." + mainFrame.getName(), JFrame.NORMAL));
+            if (status.getExtendedState() == ExtendedState.ICONIFIED) {
+                if (status.isSilentShutdown() && !status.isActive()) {
+
+                    // else frame would jump to the front
+                    this.mainFrame.setExtendedState(Frame.ICONIFIED);
+                } else {
+                    this.mainFrame.setExtendedState(Frame.NORMAL);
+                }
+            } else {
+                this.mainFrame.setExtendedState(status.getExtendedState().getId());
+            }
+
         }
 
         if (this.mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {

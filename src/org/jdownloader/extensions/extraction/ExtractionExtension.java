@@ -443,7 +443,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             }
 
             @Override
-            public void onShutdown() {
+            public void onShutdown(boolean silent) {
             }
 
             @Override

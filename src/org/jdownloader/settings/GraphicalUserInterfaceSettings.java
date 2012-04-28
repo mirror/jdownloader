@@ -275,4 +275,8 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     public void setDownloadViewRefresh(long t);
 
+    FrameStatus getLastFrameStatus();
+
+    public void setLastFrameStatus(FrameStatus status);
+
 }

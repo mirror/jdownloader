@@ -139,7 +139,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
 
             @Override
-            public void onShutdown() {
+            public void onShutdown(boolean silent) {
             }
 
             @Override
