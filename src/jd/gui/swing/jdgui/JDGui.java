@@ -66,7 +66,6 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.inapp.RlyExitListener;
 import org.appwork.utils.Application;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -274,7 +273,7 @@ public class JDGui extends SwingGui {
     private void initLocationAndDimension() {
 
         FrameStatus status = JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus();
-
+        status.setSilentShutdown(true);
         if (status == null) {
 
             status = new FrameStatus();
@@ -289,14 +288,7 @@ public class JDGui extends SwingGui {
         this.mainFrame.setPreferredSize(dim);
         this.mainFrame.setSize(dim);
         this.mainFrame.setMinimumSize(new Dimension(400, 100));
-        if (status.isSilentShutdown() && Application.getJavaVersion() >= 17000000) {
-            try {
-                mainFrame.setAutoRequestFocus(false);
-            } catch (Throwable e) {
 
-                Log.exception(e);
-            }
-        }
         Point loc = GUIUtils.getLastLocation(null, this.mainFrame);
 
         if (!status.isLocationSet()) {
@@ -351,28 +343,39 @@ public class JDGui extends SwingGui {
             loc = Screen.getCenterOfComponent(null, mainFrame);
             this.mainFrame.setLocation(loc);
         }
-        if (Application.getJavaVersion() >= 17000000) {
-            // we can ope frames in background
-            if (status.getExtendedState() == ExtendedState.ICONIFIED) {
+
+        // if (status.isSilentShutdown() && Application.getJavaVersion() >=
+        // 17000000) {
+        // try {
+        // // has no effect yet? maybe later in 1.7
+        // mainFrame.setAutoRequestFocus(false);
+        // } catch (Throwable e) {
+        //
+        // Log.exception(e);
+        // }
+        // }
+        // if (Application.getJavaVersion() >= 17000000) {
+        // // we can ope frames in background
+        // if (status.getExtendedState() == ExtendedState.ICONIFIED) {
+        // this.mainFrame.setExtendedState(Frame.NORMAL);
+        // } else {
+        // this.mainFrame.setExtendedState(status.getExtendedState().getId());
+        // }
+        //
+        // } else {
+        if (status.getExtendedState() == ExtendedState.ICONIFIED) {
+            if (status.isSilentShutdown() && !status.isActive()) {
+
+                // else frame would jump to the front
+                this.mainFrame.setExtendedState(Frame.ICONIFIED);
+            } else {
                 this.mainFrame.setExtendedState(Frame.NORMAL);
-            } else {
-                this.mainFrame.setExtendedState(status.getExtendedState().getId());
             }
-
         } else {
-            if (status.getExtendedState() == ExtendedState.ICONIFIED) {
-                if (status.isSilentShutdown() && !status.isActive()) {
-
-                    // else frame would jump to the front
-                    this.mainFrame.setExtendedState(Frame.ICONIFIED);
-                } else {
-                    this.mainFrame.setExtendedState(Frame.NORMAL);
-                }
-            } else {
-                this.mainFrame.setExtendedState(status.getExtendedState().getId());
-            }
-
+            this.mainFrame.setExtendedState(status.getExtendedState().getId());
         }
+        //
+        // }
 
         if (this.mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
             ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) this.mainFrame.getRootPane().getUI()).setMaximizedBounds(this.mainFrame);
