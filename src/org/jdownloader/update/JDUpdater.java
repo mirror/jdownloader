@@ -307,4 +307,8 @@ public class JDUpdater extends AppUpdater {
         return storage.getActiveBranch();
     }
 
+    public boolean isSelfUpdateRequested() {
+        return this.selfUpdateInfo != null;
+    }
+
 }

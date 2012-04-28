@@ -33,7 +33,9 @@ public class JDRestartController extends RestartController {
             super.onShutdown();
         } else {
             if (JDUpdater.getInstance().hasWaitingUpdates() && !ShutdownController.getInstance().hasShutdownEvent(RestartViaUpdaterEvent.getInstance())) {
-                SilentUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());
+                if (JDUpdater.getInstance().getBranch() != null && !JDUpdater.getInstance().isSelfUpdateRequested()) {
+                    SilentUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());
+                }
                 runUpdaterOnAppExit();
             }
         }
@@ -59,7 +61,9 @@ public class JDRestartController extends RestartController {
                 while (true) {
                     if (System.currentTimeMillis() - lastMouseActivity > 20000) {
                         // wait until there is no mousevent
-                        RestartViaUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());
+                        if (JDUpdater.getInstance().getBranch() != null && !JDUpdater.getInstance().isSelfUpdateRequested()) {
+                            RestartViaUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());
+                        }
                         setSilentShutDownEnabled(true);
                         restartViaUpdater(false);
                         // setSilentShutDownEnabled(false);
