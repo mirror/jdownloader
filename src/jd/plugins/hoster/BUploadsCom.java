@@ -109,7 +109,7 @@ public class BUploadsCom extends PluginForHost {
     }
 
     private String findLink() throws Exception {
-        String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+[^\"\\']{10,500})(\"|\\')").getMatch(0);
+        String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+[^\"\\']*?)(\"|\\')").getMatch(0);
         if (finalLink == null) {
             String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
             if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -144,6 +144,8 @@ public class BUploadsCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
+        final String reconnectWaittime = br.getRegex("value=\"Wait (\\d+) min\\. or buy premium\"").getMatch(0);
+        if (reconnectWaittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 60 * 1000l);
         if (br.containsHTML("value=\"Free Users\""))
             br.postPage(link.getDownloadURL(), "Free=Free+Users");
         else if (br.getFormbyProperty("name", "entryform1") != null) br.submitForm(br.getFormbyProperty("name", "entryform1"));

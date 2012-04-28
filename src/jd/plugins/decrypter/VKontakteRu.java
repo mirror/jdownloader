@@ -68,13 +68,17 @@ public class VKontakteRu extends PluginForDecrypt {
                 br.getPage(parameter);
                 /** Retry if login failed */
                 if (br.containsHTML(">Security Check<")) {
-                    logger.info("Refreshing vk.com cookies");
+                    // Usually we need to enter the last 4 digits of our phone
+                    // number here to validate our account but i'll go ahead and
+                    // just login again which is easier and works well
+                    logger.info("Security check reached, refreshing vk.com cookies");
                     this.getPluginConfig().setProperty("logincounter", "-1");
                     this.getPluginConfig().save();
                     br.clearCookies(DOMAIN);
                     br.clearCookies("login.vk.com");
                     if (!getUserLogin()) return null;
                 }
+                if (br.containsHTML("/badbrowser\\.php\"")) logger.warning("Login invalid/cookies old??");
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(DOMAIN);
                 for (final Cookie c : add.getCookies()) {
@@ -92,7 +96,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     decryptedLinks = decryptSingleVideo(decryptedLinks, parameter);
                 } else if (parameter.matches(".*?(tag|album(\\-)?\\d+_|photos|id)\\d+")) {
                     /**
-                     * Photo albums Examples: http://vk.com/photos575934598
+                     * Photo album Examples: http://vk.com/photos575934598
                      * http://vk.com/id28426816 http://vk.com/album87171972_0
                      */
                     decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter, progress);
@@ -105,7 +109,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     decryptedLinks = decryptSinglePhoto(decryptedLinks, parameter);
                 } else if (parameter.matches(".*?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)")) {
                     /**
-                     * Photo Album lists/overviews Example:
+                     * Photo albums lists/overviews Example:
                      * http://vk.com/albums46486585
                      */
                     decryptedLinks = decryptPhotoAlbums(decryptedLinks, parameter, progress);
@@ -237,7 +241,7 @@ public class VKontakteRu extends PluginForDecrypt {
         /** Photos are placed in different locations, find them all */
         final String[][] regexesPage1 = { { "class=\"photo_album_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)\"", "0" }, { "<div class=\"photo_album_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)\"", "0" }, { "<div class=\"photo_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)\"", "0" } };
         final String[][] regexesAllOthers = { { "class=\"photo(_album)?_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)", "1" } };
-        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 22, 12, 40, parameter, "al=1&part=1&offset=");
+        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 21, 12, 40, parameter, "al=1&part=1&offset=");
         for (String element : decryptedData) {
             final String decryptedLink = "http://vk.com/" + element;
             decryptedLinks.add(createDownloadlink(decryptedLink));

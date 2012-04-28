@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1gabba.in" }, urls = { "http://[\\w\\.]*?1gabba\\.in/node/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1gabba.in" }, urls = { "http://(www\\.)?1gabba\\.in/node/\\d+" }, flags = { 0 })
 public class NGbbCm extends PluginForDecrypt {
 
     public NGbbCm(PluginWrapper wrapper) {
@@ -38,15 +38,9 @@ public class NGbbCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String linkHMTL = br.getRegex(Pattern.compile("<br />  <p><a href=\"(.*?)<div id=\"comments\">", Pattern.DOTALL)).getMatch(0);
-        String links[] = new Regex(linkHMTL, Pattern.compile("(http://.+)")).getColumn(0);
-        progress.setRange(links.length);
+        String links[] = new Regex(br.toString(), Pattern.compile("(http://.+)")).getColumn(0);
         for (String element : links) {
-            if (element.contains("\">")) {
-                element = new Regex(element, Pattern.compile("(http://.*?)\">")).getMatch(0);
-            }
-            decryptedLinks.add(createDownloadlink(element));
-            progress.increase(1);
+            if (!this.canHandle(element)) decryptedLinks.add(createDownloadlink(element));
         }
 
         return decryptedLinks;
