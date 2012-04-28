@@ -273,7 +273,7 @@ public class JDGui extends SwingGui {
     private void initLocationAndDimension() {
 
         FrameStatus status = JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus();
-        status.setSilentShutdown(true);
+
         if (status == null) {
 
             status = new FrameStatus();
@@ -363,16 +363,19 @@ public class JDGui extends SwingGui {
         // }
         //
         // } else {
-        if (status.getExtendedState() == ExtendedState.ICONIFIED) {
-            if (status.isSilentShutdown() && !status.isActive()) {
 
-                // else frame would jump to the front
-                this.mainFrame.setExtendedState(Frame.ICONIFIED);
-            } else {
-                this.mainFrame.setExtendedState(Frame.NORMAL);
-            }
+        if (status.isSilentShutdown() && !status.isActive()) {
+
+            // else frame would jump to the front
+            this.mainFrame.setExtendedState(Frame.ICONIFIED);
         } else {
-            this.mainFrame.setExtendedState(status.getExtendedState().getId());
+            if (status.getExtendedState() == ExtendedState.ICONIFIED) {
+
+                this.mainFrame.setExtendedState(Frame.NORMAL);
+
+            } else {
+                this.mainFrame.setExtendedState(status.getExtendedState().getId());
+            }
         }
         //
         // }
