@@ -16,18 +16,14 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
-
-import javax.script.Invocable;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -36,6 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -43,15 +40,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifile.it" }, urls = { "http://(www\\.)?ifile\\.it/[a-z0-9]+" }, flags = { 2 })
 public class IFileIt extends PluginForHost {
 
-    private final String        useragent               = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:11.0) Gecko/20100101 Firefox/11.0";
-
+    private final String        useragent               = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0";
     /* must be static so all plugins share same lock */
     private static final Object LOCK                    = new Object();
-
-    private static final String CHALLENGEREGEX          = "challenge[ ]+:[ ]+\\'(.*?)\\',";
-    private static final String SERVER                  = "server[ ]+:[ ]+\\'(.*?)\\'";
-    private static final String RECAPTCHPUBLICREGEX     = "recaptcha_public.*?=.*?\\'(.*?)\\'";
-    private static final String RECAPTCHAIMAGEPART      = "image?c=";
     private boolean             showDialog              = false;
     private int                 MAXFREECHUNKS           = 0;
     private static final String ONLY4REGISTERED         = "You need to be a registered user in order to download this file";
@@ -65,103 +56,38 @@ public class IFileIt extends PluginForHost {
     public void doFree(final DownloadLink downloadLink, boolean resume, boolean viaAccount) throws Exception, PluginException {
         if (!viaAccount && br.containsHTML(ONLY4REGISTERED)) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLY4REGISTEREDUSERTEXT); }
         br.setFollowRedirects(true);
-        // generating first request
-        final String c = br.getRegex("(var.*?eval.*?\r?\n)").getMatch(0);
-        final String fnName = br.getRegex("url\\s+=\\s+([0-9a-z]+)\\(").getMatch(0);
-        final String dec = br.getRegex(fnName + "\\( \'(.*?)\' \\)").getMatch(0);
-        Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        final Invocable inv = (Invocable) engine;
-        try {
-            if (fnName == null || dec == null) {
-                engine.eval(c);
-                result = engine.get("__rurl2");
-            } else {
-                engine.eval(c);
-                result = inv.invokeFunction(fnName, dec);
-            }
-        } catch (final Throwable e) {
-            result = "";
-        }
-        final String finaldownlink = result.toString();
-        if (finaldownlink == null || finaldownlink.equals("") || !finaldownlink.startsWith("http")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
-        final String downlink = br.getRegex("var _url\\s+\\t+=\\s+\\t+\\'(.*?)\\';").getMatch(0);
-        String type = null, extra = null;
-        if (downlink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
         // Br2 is our xml browser now!
         final Browser br2 = br.cloneBrowser();
         br2.setReadTimeout(40 * 1000);
-        xmlrequest(br2, finaldownlink, "");
-        if (!br2.containsHTML("status\":\"ok\"")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
-        if (br2.containsHTML("download:captcha")) {
-            // Old captcha handling
+        final String ukey = new Regex(downloadLink.getDownloadURL(), "ifile\\.it/(.+)").getMatch(0);
+        xmlrequest(br2, "http://ifile.it/new_download-request.json", "ukey=" + ukey + "&ab=1");
+        if (br2.containsHTML("\"captcha\":1")) {
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2);
+            // Semi-automatic reCaptcha handling
+            final String k = br.getRegex("recaptcha_public.*?=.*?\\'([^<>\"]*?)\\';").getMatch(0);
+            if (k == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            rc.setId(k);
+            rc.load();
             for (int i = 0; i <= 5; i++) {
-                final String captchashit = br.getRegex("url \\+=.*?\\+.*?\\+.*?\"(.*?)\"").getMatch(0);
-                final String captchacrap = br.getRegex("var.*?x.*?c = '(.*?)'").getMatch(0);
-                if (captchashit == null || captchacrap == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-                final String code = getCaptchaCode("http://ifile.it/download:captcha?0." + Math.random(), downloadLink);
-                type = "ctype=simple";
-                extra = "&esn=1&" + captchacrap + "=" + Encoding.urlEncode_light(code) + "&" + captchashit;
-                xmlrequest(br2, finaldownlink, type + extra);
-                if (br2.containsHTML("\"retry\":\"retry\"")) {
-                    continue;
-                }
-                break;
-            }
-        } else if (br2.containsHTML("\"captcha\":1")) {
-            for (int i = 0; i <= 5; i++) {
-                // Manuel Re Captcha handling
-                final String k = br.getRegex(RECAPTCHPUBLICREGEX).getMatch(0);
-                if (k == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-                br2.getPage("http://api.recaptcha.net/challenge?k=" + k);
-                final String challenge = br2.getRegex(CHALLENGEREGEX).getMatch(0);
-                final String server = br2.getRegex(SERVER).getMatch(0);
-                if (challenge == null || server == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-                final String captchaAddress = server + RECAPTCHAIMAGEPART + challenge;
-                final String code = getCaptchaCode(captchaAddress, downloadLink);
-                type = "ctype=recaptcha";
-                extra = "&recaptcha_response=" + Encoding.urlEncode_light(code) + "&recaptcha_challenge=" + challenge;
-                xmlrequest(br2, finaldownlink, type + extra);
-                if (br2.containsHTML("\"captcha\":1")) {
-                    xmlrequest(br2, finaldownlink, type + extra);
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                xmlrequest(br2, "http://ifile.it/new_download-request.json", "ukey=" + ukey + "&ab=1&ctype=recaptcha&recaptcha_response" + Encoding.urlEncode_light(c) + "&recaptcha_challenge=" + rc.getChallenge());
+                if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) {
+                    rc.reload();
                     continue;
                 }
                 break;
             }
         }
-        if (br2.containsHTML("(\"retry\":\"retry\"|\"retry\":1)")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-        if (br2.containsHTML("an error has occured while processing your request")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error"); }
-        if (!br2.containsHTML("status\":\"ok\"")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        br.getPage(downlink);
-        try {
-            br.getPage(downlink);
-        } catch (final Exception e) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-        }
-        String dllink = br.getRegex("req_btn.*?target=\".*?\" href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) {
-            logger.info("first try getting dllink failed");
-            dllink = br.getRegex("\"?(http://i[0-9]+\\.ifile\\.it/.*?/\\d+/.*?)\"").getMatch(0);
-            if (dllink == null) {
-                logger.info("second try getting dllink failed");
-                final String pp = br.getRegex("<br /><br />(.*?)</div>").getMatch(0);
-                final String[] lol = HTMLParser.getHttpLinks(pp, "");
-                if (lol.length != 1) {
-                } else {
-                    for (final String link : lol) {
-                        dllink = link;
-                    }
-                }
-            }
-        }
+        if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        System.out.println(br2.toString());
+        String dllink = br2.getRegex("ticket_url\":\"(http:[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             logger.info("last try getting dllink failed, plugin must be defect!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dllink = dllink.replace("\\", "");
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, MAXFREECHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -310,7 +236,7 @@ public class IFileIt extends PluginForHost {
     private void updateBrowser(Browser br) {
         if (br == null) return;
         br.getHeaders().put("User-Agent", useragent);
-        br.getHeaders().put("Accept-Language", "de,de-de;q=0.7,en;q=0.3");
+        br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
     }
 
     @Override
@@ -348,7 +274,7 @@ public class IFileIt extends PluginForHost {
 
     private void xmlrequest(final Browser br, final String url, final String postData) throws IOException {
         br.getHeaders().put("User-Agent", useragent);
-        br.getHeaders().put("Accept-Language", "de,de-de;q=0.7,en;q=0.3");
+        br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.postPage(url, postData);
