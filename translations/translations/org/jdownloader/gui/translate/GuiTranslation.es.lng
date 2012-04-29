@@ -111,7 +111,7 @@
   "gui_linkgrabberv2_lg_continueselectedlinks" : "Agregar enlaces seleccionados",
   "gui_config_gui_barrierfree" : "Sin Barreras",
   "system_download_triggerfileexists_ask" : "Preguntar para cada archivo",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Has deshabilitado la Verificación de IP. Esto incrementará bastante los tiempos de reconexion!\\r\\n\\r\\nOtros módulos como el Grabador de Reconexion tambien se deshabilitarán.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Has deshabilitado la Verificación de IP. Esto incrementará bastante los tiempos de reconexion!\r\n\r\nOtros módulos como el Grabador de Reconexion tambien se deshabilitarán.",
   "gui_config_download_ipcheck_regex" : "Filtro de IP RegEx",
   "gui_fileinfopanel_linktab_name" : "Enlace",
   "gui_linkgrabber_packagetab_lbl_name" : "Nombre del paquete",

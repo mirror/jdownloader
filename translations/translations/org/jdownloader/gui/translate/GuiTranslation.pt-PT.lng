@@ -108,7 +108,7 @@
   "gui_linkgrabberv2_lg_continueselectedlinks" : "Continuar com o(s) endereço(s) seleccionado(s)",
   "gui_config_gui_barrierfree" : "Facilidades de Utilização",
   "system_download_triggerfileexists_ask" : "Perguntar para cada ficheiro",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Desligou o verificador de IP. Isto irá aumentar o tempo de reconexão drasticamente.\\r\\n\\r\\nVários outros módulos foram desligados também.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Desligou o verificador de IP. Isto irá aumentar o tempo de reconexão drasticamente.\r\n\r\nVários outros módulos foram desligados também.",
   "gui_config_download_ipcheck_regex" : "Expressão regular para filtrar IP",
   "gui_fileinfopanel_linktab_name" : "Nome endereço",
   "gui_linkgrabber_packagetab_lbl_name" : "Nome do pacote",

@@ -108,7 +108,7 @@
   "gui_linkgrabberv2_lg_continueselectedlinks" : "Pokračovat s vybranými odkazy?",
   "gui_config_gui_barrierfree" : "Usnadnění",
   "system_download_triggerfileexists_ask" : "Ptát se na každý soubor",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Vypnuli jste IP-Check. Toto nastavení výrazně zvýší počet Reconnectu!\\r\\n\\r\\nNěkolik dalších modulů (např. Reconnect Recorder) bylo deaktivováno.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Vypnuli jste IP-Check. Toto nastavení výrazně zvýší počet Reconnectu!\r\n\r\nNěkolik dalších modulů (např. Reconnect Recorder) bylo deaktivováno.",
   "gui_config_download_ipcheck_regex" : "IP Filtr RegEx",
   "gui_fileinfopanel_linktab_name" : "Jméno odkazu",
   "gui_linkgrabber_packagetab_lbl_name" : "Jméno balíčku",

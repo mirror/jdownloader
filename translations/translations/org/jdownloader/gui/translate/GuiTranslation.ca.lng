@@ -102,7 +102,7 @@
   "gui_linkgrabberv2_lg_continueselectedlinks" : "Continuar amb els enllaços seleccionats",
   "gui_config_gui_barrierfree" : "Sense Barreres",
   "system_download_triggerfileexists_ask" : "Preguntar per cada arxiu",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Ha deshabilitat IPCeck. Això augmentarà dràsticament el temps de reconnexió\\r\\n\\r\\n Diversos mòduls com la gravadora de reconnexió seran deshabilitats",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Ha deshabilitat IPCeck. Això augmentarà dràsticament el temps de reconnexió\r\n\r\n Diversos mòduls com la gravadora de reconnexió seran deshabilitats",
   "gui_config_download_ipcheck_regex" : "Filtre d’IP RegEx",
   "gui_fileinfopanel_linktab_name" : "LinkName",
   "gui_linkgrabber_packagetab_lbl_name" : "Nom del paquet",

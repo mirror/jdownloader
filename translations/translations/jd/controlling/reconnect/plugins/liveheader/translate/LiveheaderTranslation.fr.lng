@@ -5,7 +5,7 @@
   "gui_config_routeripfinder_ready" : "IP trouvée : %s1",
   "gui_config_liveheader_dialog_importrouter" : "Sélection du Routeur",
   "gui_config_jdrr_success" : "Réussi !",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Vous avez désactivé l'IPCheck. Cela va 'accroître considérablement les temps de reconnexion !\\R\\n\\r\\nPlusieurs autres modules comme Reconnecter l'Enregistrement sont désactivés.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Vous avez désactivé l'IPCheck. Cela va 'accroître considérablement les temps de reconnexion !\r\n\r\nPlusieurs autres modules comme Reconnecter l'Enregistrement sont désactivés.",
   "gui_config_jdrr_reconnectfaild" : "Reconnexion échouée",
   "gui_btn_help" : "Aide",
   "gui_btn_start" : "Démarrer",

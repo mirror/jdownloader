@@ -5,7 +5,7 @@
   "gui_config_routeripfinder_ready" : "IP gefunden: %s1",
   "gui_config_liveheader_dialog_importrouter" : "Router importieren",
   "gui_config_jdrr_success" : "Erfolgreich!",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Du hast den IP Check abgeschaltet. Das wird die Reconnectzeit stark verlängern!\\r\\n\\r\\n Weitere Module wie der Reconnect Recorder werden ebenfalls nicht funktionieren.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Du hast den IP Check abgeschaltet. Das wird die Reconnectzeit stark verlängern!\r\n\r\n Weitere Module wie der Reconnect Recorder werden ebenfalls nicht funktionieren.",
   "gui_config_jdrr_reconnectfaild" : "Reconnect fehlgeschlagen",
   "gui_btn_help" : "Hilfe",
   "gui_btn_start" : "Start",

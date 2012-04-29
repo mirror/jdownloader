@@ -5,7 +5,7 @@
   "gui_config_routeripfinder_ready" : "Pronađena IP adresa: %s1",
   "gui_config_liveheader_dialog_importrouter" : "Uvezi ruter",
   "gui_config_jdrr_success" : "Uspješno!",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Onemogućili ste IP provjeru. Ovo će drastično produžiti vrijeme potrebno za ponovnu uspostavu veze!\\r\\n\\r\\nOnemogućeno je nekoliko zavisnih modula kao Spremanje ponovne uspostave veze.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Onemogućili ste IP provjeru. Ovo će drastično produžiti vrijeme potrebno za ponovnu uspostavu veze!\r\n\r\nOnemogućeno je nekoliko zavisnih modula kao Spremanje ponovne uspostave veze.",
   "gui_config_jdrr_reconnectfaild" : "Ponovna uspostava veze nije uspela",
   "gui_btn_help" : "Pomoć",
   "gui_btn_start" : "Pokreni",

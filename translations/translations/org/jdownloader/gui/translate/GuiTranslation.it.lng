@@ -111,7 +111,7 @@
   "gui_linkgrabberv2_lg_continueselectedlinks" : "Continuare con i collegamenti selezionati?",
   "gui_config_gui_barrierfree" : "Accesso facilitato",
   "system_download_triggerfileexists_ask" : "Chiedi per ogni file",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "E' stato disabilitato il controllo IP. Questo aumenterà in modo pesante il tempo di riconnessione!\\r\\n\\r\\nAlcuni moduli come il Registratore riconnession saranno disabilitati.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "E' stato disabilitato il controllo IP. Questo aumenterà in modo pesante il tempo di riconnessione!\r\n\r\nAlcuni moduli come il Registratore riconnession saranno disabilitati.",
   "gui_config_download_ipcheck_regex" : "Filtro IP RegEx",
   "gui_fileinfopanel_linktab_name" : "Nome collegamento",
   "gui_linkgrabber_packagetab_lbl_name" : "Nome pacchetto",

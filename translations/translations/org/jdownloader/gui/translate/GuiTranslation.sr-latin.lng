@@ -108,7 +108,7 @@
   "gui_linkgrabberv2_lg_continueselectedlinks" : "Nastavi sa odabranim vezama",
   "gui_config_gui_barrierfree" : "Bez ograničenja",
   "system_download_triggerfileexists_ask" : "Pitaj za svaku datoteku",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Onemogućili ste IP proveru. Ovo će dramatično produžiti vreme potrebno za ponovno uspostavljanje veze!\\r\\n\\r\\nOnemogućeno je nekoliko zavisnih modula kao Snimanje ponovnog uspostavljanja veze.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Onemogućili ste IP proveru. Ovo će dramatično produžiti vreme potrebno za ponovno uspostavljanje veze!\r\n\r\nOnemogućeno je nekoliko zavisnih modula kao Snimanje ponovnog uspostavljanja veze.",
   "gui_config_download_ipcheck_regex" : "IP filter regeks",
   "gui_fileinfopanel_linktab_name" : "Ime veze",
   "gui_linkgrabber_packagetab_lbl_name" : "Ime paketa",

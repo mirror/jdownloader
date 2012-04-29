@@ -5,7 +5,7 @@
   "gui_config_routeripfinder_ready" : "Nalezena IP: %s1",
   "gui_config_liveheader_dialog_importrouter" : "Importuj router",
   "gui_config_jdrr_success" : "Úspěšné!",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Vypnuli jste IP-Check. Toto nastavení výrazně zvýší počet Reconnectu!\\r\\n\\r\\nNěkolik dalších modulů (např. Reconnect Recorder) bylo deaktivováno.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Vypnuli jste IP-Check. Toto nastavení výrazně zvýší počet Reconnectu!\r\n\r\nNěkolik dalších modulů (např. Reconnect Recorder) bylo deaktivováno.",
   "gui_config_jdrr_reconnectfaild" : "Reconnect selhal",
   "gui_btn_help" : "Nápověda",
   "gui_btn_start" : "Spustit",

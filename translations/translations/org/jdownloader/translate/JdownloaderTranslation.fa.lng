@@ -11,7 +11,7 @@
   "plugins_errors_hosterproblem" : "مشكل ميزبان ؟",
   "downloadlink_status_error" : "فضاي كافي بر روي هارد ديسك موجود نمي باشد",
   "system_download_triggerfileexists_skip" : "رها كردن لينك",
-  "gui_dialog_deepdecrypt_message" : "جي دانلودر هيچ چيزي در %s1 پيدا نكرد \\r\\n---------------------------------\\r\\nجي دانلودر  براي پيدا كردن لينك هاي كمكي اين صفحه را بررسي مي كند.",
+  "gui_dialog_deepdecrypt_message" : "جي دانلودر هيچ چيزي در %s1 پيدا نكرد \r\n---------------------------------\r\nجي دانلودر  براي پيدا كردن لينك هاي كمكي اين صفحه را بررسي مي كند.",
   "system_download_errors_couldnotrename" : "عدم توانايي در تغيير نام قستي از فايل",
   "plugins_error_downloadfailed" : "دانلود لغو شد",
   "ballon_download_error_title" : "خطا",

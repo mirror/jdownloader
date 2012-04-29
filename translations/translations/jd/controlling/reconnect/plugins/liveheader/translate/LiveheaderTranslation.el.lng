@@ -5,7 +5,7 @@
   "gui_config_routeripfinder_ready" : "Η IP βρέθηκε: %s1",
   "gui_config_liveheader_dialog_importrouter" : "Εισαγωγή router",
   "gui_config_jdrr_success" : "Επιτυχία!",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Απενεργοποιήσατε τον έλεγχο IP. Αυτό θα αυξήσει δραματικά το χρόνο επανασύνδεσης!\\r\\n\\r\\nΑρκετές περαιτέρω λειτουργίες, όπως ο Εγγραφέας Επανασύνδεσης, έχουν απενεργοποιηθεί.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Απενεργοποιήσατε τον έλεγχο IP. Αυτό θα αυξήσει δραματικά το χρόνο επανασύνδεσης!\r\n\r\nΑρκετές περαιτέρω λειτουργίες, όπως ο Εγγραφέας Επανασύνδεσης, έχουν απενεργοποιηθεί.",
   "gui_config_jdrr_reconnectfaild" : "Η επανασύνδεση απέτυχε",
   "gui_btn_help" : "Βοήθεια",
   "gui_btn_start" : "Εκκίνηση",

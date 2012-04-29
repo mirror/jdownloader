@@ -5,7 +5,7 @@
   "gui_config_routeripfinder_ready" : "IP encontrado: %s1",
   "gui_config_liveheader_dialog_importrouter" : "Importar Roteador",
   "gui_config_jdrr_success" : "Sucesso!",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Você desabilitou a checagem de IP. Este será acrescentado muito tempo para reconexão!\\r\\n\\r\\nVários módulos de  adição para gravação de reconexão foram desativados.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Você desabilitou a checagem de IP. Este será acrescentado muito tempo para reconexão!\r\n\r\nVários módulos de  adição para gravação de reconexão foram desativados.",
   "gui_config_jdrr_reconnectfaild" : "Falha de reconexão",
   "gui_btn_help" : "Ajuda",
   "gui_btn_start" : "Iniciar",

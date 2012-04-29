@@ -108,7 +108,7 @@
   "gui_linkgrabberv2_lg_continueselectedlinks" : "Seçilen Link(leri) Kabul  Et",
   "gui_config_gui_barrierfree" : "Engelsiz Yazı Boyutu",
   "system_download_triggerfileexists_ask" : "Her dosya için sor",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "IP-Denetimini devre dışı bırkatınız. Bu tekrar bağlanma sürelerini oldukça uzatır!\\r\\n\\r\\nTekrar bağlan kaydedici modülü de devre dışı bırakıldı.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "IP-Denetimini devre dışı bırkatınız. Bu tekrar bağlanma sürelerini oldukça uzatır!\r\n\r\nTekrar bağlan kaydedici modülü de devre dışı bırakıldı.",
   "gui_config_download_ipcheck_regex" : "IP Filtre (Düzenli ifade)",
   "gui_fileinfopanel_linktab_name" : "Link adı",
   "gui_linkgrabber_packagetab_lbl_name" : "Paket Adı",

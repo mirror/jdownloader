@@ -5,7 +5,7 @@
   "gui_config_routeripfinder_ready" : "IP bulundu: %s1",
   "gui_config_liveheader_dialog_importrouter" : "Yönlendirici seç (yönlendirici listede yoksa kaydedici'yi kullan)",
   "gui_config_jdrr_success" : "Başarılı!",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "IP-Denetimini devre dışı bırkatınız. Bu tekrar bağlanma sürelerini oldukça uzatır!\\r\\n\\r\\nTekrar bağlan kaydedici modülü de devre dışı bırakıldı.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "IP-Denetimini devre dışı bırkatınız. Bu tekrar bağlanma sürelerini oldukça uzatır!\r\n\r\nTekrar bağlan kaydedici modülü de devre dışı bırakıldı.",
   "gui_config_jdrr_reconnectfaild" : "Tekrar Bağlan Başarısız?",
   "gui_btn_help" : "Yardım",
   "gui_btn_start" : "Başlat",

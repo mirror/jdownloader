@@ -102,7 +102,7 @@
   "gui_linkgrabberv2_lg_continueselectedlinks" : "Pokračovať s vybranými linkami",
   "gui_config_gui_barrierfree" : "Uľahčenia",
   "system_download_triggerfileexists_ask" : "Pýtať sa pre všetky súbory",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Zakázali ste Kontrolu IP. Týmto dramaticky zvýšite množstvo znovupripojení!\\r\\n\\r\\nNiekoľko modulov ako Záznam Znovupripojení bolo zakázaných.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Zakázali ste Kontrolu IP. Týmto dramaticky zvýšite množstvo znovupripojení!\r\n\r\nNiekoľko modulov ako Záznam Znovupripojení bolo zakázaných.",
   "gui_config_download_ipcheck_regex" : "IP Filter RegEx",
   "gui_fileinfopanel_linktab_name" : "Názov dielu",
   "gui_linkgrabber_packagetab_lbl_name" : "Názov Balíka",

@@ -104,7 +104,7 @@
   "gui_linkgrabberv2_lg_continueselectedlinks" : "Tiếp tục với liên kết được chọn",
   "gui_config_gui_barrierfree" : "Trợ giúp người Khiếm thị",
   "system_download_triggerfileexists_ask" : "Hỏi cho mỗi tập tin",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Bạn đãị vô hiệu hoá IPCheck. Điều này sẽ làm tăng đáng kể số lần tái kết nối!. This will increase the reconnection times dramatically!\\r\\n\\r\\nThêm vào đó Một số mô-đun như Bộ ghi Tái kết nối đã bị tắt.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Bạn đãị vô hiệu hoá IPCheck. Điều này sẽ làm tăng đáng kể số lần tái kết nối!. This will increase the reconnection times dramatically!\r\n\r\nThêm vào đó Một số mô-đun như Bộ ghi Tái kết nối đã bị tắt.",
   "gui_config_download_ipcheck_regex" : "RegEx (Regular Expressions) để lọc IP",
   "gui_fileinfopanel_linktab_name" : "Tên liên kết tải về",
   "gui_linkgrabber_packagetab_lbl_name" : "Tên Gói tải về",

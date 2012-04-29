@@ -104,7 +104,7 @@
   "gui_linkgrabberv2_lg_continueselectedlinks" : "繼續選取的連結",
   "gui_config_gui_barrierfree" : "無障礙",
   "system_download_triggerfileexists_ask" : "每個檔案皆尋問",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "您已停用 IP 驗證。這將會大大的增加重新連線時間！\\r\\n\\r\\n幾個更進一步的模組，像是重新連接紀錄都將被停用。",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "您已停用 IP 驗證。這將會大大的增加重新連線時間！\r\n\r\n幾個更進一步的模組，像是重新連接紀錄都將被停用。",
   "gui_config_download_ipcheck_regex" : "IP 過濾器正規表示式",
   "gui_fileinfopanel_linktab_name" : "連結名稱",
   "gui_linkgrabber_packagetab_lbl_name" : "任務名稱",

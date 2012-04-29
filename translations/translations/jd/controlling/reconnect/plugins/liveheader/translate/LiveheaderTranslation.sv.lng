@@ -5,7 +5,7 @@
   "gui_config_routeripfinder_ready" : "IP funnet: %s1",
   "gui_config_liveheader_dialog_importrouter" : "Importera router",
   "gui_config_jdrr_success" : "Lyckades!",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Du har inaktiverat IP-check. Detta kommer att öka återanslutningstiden dramatiskt!\\r\\n\\r\\nFlera andra moduler såsom återanslutningsinspelaren är deaktiverade.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Du har inaktiverat IP-check. Detta kommer att öka återanslutningstiden dramatiskt!\r\n\r\nFlera andra moduler såsom återanslutningsinspelaren är deaktiverade.",
   "gui_config_jdrr_reconnectfaild" : "Återanslutning misslyckades",
   "gui_btn_help" : "Hjälp",
   "gui_btn_start" : "Starta",

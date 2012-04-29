@@ -4,7 +4,7 @@
   "gui_config_routeripfinder_ready" : "IP 找到： %s1",
   "gui_config_liveheader_dialog_importrouter" : "匯入分享器/路由器設定",
   "gui_config_jdrr_success" : "成功！",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "您已停用 IP 驗證。這將會大大的增加重新連線時間！\\r\\n\\r\\n幾個更進一步的模組，像是重新連接紀錄都將被停用。",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "您已停用 IP 驗證。這將會大大的增加重新連線時間！\r\n\r\n幾個更進一步的模組，像是重新連接紀錄都將被停用。",
   "gui_config_jdrr_reconnectfaild" : "重新連線失敗",
   "gui_btn_help" : "幫助",
   "gui_btn_start" : "開始",

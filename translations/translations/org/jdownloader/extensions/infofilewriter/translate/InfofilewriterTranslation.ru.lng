@@ -1,5 +1,5 @@
 {
-  "plugins_optional_infofilewriter_contentdefault" : "%LAST_FINISHED_PACKAGE.COMMENT%\\r\\nПароль: %LAST_FINISHED_PACKAGE.PASSWORD%\\r\\nАвто-пароль: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\\r\\n%LAST_FINISHED_PACKAGE.FILELIST%\\r\\nГотово %SYSTEM.DATE% to %SYSTEM.TIME% Часы",
+  "plugins_optional_infofilewriter_contentdefault" : "%LAST_FINISHED_PACKAGE.COMMENT%\r\nПароль: %LAST_FINISHED_PACKAGE.PASSWORD%\r\nАвто-пароль: %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\r\n%LAST_FINISHED_PACKAGE.FILELIST%\r\nГотово %SYSTEM.DATE% to %SYSTEM.TIME% Часы",
   "jd_plugins_optional_jdinfofilewriter" : "Запись файла информации",
   "plugins_optional_infofilewriter_content" : "Содержимое:",
   "plugins_optional_infofilewriter_onlywithpassword" : "Использовать только если установлен пароль",

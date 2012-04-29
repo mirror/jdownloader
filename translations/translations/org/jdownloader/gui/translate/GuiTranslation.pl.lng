@@ -108,7 +108,7 @@
   "gui_linkgrabberv2_lg_continueselectedlinks" : "Kontynuuj z wybranymi linkami",
   "gui_config_gui_barrierfree" : "Bez barier",
   "system_download_triggerfileexists_ask" : "Pytaj o każdy plik",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Wyłączyłeś sprawdzanie adresu IP. Zdecydowanie zwiększy to ilość prób ponownego połączenia!\\r\\n\\r\\nNiektóre moduły, takie jak Nagrywanie Ponownego Połączenia przestaną funkcjonować.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Wyłączyłeś sprawdzanie adresu IP. Zdecydowanie zwiększy to ilość prób ponownego połączenia!\r\n\r\nNiektóre moduły, takie jak Nagrywanie Ponownego Połączenia przestaną funkcjonować.",
   "gui_config_download_ipcheck_regex" : "Filtr IP RegEx",
   "gui_fileinfopanel_linktab_name" : "Nazwa linku",
   "gui_linkgrabber_packagetab_lbl_name" : "Nazwa pakietu",

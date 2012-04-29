@@ -108,7 +108,7 @@
   "gui_linkgrabberv2_lg_continueselectedlinks" : "Continuar com link(s) selecionado(s)",
   "gui_config_gui_barrierfree" : "Liberação de barreira",
   "system_download_triggerfileexists_ask" : "Perguntar em cada arquivo",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Você desabilitou a checagem de IP. Este será acrescentado muito tempo para reconexão!\\r\\n\\r\\nVários módulos de  adição para gravação de reconexão foram desativados.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Você desabilitou a checagem de IP. Este será acrescentado muito tempo para reconexão!\r\n\r\nVários módulos de  adição para gravação de reconexão foram desativados.",
   "gui_config_download_ipcheck_regex" : "Filtro de IP RegEX",
   "gui_fileinfopanel_linktab_name" : "Link",
   "gui_linkgrabber_packagetab_lbl_name" : "Nome do pacote",

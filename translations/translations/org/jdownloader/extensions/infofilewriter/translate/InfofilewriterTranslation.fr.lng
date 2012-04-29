@@ -1,5 +1,5 @@
 {
-  "plugins_optional_infofilewriter_contentdefault" : "%LAST_FINISHED_PACKAGE.COMMENT%\\r\\nMot de passe : %LAST_FINISHED_PACKAGE.PASSWORD%\\r\\nMot de passe auto : %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\\r\\n%LAST_FINISHED_PACKAGE.FILELIST%\\r\\nterminé le %SYSTEM.DATE% à %SYSTEM.TIME%.",
+  "plugins_optional_infofilewriter_contentdefault" : "%LAST_FINISHED_PACKAGE.COMMENT%\r\nMot de passe : %LAST_FINISHED_PACKAGE.PASSWORD%\r\nMot de passe auto : %LAST_FINISHED_PACKAGE.AUTO_PASSWORD%\r\n%LAST_FINISHED_PACKAGE.FILELIST%\r\nterminé le %SYSTEM.DATE% à %SYSTEM.TIME%.",
   "jd_plugins_optional_jdinfofilewriter" : "JDInfoFileWriter",
   "plugins_optional_infofilewriter_content" : "Contenu :",
   "plugins_optional_infofilewriter_onlywithpassword" : "Utiliser uniquement le mot de passe est actif",

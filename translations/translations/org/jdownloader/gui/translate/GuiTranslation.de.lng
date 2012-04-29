@@ -108,7 +108,7 @@
   "gui_linkgrabberv2_lg_continueselectedlinks" : "Mit ausgewählten Links fortfahren",
   "gui_config_gui_barrierfree" : "Barrierefreiheit",
   "system_download_triggerfileexists_ask" : "Bei jeder Datei fragen",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Du hast den IP Check abgeschaltet. Das wird die Reconnectzeit stark verlängern!\\r\\n\\r\\n Weitere Module wie der Reconnect Recorder werden ebenfalls nicht funktionieren.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Du hast den IP Check abgeschaltet. Das wird die Reconnectzeit stark verlängern!\r\n\r\n Weitere Module wie der Reconnect Recorder werden ebenfalls nicht funktionieren.",
   "gui_config_download_ipcheck_regex" : "RegEx zum Filtern der IP",
   "gui_fileinfopanel_linktab_name" : "Name",
   "gui_linkgrabber_packagetab_lbl_name" : "Paketname",

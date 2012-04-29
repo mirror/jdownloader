@@ -5,7 +5,7 @@
   "gui_config_routeripfinder_ready" : "IP trovato: %s1",
   "gui_config_liveheader_dialog_importrouter" : "Importa router",
   "gui_config_jdrr_success" : "Completato!",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "E' stato disabilitato il controllo IP. Questo aumenterà in modo pesante il tempo di riconnessione!\\r\\n\\r\\nAlcuni moduli come il Registratore riconnession saranno disabilitati.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "E' stato disabilitato il controllo IP. Questo aumenterà in modo pesante il tempo di riconnessione!\r\n\r\nAlcuni moduli come il Registratore riconnession saranno disabilitati.",
   "gui_config_jdrr_reconnectfaild" : "Riconnessione fallita",
   "gui_btn_help" : "Aiuto",
   "gui_btn_start" : "Avvia",

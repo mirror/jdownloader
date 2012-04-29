@@ -5,7 +5,7 @@
   "gui_config_routeripfinder_ready" : "IP alálat: %s1",
   "gui_config_liveheader_dialog_importrouter" : "Router importálása",
   "gui_config_jdrr_success" : "Sikeres!",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Letiltotta az IP-cím ellenőrzését. Ez megnöveli az újracsatlakozási időt!\\r\\n\\r\\nTöbb jövőbeli fejlesztés, mint pl. a Reconnect Recorder fog letiltásra kerülni.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Letiltotta az IP-cím ellenőrzését. Ez megnöveli az újracsatlakozási időt!\r\n\r\nTöbb jövőbeli fejlesztés, mint pl. a Reconnect Recorder fog letiltásra kerülni.",
   "gui_config_jdrr_reconnectfaild" : "Újracsatlakozási hiba",
   "gui_btn_help" : "Segítség",
   "gui_btn_start" : "Start",

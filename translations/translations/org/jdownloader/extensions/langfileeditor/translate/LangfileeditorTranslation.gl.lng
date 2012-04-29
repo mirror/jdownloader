@@ -9,7 +9,7 @@
   "plugins_optional_langfileeditor_startcurrent" : "Verificar JD con traduccion actual",
   "plugins_optional_langfileeditor_saveandupload" : "Gardar e Enviar",
   "plugins_optional_langfileeditor_keychart_missing" : "Faltantes",
-  "jd_plugins_optional_langfileeditor_langfileeditor_badlogins" : "Credenciais incorrectas.\\r\\n Por favor intenteo de novo",
+  "jd_plugins_optional_langfileeditor_langfileeditor_badlogins" : "Credenciais incorrectas.\r\n Por favor intenteo de novo",
   "plugins_optional_langfileeditor_english" : "English",
   "plugins_optional_langfileeditor_title" : "Editor de Idiomas",
   "jd_plugins_optional_langfileeditor_langfileeditor" : "Editor de Idiomas",

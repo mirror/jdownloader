@@ -49,7 +49,7 @@
   "ballon_download_fatalerror_message" : "<b>%s1<b><hr>Pluginaren Errorea",
   "downloadlink_status_error_temp_unavailable" : "Momentuz ez dago erabilgarri",
   "gui_config_reconnect_showcase_currentip" : "Zure oraingo IP-a:",
-  "gui_javacheck_newerjavaavailable_msg" : "JDownloaderrek zure Java bertsioan lan egin dezakeen arren, azken bertsioa instalatzea zinez gomendatze dizugu. \\r\\nJDownloader eta Java darabilen software guztia azkarrago eta akats gutxiagorekin ibiliko da, eta itxura hobearekin. \\r\\n\\r\\nJoan http://jdownloader.org/download -era",
+  "gui_javacheck_newerjavaavailable_msg" : "JDownloaderrek zure Java bertsioan lan egin dezakeen arren, azken bertsioa instalatzea zinez gomendatze dizugu. \r\nJDownloader eta Java darabilen software guztia azkarrago eta akats gutxiagorekin ibiliko da, eta itxura hobearekin. \r\n\r\nJoan http://jdownloader.org/download -era",
   "downloadlink_status_error_post_process" : "Prozezatzean errorea",
   "gui_download_create_connection" : "Konektatzen...",
   "downloadlink_status_error_no_plugin_available" : "Ez dago plugin-ik erabilgarri",

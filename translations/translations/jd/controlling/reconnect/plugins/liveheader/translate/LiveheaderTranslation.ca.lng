@@ -4,7 +4,7 @@
   "gui_config_routeripfinder_ready" : "IP trobada: %s1",
   "gui_config_liveheader_dialog_importrouter" : "Importar router",
   "gui_config_jdrr_success" : "Èxit!",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Ha deshabilitat IPCeck. Això augmentarà dràsticament el temps de reconnexió\\r\\n\\r\\n Diversos mòduls com la gravadora de reconnexió seran deshabilitats",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Ha deshabilitat IPCeck. Això augmentarà dràsticament el temps de reconnexió\r\n\r\n Diversos mòduls com la gravadora de reconnexió seran deshabilitats",
   "gui_config_jdrr_reconnectfaild" : "Reconnexió fallida",
   "gui_btn_help" : "Ajuda",
   "gui_btn_start" : "Iniciar",

@@ -5,7 +5,7 @@
   "gui_config_routeripfinder_ready" : "Znalezione IP: %s1",
   "gui_config_liveheader_dialog_importrouter" : "Importuj router",
   "gui_config_jdrr_success" : "Powodzenie!",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Wyłączyłeś sprawdzanie adresu IP. Zdecydowanie zwiększy to ilość prób ponownego połączenia!\\r\\n\\r\\nNiektóre moduły, takie jak Nagrywanie Ponownego Połączenia przestaną funkcjonować.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Wyłączyłeś sprawdzanie adresu IP. Zdecydowanie zwiększy to ilość prób ponownego połączenia!\r\n\r\nNiektóre moduły, takie jak Nagrywanie Ponownego Połączenia przestaną funkcjonować.",
   "gui_config_jdrr_reconnectfaild" : "Próba ponownego połączenia nieudana",
   "gui_btn_help" : "Pomoc",
   "gui_btn_start" : "Start",

@@ -5,7 +5,7 @@
   "gui_config_routeripfinder_ready" : "IP encontrada: %s1",
   "gui_config_liveheader_dialog_importrouter" : "Importar Router",
   "gui_config_jdrr_success" : "Exito!",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Has deshabilitado la Verificación de IP. Esto incrementará bastante los tiempos de reconexion!\\r\\n\\r\\nOtros módulos como el Grabador de Reconexion tambien se deshabilitarán.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Has deshabilitado la Verificación de IP. Esto incrementará bastante los tiempos de reconexion!\r\n\r\nOtros módulos como el Grabador de Reconexion tambien se deshabilitarán.",
   "gui_config_jdrr_reconnectfaild" : "Reconexión fallida",
   "gui_btn_help" : "Ayuda",
   "gui_btn_start" : "Iniciar",

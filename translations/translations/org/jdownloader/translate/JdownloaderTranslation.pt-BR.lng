@@ -19,7 +19,7 @@
   "replacer_filesize" : "Último arquivo finalizado: Tamanho",
   "system_download_triggerfileexists_skip" : "Ignorar Link",
   "gui_warning_reconnect_running" : "Executando...",
-  "gui_dialog_deepdecrypt_message" : "JDownloader não encontrou nada em %s1\\r\\n-------------------------------\\r\\nJD irá agora carregar esta página para procurar mais links.",
+  "gui_dialog_deepdecrypt_message" : "JDownloader não encontrou nada em %s1\r\n-------------------------------\r\nJD irá agora carregar esta página para procurar mais links.",
   "system_download_errors_couldnotrename" : "Não foi possível renomear parte do arquivo",
   "plugins_error_downloadfailed" : "Falha de download",
   "plugins_container_found" : "Processado %s1 links",

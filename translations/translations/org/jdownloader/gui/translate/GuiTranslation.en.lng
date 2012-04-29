@@ -111,7 +111,7 @@
   "gui_linkgrabberv2_lg_continueselectedlinks" : "Add selected link/s to Downloads",
   "gui_config_gui_barrierfree" : "Barrier-Free",
   "system_download_triggerfileexists_ask" : "Ask for each file",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "You disabled the IP check. This will increase the reconnection times dramatically!\\r\\n\\r\\nSeveral further modules like Reconnect Recorder are disabled.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "You disabled the IP check. This will increase the reconnection times dramatically!\r\n\r\nSeveral further modules like Reconnect Recorder are disabled.",
   "gui_config_download_ipcheck_regex" : "IP Filter RegEx",
   "gui_fileinfopanel_linktab_name" : "Link name",
   "gui_linkgrabber_packagetab_lbl_name" : "Package Name",

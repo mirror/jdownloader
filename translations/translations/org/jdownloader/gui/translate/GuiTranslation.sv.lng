@@ -103,7 +103,7 @@
   "gui_linkgrabberv2_lg_continueselectedlinks" : "Forsät med valda länkar?",
   "gui_config_gui_barrierfree" : "Barriär-fri",
   "system_download_triggerfileexists_ask" : "Fråga för varje fil",
-  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Du har inaktiverat IP-check. Detta kommer att öka återanslutningstiden dramatiskt!\\r\\n\\r\\nFlera andra moduler såsom återanslutningsinspelaren är deaktiverade.",
+  "jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message" : "Du har inaktiverat IP-check. Detta kommer att öka återanslutningstiden dramatiskt!\r\n\r\nFlera andra moduler såsom återanslutningsinspelaren är deaktiverade.",
   "gui_config_download_ipcheck_regex" : "IP Filter RegEx",
   "gui_fileinfopanel_linktab_name" : "Länknamn",
   "gui_linkgrabber_packagetab_lbl_name" : "Paketnamn",
