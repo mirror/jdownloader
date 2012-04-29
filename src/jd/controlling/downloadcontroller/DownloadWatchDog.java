@@ -1445,11 +1445,31 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             /* we already abort shutdown, no need to ask again */
             return;
         }
-        shutdownVeto(true);
+        if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
+
+            config.setClosedWithRunningDownloads(true);
+
+            synchronized (this.DownloadControllers) {
+                for (final SingleDownloadController con : DownloadControllers) {
+                    DownloadLink link = con.getDownloadLink();
+                    if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                        DownloadInterface dl = link.getDownloadInstance();
+                        if (dl != null && !dl.isResumable()) { throw new ShutdownVetoException("DownloadWatchDog is still running");
+
+                        }
+                    }
+                }
+            }
+        }
 
     }
 
-    private void shutdownVeto(boolean silent) throws ShutdownVetoException {
+    @Override
+    public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
+        if (shutdownVetoExceptions.length > 0) {
+            /* we already abort shutdown, no need to ask again */
+            return;
+        }
         if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
             String dialogTitle = _JDT._.DownloadWatchDog_onShutdownRequest_();
             synchronized (this.DownloadControllers) {
@@ -1458,7 +1478,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
                         DownloadInterface dl = link.getDownloadInstance();
                         if (dl != null && !dl.isResumable()) {
-                            if (silent) throw new ShutdownVetoException("DownloadWatchDog is still running");
                             dialogTitle = _JDT._.DownloadWatchDog_onShutdownRequest_nonresumable();
                             break;
                         }
@@ -1477,15 +1496,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
         }
         config.setClosedWithRunningDownloads(false);
-    }
-
-    @Override
-    public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
-        if (shutdownVetoExceptions.length > 0) {
-            /* we already abort shutdown, no need to ask again */
-            return;
-        }
-        shutdownVeto(false);
     }
 
     @Override
