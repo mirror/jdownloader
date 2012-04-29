@@ -97,11 +97,7 @@ public class CFG_GENERAL {
      **/
     public static final BooleanKeyHandler               CONVERT_RELATIVE_PATHES_JDROOT                = SH.getKeyHandler("ConvertRelativePathesJDRoot", BooleanKeyHandler.class);
     // true
-    /**
-     * Set to false to hide the Speed Warning Icons in the SpeedColumn
-     **/
-    public static final BooleanKeyHandler               SPEED_WARNING_IN_DOWNLOADTABLE_ENABLED        = SH.getKeyHandler("SpeedWarningInDownloadtableEnabled", BooleanKeyHandler.class);
-    // false
+
     public static final BooleanKeyHandler               MAX_DOWNLOADS_PER_HOST_ENABLED                = SH.getKeyHandler("MaxDownloadsPerHostEnabled", BooleanKeyHandler.class);
     // true
     /**

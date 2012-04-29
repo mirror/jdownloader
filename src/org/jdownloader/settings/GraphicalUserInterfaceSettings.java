@@ -284,4 +284,16 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isPremiumAlertTaskColumnEnabled();
 
     void setPremiumAlertTaskColumnEnabled(boolean b);
+
+    @AboutConfig
+    @Description("If true, SpeedColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
+    boolean isPremiumAlertSpeedColumnEnabled();
+
+    void setPremiumAlertSpeedColumnEnabled(boolean b);
+
+    @AboutConfig
+    @Description("If true, ETAColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
+    boolean isPremiumAlertETAColumnEnabled();
+
+    void setPremiumAlertETAColumnEnabled(boolean b);
 }

@@ -5,7 +5,9 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.proxy.ProxyBlock;
@@ -19,6 +21,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -70,8 +73,12 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public JPopupMenu createHeaderPopup() {
-        JPopupMenu ret = super.createHeaderPopup();
-        ret.add(new AppAction() {
+
+        final JPopupMenu ret = new JPopupMenu();
+        LockColumnWidthAction action;
+        ret.add(new JCheckBoxMenuItem(action = new LockColumnWidthAction(this)));
+
+        ret.add(new JCheckBoxMenuItem(new AppAction() {
             {
                 setName(_GUI._.literall_premium_alert());
                 setSmallIcon(iconWait);
@@ -82,7 +89,8 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             public void actionPerformed(ActionEvent e) {
                 JsonConfig.create(GraphicalUserInterfaceSettings.class).setPremiumAlertTaskColumnEnabled(!JsonConfig.create(GraphicalUserInterfaceSettings.class).isPremiumAlertTaskColumnEnabled());
             }
-        });
+        }));
+        ret.add(new JSeparator());
         return ret;
 
     }

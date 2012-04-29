@@ -1,8 +1,12 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 
 import javax.swing.Icon;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -14,15 +18,22 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.premium.PremiumInfoDialog;
-import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
 
 public class SpeedColumn extends ExtTextColumn<AbstractNode> {
@@ -36,11 +47,45 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
     public SpeedColumn() {
         super(_GUI._.SpeedColumn_SpeedColumn());
         rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
-        warningEnabled = CFG_GENERAL.SPEED_WARNING_IN_DOWNLOADTABLE_ENABLED.isEnabled();
+        warningEnabled = CFG_GUI.PREMIUM_ALERT_SPEED_COLUMN_ENABLED.isEnabled();
+        CFG_GUI.PREMIUM_ALERT_SPEED_COLUMN_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                warningEnabled = CFG_GUI.PREMIUM_ALERT_SPEED_COLUMN_ENABLED.isEnabled();
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+        });
     }
 
     public boolean isPaintWidthLockIcon() {
         return false;
+    }
+
+    public JPopupMenu createHeaderPopup() {
+
+        final JPopupMenu ret = new JPopupMenu();
+        LockColumnWidthAction action;
+        ret.add(new JCheckBoxMenuItem(action = new LockColumnWidthAction(this)));
+
+        ret.add(new JCheckBoxMenuItem(new AppAction() {
+            {
+                setName(_GUI._.literall_premium_alert());
+                setSmallIcon(NewTheme.I().getIcon("warning", 16));
+                setSelected(JsonConfig.create(GraphicalUserInterfaceSettings.class).isPremiumAlertSpeedColumnEnabled());
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JsonConfig.create(GraphicalUserInterfaceSettings.class).setPremiumAlertSpeedColumnEnabled(!JsonConfig.create(GraphicalUserInterfaceSettings.class).isPremiumAlertSpeedColumnEnabled());
+            }
+        }));
+        ret.add(new JSeparator());
+        return ret;
+
     }
 
     @Override

@@ -318,14 +318,6 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @RequiresRestart
-    @Description("Set to false to hide the Speed Warning Icons in the SpeedColumn")
-    boolean isSpeedWarningInDownloadtableEnabled();
-
-    void setSpeedWarningInDownloadtableEnabled(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
     @Description("If true, JDownloader performs updates automatically without user interaction")
     boolean isSilentUpdateEnabled();
 

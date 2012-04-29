@@ -5,6 +5,8 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
+import org.appwork.storage.config.handler.LongKeyHandler;
+import org.appwork.storage.config.handler.ObjectKeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -22,16 +24,19 @@ public class CFG_GUI {
     // access is faster, and we get an error on init if mappings are wrong.
     // ALL
     public static final EnumKeyHandler                                 DOWNLOAD_VIEW                             = SH.getKeyHandler("DownloadView", EnumKeyHandler.class);
-    // false
+    // 500
+    /**
+     * Refreshrate in ms for the DownloadView
+     **/
+    public static final LongKeyHandler                                 DOWNLOAD_VIEW_REFRESH                     = SH.getKeyHandler("DownloadViewRefresh", LongKeyHandler.class);
+    // true
     /**
      * Enable/disable Enable/disable Clipboard monitoring
      **/
     public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                       = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
-    // true
-
-    // jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings
+    // null
     public static final StringKeyHandler                               ACTIVE_CONFIG_PANEL                       = SH.getKeyHandler("ActiveConfigPanel", StringKeyHandler.class);
-    // true
+    // false
     /**
      * True if move button should be visible in downloadview
      **/
@@ -59,6 +64,12 @@ public class CFG_GUI {
     public static final IntegerKeyHandler                              FONT_SCALE_FACTOR                         = SH.getKeyHandler("FontScaleFactor", IntegerKeyHandler.class);
     // false
     /**
+     * If true, TaskColumn will show Premium Alerts in Free Download mode if JD
+     * thinks Premium would be better currently.
+     **/
+    public static final BooleanKeyHandler                              PREMIUM_ALERT_TASK_COLUMN_ENABLED         = SH.getKeyHandler("PremiumAlertTaskColumnEnabled", BooleanKeyHandler.class);
+    // false
+    /**
      * Paint all labels/text with or without antialias. Default value is false.
      **/
     public static final BooleanKeyHandler                              TEXT_ANTI_ALIAS_ENABLED                   = SH.getKeyHandler("TextAntiAliasEnabled", BooleanKeyHandler.class);
@@ -67,16 +78,22 @@ public class CFG_GUI {
      * Highlight Column in Downloadview if table is not in downloadsortorder
      **/
     public static final BooleanKeyHandler                              SORT_COLUMN_HIGHLIGHT_ENABLED             = SH.getKeyHandler("SortColumnHighlightEnabled", BooleanKeyHandler.class);
-    // true
+    // false
     /**
      * True if move button should be visible in downloadview
      **/
     public static final BooleanKeyHandler                              SHOW_MOVE_TO_BOTTOM_BUTTON                = SH.getKeyHandler("ShowMoveToBottomButton", BooleanKeyHandler.class);
+    // false
+    /**
+     * If true, SpeedColumn will show Premium Alerts in Free Download mode if JD
+     * thinks Premium would be better currently.
+     **/
+    public static final BooleanKeyHandler                              PREMIUM_ALERT_SPEED_COLUMN_ENABLED        = SH.getKeyHandler("PremiumAlertSpeedColumnEnabled", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              BALLOON_NOTIFICATION_ENABLED              = SH.getKeyHandler("BalloonNotificationEnabled", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler                              LOG_VIEW_VISIBLE                          = SH.getKeyHandler("LogViewVisible", BooleanKeyHandler.class);
-    // true
+    // false
     public static final BooleanKeyHandler                              CONFIG_VIEW_VISIBLE                       = SH.getKeyHandler("ConfigViewVisible", BooleanKeyHandler.class);
     // null
     public static final StringKeyHandler                               LOOK_AND_FEEL                             = SH.getKeyHandler("LookAndFeel", StringKeyHandler.class);
@@ -91,7 +108,7 @@ public class CFG_GUI {
     public static final EnumKeyHandler                                 SELECTED_DOWNLOAD_SEARCH_CATEGORY         = SH.getKeyHandler("SelectedDownloadSearchCategory", EnumKeyHandler.class);
     // false
     public static final BooleanKeyHandler                              PASSWORD_PROTECTION_ENABLED               = SH.getKeyHandler("PasswordProtectionEnabled", BooleanKeyHandler.class);
-    // true
+    // false
     /**
      * True if move button should be visible in downloadview
      **/
@@ -113,6 +130,8 @@ public class CFG_GUI {
      * Highlight Table in Downloadview if table is filtered
      **/
     public static final BooleanKeyHandler                              FILTER_HIGHLIGHT_ENABLED                  = SH.getKeyHandler("FilterHighlightEnabled", BooleanKeyHandler.class);
+    // null
+    public static final ObjectKeyHandler                               LAST_FRAME_STATUS                         = SH.getKeyHandler("LastFrameStatus", ObjectKeyHandler.class);
     // true
     /**
      * Enable/Disable the Linkgrabber Sidebar
@@ -134,7 +153,7 @@ public class CFG_GUI {
      * value is true.
      **/
     public static final BooleanKeyHandler                              ANIMATION_ENABLED                         = SH.getKeyHandler("AnimationEnabled", BooleanKeyHandler.class);
-    // true
+    // false
     /**
      * True if move button should be visible in downloadview
      **/
