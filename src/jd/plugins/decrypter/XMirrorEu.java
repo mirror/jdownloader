@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xmirror.eu" }, urls = { "http://(www\\.)?xmirror\\.eu/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xmirror.eu" }, urls = { "http://(www\\.)?xmirror\\.eu/[a-z0-9]{3,}" }, flags = { 0 })
 public class XMirrorEu extends PluginForDecrypt {
 
     public XMirrorEu(PluginWrapper wrapper) {
@@ -41,19 +41,17 @@ public class XMirrorEu extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        progress.setRange(links.length);
         for (String singleLink : links) {
             /** Needed to get the finallink */
             br.getHeaders().put("Referer", "http://xmirror.eu/?q=r_counter");
             br.getPage(singleLink);
-            String finallink = br.getRegex("ads\\'>[\t\n\r ]+<frame src=\"(http://.*?)\"").getMatch(0);
+            final String finallink = br.getRegex("ads\\'>[\t\n\r ]+<frame src=\"([^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter + "\n");
                 logger.warning("At link: " + singleLink);
                 return null;
             }
             decryptedLinks.add(createDownloadlink(singleLink));
-            progress.increase(1);
         }
         return decryptedLinks;
     }

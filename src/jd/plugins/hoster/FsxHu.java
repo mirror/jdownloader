@@ -118,7 +118,7 @@ public class FsxHu extends PluginForHost {
                 }
             }
         }
-        br.getPage("http://www.fsx.hu/download.php?vr=1");
+        br.getPage("http://www.fsx.hu/download.php?i=1");
         if (br.containsHTML("Felhívjuk figyelmedet az <a class=\"txt\" href=\\'")) throw new PluginException(LinkStatus.ERROR_FATAL, REGISTEREDONLY);
         for (int i = 0; i <= 3; i++) {
             final String code = getCaptchaCode("http://www.fsx.hu/" + captcha, downloadLink);

@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -24,17 +25,19 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect-my-links.com" }, urls = { "http://(www\\.)?protect\\-my\\-links\\.com/(\\?id=[a-z0-9]+|\\?p=.+|\\w+/[a-z0-9]{32}\\.html)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect-my-links.com" }, urls = { "http://(www\\.)?(protect\\-my\\-links\\.com|i23\\.in)/([a-z0-9]+(/[a-z0-9]+)?\\.html|\\?id=[a-z0-9]+)" }, flags = { 0 })
 public class PrtcMyLnksCm extends PluginForDecrypt {
 
     public PrtcMyLnksCm(PluginWrapper wrapper) {
@@ -44,63 +47,62 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("i23.in/", "protect-my-links.com/");
+        if (parameter.matches("http://(www\\.)?protect\\-my\\-links\\.com/\\?id=[a-z0-9]+")) parameter = "http://protect-my-links.com/" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0) + ".html";
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (new Regex(parameter, "").matches()) {
-            /* Error handling */
-            if (br.containsHTML("This data has been removed by the owner")) {
-                logger.warning("Wrong link");
-                logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-                return new ArrayList<DownloadLink>();
+        final String capPage = br.getRegex("\"(/handezSrc\\.php\\?id=\\d+)\"").getMatch(0);
+        if (capPage == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        final String fpName = br.getRegex("<title>Download ([^<>\"]*?)</title>").getMatch(0);
+        Browser ajaxBr = br.cloneBrowser();
+        ajaxBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        final String gonum = br.getRegex("\\'\\&gonum=(\\d+)\\',").getMatch(0);
+        final String rcID = br.getRegex("Recaptcha\\.create\\(\"([^<>\"]*?)\"").getMatch(0);
+        if (rcID == null || gonum == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        rc.setId(rcID);
+        rc.load();
+        for (int i = 0; i <= 5; i++) {
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, param);
+            ajaxBr.postPage("http://protect-my-links.com/ajaxln.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&id=" + new Regex(parameter, "protect\\-my\\-links\\.com/([a-z0-9]+).*?").getMatch(0) + "&gonum=" + gonum);
+            if (ajaxBr.containsHTML(">Captcha not valid<")) {
+                rc.reload();
+                continue;
             }
-
-            /* File package handling */
-            for (int i = 0; i <= 5; i++) {
-                Form captchaForm = br.getForm(1);
-                if (captchaForm == null) return null;
-                String passCode = null;
-                String captchalink0 = br.getRegex("src=\"(mUSystem.*?)\"").getMatch(0);
-                String captchalink = "http://protect-my-links.com/" + captchalink0;
-                if (captchalink0.contains("null")) return null;
-                String code = getCaptchaCode(captchalink, param);
-                captchaForm.put("captcha", code);
-                if (br.containsHTML("Password :")) {
-                    passCode = getUserInput(null, param);
-                    captchaForm.put("passwd", passCode);
-                }
-                br.submitForm(captchaForm);
-                if (br.containsHTML("Captcha is not valid") || br.containsHTML("Password is not valid")) continue;
-                break;
-            }
-            if (br.containsHTML("Captcha is not valid")) throw new DecrypterException(DecrypterException.CAPTCHA);
-            final String fpName = br.getRegex("h1 class=\"pmclass\">(.*?)</h1></td>").getMatch(0);
-            String[] links = br.getRegex("><a href=\\'(/\\?p=.*?)\\'").getColumn(0);
-            if (links == null || links.length == 0) return null;
-            progress.setRange(links.length);
-            for (String psp : links) {
-                // Fixed, thx to goodgood.51@gmail.com
-                br.getPage("http://protect-my-links.com" + psp);
-                final String finallink = decryptSingleLink();
-                if (finallink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                decryptedLinks.add(createDownloadlink(finallink));
-                progress.increase(1);
-            }
-            if (fpName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName.trim());
-                fp.addLinks(decryptedLinks);
-            }
-        } else {
+            break;
+        }
+        if (br.containsHTML(">Captcha not valid<")) throw new DecrypterException(DecrypterException.CAPTCHA);
+        if (true) {
+            logger.warning("Decrypter not yet fixed, site is buggy!");
+            return null;
+        }
+        String[] links = br.getRegex("><a href=\\'(/\\?p=.*?)\\'").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        for (String psp : links) {
+            // Fixed, thx to goodgood.51@gmail.com
+            br.getPage("http://protect-my-links.com" + psp);
             final String finallink = decryptSingleLink();
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             decryptedLinks.add(createDownloadlink(finallink));
+        }
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }

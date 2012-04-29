@@ -106,7 +106,10 @@ public class YkCm extends PluginForDecrypt {
         final Date date = new Date();
         final SimpleDateFormat sdf = new SimpleDateFormat("Z");
         final String jsonString = br.getPage("http://v.youku.com/player/getPlayList/VideoIDS/" + videoId + "/timezone/" + sdf.format(date).substring(0, 3) + "/version/5/source/video?password=&n=3&ran=" + (int) (Math.random() * 9999));
-
+        if (br.containsHTML("Sorry, this video can only be streamed within Mainland China\\.")) {
+            logger.info("Stopping decrypt process, video only available in mainland china: " + parameter);
+            return decryptedLinks;
+        }
         if (!jsonParser(jsonString)) { return null; }
 
         progress.setRange(PARTS);

@@ -104,7 +104,10 @@ public class ShrLnksBz extends PluginForDecrypt {
             br.getPage(br.getRedirectLocation());
         }
 
-        if (br.containsHTML("Der Inhalt konnte nicht gefunden werden")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
+        if (br.containsHTML("Der Inhalt konnte nicht gefunden werden")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         /* Folderpassword */
         if (br.containsHTML("id=\"folderpass\"")) {
             for (int i = 0; i <= 3; i++) {
@@ -115,7 +118,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                 // First try the stored password, if that doesn't work, ask the
                 // user to enter it
                 if (latestPassword == null) {
-                    latestPassword = Plugin.getUserInput(null, param);
+                    latestPassword = Plugin.getUserInput("Enter password for: " + parameter, param);
                 }
                 pwform.put("password", latestPassword);
                 br.submitForm(pwform);

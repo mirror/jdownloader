@@ -83,9 +83,10 @@ public class UniBytesCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML(FATALSERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
-        String addedLink = downloadLink.getDownloadURL();
+        final String addedLink = downloadLink.getDownloadURL();
         br.setFollowRedirects(false);
-        br.postPage(addedLink, "step=timer&referer=&ad=");
+        br.postPage(addedLink + "/phone", "step=phone&referer=&reg=bp&ad=");
+        br.postPage(addedLink + "/timer", "referer=" + Encoding.urlEncode(addedLink) + "&step=timer");
         String dllink = br.getRedirectLocation();
         if (dllink == null || !dllink.contains("fdload/")) {
             dllink = null;

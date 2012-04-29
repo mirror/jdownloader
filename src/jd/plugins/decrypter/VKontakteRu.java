@@ -20,10 +20,9 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 import jd.PluginWrapper;
-import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser.BrowserException;
@@ -31,13 +30,18 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.VKontakteRuHoster;
+import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+|video_ext\\.php\\?oid=\\d+\\&id=\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|id\\d+(\\?z=albums\\d+)?)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
@@ -49,9 +53,8 @@ public class VKontakteRu extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String  FILEOFFLINE  = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
-    private static final String  DOMAIN       = "vk.com";
-    private static final Integer MAXCOOKIEUSE = 500;
+    private static final String FILEOFFLINE = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
+    private static final String DOMAIN      = "vk.com";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -63,7 +66,10 @@ public class VKontakteRu extends PluginForDecrypt {
             sleep(1500l, param);
             try {
                 /** Login process */
-                if (!getUserLogin()) return null;
+                if (!getUserLogin()) {
+                    logger.info("Logindata invalid, stopping...");
+                    return null;
+                }
                 /* this call can refesh the login */
                 br.getPage(parameter);
                 /** Retry if login failed */
@@ -76,7 +82,10 @@ public class VKontakteRu extends PluginForDecrypt {
                     this.getPluginConfig().save();
                     br.clearCookies(DOMAIN);
                     br.clearCookies("login.vk.com");
-                    if (!getUserLogin()) return null;
+                    if (!getUserLogin()) {
+                        logger.info("Logindata invalid, stopping...");
+                        return null;
+                    }
                 }
                 if (br.containsHTML("/badbrowser\\.php\"")) logger.warning("Login invalid/cookies old??");
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -241,7 +250,7 @@ public class VKontakteRu extends PluginForDecrypt {
         /** Photos are placed in different locations, find them all */
         final String[][] regexesPage1 = { { "class=\"photo_album_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)\"", "0" }, { "<div class=\"photo_album_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)\"", "0" }, { "<div class=\"photo_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)\"", "0" } };
         final String[][] regexesAllOthers = { { "class=\"photo(_album)?_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)", "1" } };
-        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 21, 12, 40, parameter, "al=1&part=1&offset=");
+        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 49, 12, 40, parameter, "al=1&part=1&offset=");
         for (String element : decryptedData) {
             final String decryptedLink = "http://vk.com/" + element;
             decryptedLinks.add(createDownloadlink(decryptedLink));
@@ -369,7 +378,6 @@ public class VKontakteRu extends PluginForDecrypt {
             if (i > 0) {
                 offset += increase;
                 br.postPage(postPage, postData + offset);
-                System.out.println(br.toString());
                 for (String regex[] : regexesAllOthers) {
                     String correctedBR = br.toString().replace("\\", "");
                     String[] theData = new Regex(correctedBR, regex[0]).getColumn(Integer.parseInt(regex[1]));
@@ -399,91 +407,25 @@ public class VKontakteRu extends PluginForDecrypt {
         return decryptedData;
     }
 
-    @SuppressWarnings("unchecked")
     private boolean getUserLogin() throws Exception {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:11.0) Gecko/20100101 Firefox/11.0");
-        br.setFollowRedirects(true);
-        String username = null;
-        String password = null;
-        synchronized (LOCK) {
-            int loginCounter = this.getPluginConfig().getIntegerProperty("logincounter");
-            // Only login every x th time to prevent getting banned | else just
-            // set cookies (re-use them)
-            if (loginCounter > MAXCOOKIEUSE || loginCounter == -1) {
-                username = this.getPluginConfig().getStringProperty("user", null);
-                password = this.getPluginConfig().getStringProperty("pass", null);
-                for (int i = 0; i < 3; i++) {
-                    if (username == null || password == null) {
-                        username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + this.getHost() + " :");
-                        if (username == null) return false;
-                        password = UserIO.getInstance().requestInputDialog("Enter password for " + this.getHost() + " :");
-                        if (password == null) return false;
-                    }
-                    if (!loginSite(username, password)) {
-                        username = null;
-                        password = null;
-                        continue;
-                    } else {
-                        if (loginCounter > MAXCOOKIEUSE) {
-                            loginCounter = 0;
-                        } else {
-                            loginCounter++;
-                        }
-                        this.getPluginConfig().setProperty("user", username);
-                        this.getPluginConfig().setProperty("pass", password);
-                        this.getPluginConfig().setProperty("logincounter", loginCounter);
-                        final HashMap<String, String> cookies = new HashMap<String, String>();
-                        final Cookies add = this.br.getCookies(DOMAIN);
-                        for (final Cookie c : add.getCookies()) {
-                            cookies.put(c.getKey(), c.getValue());
-                        }
-                        this.getPluginConfig().setProperty("cookies", cookies);
-                        this.getPluginConfig().save();
-                        return true;
-                    }
-
-                }
-            } else {
-                final Object ret = this.getPluginConfig().getProperty("cookies", null);
-                if (ret != null && ret instanceof HashMap<?, ?>) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    for (Map.Entry<String, String> entry : cookies.entrySet()) {
-                        this.br.setCookie(DOMAIN, entry.getKey(), entry.getValue());
-                    }
-                    loginCounter++;
-                    this.getPluginConfig().setProperty("logincounter", loginCounter);
-                    this.getPluginConfig().save();
-                    return true;
-                }
-            }
+        final PluginForHost vkPlugin = JDUtilities.getPluginForHost("vkontakte.ru");
+        Account aa = AccountController.getInstance().getValidAccount(vkPlugin);
+        if (aa == null) {
+            String username = UserIO.getInstance().requestInputDialog("Enter Loginname for vkontakte.ru :");
+            if (username == null) throw new DecrypterException(JDL.L("plugins.decrypter.vkontakteru.nousername", "Username not entered!"));
+            String password = UserIO.getInstance().requestInputDialog("Enter password for vkontakte.ru :");
+            if (password == null) throw new DecrypterException(JDL.L("plugins.decrypter.vkontakteru.nopassword", "Password not entered!"));
+            aa = new Account(username, password);
         }
-        this.getPluginConfig().setProperty("user", Property.NULL);
-        this.getPluginConfig().setProperty("pass", Property.NULL);
-        this.getPluginConfig().setProperty("logincounter", "-1");
-        this.getPluginConfig().setProperty("cookies", Property.NULL);
-        this.getPluginConfig().save();
-        throw new DecrypterException("Login or/and password for " + this.getHost() + " is wrong!");
-    }
-
-    private boolean loginSite(String username, String password) throws Exception {
-        br.getPage("http://vk.com/login.php");
-        String damnIPH = br.getRegex("name=\"ip_h\" value=\"(.*?)\"").getMatch(0);
-        if (damnIPH == null) damnIPH = br.getRegex("\\{loginscheme: \\'https\\', ip_h: \\'(.*?)\\'\\}").getMatch(0);
-        if (damnIPH == null) damnIPH = br.getRegex("loginscheme: \\'https\\'.*?ip_h: \\'(.*?)\\'").getMatch(0);
-        if (damnIPH == null) return false;
-        br.postPage("https://login.vk.com/?act=login", "act=login&q=1&al_frame=1&expire=&captcha_sid=&captcha_key=&from_host=vk.com&from_protocol=http&ip_h=" + damnIPH + "&email=" + Encoding.urlEncode(username) + "&pass=" + Encoding.urlEncode(password));
-        final String sid = br.getRegex("setCookieEx\\(\\'sid\\', \\'(.*?)\'").getMatch(0);
-        /** sid null = login probably wrong */
-        if (sid == null) return false;
-        br.setCookie(DOMAIN, "remixsid", sid);
-        // Finish login
-        Form lol = br.getFormbyProperty("name", "login");
-        if (lol != null) {
-            lol.put("email", Encoding.urlEncode(username));
-            lol.put("pass", Encoding.urlEncode(password));
-            lol.put("expire", "0");
-            br.submitForm(lol);
+        try {
+            ((VKontakteRuHoster) vkPlugin).login(this.br, aa, false);
+        } catch (final PluginException e) {
+            aa.setEnabled(false);
+            aa.setValid(false);
+            return false;
         }
+        // Account is valid, let's just add it
+        AccountController.getInstance().addAccount(vkPlugin, aa);
         return true;
     }
 

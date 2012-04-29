@@ -766,3 +766,4 @@ jd/plugins/hoster/IshareIaskSinaComCn.class
 jd/plugins/decrypter/MgcMsCm.class
 jd/plugins/hoster/PlatinShareCom.class
 jd/plugins/decrypter/MyGkWs.class
+#jd/captcha/methods/prtctmylnkscm

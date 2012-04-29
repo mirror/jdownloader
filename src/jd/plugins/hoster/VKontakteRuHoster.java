@@ -21,21 +21,26 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?\\d+_\\d+(\\?tag=\\d+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?\\d+_\\d+(\\?tag=\\d+)?" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN    = "vk.com";
@@ -45,6 +50,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     public VKontakteRuHoster(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium();
     }
 
     @Override
@@ -81,7 +87,10 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+        throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible with account!");
+    }
+
+    public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         /**
          * Chunks disabled because (till now) this plugin only exists to
          * download pictures
@@ -97,38 +106,25 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         FINALLINK = null;
         this.setBrowserExclusive();
 
         br.setFollowRedirects(false);
-        /**
-         * Decrypter will always have working cookies so we can just get em from
-         * // there ;)
-         */
-        PluginForDecrypt vkontakteDecrypter = JDUtilities.getPluginForDecrypt("vkontakte.ru");
-        if (loaded == false) {
-            synchronized (LOCK) {
-                if (loaded == false) {
-                    /*
-                     * we only have to load this once, to make sure its loaded
-                     */
-                    vkontakteDecrypter = JDUtilities.getPluginForDecrypt("vkontakte.ru");
-                }
-                loaded = true;
-            }
+        // Login required to check/download
+        Account aa = AccountController.getInstance().getValidAccount(this);
+        // This shouldn't happen
+        if (aa == null) {
+            link.getLinkStatus().setStatusText("Only downlodable via account!");
+            return AvailableStatus.UNCHECKABLE;
         }
-        final Object ret = vkontakteDecrypter.getPluginConfig().getProperty("cookies", null);
+        login(br, aa, false);
         String albumID = link.getStringProperty("albumid");
         String photoID = new Regex(link.getDownloadURL(), "vkontaktedecrypted\\.ru/picturelink/((\\-)?\\d+_\\d+)").getMatch(0);
-        if (ret == null || albumID == null || photoID == null) {
+        if (albumID == null || photoID == null) {
             // This should never happen
             logger.warning("A property couldn't be found!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-        for (Map.Entry<String, String> entry : cookies.entrySet()) {
-            this.br.setCookie(DOMAIN, entry.getKey(), entry.getValue());
         }
         br.getPage("http://vk.com/photo" + photoID);
         /* seems we have to refesh the login process */
@@ -160,6 +156,88 @@ public class VKontakteRuHoster extends PluginForHost {
         }
         return AvailableStatus.TRUE;
 
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(br, account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Registered (free) User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(br, account, false);
+        doFree(link);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void login(Browser br, Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            br.setCookie(DOMAIN, key, value);
+                        }
+                        return;
+                    }
+                }
+                br.setFollowRedirects(true);
+                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:11.0) Gecko/20100101 Firefox/11.0");
+                br.getPage("http://vk.com/login.php");
+                String damnIPH = br.getRegex("name=\"ip_h\" value=\"(.*?)\"").getMatch(0);
+                if (damnIPH == null) damnIPH = br.getRegex("\\{loginscheme: \\'https\\', ip_h: \\'(.*?)\\'\\}").getMatch(0);
+                if (damnIPH == null) damnIPH = br.getRegex("loginscheme: \\'https\\'.*?ip_h: \\'(.*?)\\'").getMatch(0);
+                if (damnIPH == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.postPage("https://login.vk.com/?act=login", "act=login&q=1&al_frame=1&expire=&captcha_sid=&captcha_key=&from_host=vk.com&from_protocol=http&ip_h=" + damnIPH + "&email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                final String sid = br.getRegex("setCookieEx\\(\\'sid\\', \\'(.*?)\'").getMatch(0);
+                /** sid null = login probably wrong */
+                if (sid == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.setCookie(DOMAIN, "remixsid", sid);
+                // Finish login
+                Form lol = br.getFormbyProperty("name", "login");
+                if (lol != null) {
+                    lol.put("email", Encoding.urlEncode(account.getUser()));
+                    lol.put("pass", Encoding.urlEncode(account.getPass()));
+                    lol.put("expire", "0");
+                    br.submitForm(lol);
+                }
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = br.getCookies(DOMAIN);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
