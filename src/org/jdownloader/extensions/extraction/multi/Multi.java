@@ -117,7 +117,7 @@ public class Multi extends IExtraction {
     private static final String      REGEX_EXTENSION_RAR                                         = "\\.rar$";
     private static final String      TAR_BZ2$                                                    = "\\.tar\\.bz2$";
 
-    private static final String      TAR_GZ$                                                     = "\\.tar\\.gz$";
+    private static final String      TAR_GZ$                                                     = "(\\.tar\\.gz|\\.tgz)$";
 
                                                                                                                                          ;
     private static final String      TAR$                                                        = "\\.tar$";
