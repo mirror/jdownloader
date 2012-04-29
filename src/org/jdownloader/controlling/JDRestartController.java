@@ -64,6 +64,7 @@ public class JDRestartController extends RestartController {
                         if (JDUpdater.getInstance().getBranch() != null && !JDUpdater.getInstance().isSelfUpdateRequested()) {
                             RestartViaUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());
                         }
+                        JsonConfig.create(GeneralSettings.class).setSilentRestart(true);
                         setSilentShutDownEnabled(true);
                         restartViaUpdater(false);
                         // setSilentShutDownEnabled(false);

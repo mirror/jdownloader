@@ -279,4 +279,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     public void setLastFrameStatus(FrameStatus status);
 
+    @AboutConfig
+    @Description("If true, TaskColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
+    boolean isPremiumAlertTaskColumnEnabled();
+
+    void setPremiumAlertTaskColumnEnabled(boolean b);
 }

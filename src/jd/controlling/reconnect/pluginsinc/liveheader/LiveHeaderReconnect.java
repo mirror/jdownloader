@@ -354,15 +354,20 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
 
     public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
         if (keyHandler.isChildOf(settings)) {
-            System.out.println("Key: " + keyHandler + "=" + newValue);
+
             updateGUI();
+            if (!keyHandler.getKey().equalsIgnoreCase("AlreadySendToCollectServer")) {
+                settings.setAlreadySendToCollectServer(false);
+            }
         } else {
-            if (dosession && ReconnectPluginController.getInstance().getActivePlugin() == this) {
+            Log.L.info("Successful reonnects in a row: " + JsonConfig.create(ReconnectConfig.class).getSuccessCounter());
+            if (!settings.isAlreadySendToCollectServer() && dosession && ReconnectPluginController.getInstance().getActivePlugin() == this) {
                 if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() > 3) {
 
                     try {
                         NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T._.LiveHeaderReconnect_onConfigValueModified_ask_title(), T._.LiveHeaderReconnect_onConfigValueModified_ask_msg(), icon, null, null);
                         new RouterSendAction(this).actionPerformed(null);
+                        settings.setAlreadySendToCollectServer(true);
                     } catch (DialogClosedException e) {
                         e.printStackTrace();
                     } catch (DialogCanceledException e) {
@@ -387,6 +392,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
             settings.setUserName(i.getUser());
             settings.setRouterIP(i.getIp());
             settings.setScript(i.getScript());
+
             JsonConfig.create(ReconnectConfig.class).setSecondsBeforeFirstIPCheck((int) reconnectResult.getOfflineDuration() / 1000);
             JsonConfig.create(ReconnectConfig.class).setSecondsToWaitForIPChange((int) (reconnectResult.getMaxSuccessDuration() / 1000));
             JsonConfig.create(ReconnectConfig.class).setSecondsToWaitForOffline((int) reconnectResult.getMaxOfflineDuration() / 1000);

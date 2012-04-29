@@ -13,7 +13,6 @@ import javax.swing.Timer;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.ReconnectPluginController;
-import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.ipcheck.IPConnectionState;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.ipcheck.event.IPControllListener;
@@ -24,6 +23,7 @@ import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -113,29 +113,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
                 try {
                     ReconnectInvoker plg = ReconnectPluginController.getInstance().getActivePlugin().getReconnectInvoker();
                     if (plg == null) throw new ReconnectException(_GUI._.ReconnectDialog_run_failed_not_setup_());
-                    plg.validate(new ReconnectResult() {
-
-                        @Override
-                        public void setSuccess(boolean success) {
-                            super.setSuccess(success);
-                        }
-
-                        @Override
-                        public void setStartTime(long startTime) {
-                            super.setStartTime(startTime);
-                        }
-
-                        @Override
-                        public void setOfflineTime(long offlineTime) {
-                            super.setOfflineTime(offlineTime);
-                        }
-
-                        @Override
-                        public void setSuccessTime(long successTime) {
-                            super.setSuccessTime(successTime);
-                        }
-
-                    });
+                    plg.validate();
                     progress.setIndeterminate(false);
                     if (IPController.getInstance().isInvalidated()) {
 
@@ -150,7 +128,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
                     e.printStackTrace();
                     dispose();
                 } catch (ReconnectException e) {
-
+                    Log.exception(e);
                     if (!StringUtils.isEmpty(e.getMessage())) {
                         Dialog.getInstance().showErrorDialog(e.getMessage());
                     } else {

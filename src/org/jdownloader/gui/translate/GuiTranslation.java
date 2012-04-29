@@ -3706,4 +3706,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "%s1 blocked your current IP (Internet Address).\r\nIn many cases, JDownloader us able to do a Reconnect and get a new IP.\r\nIf this is not possible, we recommend to use %s1's Premium Mode." })
     String TaskColumn_getDescription_object_(String tld);
 
+    @Default(lngs = { "en" }, values = { "Premium Alerts" })
+    String literall_premium_alert();
+
 }

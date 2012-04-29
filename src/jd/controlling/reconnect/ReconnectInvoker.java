@@ -25,7 +25,7 @@ public abstract class ReconnectInvoker {
 
     }
 
-    public ReconnectResult validate(ReconnectResult ret) throws InterruptedException, ReconnectException {
+    protected ReconnectResult validate(ReconnectResult ret) throws InterruptedException, ReconnectException {
         ret.setInvoker(this);
 
         // Make sure that we are online

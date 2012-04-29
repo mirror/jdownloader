@@ -81,6 +81,7 @@ public class JDUpdater extends AppUpdater {
     public boolean canInstallDirect(File next, UpdateFile uf) {
 
         // try to install plugins without restart
+        if (next.getName().equals("build.json")) return true;
         if (!jars) {
             // only direct update class files if all jars are up2date
             String p = next.getAbsolutePath();

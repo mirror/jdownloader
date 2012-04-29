@@ -338,4 +338,9 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setSilentUpdateWithRestartEnabled(boolean b);
 
+    @DefaultBooleanValue(false)
+    void setSilentRestart(boolean b);
+
+    boolean isSilentRestart();
+
 }

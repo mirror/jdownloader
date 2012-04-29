@@ -57,22 +57,24 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         try {
             ReconnectResult r = super.validate(ret);
 
-            RouterData rd = ((LiveHeaderReconnectResult) r).getRouterData();
+            if (r instanceof LiveHeaderReconnectResult) {
+                RouterData rd = ((LiveHeaderReconnectResult) r).getRouterData();
 
-            if (rd != null && rd.getScriptID() != null) {
-                RecollInterface serverConnector;
-                try {
-                    serverConnector = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
+                if (rd != null && rd.getScriptID() != null) {
+                    RecollInterface serverConnector;
+                    try {
+                        serverConnector = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
 
-                    if (r.isSuccess()) {
+                        if (r.isSuccess()) {
 
-                        serverConnector.setWorking(rd.getScriptID(), null, r.getSuccessDuration(), r.getOfflineDuration());
-                    } else {
-                        serverConnector.setNotWorking(rd.getScriptID(), null);
+                            serverConnector.setWorking(rd.getScriptID(), null, r.getSuccessDuration(), r.getOfflineDuration());
+                        } else {
+                            serverConnector.setNotWorking(rd.getScriptID(), null);
+                        }
+
+                    } catch (Throwable e) {
+                        Log.exception(e);
                     }
-
-                } catch (Throwable e) {
-                    Log.exception(e);
                 }
             }
             return r;

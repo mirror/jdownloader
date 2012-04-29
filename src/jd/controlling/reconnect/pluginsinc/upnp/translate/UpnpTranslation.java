@@ -73,4 +73,10 @@ public interface UpnpTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Try Upnp Reconnect: %s1" })
     String try_reconnect(String friendlyname);
 
+    @Default(lngs = { "en" }, values = { "Control URL is invalid. Try UPNP Autosetup." })
+    String malformedurl();
+
+    @Default(lngs = { "en" }, values = { "Service Type is invalid. Try UPNP Autosetup." })
+    String malformedservicetype();
+
 }

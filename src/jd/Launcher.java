@@ -532,19 +532,31 @@ public class Launcher {
                                     new Thread("AutostartDialog") {
                                         @Override
                                         public void run() {
-                                            if (JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() > 0 && CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS.isEnabled()) {
-                                                ConfirmDialog d = new ConfirmDialog(Dialog.LOGIC_COUNTDOWN, _JDT._.Main_run_autostart_(), _JDT._.Main_run_autostart_msg(), NewTheme.I().getIcon("start", 32), _JDT._.Mainstart_now(), null);
-                                                d.setCountdownTime(JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds());
-                                                try {
-                                                    Dialog.getInstance().showDialog(d);
-                                                    DownloadWatchDog.getInstance().startDownloads();
-                                                } catch (DialogNoAnswerException e) {
-                                                    if (e.isCausedByTimeout()) {
-                                                        DownloadWatchDog.getInstance().startDownloads();
-                                                    }
-                                                }
-                                            } else {
+                                            if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE)) {
+                                                // maybe downloads have been
+                                                // started by another instance
+                                                // or user input
+                                                return;
+                                            }
+                                            if (JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads() && JsonConfig.create(GeneralSettings.class).isSilentRestart()) {
+
                                                 DownloadWatchDog.getInstance().startDownloads();
+                                            } else {
+
+                                                if (JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() > 0 && CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS.isEnabled()) {
+                                                    ConfirmDialog d = new ConfirmDialog(Dialog.LOGIC_COUNTDOWN, _JDT._.Main_run_autostart_(), _JDT._.Main_run_autostart_msg(), NewTheme.I().getIcon("start", 32), _JDT._.Mainstart_now(), null);
+                                                    d.setCountdownTime(JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds());
+                                                    try {
+                                                        Dialog.getInstance().showDialog(d);
+                                                        DownloadWatchDog.getInstance().startDownloads();
+                                                    } catch (DialogNoAnswerException e) {
+                                                        if (e.isCausedByTimeout()) {
+                                                            DownloadWatchDog.getInstance().startDownloads();
+                                                        }
+                                                    }
+                                                } else {
+                                                    DownloadWatchDog.getInstance().startDownloads();
+                                                }
                                             }
                                         }
                                     }.start();

@@ -3,6 +3,7 @@ package jd.controlling.reconnect.pluginsinc.upnp;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Locale;
 
@@ -115,12 +116,15 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
     @Override
     public void run() throws ReconnectException, InterruptedException {
         try {
+            if (StringUtils.isEmpty(serviceType)) { throw new ReconnectException(T._.malformedservicetype()); }
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             runCommand(serviceType, controlURL, "ForceTermination");
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             Thread.sleep(2000);
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             runCommand(serviceType, controlURL, "RequestConnection");
+        } catch (MalformedURLException e) {
+            throw new ReconnectException(T._.malformedurl());
         } catch (InterruptedException e) {
             throw e;
         } catch (final Throwable e) {
