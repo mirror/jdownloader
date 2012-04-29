@@ -34,7 +34,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect-my-links.com" }, urls = { "http://(www\\.)?protect\\-my\\-links\\.com/(\\?id=[a-z0-9]+|\\?p=.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect-my-links.com" }, urls = { "http://(www\\.)?protect\\-my\\-links\\.com/(\\?id=[a-z0-9]+|\\?p=.+|\\w+/[a-z0-9]{32}\\.html)" }, flags = { 0 })
 public class PrtcMyLnksCm extends PluginForDecrypt {
 
     public PrtcMyLnksCm(PluginWrapper wrapper) {
@@ -47,7 +47,7 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (new Regex(parameter, "protect\\-my\\-links\\.com/\\?id=[a-z0-9]+").matches()) {
+        if (new Regex(parameter, "").matches()) {
             /* Error handling */
             if (br.containsHTML("This data has been removed by the owner")) {
                 logger.warning("Wrong link");

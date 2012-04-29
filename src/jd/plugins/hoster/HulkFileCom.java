@@ -110,9 +110,6 @@ public class HulkFileCom extends PluginForHost {
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
-                // generic regex picks up false positives (premium ads above
-                // filesize)
-                // adjust accordingly to make work with COOKIE_HOST
                 filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
             }
         }
@@ -275,6 +272,7 @@ public class HulkFileCom extends PluginForHost {
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
+        regexStuff.add("(<script type=\"text/javascript\">[\r\n\t ]+var from = 1;.*?else)");
         for (String aRegex : regexStuff) {
             String lolz[] = br.getRegex(aRegex).getColumn(0);
             if (lolz != null) {

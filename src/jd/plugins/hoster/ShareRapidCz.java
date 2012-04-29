@@ -229,8 +229,8 @@ public class ShareRapidCz extends PluginForHost {
         br.submitForm(form);
         if (!br.containsHTML("<td>GB:</td>")) {
             br.getPage("http://share-rapid.com/mujucet/");
+            if (!br.containsHTML("<td>GB:</td>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        if (!br.containsHTML("<td>GB:</td>")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
     }
 
     @Override
