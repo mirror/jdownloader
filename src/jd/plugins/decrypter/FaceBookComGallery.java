@@ -52,6 +52,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         synchronized (LOCK) {
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             String parameter = param.toString().replace("#!/", "");
+            br.getHeaders().put("User-Agent", jd.plugins.hoster.FaceBookComVideos.Agent);
             br.setFollowRedirects(false);
             if (parameter.contains("on.fb.me/")) {
                 br.getPage(parameter);
@@ -86,7 +87,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 boolean doExtended = false;
                 String[] links = br.getRegex("\\&amp;src=(http\\\\u00253A.*?)\\&amp;theater\\\\\"").getColumn(0);
                 if (links == null || links.length == 0) {
-                    links = br.getRegex("ajaxify=\\\\\"http:\\\\/\\\\/www\\.facebook\\.com\\\\/photo\\.php\\?fbid=(\\d+)\\&amp;").getColumn(0);
+                    links = br.getRegex("ajaxify=(\"|\\\\\")http(://|:\\\\/\\\\/)www\\.facebook\\.com(/|\\\\/)photo\\.php\\?fbid=(\\d+)\\&amp;").getColumn(3);
                     doExtended = true;
                 }
                 if (links == null || links.length == 0) {
@@ -99,7 +100,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     for (String fbid : links) {
                         br.getPage("http://www.facebook.com/photo.php?fbid=" + fbid + "&set=" + setID + "&type=1");
                         String finallink = br.getRegex("\"Weiter\"><img src=\"(http://.*?)\"").getMatch(0);
-                        if (finallink == null) finallink = br.getRegex("\"(http://a\\d+\\.sphotos\\.ak\\.fbcdn\\.net/photos\\-.*?)\"").getMatch(0);
+                        if (finallink == null) finallink = br.getRegex("\"(http://a\\d+\\.sphotos\\.ak\\.fbcdn\\.net/(\\w+)?photos\\-.*?)\"").getMatch(0);
                         if (finallink == null) {
                             logger.warning("Decrypter broken for link: " + parameter);
                             return null;
