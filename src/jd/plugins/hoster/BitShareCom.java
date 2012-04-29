@@ -48,15 +48,16 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class BitShareCom extends PluginForHost {
 
     // private static final String RECAPTCHA = "/recaptcha/";
-    private static final String  JSONHOST    = "http://bitshare.com/files-ajax/";
-    private static final String  AJAXIDREGEX = "var ajaxdl = \"(.*?)\";";
-    private static final String  FILEIDREGEX = "bitshare\\.com/files/([a-z0-9]{8})/";
-    private static final String  DLLINKREGEX = "SUCCESS#(http://.+)";
-    private static final String  MAINPAGE    = "http://bitshare.com/";
-    private static AtomicInteger maxPrem     = new AtomicInteger(1);
-    private static final Object  LOCK        = new Object();
+    private static final String  JSONHOST         = "http://bitshare.com/files-ajax/";
+    private static final String  AJAXIDREGEX      = "var ajaxdl = \"(.*?)\";";
+    private static final String  FILEIDREGEX      = "bitshare\\.com/files/([a-z0-9]{8})/";
+    private static final String  DLLINKREGEX      = "SUCCESS#(http://.+)";
+    private static final String  MAINPAGE         = "http://bitshare.com/";
+    private static AtomicInteger maxPrem          = new AtomicInteger(1);
+    private static final Object  LOCK             = new Object();
+    private static char[]        FILENAMEREPLACES = new char[] { '-' };
 
-    private static final String  agent       = RandomUserAgent.generate();
+    private static final String  agent            = RandomUserAgent.generate();
 
     public BitShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -71,22 +72,8 @@ public class BitShareCom extends PluginForHost {
         return true;
     }
 
-    protected String getFixedFileName(String originalFilename, String prototypeName) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < prototypeName.length(); i++) {
-            char c = originalFilename.charAt(i);
-            char correctc = prototypeName.charAt(i);
-            if (Character.toLowerCase(c) != Character.toLowerCase(correctc)) {
-                if (c == '-') {
-                    sb.append(correctc);
-                } else {
-                    return null;
-                }
-            } else {
-                sb.append(c);
-            }
-        }
-        return sb.toString();
+    public char[] getFilenameReplaceMap() {
+        return FILENAMEREPLACES;
     }
 
     @Override

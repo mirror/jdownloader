@@ -51,7 +51,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.-]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/?)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
 
-    private static AtomicInteger maxPrem = new AtomicInteger(1);
+    private static AtomicInteger maxPrem          = new AtomicInteger(1);
+    private static char[]        FILENAMEREPLACES = new char[] { '_' };
 
     static class Sec {
         public static String d(final byte[] b, final byte[] key) {
@@ -111,6 +112,18 @@ public class Uploadedto extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://uploaded.to/");
         this.setStartIntervall(2000l);
+    }
+
+    public String filterPackageID(String packageIdentifier) {
+        return packageIdentifier.replaceAll("([^a-zA-Z0-9]+)", "");
+    }
+
+    public char[] getFilenameReplaceMap() {
+        return FILENAMEREPLACES;
+    }
+
+    public boolean isHosterManipulatesFilenames() {
+        return true;
     }
 
     @Override

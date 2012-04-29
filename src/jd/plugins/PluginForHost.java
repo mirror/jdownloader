@@ -48,6 +48,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.images.NewTheme;
@@ -63,10 +64,15 @@ import org.jdownloader.translate._JDT;
  */
 public abstract class PluginForHost extends Plugin {
     private static Pattern[] PATTERNS     = new Pattern[] {
+                                          /**
+                                           * these patterns should split
+                                           * filename and fileextension
+                                           * (extension must include the point)
+                                           */
                                           // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
             // normal files with extension
-            Pattern.compile("(.*)\\.(.*?$)", Pattern.CASE_INSENSITIVE) };
+            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
     private IOPermission     ioPermission = null;
 
     private LazyHostPlugin   lazyP        = null;
@@ -658,80 +664,123 @@ public abstract class PluginForHost extends Plugin {
     // return null;
     // }
 
+    public char[] getFilenameReplaceMap() {
+        return new char[0];
+    }
+
     public String autoFilenameCorrection(HashMap<Object, Object> cache, String originalFilename, DownloadLink downloadLink, ArrayList<DownloadLink> dlinks) {
         try {
-
+            // cache = null;
             String MD5 = downloadLink.getMD5Hash();
             String SHA1 = downloadLink.getSha1Hash();
             // auto partname correction
-
-            String[] multiPart = cache != null ? (String[]) cache.get(AUTO_FILE_NAME_CORRECTION_NAME_SPLIT + originalFilename) : null;
-            Pattern pattern = cache != null ? (Pattern) cache.get(AUTO_FILE_NAME_CORRECTION_NAME_SPLIT_PATTERN + originalFilename) : null;
+            /*
+             * this holds the filename split into name, extension(. included)
+             */
+            String[] fileNameSplit = null;
+            /*
+             * this holds the Pattern got used to split the filename
+             */
+            Pattern pattern = null;
+            if (cache != null) {
+                /* load from cache */
+                fileNameSplit = (String[]) cache.get(AUTO_FILE_NAME_CORRECTION_NAME_SPLIT + originalFilename);
+                pattern = (Pattern) cache.get(AUTO_FILE_NAME_CORRECTION_NAME_SPLIT_PATTERN + originalFilename);
+            }
+            char[] originalReplaces = getFilenameReplaceMap();
             // find first match
-
             if (pattern == null) {
                 for (Pattern p : PATTERNS) {
-                    multiPart = new Regex(originalFilename, p).getRow(0);
-                    if (multiPart != null) {
+                    fileNameSplit = new Regex(originalFilename, p).getRow(0);
+                    if (fileNameSplit != null) {
+                        /*
+                         * regex matched, so we should now have filename,
+                         * extension in fileNameSplit
+                         */
                         pattern = p;
                         if (cache != null) {
-                            cache.put(AUTO_FILE_NAME_CORRECTION_NAME_SPLIT + originalFilename, multiPart);
+                            /* update cache */
+                            cache.put(AUTO_FILE_NAME_CORRECTION_NAME_SPLIT + originalFilename, fileNameSplit);
                             cache.put(AUTO_FILE_NAME_CORRECTION_NAME_SPLIT_PATTERN + originalFilename, pattern);
                         }
                         break;
                     }
                 }
-
-                if (multiPart == null) {
-                    multiPart = new String[] { originalFilename, "" };
-                }
             }
-            String filteredName = filterPackageID(multiPart[0]);
+            if (fileNameSplit == null) {
+                /*
+                 * no valid pattern found,lets split filename into
+                 * name/extension as fallback
+                 */
+                fileNameSplit = CrossSystem.splitFileName(originalFilename);
+                pattern = null;
+            }
+            String filteredName = filterPackageID(fileNameSplit[0]);
             String prototypesplit;
             String newName;
             for (DownloadLink next : dlinks) {
-
                 if (downloadLink == next) {
+                    /* same link */
                     continue;
                 }
-
                 if (next.getHost().equals(getHost())) {
+                    /* same host */
                     continue;
                 }
-
-                prototypesplit = cache != null ? (String) cache.get(pattern) : null;
                 String prototypeName = next.getNameSetbyPlugin();
                 if (prototypeName.equals(originalFilename)) {
+                    /* same name */
                     continue;
                 }
-
-                if (prototypesplit == null) {
-                    if (pattern != null) {
-                        prototypesplit = new Regex(prototypeName, pattern).getMatch(0);
-                    }
-                    if (prototypesplit == null) prototypesplit = prototypeName;
-
-                    if (cache != null) cache.put(pattern, prototypesplit);
-
-                }
-                if (prototypesplit.equalsIgnoreCase(multiPart[0])) {
+                if (prototypeName.equalsIgnoreCase(originalFilename)) {
+                    /* same name but different upper/lower cases */
                     newName = fixCase(cache, originalFilename, prototypeName);
-                    if (newName != null) {
-                        //
-
-                        return newName;
+                    if (newName != null) return newName;
+                }
+                /*
+                 * this holds the filename that got extracted with same pattern
+                 * as the originalFilename
+                 */
+                prototypesplit = null;
+                if (cache != null && pattern != null) {
+                    /* load prototype split from cache if available */
+                    prototypesplit = (String) cache.get(prototypeName + pattern.toString());
+                }
+                if (prototypesplit == null) {
+                    /* no prototypesplit available yet, create new one */
+                    if (pattern != null) {
+                        /*
+                         * a pattern does exist, we must use the same one to
+                         * make sure the *filetypes* match (eg . part01.rar and
+                         * .r01 with same filename
+                         */
+                        prototypesplit = new Regex(prototypeName, pattern).getMatch(0);
+                    } else {
+                        /* no pattern available, lets use fallback */
+                        prototypesplit = CrossSystem.splitFileName(prototypeName)[0];
+                    }
+                    if (prototypesplit == null) {
+                        /*
+                         * regex did not match, different *filetypes*
+                         */
+                        continue;
+                    }
+                    if (cache != null && pattern != null) {
+                        /* update cache */
+                        cache.put(prototypeName + pattern.toString(), prototypesplit);
                     }
                 }
-                if (isHosterManipulatesFilenames() && multiPart[0].length() == prototypesplit.length() && filteredName.equalsIgnoreCase(filterPackageID(prototypesplit))) {
-                    newName = getFixedFileName(originalFilename, prototypesplit);
-                    if (newName != null) {
 
-                        String caseFix = fixCase(cache, newName + multiPart[1], prototypeName);
+                if (isHosterManipulatesFilenames() && fileNameSplit[0].length() == prototypesplit.length() && filteredName.equalsIgnoreCase(filterPackageID(prototypesplit))) {
+                    newName = getFixedFileName(originalFilename, originalReplaces, prototypesplit, next.getDefaultPlugin().getFilenameReplaceMap());
+                    if (newName != null) {
+                        String caseFix = fixCase(cache, newName + fileNameSplit[1], prototypeName);
                         if (caseFix != null) {
-                            //
+                            /* we had to fix the upper/lower cases */
                             return caseFix;
                         }
-                        return newName + multiPart[1];
+                        /* we have new name, add extension to it */
+                        return newName + fileNameSplit[1];
                     }
                 }
 
@@ -749,27 +798,49 @@ public abstract class PluginForHost extends Plugin {
         return null;
     }
 
+    protected String getFixedFileName(String originalFilename, char[] originalReplaces, String prototypeName, char[] prototypeReplaces) {
+        if (originalReplaces.length == 0 && prototypeReplaces.length == 0) {
+            /* no replacements available */
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        mainLoop: for (int i = 0; i < prototypeName.length(); i++) {
+            char oC = originalFilename.charAt(i);
+            char pC = prototypeName.charAt(i);
+            if (Character.toLowerCase(oC) != Character.toLowerCase(pC)) {
+                for (char oCC : originalReplaces) {
+                    /*
+                     * first we check if char from Original is on replacement
+                     * List, if so, we use char from prototype
+                     */
+                    if (oC == oCC) {
+                        sb.append(pC);
+                        continue mainLoop;
+                    }
+                }
+                for (char pCC : prototypeReplaces) {
+                    /*
+                     * then we check if char from prototype is on replacement
+                     * List, if so, we use char from original
+                     */
+                    if (pC == pCC) {
+                        sb.append(oC);
+                        continue mainLoop;
+                    }
+                }
+                return null;
+            } else {
+                sb.append(oC);
+            }
+        }
+        return sb.toString();
+    }
+
     protected String fixCase(HashMap<Object, Object> cache, String originalFilename, String prototypeName) {
         if (cache != null) {
             Object ret = cache.get(originalFilename + "_" + prototypeName);
             if (ret != null) return (String) ret;
         }
-        // String[] multiPart = null;
-        // Pattern pattern = null;
-        // find first match
-        // todo implement part file support
-        // for (Pattern p : PATTERNS) {
-        // multiPart = new Regex(originalFilename, p).getRow(0);
-        // if (multiPart != null) {
-        // pattern = p;
-        // break;
-        // }
-        // }
-        //
-        // if (multiPart == null) {
-        // multiPart = new String[] { originalFilename, "" };
-        // }
-        //
         boolean eic = originalFilename.equals(prototypeName);
         StringBuilder sb = new StringBuilder(prototypeName.length());
         for (int i = 0; i < prototypeName.length(); i++) {
@@ -791,10 +862,6 @@ public abstract class PluginForHost extends Plugin {
         }
         if (cache != null) cache.put(originalFilename + "_" + prototypeName, sb.toString());
         return sb.toString();
-    }
-
-    protected String getFixedFileName(String originalFilename, String prototypeName) {
-        throw new RuntimeException("not implemented");
     }
 
     /**
@@ -839,7 +906,6 @@ public abstract class PluginForHost extends Plugin {
      * @return
      */
     public JComponent layoutPremiumInfoPanel(AbstractDialog dialog) {
-
         return null;
     }
 

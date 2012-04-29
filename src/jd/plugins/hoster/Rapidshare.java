@@ -152,6 +152,8 @@ public class Rapidshare extends PluginForHost {
 
     private static final String  UA                = RandomUserAgent.generate();
 
+    private static char[]        FILENAMEREPLACES  = new char[] { '_', ' ' };
+
     private static boolean       ReadTimeoutHotFix = false;
 
     /* returns file id of link */
@@ -228,22 +230,8 @@ public class Rapidshare extends PluginForHost {
         return packageIdentifier.replaceAll("([^a-zA-Z0-9]+)", "");
     }
 
-    protected String getFixedFileName(String originalFilename, String prototypeName) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < prototypeName.length(); i++) {
-            char c = originalFilename.charAt(i);
-            char correctc = prototypeName.charAt(i);
-            if (Character.toLowerCase(c) != Character.toLowerCase(correctc)) {
-                if (c == '_') {
-                    sb.append(correctc);
-                } else {
-                    return null;
-                }
-            } else {
-                sb.append(c);
-            }
-        }
-        return sb.toString();
+    public char[] getFilenameReplaceMap() {
+        return FILENAMEREPLACES;
     }
 
     public boolean isHosterManipulatesFilenames() {

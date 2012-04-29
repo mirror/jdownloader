@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
@@ -24,14 +25,14 @@ public class ResumeAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-        return !links.isEmpty();
+        return links != null && links.size() > 0;
     }
 
     public void actionPerformed(ActionEvent e) {
         IOEQ.add(new Runnable() {
             public void run() {
                 for (DownloadLink link : links) {
-                    if (!link.getLinkStatus().isPluginActive() && link.getLinkStatus().isFailed()) {
+                    if (!link.getLinkStatus().isPluginActive() && (link.getLinkStatus().isFailed() || link.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE))) {
                         link.getLinkStatus().reset(true);
                         DownloadWatchDog.getInstance().removeIPBlockTimeout(link);
                         DownloadWatchDog.getInstance().removeTempUnavailTimeout(link);

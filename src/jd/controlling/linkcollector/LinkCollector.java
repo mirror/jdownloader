@@ -672,7 +672,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             removeFromMap(hosterMap, l);
         }
         autoRenameCache.clear();
-
     }
 
     @Override
@@ -688,6 +687,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         variousMap.clear();
         offlineMap.clear();
         hosterMap.clear();
+        autoRenameCache.clear();
         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_EMPTY));
     }
 
