@@ -587,7 +587,7 @@ public class JDGui extends SwingGui {
                              * to tray active
                              */
                             try {
-                                Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.JDGui_windowClosing_try_title_(), _GUI._.JDGui_windowClosing_try_msg_(), null, _GUI._.JDGui_windowClosing_try_answer_tray(), _GUI._.JDGui_windowClosing_try_asnwer_close());
+                                Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.JDGui_windowClosing_try_title_(), _GUI._.JDGui_windowClosing_try_msg_(), null, _GUI._.JDGui_windowClosing_try_answer_tray(), _GUI._.JDGui_windowClosing_try_asnwer_close());
                                 return;
                             } catch (DialogNoAnswerException e1) {
                                 e1.printStackTrace();
