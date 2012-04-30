@@ -532,7 +532,7 @@ public class Launcher {
                                     new Thread("AutostartDialog") {
                                         @Override
                                         public void run() {
-                                            if (DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE)) {
+                                            if (!DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE)) {
                                                 // maybe downloads have been
                                                 // started by another instance
                                                 // or user input
