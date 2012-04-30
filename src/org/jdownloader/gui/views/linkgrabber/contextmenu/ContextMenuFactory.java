@@ -25,6 +25,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.context.CheckStatusAction;
 import org.jdownloader.gui.views.components.packagetable.context.EnabledAction;
+import org.jdownloader.gui.views.components.packagetable.context.PrioritySubMenu;
 import org.jdownloader.gui.views.components.packagetable.context.SetCommentAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
 import org.jdownloader.gui.views.downloads.table.linkproperties.URLEditorAction;

@@ -7,6 +7,7 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
+import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.RequiresRestart;
 
@@ -133,4 +134,11 @@ public interface LinkgrabberSettings extends ConfigInterface {
     boolean isAutoPackageMatchingCorrectionEnabled();
 
     void setAutoPackageMatchingCorrectionEnabled(boolean b);
+
+    @AboutConfig
+    @Description("Define the Pattern that is used to create Packagename created by SplitPackages! {PACKAGENAME,HOSTNAME}")
+    @DefaultStringValue("{PACKAGENAME}-{HOSTNAME}")
+    String getSplitPackageNameFactoryPattern();
+
+    void setSplitPackageNameFactoryPattern(String b);
 }

@@ -1,4 +1,4 @@
-package org.jdownloader.gui.views.linkgrabber.contextmenu;
+package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;

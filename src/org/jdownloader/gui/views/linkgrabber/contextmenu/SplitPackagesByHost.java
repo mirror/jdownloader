@@ -12,10 +12,14 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
+import org.jdownloader.translate._JDT;
 
 public class SplitPackagesByHost extends AppAction {
 
@@ -69,8 +73,9 @@ public class SplitPackagesByHost extends AppAction {
                     newPkg.setExpanded(true);
                     if (samePkg != null) {
                         samePkg.copyPropertiesTo(newPkg);
+                        newPkg.setName(getNewPackageName(samePkg.getName(), host));
                     } else {
-                        newPkg.setName(host);
+                        newPkg.setName(getNewPackageName(null, host));
                     }
                     IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>() {
 
@@ -84,5 +89,20 @@ public class SplitPackagesByHost extends AppAction {
                 }
             }
         }, true);
+    }
+
+    public String getNewPackageName(String oldPackageName, String host) {
+        String nameFactory = JsonConfig.create(LinkgrabberSettings.class).getSplitPackageNameFactoryPattern();
+        if (StringUtils.isEmpty(nameFactory)) {
+            if (!StringUtils.isEmpty(oldPackageName)) return oldPackageName;
+            return host;
+        }
+        if (!StringUtils.isEmpty(oldPackageName)) {
+            nameFactory = nameFactory.replaceAll("\\{PACKAGENAME\\}", oldPackageName);
+        } else {
+            nameFactory = nameFactory.replaceAll("\\{PACKAGENAME\\}", _JDT._.LinkCollector_addCrawledLink_variouspackage());
+        }
+        nameFactory = nameFactory.replaceAll("\\{HOSTNAME\\}", host);
+        return nameFactory;
     }
 }
