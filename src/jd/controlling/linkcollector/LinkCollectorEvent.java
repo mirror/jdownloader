@@ -51,7 +51,12 @@ public class LinkCollectorEvent extends SimpleEvent<LinkCollector, Object, LinkC
          * New link has been added and grouped.<br>
          * Parameter[0]: (CrawledLink) added Link
          */
-        ADDED_LINK
+        ADDED_LINK,
+        /**
+         * Dupe link has been added. This event is just to inform<br>
+         * Parameter[0]: (CrawledLink) added Link
+         */
+        DUPE_LINK
     }
 
 }

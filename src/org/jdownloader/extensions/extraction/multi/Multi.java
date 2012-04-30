@@ -409,33 +409,35 @@ public class Multi extends IExtraction {
     @Override
     public void close() {
         // Deleteing rar recovery volumes
-        if (archive.getExitCode() == ExtractionControllerConstants.EXIT_CODE_SUCCESS && archive.getFirstArchiveFile().getFilePath().matches(PATTERN_RAR_MULTI)) {
-            for (ArchiveFile link : archive.getArchiveFiles()) {
-                File f = archive.getFactory().toFile(link.getFilePath().replace(REGEX_EXTENSION_RAR, ".rev"));
-                if (f.exists() && f.getName().toLowerCase(Locale.ENGLISH).endsWith(".rev")) {
-                    logger.info("Deleting rar recovery volume " + f.getAbsolutePath());
-                    if (!f.delete()) {
-                        logger.warning("Could not deleting rar recovery volume " + f.getAbsolutePath());
+        try {
+            if (archive.getExitCode() == ExtractionControllerConstants.EXIT_CODE_SUCCESS && archive.getFirstArchiveFile().getFilePath().matches(PATTERN_RAR_MULTI)) {
+                for (ArchiveFile link : archive.getArchiveFiles()) {
+                    File f = archive.getFactory().toFile(link.getFilePath().replace(REGEX_EXTENSION_RAR, ".rev"));
+                    if (f.exists() && f.getName().toLowerCase(Locale.ENGLISH).endsWith(".rev")) {
+                        logger.info("Deleting rar recovery volume " + f.getAbsolutePath());
+                        if (!f.delete()) {
+                            logger.warning("Could not deleting rar recovery volume " + f.getAbsolutePath());
+                        }
                     }
                 }
             }
-        }
-
-        try {
-            multiopener.close();
-        } catch (final Throwable e) {
-        }
-        try {
-            raropener.close();
-        } catch (final Throwable e) {
-        }
-        try {
-            stream.close();
-        } catch (final Throwable e) {
-        }
-        try {
-            inArchive.close();
-        } catch (final Throwable e) {
+        } finally {
+            try {
+                multiopener.close();
+            } catch (final Throwable e) {
+            }
+            try {
+                raropener.close();
+            } catch (final Throwable e) {
+            }
+            try {
+                stream.close();
+            } catch (final Throwable e) {
+            }
+            try {
+                inArchive.close();
+            } catch (final Throwable e) {
+            }
         }
 
     }

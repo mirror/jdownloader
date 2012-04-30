@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
-import java.util.HashSet;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -15,14 +14,12 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 
 import jd.controlling.IOEQ;
-import jd.controlling.linkcollector.LinkCollectingInformation;
-import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorHighlightListener;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.gui.UIConstants;
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.JDGui;
@@ -102,64 +99,30 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         });
 
         // filteredAdd.setVisible(false);
-        LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorListener() {
-            private HashSet<LinkCollectingJob> newJobMap = new HashSet<LinkCollectingJob>();
+        LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorHighlightListener() {
 
-            public void onLinkCollectorAbort(LinkCollectorEvent event) {
-            }
+            @Override
+            public void onHighLight(CrawledLink parameter) {
+                new EDTRunner() {
 
-            public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
-                setFilteredAvailable(LinkCollector.getInstance().getfilteredStuffSize());
-            }
-
-            public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
-                setFilteredAvailable(0);
-            }
-
-            public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
-            }
-
-            public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
-            }
-
-            public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
-                if (LinkCollector.getInstance().getPackages().size() == 0) {
-                    // I know that this is not a proper cleanup....feel free to
-                    // do it better ;-P
-                    newJobMap.clear();
-                }
-            }
-
-            public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
-                if (org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberAutoTabSwitchEnabled()) {
-                    LinkCollectingInformation sourceJob = parameter.getCollectingInfo();
-                    LinkCrawler lc = null;
-                    if (sourceJob == null || ((lc = sourceJob.getLinkCrawler()) != null && lc.isRunning())) { return; }
-                    if (LinkCollector.getInstance().getLinkChecker().isRunning()) {
-                        /*
-                         * LinkChecker from LinkCollector still running, we wait
-                         * till its finished!
-                         */
-                        return;
-                    }
-                    if (newJobMap.add(parameter.getSourceJob())) {
-                        // new job arrived
-                        new EDTRunner() {
-
-                            @Override
-                            protected void runInEDT() {
-                                try {
-                                    JDGui.getInstance().requestPanel(UserIF.Panels.LINKGRABBER, null);
-                                    if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) {
-                                        JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
-                                    }
-                                } catch (Throwable e) {
-                                }
+                    @Override
+                    protected void runInEDT() {
+                        try {
+                            JDGui.getInstance().requestPanel(UserIF.Panels.LINKGRABBER, null);
+                            if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) {
+                                JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
                             }
-                        };
+                        } catch (Throwable e) {
+                        }
                     }
-                }
+                };
             }
+
+            @Override
+            public boolean isThisListenerEnabled() {
+                return org.jdownloader.settings.staticreferences.CFG_GUI.CFG.isLinkgrabberAutoTabSwitchEnabled();
+            }
+
         });
         autoConfirm = new AutoConfirmButton();
         autoConfirm.setVisible(false);
@@ -423,5 +386,9 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     }
 
     public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+    }
+
+    @Override
+    public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
     }
 }

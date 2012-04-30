@@ -39,12 +39,9 @@ import javax.swing.Timer;
 
 import jd.Launcher;
 import jd.controlling.JDLogger;
-import jd.controlling.linkcollector.LinkCollectingInformation;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollectorEvent;
-import jd.controlling.linkcollector.LinkCollectorListener;
+import jd.controlling.linkcollector.LinkCollectorHighlightListener;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.AddonPanel;
@@ -70,7 +67,48 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class TrayExtension extends AbstractExtension<TrayConfig> implements MouseListener, MouseMotionListener, WindowListener, WindowStateListener, ActionListener, LinkCollectorListener, ShutdownVetoListener {
+public class TrayExtension extends AbstractExtension<TrayConfig> implements MouseListener, MouseMotionListener, WindowListener, WindowStateListener, ActionListener, ShutdownVetoListener {
+
+    private LinkCollectorHighlightListener highListener = new LinkCollectorHighlightListener() {
+
+                                                            @Override
+                                                            public void onHighLight(CrawledLink parameter) {
+                                                                if (!guiFrame.isVisible()) {
+                                                                    /*
+                                                                     * dont try to restore jd if password required
+                                                                     */
+                                                                    if (CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled() && !StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue())) {
+                                                                        /**
+                                                                         * do nothing , because a password is set
+                                                                         */
+                                                                        return;
+                                                                    }
+                                                                }
+                                                                miniIt(false);
+                                                                if (iconified) {
+                                                                    /*
+                                                                     * restore normale state,if windows was iconified
+                                                                     */
+                                                                    new EDTHelper<Object>() {
+                                                                        @Override
+                                                                        public Object edtRun() {
+                                                                            /*
+                                                                             * after this normal , its back to iconified
+                                                                             */
+                                                                            guiFrame.setState(JFrame.NORMAL);
+                                                                            return null;
+                                                                        }
+                                                                    }.start();
+                                                                }
+                                                            }
+
+                                                            @Override
+                                                            public boolean isThisListenerEnabled() {
+                                                                LinkgrabberResultsOption option = getSettings().getShowLinkgrabbingResultsOption();
+                                                                if ((!guiFrame.isVisible() && option == LinkgrabberResultsOption.ONLY_IF_MINIMIZED) || option == LinkgrabberResultsOption.ALWAYS) { return true; }
+                                                                return false;
+                                                            }
+                                                        };
 
     @Override
     protected void stop() throws StopException {
@@ -82,7 +120,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
             guiFrame.setAlwaysOnTop(false);
             guiFrame = null;
         }
-        LinkCollector.getInstance().getEventsender().removeListener(this);
+        LinkCollector.getInstance().getEventsender().removeListener(highListener);
         ShutdownController.getInstance().removeShutdownVetoListener(TrayExtension.this);
     }
 
@@ -107,7 +145,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
                         try {
                             if (SwingGui.getInstance() != null) {
                                 initGUI(true);
-                                LinkCollector.getInstance().getEventsender().addListener(TrayExtension.this);
+                                LinkCollector.getInstance().getEventsender().addListener(highListener);
                                 ShutdownController.getInstance().addShutdownVetoListener(TrayExtension.this);
                                 logger.info("Systemtray OK");
                             }
@@ -201,8 +239,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
             SystemTray systemTray = SystemTray.getSystemTray();
             Image img = IconIO.getScaledInstance(NewTheme.I().getImage("logo/jd_logo_64_64", -1), (int) systemTray.getTrayIconSize().getWidth(), (int) systemTray.getTrayIconSize().getHeight());
             /*
-             * trayicon message must be set, else windows cannot handle icon
-             * right (eg autohide feature)
+             * trayicon message must be set, else windows cannot handle icon right (eg autohide feature)
              */
             trayIcon = new TrayIcon(img, "JDownloader");
             trayIcon.setImageAutoSize(true);
@@ -214,16 +251,12 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
             systemTray.add(trayIcon);
         } catch (Throwable e) {
             /*
-             * on Gnome3, Unity, this can happen because icon might be
-             * blacklisted, see here
-             * http://www.webupd8.org/2011/04/how-to-re-enable
+             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here http://www.webupd8.org/2011/04/how-to-re-enable
              * -notification-area.html
              * 
-             * dconf-editor", then navigate to desktop > unity > panel and
-             * whitelist JDownloader
+             * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
              * 
-             * also see
-             * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
+             * also see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
              * 
              * TODO: maybe add dialog to inform user
              */
@@ -441,8 +474,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     /**
-     * gets called if mouse stays over the tray. Edit delay in
-     * {@link TrayMouseAdapter}
+     * gets called if mouse stays over the tray. Edit delay in {@link TrayMouseAdapter}
      */
     public void mouseStay(MouseEvent e) {
         if (!getSettings().isToolTipEnabled()) return;
@@ -506,60 +538,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     @Override
     protected void initExtension() throws StartException {
         configPanel = new TrayConfigPanel(this);
-    }
-
-    public void onLinkCollectorAbort(LinkCollectorEvent event) {
-    }
-
-    public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
-    }
-
-    public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
-    }
-
-    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
-    }
-
-    public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
-
-    }
-
-    public void onLinkCollectorLinksRemoved(LinkCollectorEvent event) {
-    }
-
-    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
-        LinkCollectingInformation sourceJob = parameter.getCollectingInfo();
-        LinkCrawler lc = null;
-        if (sourceJob == null || ((lc = sourceJob.getLinkCrawler()) != null && lc.isRunning())) { return; }
-        if (LinkCollector.getInstance().getLinkChecker().isRunning()) {
-            /*
-             * LinkChecker from LinkCollector still running, we wait till its
-             * finished!
-             */
-            return;
-        }
-        LinkgrabberResultsOption option = getSettings().getShowLinkgrabbingResultsOption();
-        if ((!guiFrame.isVisible() && option == LinkgrabberResultsOption.ONLY_IF_MINIMIZED) || option == LinkgrabberResultsOption.ALWAYS) {
-            if (!guiFrame.isVisible()) {
-                /* dont try to restore jd if password required */
-                if (CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled() && !StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue())) {
-                    /* do nothing, because a password is set */
-                    return;
-                }
-            }
-            miniIt(false);
-            if (iconified) {
-                /* restore normale state,if windows was iconified */
-                new EDTHelper<Object>() {
-                    @Override
-                    public Object edtRun() {
-                        /* after this normal, its back to iconified */
-                        guiFrame.setState(JFrame.NORMAL);
-                        return null;
-                    }
-                }.start();
-            }
-        }
     }
 
     @Override

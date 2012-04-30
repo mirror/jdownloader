@@ -224,6 +224,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
             }
+
+            @Override
+            public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
+            }
         });
     }
 
@@ -348,7 +352,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 try {
                     /* update dupeCheck map */
                     if (!dupeCheckMap.add(link.getLinkID())) {
-                        //
+                        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
                         return null;
                     }
                     PackageInfo dpi = link.getDesiredPackageInfo();
@@ -482,15 +486,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         add.add(link);
                         LinkCollector.this.addmoveChildren(pkg, add, -1);
                     }
-                    try {
-                        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ADDED_LINK, link, QueuePriority.NORM));
-                    } finally {
-                        link.setCollectingInfo(null);
-                    }
+                    eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ADDED_LINK, link, QueuePriority.NORM));
                     return null;
                 } catch (RuntimeException e) {
                     dupeCheckMap.remove(link.getLinkID());
                     throw e;
+                } finally {
+                    link.setCollectingInfo(null);
+                    link.setSourceJob(null);
                 }
             }
         });
@@ -616,6 +619,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             protected CrawledLink crawledLinkFactorybyURL(String url) {
                 CrawledLink ret = new CrawledLink(url);
                 ret.setCollectingInfo(collectingInfo);
+                ret.setSourceJob(job);
                 return ret;
             }
 

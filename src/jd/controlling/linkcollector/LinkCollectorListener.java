@@ -53,4 +53,10 @@ public interface LinkCollectorListener extends EventListener {
      */
     void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter);
 
+    /**
+     * Dupe link has been added.<br>
+     * Parameter[0]: (CrawledLink) added Link
+     */
+    void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter);
+
 }

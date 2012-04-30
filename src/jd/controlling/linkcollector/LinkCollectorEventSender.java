@@ -30,6 +30,9 @@ public class LinkCollectorEventSender extends Eventsender<LinkCollectorListener,
         case ADDED_LINK:
             listener.onLinkCollectorLinkAdded(event, (CrawledLink) event.getParameter());
             break;
+        case DUPE_LINK:
+            listener.onLinkCollectorDupeAdded(event, (CrawledLink) event.getParameter());
+            break;
         // fill
         default:
             System.out.println("Unhandled Event: " + event);

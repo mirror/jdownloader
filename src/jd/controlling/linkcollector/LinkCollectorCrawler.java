@@ -31,4 +31,8 @@ public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorLi
     public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
     }
 
+    @Override
+    public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
+    }
+
 }
