@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -411,7 +412,7 @@ public class Multi extends IExtraction {
         if (archive.getExitCode() == ExtractionControllerConstants.EXIT_CODE_SUCCESS && archive.getFirstArchiveFile().getFilePath().matches(PATTERN_RAR_MULTI)) {
             for (ArchiveFile link : archive.getArchiveFiles()) {
                 File f = archive.getFactory().toFile(link.getFilePath().replace(REGEX_EXTENSION_RAR, ".rev"));
-                if (f.exists()) {
+                if (f.exists() && f.getName().toLowerCase(Locale.ENGLISH).endsWith(".rev")) {
                     logger.info("Deleting rar recovery volume " + f.getAbsolutePath());
                     if (!f.delete()) {
                         logger.warning("Could not deleting rar recovery volume " + f.getAbsolutePath());
