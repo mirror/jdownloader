@@ -58,6 +58,7 @@ public class VideoMediasetIt extends PluginForHost {
         br.getPage("http://cdnselector.xuniplay.fdnames.com/GetCDN.aspx?streamid=" + new Regex(downloadLink.getDownloadURL(), "video\\.mediaset\\.it/video/[^<>/\"]*?/[^<>/\"]*?/(\\d+)/").getMatch(0) + "&type=video-f4v");
         DLLINK = br.getRegex("<video src=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK.contains("Error400")) throw new PluginException(LinkStatus.ERROR_FATAL, "Silverlight videos are currently not supported!");
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));

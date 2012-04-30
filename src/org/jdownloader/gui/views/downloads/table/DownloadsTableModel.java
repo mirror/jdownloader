@@ -38,6 +38,8 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
 
     protected FileColumn   expandCollapse;
 
+    private PriorityColumn priorityColumn;
+
     private DownloadsTableModel() {
         super(DownloadController.getInstance(), "downloadstable3");
 
@@ -61,7 +63,7 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
         this.addColumn(new LoadedColumn());
         this.addColumn(new ProgressColumn());
 
-        this.addColumn(new PriorityColumn());
+        this.addColumn(priorityColumn = new PriorityColumn());
         this.addColumn(new AvailabilityColumn());
         this.addColumn(new DownloadFolderColumn());
         this.addColumn(new CommentColumn());
@@ -72,7 +74,11 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
     }
 
     public void setStopSignColumnVisible(boolean b) {
-        this.setColumnVisible(stopSignColumn, b);
+        if (stopSignColumn != null) this.setColumnVisible(stopSignColumn, b);
+    }
+
+    public void setPriorityColumnVisible(boolean b) {
+        if (priorityColumn != null) this.setColumnVisible(priorityColumn, b);
     }
 
 }

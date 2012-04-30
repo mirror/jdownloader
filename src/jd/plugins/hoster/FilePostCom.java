@@ -181,6 +181,7 @@ public class FilePostCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", ua);
+        br.setCookie("http://filepost.com", "lang", "1");
         br.getPage(downloadLink.getDownloadURL());
         String premiumlimit = br.getRegex("Files over (.*?) can be downloaded by premium").getMatch(0);
         if (premiumlimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium", "Files over " + premiumlimit + " are only downloadable for premium users"));
@@ -301,6 +302,7 @@ public class FilePostCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(true);
+        br.setCookie("http://filepost.com", "lang", "1");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
         if (br.containsHTML("(>Sorry, you have reached the daily download limit|>Please contact our support team if you have questions about this limit)")) {
@@ -354,6 +356,7 @@ public class FilePostCom extends PluginForHost {
             // Load cookies, because no multiple downloads possible when always
             // loggin in for every download
             br.setCookiesExclusive(true);
+            br.setCookie("http://filepost.com", "lang", "1");
             try {
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals((account.getStringProperty("name", Encoding.urlEncode(account.getUser()))));
@@ -409,6 +412,8 @@ public class FilePostCom extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+                /* change language to english */
+                br.postPage("http://filepost.com/general/select_language/?SID=" + br.getCookie(MAINPAGE, "SID") + "&JsHttpRequest=" + System.currentTimeMillis() + "-xml", "language=1");
             } catch (PluginException e) {
                 account.setProperty("cookies", null);
                 throw e;

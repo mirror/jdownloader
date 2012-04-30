@@ -29,8 +29,9 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
         return INSTANCE;
     }
 
-    private boolean      autoConfirm;
-    protected FileColumn expandCollapse;
+    private boolean        autoConfirm;
+    protected FileColumn   expandCollapse;
+    private PriorityColumn priorityColumn;
 
     private LinkGrabberTableModel() {
         super(LinkCollector.getInstance(), "LinkGrabberTableModel");
@@ -78,13 +79,17 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
 
         });
         // this.addColumn(new AddedDateColumn());
-        this.addColumn(new PriorityColumn());
+        this.addColumn(priorityColumn = new PriorityColumn());
         this.addColumn(new CommentColumn() {
             @Override
             public boolean isDefaultVisible() {
                 return false;
             }
         });
+    }
+
+    public void setPriorityColumnVisible(boolean b) {
+        if (priorityColumn != null) this.setColumnVisible(priorityColumn, b);
     }
 
 }
