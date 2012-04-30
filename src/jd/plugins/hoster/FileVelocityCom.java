@@ -100,11 +100,12 @@ public class FileVelocityCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
-        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|>This file has been removed by the administrator)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
+        final Regex fileInfo = new Regex(correctedBR, "><h2>Download File ([^<>\"]*?)</h2></div>[\t\n\r ]+<font color=\"red\">\\(([^<>\"]*?)\\)</font>");
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + "/[a-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
@@ -116,6 +117,9 @@ public class FileVelocityCom extends PluginForHost {
                         filename = new Regex(correctedBR, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
                         if (filename == null) {
                             filename = new Regex(correctedBR, "File Name.*?nowrap>(.*?)</td").getMatch(0);
+                            if (filename == null) {
+                                filename = fileInfo.getMatch(0);
+                            }
                         }
                     }
                 }
@@ -126,6 +130,9 @@ public class FileVelocityCom extends PluginForHost {
             filesize = new Regex(correctedBR, "<small>\\((.*?)\\)</small>").getMatch(0);
             if (filesize == null) {
                 filesize = new Regex(correctedBR, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+                if (filesize == null) {
+                    filesize = fileInfo.getMatch(1);
+                }
             }
         }
         if (filename == null || filename.equals("")) {
@@ -584,7 +591,11 @@ public class FileVelocityCom extends PluginForHost {
             br.getPage(COOKIE_HOST + "/?op=my_account");
             doSomething();
             if (!new Regex(correctedBR, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            if (!new Regex(correctedBR, "(Premium\\-Account expire|>Renew premium<)").matches()) {account.setProperty("nopremium", true);                } else {                    account.setProperty("nopremium", false);               }
+            if (!new Regex(correctedBR, "(Premium\\-Account expire|>Renew premium<)").matches()) {
+                account.setProperty("nopremium", true);
+            } else {
+                account.setProperty("nopremium", false);
+            }
             /** Save cookies */
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(COOKIE_HOST);

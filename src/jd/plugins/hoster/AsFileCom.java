@@ -81,6 +81,7 @@ public class AsFileCom extends PluginForHost {
         if (!br.containsHTML("/free\\-download/")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final String fileID = new Regex(downloadLink.getDownloadURL(), "asfile\\.com/file/(.+)").getMatch(0);
         br.getPage("http://asfile.com/en/free-download/file/" + fileID);
+        if (br.containsHTML("You have exceeded the download limit for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         final String hash = br.getRegex("hash: \\'([a-z0-9]+)\\'").getMatch(0);
         final String storage = br.getRegex("storage: \\'([^<>\"\\']+)\\'").getMatch(0);
         if (hash == null || storage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
