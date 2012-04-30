@@ -695,7 +695,7 @@ abstract public class DownloadInterface {
          */
         public void setLoaded(long loaded) {
             loaded = Math.max(0, loaded);
-            setTotalLinkBytesLoaded(loaded);
+            addToTotalLinkBytesLoaded(loaded);
         }
 
         public void startChunk() {
@@ -1030,6 +1030,7 @@ abstract public class DownloadInterface {
 
     protected synchronized void addToTotalLinkBytesLoaded(long block) {
         totalLinkBytesLoaded += block;
+        totalLinkBytesLoadedLive.addAndGet(block);
     }
 
     public synchronized void setTotalLinkBytesLoaded(long loaded) {
