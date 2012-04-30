@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qq.com" }, urls = { "http://(www\\.)?fenxiang\\.qq\\.com/filedownload\\.php\\?code=[^<>\"#]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qq.com" }, urls = { "http://(www\\.)?(fenxiang\\.qq\\.com/filedownload\\.php\\?code=[^<>\"#]+|urlxf\\.qq\\.com/\\?\\w+)" }, flags = { 0 })
 public class QqCom extends PluginForHost {
 
     public QqCom(final PluginWrapper wrapper) {
@@ -74,6 +74,12 @@ public class QqCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
+        if (link.getDownloadURL().matches("https?://urlxf\\.qq\\.com/\\?\\w+")) {
+            br.getPage(link.getDownloadURL());
+            String redirect = br.getRegex("window.location=\"(http[^\"]+)").getMatch(0);
+            if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(redirect);
+        }
         if (br.containsHTML("(>分享文件已过期或者链接错误，请确认后重试。<|>想了解更多有关QQ旋风资源分享的信息，请访问 <a href=)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("filename:\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {

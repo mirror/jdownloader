@@ -72,7 +72,7 @@ public class CtDiskCom extends PluginForHost {
             br.postPage("http://www.ctdisk.com/guest_login.php", "file_id=" + new Regex(downloadLink.getDownloadURL(), "ctdisk\\.com/file/(\\d+)").getMatch(0) + "&randcode=" + code);
             if (br.getURL().contains("/guest_login.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        String dllink = br.getRegex("\"(http://[a-z0-9]+\\.ctdisk\\.com(:\\d+)?/cache/.*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(http://[a-z0-9]+\\.ctdisk\\.com(:\\d+)?/(cache|down)/.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex(DLLINKREGEX2).getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Check if link is working. If not try mirror. Limits can be

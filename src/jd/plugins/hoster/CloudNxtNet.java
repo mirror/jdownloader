@@ -43,12 +43,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 16381 $", interfaceVersion = 2, names = { "novafile.com" }, urls = { "https?://(www\\.)?novafile\\.com/[a-z0-9]{12}" }, flags = { 1 })
-public class NovaFileCom extends PluginForHost {
+@HostPlugin(revision = "$Revision: 16456 $", interfaceVersion = 2, names = { "cloudnxt.net" }, urls = { "https?://(www\\.)?cloudnxt\\.net/[a-z0-9]{12}" }, flags = { 0 })
+public class CloudNxtNet extends PluginForHost {
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private static final String COOKIE_HOST         = "http://novafile.com";
+    private static final String COOKIE_HOST         = "http://cloudnxt.net";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -58,7 +58,7 @@ public class NovaFileCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.6-raz
     // mods:
-    // non account: chunk * maxdl
+    // non account: 20 * unlimited? (with waits)
     // free account:
     // premium account:
     // protocol: no https
@@ -75,9 +75,9 @@ public class NovaFileCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public NovaFileCom(PluginWrapper wrapper) {
+    public CloudNxtNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(COOKIE_HOST + "/premium.html");
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -113,7 +113,7 @@ public class NovaFileCom extends PluginForHost {
             if (filename == null) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = new Regex(correctedBR, "(?i)<span class=\"name\">([^<]+)").getMatch(0);
+                    filename = new Regex(correctedBR, "(?i)Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                 }
             }
         }
@@ -144,7 +144,7 @@ public class NovaFileCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1, "freelink");
+        doFree(downloadLink, true, 0, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -270,7 +270,7 @@ public class NovaFileCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     /** Remove HTML code which could break the plugin */
@@ -303,7 +303,7 @@ public class NovaFileCom extends PluginForHost {
                 if (dllink == null) {
                     dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
+                        dllink = new Regex(correctedBR, "(?i)<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
                         if (dllink == null) {
                             String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                             if (cryptedScripts != null && cryptedScripts.length != 0) {
