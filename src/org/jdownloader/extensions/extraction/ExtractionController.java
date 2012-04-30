@@ -135,7 +135,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     passwordList.addAll(pwList);
                     passwordList.add(archive.getName());
 
-                    passwordListSize = passwordList.size() + pwList.size() + 2;
+                    passwordListSize = passwordList.size() + 2;
 
                     fireEvent(ExtractionEvent.Type.START_CRACK_PASSWORD);
                     logger.info("Start password finding for " + archive);
