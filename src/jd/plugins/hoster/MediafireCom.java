@@ -209,7 +209,7 @@ public class MediafireCom extends PluginForHost {
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
-            this.login(account);
+            this.login(br, account);
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
@@ -485,7 +485,7 @@ public class MediafireCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         this.requestFileInformation(downloadLink);
-        this.login(account);
+        this.login(br, account);
         if (account.getBooleanProperty("freeaccount")) {
             doFree(downloadLink, account);
         } else {
@@ -607,25 +607,25 @@ public class MediafireCom extends PluginForHost {
         Browser.setRequestIntervalLimitGlobal(this.getHost(), 250);
     }
 
-    public void login(final Account account) throws Exception {
+    public void login(final Browser br, final Account account) throws Exception {
         boolean red = br.isFollowingRedirects();
         try {
             this.setBrowserExclusive();
-            this.br.setFollowRedirects(true);
-            this.br.getPage("http://www.mediafire.com/");
-            Form form = this.br.getFormbyProperty("name", "form_login1");
+            br.setFollowRedirects(true);
+            br.getPage("http://www.mediafire.com/");
+            Form form = br.getFormbyProperty("name", "form_login1");
             if (form == null) {
-                form = this.br.getFormBySubmitvalue("login_email");
+                form = br.getFormBySubmitvalue("login_email");
             }
             if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             form.put("login_email", Encoding.urlEncode(account.getUser()));
             form.put("login_pass", Encoding.urlEncode(account.getPass()));
-            this.br.submitForm(form);
-            this.br.getPage("http://www.mediafire.com/myfiles.php");
-            final String cookie = this.br.getCookie("http://www.mediafire.com", "user");
+            br.submitForm(form);
+            br.getPage("http://www.mediafire.com/myfiles.php");
+            final String cookie = br.getCookie("http://www.mediafire.com", "user");
             if ("x".equals(cookie) || cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             if (MediafireCom.CONFIGURATION_KEYS.get(account) == null) {
-                this.br.getPage("http://www.mediafire.com/myaccount/download_options.php?enable=1");
+                br.getPage("http://www.mediafire.com/myaccount/download_options.php?enable=1");
                 if (br.containsHTML("setCustomVar\\',1,\\'UserType\\',\\'registered\\']")) {
                     account.setProperty("freeaccount", true);
                 } else {

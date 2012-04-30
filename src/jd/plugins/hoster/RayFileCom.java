@@ -55,7 +55,7 @@ public class RayFileCom extends PluginForHost {
         regex = "downloads_url = \\['(.*?)'\\]";
         p = Pattern.compile(regex);
         downloadUrl = ajax.getRegex(p).getMatch(0);
-
+        if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String cookie_key = null;
         String cookie_value = null;
         String cookie_host = null;
@@ -86,7 +86,7 @@ public class RayFileCom extends PluginForHost {
             br.getPage(redirectUrl);
         }
 
-        if (this.br.containsHTML("page404")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (this.br.containsHTML("page404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         Regex fname = br.getRegex("var fname = \"(.*?)\";");
         Regex fsize = br.getRegex("formatsize = \"(.*?)\";");

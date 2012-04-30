@@ -43,7 +43,7 @@ public class YunFileCom extends PluginForHost {
 
     private static final Object LOCK     = new Object();
 
-    // MountFileCom uses the same script
+    // Works like HowFileCom
     public YunFileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.yunfile.com/user/premiumMembership.html");

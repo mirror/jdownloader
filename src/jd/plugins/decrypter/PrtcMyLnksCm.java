@@ -59,14 +59,15 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
         final String fpName = br.getRegex("<title>Download ([^<>\"]*?)</title>").getMatch(0);
         Browser ajaxBr = br.cloneBrowser();
         ajaxBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        final String gonum = br.getRegex("\\'\\&gonum=(\\d+)\\',").getMatch(0);
-        final String rcID = br.getRegex("Recaptcha\\.create\\(\"([^<>\"]*?)\"").getMatch(0);
+        ajaxBr.getPage("http://protect-my-links.com" + capPage);
+        final String gonum = ajaxBr.getRegex("\\'\\&gonum=(\\d+)\\',").getMatch(0);
+        final String rcID = ajaxBr.getRegex("Recaptcha\\.create\\(\"([^<>\"]*?)\"").getMatch(0);
         if (rcID == null || gonum == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.setId(rcID);
         rc.load();
         for (int i = 0; i <= 5; i++) {
@@ -80,6 +81,18 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
             break;
         }
         if (br.containsHTML(">Captcha not valid<")) throw new DecrypterException(DecrypterException.CAPTCHA);
+        final String gotoPage = ajaxBr.getRegex("\"goto\":\"([^<>\"]*?)\"").getMatch(0);
+        if (gotoPage == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        br.getPage("http://protect-my-links.com" + gotoPage.replace("\\", ""));
+        System.out.println(br.toString());
+        final String c = br.getRegex("<script language=javascript>c=\"(.*?)\"\\);</script>").getMatch(0);
+        if (c == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         if (true) {
             logger.warning("Decrypter not yet fixed, site is buggy!");
             return null;

@@ -19,15 +19,22 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.MediafireCom;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?(?!download)[\\w\\.]*?(mediafire\\.com|mfi\\.re)/(imageview.+|i/\\?.+|\\\\?sharekey=.+|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php).+)" }, flags = { 0 })
 public class MdfrFldr extends PluginForDecrypt {
@@ -74,6 +81,14 @@ public class MdfrFldr extends PluginForDecrypt {
         }
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        // Private link? Login needed!
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("error.php?errno=999")) {
+            if (!getUserLogin()) {
+                logger.info("Wrong logindata entered, stopping...");
+                return decryptedLinks;
+            }
+            br.getPage(parameter);
+        }
         if (br.getRedirectLocation() != null) {
             /* check for direct download stuff */
             String red = br.getRedirectLocation();
@@ -144,6 +159,28 @@ public class MdfrFldr extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    private boolean getUserLogin() throws Exception {
+        final PluginForHost hosterPlugin = JDUtilities.getPluginForHost("mediafire.com");
+        Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
+        if (aa == null) {
+            String username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + this.getHost() + " :");
+            if (username == null) throw new DecrypterException(JDL.L("plugins.decrypter.mdfrfldr.nousername", "Username not entered!"));
+            String password = UserIO.getInstance().requestInputDialog("Enter password for " + this.getHost() + " :");
+            if (password == null) throw new DecrypterException(JDL.L("plugins.decrypter.mdfrfldr.nopassword", "Password not entered!"));
+            aa = new Account(username, password);
+        }
+        try {
+            ((MediafireCom) hosterPlugin).login(br, aa);
+        } catch (final PluginException e) {
+            aa.setEnabled(false);
+            aa.setValid(false);
+            return false;
+        }
+        // Account is valid, let's just add it
+        AccountController.getInstance().addAccount(hosterPlugin, aa);
+        return true;
     }
 
     private static synchronized String unescape(final String s) {

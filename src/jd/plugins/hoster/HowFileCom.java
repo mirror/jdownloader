@@ -68,7 +68,7 @@ public class HowFileCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // Works like MountFileCom and YonFileCom
+    // Works like YunFileCom
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
