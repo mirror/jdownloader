@@ -4,6 +4,7 @@ import org.appwork.app.gui.copycutpaste.CopyCutPasteHandler;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.inapp.RestartController;
+import org.appwork.update.inapp.RestartDirectEvent;
 import org.appwork.update.inapp.RestartViaUpdaterEvent;
 import org.appwork.update.inapp.SilentUpdaterEvent;
 import org.jdownloader.settings.GeneralSettings;
@@ -31,7 +32,11 @@ public class JDRestartController extends RestartController {
                 if (JDUpdater.getInstance().getBranch() != null && !JDUpdater.getInstance().isSelfUpdateRequested()) {
                     SilentUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());
                 }
-                runUpdaterOnAppExit();
+                if (ShutdownController.getInstance().hasShutdownEvent(RestartDirectEvent.getInstance()) || ShutdownController.getInstance().hasShutdownEvent(RestartViaUpdaterEvent.getInstance())) {
+                    restartViaUpdater(true);
+                } else {
+                    runUpdaterOnAppExit();
+                }
             }
         }
 

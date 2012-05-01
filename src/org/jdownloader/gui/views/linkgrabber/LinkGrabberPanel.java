@@ -45,6 +45,7 @@ import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAllAction;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmOptionsAction;
 import org.jdownloader.gui.views.linkgrabber.actions.RemoveOptionsAction;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListener, GenericConfigEventListener<Boolean> {
     /**
@@ -109,8 +110,10 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                     protected void runInEDT() {
                         try {
                             JDGui.getInstance().requestPanel(UserIF.Panels.LINKGRABBER, null);
-                            if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) {
-                                JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
+                            if (CFG_GUI.CFG.isLinkgrabberFrameToTopOnNewLinksEnabled()) {
+                                if (JDGui.getInstance().getMainFrame().getState() != JFrame.ICONIFIED && JDGui.getInstance().getMainFrame().isVisible()) {
+                                    JDGui.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
+                                }
                             }
                         } catch (Throwable e) {
                         }

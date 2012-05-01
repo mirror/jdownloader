@@ -62,7 +62,10 @@ public class JDUpdaterGUI extends UpdaterGUI {
             if (JsonConfig.create(GeneralSettings.class).isSilentUpdateWithRestartEnabled()) {
                 JDRestartController.getInstance().bootstrapRestartASAP();
             } else {
-                if (JDUpdater.getInstance().getBranch() != null && !JDUpdater.getInstance().isSelfUpdateRequested()) SilentUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());
+                if (JDUpdater.getInstance().getBranch() != null && !JDUpdater.getInstance().isSelfUpdateRequested()) {
+                    //
+                    SilentUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());
+                }
             }
         } else {
             super.onInstallRequest();

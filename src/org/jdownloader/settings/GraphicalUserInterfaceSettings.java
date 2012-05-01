@@ -238,6 +238,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setLinkgrabberAutoTabSwitchEnabled(boolean b);
 
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @Description("If enabled, JDownloader GUI will come to top iof new links have been added")
+    boolean isLinkgrabberFrameToTopOnNewLinksEnabled();
+
+    void setLinkgrabberFrameToTopOnNewLinksEnabled(boolean b);
+
     @DefaultEnumValue("FILENAME")
     void setSelectedDownloadSearchCategory(SearchCategory selectedCategory);
 
