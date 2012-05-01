@@ -52,7 +52,7 @@ public class ClipHunterCom extends PluginForHost {
             engine.eval(fun);
             result = inv.invokeFunction("decrypt", value);
         } catch (final ScriptException e) {
-            e.printStackTrace();
+            return null;
         }
         return (String) result;
     }
@@ -94,10 +94,11 @@ public class ClipHunterCom extends PluginForHost {
         // parse decryptalgo
         final Browser br2 = br.cloneBrowser();
         br2.getPage(jsUrl);
-        String decryptAlgo = new Regex(br2, "decrypt\\:function(.*?)\\}\\;\\$\\(document").getMatch(0);
+        String decryptAlgo = new Regex(br2, "decrypt\\:function(.*?)\\}\\;var").getMatch(0);
         if (decryptAlgo == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         decryptAlgo = "function decrypt" + decryptAlgo + ";";
         DLLINK = decryptUrl(decryptAlgo, encryptedUrl);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -129,4 +130,5 @@ public class ClipHunterCom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }
