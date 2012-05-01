@@ -153,6 +153,7 @@ public class JDUpdater extends AppUpdater {
      */
     private JDUpdater() {
         super();
+        setRestartArgs(Launcher.PARAMETERS);
         icon = new UpdateProgress();
         ((org.appwork.swing.components.circlebar.ImagePainter) icon.getValueClipPainter()).setBackground(Color.LIGHT_GRAY);
         ((org.appwork.swing.components.circlebar.ImagePainter) icon.getValueClipPainter()).setForeground(Color.GREEN);

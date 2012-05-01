@@ -80,7 +80,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.ExternInterface;
 import org.jdownloader.api.RemoteAPIController;
-import org.jdownloader.controlling.JDRestartController;
 import org.jdownloader.dynamic.Dynamic;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.gui.uiserio.JDSwingUserIO;
@@ -577,7 +576,7 @@ public class Launcher {
                     Log.L.info("Init Gui");
                     JDGui.getInstance();
                     EDTEventQueue.initEventQueue();
-                    JDRestartController.getInstance().initMouseObserver();
+
                     Log.L.info("GUIDONE->" + (System.currentTimeMillis() - Launcher.startup));
                 } catch (Throwable e) {
                     Log.exception(e);
