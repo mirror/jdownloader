@@ -111,7 +111,7 @@ public class Launcher {
 
     public static SingleReachableState INIT_COMPLETE              = new SingleReachableState("INIT_COMPLETE");
     public static SingleReachableState GUI_COMPLETE               = new SingleReachableState("GUI_COMPLETE");
-    private static ParameterParser     PARAMETERS;
+    public static ParameterParser      PARAMETERS;
     public final static long           startup                    = System.currentTimeMillis();
 
     // private static JSonWrapper webConfig;

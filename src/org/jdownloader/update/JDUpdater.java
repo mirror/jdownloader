@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
 
+import jd.Launcher;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
 import jd.parser.Regex;
@@ -21,16 +22,23 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.exchange.UpdateFile;
 import org.appwork.update.inapp.AppUpdater;
 import org.appwork.update.inapp.UpdaterGUI;
+import org.appwork.update.standalone.KeyChangeRequest;
 import org.appwork.update.updateclient.Actions;
 import org.appwork.update.updateclient.InstalledFile;
+import org.appwork.update.updateclient.LastChanceException;
 import org.appwork.update.updateclient.Parameters;
 import org.appwork.update.updateclient.UpdaterState;
 import org.appwork.update.updateclient.event.UpdaterEvent;
 import org.appwork.update.updateclient.event.UpdaterListener;
+import org.appwork.update.updateclient.http.ClientUpdateRequiredException;
+import org.appwork.update.updateclient.http.HTTPIOException;
+import org.appwork.update.updateclient.http.UpdateServerException;
 import org.appwork.update.updateclient.translation.T;
 import org.appwork.utils.Application;
+import org.appwork.utils.Hash;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
@@ -52,8 +60,37 @@ public class JDUpdater extends AppUpdater {
     private boolean        jars;
 
     public void run() {
-
+        try {
+            if (this.tryLastChance()) {
+                Log.L.info("Last Chance Restorer - Exit NOw");
+                System.exit(1);
+            }
+        } catch (LastChanceException e) {
+            Dialog.getInstance().showMessageDialog(_GUI._.JDUpdater_run_lasttryfailed_title_(), _GUI._.JDUpdater_run_lasttry_msg_());
+        }
         super.run();
+    }
+
+    protected byte[] getLastChanceBytes() throws UnsupportedEncodingException, HTTPIOException, InterruptedException, ClientUpdateRequiredException, UpdateServerException, KeyChangeRequest {
+        Parameters jar = null;
+        Parameters jarHash = null;
+        try {
+            jar = new Parameters("jar", getJarName());
+        } catch (Throwable e) {
+            Log.exception(e);
+        }
+
+        try {
+            jarHash = new Parameters("jarhash", Hash.getMD5(Application.getResource(getJarName())));
+        } catch (Throwable e) {
+            Log.exception(e);
+        }
+        if (Launcher.PARAMETERS.hasCommandSwitch("lasttry")) {
+            return get(Actions.LAST_CHANCE, Parameters.APP_ID, Parameters.BRANCH_ID, jar, jarHash, new Parameters("test", "test"));
+        } else {
+            return get(Actions.LAST_CHANCE, Parameters.APP_ID, Parameters.BRANCH_ID, jar, jarHash);
+        }
+
     }
 
     @Override

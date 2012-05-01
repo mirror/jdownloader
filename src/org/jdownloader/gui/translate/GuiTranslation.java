@@ -3715,4 +3715,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Matches for any File or Link" })
     String BooleanFilter_toString_();
 
+    @Default(lngs = { "en" }, values = { "Corrupt Installation!" })
+    String JDUpdater_run_lasttryfailed_title_();
+
+    @Default(lngs = { "en" }, values = { "Your Installation of JDownloader is currupt, and cannot be fixed by updating it.\r\nPlease download the latest version at http://jdownloader.org/download and install it." })
+    String JDUpdater_run_lasttry_msg_();
+
 }
