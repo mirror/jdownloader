@@ -12,6 +12,7 @@ public class RuleWrapper<T extends FilterRule> {
     protected CompiledRegexFilter     fileNameRule;
     protected boolean                 requiresLinkcheck = false;
     private CompiledPluginStatusFiler pluginStatusFilter;
+    private BooleanFilter             alwaysFilter;
 
     public CompiledPluginStatusFiler getPluginStatusFilter() {
         return pluginStatusFilter;
@@ -34,6 +35,7 @@ public class RuleWrapper<T extends FilterRule> {
             fileNameRule = new CompiledRegexFilter(rule.getFilenameFilter());
             requiresLinkcheck = true;
         }
+
         if (rule.getFilesizeFilter().isEnabled()) {
             filesizeRule = new CompiledFilesizeFilter(rule.getFilesizeFilter());
             requiresLinkcheck = true;
@@ -51,6 +53,18 @@ public class RuleWrapper<T extends FilterRule> {
             sourceRule = new CompiledRegexFilter(rule.getSourceURLFilter());
 
         }
+
+        if (rule.getMatchAlwaysFilter().isEnabled()) {
+            alwaysFilter = rule.getMatchAlwaysFilter();
+            // overwrites all others
+            requiresHoster = false;
+            requiresLinkcheck = false;
+
+        }
+    }
+
+    public BooleanFilter getAlwaysFilter() {
+        return alwaysFilter;
     }
 
     public CompiledRegexFilter getFileNameRule() {

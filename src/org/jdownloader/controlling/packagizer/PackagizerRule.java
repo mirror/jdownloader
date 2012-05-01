@@ -17,6 +17,7 @@ public class PackagizerRule extends FilterRule implements Storable {
         ret.setIconKey(getIconKey());
         ret.setFilenameFilter(getFilenameFilter());
         ret.setFilesizeFilter(getFilesizeFilter());
+        ret.setMatchAlwaysFilter(getMatchAlwaysFilter());
         ret.setFiletypeFilter(getFiletypeFilter());
         ret.setOnlineStatusFilter(getOnlineStatusFilter());
         ret.setPluginStatusFilter(getPluginStatusFilter());
@@ -30,6 +31,7 @@ public class PackagizerRule extends FilterRule implements Storable {
         ret.downloadDestination = downloadDestination;
         ret.packageName = packageName;
         ret.priority = priority;
+        ret.setCreated(System.currentTimeMillis());
         return ret;
     }
 

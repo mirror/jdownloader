@@ -327,6 +327,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         panel = new MigPanel("ins 5,wrap 6", "[][][fill][][][grow,fill]", "[]");
         panel.add(createHeader(_GUI._.FilterRuleDialog_layoutDialogContent_name()), "spanx,growx,pushx");
+
         txtName = new ExtTextField() {
 
             /**
@@ -398,7 +399,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         panel.add(txtName, "spanx,growx,pushx,height 22!");
 
         panel.add(createHeader(getIfText()), "gaptop 10,spanx,growx,pushx");
-
+        addConditionGui(panel);
         cobFilename = new JComboBox(new String[] { _GUI._.FilterRuleDialog_layoutDialogContent_contains(), _GUI._.FilterRuleDialog_layoutDialogContent_equals(), _GUI._.FilterRuleDialog_layoutDialogContent_contains_not(), _GUI._.FilterRuleDialog_layoutDialogContent_equals_not() });
         txtFilename = new ExtTextField() {
 
@@ -747,7 +748,10 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         return panel;
     }
 
-    private JToggleButton createToggle() {
+    public void addConditionGui(JComponent panel) {
+    }
+
+    protected JToggleButton createToggle() {
         JToggleButton ret = new JToggleButton(new AppAction() {
             {
                 setTooltipText(_GUI._.ConditionDialog_layoutDialogContent_regex_tooltip_());

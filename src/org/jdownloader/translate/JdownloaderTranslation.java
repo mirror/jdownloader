@@ -801,4 +801,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Start Downloads" })
     String StartDownloadsAction_createTooltip_();
 
+    @Default(lngs = { "en" }, values = { "Create Subfolder by Packagename" })
+    String PackagizerSettings_folderbypackage_rule_name();
+
 }

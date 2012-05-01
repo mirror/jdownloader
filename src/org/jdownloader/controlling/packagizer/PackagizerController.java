@@ -26,10 +26,12 @@ import org.appwork.utils.logging.Log;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.filter.BooleanFilter;
 import org.jdownloader.controlling.filter.NoDownloadLinkException;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchive;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
+import org.jdownloader.translate._JDT;
 
 public class PackagizerController implements PackagizerInterface, FileCreationListener {
     private PackagizerSettings                  config;
@@ -67,6 +69,17 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             }
         }
         if (list == null) list = new ArrayList<PackagizerRule>();
+
+        // workaround to add folder by package rule
+        if (list.size() == 0) {
+            PackagizerRule folderByPackage = new PackagizerRule();
+            folderByPackage.setMatchAlwaysFilter(new BooleanFilter(true));
+            folderByPackage.setDownloadDestination("<jd:packagename>");
+            folderByPackage.setIconKey("folder");
+            folderByPackage.setName(_JDT._.PackagizerSettings_folderbypackage_rule_name());
+            folderByPackage.setEnabled(false);
+            list.add(folderByPackage);
+        }
         update();
 
         if (!testInstance) {
@@ -254,22 +267,24 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (!org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
         ArrayList<PackagizerRuleWrapper> lfileFilter = fileFilter;
         for (PackagizerRuleWrapper lgr : lfileFilter) {
-            try {
-                if (!lgr.checkHoster(link)) continue;
-            } catch (NoDownloadLinkException e) {
-                throw new WTFException();
-            }
-            try {
-                if (!lgr.checkPluginStatus(link)) continue;
-            } catch (NoDownloadLinkException e) {
-                throw new WTFException();
-            }
-            if (!lgr.checkSource(link)) continue;
-            if (lgr.isRequiresLinkcheck()) {
-                if (!lgr.checkOnlineStatus(link)) continue;
-                if (!lgr.checkFileName(link)) continue;
-                if (!lgr.checkFileSize(link)) continue;
-                if (!lgr.checkFileType(link)) continue;
+            if (lgr.getAlwaysFilter() == null || !lgr.getAlwaysFilter().isEnabled()) {
+                try {
+                    if (!lgr.checkHoster(link)) continue;
+                } catch (NoDownloadLinkException e) {
+                    throw new WTFException();
+                }
+                try {
+                    if (!lgr.checkPluginStatus(link)) continue;
+                } catch (NoDownloadLinkException e) {
+                    throw new WTFException();
+                }
+                if (!lgr.checkSource(link)) continue;
+                if (lgr.isRequiresLinkcheck()) {
+                    if (!lgr.checkOnlineStatus(link)) continue;
+                    if (!lgr.checkFileName(link)) continue;
+                    if (!lgr.checkFileSize(link)) continue;
+                    if (!lgr.checkFileType(link)) continue;
+                }
             }
             set(link, lgr);
         }
@@ -393,23 +408,24 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         ArrayList<PackagizerRuleWrapper> lfileFilter = fileFilter;
         for (PackagizerRuleWrapper lgr : lfileFilter) {
             if (!StringUtils.isEmpty(lgr.getRule().getFilename()) || !StringUtils.isEmpty(lgr.getRule().getDownloadDestination())) {
-
-                try {
-                    if (!lgr.checkHoster(link)) continue;
-                } catch (NoDownloadLinkException e) {
-                    throw new WTFException();
-                }
-                try {
-                    if (!lgr.checkPluginStatus(link)) continue;
-                } catch (NoDownloadLinkException e) {
-                    throw new WTFException();
-                }
-                if (!lgr.checkSource(link)) continue;
-                if (lgr.isRequiresLinkcheck()) {
-                    if (!lgr.checkOnlineStatus(link)) continue;
-                    if (!lgr.checkFileName(link)) continue;
-                    if (!lgr.checkFileSize(link)) continue;
-                    if (!lgr.checkFileType(link)) continue;
+                if (lgr.getAlwaysFilter() == null || !lgr.getAlwaysFilter().isEnabled()) {
+                    try {
+                        if (!lgr.checkHoster(link)) continue;
+                    } catch (NoDownloadLinkException e) {
+                        throw new WTFException();
+                    }
+                    try {
+                        if (!lgr.checkPluginStatus(link)) continue;
+                    } catch (NoDownloadLinkException e) {
+                        throw new WTFException();
+                    }
+                    if (!lgr.checkSource(link)) continue;
+                    if (lgr.isRequiresLinkcheck()) {
+                        if (!lgr.checkOnlineStatus(link)) continue;
+                        if (!lgr.checkFileName(link)) continue;
+                        if (!lgr.checkFileSize(link)) continue;
+                        if (!lgr.checkFileType(link)) continue;
+                    }
                 }
                 String downloadPath = f.getParent();
                 String filename = f.getName();

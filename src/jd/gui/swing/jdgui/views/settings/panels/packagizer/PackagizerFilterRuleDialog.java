@@ -18,6 +18,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JToggleButton;
 import javax.swing.ListCellRenderer;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.text.JTextComponent;
@@ -48,6 +49,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.controlling.filter.BooleanFilter;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
 import org.jdownloader.gui.translate._GUI;
@@ -185,7 +187,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         rule.setFilesizeFilter(getFilersizeFilter());
         rule.setSourceURLFilter(getSourceFilter());
         rule.setFiletypeFilter(getFiletypeFilter());
-
+        rule.setMatchAlwaysFilter(getMatchAlwaysFilter());
         rule.setDownloadDestination(cbDest.isSelected() ? fpDest.getPath() : null);
         rule.setChunks(cbChunks.isSelected() ? ((Number) spChunks.getValue()).intValue() : -1);
         rule.setPriority(cbPriority.isSelected() ? prio : null);
@@ -199,6 +201,10 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         rule.setOnlineStatusFilter(getOnlineStatusFilter());
         rule.setPluginStatusFilter(getPluginStatusFilter());
 
+    }
+
+    private BooleanFilter getMatchAlwaysFilter() {
+        return new BooleanFilter(cbAlways.isSelected());
     }
 
     private void updateGUI() {
@@ -224,7 +230,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         }
         cbStart.setSelected(rule.isAutoStartEnabled() != null);
         cbAdd.setSelected(rule.isAutoAddEnabled() != null);
-
+        cbAlways.setSelected(rule.getMatchAlwaysFilter() != null && rule.getMatchAlwaysFilter().isEnabled());
         cobAutoAdd.setSelectedIndex((rule.isAutoAddEnabled() == null || rule.isAutoAddEnabled()) ? 0 : 1);
         cobAutostart.setSelectedIndex((rule.isAutoStartEnabled() == null || rule.isAutoStartEnabled()) ? 0 : 1);
         cobExtract.setSelectedIndex((rule.isAutoExtractionEnabled() == null || rule.isAutoExtractionEnabled()) ? 0 : 1);
@@ -282,32 +288,40 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         return ret;
     }
 
-    private PathChooser  fpDest;
-    private FilterPanel  fpPriority;
-    private ExtTextField txtPackagename;
+    private PathChooser   fpDest;
+    private FilterPanel   fpPriority;
+    private ExtTextField  txtPackagename;
 
-    private ExtSpinner   spChunks;
-    private ExtCheckBox  cbDest;
-    private ExtCheckBox  cbPriority;
-    private ExtCheckBox  cbPackagename;
-    private ExtCheckBox  cbExtract;
-    private ExtCheckBox  cbChunks;
-    private RadioButton  p_1;
-    private RadioButton  p0;
-    private RadioButton  p1;
-    private RadioButton  p2;
-    private RadioButton  p3;
-    private JLabel       lblAutostart;
-    private JLabel       lblautoadd;
-    private ExtCheckBox  cbStart;
-    private ExtCheckBox  cbAdd;
-    private ExtCheckBox  cbName;
-    private JLabel       lblFilename;
-    private ExtTextField txtNewFilename;
+    private ExtSpinner    spChunks;
+    private ExtCheckBox   cbDest;
+    private ExtCheckBox   cbPriority;
+    private ExtCheckBox   cbPackagename;
+    private ExtCheckBox   cbExtract;
+    private ExtCheckBox   cbChunks;
+    private RadioButton   p_1;
+    private RadioButton   p0;
+    private RadioButton   p1;
+    private RadioButton   p2;
+    private RadioButton   p3;
+    private JLabel        lblAutostart;
+    private JLabel        lblautoadd;
+    private ExtCheckBox   cbStart;
+    private ExtCheckBox   cbAdd;
+    private ExtCheckBox   cbName;
+    private JLabel        lblFilename;
+    private ExtTextField  txtNewFilename;
+    private JToggleButton cbAlways;
+
+    public void addConditionGui(JComponent panel) {
+        cbAlways = new ExtCheckBox();
+        panel.add(cbAlways);
+        panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_always()), "spanx");
+    }
 
     @Override
     public JComponent layoutDialogContent() {
         MigPanel ret = (MigPanel) super.layoutDialogContent();
+
         ret.add(createHeader(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_then()), "gaptop 10, spanx,growx,pushx");
         lblDest = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_dest());
         lblPriority = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_priority());

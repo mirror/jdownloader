@@ -3709,4 +3709,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Premium Alerts" })
     String literall_premium_alert();
 
+    @Default(lngs = { "en" }, values = { "Matches on any File or Link and ignores conditions below" })
+    String FilterRuleDialog_layoutDialogContent_lbl_always();
+
+    @Default(lngs = { "en" }, values = { "Matches for any File or Link" })
+    String BooleanFilter_toString_();
+
 }
