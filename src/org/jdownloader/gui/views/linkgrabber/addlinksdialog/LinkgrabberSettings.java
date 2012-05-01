@@ -52,6 +52,13 @@ public interface LinkgrabberSettings extends ConfigInterface {
     void setUseLastDownloadDestinationAsDefault(boolean b);
 
     @AboutConfig
+    @DefaultBooleanValue(true)
+    @Description("If true, JD will switch to the Download Tab after confirming Links in Linkgrabber")
+    boolean isAutoSwitchToDownloadTableOnConfirmDefaultEnabled();
+
+    void setAutoSwitchToDownloadTableOnConfirmDefaultEnabled(boolean b);
+
+    @AboutConfig
     @RequiresRestart
     @DefaultBooleanValue(true)
     @Description("If false, The AddLinks Dialog in Linkgrabber works on the pasted text, and does not prefilter URLS any more")

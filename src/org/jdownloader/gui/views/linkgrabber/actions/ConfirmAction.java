@@ -16,11 +16,15 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.UserIF;
+import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -34,6 +38,7 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.ValidateArchiveAction;
 import org.jdownloader.extensions.extraction.gui.DummyArchiveDialog;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 
 public class ConfirmAction extends AppAction {
@@ -144,6 +149,17 @@ public class ConfirmAction extends AppAction {
                         }
 
                     }, true);
+                }
+
+                if (JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled()) {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            JDGui.getInstance().requestPanel(UserIF.Panels.DOWNLOADLIST, null);
+                        }
+                    };
+
                 }
             }
 
