@@ -70,10 +70,8 @@ abstract public class DownloadInterface {
     public class Chunk extends Thread {
 
         /**
-         * Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt,
-         * so wird er weggelassen. Sehr niedrig geregelte chunks haben einen
-         * kleinen Buffer und eine sehr hohe Intervalzeit. Das fuehrt zu
-         * verstaerkt intervalartigem laden und ist ungewuenscht
+         * Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt, so wird er weggelassen. Sehr niedrig geregelte chunks haben einen kleinen Buffer
+         * und eine sehr hohe Intervalzeit. Das fuehrt zu verstaerkt intervalartigem laden und ist ungewuenscht
          */
         public static final long                MIN_CHUNKSIZE        = 1 * 1024 * 1024;
 
@@ -103,8 +101,7 @@ abstract public class DownloadInterface {
         private boolean                         clonedconnection     = false;
 
         /**
-         * Die Connection wird entsprechend der start und endbytes neu
-         * aufgebaut.
+         * Die Connection wird entsprechend der start und endbytes neu aufgebaut.
          * 
          * @param startByte
          * @param endByte
@@ -172,8 +169,7 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Kopiert die Verbindung. Es wird bis auf die Range und timeouts exakt
-         * die selbe Verbindung nochmals aufgebaut.
+         * Kopiert die Verbindung. Es wird bis auf die Range und timeouts exakt die selbe Verbindung nochmals aufgebaut.
          * 
          * @param connection
          * @return
@@ -270,8 +266,7 @@ abstract public class DownloadInterface {
                 int maxbuffersize = JsonConfig.create(GeneralSettings.class).getMaxBufferSize() * 1024;
                 buffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(Math.max(maxbuffersize, 10240), false);
                 /*
-                 * now we calculate the max fill level when to force buffer
-                 * flushing
+                 * now we calculate the max fill level when to force buffer flushing
                  */
                 flushLevel = Math.max((maxbuffersize / 100 * JsonConfig.create(GeneralSettings.class).getFlushBufferLevel()), 1);
             } catch (Throwable e) {
@@ -326,8 +321,7 @@ abstract public class DownloadInterface {
                                 reachedEOF = true;
                             } else {
                                 /*
-                                 * wait a moment, give system chance to fill up
-                                 * its buffers
+                                 * wait a moment, give system chance to fill up its buffers
                                  */
                                 synchronized (this) {
                                     this.wait(500);
@@ -370,7 +364,7 @@ abstract public class DownloadInterface {
                         break;
                     }
                     if (towrite > 0) {
-                        addToTotalLinkBytesLoaded(towrite);
+                        addToTotalLinkBytesLoaded(towrite, false);
                         addChunkBytesLoaded(towrite);
                         writeBytes(this);
                     }
@@ -451,9 +445,8 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Gibt die Aktuelle Endposition in der gesamtfile zurueck. Diese
-         * Methode gibt die Endposition unahaengig davon an Ob der aktuelle
-         * BUffer schon geschrieben wurde oder nicht.
+         * Gibt die Aktuelle Endposition in der gesamtfile zurueck. Diese Methode gibt die Endposition unahaengig davon an Ob der aktuelle BUffer schon
+         * geschrieben wurde oder nicht.
          * 
          * @return
          */
@@ -490,8 +483,7 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Gibt zurueck ob der chunk von einem externen eregniss unterbrochen
-         * wurde
+         * Gibt zurueck ob der chunk von einem externen eregniss unterbrochen wurde
          * 
          * @return
          */
@@ -567,8 +559,7 @@ abstract public class DownloadInterface {
                 } else if ((range = new Regex(contentRange, ".*?(\\d+).*?-/.*?(\\d+)").getRow(0)) != null) {
                     /* NON RFC-2616! STOP is missing */
                     /*
-                     * this happend for some stupid servers, seems to happen
-                     * when request is bytes=9500- (x till end)
+                     * this happend for some stupid servers, seems to happen when request is bytes=9500- (x till end)
                      */
                     /* START-/SIZE */
                     /* content-range: bytes 1020054729-/1073741824 */
@@ -645,8 +636,7 @@ abstract public class DownloadInterface {
                         /* WTF? no Content-Range response available! */
                         if (connection.getLongContentLength() == startByte) {
                             /*
-                             * Content-Length equals startByte -> Chunk is
-                             * Complete!
+                             * Content-Length equals startByte -> Chunk is Complete!
                              */
                             return;
                         }
@@ -659,8 +649,7 @@ abstract public class DownloadInterface {
                     }
                 } else if (ContentRange != null) {
                     /*
-                     * we did not request a range but got a content-range
-                     * response,WTF?!
+                     * we did not request a range but got a content-range response,WTF?!
                      */
                     logger.severe("No Range Request->Content-Range Response?!");
                     endByte = ContentRange[1];
@@ -688,14 +677,13 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Setzt die anzahl der schon geladenen partbytes. Ist fuer resume
-         * wichtig.
+         * Setzt die anzahl der schon geladenen partbytes. Ist fuer resume wichtig.
          * 
          * @param loaded
          */
         public void setLoaded(long loaded) {
             loaded = Math.max(0, loaded);
-            addToTotalLinkBytesLoaded(loaded);
+            addToTotalLinkBytesLoaded(loaded, true);
         }
 
         public void startChunk() {
@@ -840,8 +828,7 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * darf NUR dann auf true gesetzt werden, wenn die dateigroesse 100% richtig
-     * ist!
+     * darf NUR dann auf true gesetzt werden, wenn die dateigroesse 100% richtig ist!
      * 
      * @param fileSizeVerified
      * @throws PluginException
@@ -877,8 +864,7 @@ abstract public class DownloadInterface {
                 setChunkNum(chunks);
             } else {
                 /*
-                 * downloadchunks are more than allowed chunks, need to
-                 * repartition the download
+                 * downloadchunks are more than allowed chunks, need to repartition the download
                  */
                 logger.info("Download has " + chunks + " Chunks but only " + getChunkNum() + " allowed! Change to 1!");
                 setChunkNum(1);
@@ -1028,9 +1014,9 @@ abstract public class DownloadInterface {
         chunksInProgress += i;
     }
 
-    protected synchronized void addToTotalLinkBytesLoaded(long block) {
+    protected synchronized void addToTotalLinkBytesLoaded(long block, boolean updateLiveData) {
         totalLinkBytesLoaded += block;
-        totalLinkBytesLoadedLive.addAndGet(block);
+        if (updateLiveData) totalLinkBytesLoadedLive.addAndGet(block);
     }
 
     public synchronized void setTotalLinkBytesLoaded(long loaded) {
@@ -1039,8 +1025,7 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * ueber error() kann ein fehler gemeldet werden. DIe Methode entscheided
-     * dann ob dieser fehler zu einem Abbruch fuehren muss
+     * ueber error() kann ein fehler gemeldet werden. DIe Methode entscheided dann ob dieser fehler zu einem Abbruch fuehren muss
      */
     protected synchronized void error(int id, String string) {
         /* if we recieved external stop, then we dont have to handle errors */
@@ -1142,10 +1127,8 @@ abstract public class DownloadInterface {
         if (this.doFileSizeCheck && (totalLinkBytesLoaded <= 0 || totalLinkBytesLoaded != fileSize && fileSize > 0)) {
             if (totalLinkBytesLoaded > fileSize) {
                 /*
-                 * workaround for old bug deep in this downloadsystem. more data
-                 * got loaded (maybe just counting bug) than filesize. but in
-                 * most cases the file is okay! WONTFIX because new
-                 * downloadsystem is on its way
+                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in most cases the file
+                 * is okay! WONTFIX because new downloadsystem is on its way
                  */
                 logger.severe("Filesize: " + fileSize + " Loaded: " + totalLinkBytesLoaded);
                 if (!linkStatus.isFailed()) {
@@ -1177,8 +1160,7 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink
-     * regelmaesig und fordert beim Controller eine aktualisierung des links an
+     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des links an
      */
     private void onChunkFinished() {
         synchronized (this) {
@@ -1196,8 +1178,7 @@ abstract public class DownloadInterface {
     abstract protected void onChunksReady();
 
     /**
-     * Gibt die Anzahl der Chunks an die dieser Download verwenden soll. Chu8nks
-     * koennen nur vor dem Downloadstart gesetzt werden!
+     * Gibt die Anzahl der Chunks an die dieser Download verwenden soll. Chu8nks koennen nur vor dem Downloadstart gesetzt werden!
      */
     public void setChunkNum(int num) {
         if (num <= 0) {
@@ -1222,8 +1203,7 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig
-     * sein weil sonst das automatische kopieren der Connections fehl schlaegt.,
+     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl schlaegt.,
      */
     public void setRequestTimeout(int requestTimeout) {
         this.requestTimeout = requestTimeout;
@@ -1255,8 +1235,7 @@ abstract public class DownloadInterface {
     public static boolean preDownloadCheckFailed(DownloadLink link) {
         if (!link.isAvailabilityStatusChecked() && link.getForcedFileName() == null) {
             /*
-             * dont proceed if no linkcheck has done yet, maybe we dont know
-             * filename yet
+             * dont proceed if no linkcheck has done yet, maybe we dont know filename yet
              */
             return false;
         }
@@ -1300,8 +1279,7 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Startet den Download. Nach dem Aufruf dieser Funktion koennen keine
-     * Downlaodparameter mehr gesetzt werden bzw bleiben wirkungslos.
+     * Startet den Download. Nach dem Aufruf dieser Funktion koennen keine Downlaodparameter mehr gesetzt werden bzw bleiben wirkungslos.
      * 
      * @return
      * @throws Exception
@@ -1501,8 +1479,7 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Setzt man diesen Wert auf true, so wird der erste Chunk nicht per ranges
-     * geladen. d.h. es gibt keinen 0-...range
+     * Setzt man diesen Wert auf true, so wird der erste Chunk nicht per ranges geladen. d.h. es gibt keinen 0-...range
      * 
      * @param b
      */
