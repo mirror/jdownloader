@@ -41,13 +41,22 @@ public class StolenVideosNet extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String tempID = br.getRedirectLocation();
+        String filename = br.getRegex("<title>Welcome to Stolen XXX Videos \\- Viewing Media \\-([^<>\"]*?)\\- Daily Free XXX Porn Videos</title>").getMatch(0);
         if (tempID != null && tempID.length() < 40) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (tempID != null) {
-            DownloadLink dl = createDownloadlink(tempID);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            String ext = tempID.substring(tempID.lastIndexOf("."));
+            if (ext != null) {
+                if (ext.length() > 10) {
+                    br.getPage(tempID);
+                    tempID = br.getRegex("url:\'(http://[^<>]+)\'").getMatch(0);
+                }
+            }
+            if (tempID != null) {
+                DownloadLink dl = createDownloadlink(tempID);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
         }
-        String filename = br.getRegex("<title>Welcome to Stolen XXX Videos \\- Viewing Media \\-([^<>\"]*?)\\- Daily Free XXX Porn Videos</title>").getMatch(0);
         if (filename == null) {
             logger.warning("Couldn't decrypt link: " + parameter);
             return null;
@@ -72,10 +81,21 @@ public class StolenVideosNet extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (tempID == null) {
-            logger.warning("Couldn't decrypt link: " + parameter);
-            return null;
+        tempID = br.getRegex("<iframe id=\"preview\" src=\"(http://gallys\\.nastydollars\\.com/[^<>\"]+)").getMatch(0);
+        if (tempID != null) {
+            br.getPage(tempID);
+            tempID = br.getRegex("<iframe src=\"(http://[^<>\"]+)").getMatch(0);
+            if (tempID != null) {
+                br.getPage(tempID);
+                tempID = br.getRegex("<a href=\"(http://[^<>]+\\.flv)\" id=\"media\"").getMatch(0);
+                if (tempID != null) {
+                    DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
+                }
+            }
         }
+        logger.warning("Couldn't decrypt link: " + parameter);
         return decryptedLinks;
     }
 

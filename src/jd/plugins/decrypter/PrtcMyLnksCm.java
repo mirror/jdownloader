@@ -66,13 +66,14 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        /* recaptcha */
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.setId(rcID);
         rc.load();
         for (int i = 0; i <= 5; i++) {
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, param);
+            String c = getCaptchaCode("recaptcha", cf, param);
             ajaxBr.postPage("http://protect-my-links.com/ajaxln.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&id=" + new Regex(parameter, "protect\\-my\\-links\\.com/([a-z0-9]+).*?").getMatch(0) + "&gonum=" + gonum);
             if (ajaxBr.containsHTML(">Captcha not valid<")) {
                 rc.reload();
@@ -80,37 +81,36 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
             }
             break;
         }
-        if (br.containsHTML(">Captcha not valid<")) throw new DecrypterException(DecrypterException.CAPTCHA);
+        if (ajaxBr.containsHTML(">Captcha not valid<")) throw new DecrypterException(DecrypterException.CAPTCHA);
+        /* next */
         final String gotoPage = ajaxBr.getRegex("\"goto\":\"([^<>\"]*?)\"").getMatch(0);
         if (gotoPage == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        br.getHeaders().put("Referer", br.getHost());
         br.getPage("http://protect-my-links.com" + gotoPage.replace("\\", ""));
-        System.out.println(br.toString());
-        final String c = br.getRegex("<script language=javascript>c=\"(.*?)\"\\);</script>").getMatch(0);
-        if (c == null) {
+
+        if (!br.containsHTML("(Page protected by|JavaScript Encoder)")) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        if (true) {
-            logger.warning("Decrypter not yet fixed, site is buggy!");
-            return null;
-        }
-        String[] links = br.getRegex("><a href=\\'(/\\?p=.*?)\\'").getColumn(0);
+        /* decode js */
+        br.getRequest().setHtmlCode(jsDecoder());
+        /* parsing links */
+        String[] links = br.getRegex("class=\"server\">.*?<a href=\"(.*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         for (String psp : links) {
-            // Fixed, thx to goodgood.51@gmail.com
-            br.getPage("http://protect-my-links.com" + psp);
-            final String finallink = decryptSingleLink();
-            if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            if (psp.startsWith("http")) {
+                decryptedLinks.add(createDownloadlink(psp));
             }
-            decryptedLinks.add(createDownloadlink(finallink));
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.warning("Decrypter out of date for link: " + parameter);
+            return null;
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
@@ -120,7 +120,7 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String decryptSingleLink() {
+    private String jsDecoder() {
         String c = br.getRegex("javascript>c=\"(.*?)\";").getMatch(0);
         String x = br.getRegex("x\\(\"(.*?)\"\\)").getMatch(0);
         if (c == null || x == null) return null;
@@ -128,13 +128,10 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
         if (step1Str == null) return null;
         ArrayList<Integer> step2Lst = step2(step1Str);
         if (step2Lst == null || step2Lst.size() == 0) return null;
-        String step3Str = step3(step2Lst, x);
-        if (step3Str == null) return null;
-        String finallink = step4(step3Str);
-        return finallink;
+        return step3(step2Lst, x);
     }
 
-    public static String step1(String varC) {
+    private static String step1(String varC) {
         String result = "";
         String d = "";
 
@@ -155,7 +152,7 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
         return result;
     }
 
-    public static ArrayList<Integer> step2(String step1Str) {
+    private static ArrayList<Integer> step2(String step1Str) {
         // String to match : t=Array(63,2,21,25,58,38,59,47, ...);
 
         Pattern pattern = Pattern.compile("Array((.*?));");
@@ -177,7 +174,7 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
         return intList;
     }
 
-    public static String step3(ArrayList<Integer> step2Lst, String varParamX) {
+    private static String step3(ArrayList<Integer> step2Lst, String varParamX) {
         int l = varParamX.length();
         int b = 1024;
         int i;
@@ -208,23 +205,4 @@ public class PrtcMyLnksCm extends PluginForDecrypt {
         return globalStr.toString();
     }
 
-    public static String step4(String step3Str) {
-        String result = "";
-
-        Pattern pattern = Pattern.compile("src=\"(.*?)\">");
-        Matcher matcher = pattern.matcher(step3Str);
-
-        int i = 1;
-        while (matcher.find()) {
-            String tab[] = matcher.group().split("\"");
-
-            if (i == 2) {
-                result = tab[1];
-            }
-
-            i++;
-        }
-
-        return result;
-    }
 }
