@@ -81,7 +81,6 @@ public class IFileIt extends PluginForHost {
             }
         }
         if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        System.out.println(br2.toString());
         String dllink = br2.getRegex("ticket_url\":\"(http:[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             logger.info("last try getting dllink failed, plugin must be defect!");
@@ -155,7 +154,7 @@ public class IFileIt extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        doFree(downloadLink, false, false);
+        doFree(downloadLink, true, false);
     }
 
     @Override
