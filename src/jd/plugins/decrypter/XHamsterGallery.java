@@ -54,15 +54,18 @@ public class XHamsterGallery extends PluginForDecrypt {
                 if (!allPages.contains(aPage)) allPages.add(aPage);
         }
         for (String currentPage : allPages) {
-            br.getPage(parameterWihoutHtml + "-" + currentPage + ".html");
-            final String allLinks = br.getRegex("<small>\\[\\d+ pictures\\]</small></td></tr></table></div>(.*?)<table cellpadding=\"0\" cellspacing=\"0\" class=\\'listDescr\\' width=\"97%\">[\t\n\r ]+<colgroup><col width=\"160\"><col></colgroup>").getMatch(0);
+            final String thePage = parameterWihoutHtml + "-" + currentPage + ".html";
+            br.getPage(thePage);
+            // Ehefotze </h1> <small>[249
+            // pictures]</small></td></tr></table></div>
+            final String allLinks = br.getRegex("<small>\\[\\d+ pictures\\]</small>( > \\d+)?</td></tr></table></div>(.*?)<table cellpadding=\"0\" cellspacing=\"0\" class=\\'listDescr\\' width=\"97%\">[\t\n\r ]+<colgroup><col width=\"160\"><col></colgroup>").getMatch(1);
             if (allLinks == null) {
-                logger.warning("Decrypter failed on page " + currentPage + " for link: " + parameter);
+                logger.warning("Decrypter failed on page " + currentPage + " for link: " + thePage);
                 return null;
             }
             final String[] thumbNails = new Regex(allLinks, "\"(http://p\\d+\\.xhamster\\.com/\\d+/\\d+/\\d+/\\d+_160\\.jpg)\"").getColumn(0);
             if (thumbNails == null || thumbNails.length == 0) {
-                logger.warning("Decrypter failed on page " + currentPage + " for link: " + parameter);
+                logger.warning("Decrypter failed on page " + currentPage + " for link: " + thePage);
                 return null;
             }
             for (String thumbNail : thumbNails) {

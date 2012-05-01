@@ -22,11 +22,9 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stolenvideos.net" }, urls = { "http://(www\\.)?stolenvideos\\.net/\\d+/.*?\\.html" }, flags = { 0 })
 public class StolenVideosNet extends PluginForDecrypt {
@@ -42,7 +40,10 @@ public class StolenVideosNet extends PluginForDecrypt {
         br.getPage(parameter);
         String tempID = br.getRedirectLocation();
         String filename = br.getRegex("<title>Welcome to Stolen XXX Videos \\- Viewing Media \\-([^<>\"]*?)\\- Daily Free XXX Porn Videos</title>").getMatch(0);
-        if (tempID != null && tempID.length() < 40) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (tempID != null && tempID.length() < 40) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (tempID != null) {
             String ext = tempID.substring(tempID.lastIndexOf("."));
             if (ext != null) {

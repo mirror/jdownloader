@@ -60,8 +60,6 @@ public class IfolderRu extends PluginForHost {
         return 10;
     }
 
-    // If they change back to the "secret" value in the last form(s) look into
-    // revision 11681
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -194,6 +192,7 @@ public class IfolderRu extends PluginForHost {
         br.getHeaders().put("User-Agent", ua);
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
+        br.setReadTimeout(3 * 60 * 1000);
     }
 
     @Override

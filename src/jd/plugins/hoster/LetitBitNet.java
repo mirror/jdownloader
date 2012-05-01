@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -52,9 +53,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://(www\\.)?letitbit\\.net/d?download/(.*?\\.html|[0-9a-zA-z/.-]+)" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
 
-    private static boolean      debugSwitch = false;
-    private static final Object LOCK        = new Object();
-    private static final String COOKIE_HOST = "http://letitbit.net/";
+    private static boolean       debugSwitch = false;
+    private static final Object  LOCK        = new Object();
+    private static final String  COOKIE_HOST = "http://letitbit.net/";
+    private static AtomicInteger maxFree     = new AtomicInteger(1);
 
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -100,7 +102,7 @@ public class LetitBitNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return maxFree.get();
     }
 
     private String getUrl(Account account) throws IOException {
@@ -180,7 +182,12 @@ public class LetitBitNet extends PluginForHost {
         }
         requestFileInformation(downloadLink);
         String url = getLinkViaSkymonkDownloadMethod(downloadLink.getDownloadURL());
-        url = url == null ? handleFreeFallback(downloadLink) : url;
+        if (url == null) {
+            url = handleFreeFallback(downloadLink);
+        } else {
+            // Enable unlimited simultan downloads for skymonk users
+            maxFree.set(-1);
+        }
         if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         if (!dl.getConnection().isOK()) {
