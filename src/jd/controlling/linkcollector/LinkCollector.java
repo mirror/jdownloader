@@ -111,7 +111,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private HashMap<String, ArrayList<CrawledLink>> variousMap    = new HashMap<String, ArrayList<CrawledLink>>();
     private HashMap<String, ArrayList<CrawledLink>> hosterMap     = new HashMap<String, ArrayList<CrawledLink>>();
     private HashMap<Object, Object>                 autoRenameCache;
-    private long                                    lastRenameTime;
+    private DelayedRunnable                         asyncCacheCleanup;
 
     private LinkCollector() {
         autoRenameCache = new HashMap<Object, Object>();
@@ -161,8 +161,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 while (retry > 0) {
                     if (!LinkChecker.isChecking() && !LinkCrawler.isCrawling()) {
                         /*
-                         * we wait till the LinkCollector is finished or max 10
-                         * secs
+                         * we wait till the LinkCollector is finished or max 10 secs
                          */
                         break;
                     }
@@ -196,6 +195,22 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
 
         };
+        asyncCacheCleanup = new DelayedRunnable(IOEQ.TIMINGQUEUE, 30000l, 120000l) {
+
+            @Override
+            public void delayedrun() {
+                IOEQ.add(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        autoRenameCache.clear();
+                    }
+
+                }, true);
+            }
+
+        };
+
         this.eventsender.addListener(new LinkCollectorListener() {
 
             public void onLinkCollectorAbort(LinkCollectorEvent event) {
@@ -223,6 +238,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
 
             public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+                asyncCacheCleanup.run();
             }
 
             @Override
@@ -311,14 +327,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
                 if (newName != null && !name.equals(newName)) {
                     /*
-                     * we do not force a filename if newName equals to name set
-                     * by plugin!
+                     * we do not force a filename if newName equals to name set by plugin!
                      */
                     link.getDownloadLink().forceFileName(newName);
                 }
             }
         }
-        lastRenameTime = (System.currentTimeMillis() - t);
     }
 
     private void addCrawledLink(final CrawledLink link) {
@@ -361,6 +375,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     String packageName = null;
                     String packageID = null;
                     String downloadFolder = null;
+                    boolean ignoreSpecialPackages = dpi != null && dpi.isPackagizerRuleMatched();
                     boolean isMultiArchive = false;
                     if (dpi != null) {
                         packageName = dpi.getName();
@@ -452,20 +467,20 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                     CrawledPackage pkg = packageMap.get(identifier);
                     if (pkg == null) {
-                        if (LinkCrawler.PERMANENT_OFFLINE_ID == uID) {
+                        if (!ignoreSpecialPackages && LinkCrawler.PERMANENT_OFFLINE_ID == uID) {
                             /* these links will never come back online */
                             getPermanentOfflineCrawledPackage();
                             List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                             add.add(link);
                             LinkCollector.this.addmoveChildren(getPermanentOfflineCrawledPackage(), add, -1);
-                        } else if (link.getLinkState() == LinkState.OFFLINE && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.OFFLINE_PACKAGE_ENABLED.getValue()) {
+                        } else if (!ignoreSpecialPackages && link.getLinkState() == LinkState.OFFLINE && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.OFFLINE_PACKAGE_ENABLED.getValue()) {
                             getOfflineCrawledPackage();
                             ArrayList<CrawledLink> list = getIdentifiedMap(identifier, offlineMap);
                             list.add(link);
                             List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                             add.add(link);
                             LinkCollector.this.addmoveChildren(getOfflineCrawledPackage(), add, -1);
-                        } else if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue() > 0) {
+                        } else if (!ignoreSpecialPackages && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue() > 0) {
                             getVariousCrawledPackage();
                             ArrayList<CrawledLink> list = getIdentifiedMap(identifier, variousMap);
                             list.add(link);
@@ -650,8 +665,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         lc.setHandler(this);
         String jobText = job.getText();
         /*
-         * we don't want to keep reference on text during the whole link
-         * grabbing/checking/collecting way
+         * we don't want to keep reference on text during the whole link grabbing/checking/collecting way
          */
         job.setText(null);
         lc.crawl(jobText, null, job.isDeepAnalyse());
@@ -675,7 +689,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             removeFromMap(offlineMap, l);
             removeFromMap(hosterMap, l);
         }
-        autoRenameCache.clear();
     }
 
     @Override
@@ -692,14 +705,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         offlineMap.clear();
         hosterMap.clear();
         autoRenameCache.clear();
+        asyncCacheCleanup.stop();
         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_EMPTY));
     }
 
     /*
      * converts a CrawledPackage into a FilePackage
      * 
-     * if plinks is not set, then the original children of the CrawledPackage
-     * will get added to the FilePackage
+     * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
      * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
@@ -722,8 +735,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 DownloadLink dl = link.getDownloadLink();
                 if (dl != null) {
                     /*
-                     * change filename if it is different than original
-                     * downloadlink
+                     * change filename if it is different than original downloadlink
                      */
                     if (link.isNameSet()) dl.forceFileName(link.getName());
                     /* set correct enabled/disabled state */
@@ -1043,51 +1055,54 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             try {
                 zip = new ZipIOReader(file);
                 ZipEntry check = zip.getZipFile(getCheckFileName());
-                String checkString = null;
                 if (check != null) {
                     /* parse checkFile if it exists */
-                    InputStream checkIS = null;
-                    try {
-                        checkIS = zip.getInputStream(check);
-                        byte[] checkbyte = IO.readStream(1024, checkIS);
-                        checkString = new String(checkbyte, "UTF-8");
-                        checkbyte = null;
-                    } finally {
+                    String checkString = null;
+                    {
+                        /* own scope so we can reuse checkIS */
+                        InputStream checkIS = null;
                         try {
-                            checkIS.close();
-                        } catch (final Throwable e) {
-                        }
-                    }
-                    check = null;
-                }
-                if (checkString != null) {
-                    /* checkFile exists, lets verify */
-                    MessageDigest md = MessageDigest.getInstance("SHA1");
-                    byte[] buffer = new byte[1024];
-                    int found = 0;
-                    for (ZipEntry entry : zip.getZipFiles()) {
-                        if (entry.getName().matches("^\\d+$")) {
-                            found++;
-                            DigestInputStream checkIS = null;
+                            checkIS = zip.getInputStream(check);
+                            byte[] checkbyte = IO.readStream(1024, checkIS);
+                            checkString = new String(checkbyte, "UTF-8");
+                            checkbyte = null;
+                        } finally {
                             try {
-                                checkIS = new DigestInputStream(zip.getInputStream(entry), md);
-                                while (checkIS.read(buffer) >= 0) {
-                                }
-                            } finally {
-                                try {
-                                    checkIS.close();
-                                } catch (final Throwable e) {
-                                }
+                                checkIS.close();
+                            } catch (final Throwable e) {
                             }
                         }
                     }
-                    String hash = HexFormatter.byteArrayToHex(md.digest());
-                    String time = new Regex(checkString, "(\\d+)").getMatch(0);
-                    String numberCheck = new Regex(checkString, ".*?:(\\d+)").getMatch(0);
-                    String hashCheck = new Regex(checkString, ".*?:.*?:(.+)").getMatch(0);
-                    boolean numberOk = (numberCheck != null && Integer.parseInt(numberCheck) == found);
-                    boolean hashOk = (hashCheck != null && hashCheck.equalsIgnoreCase(hash));
-                    Log.L.info("LinkCollectorListVerify: TimeStamp(" + time + ")|numberOfPackages(" + found + "):" + numberOk + "|hash:" + hashOk);
+                    if (checkString != null) {
+                        /* checkFile exists, lets verify */
+                        MessageDigest md = MessageDigest.getInstance("SHA1");
+                        byte[] buffer = new byte[1024];
+                        int found = 0;
+                        for (ZipEntry entry : zip.getZipFiles()) {
+                            if (entry.getName().matches("^\\d+$")) {
+                                found++;
+                                DigestInputStream checkIS = null;
+                                try {
+                                    checkIS = new DigestInputStream(zip.getInputStream(entry), md);
+                                    while (checkIS.read(buffer) >= 0) {
+                                    }
+                                } finally {
+                                    try {
+                                        checkIS.close();
+                                    } catch (final Throwable e) {
+                                    }
+                                }
+                            }
+                        }
+                        String hash = HexFormatter.byteArrayToHex(md.digest());
+                        String time = new Regex(checkString, "(\\d+)").getMatch(0);
+                        String numberCheck = new Regex(checkString, ".*?:(\\d+)").getMatch(0);
+                        String hashCheck = new Regex(checkString, ".*?:.*?:(.+)").getMatch(0);
+                        boolean numberOk = (numberCheck != null && Integer.parseInt(numberCheck) == found);
+                        boolean hashOk = (hashCheck != null && hashCheck.equalsIgnoreCase(hash));
+                        Log.L.info("LinkCollectorListVerify: TimeStamp(" + time + ")|numberOfPackages(" + found + "):" + numberOk + "|hash:" + hashOk);
+                    }
+                    check = null;
                 }
                 /* lets restore the CrawledPackages from Json */
                 HashMap<Integer, CrawledPackage> map = new HashMap<Integer, CrawledPackage>();
@@ -1146,8 +1161,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         if (!StringUtils.isEmpty(oldJDRoot)) {
                             String newRoot = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
                             /*
-                             * convert pathes relative to JDownloader root,only
-                             * in jared version
+                             * convert pathes relative to JDownloader root,only in jared version
                              */
                             for (CrawledPackage pkg : ret2) {
                                 if (!CrossSystem.isAbsolutePath(pkg.getDownloadFolder())) {
@@ -1241,8 +1255,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         zip.addByteArry(check.getBytes("UTF-8"), true, "", getCheckFileName());
                         try {
                             /*
-                             * add current JDRoot directory to savefile so we
-                             * can convert pathes if needed
+                             * add current JDRoot directory to savefile so we can convert pathes if needed
                              */
                             String currentROOT = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
                             zip.addByteArry(currentROOT.getBytes("UTF-8"), true, "", getJDRootFileName());
@@ -1287,8 +1300,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     /**
-     * save the current CrawledPackages/CrawledLinks controlled by this
-     * LinkCollector
+     * save the current CrawledPackages/CrawledLinks controlled by this LinkCollector
      */
     public void saveLinkCollectorLinks() {
         if (isSaveAllowed() == false) return;

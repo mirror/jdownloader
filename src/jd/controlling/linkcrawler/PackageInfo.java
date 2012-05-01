@@ -9,7 +9,8 @@ import org.jdownloader.controlling.UniqueSessionID;
 
 public class PackageInfo {
     private UniqueSessionID uniqueId              = null;
-    private Boolean  autoExtractionEnabled = null;
+    private Boolean         autoExtractionEnabled = null;
+    private boolean         packagizerRuleMatched = false;
 
     public Boolean isAutoExtractionEnabled() {
         return autoExtractionEnabled;
@@ -61,9 +62,8 @@ public class PackageInfo {
     private String          comment             = null;
 
     /**
-     * Returns a packageID or null, of no id specific values are set. if this
-     * method returns a value !=null, it should get an own package, which is not
-     * part of autopackaging.
+     * Returns a packageID or null, of no id specific values are set. if this method returns a value !=null, it should get an own package, which is not part of
+     * autopackaging.
      * 
      * @return
      */
@@ -105,6 +105,21 @@ public class PackageInfo {
             ret.setDownloadFolder(dpi.getDestinationFolder());
         }
         return ret;
+    }
+
+    /**
+     * @return the packagizerRuleMatched
+     */
+    public boolean isPackagizerRuleMatched() {
+        return packagizerRuleMatched;
+    }
+
+    /**
+     * @param packagizerRuleMatched
+     *            the packagizerRuleMatched to set
+     */
+    public void setPackagizerRuleMatched(boolean packagizerRuleMatched) {
+        this.packagizerRuleMatched = packagizerRuleMatched;
     }
 
 }

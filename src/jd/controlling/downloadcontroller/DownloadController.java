@@ -44,18 +44,23 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.CleanAfterDownloadAction;
+import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadController extends PackageController<FilePackage, DownloadLink> {
 
@@ -103,8 +108,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 while (retry > 0) {
                     if (DownloadWatchDog.getInstance().getStateMachine().isFinal() || DownloadWatchDog.getInstance().getStateMachine().isStartState()) {
                         /*
-                         * we wait till the DownloadWatchDog is finished or max
-                         * 10 secs
+                         * we wait till the DownloadWatchDog is finished or max 10 secs
                          */
                         break;
                     }
@@ -266,8 +270,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     /**
-     * fill given DownloadInformations with current details of this
-     * DownloadController
+     * fill given DownloadInformations with current details of this DownloadController
      */
     protected void getDownloadStatus(final DownloadInformations ds) {
         ds.reset();
@@ -319,8 +322,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         if ((nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
                             if (new File(nextDownloadLink.getFileOutput()).exists()) {
                                 /*
-                                 * fertige datei sollte auch auf der platte sein
-                                 * und nicht nur als fertig in der liste
+                                 * fertige datei sollte auch auf der platte sein und nicht nur als fertig in der liste
                                  */
                                 return nextDownloadLink;
                             }
@@ -437,51 +439,54 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 try {
                     zip = new ZipIOReader(file);
                     ZipEntry check = zip.getZipFile(getCheckFileName());
-                    String checkString = null;
                     if (check != null) {
                         /* parse checkFile if it exists */
-                        InputStream checkIS = null;
-                        try {
-                            checkIS = zip.getInputStream(check);
-                            byte[] checkbyte = IO.readStream(1024, checkIS);
-                            checkString = new String(checkbyte, "UTF-8");
-                            checkbyte = null;
-                        } finally {
+                        String checkString = null;
+                        {
+                            /* own scope so we can reuse checkIS */
+                            InputStream checkIS = null;
                             try {
-                                checkIS.close();
-                            } catch (final Throwable e) {
-                            }
-                        }
-                        check = null;
-                    }
-                    if (checkString != null) {
-                        /* checkFile exists, lets verify */
-                        MessageDigest md = MessageDigest.getInstance("SHA1");
-                        byte[] buffer = new byte[1024];
-                        int found = 0;
-                        for (ZipEntry entry : zip.getZipFiles()) {
-                            if (entry.getName().matches("^\\d+$")) {
-                                found++;
-                                DigestInputStream checkIS = null;
+                                checkIS = zip.getInputStream(check);
+                                byte[] checkbyte = IO.readStream(1024, checkIS);
+                                checkString = new String(checkbyte, "UTF-8");
+                                checkbyte = null;
+                            } finally {
                                 try {
-                                    checkIS = new DigestInputStream(zip.getInputStream(entry), md);
-                                    while (checkIS.read(buffer) >= 0) {
-                                    }
-                                } finally {
-                                    try {
-                                        checkIS.close();
-                                    } catch (final Throwable e) {
-                                    }
+                                    checkIS.close();
+                                } catch (final Throwable e) {
                                 }
                             }
                         }
-                        String hash = HexFormatter.byteArrayToHex(md.digest());
-                        String time = new Regex(checkString, "(\\d+)").getMatch(0);
-                        String numberCheck = new Regex(checkString, ".*?:(\\d+)").getMatch(0);
-                        String hashCheck = new Regex(checkString, ".*?:.*?:(.+)").getMatch(0);
-                        boolean numberOk = (numberCheck != null && Integer.parseInt(numberCheck) == found);
-                        boolean hashOk = (hashCheck != null && hashCheck.equalsIgnoreCase(hash));
-                        Log.L.info("DownloadListVerify: TimeStamp(" + time + ")|numberOfPackages(" + found + "):" + numberOk + "|hash:" + hashOk);
+                        if (checkString != null) {
+                            /* checkFile exists, lets verify */
+                            MessageDigest md = MessageDigest.getInstance("SHA1");
+                            byte[] buffer = new byte[1024];
+                            int found = 0;
+                            for (ZipEntry entry : zip.getZipFiles()) {
+                                if (entry.getName().matches("^\\d+$")) {
+                                    found++;
+                                    DigestInputStream checkIS = null;
+                                    try {
+                                        checkIS = new DigestInputStream(zip.getInputStream(entry), md);
+                                        while (checkIS.read(buffer) >= 0) {
+                                        }
+                                    } finally {
+                                        try {
+                                            checkIS.close();
+                                        } catch (final Throwable e) {
+                                        }
+                                    }
+                                }
+                            }
+                            String hash = HexFormatter.byteArrayToHex(md.digest());
+                            String time = new Regex(checkString, "(\\d+)").getMatch(0);
+                            String numberCheck = new Regex(checkString, ".*?:(\\d+)").getMatch(0);
+                            String hashCheck = new Regex(checkString, ".*?:.*?:(.+)").getMatch(0);
+                            boolean numberOk = (numberCheck != null && Integer.parseInt(numberCheck) == found);
+                            boolean hashOk = (hashCheck != null && hashCheck.equalsIgnoreCase(hash));
+                            Log.L.info("DownloadListVerify: TimeStamp(" + time + ")|numberOfPackages(" + found + "):" + numberOk + "|hash:" + hashOk);
+                        }
+                        check = null;
                     }
                     /* lets restore the FilePackages from Json */
                     HashMap<Integer, FilePackage> map = new HashMap<Integer, FilePackage>();
@@ -515,6 +520,51 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     ArrayList<FilePackage> ret2 = new ArrayList<FilePackage>(positions.size());
                     for (Integer position : positions) {
                         ret2.add(map.get(position));
+                    }
+                    if (JsonConfig.create(GeneralSettings.class).isConvertRelativePathesJDRoot()) {
+                        try {
+                            ZipEntry jdRoot = zip.getZipFile(getJDRootFileName());
+                            String oldJDRoot = null;
+                            if (jdRoot != null) {
+                                /* parse jdRoot.path if it exists */
+                                InputStream checkIS = null;
+                                try {
+                                    checkIS = zip.getInputStream(jdRoot);
+                                    byte[] checkbyte = IO.readStream(1024, checkIS);
+                                    oldJDRoot = new String(checkbyte, "UTF-8");
+                                    checkbyte = null;
+                                } finally {
+                                    try {
+                                        checkIS.close();
+                                    } catch (final Throwable e) {
+                                    }
+                                }
+                                jdRoot = null;
+                            }
+                            if (!StringUtils.isEmpty(oldJDRoot)) {
+                                String newRoot = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
+                                /*
+                                 * convert pathes relative to JDownloader root,only in jared version
+                                 */
+                                for (FilePackage pkg : ret2) {
+                                    if (!CrossSystem.isAbsolutePath(pkg.getDownloadDirectory())) {
+                                        /* no need to convert relative pathes */
+                                        continue;
+                                    }
+                                    String pkgPath = LinkTreeUtils.getDownloadDirectory(pkg).toString();
+                                    if (pkgPath.startsWith(oldJDRoot)) {
+                                        /*
+                                         * folder is inside JDRoot, lets update it
+                                         */
+                                        String restPath = pkgPath.substring(oldJDRoot.length());
+                                        String newPath = new File(newRoot, restPath).toString();
+                                        pkg.setDownloadDirectory(newPath);
+                                    }
+                                }
+                            }
+                        } catch (final Throwable e) {
+                            Log.exception(e);
+                        }
                     }
                     map = null;
                     positions = null;
@@ -563,8 +613,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     continue;
                 }
                 /*
-                 * reset not if already exist, offline or finished. plugin
-                 * errors will be reset here because plugin can be fixed again
+                 * reset not if already exist, offline or finished. plugin errors will be reset here because plugin can be fixed again
                  */
                 localLink.getLinkStatus().resetStatus(LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED, LinkStatus.ERROR_FATAL);
 
@@ -652,8 +701,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     zip.addByteArry(check.getBytes("UTF-8"), true, "", getCheckFileName());
                     try {
                         /*
-                         * add current JDRoot directory to savefile so we can
-                         * convert pathes if needed
+                         * add current JDRoot directory to savefile so we can convert pathes if needed
                          */
                         String currentROOT = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
                         zip.addByteArry(currentROOT.getBytes("UTF-8"), true, "", getJDRootFileName());
@@ -693,8 +741,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     /**
-     * save the current FilePackages/DownloadLinks controlled by this
-     * DownloadController
+     * save the current FilePackages/DownloadLinks controlled by this DownloadController
      */
     public void saveDownloadLinks() {
         if (isSaveAllowed() == false) return;

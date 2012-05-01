@@ -361,6 +361,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (dpiSet && link.getDesiredPackageInfo() == null) {
             /* set desiredpackageinfo if not set yet */
             link.setDesiredPackageInfo(dpi);
+            dpi.setPackagizerRuleMatched(true);
         }
     }
 
