@@ -296,4 +296,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isPremiumAlertETAColumnEnabled();
 
     void setPremiumAlertETAColumnEnabled(boolean b);
+
+    @AboutConfig
+    @Description("If false, Most of the Tooltips will be disabled")
+    @DefaultBooleanValue(true)
+    boolean isTooltipEnabled();
+
+    void setTooltipEnabled(boolean b);
 }

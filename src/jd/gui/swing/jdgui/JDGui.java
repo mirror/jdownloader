@@ -64,6 +64,10 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.update.inapp.RlyExitListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
@@ -84,6 +88,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.FrameStatus;
 import org.jdownloader.settings.FrameStatus.ExtendedState;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class JDGui extends SwingGui {
 
@@ -135,7 +140,7 @@ public class JDGui extends SwingGui {
         Dialog.getInstance().setParentOwner(this.mainFrame);
         this.initLocationAndDimension();
         this.mainFrame.setVisible(true);
-
+        initToolTipSettings();
         if (this.mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
             ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) this.mainFrame.getRootPane().getUI()).setMaximizedBounds(this.mainFrame);
         }
@@ -196,6 +201,22 @@ public class JDGui extends SwingGui {
                 });
             }
 
+        });
+    }
+
+    private void initToolTipSettings() {
+
+        ToolTipController.getInstance().setClassicToolstipsEnabled(CFG_GUI.TOOLTIP_ENABLED.isEnabled());
+        CFG_GUI.TOOLTIP_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                ToolTipController.getInstance().setClassicToolstipsEnabled(CFG_GUI.TOOLTIP_ENABLED.isEnabled());
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
         });
     }
 

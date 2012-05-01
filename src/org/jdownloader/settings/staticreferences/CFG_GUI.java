@@ -24,19 +24,25 @@ public class CFG_GUI {
     // access is faster, and we get an error on init if mappings are wrong.
     // ALL
     public static final EnumKeyHandler                                 DOWNLOAD_VIEW                             = SH.getKeyHandler("DownloadView", EnumKeyHandler.class);
+    // false
+    /**
+     * If true, ETAColumn will show Premium Alerts in Free Download mode if JD
+     * thinks Premium would be better currently.
+     **/
+    public static final BooleanKeyHandler                              PREMIUM_ALERT_ETACOLUMN_ENABLED           = SH.getKeyHandler("PremiumAlertETAColumnEnabled", BooleanKeyHandler.class);
     // 500
     /**
      * Refreshrate in ms for the DownloadView
      **/
     public static final LongKeyHandler                                 DOWNLOAD_VIEW_REFRESH                     = SH.getKeyHandler("DownloadViewRefresh", LongKeyHandler.class);
-    // true
+    // false
     /**
      * Enable/disable Enable/disable Clipboard monitoring
      **/
     public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                       = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
-    // null
+    // jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings
     public static final StringKeyHandler                               ACTIVE_CONFIG_PANEL                       = SH.getKeyHandler("ActiveConfigPanel", StringKeyHandler.class);
-    // false
+    // true
     /**
      * True if move button should be visible in downloadview
      **/
@@ -78,7 +84,7 @@ public class CFG_GUI {
      * Highlight Column in Downloadview if table is not in downloadsortorder
      **/
     public static final BooleanKeyHandler                              SORT_COLUMN_HIGHLIGHT_ENABLED             = SH.getKeyHandler("SortColumnHighlightEnabled", BooleanKeyHandler.class);
-    // false
+    // true
     /**
      * True if move button should be visible in downloadview
      **/
@@ -91,9 +97,14 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              PREMIUM_ALERT_SPEED_COLUMN_ENABLED        = SH.getKeyHandler("PremiumAlertSpeedColumnEnabled", BooleanKeyHandler.class);
     // true
     public static final BooleanKeyHandler                              BALLOON_NOTIFICATION_ENABLED              = SH.getKeyHandler("BalloonNotificationEnabled", BooleanKeyHandler.class);
+    // true
+    /**
+     * If false, Most of the Tooltips will be disabled
+     **/
+    public static final BooleanKeyHandler                              TOOLTIP_ENABLED                           = SH.getKeyHandler("TooltipEnabled", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler                              LOG_VIEW_VISIBLE                          = SH.getKeyHandler("LogViewVisible", BooleanKeyHandler.class);
-    // false
+    // true
     public static final BooleanKeyHandler                              CONFIG_VIEW_VISIBLE                       = SH.getKeyHandler("ConfigViewVisible", BooleanKeyHandler.class);
     // null
     public static final StringKeyHandler                               LOOK_AND_FEEL                             = SH.getKeyHandler("LookAndFeel", StringKeyHandler.class);
@@ -108,7 +119,7 @@ public class CFG_GUI {
     public static final EnumKeyHandler                                 SELECTED_DOWNLOAD_SEARCH_CATEGORY         = SH.getKeyHandler("SelectedDownloadSearchCategory", EnumKeyHandler.class);
     // false
     public static final BooleanKeyHandler                              PASSWORD_PROTECTION_ENABLED               = SH.getKeyHandler("PasswordProtectionEnabled", BooleanKeyHandler.class);
-    // false
+    // true
     /**
      * True if move button should be visible in downloadview
      **/
@@ -153,7 +164,7 @@ public class CFG_GUI {
      * value is true.
      **/
     public static final BooleanKeyHandler                              ANIMATION_ENABLED                         = SH.getKeyHandler("AnimationEnabled", BooleanKeyHandler.class);
-    // false
+    // true
     /**
      * True if move button should be visible in downloadview
      **/
