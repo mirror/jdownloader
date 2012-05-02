@@ -136,10 +136,10 @@ public class RouterUtils {
         Socket sock = null;
         URLConnectionAdapter con = null;
         try {
-
+            Log.L.info("Check " + host + ":" + port);
             sock = new Socket();
-            sock.setSoTimeout(1000);
-            sock.connect(new InetSocketAddress(host, port), 1000);
+            sock.setSoTimeout(2000);
+            sock.connect(new InetSocketAddress(host, port), 2000);
             Browser br = new Browser();
             br.setProxy(HTTPProxy.NONE);
             br.setConnectTimeout(2000);
@@ -169,6 +169,7 @@ public class RouterUtils {
             return true;
 
         } catch (final Exception e) {
+            Log.exception(e);
         } finally {
             try {
                 sock.close();
