@@ -240,7 +240,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @Description("If enabled, JDownloader GUI will come to top iof new links have been added")
+    @Description("If enabled, JDownloader GUI will come to top when new links are added")
     boolean isLinkgrabberFrameToTopOnNewLinksEnabled();
 
     void setLinkgrabberFrameToTopOnNewLinksEnabled(boolean b);

@@ -48,12 +48,17 @@ public class QqCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        String dllink = null;
         requestFileInformation(downloadLink);
-        final String[] dlValues = br.getRegex("<a id=\"btn_normaldl\" class=\"btn_normal\".*?dllink=\"(.*?)\" (.*?)=\"(.*?)\" filename=\"(.*?)\"></a>").getRow(0);
-        if (dlValues == null || dlValues.length != 4) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
-        br.setCookie(getHost(), dlValues[1].toUpperCase(), dlValues[2]);
-        final String dllink = dlValues[0] + "/" + Encoding.Base64Encode(dlValues[3]);
+        final String[] dlValues = br.getRegex("<a id=\"btn_normaldl\" class=\"btn_normal\".+ftnlink=\"([^\"]+)\" ftncookie=\"([^\"]+)\" dllink=\"(.*?)\" (.*?)=\"(.*?)\" filename=\"(.*?)\"></a>").getRow(0);
+        if (dlValues == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dlValues[0] != null && dlValues[1] != null && dlValues[5] != null) {
+            br.setCookie(br.getHost(), "FTN5K", dlValues[1]);
+            dllink = dlValues[0] + "/" + Encoding.urlEncode(dlValues[5]);
+        } else {
+            br.setCookie(br.getHost(), dlValues[3].toUpperCase(), dlValues[4]);
+            dllink = dlValues[2] + "/" + Encoding.Base64Encode(dlValues[5]);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
 
         if (dl.getConnection().getResponseCode() == 503) {
@@ -64,7 +69,6 @@ public class QqCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         dl.startDownload();
     }
 
