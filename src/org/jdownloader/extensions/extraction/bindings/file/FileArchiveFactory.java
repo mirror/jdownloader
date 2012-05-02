@@ -133,4 +133,9 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
         return new File(path);
     }
 
+    @Override
+    public File getFolder() {
+        return getFile().getParentFile();
+    }
+
 }

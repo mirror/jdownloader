@@ -44,7 +44,7 @@ public class DummyArchive {
 
         if (missing != null) {
             for (String miss : missing) {
-                ret.add(new DummyArchiveFile(miss).setMissing(false));
+                ret.add(new DummyArchiveFile(miss, archive2.getFolder()));
             }
         }
         for (ArchiveFile af : archive2.getArchiveFiles()) {

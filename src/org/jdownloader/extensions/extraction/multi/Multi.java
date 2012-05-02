@@ -374,7 +374,7 @@ public class Multi extends IExtraction {
                         if (!erg.containsKey(0)) start = 1;
                         if (ret.getSize() == 0) {
                             // .rar missing
-                            ret.add(new DummyArchiveFile(archive.getName() + ".rar"));
+                            ret.add(new DummyArchiveFile(archive.getName() + ".rar", archive.getFolder()));
 
                         }
                         break;
@@ -395,7 +395,7 @@ public class Multi extends IExtraction {
                 } else {
                     // missing file
                     String part = String.format(format, StringFormatter.fillString(i + "", "0", "", length));
-                    ret.add(new DummyArchiveFile(part));
+                    ret.add(new DummyArchiveFile(part, archive.getFolder()));
                 }
 
             }

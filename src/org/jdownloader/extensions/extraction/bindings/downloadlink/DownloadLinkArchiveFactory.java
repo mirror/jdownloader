@@ -162,4 +162,9 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         return new DownloadLinkArchive(this);
     }
 
+    @Override
+    public File getFolder() {
+        return new File(getDownloadLink().getFilePackage().getDownloadDirectory());
+    }
+
 }

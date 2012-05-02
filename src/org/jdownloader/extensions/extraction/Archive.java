@@ -308,4 +308,8 @@ public class Archive {
         return false;
     }
 
+    public File getFolder() {
+        return getFactory().getFolder();
+    }
+
 }

@@ -12,6 +12,7 @@ public interface ArchiveFactory extends ArchiveFile {
     // link1.setProperty(ExtractionExtension.DOWNLOADLINK_KEY_EXTRACTEDPATH,
     // dl.getAbsolutePath());
     // }
+    public File getFolder();
 
     void fireExtractToChange(Archive archive);
 

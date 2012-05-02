@@ -9,15 +9,18 @@ import java.util.regex.Pattern;
 
 import jd.controlling.linkcrawler.CrawledLink;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.settings.GeneralSettings;
 
 public class CrawledLinkFactory extends CrawledLinkArchiveFile implements ArchiveFactory {
 
     public CrawledLinkFactory(CrawledLink l) {
         super(l);
+
     }
 
     public ArrayList<ArchiveFile> createPartFileList(String pattern) {
@@ -78,6 +81,15 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
 
     public File toFile(String path) {
         return new File(path);
+    }
+
+    @Override
+    public File getFolder() {
+        try {
+            return new File(this.getLink().getParentNode().getDownloadFolder());
+        } catch (NullPointerException e) {
+            return new File(JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
+        }
     }
 
 }
