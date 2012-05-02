@@ -378,32 +378,34 @@ public class Launcher {
     }
 
     private static void checkSessionInstallLog() {
+        File logFile = null;
         try {
             InstallLogList tmpInstallLog = new InstallLogList();
-            final File logFile = Application.getResource(org.appwork.update.standalone.Main.SESSION_INSTALL_LOG_LOG);
+            logFile = Application.getResource(org.appwork.update.standalone.Main.SESSION_INSTALL_LOG_LOG);
             if (logFile.exists()) {
                 tmpInstallLog = JSonStorage.restoreFrom(logFile, tmpInstallLog);
 
                 for (InstalledFile iFile : tmpInstallLog) {
                     if (iFile.getRelPath().endsWith(".class")) {
-
                         // Updated plugins
                         JDInitFlags.REFRESH_CACHE = true;
+                        Log.L.info("RefreshCache=true");
                         break;
                     }
                     if (iFile.getRelPath().startsWith("extensions") && iFile.getRelPath().endsWith(".jar")) {
-
                         // Updated extensions
                         JDInitFlags.REFRESH_CACHE = true;
+                        Log.L.info("RefreshCache=true");
                         break;
                     }
                 }
             }
-            logFile.delete();
+
         } catch (Throwable e) {
             // JUst to be sure
             Log.exception(e);
-
+        } finally {
+            if (logFile != null) logFile.delete();
         }
     }
 
@@ -432,23 +434,22 @@ public class Launcher {
         } else {
             JDLogger.removeConsoleHandler();
         }
-
-        CFG_GENERAL.BROWSER_COMMAND_LINE.getEventSender().addListener(new GenericConfigEventListener<String[]>() {
-
-            @Override
-            public void onConfigValidatorError(KeyHandler<String[]> keyHandler, String[] invalidValue, ValidationException validateException) {
-            }
-
-            @Override
-            public void onConfigValueModified(KeyHandler<String[]> keyHandler, String[] newValue) {
-                CrossSystem.setBrowserCommandLine(newValue);
-            }
-        });
-        CrossSystem.setBrowserCommandLine(CFG_GENERAL.BROWSER_COMMAND_LINE.getValue());
         /* these can be initiated without a gui */
         final Thread thread = new Thread() {
             @Override
             public void run() {
+                CFG_GENERAL.BROWSER_COMMAND_LINE.getEventSender().addListener(new GenericConfigEventListener<String[]>() {
+
+                    @Override
+                    public void onConfigValidatorError(KeyHandler<String[]> keyHandler, String[] invalidValue, ValidationException validateException) {
+                    }
+
+                    @Override
+                    public void onConfigValueModified(KeyHandler<String[]> keyHandler, String[] newValue) {
+                        CrossSystem.setBrowserCommandLine(newValue);
+                    }
+                });
+                CrossSystem.setBrowserCommandLine(CFG_GENERAL.BROWSER_COMMAND_LINE.getValue());
                 /* setup JSPermission */
                 try {
                     JSPermissionRestricter.init();
@@ -479,13 +480,14 @@ public class Launcher {
             }
         };
         thread.start();
-        new EDTHelper<Void>() {
+        final EDTHelper<Void> lafInit = new EDTHelper<Void>() {
             @Override
             public Void edtRun() {
                 LookAndFeelController.getInstance().setUIManager();
                 return null;
             }
-        }.waitForEDT();
+        };
+        lafInit.start();
         Locale.setDefault(Locale.ENGLISH);
         GUI_COMPLETE.executeWhenReached(new Runnable() {
 
@@ -535,9 +537,7 @@ public class Launcher {
                                 @Override
                                 protected Void run() throws RuntimeException {
                                     /*
-                                     * we do this check inside IOEQ because
-                                     * initDownloadLinks also does its final
-                                     * init in IOEQ
+                                     * we do this check inside IOEQ because initDownloadLinks also does its final init in IOEQ
                                      */
                                     List<DownloadLink> dlAvailable = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
@@ -554,8 +554,7 @@ public class Launcher {
                                     });
                                     if (dlAvailable.size() == 0) {
                                         /*
-                                         * no downloadlinks available to
-                                         * autostart
+                                         * no downloadlinks available to autostart
                                          */
                                         return null;
                                     }
@@ -604,7 +603,8 @@ public class Launcher {
             public Void edtRun() {
                 /* init gui here */
                 try {
-                    Log.L.info("Init Gui");
+                    lafInit.waitForEDT();
+                    Log.L.info("InitGUI->" + (System.currentTimeMillis() - Launcher.startup));
                     JDGui.getInstance();
                     EDTEventQueue.initEventQueue();
 

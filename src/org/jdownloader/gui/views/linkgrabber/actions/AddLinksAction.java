@@ -34,8 +34,10 @@ public class AddLinksAction extends AppAction {
                 Thread thread = new Thread("AddLinksDialog") {
                     public void run() {
                         LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(crawljob);
-                        lc.waitForCrawling();
-                        System.out.println("JOB DONE: " + lc.crawledLinksFound());
+                        if (lc != null) {
+                            lc.waitForCrawling();
+                            System.out.println("JOB DONE: " + lc.crawledLinksFound());
+                        }
                     }
                 };
 

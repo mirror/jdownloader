@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.controlling.AccountController;
 import jd.controlling.IOEQ;
@@ -140,6 +141,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private HashSet<String>                                            captchaBlockedHoster   = new HashSet<String>();
 
     private final static DownloadWatchDog                              INSTANCE               = new DownloadWatchDog();
+    private final AtomicInteger                                        shutdownRequests       = new AtomicInteger(0);
 
     public static DownloadWatchDog getInstance() {
         return INSTANCE;
@@ -619,6 +621,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
              */
             return false;
         }
+        if (shutdownRequests.get() > 0) {
+            /* shutdown is requested, we do not start new downloads */
+            return false;
+        }
         if (Reconnecter.getInstance().isReconnectInProgress()) {
             /* reconnect in progress */
             return false;
@@ -891,23 +897,27 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             DownloadLink dlLink = dci.link;
             String dlFolder = dlLink.getFilePackage().getDownloadDirectory();
             DISKSPACECHECK check = this.checkFreeDiskSpace(new File(dlFolder), (dlLink.getDownloadSize() - dlLink.getDownloadCurrent()));
-            switch (check) {
-            case OK:
-            case UNKNOWN:
-                Log.L.info("Start " + dci);
-                this.activateSingleDownloadController(dci);
-                ret++;
-                break;
-            case FAILED:
-                Log.L.info("Could not start " + dci + ": not enough diskspace free");
-                dci.link.getLinkStatus().setStatus(LinkStatus.TEMP_IGNORE);
-                dci.link.getLinkStatus().setValue(LinkStatus.TEMP_IGNORE_REASON_NOT_ENOUGH_HARDDISK_SPACE);
-                break;
-            case INVALIDFOLDER:
-                Log.L.info("Could not start " + dci + ": invalid downloadfolder->" + dlFolder);
-                dci.link.getLinkStatus().setStatus(LinkStatus.TEMP_IGNORE);
-                dci.link.getLinkStatus().setValue(LinkStatus.TEMP_IGNORE_REASON_INVALID_DOWNLOAD_DESTINATION);
-                break;
+            synchronized (shutdownRequests) {
+                if (shutdownRequests.get() == 0) {
+                    switch (check) {
+                    case OK:
+                    case UNKNOWN:
+                        Log.L.info("Start " + dci);
+                        this.activateSingleDownloadController(dci);
+                        ret++;
+                        break;
+                    case FAILED:
+                        Log.L.info("Could not start " + dci + ": not enough diskspace free");
+                        dci.link.getLinkStatus().setStatus(LinkStatus.TEMP_IGNORE);
+                        dci.link.getLinkStatus().setValue(LinkStatus.TEMP_IGNORE_REASON_NOT_ENOUGH_HARDDISK_SPACE);
+                        break;
+                    case INVALIDFOLDER:
+                        Log.L.info("Could not start " + dci + ": invalid downloadfolder->" + dlFolder);
+                        dci.link.getLinkStatus().setStatus(LinkStatus.TEMP_IGNORE);
+                        dci.link.getLinkStatus().setValue(LinkStatus.TEMP_IGNORE_REASON_INVALID_DOWNLOAD_DESTINATION);
+                        break;
+                    }
+                }
             }
             maxLoops--;
         }
@@ -1371,63 +1381,83 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     public void onSilentShutdownVetoRequest(ShutdownVetoException[] vetos) throws ShutdownVetoException {
         if (vetos.length > 0) {
             /* we already abort shutdown, no need to ask again */
+            /* no need to increment the shutdownRequests because it wont happen */
             return;
         }
-        if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
-
-            config.setClosedWithRunningDownloads(true);
-
-            synchronized (this.DownloadControllers) {
-                for (final SingleDownloadController con : DownloadControllers) {
-                    DownloadLink link = con.getDownloadLink();
-                    if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                        DownloadInterface dl = link.getDownloadInstance();
-                        if (dl != null && !dl.isResumable()) { throw new ShutdownVetoException("DownloadWatchDog is still running");
-
+        synchronized (shutdownRequests) {
+            /* we sync on shutdownRequests to make sure that no new downloads get started meanwhile */
+            if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
+                synchronized (this.DownloadControllers) {
+                    for (final SingleDownloadController con : DownloadControllers) {
+                        DownloadLink link = con.getDownloadLink();
+                        if (con.getAccount() == null) { throw new ShutdownVetoException("DownloadWatchDog is still running: no account", this); }
+                        if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                            DownloadInterface dl = link.getDownloadInstance();
+                            if (dl != null && !dl.isResumable()) { throw new ShutdownVetoException("DownloadWatchDog is still running: non resumeable", this); }
                         }
                     }
                 }
+                /* downloadWatchDog was running */
+                config.setClosedWithRunningDownloads(true);
+            } else {
+                /* downloadWatchDog was not running */
+                config.setClosedWithRunningDownloads(false);
             }
+            shutdownRequests.incrementAndGet();
         }
-
     }
 
     @Override
     public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
         if (shutdownVetoExceptions.length > 0) {
             /* we already abort shutdown, no need to ask again */
-            return;
+            /* no need to increment the shutdownRequests because it wont happen */
+            /*
+             * we need this ShutdownVetoException here to avoid count issues with shutdownRequests
+             */
+            throw new ShutdownVetoException("Shutdown already cancelled!", this);
         }
-        if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
-            String dialogTitle = _JDT._.DownloadWatchDog_onShutdownRequest_();
-            synchronized (this.DownloadControllers) {
-                for (final SingleDownloadController con : DownloadControllers) {
-                    DownloadLink link = con.getDownloadLink();
-                    if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                        DownloadInterface dl = link.getDownloadInstance();
-                        if (dl != null && !dl.isResumable()) {
-                            dialogTitle = _JDT._.DownloadWatchDog_onShutdownRequest_nonresumable();
-                            break;
+        synchronized (shutdownRequests) {
+            /* we sync on shutdownRequests to make sure that no new downloads get started meanwhile */
+            if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
+                String dialogTitle = _JDT._.DownloadWatchDog_onShutdownRequest_();
+                synchronized (this.DownloadControllers) {
+                    for (final SingleDownloadController con : DownloadControllers) {
+                        DownloadLink link = con.getDownloadLink();
+                        if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                            DownloadInterface dl = link.getDownloadInstance();
+                            if (dl != null && !dl.isResumable()) {
+                                dialogTitle = _JDT._.DownloadWatchDog_onShutdownRequest_nonresumable();
+                                break;
+                            }
                         }
                     }
                 }
-            }
 
-            try {
-                NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, dialogTitle, _JDT._.DownloadWatchDog_onShutdownRequest_msg(), NewTheme.I().getIcon("download", 32), _JDT._.literally_yes(), null);
-                config.setClosedWithRunningDownloads(true);
-                return;
-            } catch (DialogNoAnswerException e) {
-                e.printStackTrace();
+                try {
+                    NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, dialogTitle, _JDT._.DownloadWatchDog_onShutdownRequest_msg(), NewTheme.I().getIcon("download", 32), _JDT._.literally_yes(), null);
+                    /* downloadWatchDog was running */
+                    config.setClosedWithRunningDownloads(true);
+                    shutdownRequests.incrementAndGet();
+                    return;
+                } catch (DialogNoAnswerException e) {
+                }
+                throw new ShutdownVetoException("DownloadWatchDog is still running", this);
+            } else {
+                /* downloadWatchDog was not running */
+                config.setClosedWithRunningDownloads(false);
+                shutdownRequests.incrementAndGet();
             }
-            throw new ShutdownVetoException("DownloadWatchDog is still running");
-
         }
-        config.setClosedWithRunningDownloads(false);
     }
 
     @Override
     public void onShutdownVeto(ShutdownVetoException[] shutdownVetoExceptions) {
+        for (ShutdownVetoException ex : shutdownVetoExceptions) {
+            if (this == ex.getSource()) return;
+        }
+        /* none of the exceptions belong to us, so we can decrement the shutdownRequests */
+        shutdownRequests.decrementAndGet();
     }
 
 }

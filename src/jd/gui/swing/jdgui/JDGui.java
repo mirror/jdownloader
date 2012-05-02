@@ -95,8 +95,7 @@ public class JDGui extends SwingGui {
     private static JDGui INSTANCE;
 
     /**
-     * Factorymethode. Erzeugt eine INstanc der Gui oder gibt eine bereits
-     * existierende zurück
+     * Factorymethode. Erzeugt eine INstanc der Gui oder gibt eine bereits existierende zurück
      * 
      * @return
      */
@@ -150,8 +149,7 @@ public class JDGui extends SwingGui {
                 if (e.getID() == KeyEvent.KEY_RELEASED && e.isShiftDown() && e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
                     try {
                         /*
-                         * dirty little helper for mac os problem, unable to
-                         * reach window header
+                         * dirty little helper for mac os problem, unable to reach window header
                          */
                         final Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
                         JDGui.this.mainFrame.setExtendedState(Frame.NORMAL);
@@ -488,8 +486,7 @@ public class JDGui extends SwingGui {
     }
 
     /**
-     * Adds view to the main tabbedpane if setActive is true, the enw panel will
-     * be selected
+     * Adds view to the main tabbedpane if setActive is true, the enw panel will be selected
      */
     @Override
     public void setContent(final View view, boolean setActive) {
@@ -529,8 +526,7 @@ public class JDGui extends SwingGui {
     }
 
     /**
-     * Sets the Windows Icons. lot's of lafs have problems resizing the icon. so
-     * we set different sizes. for 1.5 it is only possible to use
+     * Sets the Windows Icons. lot's of lafs have problems resizing the icon. so we set different sizes. for 1.5 it is only possible to use
      * {@link JFrame#setIconImage(Image)}
      */
     private void setWindowIcon() {
@@ -547,9 +543,21 @@ public class JDGui extends SwingGui {
                     list.add(NewTheme.I().getImage("logo/logo_19_19", -1));
                     list.add(NewTheme.I().getImage("logo/logo_20_20", -1));
                     list.add(NewTheme.I().getImage("logo/jd_logo_64_64", -1));
-                    mainFrame.setIconImages(list);
+                    new EDTHelper<Object>() {
+                        @Override
+                        public Object edtRun() {
+                            mainFrame.setIconImages(list);
+                            return null;
+                        }
+                    }.start();
                 } else {
-                    mainFrame.setIconImage(NewTheme.I().getImage("logo/logo_17_17", -1));
+                    new EDTHelper<Object>() {
+                        @Override
+                        public Object edtRun() {
+                            mainFrame.setIconImage(NewTheme.I().getImage("logo/logo_17_17", -1));
+                            return null;
+                        }
+                    }.start();
                 }
             }
 
@@ -567,8 +575,7 @@ public class JDGui extends SwingGui {
     }
 
     /**
-     * Converts a {@link ConfigContainer} to a {@link AddonConfig} and displays
-     * it
+     * Converts a {@link ConfigContainer} to a {@link AddonConfig} and displays it
      * 
      * @param container
      */
@@ -607,8 +614,7 @@ public class JDGui extends SwingGui {
                     try {
                         if (SystemTray.isSupported() && ((org.jdownloader.extensions.jdtrayicon.TrayConfig) ext.getSettings()).isCloseToTrayEnabled()) {
                             /*
-                             * avoid exit if trayicon addon is enabled and close
-                             * to tray active
+                             * avoid exit if trayicon addon is enabled and close to tray active
                              */
                             try {
                                 Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.JDGui_windowClosing_try_title_(), _GUI._.JDGui_windowClosing_try_msg_(), null, _GUI._.JDGui_windowClosing_try_answer_tray(), _GUI._.JDGui_windowClosing_try_asnwer_close());

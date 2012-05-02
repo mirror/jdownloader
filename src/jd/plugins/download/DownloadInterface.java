@@ -892,8 +892,9 @@ abstract public class DownloadInterface {
         logger.finer("Connect...");
         if (request == null) throw new IllegalStateException("Wrong Mode. Instance is in direct Connection mode");
         this.connected = true;
+        boolean resumed = false;
         if (this.isResume() && this.checkResumabled()) {
-            connectResumable();
+            resumed = connectResumable();
         } else {
             if (this.isFileSizeVerified()) {
                 int tmp = Math.min(Math.max(1, (int) (downloadLink.getDownloadSize() / Chunk.MIN_CHUNKSIZE)), getChunkNum());
@@ -914,17 +915,14 @@ abstract public class DownloadInterface {
         connection = request.getHttpConnection();
         if (request.getLocation() != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, DownloadInterface.ERROR_REDIRECTED);
         if (connection.getRange() != null) {
-            // Dateigroesse wird aus dem Range-Response gelesen
+            /* we have a range response, let's use it */
             if (connection.getRange()[2] > 0) {
                 this.setFilesizeCheck(true);
                 this.downloadLink.setDownloadSize(connection.getRange()[2]);
             }
-        } else {
-            if (connection.getLongContentLength() > 0) {
-                this.setFilesizeCheck(true);
-                this.downloadLink.setDownloadSize(connection.getLongContentLength());
-            }
-
+        } else if (resumed == false && connection.getLongContentLength() > 0 && connection.isOK()) {
+            this.setFilesizeCheck(true);
+            this.downloadLink.setDownloadSize(connection.getLongContentLength());
         }
         fileSize = downloadLink.getDownloadSize();
 
@@ -939,7 +937,6 @@ abstract public class DownloadInterface {
             logger.warning("HTTP/1.1 416 Requested Range Not Satisfiable");
             if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
             throw new IllegalStateException("HTTP/1.1 416 Requested Range Not Satisfiable");
-
         } else if (request.getHttpConnection().getRange() == null) {
             logger.warning("No Chunkload");
             setChunkNum(1);
@@ -952,13 +949,13 @@ abstract public class DownloadInterface {
         }
     }
 
-    private void connectResumable() throws IOException {
+    private boolean connectResumable() throws IOException {
         // TODO: endrange pruefen
 
         long[] chunkProgress = downloadLink.getChunksProgress();
         String start, end;
         start = end = "";
-
+        boolean rangeRequested = false;
         if (this.isFileSizeVerified()) {
             start = chunkProgress[0] == 0 ? "0" : (chunkProgress[0] + 1) + "";
             end = (fileSize / chunkProgress.length) + "";
@@ -967,11 +964,14 @@ abstract public class DownloadInterface {
             end = chunkProgress.length > 1 ? (chunkProgress[1] + 1) + "" : "";
         }
         if (this.isFirstChunkRangeless() && start.equals("0")) {
+            rangeRequested = false;
             request.getHeaders().remove("Range");
         } else {
+            rangeRequested = true;
             request.getHeaders().put("Range", "bytes=" + start + "-" + end);
         }
         browser.connect(request);
+        return rangeRequested;
     }
 
     public Browser getBrowser() {

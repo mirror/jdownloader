@@ -101,8 +101,10 @@ public class AddLinksProgress extends AbstractDialog<Object> {
             public void run() {
                 lc = LinkCollector.getInstance().addCrawlerJob(job);
 
-                lc.waitForCrawling();
-                System.out.println("JOB DONE: " + lc.crawledLinksFound());
+                if (lc != null) {
+                    lc.waitForCrawling();
+                    System.out.println("JOB DONE: " + lc.crawledLinksFound());
+                }
                 new EDTRunner() {
 
                     @Override

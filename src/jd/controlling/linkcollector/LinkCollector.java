@@ -13,6 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 
 import jd.controlling.IOEQ;
@@ -76,29 +77,29 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         return INSTANCE;
     }
 
-    private transient LinkCollectorEventSender      eventsender   = new LinkCollectorEventSender();
-    private static LinkCollector                    INSTANCE      = new LinkCollector();
+    private transient LinkCollectorEventSender      eventsender      = new LinkCollectorEventSender();
+    private static LinkCollector                    INSTANCE         = new LinkCollector();
 
-    private LinkChecker<CrawledLink>                linkChecker   = null;
+    private LinkChecker<CrawledLink>                linkChecker      = null;
     /**
      * NOTE: only access these fields inside the IOEQ
      */
-    private HashSet<String>                         dupeCheckMap  = new HashSet<String>();
-    private HashMap<String, CrawledPackage>         packageMap    = new HashMap<String, CrawledPackage>();
+    private HashSet<String>                         dupeCheckMap     = new HashSet<String>();
+    private HashMap<String, CrawledPackage>         packageMap       = new HashMap<String, CrawledPackage>();
 
     /* sync on filteredStuff itself when accessing it */
-    private ArrayList<CrawledLink>                  filteredStuff = new ArrayList<CrawledLink>();
+    private ArrayList<CrawledLink>                  filteredStuff    = new ArrayList<CrawledLink>();
 
-    private LinkCrawlerFilter                       crawlerFilter = null;
+    private LinkCrawlerFilter                       crawlerFilter    = null;
 
     private ExtractionExtension                     archiver;
-    private DelayedRunnable                         asyncSaving   = null;
+    private DelayedRunnable                         asyncSaving      = null;
 
-    private boolean                                 allowSave     = false;
+    private boolean                                 allowSave        = false;
 
-    private boolean                                 allowLoad     = true;
+    private boolean                                 allowLoad        = true;
 
-    private PackagizerInterface                     packagizer    = null;
+    private PackagizerInterface                     packagizer       = null;
 
     protected OfflineCrawledPackage                 offlinePackage;
 
@@ -106,12 +107,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     protected PermanentOfflinePackage               permanentofflinePackage;
 
-    private HashMap<String, ArrayList<CrawledLink>> offlineMap    = new HashMap<String, ArrayList<CrawledLink>>();
+    private HashMap<String, ArrayList<CrawledLink>> offlineMap       = new HashMap<String, ArrayList<CrawledLink>>();
 
-    private HashMap<String, ArrayList<CrawledLink>> variousMap    = new HashMap<String, ArrayList<CrawledLink>>();
-    private HashMap<String, ArrayList<CrawledLink>> hosterMap     = new HashMap<String, ArrayList<CrawledLink>>();
+    private HashMap<String, ArrayList<CrawledLink>> variousMap       = new HashMap<String, ArrayList<CrawledLink>>();
+    private HashMap<String, ArrayList<CrawledLink>> hosterMap        = new HashMap<String, ArrayList<CrawledLink>>();
     private HashMap<Object, Object>                 autoRenameCache;
     private DelayedRunnable                         asyncCacheCleanup;
+    private final AtomicInteger                     shutdownRequests = new AtomicInteger(0);
 
     private LinkCollector() {
         autoRenameCache = new HashMap<Object, Object>();
@@ -119,22 +121,36 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             @Override
             public void onShutdownVeto(ShutdownVetoException[] vetos) {
+                for (ShutdownVetoException ex : vetos) {
+                    if (this == ex.getSource()) return;
+                }
+                /* none of the exceptions belong to us, so we can decrement the shutdownRequests */
+                shutdownRequests.decrementAndGet();
             }
 
             @Override
             public void onShutdownVetoRequest(ShutdownVetoException[] vetos) throws ShutdownVetoException {
                 if (vetos.length > 0) {
                     /* we already abort shutdown, no need to ask again */
-                    return;
+                    /*
+                     * we need this ShutdownVetoException here to avoid count issues with shutdownRequests
+                     */
+                    throw new ShutdownVetoException("Shutdown already cancelled!", this);
                 }
-                if (LinkChecker.isChecking() || LinkCrawler.isCrawling()) {
-                    try {
-                        NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.LinkCollector_onShutdownRequest_(), _JDT._.LinkCollector_onShutdownRequest_msg(), NewTheme.I().getIcon("linkgrabber", 32), _JDT._.literally_yes(), null);
-                        return;
-                    } catch (DialogNoAnswerException e) {
-                        e.printStackTrace();
+                synchronized (shutdownRequests) {
+                    if (LinkChecker.isChecking() || LinkCrawler.isCrawling()) {
+                        try {
+                            NewUIO.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.LinkCollector_onShutdownRequest_(), _JDT._.LinkCollector_onShutdownRequest_msg(), NewTheme.I().getIcon("linkgrabber", 32), _JDT._.literally_yes(), null);
+                            /* user allows to stop */
+                            shutdownRequests.incrementAndGet();
+                            return;
+                        } catch (DialogNoAnswerException e) {
+                            e.printStackTrace();
+                        }
+                        throw new ShutdownVetoException("LinkCollector is still running", this);
                     }
-                    throw new ShutdownVetoException("LinkCollector is still running");
+                    /* LinkChecker/Collector not running */
+                    shutdownRequests.incrementAndGet();
                 }
             }
 
@@ -146,9 +162,16 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             public void onSilentShutdownVetoRequest(ShutdownVetoException[] vetos) throws ShutdownVetoException {
                 if (vetos.length > 0) {
                     /* we already abort shutdown, no need to ask again */
-                    return;
+                    /*
+                     * we need this ShutdownVetoException here to avoid count issues with shutdownRequests
+                     */
+                    throw new ShutdownVetoException("Shutdown already cancelled!", this);
                 }
-                if (LinkChecker.isChecking() || LinkCrawler.isCrawling()) { throw new ShutdownVetoException("LinkCollector is still running"); }
+                synchronized (shutdownRequests) {
+                    if (LinkChecker.isChecking() || LinkCrawler.isCrawling()) { throw new ShutdownVetoException("LinkCollector is still running", this); }
+                    /* LinkChecker/Collector not running */
+                    shutdownRequests.incrementAndGet();
+                }
             }
 
         });
@@ -172,6 +195,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
                     retry--;
                 }
+                /* we try a last save */
                 IOEQ.getQueue().addWait(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
 
                     @Override
@@ -582,11 +606,69 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public LinkCrawler addCrawlerJob(final ArrayList<CrawledLink> links) {
         if (links == null || links.size() == 0) throw new IllegalArgumentException("no links");
         lazyInit();
-        final LinkCollectorCrawler lc = new LinkCollectorCrawler() {
-            @Override
-            protected void generalCrawledLinkModifier(CrawledLink link) {
-                LinkCollectingJob job = link.getSourceJob();
-                if (job != null) {
+        synchronized (shutdownRequests) {
+            if (shutdownRequests.get() > 0) return null;
+            final LinkCollectorCrawler lc = new LinkCollectorCrawler() {
+                @Override
+                protected void generalCrawledLinkModifier(CrawledLink link) {
+                    LinkCollectingJob job = link.getSourceJob();
+                    if (job != null) {
+                        if (link.getDownloadLink() != null) {
+                            if (job.getCustomSourceUrl() != null) link.getDownloadLink().setBrowserUrl(job.getCustomSourceUrl());
+                            if (job.getCustomComment() != null) link.getDownloadLink().setComment(job.getCustomComment());
+                        }
+                        if (job.getOutputFolder() != null && (link.getDesiredPackageInfo() == null || link.getDesiredPackageInfo().getDestinationFolder() == null)) {
+                            if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
+                            link.getDesiredPackageInfo().setDestinationFolder(job.getOutputFolder().getAbsolutePath());
+                        }
+                        if (!StringUtils.isEmpty(job.getPackageName()) && (link.getDesiredPackageInfo() == null || StringUtils.isEmpty(link.getDesiredPackageInfo().getName()))) {
+                            if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
+                            link.getDesiredPackageInfo().setName(job.getPackageName());
+                        }
+                        if (!StringUtils.isEmpty(job.getExtractPassword())) {
+                            if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
+                            link.getDesiredPackageInfo().getExtractionPasswords().add(job.getExtractPassword());
+                        }
+                        if (job.isAutoStart()) {
+                            link.setAutoConfirmEnabled(true);
+                            link.setAutoStartEnabled(true);
+                        }
+                    }
+                }
+            };
+            eventsender.addListener(lc, true);
+            lc.setFilter(crawlerFilter);
+            lc.setHandler(this);
+            LinkCollectingInformation collectingInfo = new LinkCollectingInformation(lc, linkChecker);
+            ArrayList<CrawledLink> jobs = new ArrayList<CrawledLink>(links);
+            collectingInfo.setLinkCrawler(lc);
+            collectingInfo.setLinkChecker(linkChecker);
+            for (CrawledLink job : jobs) {
+                job.setCollectingInfo(collectingInfo);
+            }
+            lc.crawl(jobs);
+            return lc;
+        }
+    }
+
+    public LinkCrawler addCrawlerJob(final LinkCollectingJob job) {
+        if (job == null) throw new IllegalArgumentException("job is null");
+        lazyInit();
+        synchronized (shutdownRequests) {
+            if (shutdownRequests.get() > 0) return null;
+            final LinkCollectorCrawler lc = new LinkCollectorCrawler() {
+                private LinkCollectingInformation collectingInfo = new LinkCollectingInformation(this, linkChecker);
+
+                @Override
+                protected CrawledLink crawledLinkFactorybyURL(String url) {
+                    CrawledLink ret = new CrawledLink(url);
+                    ret.setCollectingInfo(collectingInfo);
+                    ret.setSourceJob(job);
+                    return ret;
+                }
+
+                @Override
+                protected void generalCrawledLinkModifier(CrawledLink link) {
                     if (link.getDownloadLink() != null) {
                         if (job.getCustomSourceUrl() != null) link.getDownloadLink().setBrowserUrl(job.getCustomSourceUrl());
                         if (job.getCustomComment() != null) link.getDownloadLink().setComment(job.getCustomComment());
@@ -599,77 +681,25 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
                         link.getDesiredPackageInfo().setName(job.getPackageName());
                     }
+
                     if (!StringUtils.isEmpty(job.getExtractPassword())) {
                         if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
                         link.getDesiredPackageInfo().getExtractionPasswords().add(job.getExtractPassword());
                     }
-                    if (job.isAutoStart()) {
-                        link.setAutoConfirmEnabled(true);
-                        link.setAutoStartEnabled(true);
-                    }
                 }
-            }
-        };
-        eventsender.addListener(lc, true);
-        lc.setFilter(crawlerFilter);
-        lc.setHandler(this);
-        LinkCollectingInformation collectingInfo = new LinkCollectingInformation(lc, linkChecker);
-        ArrayList<CrawledLink> jobs = new ArrayList<CrawledLink>(links);
-        collectingInfo.setLinkCrawler(lc);
-        collectingInfo.setLinkChecker(linkChecker);
-        for (CrawledLink job : jobs) {
-            job.setCollectingInfo(collectingInfo);
+
+            };
+            eventsender.addListener(lc, true);
+            lc.setFilter(crawlerFilter);
+            lc.setHandler(this);
+            String jobText = job.getText();
+            /*
+             * we don't want to keep reference on text during the whole link grabbing/checking/collecting way
+             */
+            job.setText(null);
+            lc.crawl(jobText, null, job.isDeepAnalyse());
+            return lc;
         }
-        lc.crawl(jobs);
-        return lc;
-    }
-
-    public LinkCrawler addCrawlerJob(final LinkCollectingJob job) {
-        if (job == null) throw new IllegalArgumentException("job is null");
-        lazyInit();
-        final LinkCollectorCrawler lc = new LinkCollectorCrawler() {
-            private LinkCollectingInformation collectingInfo = new LinkCollectingInformation(this, linkChecker);
-
-            @Override
-            protected CrawledLink crawledLinkFactorybyURL(String url) {
-                CrawledLink ret = new CrawledLink(url);
-                ret.setCollectingInfo(collectingInfo);
-                ret.setSourceJob(job);
-                return ret;
-            }
-
-            @Override
-            protected void generalCrawledLinkModifier(CrawledLink link) {
-                if (link.getDownloadLink() != null) {
-                    if (job.getCustomSourceUrl() != null) link.getDownloadLink().setBrowserUrl(job.getCustomSourceUrl());
-                    if (job.getCustomComment() != null) link.getDownloadLink().setComment(job.getCustomComment());
-                }
-                if (job.getOutputFolder() != null && (link.getDesiredPackageInfo() == null || link.getDesiredPackageInfo().getDestinationFolder() == null)) {
-                    if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
-                    link.getDesiredPackageInfo().setDestinationFolder(job.getOutputFolder().getAbsolutePath());
-                }
-                if (!StringUtils.isEmpty(job.getPackageName()) && (link.getDesiredPackageInfo() == null || StringUtils.isEmpty(link.getDesiredPackageInfo().getName()))) {
-                    if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
-                    link.getDesiredPackageInfo().setName(job.getPackageName());
-                }
-
-                if (!StringUtils.isEmpty(job.getExtractPassword())) {
-                    if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
-                    link.getDesiredPackageInfo().getExtractionPasswords().add(job.getExtractPassword());
-                }
-            }
-
-        };
-        eventsender.addListener(lc, true);
-        lc.setFilter(crawlerFilter);
-        lc.setHandler(this);
-        String jobText = job.getText();
-        /*
-         * we don't want to keep reference on text during the whole link grabbing/checking/collecting way
-         */
-        job.setText(null);
-        lc.crawl(jobText, null, job.isDeepAnalyse());
-        return lc;
     }
 
     private void addFilteredStuff(CrawledLink filtered) {

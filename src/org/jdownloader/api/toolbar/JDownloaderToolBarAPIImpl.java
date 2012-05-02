@@ -176,8 +176,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
 
                     public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
                         /*
-                         * if the url cannot be handled by a plugin, we check
-                         * the dom
+                         * if the url cannot be handled by a plugin, we check the dom
                          */
                         addCompleteDom(url, dom, link);
                     }
@@ -188,8 +187,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
 
                     public void brokenCrawler(CrawledLink link, LinkCrawler lc) {
                         /*
-                         * if the url cannot be handled because a plugin is
-                         * broken, we check the dom
+                         * if the url cannot be handled because a plugin is broken, we check the dom
                          */
                         addCompleteDom(url, dom, link);
 
@@ -288,9 +286,10 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
             Thread thread = new Thread("AddLinksDialog") {
                 public void run() {
                     LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(job);
-
-                    lc.waitForCrawling();
-                    System.out.println("JOB DONE: " + lc.crawledLinksFound());
+                    if (lc != null) {
+                        lc.waitForCrawling();
+                        System.out.println("JOB DONE: " + lc.crawledLinksFound());
+                    }
 
                 }
             };

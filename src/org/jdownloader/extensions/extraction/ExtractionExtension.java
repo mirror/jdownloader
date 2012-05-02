@@ -438,7 +438,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                     } catch (DialogNoAnswerException e) {
                         e.printStackTrace();
                     }
-                    throw new ShutdownVetoException("ExtractionExtension is still running");
+                    throw new ShutdownVetoException("ExtractionExtension is still running", this);
                 }
             }
 
@@ -452,7 +452,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                     /* we already abort shutdown, no need to ask again */
                     return;
                 }
-                if (!extractionQueue.isEmpty() || extractionQueue.getCurrentQueueEntry() != null) { throw new ShutdownVetoException("ExtractionExtension is still running"); }
+                if (!extractionQueue.isEmpty() || extractionQueue.getCurrentQueueEntry() != null) { throw new ShutdownVetoException("ExtractionExtension is still running", this); }
             }
 
         });
