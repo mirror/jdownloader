@@ -7,6 +7,7 @@ import jd.controlling.proxy.ProxyData;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.Description;
 
@@ -42,12 +43,12 @@ public interface InternetConnectionSettings extends ConfigInterface {
     @AboutConfig
     void setRouterIPCheckConnectTimeout(int timeout);
 
-    @DefaultBooleanValue(true)
+    @DefaultIntValue(1000)
     int getRouterIPCheckConnectTimeout();
 
     @AboutConfig
     void setRouterIPCheckReadTimeout(int timeout);
 
-    @DefaultBooleanValue(true)
+    @DefaultIntValue(1000)
     int getRouterIPCheckReadTimeout();
 }
