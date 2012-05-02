@@ -35,7 +35,7 @@ public class Main {
             }
             try {
 
-                final org.appwork.utils.swing.dialog.ExceptionDialog dialog = new org.appwork.utils.swing.dialog.ExceptionDialog(org.appwork.utils.swing.dialog.Dialog.LOGIC_DONT_SHOW_AGAIN_DELETE_ON_EXIT | org.appwork.utils.swing.dialog.Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | org.appwork.utils.swing.dialog.Dialog.BUTTONS_HIDE_CANCEL | org.appwork.utils.swing.dialog.Dialog.STYLE_HIDE_ICON, "Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e, null, null);
+                final org.appwork.utils.swing.dialog.ExceptionDialog dialog = new org.appwork.utils.swing.dialog.ExceptionDialog(org.appwork.utils.swing.dialog.Dialog.LOGIC_DONT_SHOW_AGAIN_DELETE_ON_EXIT | org.appwork.utils.swing.dialog.Dialog.BUTTONS_HIDE_CANCEL | org.appwork.utils.swing.dialog.Dialog.STYLE_HIDE_ICON, "Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e, null, null);
 
                 org.appwork.utils.swing.dialog.Dialog.getInstance().showDialog(dialog);
             } catch (Throwable e2) {
