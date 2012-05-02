@@ -27,6 +27,10 @@ public class NewPackageAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
+        if (true) {
+            /* not finished yet */
+            return;
+        }
         FilePackage fp = links.get(0).getFilePackage();
         String string = UserIO.getInstance().requestInputDialog(0, _GUI._.gui_linklist_newpackage_message(), fp.getName());
         if (string == null) return;
