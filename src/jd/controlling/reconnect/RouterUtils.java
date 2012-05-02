@@ -38,11 +38,13 @@ import jd.nutils.Executer;
 import jd.nutils.ProcessListener;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.settings.InternetConnectionSettings;
 
 public class RouterUtils {
 
@@ -138,12 +140,12 @@ public class RouterUtils {
         try {
             Log.L.info("Check " + host + ":" + port);
             sock = new Socket();
-            sock.setSoTimeout(2000);
-            sock.connect(new InetSocketAddress(host, port), 2000);
+            sock.setSoTimeout(JsonConfig.create(InternetConnectionSettings.class).getRouterIPCheckConnectTimeout());
+            sock.connect(new InetSocketAddress(host, port), JsonConfig.create(InternetConnectionSettings.class).getRouterIPCheckConnectTimeout());
             Browser br = new Browser();
             br.setProxy(HTTPProxy.NONE);
-            br.setConnectTimeout(2000);
-            br.setReadTimeout(1000);
+            br.setConnectTimeout(JsonConfig.create(InternetConnectionSettings.class).getRouterIPCheckConnectTimeout());
+            br.setReadTimeout(JsonConfig.create(InternetConnectionSettings.class).getRouterIPCheckReadTimeout());
             br.setFollowRedirects(false);
             if (port == 443) {
                 /* 443 is https */

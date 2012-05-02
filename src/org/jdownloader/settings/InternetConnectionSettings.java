@@ -38,4 +38,16 @@ public interface InternetConnectionSettings extends ConfigInterface {
 
     @DefaultBooleanValue(true)
     boolean isNoneRotationEnabled();
+
+    @AboutConfig
+    void setRouterIPCheckConnectTimeout(int timeout);
+
+    @DefaultBooleanValue(true)
+    int getRouterIPCheckConnectTimeout();
+
+    @AboutConfig
+    void setRouterIPCheckReadTimeout(int timeout);
+
+    @DefaultBooleanValue(true)
+    int getRouterIPCheckReadTimeout();
 }

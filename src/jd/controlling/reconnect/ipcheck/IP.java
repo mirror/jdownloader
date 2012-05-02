@@ -91,13 +91,17 @@ public class IP {
         return this.ip != null ? this.ip : "unknown";
     }
 
+    public static void main(String[] args) {
+        System.out.println(isValidRouterIP("192.168.0.1"));
+    }
+
     public static boolean isValidRouterIP(String gatewayIP) {
         boolean localip = isLocalIP(gatewayIP);
         if (!localip) {
             try {
                 localip = isLocalIP(InetAddress.getByName(gatewayIP).getHostAddress());
             } catch (UnknownHostException e) {
-    
+
             }
         }
         if (!localip) return false;
@@ -105,7 +109,7 @@ public class IP {
     }
 
     public static boolean isLocalIP(String ip) {
-    
+
         if (ip == null) return false;
         if (ip.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
             final String parts[] = ip.split("\\.");
@@ -121,7 +125,7 @@ public class IP {
                 if (n1 == 192 && n2 == 168) { return true; }
                 /* 172.16.0.0 - 172.31.255.255 */
                 if (n1 == 172 && n2 >= 16 && n2 <= 31) { return true; }
-    
+
             }
         }
         return false;
