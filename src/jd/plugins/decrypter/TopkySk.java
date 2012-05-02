@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
  * @author butkovip
  * 
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = { "http://[\\w\\.]*?topky\\.sk/cl/[0-9]+/[0-9]+/VIDEO-[-a-zA-Z0-9]+" }, flags = { 0 }, names = { "topky.sk" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = { "http://[\\w\\.]*?topky\\.sk/cl/[0-9]+/[0-9]+/(VIDEO\\-[-a-zA-Z0-9]+)?" }, flags = { 0 }, names = { "topky.sk" })
 public class TopkySk extends PluginForDecrypt {
 
     public TopkySk(PluginWrapper wrapper) {
@@ -45,10 +45,11 @@ public class TopkySk extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.clearCookies(getHost());
-        br.getPage(cryptedLink.getCryptedUrl());
+        final String parameter = cryptedLink.toString();
+        br.getPage(parameter);
 
         // extract img.zoznam.sk like vids
-        String[][] links = br.getRegex("fo.addVariable[(]\"file\", \"(.*?)\"[)]").getMatches();
+        String[][] links = br.getRegex("fo\\.addVariable[(]\"file\", \"(.*?)\"[)]").getMatches();
         if (null != links && 0 < links.length) {
             for (String[] link : links) {
                 if (null != link && 1 == link.length && null != link[0] && 0 < link[0].length()) {
@@ -66,7 +67,13 @@ public class TopkySk extends PluginForDecrypt {
                 }
             }
         }
-
+        // extract topky.sk vids
+        final String finallink = br.getRegex("name=\"FlashVars\" value=\"file=(http://[^<>\"]*?)\\&").getMatch(0);
+        if (finallink != null) decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         return decryptedLinks;
     }
 }

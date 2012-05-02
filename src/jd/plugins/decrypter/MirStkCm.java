@@ -92,7 +92,7 @@ public class MirStkCm extends PluginForDecrypt {
             if (parameter.contains("uploading.to/") || parameter.contains("multishared.com/")) {
                 br.getHeaders().put("Referer", new Regex(parameter, "(https?://[\\w+\\.\\d\\-]+(:\\d+)?)/").getMatch(0) + "/r_counter");
                 br.getPage(singleLink);
-                finallink = br.getRegex("frame src=\"(https?://[^\"\\' <>]+)\"").getMatch(0);
+                finallink = br.getRegex("frame src=\"([^\"\\' <>]*?)\"").getMatch(0);
             } else if (parameter.contains("copyload.com/") || parameter.contains("multiupload.biz/")) {
                 br.getHeaders().put("Referer", new Regex(parameter, "(https?://[\\w+\\.\\d\\-]+(:\\d+)?)/").getMatch(0) + "/r_counter");
                 br.getPage(singleLink);
