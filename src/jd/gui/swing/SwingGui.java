@@ -24,11 +24,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.awt.event.WindowListener;
 import java.awt.event.WindowStateListener;
-import java.awt.image.RenderedImage;
-import java.io.File;
-import java.io.IOException;
 
-import javax.imageio.ImageIO;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -40,8 +36,6 @@ import jd.gui.UserIF;
 import jd.gui.swing.jdgui.interfaces.View;
 
 import org.appwork.app.gui.ActiveDialogException;
-import org.appwork.screenshot.ScreensShotHelper;
-import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -179,15 +173,6 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
                             }
                         }
 
-                    }
-                }
-                if (!b && isVisible() && isActive()) {
-                    try {
-                        File file = Application.getResource("tmp/screen.png");
-                        file.getParentFile().mkdirs();
-                        ImageIO.write((RenderedImage) ScreensShotHelper.getScreenShot(getLocationOnScreen().x, getLocationOnScreen().y, getWidth(), getHeight()), "png", file);
-                    } catch (IOException e) {
-                        e.printStackTrace();
                     }
                 }
 
