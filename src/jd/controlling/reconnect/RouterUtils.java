@@ -19,8 +19,6 @@ package jd.controlling.reconnect;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -53,9 +51,8 @@ public class RouterUtils {
     private static InetAddress  ADDRESS_CACHE;
 
     /**
-     * Runs throw a predefined Host Table (multithreaded) and checks if there is
-     * a service on port 80. returns the ip if there is a webservice on any
-     * adress. See {@link #updateHostTable()}
+     * Runs throw a predefined Host Table (multithreaded) and checks if there is a service on port 80. returns the ip if there is a webservice on any adress.
+     * See {@link #updateHostTable()}
      * 
      * @return
      */
@@ -124,8 +121,7 @@ public class RouterUtils {
     }
 
     /**
-     * checks if there is a open port at host. e.gh. test if there is a
-     * webserverr unning on this port
+     * checks if there is a open port at host. e.gh. test if there is a webserverr unning on this port
      * 
      * @param host
      * @return
@@ -135,17 +131,13 @@ public class RouterUtils {
     }
 
     private static boolean checkPort(String host, int port) {
-        Socket sock = null;
         URLConnectionAdapter con = null;
         try {
             Log.L.info("Check " + host + ":" + port);
-            sock = new Socket();
-            sock.setSoTimeout(JsonConfig.create(InternetConnectionSettings.class).getRouterIPCheckConnectTimeout());
-            sock.connect(new InetSocketAddress(host, port), JsonConfig.create(InternetConnectionSettings.class).getRouterIPCheckConnectTimeout());
             Browser br = new Browser();
             br.setProxy(HTTPProxy.NONE);
-            br.setConnectTimeout(JsonConfig.create(InternetConnectionSettings.class).getRouterIPCheckConnectTimeout());
-            br.setReadTimeout(JsonConfig.create(InternetConnectionSettings.class).getRouterIPCheckReadTimeout());
+            br.setConnectTimeout(Math.max(10, JsonConfig.create(InternetConnectionSettings.class).getRouterIPCheckConnectTimeout()));
+            br.setReadTimeout(Math.max(10, JsonConfig.create(InternetConnectionSettings.class).getRouterIPCheckReadTimeout()));
             br.setFollowRedirects(false);
             if (port == 443) {
                 /* 443 is https */
@@ -176,10 +168,6 @@ public class RouterUtils {
         } catch (final Exception e) {
             Log.exception(e);
         } finally {
-            try {
-                sock.close();
-            } catch (Throwable e) {
-            }
             try {
                 con.disconnect();
             } catch (Throwable e) {
@@ -256,8 +244,7 @@ public class RouterUtils {
     }
 
     /**
-     * Calls netstat -nt to find the router's ip. returns null if nothing found
-     * and the ip if found something;
+     * Calls netstat -nt to find the router's ip. returns null if nothing found and the ip if found something;
      * 
      * 
      * @throws UnknownHostException
@@ -287,8 +274,7 @@ public class RouterUtils {
     }
 
     /**
-     * Uses the /sbin/route command to determine the router's ip. works on linux
-     * and mac.
+     * Uses the /sbin/route command to determine the router's ip. works on linux and mac.
      * 
      * @return
      */
@@ -323,8 +309,7 @@ public class RouterUtils {
                 }
             } else {
                 /*
-                 * we use route command to find gateway routes and test them for
-                 * port 80,443
+                 * we use route command to find gateway routes and test them for port 80,443
                  */
                 final Executer exec = new Executer("/sbin/route");
                 exec.addParameters(new String[] { "-n" });
@@ -449,8 +434,7 @@ public class RouterUtils {
     }
 
     /**
-     * This function tries to return of the internet connection is through a
-     * direct modem connection.Works only for windows. tested on win 7
+     * This function tries to return of the internet connection is through a direct modem connection.Works only for windows. tested on win 7
      * 
      * @return
      */
@@ -491,8 +475,7 @@ public class RouterUtils {
     }
 
     /**
-     * Updates the host table and adds the full ip range (0-255) of the local
-     * devices to the table.
+     * Updates the host table and adds the full ip range (0-255) of the local devices to the table.
      */
     private static ArrayList<String> getHostTable() {
         ArrayList<String> ret = new ArrayList<String>();

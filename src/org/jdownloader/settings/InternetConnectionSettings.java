@@ -43,12 +43,12 @@ public interface InternetConnectionSettings extends ConfigInterface {
     @AboutConfig
     void setRouterIPCheckConnectTimeout(int timeout);
 
-    @DefaultIntValue(1000)
+    @DefaultIntValue(2000)
     int getRouterIPCheckConnectTimeout();
 
     @AboutConfig
     void setRouterIPCheckReadTimeout(int timeout);
 
-    @DefaultIntValue(1000)
+    @DefaultIntValue(5000)
     int getRouterIPCheckReadTimeout();
 }

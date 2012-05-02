@@ -76,7 +76,7 @@ public class UploadURCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         checkErrors();
-        String[][] fileInfo = br.getRegex("(?i)<div class=\"row2\\-download\\-top\"><font [^>]+> ([^>]+)</font><br/>([\\d\\.]+ (KB|MB|GB|TB))").getMatches();
+        String[][] fileInfo = br.getRegex("(?i)<div class=\"row2\\-download\\-top\"><.*?> ([^>]+)</.*?><.*?>([\\d\\.]+ (KB|MB|GB|TB))").getMatches();
         if (fileInfo == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(fileInfo[0][0].trim()));
         link.setDownloadSize(SizeFormatter.getSize(fileInfo[0][1]));

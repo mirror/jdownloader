@@ -191,8 +191,7 @@ public class FileVelocityCom extends PluginForHost {
         }
 
         /**
-         * Videolinks can already be found here, if a link is found here we can
-         * skip waittimes and captchas
+         * Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -466,8 +465,7 @@ public class FileVelocityCom extends PluginForHost {
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             /**
-             * Who needs half points ? If we have a dot in the points, just
-             * remove it
+             * Who needs half points ? If we have a dot in the points, just remove it
              */
             if (points.contains(".")) {
                 String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
@@ -565,46 +563,51 @@ public class FileVelocityCom extends PluginForHost {
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             /** Load cookies */
-            br.setCookiesExclusive(true);
-            final Object ret = account.getProperty("cookies", null);
-            boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (account.isValid()) {
-                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                        final String key = cookieEntry.getKey();
-                        final String value = cookieEntry.getValue();
-                        this.br.setCookie(COOKIE_HOST, key, value);
+            try {
+                br.setCookiesExclusive(true);
+                br.setCookie(COOKIE_HOST, "lang", "english");
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(COOKIE_HOST, key, value);
+                        }
+                        return;
                     }
-                    return;
                 }
+                br.getPage(COOKIE_HOST + "/login.html");
+                Form loginform = br.getForm(0);
+                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                loginform.put("login", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginform);
+                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.getPage(COOKIE_HOST + "/?op=my_account");
+                doSomething();
+                if (!new Regex(correctedBR, "(Premium Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!new Regex(correctedBR, "(Premium Account expire|>Renew premium<)").matches()) {
+                    account.setProperty("nopremium", true);
+                } else {
+                    account.setProperty("nopremium", false);
+                }
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
             }
-            br.setCookie(COOKIE_HOST, "lang", "english");
-            br.getPage(COOKIE_HOST + "/login.html");
-            Form loginform = br.getForm(0);
-            if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            loginform.put("login", Encoding.urlEncode(account.getUser()));
-            loginform.put("password", Encoding.urlEncode(account.getPass()));
-            br.submitForm(loginform);
-            if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            br.getPage(COOKIE_HOST + "/?op=my_account");
-            doSomething();
-            if (!new Regex(correctedBR, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            if (!new Regex(correctedBR, "(Premium\\-Account expire|>Renew premium<)").matches()) {
-                account.setProperty("nopremium", true);
-            } else {
-                account.setProperty("nopremium", false);
-            }
-            /** Save cookies */
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = this.br.getCookies(COOKIE_HOST);
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            account.setProperty("name", Encoding.urlEncode(account.getUser()));
-            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-            account.setProperty("cookies", cookies);
         }
     }
 

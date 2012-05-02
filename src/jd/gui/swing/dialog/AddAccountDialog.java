@@ -60,6 +60,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
         try {
             Dialog.getInstance().showDialog(dialog);
+            if (dialog.getHoster() == null) return;
             final Account ac = new Account(dialog.getUsername(), dialog.getPassword());
             ac.setHoster(dialog.getHoster().getDisplayName());
 
@@ -199,7 +200,13 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                 return value.getDisplayName();
             }
         };
+        hoster.addActionListener(new ActionListener() {
 
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                checkOK();
+            }
+        });
         if (this.plugin != null) {
             try {
                 LazyHostPlugin lazyp = plugin.getLazyP();
@@ -263,6 +270,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
 
     private void checkOK() {
         boolean ok = getPassword() != null || getUsername() != null;
+        if (hoster.getSelectedItem() == null) ok = false;
         this.okButton.setEnabled(ok);
     }
 
