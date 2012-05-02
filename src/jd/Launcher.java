@@ -581,7 +581,9 @@ public class Launcher {
                                 @Override
                                 protected Void run() throws RuntimeException {
                                     /*
-                                     * we do this check inside IOEQ because initDownloadLinks also does its final init in IOEQ
+                                     * we do this check inside IOEQ because
+                                     * initDownloadLinks also does its final
+                                     * init in IOEQ
                                      */
                                     List<DownloadLink> dlAvailable = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
@@ -598,7 +600,8 @@ public class Launcher {
                                     });
                                     if (dlAvailable.size() == 0) {
                                         /*
-                                         * no downloadlinks available to autostart
+                                         * no downloadlinks available to
+                                         * autostart
                                          */
                                         return null;
                                     }
@@ -650,7 +653,7 @@ public class Launcher {
                     lafInit.waitForEDT();
                     Log.L.info("InitGUI->" + (System.currentTimeMillis() - Launcher.startup));
                     JDGui.getInstance();
-                    DUMMY_GUI.dispose();
+                    if (DUMMY_GUI != null) DUMMY_GUI.dispose();
                     EDTEventQueue.initEventQueue();
 
                     Log.L.info("GUIDONE->" + (System.currentTimeMillis() - Launcher.startup));
