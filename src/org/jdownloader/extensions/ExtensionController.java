@@ -68,7 +68,7 @@ public class ExtensionController {
             ArrayList<LazyExtension> ret = new ArrayList<LazyExtension>();
             final long t = System.currentTimeMillis();
             try {
-                if (JDInitFlags.REFRESH_CACHE || JDInitFlags.SWITCH_RETURNED_FROM_UPDATE) {
+                if (JDInitFlags.REFRESH_CACHE) {
                     try {
                         /* do a fresh scan */
                         ret = load();

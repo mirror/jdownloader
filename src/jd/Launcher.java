@@ -17,6 +17,7 @@
 
 package jd;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
@@ -64,6 +65,8 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.update.inapp.RlyExitListener;
 import org.appwork.update.inapp.WebupdateSettings;
+import org.appwork.update.updateclient.InstallLogList;
+import org.appwork.update.updateclient.InstalledFile;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.event.DefaultEventListener;
@@ -256,7 +259,7 @@ public class Launcher {
                     Launcher.LOG.info("Browser DEBUG Modus aktiv");
 
                 }
-                if (event.getSwitchCommand().equalsIgnoreCase("scan") || event.getSwitchCommand().equalsIgnoreCase("rfu")) {
+                if (event.getSwitchCommand().equalsIgnoreCase("update")) {
                     JDInitFlags.REFRESH_CACHE = true;
                 }
                 if (event.getSwitchCommand().equalsIgnoreCase("trdebug")) {
@@ -268,7 +271,9 @@ public class Launcher {
                 }
             }
         });
+
         PARAMETERS.parse(null);
+        checkSessionInstallLog();
         org.jdownloader.controlling.JDRestartController.getInstance().setStartArguments(PARAMETERS.getRawArguments());
 
         if (!Application.isJared(Launcher.class)) {
@@ -372,12 +377,38 @@ public class Launcher {
 
     }
 
-    private static void preInitChecks() {
-        Launcher.javaCheck();
+    private static void checkSessionInstallLog() {
+        try {
+            InstallLogList tmpInstallLog = new InstallLogList();
+            final File logFile = Application.getResource(org.appwork.update.standalone.Main.SESSION_INSTALL_LOG_LOG);
+            if (logFile.exists()) {
+                tmpInstallLog = JSonStorage.restoreFrom(logFile, tmpInstallLog);
+
+                for (InstalledFile iFile : tmpInstallLog) {
+                    if (iFile.getRelPath().endsWith(".class")) {
+
+                        // Updated plugins
+                        JDInitFlags.REFRESH_CACHE = true;
+                        break;
+                    }
+                    if (iFile.getRelPath().startsWith("extensions") && iFile.getRelPath().endsWith(".jar")) {
+
+                        // Updated extensions
+                        JDInitFlags.REFRESH_CACHE = true;
+                        break;
+                    }
+                }
+            }
+            logFile.delete();
+        } catch (Throwable e) {
+            // JUst to be sure
+            Log.exception(e);
+
+        }
     }
 
-    public static boolean returnedfromUpdate() {
-        return JDInitFlags.SWITCH_RETURNED_FROM_UPDATE;
+    private static void preInitChecks() {
+        Launcher.javaCheck();
     }
 
     private static void start(final String args[]) {

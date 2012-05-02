@@ -200,7 +200,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
         if (list != null) return;
         synchronized (this) {
             if (list != null) return;
-            init(JDInitFlags.REFRESH_CACHE || JDInitFlags.SWITCH_RETURNED_FROM_UPDATE);
+            init(JDInitFlags.REFRESH_CACHE);
         }
     }
 
