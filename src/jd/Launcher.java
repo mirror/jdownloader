@@ -17,6 +17,8 @@
 
 package jd;
 
+import java.awt.Dimension;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -27,6 +29,11 @@ import java.util.Random;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JWindow;
 
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
@@ -78,6 +85,7 @@ import org.appwork.utils.singleapp.AnotherInstanceRunningException;
 import org.appwork.utils.singleapp.InstanceMessageListener;
 import org.appwork.utils.singleapp.SingleAppInstance;
 import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -91,7 +99,9 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.jdserv.stats.StatsManager;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.AutoDownloadStartOption;
+import org.jdownloader.settings.FrameStatus;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
@@ -193,6 +203,8 @@ public class Launcher {
         }
     }
 
+    protected static JWindow DUMMY_GUI;
+
     /**
      * Lädt ein Dynamicplugin.
      * 
@@ -207,6 +219,38 @@ public class Launcher {
             e.printStackTrace();
         }
         Launcher.LOG = JDLogger.getLogger();
+
+        File screen = Application.getResource("tmp/screen.png");
+        if (screen.exists()) {
+            try {
+                final BufferedImage img = ImageIO.read(screen);
+
+                final FrameStatus status = JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus();
+                if (status.getHeight() == img.getHeight() && status.getWidth() == img.getWidth()) {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            DUMMY_GUI = new JWindow();
+
+                            DUMMY_GUI.add(new JLabel(new ImageIcon(img)));
+                            DUMMY_GUI.setSize(new Dimension(status.getWidth(), status.getHeight()));
+
+                            DUMMY_GUI.setLocation(status.getX(), status.getY());
+
+                            DUMMY_GUI.pack();
+                            DUMMY_GUI.toFront();
+                            DUMMY_GUI.setVisible(true);
+                        }
+                    };
+
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         // Mac OS specific
         if (CrossSystem.isMac()) {
             // Set MacApplicationName
@@ -606,6 +650,7 @@ public class Launcher {
                     lafInit.waitForEDT();
                     Log.L.info("InitGUI->" + (System.currentTimeMillis() - Launcher.startup));
                     JDGui.getInstance();
+                    DUMMY_GUI.dispose();
                     EDTEventQueue.initEventQueue();
 
                     Log.L.info("GUIDONE->" + (System.currentTimeMillis() - Launcher.startup));
