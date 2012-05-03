@@ -57,6 +57,7 @@ public interface GeneralSettings extends ConfigInterface {
     @DefaultEnumValue("NEVER")
     CleanAfterDownloadAction getCleanupAfterDownloadAction();
 
+    @AboutConfig
     @DefaultFactory(DefaultDownloadFolder.class)
     String getDefaultDownloadFolder();
 
@@ -281,24 +282,28 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isClosedWithRunningDownloads();
 
     @DefaultIntValue(10)
+    @AboutConfig
     @SpinnerValidator(min = 0, max = 120)
     @Description("AutoStart Downloads will show a Countdown Dialog after Startup. Set the countdown time to 0 to remove this dialog. @see showCountdownonAutoStartDownloads")
     int getAutoStartCountdownSeconds();
 
     void setAutoStartCountdownSeconds(int seconds);
 
+    @AboutConfig
     @DefaultLongValue(10 * 60 * 1000l)
     @Description("Waittime in ms if a Download had unknown IOException")
     long getDownloadUnknownIOExceptionWaittime();
 
     void setDownloadUnknownIOExceptionWaittime(long ms);
 
+    @AboutConfig
     @DefaultLongValue(5 * 60 * 1000l)
     @Description("Waittime in ms if a Download HashCheck Failed")
     long getDownloadHashCheckFailedRetryWaittime();
 
     void setDownloadHashCheckFailedRetryWaittime(long ms);
 
+    @AboutConfig
     @DefaultLongValue(30 * 60 * 1000l)
     @Description("Waittime in ms if a Download Temp Unavailable Failed")
     long getDownloadTempUnavailableRetryWaittime();
