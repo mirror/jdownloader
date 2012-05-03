@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
 import java.lang.reflect.Field;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.plugins.DownloadLink;
@@ -75,6 +77,70 @@ public class RtmpDump extends RTMPDownload {
         super(plugin, downloadLink, rtmpURL);
     }
 
+    /**
+     * Attempt to locate a rtmpdump executable. The local tools folder is
+     * searched first, then *nix /usr bin folders. If found, the path will is
+     * saved to the variable RTMPDUMP.
+     * 
+     * @return Whether or not rtmpdump executable was found
+     */
+    private boolean findRtmpDump() {
+        if (CrossSystem.isWindows()) {
+            RTMPDUMP = JDUtilities.getResourceFile("tools/Windows/rtmpdump/rtmpdump.exe").getAbsolutePath();
+        } else if (CrossSystem.isLinux()) {
+            RTMPDUMP = JDUtilities.getResourceFile("tools/linux/rtmpdump/rtmpdump").getAbsolutePath();
+        } else if (CrossSystem.isMac()) {
+            RTMPDUMP = JDUtilities.getResourceFile("tools/mac/rtmpdump/rtmpdump").getAbsolutePath();
+        } else {
+            return false;
+        }
+        if (!new File(RTMPDUMP).exists() && (CrossSystem.isLinux() || CrossSystem.isMac())) {
+            RTMPDUMP = "/usr/bin/rtmpdump";
+            if (!new File(RTMPDUMP).exists()) {
+                RTMPDUMP = "/usr/local/bin/rtmpdump";
+            }
+        }
+
+        if (!new File(RTMPDUMP).exists()) {
+            RTMPDUMP = "";
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Attempt to locate a rtmpdump executable and parse the version number from
+     * the 'rtmpdump -h' output.
+     * 
+     * @return The version number of the RTMPDump executable
+     */
+    public String getRtmpDumpVersion() throws Exception {
+        if (!findRtmpDump()) { throw new Exception("Error " + RTMPDUMP + " not found!"); }
+        String arg = " -h";
+
+        NativeProcess verNP;
+        Process verP;
+        InputStreamReader verR;
+
+        if (CrossSystem.isWindows()) {
+            verNP = new NativeProcess(RTMPDUMP, arg);
+            verR = new InputStreamReader(verNP.getErrorStream());
+        } else {
+            verP = Runtime.getRuntime().exec(RTMPDUMP + arg);
+            verR = new InputStreamReader(verP.getErrorStream());
+        }
+
+        final BufferedReader br = new BufferedReader(verR);
+        Pattern reg = Pattern.compile("RTMPDump v([0-9.]+)");
+        String line = "";
+
+        while ((line = br.readLine()) != null) {
+            Matcher match = reg.matcher(line);
+            if (match.find()) { return match.group(1); }
+        }
+        throw new Exception("Error " + RTMPDUMP + " version not found!");
+    }
+
     private void getProcessId() {
         try {
             final Field pidField = P.getClass().getDeclaredField("pid");
@@ -96,24 +162,7 @@ public class RtmpDump extends RTMPDownload {
     }
 
     public boolean start(final RtmpUrlConnection rtmpConnection) throws Exception {
-        if (CrossSystem.isWindows()) {
-            RTMPDUMP = JDUtilities.getResourceFile("tools/Windows/rtmpdump/rtmpdump.exe").getAbsolutePath();
-        } else if (CrossSystem.isLinux()) {
-            RTMPDUMP = JDUtilities.getResourceFile("tools/linux/rtmpdump/rtmpdump").getAbsolutePath();
-        } else if (CrossSystem.isMac()) {
-            RTMPDUMP = JDUtilities.getResourceFile("tools/mac/rtmpdump/rtmpdump").getAbsolutePath();
-        } else {
-            return false;
-        }
-        if (!new File(RTMPDUMP).exists()) {
-            if (CrossSystem.isLinux() || CrossSystem.isMac()) {
-                RTMPDUMP = "/usr/bin/rtmpdump";
-                if (!new File(RTMPDUMP).exists()) {
-                    RTMPDUMP = "/usr/local/bin/rtmpdump";
-                }
-            }
-        }
-        if (!new File(RTMPDUMP).exists()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " not found!"); }
+        if (!findRtmpDump()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " not found!"); }
         final ThrottledConnection tcon = new RTMPCon() {
             @Override
             public long getSpeedMeter() {
