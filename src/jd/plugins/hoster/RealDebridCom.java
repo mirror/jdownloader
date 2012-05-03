@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -37,12 +38,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 16318 $", interfaceVersion = 2, names = { "real-debrid.com" }, urls = { "http://\\w+\\.real\\-debrid\\.com/dl/\\w+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 16318 $", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "http://\\w+\\.real\\-debrid\\.com/dl/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends PluginForHost {
 
     // DEV NOTES
@@ -76,17 +76,35 @@ public class RealDebridCom extends PluginForHost {
         prepBrowser();
         if (urls == null || urls.length == 0) { return false; }
         try {
-            Account aa = AccountController.getInstance().getValidAccount(this);
-            if (aa == null || !aa.isValid()) {
+            LinkedList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
+            if (accs == null || accs.size() == 0) {
                 logger.info("No account present, Please add a premium" + mName + "account.");
+                for (DownloadLink dl : urls) {
+                    /* no check possible */
+                    dl.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+                }
                 return false;
             }
-            login(aa, false);
+            login(accs.get(0), false);
+            br.setFollowRedirects(true);
             for (DownloadLink dl : urls) {
-                URLConnectionAdapter con = br.openGetConnection(dl.getDownloadURL());
-                dl.setFinalFileName(getFileNameFromHeader(con));
-                dl.setDownloadSize(con.getLongContentLength());
-                dl.setAvailable(true);
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openGetConnection(dl.getDownloadURL());
+                    if (con.isContentDisposition()) {
+                        dl.setFinalFileName(getFileNameFromHeader(con));
+                        dl.setDownloadSize(con.getLongContentLength());
+                        dl.setAvailable(true);
+                    } else {
+                        dl.setAvailable(false);
+                    }
+                } finally {
+                    try {
+                        /* make sure we close connection */
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
             }
         } catch (Exception e) {
             return false;
@@ -95,28 +113,29 @@ public class RealDebridCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) {
-        if (checkLinks(new DownloadLink[] { link }) == false) {
-            link.setAvailableStatus(AvailableStatus.FALSE);
-        } else if (!link.isAvailabilityStatusChecked()) {
-            link.setAvailableStatus(AvailableStatus.FALSE);
-        }
+    public AvailableStatus requestFileInformation(DownloadLink link) throws PluginException {
+        checkLinks(new DownloadLink[] { link });
+        if (!link.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return link.getAvailableStatus();
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Download only works with a premium" + mName + "account.", PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            /* not existing in old stable */
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (account == null) {
+            /* without account its not possible to download the link */
+            return false;
         }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Download only works with a premium" + mName + "account.");
+        return true;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Download only works with a premium" + mName + "account.", PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 0;
     }
 
     @Override
@@ -128,12 +147,8 @@ public class RealDebridCom extends PluginForHost {
         handleDL(link, link.getDownloadURL());
     }
 
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
-    }
-
     private void handleDL(DownloadLink link, String dllink) throws Exception {
+        /* we want to follow redirects in final stage */
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
@@ -141,8 +156,7 @@ public class RealDebridCom extends PluginForHost {
             return;
         } else {
             /*
-             * download is not contentdisposition, so remove this host from
-             * premiumHosts list
+             * download is not contentdisposition, so remove this host from premiumHosts list
              */
             br.followConnection();
         }
@@ -177,17 +191,14 @@ public class RealDebridCom extends PluginForHost {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
-            if (multiHostSupported()) {
-                ai.setProperty("multiHostSupport", Property.NULL);
-            }
+
+            ai.setProperty("multiHostSupport", Property.NULL);
+
             return ai;
         }
         account.setValid(true);
-        try {
-            account.setConcurrentUsePossible(true);
-            account.setMaxSimultanDownloads(-1);
-        } catch (final Throwable e) {
-        }
+        account.setConcurrentUsePossible(true);
+        account.setMaxSimultanDownloads(-1);
         br.getPage(mProt + mName + "/api/account.php");
         String expire = br.getRegex("(?i)<expiration\\-txt>([^<]+)").getMatch(0);
         if (expire != null) {
@@ -199,21 +210,19 @@ public class RealDebridCom extends PluginForHost {
         } else {
             // unhandled account type here.
         }
-        if (multiHostSupported()) {
-            try {
-                String hostsSup = br.cloneBrowser().getPage(mProt + mName + "/api/hosters.php");
-                String[] hosts = new Regex(hostsSup, "\"([^\"]+)\",").getColumn(0);
-                ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-                /*
-                 * set ArrayList<String> with all supported multiHosts of this
-                 * service
-                 */
-                ai.setProperty("multiHostSupport", supportedHosts);
-            } catch (Throwable e) {
-                account.setProperty("multiHostSupport", Property.NULL);
-                logger.info("Could not fetch ServerList from Multishare: " + e.toString());
-            }
+        try {
+            String hostsSup = br.cloneBrowser().getPage(mProt + mName + "/api/hosters.php");
+            String[] hosts = new Regex(hostsSup, "\"([^\"]+)\",").getColumn(0);
+            ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+            /*
+             * set ArrayList<String> with all supported multiHosts of this service
+             */
+            ai.setProperty("multiHostSupport", supportedHosts);
+        } catch (Throwable e) {
+            account.setProperty("multiHostSupport", Property.NULL);
+            logger.info("Could not fetch ServerList from Multishare: " + e.toString());
         }
+
         return ai;
     }
 
@@ -255,25 +264,8 @@ public class RealDebridCom extends PluginForHost {
         }
     }
 
-    private boolean multiHostSupported() {
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        int rev = Integer.parseInt(prev);
-        if (rev < 16116) return false;
-        return true;
-    }
-
     private void showMessage(DownloadLink link, String message) {
         link.getLinkStatus().setStatusText(message);
-    }
-
-    private void handleErrors() {
-        // begin the error handing..
-        if (br.containsHTML("123")) logger.warning("123");
     }
 
     @Override

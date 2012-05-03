@@ -9,6 +9,7 @@ public class AbstractHostPlugin implements Storable {
     private boolean premium;
     private boolean hasConfig;
     private long    version;
+    private int     interfaceVersion = 0;
 
     public long getVersion() {
         return version;
@@ -75,6 +76,21 @@ public class AbstractHostPlugin implements Storable {
 
     public AbstractHostPlugin(String className) {
         this.classname = className;
+    }
+
+    /**
+     * @return the interfaceVersion
+     */
+    public int getInterfaceVersion() {
+        return interfaceVersion;
+    }
+
+    /**
+     * @param interfaceVersion
+     *            the interfaceVersion to set
+     */
+    public void setInterfaceVersion(int interfaceVersion) {
+        this.interfaceVersion = interfaceVersion;
     }
 
 }

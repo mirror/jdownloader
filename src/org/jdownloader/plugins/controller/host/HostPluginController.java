@@ -4,6 +4,7 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 
 import jd.JDInitFlags;
@@ -26,8 +27,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
     private static final HostPluginController INSTANCE = new HostPluginController();
 
     /**
-     * get the only existing instance of HostPluginController. This is a
-     * singleton
+     * get the only existing instance of HostPluginController. This is a singleton
      * 
      * @return
      */
@@ -42,8 +42,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private HostPluginController() {
         this.list = null;
@@ -112,8 +111,8 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     private List<LazyHostPlugin> update() throws MalformedURLException {
-        List<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>();
-        ArrayList<AbstractHostPlugin> save = new ArrayList<AbstractHostPlugin>();
+        HashMap<String, AbstractHostPlugin> ret = new HashMap<String, AbstractHostPlugin>();
+        HashMap<String, LazyHostPlugin> ret2 = new HashMap<String, LazyHostPlugin>();
         PluginClassLoaderChild classLoader = PluginClassLoader.getInstance().getChild();
         for (PluginInfo<PluginForHost> c : scan("jd/plugins/hoster")) {
             String simpleName = c.getClazz().getSimpleName();
@@ -132,23 +131,32 @@ public class HostPluginController extends PluginController<PluginForHost> {
                     if (names.length == 0) { throw new WTFException("names.length=0"); }
                     for (int i = 0; i < names.length; i++) {
                         try {
+                            String displayName = new String(names[i]);
+                            AbstractHostPlugin existingPlugin = ret.get(displayName);
+                            if (existingPlugin != null && existingPlugin.getInterfaceVersion() > a.interfaceVersion()) {
+                                /* we already loaded a plugin with higher interfaceVersion, so skip older one */
+                                continue;
+                            }
                             AbstractHostPlugin ap = new AbstractHostPlugin(new String(c.getClazz().getSimpleName()));
-                            ap.setDisplayName(new String(names[i]));
+                            ap.setDisplayName(displayName);
                             ap.setPattern(new String(patterns[i]));
                             ap.setVersion(revision);
+                            ap.setInterfaceVersion(a.interfaceVersion());
                             LazyHostPlugin l = new LazyHostPlugin(ap, null, classLoader);
                             PluginForHost plg = l.newInstance();
                             ap.setPremium(plg.isPremiumEnabled());
                             String purl = plg.getBuyPremiumUrl();
                             if (purl != null) purl = new String(purl);
-
                             ap.setPremiumUrl(purl);
                             ap.setHasConfig(plg.hasConfig());
                             l.setHasConfig(plg.hasConfig());
                             l.setPremium(ap.isPremium());
                             l.setPremiumUrl(purl);
-                            ret.add(l);
-                            save.add(ap);
+                            existingPlugin = ret.put(ap.getDisplayName(), ap);
+                            if (existingPlugin != null) {
+                                Log.L.finest("@HostPlugin replaced:" + simpleName + " " + names[i]);
+                            }
+                            ret2.put(ap.getDisplayName(), l);
                             Log.L.finer("@HostPlugin ok:" + simpleName + " " + names[i]);
                         } catch (Throwable e) {
                             Log.L.severe("@HostPlugin failed:" + simpleName + " " + names[i]);
@@ -163,8 +171,8 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 Log.L.severe("@HostPlugin missing:" + simpleName);
             }
         }
-        save(save);
-        return ret;
+        save(new ArrayList<AbstractHostPlugin>(ret.values()));
+        return new ArrayList<LazyHostPlugin>(ret2.values());
     }
 
     private void save(List<AbstractHostPlugin> save) {

@@ -10,6 +10,7 @@ public class AbstractCrawlerPlugin implements Storable {
     private String  displayName;
     private long    version;
     private boolean hasConfig;
+    private int     interfaceVersion = 0;
 
     public boolean isHasConfig() {
         return hasConfig;
@@ -62,6 +63,21 @@ public class AbstractCrawlerPlugin implements Storable {
      */
     public long getVersion() {
         return version;
+    }
+
+    /**
+     * @return the interfaceVersion
+     */
+    public int getInterfaceVersion() {
+        return interfaceVersion;
+    }
+
+    /**
+     * @param interfaceVersion
+     *            the interfaceVersion to set
+     */
+    public void setInterfaceVersion(int interfaceVersion) {
+        this.interfaceVersion = interfaceVersion;
     }
 
 }
