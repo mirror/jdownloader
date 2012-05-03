@@ -53,10 +53,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://(www\\.)?letitbit\\.net/d?download/(.*?\\.html|[0-9a-zA-z/.-]+)" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
 
-    private static boolean       debugSwitch = false;
-    private static final Object  LOCK        = new Object();
-    private static final String  COOKIE_HOST = "http://letitbit.net/";
-    private static AtomicInteger maxFree     = new AtomicInteger(1);
+    private static boolean       debugSwitch                       = false;
+    private static final Object  LOCK                              = new Object();
+    private static final String  COOKIE_HOST                       = "http://letitbit.net/";
+    private static AtomicInteger maxFree                           = new AtomicInteger(1);
+    private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
 
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -180,6 +181,8 @@ public class LetitBitNet extends PluginForHost {
         } catch (Throwable e) {
             /* only available after 0.9xx version */
         }
+        maxFree.set(1);
+        if (getPluginConfig().getBooleanProperty(ENABLEUNLIMITEDSIMULTANMAXFREEDLS)) maxFree.set(-1);
         requestFileInformation(downloadLink);
         String url = getLinkViaSkymonkDownloadMethod(downloadLink.getDownloadURL());
         if (url == null) {
@@ -550,6 +553,7 @@ public class LetitBitNet extends PluginForHost {
             }
         }, "Activation", null, null));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LetitBitNet.ENABLEUNLIMITEDSIMULTANMAXFREEDLS, JDL.L("plugins.hoster.letitbitnet.enableunlimitedsimultanfreedls", "Enable unlimited (20) max simultanious free downloads (can cause problems, use at your own risc)")).setDefaultValue(false));
     }
 
 }

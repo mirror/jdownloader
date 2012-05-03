@@ -105,7 +105,7 @@ public class VimeoCom extends PluginForHost {
     }
 
     private String getClipData(final String tag) {
-        return new Regex(clipData, "<" + tag + ">(.*?)</" + tag + ">").getMatch(0);
+        return new Regex(clipData, "\"" + tag + "\":(\\d+)").getMatch(0);
     }
 
     @Override
@@ -236,18 +236,18 @@ public class VimeoCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL() + "?hd=1");
         if (br.containsHTML(">Page not found on Vimeo<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (br.containsHTML(">This is a private video<") && br.containsHTML("Do you have permission to watch this video\\?")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This is a private video. Do you have no permission to watch this video!"); }
-        final String clipID = br.getRegex("targ_clip_id:   (\\d+)").getMatch(0);
-        clipData = br.getPage("/moogaloop/load/clip:" + clipID + "/local?param_force_embed=0&param_clip_id=" + clipID + "&param_show_portrait=0&param_multimoog=&param_server=vimeo.com&param_show_title=0&param_autoplay=0&param_show_byline=0&param_color=00ADEF&param_fullscreen=1&param_md5=0&param_context_id=&context_id=null");
-        String title = getClipData("caption");
-        String clipId = getClipData("clip_id");
-        if (clipId == null) {
-            clipId = getClipData("nodeId");
-        }
-        final String dlURL = "/moogaloop/play/clip:" + clipId + "/" + getClipData("request_signature") + "/" + getClipData("request_signature_expires") + "/?q=" + (getClipData("isHD").equals("1") ? "hd" : "sd");
+        final String clipID = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String signature = br.getRegex("\"signature\":\"([a-z0-9]+)\"").getMatch(0);
+        final String time = br.getRegex("\"timestamp\":(\\d+)").getMatch(0);
+        if (signature == null || time == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String title = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
+        if (title == null) title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
+        clipData = br.toString();
+        final String dlURL = "http://player.vimeo.com/play_redirect?clip_id=" + clipID + "&sig=" + signature + "&time=" + time + "&quality=" + ("1".equals(getClipData("isHD")) ? "hd" : "sd");
         br.setFollowRedirects(false);
         br.getPage(dlURL);
         finalURL = br.getRedirectLocation();
-        if (finalURL == null || title == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (finalURL == null || title == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         title = Encoding.htmlDecode(title);
         URLConnectionAdapter con = null;
         try {

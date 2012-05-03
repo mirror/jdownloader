@@ -62,7 +62,7 @@ public class SaveTv extends PluginForHost {
         if (urls == null || urls.length == 0) return false;
         try {
             Account aa = AccountController.getInstance().getValidAccount(this);
-            if (aa.toString().contains("false")) throw new PluginException(LinkStatus.ERROR_FATAL, "Kann Links ohne gültigen Account nicht überprüfen");
+            if (aa == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Kann Links ohne gültigen Account nicht überprüfen");
             br.setFollowRedirects(true);
             String acctype = this.getPluginConfig().getStringProperty("premium", null);
             if (acctype != null) {

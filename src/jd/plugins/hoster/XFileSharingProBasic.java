@@ -292,7 +292,7 @@ public class XFileSharingProBasic extends PluginForHost {
         ArrayList<String> someStuff = new ArrayList<String>();
         ArrayList<String> regexStuff = new ArrayList<String>();
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: none;\">.*?</div>)");
+        regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
         for (String aRegex : regexStuff) {
             String lolz[] = br.getRegex(aRegex).getColumn(0);

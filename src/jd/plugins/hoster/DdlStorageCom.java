@@ -59,7 +59,6 @@ public class DdlStorageCom extends PluginForHost {
     private static final String  COOKIE_HOST         = "http://ddlstorage.com";
     private static final String  MAINTENANCE         = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT = "This server is under Maintenance";
-    private static final String  ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static final Object  LOCK                = new Object();
     private static AtomicInteger maxPrem             = new AtomicInteger(1);
 
@@ -334,15 +333,7 @@ public class DdlStorageCom extends PluginForHost {
                 logger.info("Waittime regexes seem to be broken");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
             } else {
-                int minutes = 0, seconds = 0, hours = 0;
-                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
-                logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
-                /** Not enough wait time to reconnect->Wait and try again */
-                if (waittime < 180000) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", ALLWAIT_SHORT), waittime); }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
             }
         }
         if (correctedBR.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }

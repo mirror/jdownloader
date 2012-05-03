@@ -66,28 +66,31 @@ public class VKontakteRu extends PluginForDecrypt {
             sleep(1500l, param);
             try {
                 /** Login process */
-                if (!getUserLogin()) {
+                if (!getUserLogin(false)) {
                     logger.info("Logindata invalid, stopping...");
                     return null;
                 }
-                /* this call can refesh the login */
                 br.getPage(parameter);
-                /** Retry if login failed */
-                if (br.containsHTML(">Security Check<")) {
-                    // Usually we need to enter the last 4 digits of our phone
-                    // number here to validate our account but i'll go ahead and
-                    // just login again which is easier and works well
-                    logger.info("Security check reached, refreshing vk.com cookies");
+                /**
+                 * Retry if login failed Those are 2 different errormessages but
+                 * refreshing the cookies works fine for both
+                 * */
+                if (br.containsHTML("(>Security Check<|/badbrowser\\.php\")")) {
+                    if (br.containsHTML("/badbrowser\\.php\"")) {
+                        logger.info("Login cookies old, trying to refresh them...");
+                    } else {
+                        logger.info("Security check reached, refreshing vk.com cookies");
+                    }
                     this.getPluginConfig().setProperty("logincounter", "-1");
                     this.getPluginConfig().save();
                     br.clearCookies(DOMAIN);
                     br.clearCookies("login.vk.com");
-                    if (!getUserLogin()) {
-                        logger.info("Logindata invalid, stopping...");
+                    if (!getUserLogin(true)) {
+                        logger.info("Logindata invalid/refreshing cookies failed, stopping...");
                         return null;
                     }
+                    logger.info("Cookies refreshed successfully, continueing to decrypt...");
                 }
-                if (br.containsHTML("/badbrowser\\.php\"")) logger.warning("Login invalid/cookies old??");
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(DOMAIN);
                 for (final Cookie c : add.getCookies()) {
@@ -407,7 +410,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return decryptedData;
     }
 
-    private boolean getUserLogin() throws Exception {
+    private boolean getUserLogin(final boolean force) throws Exception {
         final PluginForHost vkPlugin = JDUtilities.getPluginForHost("vkontakte.ru");
         Account aa = AccountController.getInstance().getValidAccount(vkPlugin);
         if (aa == null) {
@@ -418,7 +421,7 @@ public class VKontakteRu extends PluginForDecrypt {
             aa = new Account(username, password);
         }
         try {
-            ((VKontakteRuHoster) vkPlugin).login(this.br, aa, false);
+            ((VKontakteRuHoster) vkPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {
             aa.setEnabled(false);
             aa.setValid(false);

@@ -51,7 +51,7 @@ public class U115Com extends PluginForHost {
     private static final String NOFREESLOTS           = "网络繁忙时段，非登陆用户其它下载地址暂时关闭。推荐您使用优蛋下载";
     private static final String ACCOUNTNEEDED         = "(为加强知识产权的保护力度，营造健康有益的网络环境，115网盘暂时停止影视资源外链服务。|is_no_check=\"1\")";
     private static final String ACCOUNTNEEDEDUSERTEXT = "Account is needed to download this link";
-    private static final String EXACTLINKREGEX        = "\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/down_group\\d+/[^<>\"\\']+)\"";
+    private static final String EXACTLINKREGEX        = "\"(http://[a-z0-9]+\\.115\\.com/[a-z0-9_\\-]+\\d+/[^<>\"\\'/]*?/[^<>\"\\'/]*?/[^<>\"\\']*?)\"";
     private static final Object LOCK                  = new Object();
 
     public U115Com(PluginWrapper wrapper) {
@@ -66,6 +66,44 @@ public class U115Com extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("u.115.com/file/", "115.com/file/"));
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        prepareBrowser(br);
+        br.setCustomCharset("utf-8");
+        br.getPage(link.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            if (br.getRedirectLocation().equals(UNDERMAINTENANCEURL)) {
+                link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
+                return AvailableStatus.UNCHECKABLE;
+            }
+            br.getPage(br.getRedirectLocation());
+        }
+        if (br.containsHTML("(id=\"pickcode_error\">很抱歉，文件不存在。</div>|很抱歉，文件不存在。|>很抱歉，该文件提取码不存在。<|<title>115网盘\\|网盘\\|115,我的网盘\\|免费网络硬盘 \\- 爱分享，云生活</title>|/resource\\?r=404|>视听类文件暂时不支持分享，给您带来的不便深表歉意。<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?)网盘下载\\|115网盘|网盘|115网络U盘-我的网盘|免费网络硬盘</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("id=\"Download\"></a><a id=\"Download(.*?)\"></a>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("file_name: \\'(.*?)\\',").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex("文件大小：(.*?)<div class=\"share-url\"").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("u6587\\\\u4ef6\\\\u5927\\\\u5c0f\\\\uff1a(.*?)\\\\r\\\\n\\\\").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("file_size: \\'(.*?)\\'").getMatch(0);
+                if (filesize == null) filesize = br.getRegex("<li>文件大小：(.*?)</li>").getMatch(0);
+            }
+        }
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filesize = filesize.replace(",", "");
+        link.setFinalFileName(filename);
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        parseSHA1(link, br);
+        if (br.containsHTML(ACCOUNTNEEDED)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.u115com.only4registered", ACCOUNTNEEDEDUSERTEXT));
+        return AvailableStatus.TRUE;
     }
 
     public String findLink(DownloadLink link) throws Exception {
@@ -103,7 +141,7 @@ public class U115Com extends PluginForHost {
      */
     private String findWorkingLink(String correctedBR) throws IOException, PluginException {
         if (correctedBR.contains("\"msg_code\":50027")) throw new PluginException(LinkStatus.ERROR_FATAL, ACCOUNTNEEDEDUSERTEXT);
-        String linksToDownload[] = new Regex(correctedBR, "\"url\":\"(http:.*?)\"").getColumn(0);
+        String linksToDownload[] = new Regex(correctedBR, "\"(url|data)\":\"(http:.*?)\"").getColumn(1);
         if (linksToDownload == null || linksToDownload.length == 0) linksToDownload = new Regex(correctedBR, EXACTLINKREGEX).getColumn(0);
         if (linksToDownload == null || linksToDownload.length == 0) return null;
         String finallink = null;
@@ -164,44 +202,6 @@ public class U115Com extends PluginForHost {
         } catch (Throwable e) {
             /* setCookie throws exception in 09580 */
         }
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        prepareBrowser(br);
-        br.setCustomCharset("utf-8");
-        br.getPage(link.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().equals(UNDERMAINTENANCEURL)) {
-                link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
-                return AvailableStatus.UNCHECKABLE;
-            }
-            br.getPage(br.getRedirectLocation());
-        }
-        if (br.containsHTML("(id=\"pickcode_error\">很抱歉，文件不存在。</div>|很抱歉，文件不存在。|>很抱歉，该文件提取码不存在。<|<title>115网盘\\|网盘\\|115,我的网盘\\|免费网络硬盘 \\- 爱分享，云生活</title>|/resource\\?r=404)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)网盘下载\\|115网盘|网盘|115网络U盘-我的网盘|免费网络硬盘</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("id=\"Download\"></a><a id=\"Download(.*?)\"></a>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("file_name: \\'(.*?)\\',").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("文件大小：(.*?)<div class=\"share-url\"").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("u6587\\\\u4ef6\\\\u5927\\\\u5c0f\\\\uff1a(.*?)\\\\r\\\\n\\\\").getMatch(0);
-            if (filesize == null) {
-                filesize = br.getRegex("file_size: \\'(.*?)\\'").getMatch(0);
-                if (filesize == null) filesize = br.getRegex("<li>文件大小：(.*?)</li>").getMatch(0);
-            }
-        }
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filesize = filesize.replace(",", "");
-        link.setFinalFileName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        parseSHA1(link, br);
-        if (br.containsHTML(ACCOUNTNEEDED)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.u115com.only4registered", ACCOUNTNEEDEDUSERTEXT));
-        return AvailableStatus.TRUE;
     }
 
     @Override
