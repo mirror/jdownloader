@@ -309,18 +309,15 @@ public class HolderFileCom extends PluginForHost {
         if (dllink == null) {
             dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
+                dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                 if (dllink == null) {
-                    dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
+                    dllink = new Regex(correctedBR, "\"(http://(\\d+\\.\\d+\\.\\d+\\.\\d+|holderfile\\.com):\\d+/d/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = new Regex(correctedBR, "(?i)<a href=\"(https?://[^\"]+).+Download Now").getMatch(0);
-                        if (dllink == null) {
-                            String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                            if (cryptedScripts != null && cryptedScripts.length != 0) {
-                                for (String crypted : cryptedScripts) {
-                                    dllink = decodeDownloadLink(crypted);
-                                    if (dllink != null) break;
-                                }
+                        String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                        if (cryptedScripts != null && cryptedScripts.length != 0) {
+                            for (String crypted : cryptedScripts) {
+                                dllink = decodeDownloadLink(crypted);
+                                if (dllink != null) break;
                             }
                         }
                     }

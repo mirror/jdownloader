@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -43,7 +44,7 @@ public class Mv2kTo extends PluginForDecrypt {
      * ,vreer.com,uploadc.com,dragonuploadz.com,allmyvideos
      * .net,vidreel.com,putlocker
      * .com,vureel.com,vidbox.netdeditv.com,watchfreeinhd.com and many others
-     * 3=zalaa.com,sockshare.com
+     * 3=zalaa.com,sockshare.com 4=stream2k.com
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -53,10 +54,23 @@ public class Mv2kTo extends PluginForDecrypt {
         // Not sure what that is, maybe mirrors (on the same hoster)
         // String[] parts =
         // br.getRegex("<OPTION value=\"([^<>\"]*?\\-\\d+\\.html)\"").getColumn(0);
-        final String[][] regexes = { { "width=\"\\d+\" height=\"\\d+\" frameborder=\"0\"( scrolling=\"no\")? src=\"(http://[^<>\"]*?)\"", "1" }, { "<a target=\"_blank\" href=\"(http://[^<>\"]*?)\"", "0" }, { "<IFRAME SRC=\"(http://[^<>\"]*?)\"", "0" } };
+        Browser br2 = br.cloneBrowser();
+        final String[][] regexes = { { "width=\"\\d+\" height=\"\\d+\" frameborder=\"0\"( scrolling=\"no\")? src=\"(http://[^<>\"]*?)\"", "1" }, { "<a target=\"_blank\" href=\"(http://[^<>\"]*?)\"", "0" }, { "<IFRAME SRC=\"(http://[^<>\"]*?)\"", "0" }, { "<iframe width=\\d+% height=\\d+px frameborder=\"0\" scrolling=\"no\" src=\"(http://embed\\.stream2k\\.com/[^<>\"]*?)\"", "0" } };
         for (String[] regex : regexes) {
-            final String finallink = br.getRegex(Pattern.compile(regex[0], Pattern.CASE_INSENSITIVE)).getMatch(Integer.parseInt(regex[1]));
-            if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
+            String finallink = br.getRegex(Pattern.compile(regex[0], Pattern.CASE_INSENSITIVE)).getMatch(Integer.parseInt(regex[1]));
+            if (finallink != null) {
+                if (finallink.matches("http://embed\\.stream2k\\.com/[^<>\"]+")) {
+                    br2.getPage(finallink);
+                    finallink = br2.getRegex("file: \\'(http://[^<>\"]*?)\\',").getMatch(0);
+                    if (finallink == null) finallink = br2.getRegex("\\'(http://server\\d+\\.stream2k\\.com/dl\\d+/[^<>\"/]*?)\\'").getMatch(0);
+                    if (finallink != null) {
+                        finallink = "directhttp://" + finallink;
+                    } else {
+                        finallink = "";
+                    }
+                }
+                decryptedLinks.add(createDownloadlink(finallink));
+            }
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);

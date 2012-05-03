@@ -50,12 +50,12 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filerio.com", "filekeen.com" }, urls = { "http://(www\\.)?(filekeen|filerio)\\.com/[a-z0-9]{12}", "vSGzhkIKEfRUhbUNUSED_REGEXfdgrtjRET36fdfjhtwe85t7459zghwghior" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filerio.com", "filekeen.com" }, urls = { "http://(www\\.)?(filerio\\.in|filekeen\\.com|filerio\\.com)/[a-z0-9]{12}", "vSGzhkIKEfRUhbUNUSED_REGEXfdgrtjRET36fdfjhtwe85t7459zghwghior" }, flags = { 2, 0 })
 public class FileRioCom extends PluginForHost {
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://filerio.com";
+    private static final String COOKIE_HOST         = "http://filerio.in";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
@@ -64,7 +64,7 @@ public class FileRioCom extends PluginForHost {
     // XfileSharingProBasic Version 2.5.4.6, modified fnf-texts
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replaceAll("(filerio|filekeen)\\.com/", "filerio.in/"));
     }
 
     @Override
@@ -223,7 +223,7 @@ public class FileRioCom extends PluginForHost {
                 logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                 dlForm = rc.getForm();
                 /** wait time is often skippable for reCaptcha handling */
-                // skipWaittime = true;
+                skipWaittime = true;
             }
             /* Captcha END */
             if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
@@ -278,19 +278,23 @@ public class FileRioCom extends PluginForHost {
     }
 
     public String getDllink() {
+        System.out.println(br.toString());
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
+                dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                 if (dllink == null) {
-                    dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
+                    dllink = new Regex(correctedBR, "\"(http://(\\d+\\.\\d+\\.\\d+\\.\\d+|([a-z0-9]+\\.)filerio\\.in):\\d+/d/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
                     if (dllink == null) {
-                        String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                        if (cryptedScripts != null && cryptedScripts.length != 0) {
-                            for (String crypted : cryptedScripts) {
-                                dllink = decodeDownloadLink(crypted);
-                                if (dllink != null) break;
+                        dllink = new Regex(correctedBR, "<span style=\"width:915px; height:67px; font\\-family:\"Tahoma\"; font\\-size:12px; color:#356186; border:1px solid #bbb; padding:7px;\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+                        if (dllink == null) {
+                            String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                            if (cryptedScripts != null && cryptedScripts.length != 0) {
+                                for (String crypted : cryptedScripts) {
+                                    dllink = decodeDownloadLink(crypted);
+                                    if (dllink != null) break;
+                                }
                             }
                         }
                     }
@@ -546,7 +550,11 @@ public class FileRioCom extends PluginForHost {
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/?op=my_account");
                 if (!new Regex(correctedBR, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!new Regex(correctedBR, "(Premium\\-Account expire|>Renew premium<)").matches()) {account.setProperty("nopremium", true);                } else {                    account.setProperty("nopremium", false);               }
+                if (!new Regex(correctedBR, "(Premium\\-Account expire|>Renew premium<)").matches()) {
+                    account.setProperty("nopremium", true);
+                } else {
+                    account.setProperty("nopremium", false);
+                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);
@@ -579,7 +587,7 @@ public class FileRioCom extends PluginForHost {
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        final String ttt = new Regex(correctedBR, "<div class=\"wait\\-txt\"><span id=\"[a-z0-9]+\">(\\d+)</span></div>").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
