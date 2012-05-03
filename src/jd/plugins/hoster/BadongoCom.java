@@ -220,7 +220,7 @@ public class BadongoCom extends PluginForHost {
                     downloadLink.setName(filename);
                 }
             }
-            dllink = Encoding.urlDecode(dllink, true);
+            dllink = Encoding.urlDecode(dllink, false);
             dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         }
         if (!dl.getConnection().isContentDisposition()) {
