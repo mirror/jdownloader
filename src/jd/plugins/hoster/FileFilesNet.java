@@ -182,6 +182,7 @@ public class FileFilesNet extends PluginForHost {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
+                prepBrowser();
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
@@ -197,7 +198,6 @@ public class FileFilesNet extends PluginForHost {
                         return;
                     }
                 }
-                prepBrowser();
                 br.getPage(HOST);
                 br.postPage(HOST + "/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 if (!br.containsHTML("#login\\|1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

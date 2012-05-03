@@ -84,6 +84,7 @@ public class RuTubeRu extends PluginForHost {
 
                 ((RTMPDownload) dl).startDownload();
             } catch (final Throwable e) {
+                e.printStackTrace();
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD needed!");
             }
         } else {
