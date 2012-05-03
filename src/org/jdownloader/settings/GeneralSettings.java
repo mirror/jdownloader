@@ -305,8 +305,6 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setDownloadTempUnavailableRetryWaittime(long ms);
 
-    void setDownloadHosterTempUnavailableRetryWaittime(long ms);
-
     void setNetworkIssuesTimeout(int timeout);
 
     @AboutConfig
