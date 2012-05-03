@@ -74,6 +74,7 @@ public class MojoFileCom extends PluginForHost {
 
     public MojoFileCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall(10 * 1000);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
@@ -269,7 +270,8 @@ public class MojoFileCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        // 1 dl starts->30 minute waittime->2nd possible->And so on
+        return -1;
     }
 
     /** This removes fake messages which can kill the plugin */
@@ -328,12 +330,13 @@ public class MojoFileCom extends PluginForHost {
             }
             if (correctedBR.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
+        System.out.println(correctedBR);
         /** Wait time reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait|>You reached your hourly traffic limit)").matches()) {
             /** TODO: Improve those regexes */
             String tmphrs = new Regex(correctedBR, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
-            String tmpmin = new Regex(correctedBR, "\\s+(\\d+)\\s+minutes?").getMatch(0);
+            String tmpmin = br.getRegex("var maxtime = (\\d+)").getMatch(0);
             if (tmpmin == null) tmpmin = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
             String tmpsec = new Regex(correctedBR, "\\s+(\\d+)\\s+seconds?").getMatch(0);
             String tmpdays = new Regex(correctedBR, "\\s+(\\d+)\\s+days?").getMatch(0);
