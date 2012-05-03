@@ -31,11 +31,10 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeListener;
 import org.appwork.utils.swing.EDTRunner;
-import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
-import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_LINKFILTER;
 
 public class AutoConfirmButton extends ExtButton implements ChangeListener, TableModelListener {
     /**
@@ -173,9 +172,10 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
                             public void run() {
                                 ArrayList<AbstractNode> list = new ArrayList<AbstractNode>();
                                 boolean autoStart = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue();
+
                                 for (CrawledLink l : LinkGrabberTableModel.getInstance().getAllChildrenNodes()) {
                                     if (l.getLinkState() == LinkState.OFFLINE) continue;
-                                    if (l.isAutoConfirmEnabled()) {
+                                    if (l.isAutoConfirmEnabled() || CFG_LINKFILTER.LINKGRABBER_AUTO_CONFIRM_ENABLED.isEnabled()) {
                                         list.add(l);
                                         if (l.isAutoStartEnabled()) autoStart = true;
                                     }
