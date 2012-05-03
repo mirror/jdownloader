@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,7 +42,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -332,23 +330,9 @@ public class Uploadedto extends PluginForHost {
         }
         Browser brc = br.cloneBrowser();
         brc.getPage("http://uploaded.to/js/download.js");
-        String recaptcha = brc.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
-        if (recaptcha == null) {
-            logger.severe(brc.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        rc.setId(recaptcha.trim());
-        rc.load();
-        Form rcForm = new Form();
-        rcForm.setMethod(MethodType.POST);
-        rcForm.setAction("http://uploaded.to/io/ticket/captcha/" + getID(downloadLink));
-        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        rc.setForm(rcForm);
+
         String wait = br.getRegex("Aktuelle Wartezeit: <span>(\\d+)</span> Sekunden</span>").getMatch(0);
-        String c = getCaptchaCode(cf, downloadLink);
-        rc.setCode(c);
+        br.postPage("http://uploaded.to/io/ticket/captcha/" + getID(downloadLink), "");
         if (br.containsHTML("No connection to database")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
         if (br.containsHTML("err\":\"Ticket kann nicht")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
         if (br.containsHTML("\"?err\"?:\"captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
