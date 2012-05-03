@@ -17,13 +17,19 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,17 +38,21 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 16216 $", interfaceVersion = 2, names = { "flyfiles.net" }, urls = { "https?://(www\\.)?flyfiles\\.net/[a-z0-9]{10}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 16216 $", interfaceVersion = 2, names = { "flyfiles.net" }, urls = { "https?://(www\\.)?flyfiles\\.net/[a-z0-9]{10}" }, flags = { 2 })
 public class FileFilesNet extends PluginForHost {
 
-    private static final String COOKIE_HOST = "http://flyfiles.net";
+    private static final String HOST = "http://flyfiles.net";
+    private static final Object LOCK = new Object();
+
+    // TODO: rename plugin when jd2 goes stable, FlyFilesNet
 
     // DEV NOTES
     // mods:
-    // non account: 6 * 1?
+    // non account: 6 * 1
     // free account:
-    // premium account:
+    // premium account: 6 * 1
     // protocol: has https but is fubar.
     // other: no redirects
 
@@ -53,7 +63,7 @@ public class FileFilesNet extends PluginForHost {
 
     public FileFilesNet(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(HOST + "/");
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -68,13 +78,18 @@ public class FileFilesNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return COOKIE_HOST + "/terms.php";
+        return HOST + "/terms.php";
+    }
+
+    public void prepBrowser() {
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.setCookie(HOST, "lang", "english");
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">[\r\n\t ]+File not found\\![\r\n\t ]+<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String[][] fileInfo = br.getRegex("(?i)<div id=\"file_det\">[\r\n\t ]+(.+?) \\- ([\\d\\.]+ (KB|MB|GB|TB))[\r\n\t ]+").getMatches();
@@ -89,12 +104,11 @@ public class FileFilesNet extends PluginForHost {
         String dllink = (checkDirectLink(downloadLink, "directlink"));
         if (dllink == null) {
             requestFileInformation(downloadLink);
-            br.postPage(COOKIE_HOST + "/", "getDownLink=" + new Regex(downloadLink.getDownloadURL(), "net/(.*)").getMatch(0));
+            br.postPage(HOST + "/", "getDownLink=" + new Regex(downloadLink.getDownloadURL(), "net/(.*)").getMatch(0));
             // they don't show any info about limits or waits. You seem to just
             // get '#' instead of link.
             if (br.containsHTML("#downlink\\|#")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster connection limit reached.", 10 * 60 * 1000l);
-            dllink = br.getRegex("#downlink\\|(https?://\\w+\\.flyfiles\\.net/\\w+/.+)").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("(https?://.+)").getMatch(0);
+            dllink = getDllink();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -6);
@@ -104,6 +118,11 @@ public class FileFilesNet extends PluginForHost {
         }
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     private String checkDirectLink(DownloadLink downloadLink, String property) {
@@ -125,13 +144,111 @@ public class FileFilesNet extends PluginForHost {
         return dllink;
     }
 
-    @Override
-    public void reset() {
+    public String getDllink() {
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            dllink = br.getRegex("#downlink\\|(https?://\\w+\\.flyfiles\\.net/\\w+/.+)").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("(https?://.+)").getMatch(0);
+            }
+        }
+        return dllink;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String expire = new Regex(br, "(?i)<u>Premium</u>: <span>(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})</span>").getMatch(0);
+        if (expire == null) {
+            ai.setExpired(true);
+            account.setValid(false);
+            return ai;
+        }
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", null));
+        ai.setUnlimitedTraffic();
+        ai.setStatus("Premium User");
+        account.setValid(true);
+        return ai;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(HOST, key, value);
+                        }
+                        return;
+                    }
+                }
+                prepBrowser();
+                br.getPage(HOST);
+                br.postPage(HOST + "/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                if (!br.containsHTML("#login\\|1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.getPage("/");
+                // only support premium at this stage
+                if (!new Regex(br, "(?i)(<u>Premium</u>: <span>\\d+{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}</span>)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(HOST);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        String dllink = checkDirectLink(link, "premlink");
+        if (dllink == null) {
+            br.postPage(HOST + "/", "getDownLink=" + new Regex(link.getDownloadURL(), "net/(.*)").getMatch(0));
+            dllink = getDllink();
+            // they don't show any info about limits or waits. You seem to just
+            // get '#' instead of link.
+            if (br.containsHTML("#downlink\\|#")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster connection limit reached.", 10 * 60 * 1000l);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -6);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setProperty("premlink", dllink);
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
         return 1;
+    }
+
+    @Override
+    public void reset() {
     }
 
     @Override
