@@ -53,6 +53,16 @@ public interface GeneralSettings extends ConfigInterface {
 
     }
 
+    @DefaultIntValue(10)
+    @AboutConfig
+    @SpinnerValidator(min = 0, max = 120)
+    @Description("AutoStart Downloads will show a Countdown Dialog after Startup. Set the countdown time to 0 to remove this dialog. @see showCountdownonAutoStartDownloads")
+    int getAutoStartCountdownSeconds();
+
+    AutoDownloadStartOption getAutoStartDownloadOption();
+
+    String[] getBrowserCommandLine();
+
     @AboutConfig
     @DefaultEnumValue("NEVER")
     CleanAfterDownloadAction getCleanupAfterDownloadAction();
@@ -64,9 +74,24 @@ public interface GeneralSettings extends ConfigInterface {
     ArrayList<String[]> getDownloadFolderHistory();
 
     @AboutConfig
+    @DefaultLongValue(5 * 60 * 1000l)
+    @Description("Waittime in ms if a Download HashCheck Failed")
+    long getDownloadHashCheckFailedRetryWaittime();
+
+    @AboutConfig
     @Description("Download Speed limit in bytes.")
     @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
     int getDownloadSpeedLimit();
+
+    @AboutConfig
+    @DefaultLongValue(30 * 60 * 1000l)
+    @Description("Waittime in ms if a Download Temp Unavailable Failed")
+    long getDownloadTempUnavailableRetryWaittime();
+
+    @AboutConfig
+    @DefaultLongValue(10 * 60 * 1000l)
+    @Description("Waittime in ms if a Download had unknown IOException")
+    long getDownloadUnknownIOExceptionWaittime();
 
     @AboutConfig
     @Description("flush download buffers when filled up to x percent (1-100)")
@@ -98,13 +123,6 @@ public interface GeneralSettings extends ConfigInterface {
     @DefaultIntValue(30000)
     @RequiresRestart
     int getHttpReadTimeout();
-
-    @AboutConfig
-    @Description("Timeout for network problems")
-    @SpinnerValidator(min = 0, max = 1000000)
-    @DefaultIntValue(15000)
-    @RequiresRestart
-    int getNetworkIssuesTimeout();
 
     @AboutConfig
     @DefaultEnumValue("ASK_FOR_EACH_FILE")
@@ -140,6 +158,13 @@ public interface GeneralSettings extends ConfigInterface {
     int getMaxSimultaneDownloadsPerHost();
 
     @AboutConfig
+    @Description("Timeout for network problems")
+    @SpinnerValidator(min = 0, max = 1000000)
+    @DefaultIntValue(15000)
+    @RequiresRestart
+    int getNetworkIssuesTimeout();
+
+    @AboutConfig
     @Description("Pause Speed. in Pause Mode we limit speed to this value to keep connections open, but use hardly bandwidth")
     @DefaultIntValue(10240)
     @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
@@ -173,6 +198,10 @@ public interface GeneralSettings extends ConfigInterface {
     @DefaultBooleanValue(true)
     boolean isCleanUpFilenames();
 
+    boolean isClosedWithRunningDownloads();
+
+    boolean isConvertRelativePathesJDRoot();
+
     @AboutConfig
     @Description("Do not start further downloads if others are waiting for a reconnect/new ip")
     @DefaultBooleanValue(true)
@@ -201,6 +230,20 @@ public interface GeneralSettings extends ConfigInterface {
     @DefaultBooleanValue(false)
     boolean isMaxDownloadsPerHostEnabled();
 
+    boolean isShowCountdownonAutoStartDownloads();
+
+    boolean isSilentRestart();
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @Description("If true, JDownloader performs updates automatically without user interaction")
+    boolean isSilentUpdateEnabled();
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @Description("If false, JDownloader will autorestart to finish a update silently")
+    boolean isSilentUpdateWithRestartEnabled();
+
     @AboutConfig
     @DefaultBooleanValue(true)
     @Description("Use available Accounts?")
@@ -220,20 +263,46 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setAutoReconnectEnabled(boolean b);
 
+    void setAutoStartCountdownSeconds(int seconds);
+
+    @AboutConfig
+    @DefaultEnumValue("ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS")
+    void setAutoStartDownloadOption(AutoDownloadStartOption option);
+
+    @DefaultFactory(DefaultBrowserCommand.class)
+    @AboutConfig
+    @Description("CommandLine to open a link in a browser. Use %s as wildcard for the url")
+    void setBrowserCommandLine(String[] b);
+
     void setCleanupAfterDownloadAction(CleanAfterDownloadAction action);
 
     void setCleanUpFilenames(boolean b);
 
+    @Description("Is true, if jdownloader got closed with running downloads.")
+    @DefaultBooleanValue(false)
+    void setClosedWithRunningDownloads(boolean b);
+
+    @DefaultBooleanValue(true)
     @AboutConfig
+    @RequiresRestart
+    @Description("Correct pathes relative to JDownloader root")
+    void setConvertRelativePathesJDRoot(boolean b);
+
     void setDefaultDownloadFolder(String ddl);
 
     void setDownloadControllerPrefersReconnectEnabled(boolean b);
 
     void setDownloadFolderHistory(ArrayList<String[]> history);
 
+    void setDownloadHashCheckFailedRetryWaittime(long ms);
+
     void setDownloadSpeedLimit(int bytes);
 
     void setDownloadSpeedLimitEnabled(boolean b);
+
+    void setDownloadTempUnavailableRetryWaittime(long ms);
+
+    void setDownloadUnknownIOExceptionWaittime(long ms);
 
     void setFilterRegex(boolean b);
 
@@ -267,96 +336,26 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setMaxSimultaneDownloadsPerHost(int num);
 
-    void setPauseSpeed(int kb);
-
-    void setUseAvailableAccounts(boolean b);
-
-    void setUseOriginalLastModified(boolean b);
-
-    void setWaittimeOnConnectionLoss(int milliseconds);
-
-    @Description("Is true, if jdownloader got closed with running downloads.")
-    @DefaultBooleanValue(false)
-    void setClosedWithRunningDownloads(boolean b);
-
-    boolean isClosedWithRunningDownloads();
-
-    @DefaultIntValue(10)
-    @AboutConfig
-    @SpinnerValidator(min = 0, max = 120)
-    @Description("AutoStart Downloads will show a Countdown Dialog after Startup. Set the countdown time to 0 to remove this dialog. @see showCountdownonAutoStartDownloads")
-    int getAutoStartCountdownSeconds();
-
-    void setAutoStartCountdownSeconds(int seconds);
-
-    @AboutConfig
-    @DefaultLongValue(10 * 60 * 1000l)
-    @Description("Waittime in ms if a Download had unknown IOException")
-    long getDownloadUnknownIOExceptionWaittime();
-
-    void setDownloadUnknownIOExceptionWaittime(long ms);
-
-    @AboutConfig
-    @DefaultLongValue(5 * 60 * 1000l)
-    @Description("Waittime in ms if a Download HashCheck Failed")
-    long getDownloadHashCheckFailedRetryWaittime();
-
-    void setDownloadHashCheckFailedRetryWaittime(long ms);
-
-    @AboutConfig
-    @DefaultLongValue(30 * 60 * 1000l)
-    @Description("Waittime in ms if a Download Temp Unavailable Failed")
-    long getDownloadTempUnavailableRetryWaittime();
-
-    void setDownloadTempUnavailableRetryWaittime(long ms);
-
     void setNetworkIssuesTimeout(int timeout);
 
-    @AboutConfig
-    @DefaultEnumValue("ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS")
-    void setAutoStartDownloadOption(AutoDownloadStartOption option);
-
-    AutoDownloadStartOption getAutoStartDownloadOption();
+    void setPauseSpeed(int kb);
 
     @DefaultBooleanValue(true)
     @AboutConfig
     @Description("@see AutoStartCountdownSeconds")
     void setShowCountdownonAutoStartDownloads(boolean b);
 
-    boolean isShowCountdownonAutoStartDownloads();
-
-    @DefaultFactory(DefaultBrowserCommand.class)
-    @AboutConfig
-    @Description("CommandLine to open a link in a browser. Use %s as wildcard for the url")
-    void setBrowserCommandLine(String[] b);
-
-    String[] getBrowserCommandLine();
-
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    @RequiresRestart
-    @Description("Correct pathes relative to JDownloader root")
-    void setConvertRelativePathesJDRoot(boolean b);
-
-    boolean isConvertRelativePathesJDRoot();
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @Description("If true, JDownloader performs updates automatically without user interaction")
-    boolean isSilentUpdateEnabled();
-
-    void setSilentUpdateEnabled(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @Description("If false, JDownloader will autorestart to finish a update silently")
-    boolean isSilentUpdateWithRestartEnabled();
-
-    void setSilentUpdateWithRestartEnabled(boolean b);
-
     @DefaultBooleanValue(false)
     void setSilentRestart(boolean b);
 
-    boolean isSilentRestart();
+    void setSilentUpdateEnabled(boolean b);
+
+    void setSilentUpdateWithRestartEnabled(boolean b);
+
+    void setUseAvailableAccounts(boolean b);
+
+    void setUseOriginalLastModified(boolean b);
+
+    void setWaittimeOnConnectionLoss(int milliseconds);
 
 }
