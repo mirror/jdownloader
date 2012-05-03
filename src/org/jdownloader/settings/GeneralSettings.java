@@ -11,6 +11,7 @@ import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultFactory;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
@@ -285,6 +286,26 @@ public interface GeneralSettings extends ConfigInterface {
     int getAutoStartCountdownSeconds();
 
     void setAutoStartCountdownSeconds(int seconds);
+
+    @DefaultLongValue(10 * 60 * 1000l)
+    @Description("Waittime in ms if a Download had unknown IOException")
+    long getDownloadUnknownIOExceptionWaittime();
+
+    void setDownloadUnknownIOExceptionWaittime(long ms);
+
+    @DefaultLongValue(5 * 60 * 1000l)
+    @Description("Waittime in ms if a Download HashCheck Failed")
+    long getDownloadHashCheckFailedRetryWaittime();
+
+    void setDownloadHashCheckFailedRetryWaittime(long ms);
+
+    @DefaultLongValue(30 * 60 * 1000l)
+    @Description("Waittime in ms if a Download Temp Unavailable Failed")
+    long getDownloadTempUnavailableRetryWaittime();
+
+    void setDownloadTempUnavailableRetryWaittime(long ms);
+
+    void setDownloadHosterTempUnavailableRetryWaittime(long ms);
 
     void setNetworkIssuesTimeout(int timeout);
 
