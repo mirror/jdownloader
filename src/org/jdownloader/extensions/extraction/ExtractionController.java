@@ -28,6 +28,7 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
 
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging.Log;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
 
 /**
@@ -77,6 +78,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     }
 
     private boolean checkPassword(String pw) {
+        Log.L.info("Check Password: " + pw);
         if (pw == null || "".equals(pw)) return false;
         // workaround for bug
         // http://sourceforge.net/projects/sevenzipjbind/forums/forum/757965/topic/5152496

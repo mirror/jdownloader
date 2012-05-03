@@ -251,7 +251,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 } catch (IOException e) {
                     linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_hosterproblem());
-                    linkStatus.setValue(10 * 60 * 1000l);
+                    linkStatus.setValue(JsonConfig.create(GeneralSettings.class).getDownloadUnknownIOExceptionWaittime());
                 } catch (InterruptedException e) {
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_error() + "Interrupted");
@@ -426,7 +426,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             if (retry()) {
                 /* we can try again, let's wait 5 mins */
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setWaitTime(5 * 60 * 1000l);
+                linkStatus.setWaitTime(JsonConfig.create(GeneralSettings.class).getDownloadHashCheckFailedRetryWaittime());
             }
         }
     }
@@ -561,8 +561,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             linkStatus.setWaitTime(linkStatus.getValue());
             logger.warning("Error occurred: Temporarily unavailable: Please wait " + linkStatus.getValue() + " ms for a retry");
         } else if (linkStatus.getValue() == 0) {
-            linkStatus.setWaitTime(30 * 60 * 1000l);
-            logger.warning("Error occurred: Temporarily unavailable: Please wait " + 30 * 60 * 1000l + " ms for a retry");
+            linkStatus.setWaitTime(JsonConfig.create(GeneralSettings.class).getDownloadTempUnavailableRetryWaittime());
+            logger.warning("Error occurred: Temporarily unavailable: Please wait " + JsonConfig.create(GeneralSettings.class).getDownloadTempUnavailableRetryWaittime() + " ms for a retry");
         } else {
             logger.warning("Error occurred: Temporarily unavailable: disable link!");
             linkStatus.resetWaitTime();
@@ -578,7 +578,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         long milliSeconds = linkStatus.getValue();
         if (milliSeconds <= 0) {
             logger.severe(_JDT._.plugins_errors_pluginerror());
-            milliSeconds = 3600000l;
+            milliSeconds = 60 * 60 * 1000l;
         }
         if (account != null) {
             /*

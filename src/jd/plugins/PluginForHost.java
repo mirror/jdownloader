@@ -40,7 +40,6 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.nutils.Formatter;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
@@ -574,7 +573,7 @@ public abstract class PluginForHost extends Plugin {
      * @return
      */
     public String getBuyPremiumUrl() {
-        if (premiumurl != null) return "http://jdownloader.org/r.php?u=" + Encoding.urlEncode(premiumurl);
+        if (premiumurl != null) return premiumurl;
         return premiumurl;
     }
 

@@ -32,7 +32,6 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/jd/ressourcen/code-ressourcen/synthetica_docs.zip!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBatik.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlackMoon.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlackStar.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlueIce.jar"/>

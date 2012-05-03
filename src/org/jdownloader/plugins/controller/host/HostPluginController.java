@@ -8,7 +8,6 @@ import java.util.List;
 
 import jd.JDInitFlags;
 import jd.nutils.Formatter;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
 
@@ -23,9 +22,8 @@ import org.jdownloader.plugins.controller.PluginController;
 import org.jdownloader.plugins.controller.PluginInfo;
 
 public class HostPluginController extends PluginController<PluginForHost> {
-    private static final String               HTTP_JDOWNLOADER_ORG_R_PHP_U = "http://jdownloader.org/r.php?u=";
 
-    private static final HostPluginController INSTANCE                     = new HostPluginController();
+    private static final HostPluginController INSTANCE = new HostPluginController();
 
     /**
      * get the only existing instance of HostPluginController. This is a
@@ -143,10 +141,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             ap.setPremium(plg.isPremiumEnabled());
                             String purl = plg.getBuyPremiumUrl();
                             if (purl != null) purl = new String(purl);
-                            if (purl != null && purl.startsWith(HTTP_JDOWNLOADER_ORG_R_PHP_U)) {
-                                /* need to modify buy url */
-                                purl = Encoding.urlDecode(purl.substring(HTTP_JDOWNLOADER_ORG_R_PHP_U.length()), false);
-                            }
+
                             ap.setPremiumUrl(purl);
                             ap.setHasConfig(plg.hasConfig());
                             l.setHasConfig(plg.hasConfig());
