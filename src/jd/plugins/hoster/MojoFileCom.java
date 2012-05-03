@@ -330,7 +330,6 @@ public class MojoFileCom extends PluginForHost {
             }
             if (correctedBR.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
-        System.out.println(correctedBR);
         /** Wait time reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait|>You reached your hourly traffic limit)").matches()) {
             /** TODO: Improve those regexes */
