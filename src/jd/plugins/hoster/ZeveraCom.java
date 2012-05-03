@@ -157,7 +157,8 @@ public class ZeveraCom extends PluginForHost {
             return;
         } else {
             /*
-             * download is not contentdisposition, so remove this host from premiumHosts list
+             * download is not contentdisposition, so remove this host from
+             * premiumHosts list
              */
             br.followConnection();
         }
@@ -173,15 +174,14 @@ public class ZeveraCom extends PluginForHost {
         showMessage(link, "Task 1: Generating Link");
         /* request Download */
         if (link.getStringProperty("pass", null) != null) {
-            br.getPage(mServ + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(link.getDownloadURL()) + "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
+            br.getPage(mServ + "/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()) + "&FilePass=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
         } else {
-            br.getPage(mServ + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(link.getDownloadURL()));
+            br.getPage(mServ + "/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()));
         }
         // handleErrors();
-        String dllink = br.getRegex("\"generated_links\":\\[\\[\"[^\"]+\",\"[^\\,]+,\"(http[^\"]+)\"\\]\\]").getMatch(0);
+        br.getPage(br.getRedirectLocation());
+        String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        /* unescape json string */
-        dllink = dllink.replaceAll("\\\\/", "/");
         showMessage(link, "Task 2: Download begins!");
         handleDL(link, dllink);
     }
@@ -199,23 +199,22 @@ public class ZeveraCom extends PluginForHost {
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
-        br.getPage(mServ + "/api/account.php");
-        String expire = br.getRegex("(?i)<expiration\\-txt>([^<]+)").getMatch(0);
+        // doesn't contain useful info....
+        // br.getPage(mServ + "/jDownloader.ashx?cmd=accountinfo");
+        // grab website page instead.
+        br.getPage(mServ + "/Member/Dashboard.aspx");
+        String expire = br.getRegex("(?i)>Expiration date:</label>.+(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))</label>").getMatch(0);
         if (expire != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "M/d/yyyy h:mm a", null));
         }
-        String acctype = br.getRegex("(?i)<type>(\\w+)</type>").getMatch(0).toLowerCase();
-        if (acctype.equals("premium")) {
-            ai.setStatus("Premium User");
-        } else {
-            // unhandled account type here.
-        }
+        ai.setStatus("Premium User");
         try {
-            String hostsSup = br.cloneBrowser().getPage(mServ + "/api/hosters.php");
-            String[] hosts = new Regex(hostsSup, "\"([^\"]+)\",").getColumn(0);
+            String hostsSup = br.cloneBrowser().getPage(mServ + "/jDownloader.ashx?cmd=gethosters");
+            String[] hosts = new Regex(hostsSup, "([^,]+)").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
             /*
-             * set ArrayList<String> with all supported multiHosts of this service
+             * set ArrayList<String> with all supported multiHosts of this
+             * service
              */
             ai.setProperty("multiHostSupport", supportedHosts);
         } catch (Throwable e) {
@@ -230,6 +229,7 @@ public class ZeveraCom extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
+                prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -244,7 +244,6 @@ public class ZeveraCom extends PluginForHost {
                         return;
                     }
                 }
-                prepBrowser();
                 br.getPage(mServ + "/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
