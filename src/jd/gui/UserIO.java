@@ -30,6 +30,7 @@ import jd.nutils.JDFlags;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.BinaryLogic;
+import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -294,9 +295,20 @@ public class UserIO {
      *            TODO
      * @return
      */
-    public int requestComboDialog(final int flag, final String title, final String question, final Object[] options, final int defaultSelection, final ImageIcon icon, final String okText, final String cancelText, final ListCellRenderer renderer) {
+    public int requestComboDialog(int flag, final String title, final String question, final Object[] options, final int defaultSelection, final ImageIcon icon, final String okText, final String cancelText, final ListCellRenderer renderer) {
         try {
-            return Dialog.getInstance().showComboDialog(this.convertFlagToAWDialog(flag), title, question, options, defaultSelection, icon, okText, cancelText, renderer);
+            flag = this.convertFlagToAWDialog(flag);
+            if ((flag & Dialog.LOGIC_BYPASS) > 0) { return defaultSelection; }
+            ComboBoxDialog d = new ComboBoxDialog(flag, title, question, options, defaultSelection, icon, okText, cancelText, renderer) {
+
+                @Override
+                protected boolean isResizable() {
+                    return true;
+                }
+
+            };
+
+            return Dialog.getInstance().showDialog(d);
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {

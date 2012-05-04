@@ -439,45 +439,52 @@ public class Launcher {
         final Thread thread = new Thread() {
             @Override
             public void run() {
-                CFG_GENERAL.BROWSER_COMMAND_LINE.getEventSender().addListener(new GenericConfigEventListener<String[]>() {
-
-                    @Override
-                    public void onConfigValidatorError(KeyHandler<String[]> keyHandler, String[] invalidValue, ValidationException validateException) {
-                    }
-
-                    @Override
-                    public void onConfigValueModified(KeyHandler<String[]> keyHandler, String[] newValue) {
-                        CrossSystem.setBrowserCommandLine(newValue);
-                    }
-                });
-                CrossSystem.setBrowserCommandLine(CFG_GENERAL.BROWSER_COMMAND_LINE.getValue());
-                /* setup JSPermission */
                 try {
-                    JSPermissionRestricter.init();
-                } catch (final Throwable e) {
-                    Log.exception(e);
-                }
-                /* set gloabel logger for browser */
-                Browser.setGlobalLogger(JDLogger.getLogger());
-                /* init default global Timeouts */
-                Browser.setGlobalReadTimeout(JsonConfig.create(GeneralSettings.class).getHttpReadTimeout());
-                Browser.setGlobalConnectTimeout(JsonConfig.create(GeneralSettings.class).getHttpConnectTimeout());
-                /* init global proxy stuff */
-                Browser.setGlobalProxy(ProxyController.getInstance().getDefaultProxy());
-                /* add global proxy change listener */
-                ProxyController.getInstance().getEventSender().addListener(new DefaultEventListener<ProxyEvent<ProxyInfo>>() {
+                    CFG_GENERAL.BROWSER_COMMAND_LINE.getEventSender().addListener(new GenericConfigEventListener<String[]>() {
 
-                    public void onEvent(ProxyEvent<ProxyInfo> event) {
-                        if (event.getType().equals(ProxyEvent.Types.REFRESH)) {
-                            HTTPProxy proxy = null;
-                            if ((proxy = ProxyController.getInstance().getDefaultProxy()) != Browser._getGlobalProxy()) {
-                                Log.L.info("Set new DefaultProxy: " + proxy);
-                                Browser.setGlobalProxy(proxy);
-                            }
+                        @Override
+                        public void onConfigValidatorError(KeyHandler<String[]> keyHandler, String[] invalidValue, ValidationException validateException) {
                         }
 
+                        @Override
+                        public void onConfigValueModified(KeyHandler<String[]> keyHandler, String[] newValue) {
+                            CrossSystem.setBrowserCommandLine(newValue);
+                        }
+                    });
+                    CrossSystem.setBrowserCommandLine(CFG_GENERAL.BROWSER_COMMAND_LINE.getValue());
+                    /* setup JSPermission */
+                    try {
+                        JSPermissionRestricter.init();
+                    } catch (final Throwable e) {
+                        Log.exception(e);
                     }
-                });
+                    /* set gloabel logger for browser */
+                    Browser.setGlobalLogger(JDLogger.getLogger());
+                    /* init default global Timeouts */
+                    Browser.setGlobalReadTimeout(JsonConfig.create(GeneralSettings.class).getHttpReadTimeout());
+                    Browser.setGlobalConnectTimeout(JsonConfig.create(GeneralSettings.class).getHttpConnectTimeout());
+                    /* init global proxy stuff */
+                    Browser.setGlobalProxy(ProxyController.getInstance().getDefaultProxy());
+                    /* add global proxy change listener */
+                    ProxyController.getInstance().getEventSender().addListener(new DefaultEventListener<ProxyEvent<ProxyInfo>>() {
+
+                        public void onEvent(ProxyEvent<ProxyInfo> event) {
+                            if (event.getType().equals(ProxyEvent.Types.REFRESH)) {
+                                HTTPProxy proxy = null;
+                                if ((proxy = ProxyController.getInstance().getDefaultProxy()) != Browser._getGlobalProxy()) {
+                                    Log.L.info("Set new DefaultProxy: " + proxy);
+                                    Browser.setGlobalProxy(proxy);
+                                }
+                            }
+
+                        }
+                    });
+                } catch (Throwable e) {
+                    Log.exception(e);
+                    Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
+
+                    org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
+                }
             }
         };
         thread.start();
@@ -496,108 +503,118 @@ public class Launcher {
                 new Thread() {
                     @Override
                     public void run() {
-                        HostPluginController.getInstance().ensureLoaded();
-                        /* load links */
-                        DownloadController.getInstance().initDownloadLinks();
-                        LinkCollector.getInstance().initLinkCollector();
-                        /* start remote api */
-                        RemoteAPIController.getInstance();
-                        ExternInterface.getINSTANCE();
-                        // GarbageController.getInstance();
-                        /* load extensions */
-                        ExtensionController.getInstance().init();
-                        /* init clipboardMonitoring stuff */
-                        if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled()) {
-                            ClipboardMonitoring.getINSTANCE().startMonitoring();
-                        }
-                        org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
-                            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                                if (Boolean.TRUE.equals(newValue) && ClipboardMonitoring.getINSTANCE().isMonitoring() == false) {
-                                    ClipboardMonitoring.getINSTANCE().startMonitoring();
-                                } else {
-                                    ClipboardMonitoring.getINSTANCE().stopMonitoring();
-                                }
+                        try {
+                            HostPluginController.getInstance().ensureLoaded();
+                            /* load links */
+                            DownloadController.getInstance().initDownloadLinks();
+                            LinkCollector.getInstance().initLinkCollector();
+                            /* start remote api */
+                            RemoteAPIController.getInstance();
+                            ExternInterface.getINSTANCE();
+                            // GarbageController.getInstance();
+                            /* load extensions */
+                            ExtensionController.getInstance().init();
+                            /* init clipboardMonitoring stuff */
+                            if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled()) {
+                                ClipboardMonitoring.getINSTANCE().startMonitoring();
                             }
+                            org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
-                            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-                            }
-                        });
-                        /* check for available updates */
-                        // activate auto checker only if we are in jared mode
-                        if ((JsonConfig.create(WebupdateSettings.class).isAutoUpdateCheckEnabled() && Application.isJared(Launcher.class)) || PARAMETERS.hasCommandSwitch("autoupdate")) {
-                            JDUpdater.getInstance().startChecker();
-                        }
-                        /* start downloadwatchdog */
-                        DownloadWatchDog.getInstance();
-                        AutoDownloadStartOption doRestartRunninfDownloads = JsonConfig.create(GeneralSettings.class).getAutoStartDownloadOption();
-                        boolean closedRunning = JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads();
-                        if (doRestartRunninfDownloads == AutoDownloadStartOption.ALWAYS || (closedRunning && doRestartRunninfDownloads == AutoDownloadStartOption.ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS)) {
-                            IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-                                @Override
-                                protected Void run() throws RuntimeException {
-                                    /*
-                                     * we do this check inside IOEQ because
-                                     * initDownloadLinks also does its final
-                                     * init in IOEQ
-                                     */
-                                    List<DownloadLink> dlAvailable = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-
-                                        @Override
-                                        public boolean isChildrenNodeFiltered(DownloadLink node) {
-                                            return node.isEnabled() && node.getLinkStatus().hasStatus(LinkStatus.TODO);
-                                        }
-
-                                        @Override
-                                        public int returnMaxResults() {
-                                            return 1;
-                                        }
-
-                                    });
-                                    if (dlAvailable.size() == 0) {
-                                        /*
-                                         * no downloadlinks available to
-                                         * autostart
-                                         */
-                                        return null;
+                                public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                                    if (Boolean.TRUE.equals(newValue) && ClipboardMonitoring.getINSTANCE().isMonitoring() == false) {
+                                        ClipboardMonitoring.getINSTANCE().startMonitoring();
+                                    } else {
+                                        ClipboardMonitoring.getINSTANCE().stopMonitoring();
                                     }
-                                    new Thread("AutostartDialog") {
-                                        @Override
-                                        public void run() {
-                                            if (!DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE)) {
-                                                // maybe downloads have been
-                                                // started by another instance
-                                                // or user input
-                                                return;
-                                            }
-                                            if (JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads() && JsonConfig.create(GeneralSettings.class).isSilentRestart()) {
+                                }
 
-                                                DownloadWatchDog.getInstance().startDownloads();
-                                            } else {
-
-                                                if (JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() > 0 && CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS.isEnabled()) {
-                                                    ConfirmDialog d = new ConfirmDialog(Dialog.LOGIC_COUNTDOWN, _JDT._.Main_run_autostart_(), _JDT._.Main_run_autostart_msg(), NewTheme.I().getIcon("start", 32), _JDT._.Mainstart_now(), null);
-                                                    d.setCountdownTime(JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds());
-                                                    try {
-                                                        Dialog.getInstance().showDialog(d);
-                                                        DownloadWatchDog.getInstance().startDownloads();
-                                                    } catch (DialogNoAnswerException e) {
-                                                        if (e.isCausedByTimeout()) {
-                                                            DownloadWatchDog.getInstance().startDownloads();
-                                                        }
-                                                    }
-                                                } else {
-                                                    DownloadWatchDog.getInstance().startDownloads();
-                                                }
-                                            }
-                                        }
-                                    }.start();
-                                    return null;
+                                public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
                                 }
                             });
+                            /* check for available updates */
+                            // activate auto checker only if we are in jared
+                            // mode
+                            if ((JsonConfig.create(WebupdateSettings.class).isAutoUpdateCheckEnabled() && Application.isJared(Launcher.class)) || PARAMETERS.hasCommandSwitch("autoupdate")) {
+                                JDUpdater.getInstance().startChecker();
+                            }
+                            /* start downloadwatchdog */
+                            DownloadWatchDog.getInstance();
+                            AutoDownloadStartOption doRestartRunninfDownloads = JsonConfig.create(GeneralSettings.class).getAutoStartDownloadOption();
+                            boolean closedRunning = JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads();
+                            if (doRestartRunninfDownloads == AutoDownloadStartOption.ALWAYS || (closedRunning && doRestartRunninfDownloads == AutoDownloadStartOption.ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS)) {
+                                IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                                    @Override
+                                    protected Void run() throws RuntimeException {
+                                        /*
+                                         * we do this check inside IOEQ because
+                                         * initDownloadLinks also does its final
+                                         * init in IOEQ
+                                         */
+                                        List<DownloadLink> dlAvailable = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+
+                                            @Override
+                                            public boolean isChildrenNodeFiltered(DownloadLink node) {
+                                                return node.isEnabled() && node.getLinkStatus().hasStatus(LinkStatus.TODO);
+                                            }
+
+                                            @Override
+                                            public int returnMaxResults() {
+                                                return 1;
+                                            }
+
+                                        });
+                                        if (dlAvailable.size() == 0) {
+                                            /*
+                                             * no downloadlinks available to
+                                             * autostart
+                                             */
+                                            return null;
+                                        }
+                                        new Thread("AutostartDialog") {
+                                            @Override
+                                            public void run() {
+                                                if (!DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE)) {
+                                                    // maybe downloads have been
+                                                    // started by another
+                                                    // instance
+                                                    // or user input
+                                                    return;
+                                                }
+                                                if (JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads() && JsonConfig.create(GeneralSettings.class).isSilentRestart()) {
+
+                                                    DownloadWatchDog.getInstance().startDownloads();
+                                                } else {
+
+                                                    if (JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() > 0 && CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS.isEnabled()) {
+                                                        ConfirmDialog d = new ConfirmDialog(Dialog.LOGIC_COUNTDOWN, _JDT._.Main_run_autostart_(), _JDT._.Main_run_autostart_msg(), NewTheme.I().getIcon("start", 32), _JDT._.Mainstart_now(), null);
+                                                        d.setCountdownTime(JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds());
+                                                        try {
+                                                            Dialog.getInstance().showDialog(d);
+                                                            DownloadWatchDog.getInstance().startDownloads();
+                                                        } catch (DialogNoAnswerException e) {
+                                                            if (e.isCausedByTimeout()) {
+                                                                DownloadWatchDog.getInstance().startDownloads();
+                                                            }
+                                                        }
+                                                    } else {
+                                                        DownloadWatchDog.getInstance().startDownloads();
+                                                    }
+                                                }
+                                            }
+                                        }.start();
+                                        return null;
+                                    }
+                                });
+                            }
+                        } catch (Throwable e) {
+                            Log.exception(e);
+                            Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
+
+                            org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
                         }
                     }
+
                 }.start();
             }
 
