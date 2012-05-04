@@ -15,8 +15,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.RTMPDownload;
-import jd.utils.JDUtilities;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.throttledconnection.ThrottledConnection;
@@ -67,7 +67,8 @@ public class RtmpDump extends RTMPDownload {
     private volatile long     BYTESLOADED = 0l;
     private long              SPEED       = 0l;
     private int               PID         = -1;
-    private String            RTMPDUMP;
+    private static String     RTMPDUMP    = null;
+    private static String     RTMPVERSION = null;
     private NativeProcess     NP;
     private Process           P;
 
@@ -78,67 +79,76 @@ public class RtmpDump extends RTMPDownload {
     }
 
     /**
-     * Attempt to locate a rtmpdump executable. The local tools folder is
-     * searched first, then *nix /usr bin folders. If found, the path will is
-     * saved to the variable RTMPDUMP.
+     * Attempt to locate a rtmpdump executable. The local tools folder is searched first, then *nix /usr bin folders. If found, the path will is saved to the
+     * variable RTMPDUMP.
      * 
      * @return Whether or not rtmpdump executable was found
      */
-    private boolean findRtmpDump() {
+    private synchronized boolean findRtmpDump() {
+        if (RTMPDUMP != null) { return RTMPDUMP.length() > 0; }
         if (CrossSystem.isWindows()) {
-            RTMPDUMP = JDUtilities.getResourceFile("tools/Windows/rtmpdump/rtmpdump.exe").getAbsolutePath();
+            RTMPDUMP = Application.getResource("tools/Windows/rtmpdump/rtmpdump.exe").getAbsolutePath();
         } else if (CrossSystem.isLinux()) {
-            RTMPDUMP = JDUtilities.getResourceFile("tools/linux/rtmpdump/rtmpdump").getAbsolutePath();
+            RTMPDUMP = Application.getResource("tools/linux/rtmpdump/rtmpdump").getAbsolutePath();
         } else if (CrossSystem.isMac()) {
-            RTMPDUMP = JDUtilities.getResourceFile("tools/mac/rtmpdump/rtmpdump").getAbsolutePath();
-        } else {
-            return false;
+            RTMPDUMP = Application.getResource("tools/mac/rtmpdump/rtmpdump").getAbsolutePath();
         }
-        if (!new File(RTMPDUMP).exists() && (CrossSystem.isLinux() || CrossSystem.isMac())) {
-            RTMPDUMP = "/usr/bin/rtmpdump";
-            if (!new File(RTMPDUMP).exists()) {
-                RTMPDUMP = "/usr/local/bin/rtmpdump";
-            }
+        if (RTMPDUMP != null && !new File(RTMPDUMP).exists()) RTMPDUMP = null;
+        if (RTMPDUMP == null && (CrossSystem.isLinux() || CrossSystem.isMac())) {
+            if (RTMPDUMP == null && (RTMPDUMP = "/usr/bin/rtmpdump") != null && !new File(RTMPDUMP).exists()) RTMPDUMP = null;
+            if (RTMPDUMP == null && (RTMPDUMP = "/usr/local/bin/rtmpdump") != null && !new File(RTMPDUMP).exists()) RTMPDUMP = null;
         }
-
-        if (!new File(RTMPDUMP).exists()) {
-            RTMPDUMP = "";
-            return false;
-        }
-        return true;
+        if (RTMPDUMP == null) RTMPDUMP = "";
+        return RTMPDUMP.length() > 0;
     }
 
     /**
-     * Attempt to locate a rtmpdump executable and parse the version number from
-     * the 'rtmpdump -h' output.
+     * Attempt to locate a rtmpdump executable and parse the version number from the 'rtmpdump -h' output.
      * 
      * @return The version number of the RTMPDump executable
      */
-    public String getRtmpDumpVersion() throws Exception {
+    public synchronized String getRtmpDumpVersion() throws Exception {
+        if (RTMPVERSION != null) return RTMPVERSION;
         if (!findRtmpDump()) { throw new Exception("Error " + RTMPDUMP + " not found!"); }
         String arg = " -h";
-
-        NativeProcess verNP;
-        Process verP;
-        InputStreamReader verR;
-
-        if (CrossSystem.isWindows()) {
-            verNP = new NativeProcess(RTMPDUMP, arg);
-            verR = new InputStreamReader(verNP.getErrorStream());
-        } else {
-            verP = Runtime.getRuntime().exec(RTMPDUMP + arg);
-            verR = new InputStreamReader(verP.getErrorStream());
+        NativeProcess verNP = null;
+        Process verP = null;
+        InputStreamReader verR = null;
+        try {
+            if (CrossSystem.isWindows()) {
+                verNP = new NativeProcess(RTMPDUMP, arg);
+                verR = new InputStreamReader(verNP.getErrorStream());
+            } else {
+                verP = Runtime.getRuntime().exec(RTMPDUMP + arg);
+                verR = new InputStreamReader(verP.getErrorStream());
+            }
+            final BufferedReader br = new BufferedReader(verR);
+            Pattern reg = Pattern.compile("RTMPDump v([0-9.]+)");
+            String line = null;
+            while ((line = br.readLine()) != null) {
+                Matcher match = reg.matcher(line);
+                if (match.find()) {
+                    RTMPVERSION = match.group(1);
+                    return RTMPVERSION;
+                }
+            }
+            throw new Exception("Error " + RTMPDUMP + " version not found!");
+        } finally {
+            try {
+                /* make sure we destroyed the process */
+                verP.destroy();
+            } catch (final Throwable e) {
+            }
+            try {
+                /* close InputStreamReader */
+                verR.close();
+            } catch (final Throwable e) {
+            }
+            if (verNP != null) {
+                /* close Streams from native */
+                verNP.closeStreams();
+            }
         }
-
-        final BufferedReader br = new BufferedReader(verR);
-        Pattern reg = Pattern.compile("RTMPDump v([0-9.]+)");
-        String line = "";
-
-        while ((line = br.readLine()) != null) {
-            Matcher match = reg.matcher(line);
-            if (match.find()) { return match.group(1); }
-        }
-        throw new Exception("Error " + RTMPDUMP + " version not found!");
     }
 
     private void getProcessId() {
@@ -156,7 +166,7 @@ public class RtmpDump extends RTMPDownload {
         if (PID >= 0) {
             try {
                 Runtime.getRuntime().exec("kill -SIGINT " + String.valueOf(PID));
-            } catch (final Exception e1) {
+            } catch (final Throwable e1) {
             }
         }
     }
@@ -282,6 +292,20 @@ public class RtmpDump extends RTMPDownload {
                 }
             } finally {
                 rtmpConnection.disconnect();
+                try {
+                    /* make sure we destroyed the process */
+                    P.destroy();
+                } catch (final Throwable e) {
+                }
+                try {
+                    /* close InputStreamReader */
+                    R.close();
+                } catch (final Throwable e) {
+                }
+                if (NP != null) {
+                    /* close Streams from native */
+                    NP.closeStreams();
+                }
             }
             if (downloadLink.getLinkStatus().getStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
                 return false;

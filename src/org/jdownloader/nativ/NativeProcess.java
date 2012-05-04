@@ -120,4 +120,19 @@ public class NativeProcess {
             sendSignal(pid, 0);
         }
     }
+
+    public void closeStreams() {
+        try {
+            stdin_stream.close();
+        } catch (final Throwable e) {
+        }
+        try {
+            stderr_stream.close();
+        } catch (final Throwable e) {
+        }
+        try {
+            stdout_stream.close();
+        } catch (final Throwable e) {
+        }
+    }
 }

@@ -170,9 +170,8 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert das Basisverzeichnis fuer jD zurueck. Don't use a logger in this
-     * method. It will cause a NullpointerException, because the logger need
-     * this method for initialisation.
+     * Liefert das Basisverzeichnis fuer jD zurueck. Don't use a logger in this method. It will cause a NullpointerException, because the logger need this
+     * method for initialisation.
      * 
      * @return ein File, dass das Basisverzeichnis angibt
      */
@@ -212,8 +211,7 @@ public class JDUtilities {
     }
 
     /**
-     * Sucht ein passendes Plugin fuer einen Anbieter Please dont use the
-     * returned Plugin to start any function
+     * Sucht ein passendes Plugin fuer einen Anbieter Please dont use the returned Plugin to start any function
      * 
      * @param host
      *            Der Host, von dem das Plugin runterladen kann
@@ -267,6 +265,8 @@ public class JDUtilities {
      *            Ressource, die geladen werden soll
      * @return File zu arg
      */
+    @Deprecated
+    /* please use Application.getRessource where possible */
     public static File getResourceFile(final String resource) {
         return Application.getResource(resource);
 
@@ -291,8 +291,7 @@ public class JDUtilities {
      * @param parameter
      * @param runIn
      * @param waitForReturn
-     * @return null oder die rueckgabe des befehls falls waitforreturn == true
-     *         ist
+     * @return null oder die rueckgabe des befehls falls waitforreturn == true ist
      */
     public static String runCommand(final String command, final String[] parameter, final String runIn, final int waitForReturn) {
         final Executer exec = new Executer(command);

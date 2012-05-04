@@ -21,7 +21,6 @@ public class PluginClassLoader extends URLClassLoader {
         public Class loadClass(String name) throws ClassNotFoundException {
             try {
                 if (!name.startsWith("jd.plugins.hoster") && !name.startsWith("jd.plugins.decrypter")) { return super.loadClass(name); }
-                if (name.startsWith("jd.plugins.hoster.RTMPDownload")) { return super.loadClass(name); }
                 Class<?> c = findLoadedClass(name);
                 if (c != null) {
                     // System.out.println("Class has already been loaded by this PluginClassLoaderChild");
@@ -29,14 +28,17 @@ public class PluginClassLoader extends URLClassLoader {
                 }
                 synchronized (this) {
                     /*
-                     * we have to synchronize this because concurrent
-                     * defineClass for same class throws exception
+                     * we have to synchronize this because concurrent defineClass for same class throws exception
                      */
                     c = findLoadedClass(name);
                     if (c != null) { return c; }
                     URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
                     byte[] data;
                     data = IO.readURL(myUrl);
+                    if (name.startsWith("jd.plugins.hoster.RTMPDownload")) {
+                        /* we only want one instance of RTMPDownload */
+                        return super.defineClass(name, data, 0, data.length);
+                    }
                     return defineClass(name, data, 0, data.length);
                 }
             } catch (Exception e) {
