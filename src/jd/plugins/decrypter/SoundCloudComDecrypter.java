@@ -43,6 +43,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         }
         if (decryptList) {
             br.getPage(parameter);
+            if (br.containsHTML(">Oops, looks like we can\\'t find that page")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String fpName = br.getRegex("<title>(.*?) on SoundCloud \\- Create, record and share your sounds for free</title>").getMatch(0);
             String[] links = br.getRegex("\"(http://soundcloud\\.com/[^\"\\'<>]+)\" property=\"og:song\"").getColumn(0);
             if (links == null || links.length == 0) {
