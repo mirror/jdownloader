@@ -119,7 +119,7 @@ public class SrnnksCategory extends PluginForDecrypt {
         Format[] formats = parseFormats(page);
         int res;
         if (formats.length > 1) {
-            res = UserIO.getInstance().requestComboDialog(0, "Bitte Format auswählen", "Bitte das gewünsche Format auswählen.", formats, 0, null, null, null, null);
+            res = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, "Bitte Format auswählen", "Bitte das gewünsche Format auswählen.", formats, 0, null, null, null, null);
             if (res < 0) {
                 return null;
             } else {

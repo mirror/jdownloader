@@ -42,7 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.JDUtilities;
 
 import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
@@ -55,6 +54,9 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.uiserio.NewUIO;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
@@ -191,13 +193,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                                 /*
                                  * 2 different plugins -> multihoster
                                  * 
-                                 * let's use original one to do a linkcheck and
-                                 * then use livePlugin(multihost service) to
-                                 * download the link
+                                 * let's use original one to do a linkcheck and then use livePlugin(multihost service) to download the link
                                  */
                                 /*
-                                 * make sure the current Thread uses the
-                                 * PluginClassLoaderChild of the Plugin in use
+                                 * make sure the current Thread uses the PluginClassLoaderChild of the Plugin in use
                                  */
                                 this.setContextClassLoader(originalPlugin.getLazyP().getClassLoader());
                                 originalPlugin.init();
@@ -205,8 +204,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                                 if (AvailableStatus.FALSE == downloadLink.getAvailableStatus()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                             }
                             /*
-                             * make sure the current Thread uses the
-                             * PluginClassLoaderChild of the Plugin in use
+                             * make sure the current Thread uses the PluginClassLoaderChild of the Plugin in use
                              */
                             this.setContextClassLoader(livePlugin.getLazyP().getClassLoader());
                             livePlugin.init();
@@ -218,8 +216,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                             } catch (final Throwable e3) {
                             }
                             /*
-                             * damit browserexceptions korrekt weitergereicht
-                             * werden
+                             * damit browserexceptions korrekt weitergereicht werden
                              */
                             if (e.getException() != null) {
                                 throw e.getException();
@@ -552,10 +549,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     protected void onErrorDownloadTemporarilyUnavailable() {
         if (linkStatus.getErrorMessage() == null) linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
         /*
-         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll.
-         * value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms.
-         * value==0 macht default 30 mins Der DownloadWatchdoggibt den Link
-         * wieder frei ewnn es zeit ist.
+         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms. value==0
+         * macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
          */
         if (linkStatus.getValue() > 0) {
             linkStatus.setWaitTime(linkStatus.getValue());
@@ -610,8 +605,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             logger.severe("Account: " + account.getUser() + " is blocked, temp. disabling it!");
             AccountController.getInstance().addAccountBlocked(account, milliSeconds);
             /*
-             * we reset linkStatus so link can be download again as free
-             * user(not with this account)
+             * we reset linkStatus so link can be download again as free user(not with this account)
              */
             linkStatus.reset();
             return;
@@ -636,32 +630,41 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             linkStatus.setErrorMessage(null);
             linkStatus.resetWaitTime();
             /*
-             * we are going to download this link, create new liveplugin
-             * instance here
+             * we are going to download this link, create new liveplugin instance here
              */
-            originalPlugin = downloadLink.getDefaultPlugin().getNewInstance();
+            try {
+                originalPlugin = downloadLink.getDefaultPlugin().getLazyP().newInstance();
+            } catch (UpdateRequiredClassNotFoundException e) {
+                logger.severe(JDLogger.getStackTrace(e));
+                downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (account != null && !account.getHoster().equalsIgnoreCase(downloadLink.getHost())) {
                 /* another plugin to handle this download! ->multihoster */
-                downloadLink.setLivePlugin(JDUtilities.getNewPluginForHostInstance(account.getHoster()));
+                try {
+                    LazyHostPlugin lazy = HostPluginController.getInstance().get(account.getHoster());
+                    downloadLink.setLivePlugin(lazy.newInstance());
+                } catch (UpdateRequiredClassNotFoundException e) {
+                    logger.severe(JDLogger.getStackTrace(e));
+                    downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             } else {
                 downloadLink.setLivePlugin(originalPlugin);
             }
             livePlugin = downloadLink.getLivePlugin();
-            livePlugin.setIOPermission(ioP);
-            livePlugin.setLogger(llogger);
-            /*
-             * handle is only called in download situation, that why we create a
-             * new browser instance here
-             */
-            livePlugin.setBrowser(new Browser());
-            if (originalPlugin != livePlugin) {
-                /* we have 2 different plugins -> multihoster */
-                originalPlugin.setBrowser(new Browser());
-                originalPlugin.setIOPermission(ioP);
-                originalPlugin.setLogger(llogger);
-                originalPlugin.setDownloadLink(downloadLink);
-            }
-            if (livePlugin != null) {
+            if (livePlugin != null && originalPlugin != null) {
+                livePlugin.setIOPermission(ioP);
+                livePlugin.setLogger(llogger);
+                /*
+                 * handle is only called in download situation, that why we create a new browser instance here
+                 */
+                livePlugin.setBrowser(new Browser());
+                if (originalPlugin != livePlugin) {
+                    /* we have 2 different plugins -> multihoster */
+                    originalPlugin.setBrowser(new Browser());
+                    originalPlugin.setIOPermission(ioP);
+                    originalPlugin.setLogger(llogger);
+                    originalPlugin.setDownloadLink(downloadLink);
+                }
                 if (downloadLink.getDownloadURL() == null) {
                     downloadLink.getLinkStatus().setStatusText(_JDT._.controller_status_containererror());
                     downloadLink.getLinkStatus().setErrorMessage(_JDT._.controller_status_containererror());
@@ -671,17 +674,14 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 /* check ob Datei existiert oder bereits geladen wird */
                 synchronized (DUPELOCK) {
                     /*
-                     * dieser sync block dient dazu das immer nur ein link
-                     * gestartet wird und dann der dupe check durchgeführt
-                     * werden kann
+                     * dieser sync block dient dazu das immer nur ein link gestartet wird und dann der dupe check durchgeführt werden kann
                      */
                     if (DownloadInterface.preDownloadCheckFailed(downloadLink)) {
                         if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) onErrorFileExists();
                         return;
                     }
                     /*
-                     * setinprogress innerhalb des sync damit keine 2 downloads
-                     * gleichzeitig in progress übergehen können
+                     * setinprogress innerhalb des sync damit keine 2 downloads gleichzeitig in progress übergehen können
                      */
                     linkStatus.setInProgress(true);
                 }
@@ -709,11 +709,11 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                         }
                     }
                 }
-                /* move download log into global log */
-                llogger.logInto(JDLogger.getLogger());
             }
         } finally {
             if (llogger != null) {
+                /* move download log into global log */
+                llogger.logInto(JDLogger.getLogger());
                 llogger.clear();
             }
             try {

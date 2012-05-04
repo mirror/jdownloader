@@ -65,6 +65,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
@@ -441,7 +442,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         for (String host : hosterMap.keySet()) {
                             lazyPlg = HostPluginController.getInstance().get(host);
                             PluginForHost plg2 = null;
-                            if (lazyPlg != null) plg2 = lazyPlg.getPrototype();
+                            if (lazyPlg != null) {
+                                try {
+                                    plg2 = lazyPlg.getPrototype();
+                                } catch (UpdateRequiredClassNotFoundException e) {
+                                    Log.exception(e);
+                                }
+                            }
                             if (plg2 != null) {
                                 identifier = plg2.filterPackageID(identifier);
                             }

@@ -107,8 +107,10 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     configPanel.setHidden();
                 }
                 configPanel = PluginConfigPanel.create(selectedItem);
-                configPanel.setShown();
-                card.add(configPanel);
+                if (configPanel != null) {
+                    configPanel.setShown();
+                    card.add(configPanel);
+                }
                 revalidate();
             }
         };

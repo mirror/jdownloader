@@ -85,25 +85,25 @@ public class CrhyRllCom extends PluginForDecrypt {
         try {
             // Attempt to login
             this.setBrowserExclusive();
-            if (this.br.getCookies("crunchyroll.com").isEmpty()) {
-                final PluginForHost plugin = JDUtilities.getPluginForHost("crunchyroll.com");
-                if (plugin != null) {
-                    final Account account = AccountController.getInstance().getValidAccount(plugin);
-                    if (account != null) {
-                        try {
-                            ((jd.plugins.hoster.CrunchyRollCom) plugin).login(account, this.br, false, true);
-                        } catch (final Exception e) {
-                        }
+            final PluginForHost plugin = JDUtilities.getPluginForHost("crunchyroll.com");
+            if (plugin != null) {
+                final Account account = AccountController.getInstance().getValidAccount(plugin);
+                if (account != null) {
+                    try {
+                        ((jd.plugins.hoster.CrunchyRollCom) plugin).login(account, this.br, false, true);
+                    } catch (final Throwable e) {
                     }
                 }
             }
-
             // Load the linked page
             this.br.setFollowRedirects(true);
             this.br.getPage(cryptedLink.getCryptedUrl());
 
             // Determine if the video exists
-            if (this.br.containsHTML("(<title>Crunchyroll \\- Page Not Found</title>|<p>But we were unable to find the page you were looking for\\. Sorry\\.</p>)")) { throw new DecrypterException("This video is not avaible (404)"); }
+            if (this.br.containsHTML("(<title>Crunchyroll \\- Page Not Found</title>|<p>But we were unable to find the page you were looking for\\. Sorry\\.</p>)")) {
+                /* not available ==offline, no need to show error message */
+                return decryptedLinks;
+            }
 
             // Get the episode name 'show-episode-1-name'
             final Regex urlReg = new Regex(cryptedLink.getCryptedUrl(), "crunchyroll\\.com/([a-z0-9\\-]+)/episode\\-([0-9]+)([a-z0-9\\-]*)\\-([0-9]+)");
@@ -145,15 +145,15 @@ public class CrhyRllCom extends PluginForDecrypt {
                 quality += "p"; // '360' => '360p'
 
                 // Try and find the RTMP quality codes
-                jd.plugins.decrypter.CrhyRllCom.DestinationQuality qualityValue = null;
-                if (quality.equals(jd.plugins.decrypter.CrhyRllCom.DestinationQuality.VIDEO360P.toString())) {
-                    qualityValue = jd.plugins.decrypter.CrhyRllCom.DestinationQuality.VIDEO360P;
-                } else if (quality.equals(jd.plugins.decrypter.CrhyRllCom.DestinationQuality.VIDEO480P.toString())) {
-                    qualityValue = jd.plugins.decrypter.CrhyRllCom.DestinationQuality.VIDEO480P;
-                } else if (quality.equals(jd.plugins.decrypter.CrhyRllCom.DestinationQuality.VIDEO720P.toString())) {
-                    qualityValue = jd.plugins.decrypter.CrhyRllCom.DestinationQuality.VIDEO720P;
-                } else if (quality.equals(jd.plugins.decrypter.CrhyRllCom.DestinationQuality.VIDEO1080P.toString())) {
-                    qualityValue = jd.plugins.decrypter.CrhyRllCom.DestinationQuality.VIDEO1080P;
+                CrhyRllCom.DestinationQuality qualityValue = null;
+                if (quality.equals(CrhyRllCom.DestinationQuality.VIDEO360P.toString())) {
+                    qualityValue = CrhyRllCom.DestinationQuality.VIDEO360P;
+                } else if (quality.equals(CrhyRllCom.DestinationQuality.VIDEO480P.toString())) {
+                    qualityValue = CrhyRllCom.DestinationQuality.VIDEO480P;
+                } else if (quality.equals(CrhyRllCom.DestinationQuality.VIDEO720P.toString())) {
+                    qualityValue = CrhyRllCom.DestinationQuality.VIDEO720P;
+                } else if (quality.equals(CrhyRllCom.DestinationQuality.VIDEO1080P.toString())) {
+                    qualityValue = DestinationQuality.VIDEO1080P;
                 }
                 if (qualityValue == null) {
                     continue;
@@ -207,9 +207,13 @@ public class CrhyRllCom extends PluginForDecrypt {
                 decryptedLinks.add(thisLink);
             }
         } catch (final IOException e) {
-            this.br.getHttpConnection().disconnect();
             this.logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             return null;
+        } finally {
+            try {
+                br.getHttpConnection().disconnect();
+            } catch (final Throwable e) {
+            }
         }
         return decryptedLinks;
     }
@@ -220,18 +224,14 @@ public class CrhyRllCom extends PluginForDecrypt {
     }
 
     /**
-     * Try and find the RTMP details for the given link. If the details are
-     * successfully found, then set the properties of the link. rtmphost =
-     * TcUrl. rtmpfile = playpath. rtmpswf = swfVfy (without full path).
-     * filename = output filename without extension. separator = character
-     * separator for the filename. qualityname = text definition of the quality
-     * found ("360p", "480p", etc).
+     * Try and find the RTMP details for the given link. If the details are successfully found, then set the properties of the link. rtmphost = TcUrl. rtmpfile
+     * = playpath. rtmpswf = swfVfy (without full path). filename = output filename without extension. separator = character separator for the filename.
+     * qualityname = text definition of the quality found ("360p", "480p", etc).
      * 
      * @param downloadLink
      *            The DownloadLink file to check
      * @param br
-     *            The browser to use to load the XML file with. If null, uses
-     *            different browser
+     *            The browser to use to load the XML file with. If null, uses different browser
      */
     public void setRTMP(final DownloadLink downloadLink, Browser br) throws IOException, PluginException {
         if (br == null) {
@@ -299,7 +299,7 @@ public class CrhyRllCom extends PluginForDecrypt {
             }
 
             // Check if a premium account is needed (and we aren't using one)
-            if (br.containsHTML("<upsell>1</upsell>")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Quality not available (try using premium)"); }
+            if (br.containsHTML("<upsell>1</upsell>")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Quality not available (try using premium)"); }
 
             // Check if the quality found is actually the one we wanted
             final String qual = Encoding.htmlDecode(br.getRegex(CrhyRllCom.RTMP_QUAL).getMatch(0));
@@ -326,6 +326,6 @@ public class CrhyRllCom extends PluginForDecrypt {
             return;
         }
         downloadLink.setAvailable(false);
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Quality not available (try using premium)");
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Quality not available (try using premium)");
     }
 }

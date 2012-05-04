@@ -16,6 +16,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -24,6 +25,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class PremiumInfoDialog extends AbstractDialog<Object> {
@@ -104,7 +106,12 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
 
     @Override
     public JComponent layoutDialogContent() {
-        PluginForHost plg = HostPluginController.getInstance().get(info.getTld()).getPrototype();
+        PluginForHost plg = null;
+        try {
+            plg = HostPluginController.getInstance().get(info.getTld()).getPrototype();
+        } catch (UpdateRequiredClassNotFoundException e) {
+            Log.exception(e);
+        }
         if (plg != null) {
             // let's ask the plugin
             JComponent plgPanel = plg.layoutPremiumInfoPanel(this);

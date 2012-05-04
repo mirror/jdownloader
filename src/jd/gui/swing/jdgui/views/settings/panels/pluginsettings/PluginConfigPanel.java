@@ -5,9 +5,12 @@ import javax.swing.JTextArea;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
+import jd.plugins.Plugin;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.logging.Log;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
 public class PluginConfigPanel extends SwitchPanel {
     /**
@@ -28,10 +31,18 @@ public class PluginConfigPanel extends SwitchPanel {
     }
 
     public static PluginConfigPanel create(LazyPlugin<?> selectedItem) {
-        final AddonConfig cp = AddonConfig.getInstance(selectedItem.getPrototype().getConfig(), "", false);
+        Plugin proto = null;
+        try {
+            proto = selectedItem.getPrototype();
+        } catch (UpdateRequiredClassNotFoundException e) {
+            Log.exception(e);
+            return null;
+        }
+
+        final AddonConfig cp = AddonConfig.getInstance(proto.getConfig(), "", false);
 
         // ImageIcon icon = null;
-        // if (selectedItem instanceof HostPluginWrapper) {
+        // if (selectedItem instanceof HostPluginWrapper) { ;
         // icon = ((HostPluginWrapper) selectedItem).getIconUnscaled();
         // if (icon.getIconWidth() > 32 || icon.getIconHeight() > 32) {
         // icon = JDImage.getScaledImageIcon(icon, 32, 32);
@@ -57,7 +68,7 @@ public class PluginConfigPanel extends SwitchPanel {
                 cp.setHidden();
             }
         };
-        String desc = selectedItem.getPrototype().getDescription();
+        String desc = proto.getDescription();
         if (desc != null) {
             JTextArea txt = new JTextArea();
             txt.setEditable(false);

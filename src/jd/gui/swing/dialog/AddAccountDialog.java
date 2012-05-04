@@ -39,6 +39,7 @@ import jd.plugins.PluginForHost;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.components.searchcombo.SearchComboBox;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.HelpNotifier;
 import org.appwork.utils.swing.HelpNotifierCallbackListener;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -50,6 +51,7 @@ import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
@@ -70,8 +72,9 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {
-
             e.printStackTrace();
+        } catch (UpdateRequiredClassNotFoundException e) {
+            Log.exception(e);
         }
 
     }
@@ -80,7 +83,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         try {
             checkAccount(ac);
         } catch (DialogClosedException e) {
-
             throw e;
         } catch (DialogCanceledException e) {
             throw e;

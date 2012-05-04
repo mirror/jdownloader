@@ -106,11 +106,6 @@ public abstract class PluginForDecrypt extends Plugin {
         this.br = br;
     }
 
-    public PluginForDecrypt getNewInstance() {
-        if (lazyC == null) return null;
-        return lazyC.newInstance();
-    }
-
     @Override
     public long getVersion() {
         return lazyC.getVersion();
@@ -129,10 +124,8 @@ public abstract class PluginForDecrypt extends Plugin {
      * Diese Methode entschlüsselt Links.
      * 
      * @param cryptedLinks
-     *            Ein Vector, mit jeweils einem verschlüsseltem Link. Die
-     *            einzelnen verschlüsselten Links werden aufgrund des Patterns
-     *            {@link jd.plugins.Plugin#getSupportedLinks()
-     *            getSupportedLinks()} herausgefiltert
+     *            Ein Vector, mit jeweils einem verschlüsseltem Link. Die einzelnen verschlüsselten Links werden aufgrund des Patterns
+     *            {@link jd.plugins.Plugin#getSupportedLinks() getSupportedLinks()} herausgefiltert
      * @return Ein Vector mit Klartext-links
      */
 
@@ -150,9 +143,8 @@ public abstract class PluginForDecrypt extends Plugin {
     public abstract ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception;
 
     /**
-     * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden
-     * durchlaufen. Der letzte step muss als parameter einen Vector<String> mit
-     * den decoded Links setzen
+     * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen Vector<String> mit den decoded
+     * Links setzen
      * 
      * @param cryptedLink
      *            Ein einzelner verschlüsselter Link
@@ -168,8 +160,7 @@ public abstract class PluginForDecrypt extends Plugin {
         boolean showException = true;
         try {
             /*
-             * we now lets log into plugin specific loggers with all
-             * verbose/debug on
+             * we now lets log into plugin specific loggers with all verbose/debug on
              */
             br.setLogger(logger);
             br.setVerbose(true);
@@ -181,8 +172,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 showException = false;
             }
             /*
-             * we got a decrypter exception, clear log and note that something
-             * went wrong
+             * we got a decrypter exception, clear log and note that something went wrong
              */
             if (logger instanceof JDPluginLogger) {
                 /* make sure we use the right logger */
@@ -199,15 +189,13 @@ public abstract class PluginForDecrypt extends Plugin {
 
         } catch (Throwable e) {
             /*
-             * damn, something must have gone really really bad, lets keep the
-             * log
+             * damn, something must have gone really really bad, lets keep the log
              */
             logger.log(Level.SEVERE, "Exception:" + e.getMessage(), e);
         }
         if (tmpLinks == null && showException) {
             /*
-             * null as return value? something must have happened, do not clear
-             * log
+             * null as return value? something must have happened, do not clear log
              */
             logger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
 
@@ -225,11 +213,9 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     /**
-     * use this to process decrypted links while the decrypter itself is still
-     * running
+     * use this to process decrypted links while the decrypter itself is still running
      * 
-     * NOTE: if you use this, please put it in try{}catch(Throwable) as this
-     * function is ONLY available in>09581
+     * NOTE: if you use this, please put it in try{}catch(Throwable) as this function is ONLY available in>09581
      * 
      * @param links
      */
@@ -310,8 +296,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     public ArrayList<CrawledLink> getCrawlableLinks(String data) {
         /*
-         * we dont need memory optimization here as downloadlink, crypted link
-         * itself take care of this
+         * we dont need memory optimization here as downloadlink, crypted link itself take care of this
          */
         String[] hits = new Regex(data, getSupportedLinks()).setMemoryOptimized(false).getColumn(-1);
         ArrayList<CrawledLink> chits = null;
@@ -363,8 +348,7 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     /**
-     * Can be overridden to show the current status for example in captcha
-     * dialog
+     * Can be overridden to show the current status for example in captcha dialog
      * 
      * @return
      */

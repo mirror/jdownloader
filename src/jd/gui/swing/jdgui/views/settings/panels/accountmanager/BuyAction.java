@@ -17,6 +17,7 @@ import jd.controlling.IOEQ;
 import jd.plugins.Account;
 
 import org.appwork.swing.components.searchcombo.SearchComboBox;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
 import org.appwork.utils.os.CrossSystem;
@@ -160,8 +161,8 @@ public class BuyAction extends AbstractAction {
                     Dialog.getInstance().showDialog(d);
                     if (d.getReturnValue() < 0) return;
                     LazyHostPlugin buyIt = options[d.getReturnValue()];
-                    if (buyIt == null) return;
-                    CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(buyIt.getPrototype().getBuyPremiumUrl(), "accountmanager" + (table == null ? "/context" : "/table")));
+                    if (buyIt == null || StringUtils.isEmpty(buyIt.getPremiumUrl())) return;
+                    CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(buyIt.getPremiumUrl(), "accountmanager" + (table == null ? "/context" : "/table")));
                     try {
                         NewUIO.I().show(BuyAndAddPremiumDialogInterface.class, new BuyAndAddPremiumAccount(DomainInfo.getInstance(buyIt.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));
                     } catch (DialogClosedException e1) {

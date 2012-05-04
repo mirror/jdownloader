@@ -4,6 +4,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
 public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
 
@@ -14,7 +15,7 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
     }
 
     @Override
-    public PluginForDecrypt newInstance() {
+    public PluginForDecrypt newInstance() throws UpdateRequiredClassNotFoundException {
         PluginForDecrypt ret = super.newInstance();
         ret.setLazyC(this);
         return ret;

@@ -59,14 +59,12 @@ public class LinkStatus implements Serializable {
     public final static int   ERROR_FILE_NOT_FOUND                 = 1 << 5;
 
     /**
-     * Plugins & Controlling: A Premium error occured. check value flag for
-     * further details
+     * Plugins & Controlling: A Premium error occured. check value flag for further details
      */
     public static final int   ERROR_PREMIUM                        = 1 << 8;
 
     /**
-     * Downloadinterface: The download started, but has not been finished
-     * successfully
+     * Downloadinterface: The download started, but has not been finished successfully
      */
     public static final int   ERROR_DOWNLOAD_INCOMPLETE            = 1 << 9;
 
@@ -76,8 +74,7 @@ public class LinkStatus implements Serializable {
     public static final int   DOWNLOADINTERFACE_IN_PROGRESS        = 1 << 10;
 
     /**
-     * Plugins:Download is not possible right now. May be back later. Maybe
-     * server problems or anything like this
+     * Plugins:Download is not possible right now. May be back later. Maybe server problems or anything like this
      */
     public static final int   ERROR_TEMPORARILY_UNAVAILABLE        = 1 << 11;
 
@@ -87,8 +84,7 @@ public class LinkStatus implements Serializable {
     public static final int   ERROR_HOSTER_TEMPORARILY_UNAVAILABLE = 1 << 12;
 
     /**
-     * Controlling & Downloadinterface: The destination file already exists on
-     * harddisk
+     * Controlling & Downloadinterface: The destination file already exists on harddisk
      */
     public static final int   ERROR_ALREADYEXISTS                  = 1 << 13;
 
@@ -98,14 +94,12 @@ public class LinkStatus implements Serializable {
     public static final int   ERROR_DOWNLOAD_FAILED                = 1 << 14;
 
     /**
-     * DownloadInterface: A Connection Timeout occured. Maybe no connection to
-     * the internet?
+     * DownloadInterface: A Connection Timeout occured. Maybe no connection to the internet?
      */
     public static final int   ERROR_NO_CONNECTION                  = 1 << 15;
 
     /**
-     * Plugins & Downloadinterface: Serious fatal error. No retry. Download will
-     * be canceled finally.
+     * Plugins & Downloadinterface: Serious fatal error. No retry. Download will be canceled finally.
      */
     public static final int   ERROR_FATAL                          = 1 << 17;
 
@@ -125,8 +119,7 @@ public class LinkStatus implements Serializable {
     public static final int   ERROR_LOCAL_IO                       = 1 << 21;
 
     /**
-     * Plugin out of date. This flag says that the plugin noticed parsing
-     * problems and might be out of date.
+     * Plugin out of date. This flag says that the plugin noticed parsing problems and might be out of date.
      */
     public static final int   ERROR_PLUGIN_DEFECT                  = 1 << 22;
 
@@ -178,8 +171,7 @@ public class LinkStatus implements Serializable {
     }
 
     /**
-     * Fügt einen LinkStatus.* Status hinzu.Der alte status wird dabei nicht
-     * gelöscht.
+     * Fügt einen LinkStatus.* Status hinzu.Der alte status wird dabei nicht gelöscht.
      * 
      * @param status
      */
@@ -210,6 +202,8 @@ public class LinkStatus implements Serializable {
         case LinkStatus.ERROR_RETRY:
             return _JDT._.downloadlink_status_error_retry();
         case LinkStatus.ERROR_PLUGIN_DEFECT:
+            if (errorMessage != null) return errorMessage;
+            if (statusText != null) return statusText;
             return _JDT._.downloadlink_status_error_defect();
         case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
             return _JDT._.downloadlink_status_incomplete();
@@ -357,8 +351,7 @@ public class LinkStatus implements Serializable {
     }
 
     /**
-     * Setzt den Linkstatus. Es dürfen nur LInkStatus.*STATUS ids verwendet
-     * werden
+     * Setzt den Linkstatus. Es dürfen nur LInkStatus.*STATUS ids verwendet werden
      * 
      * @param status
      */
@@ -433,8 +426,7 @@ public class LinkStatus implements Serializable {
     }
 
     /**
-     * Use this function to reset linkstatus to {@link #TODO}, if no
-     * notResetIfFlag match.
+     * Use this function to reset linkstatus to {@link #TODO}, if no notResetIfFlag match.
      */
     public void resetStatus(int... notResetIfFlag) {
         if (this.downloadLink != null) {

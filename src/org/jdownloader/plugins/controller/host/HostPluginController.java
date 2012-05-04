@@ -21,6 +21,7 @@ import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
 import org.jdownloader.plugins.controller.PluginInfo;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
 public class HostPluginController extends PluginController<PluginForHost> {
 
@@ -103,9 +104,21 @@ public class HostPluginController extends PluginController<PluginForHost> {
         }, new ArrayList<AbstractHostPlugin>());
         List<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>(l.size());
         PluginClassLoaderChild classLoader = PluginClassLoader.getInstance().getChild();
+        LazyHostPlugin fallBackPlugin = null;
         /* use this classLoader for all cached plugins to load */
         for (AbstractHostPlugin ap : l) {
-            ret.add(new LazyHostPlugin(ap, null, classLoader));
+            LazyHostPlugin lhp;
+            lhp = new LazyHostPlugin(ap, null, classLoader);
+            if ("UpdateRequired".equalsIgnoreCase(ap.getDisplayName())) {
+                /* we do not add fallBackPlugin to returned plugin List */
+                fallBackPlugin = lhp;
+            } else {
+                ret.add(lhp);
+            }
+        }
+        for (LazyHostPlugin lhp : ret) {
+            /* set fallBackPlugin to all plugins */
+            lhp.setFallBackPlugin(fallBackPlugin);
         }
         return ret;
     }
@@ -114,65 +127,90 @@ public class HostPluginController extends PluginController<PluginForHost> {
         HashMap<String, AbstractHostPlugin> ret = new HashMap<String, AbstractHostPlugin>();
         HashMap<String, LazyHostPlugin> ret2 = new HashMap<String, LazyHostPlugin>();
         PluginClassLoaderChild classLoader = PluginClassLoader.getInstance().getChild();
-        for (PluginInfo<PluginForHost> c : scan("jd/plugins/hoster")) {
-            String simpleName = c.getClazz().getSimpleName();
-            HostPlugin a = c.getClazz().getAnnotation(HostPlugin.class);
-            if (a != null) {
-                try {
-                    long revision = Formatter.getRevision(a.revision());
-                    String[] names = a.names();
-                    String[] patterns = a.urls();
-                    if (names.length == 0) {
-                        /* create multiple hoster plugins from one source */
-                        patterns = (String[]) c.getClazz().getDeclaredMethod("getAnnotationUrls", new Class[] {}).invoke(null, new Object[] {});
-                        names = (String[]) c.getClazz().getDeclaredMethod("getAnnotationNames", new Class[] {}).invoke(null, new Object[] {});
-                    }
-                    if (patterns.length != names.length) throw new WTFException("names.length != patterns.length");
-                    if (names.length == 0) { throw new WTFException("names.length=0"); }
-                    for (int i = 0; i < names.length; i++) {
-                        try {
-                            String displayName = new String(names[i]);
-                            AbstractHostPlugin existingPlugin = ret.get(displayName);
-                            if (existingPlugin != null && existingPlugin.getInterfaceVersion() > a.interfaceVersion()) {
-                                /* we already loaded a plugin with higher interfaceVersion, so skip older one */
-                                continue;
-                            }
-                            AbstractHostPlugin ap = new AbstractHostPlugin(new String(c.getClazz().getSimpleName()));
-                            ap.setDisplayName(displayName);
-                            ap.setPattern(new String(patterns[i]));
-                            ap.setVersion(revision);
-                            ap.setInterfaceVersion(a.interfaceVersion());
-                            LazyHostPlugin l = new LazyHostPlugin(ap, null, classLoader);
-                            PluginForHost plg = l.newInstance();
-                            ap.setPremium(plg.isPremiumEnabled());
-                            String purl = plg.getBuyPremiumUrl();
-                            if (purl != null) purl = new String(purl);
-                            ap.setPremiumUrl(purl);
-                            ap.setHasConfig(plg.hasConfig());
-                            l.setHasConfig(plg.hasConfig());
-                            l.setPremium(ap.isPremium());
-                            l.setPremiumUrl(purl);
-                            existingPlugin = ret.put(ap.getDisplayName(), ap);
-                            if (existingPlugin != null) {
-                                Log.L.finest("@HostPlugin replaced:" + simpleName + " " + names[i]);
-                            }
-                            ret2.put(ap.getDisplayName(), l);
-                            Log.L.finer("@HostPlugin ok:" + simpleName + " " + names[i]);
-                        } catch (Throwable e) {
-                            Log.L.severe("@HostPlugin failed:" + simpleName + " " + names[i]);
-                            Log.exception(e);
+        LazyHostPlugin fallBackPlugin = null;
+        try {
+            /* during init we dont want dummy libs being created */
+            classLoader.setCreateDummyLibs(false);
+            for (PluginInfo<PluginForHost> c : scan("jd/plugins/hoster")) {
+                String simpleName = c.getClazz().getSimpleName();
+                HostPlugin a = c.getClazz().getAnnotation(HostPlugin.class);
+                if (a != null) {
+                    try {
+                        long revision = Formatter.getRevision(a.revision());
+                        String[] names = a.names();
+                        String[] patterns = a.urls();
+                        if (names.length == 0) {
+                            /* create multiple hoster plugins from one source */
+                            patterns = (String[]) c.getClazz().getDeclaredMethod("getAnnotationUrls", new Class[] {}).invoke(null, new Object[] {});
+                            names = (String[]) c.getClazz().getDeclaredMethod("getAnnotationNames", new Class[] {}).invoke(null, new Object[] {});
                         }
+                        if (patterns.length != names.length) throw new WTFException("names.length != patterns.length");
+                        if (names.length == 0) { throw new WTFException("names.length=0"); }
+                        for (int i = 0; i < names.length; i++) {
+                            try {
+                                String displayName = new String(names[i]);
+                                AbstractHostPlugin existingPlugin = ret.get(displayName);
+                                if (existingPlugin != null && existingPlugin.getInterfaceVersion() > a.interfaceVersion()) {
+                                    /* we already loaded a plugin with higher interfaceVersion, so skip older one */
+                                    continue;
+                                }
+                                AbstractHostPlugin ap = new AbstractHostPlugin(new String(c.getClazz().getSimpleName()));
+                                ap.setDisplayName(displayName);
+                                ap.setPattern(new String(patterns[i]));
+                                ap.setVersion(revision);
+                                ap.setInterfaceVersion(a.interfaceVersion());
+                                LazyHostPlugin l = new LazyHostPlugin(ap, null, classLoader);
+                                try {
+                                    PluginForHost plg = l.newInstance();
+                                    ap.setPremium(plg.isPremiumEnabled());
+                                    String purl = plg.getBuyPremiumUrl();
+                                    if (purl != null) purl = new String(purl);
+                                    ap.setPremiumUrl(purl);
+                                    ap.setHasConfig(plg.hasConfig());
+                                    l.setHasConfig(plg.hasConfig());
+                                    l.setPremium(ap.isPremium());
+                                    l.setPremiumUrl(purl);
+                                } catch (Throwable e) {
+                                    if (e instanceof UpdateRequiredClassNotFoundException) {
+                                        Log.L.finest("@HostPlugin incomplete:" + simpleName + " " + names[i] + " " + e.getMessage());
+                                    } else
+                                        throw e;
+                                }
+                                if ("UpdateRequired".equalsIgnoreCase(displayName)) {
+                                    /* we do not add fallBackPlugin to returned plugin list */
+                                    fallBackPlugin = l;
+                                } else {
+                                    ret2.put(ap.getDisplayName(), l);
+                                }
+                                existingPlugin = ret.put(ap.getDisplayName(), ap);
+                                if (existingPlugin != null) {
+                                    Log.L.finest("@HostPlugin replaced:" + simpleName + " " + names[i]);
+                                }
+                                Log.L.finer("@HostPlugin ok:" + simpleName + " " + names[i]);
+                            } catch (Throwable e) {
+                                Log.L.severe("@HostPlugin failed:" + simpleName + " " + names[i]);
+                                Log.exception(e);
+                            }
+                        }
+                    } catch (final Throwable e) {
+                        Log.L.severe("@HostPlugin failed:" + simpleName);
+                        Log.exception(e);
                     }
-                } catch (final Throwable e) {
-                    Log.L.severe("@HostPlugin failed:" + simpleName);
-                    Log.exception(e);
+                } else {
+                    Log.L.severe("@HostPlugin missing:" + simpleName);
                 }
-            } else {
-                Log.L.severe("@HostPlugin missing:" + simpleName);
             }
+        } finally {
+            /* now the pluginClassLoad may create dummy libraries */
+            classLoader.setCreateDummyLibs(true);
         }
         save(new ArrayList<AbstractHostPlugin>(ret.values()));
-        return new ArrayList<LazyHostPlugin>(ret2.values());
+        ArrayList<LazyHostPlugin> ret3 = new ArrayList<LazyHostPlugin>(ret2.values());
+        for (LazyHostPlugin lhp : ret3) {
+            /* set fallBackPlugin to all plugins */
+            lhp.setFallBackPlugin(fallBackPlugin);
+        }
+        return ret3;
     }
 
     private void save(List<AbstractHostPlugin> save) {
