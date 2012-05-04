@@ -46,12 +46,12 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.decrypter.CrhyRllCom;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -70,10 +70,10 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-@HostPlugin(revision = "$Revision: 16456 $", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://www.crunchyroll.com/xml/\\?req=(RpcApiVideoPlayer_GetStandardConfig&media_id=[0-9]+.*|RpcApiSubtitle_GetXml&subtitle_script_id=[0-9]+.*)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 16456 $", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://www\\.crunchyroll\\.com/xml/\\?req=(RpcApiVideoPlayer_GetStandardConfig&media_id=[0-9]+.*|RpcApiSubtitle_GetXml&subtitle_script_id=[0-9]+.*)" }, flags = { 2 })
 public class CrunchyRollCom extends PluginForHost {
 
-    static private final Pattern                             CONFIG_URL           = Pattern.compile("(http://www.crunchyroll.com/xml/\\?req=RpcApiVideoPlayer_GetStandardConfig.*video_quality=)([0-9]*)(.*)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern                             CONFIG_URL           = Pattern.compile("(http://www\\.crunchyroll\\.com/xml/\\?req=RpcApiVideoPlayer_GetStandardConfig.*video_quality=)([0-9]*)(.*)", Pattern.CASE_INSENSITIVE);
     static private Object                                    lock                 = new Object();
     static private HashMap<Account, HashMap<String, String>> loginCookies         = new HashMap<Account, HashMap<String, String>>();
     static private final String                              RCP_API_SUBTITLE     = "RpcApiSubtitle_GetXml";

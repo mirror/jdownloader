@@ -22,7 +22,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 16456 $", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(www\\.)?crunchyroll.com/[a-z0-9-]+/[a-z0-9-]+-[0-9]+" }, flags = { 2 })
+@DecrypterPlugin(revision = "$Revision: 16456 $", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(www\\.)?crunchyroll\\.com/[a-z0-9\\-]+/[a-z0-9\\-]+\\-[0-9]+" }, flags = { 2 })
 public class CrhyRllCom extends PluginForDecrypt {
 
     // Define the video quality codes used for RTMP
@@ -59,18 +59,18 @@ public class CrhyRllCom extends PluginForDecrypt {
 
     }
 
-    static public final Pattern CONFIG_SUBS  = Pattern.compile("<subtitles><media_id>([0-9]+?)</media_id><subtitle id='([0-9]+?)' link='(http://www.crunchyroll.com/xml/\\?req=RpcApiSubtitle_GetXml&amp;subtitle_script_id=[0-9]+?)' title='(.+?)'.*/>.*</subtitles>", Pattern.CASE_INSENSITIVE);
-    static public final Pattern CONFIG_URL   = Pattern.compile("(http://www.crunchyroll.com/xml/\\?req=RpcApiVideoPlayer_GetStandardConfig&media_id=([0-9]+).*video_quality=)([0-9]*)(.*)", Pattern.CASE_INSENSITIVE);
+    static public final Pattern CONFIG_SUBS  = Pattern.compile("<subtitles><media_id>([0-9]+?)</media_id><subtitle id='([0-9]+?)' link='(http://www\\.crunchyroll\\.com/xml/\\?req=RpcApiSubtitle_GetXml&amp;subtitle_script_id=[0-9]+?)' title='(.+?)'.*/>.*</subtitles>", Pattern.CASE_INSENSITIVE);
+    static public final Pattern CONFIG_URL   = Pattern.compile("(http://www\\.crunchyroll\\.com/xml/\\?req=RpcApiVideoPlayer_GetStandardConfig&media_id=([0-9]+).*video_quality=)([0-9]*)(.*)", Pattern.CASE_INSENSITIVE);
     static public final int     EPISODE_PAD  = 3;
     static public final Pattern RTMP_EPISODE = Pattern.compile("<episode_number>(.*?)</episode_number>", Pattern.CASE_INSENSITIVE);
     static public final Pattern RTMP_FILE    = Pattern.compile("<file>(.*?)</file>", Pattern.CASE_INSENSITIVE);
     static public final Pattern RTMP_HOST    = Pattern.compile("<host>(rtmp.*)</host>", Pattern.CASE_INSENSITIVE);
     static public final Pattern RTMP_QUAL    = Pattern.compile("<video_encode_quality>(.*?)</video_encode_quality>", Pattern.CASE_INSENSITIVE);
     static public final Pattern RTMP_SERIES  = Pattern.compile("<series_title>(.*?)</series_title>", Pattern.CASE_INSENSITIVE);
-    static public final Pattern RTMP_SWF     = Pattern.compile("<default:chromelessPlayerUrl>(ChromelessPlayerApp.swf.*)</default:chromelessPlayerUrl>", Pattern.CASE_INSENSITIVE);
+    static public final Pattern RTMP_SWF     = Pattern.compile("<default:chromelessPlayerUrl>(ChromelessPlayerApp\\.swf.*)</default:chromelessPlayerUrl>", Pattern.CASE_INSENSITIVE);
     static public final Pattern RTMP_TITLE   = Pattern.compile("<episode_title>(.*?)</episode_title>", Pattern.CASE_INSENSITIVE);
     static public final String  SWF_DIR      = "http://static.ak.crunchyroll.com/flash/20120315193834.0fa282dfa08cb851004372906bfd7e14/";
-    static public final Pattern SWF_URL      = Pattern.compile("((http://static.ak.crunchyroll.com/flash/[a-z0-9.]+/)StandardVideoPlayer.swf)", Pattern.CASE_INSENSITIVE);
+    static public final Pattern SWF_URL      = Pattern.compile("((http://static\\.ak\\.crunchyroll\\.com/flash/[a-z0-9\\.]+/)StandardVideoPlayer\\.swf)", Pattern.CASE_INSENSITIVE);
 
     @SuppressWarnings("deprecation")
     public CrhyRllCom(final PluginWrapper wrapper) {
@@ -106,7 +106,7 @@ public class CrhyRllCom extends PluginForDecrypt {
             if (this.br.containsHTML("(<title>Crunchyroll \\- Page Not Found</title>|<p>But we were unable to find the page you were looking for\\. Sorry\\.</p>)")) { throw new DecrypterException("This video is not avaible (404)"); }
 
             // Get the episode name 'show-episode-1-name'
-            final Regex urlReg = new Regex(cryptedLink.getCryptedUrl(), "crunchyroll.com/([a-z0-9-]+)/episode-([0-9]+)([a-z0-9-]*)-([0-9]+)");
+            final Regex urlReg = new Regex(cryptedLink.getCryptedUrl(), "crunchyroll\\.com/([a-z0-9\\-]+)/episode\\-([0-9]+)([a-z0-9\\-]*)\\-([0-9]+)");
             if (!urlReg.matches()) { throw new DecrypterException("Unable to find episode title"); }
             final String separator = "-";
             final String vidSeries = urlReg.getMatch(0);
@@ -182,8 +182,8 @@ public class CrhyRllCom extends PluginForDecrypt {
                 final String subTitle = subtitle[3];
                 String subName = new Regex(subTitle, "\\[[0-9 ]+\\] (.+)").getMatch(0);
 
-                subName = subName.replaceAll("[ ]", separator).toLowerCase();
-                subName = subName.replaceAll("[^a-z0-9-]", "");
+                subName = subName.replaceAll("[ ]+", separator).toLowerCase();
+                subName = subName.replaceAll("[^a-z0-9\\-]+", "");
 
                 final String subFile = title + separator + subName;
 
@@ -285,7 +285,7 @@ public class CrhyRllCom extends PluginForDecrypt {
 
                 // 'show-001-name-360p'
                 filename = series + " " + episode + " " + title + " " + qualityObj.toString();
-                filename = filename.trim().replace(' ', '-').toLowerCase().replaceAll("[^a-z0-9-]", "");
+                filename = filename.trim().replace(" ", "-").toLowerCase().replaceAll("[^a-z0-9\\-]+", "");
 
                 downloadLink.setFinalFileName(filename + ".unk");
                 downloadLink.setProperty("filename", filename);

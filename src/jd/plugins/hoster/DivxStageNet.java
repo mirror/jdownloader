@@ -26,13 +26,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxstage.net" }, urls = { "http://[\\w\\.]*?divxstage\\.net/video/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxstage.net" }, urls = { "http://[\\w\\.]*?divxstage\\.(net|eu)/video/[a-z0-9]+" }, flags = { 0 })
 public class DivxStageNet extends PluginForHost {
 
     public String DLLINK = null;
 
     public DivxStageNet(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("divxstage.eu", "divxstage.net"));
     }
 
     @Override

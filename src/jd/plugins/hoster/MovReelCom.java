@@ -392,7 +392,7 @@ public class MovReelCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -10);
+        doFree(downloadLink, true, -2);
     }
 
     public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
