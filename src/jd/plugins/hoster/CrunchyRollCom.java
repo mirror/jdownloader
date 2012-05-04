@@ -21,7 +21,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -31,10 +30,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.zip.InflaterInputStream;
 
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -62,6 +57,12 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
+import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -69,7 +70,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-@HostPlugin(revision = "$Revision: 16456 $", interfaceVersion = 2, names = { "crunchyroll.com" }, urls = { "http://www.crunchyroll.com/xml/\\?req=(RpcApiVideoPlayer_GetStandardConfig&media_id=[0-9]+.*|RpcApiSubtitle_GetXml&subtitle_script_id=[0-9]+.*)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 16456 $", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://www.crunchyroll.com/xml/\\?req=(RpcApiVideoPlayer_GetStandardConfig&media_id=[0-9]+.*|RpcApiSubtitle_GetXml&subtitle_script_id=[0-9]+.*)" }, flags = { 2 })
 public class CrunchyRollCom extends PluginForHost {
 
     static private final Pattern                             CONFIG_URL           = Pattern.compile("(http://www.crunchyroll.com/xml/\\?req=RpcApiVideoPlayer_GetStandardConfig.*video_quality=)([0-9]*)(.*)", Pattern.CASE_INSENSITIVE);
@@ -80,9 +81,162 @@ public class CrunchyRollCom extends PluginForHost {
     static private final String                              RTMPDUMP_MIN_VER     = "2.4";
 
     @SuppressWarnings("deprecation")
-    public CrunchyRollCom(PluginWrapper wrapper) {
+    public CrunchyRollCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.crunchyroll.com/login");
+    }
+
+    /**
+     * Decrypt and convert the downloaded file from CrunchyRoll's own encrypted
+     * xml format into its .ass equivalent.
+     * 
+     * @param downloadLink
+     *            The DownloadLink to convert to .ass
+     */
+    private void convertSubs(final DownloadLink downloadLink) throws Exception {
+        downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptingsubtitles", "Decrypting subtitles..."));
+        try {
+            // Create the XML Parser
+            final DocumentBuilderFactory xmlDocBuilderFactory = DocumentBuilderFactory.newInstance();
+            final DocumentBuilder xmlDocBuilder = xmlDocBuilderFactory.newDocumentBuilder();
+            final Document xml = xmlDocBuilder.parse(new File(downloadLink.getFileOutput()));
+
+            // normalize text representation
+            xml.getDocumentElement().normalize();
+
+            // Get the subtitle information
+            final Element xmlSub = (Element) xml.getElementsByTagName("subtitle").item(0);
+
+            final Node xmlId = xmlSub.getAttributeNode("id");
+            final Node xmlIv = xmlSub.getElementsByTagName("iv").item(0);
+            final Node xmlData = xmlSub.getElementsByTagName("data").item(0);
+
+            final int subId = Integer.parseInt(xmlId.getNodeValue());
+            final String subIv = xmlIv.getTextContent();
+            final String subData = xmlData.getTextContent();
+
+            // Generate the AES parameters
+            final byte[] key = this.subsGenerateKey(subId, 32);
+            final byte[] ivData = DatatypeConverter.parseBase64Binary(subIv);
+            final byte[] encData = DatatypeConverter.parseBase64Binary(subData);
+
+            final KeyParameter keyParam = new KeyParameter(key);
+            final CipherParameters cipherParams = new ParametersWithIV(keyParam, ivData);
+
+            // Decrypt the subtitles
+            final BufferedBlockCipher cipher = new BufferedBlockCipher(new CBCBlockCipher(new AESEngine()));
+            cipher.reset();
+            cipher.init(false, cipherParams);
+
+            // create a temporary buffer to decode into (it'll include padding)
+            final byte[] decBuffer = new byte[cipher.getOutputSize(encData.length)];
+            int decLength = cipher.processBytes(encData, 0, encData.length, decBuffer, 0);
+            decLength += cipher.doFinal(decBuffer, decLength);
+
+            // TODO Check this code (I don't think it will always be needed)
+            // remove padding
+            final byte[] decrypted = new byte[decLength];
+            System.arraycopy(decBuffer, 0, decrypted, 0, decLength);
+
+            // Create the XML Parser (and decompress using InflaterInputStream)
+            final DocumentBuilderFactory subsDocBuilderFactory = DocumentBuilderFactory.newInstance();
+            final DocumentBuilder subsDocBuilder = subsDocBuilderFactory.newDocumentBuilder();
+            final Document subs = subsDocBuilder.parse(new InflaterInputStream(new ByteArrayInputStream(decrypted)));
+
+            // Get the header
+            final Element subHeaderElem = (Element) subs.getElementsByTagName("subtitle_script").item(0);
+            final String subHeaderTitle = subHeaderElem.getAttributeNode("title").getNodeValue();
+            final String subHeaderWrap = subHeaderElem.getAttributeNode("wrap_style").getNodeValue();
+            final String subHeaderResX = subHeaderElem.getAttributeNode("play_res_x").getNodeValue();
+            final String subHeaderResY = subHeaderElem.getAttributeNode("play_res_y").getNodeValue();
+
+            final String subHeader = "[Script Info]\nTitle: " + subHeaderTitle + "\nScriptType: v4.00+\nWrapStyle: " + subHeaderWrap + "\nPlayResX: " + subHeaderResX + "\nPlayResY: " + subHeaderResY + "\n";
+
+            // Get the styles
+            String subStyles = "[V4 Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n";
+            final NodeList subStylesNodes = subs.getElementsByTagName("style");
+
+            for (int i = 0; i < subStylesNodes.getLength(); i++) {
+                final Element subStylesElem = (Element) subStylesNodes.item(i);
+                final String subStylesName = subStylesElem.getAttributeNode("name").getNodeValue();
+                final String subStylesFontName = subStylesElem.getAttributeNode("font_name").getNodeValue();
+                final String subStylesFontSize = subStylesElem.getAttributeNode("font_size").getNodeValue();
+                final String subStylesPriColor = subStylesElem.getAttributeNode("primary_colour").getNodeValue();
+                final String subStylesSecColor = subStylesElem.getAttributeNode("secondary_colour").getNodeValue();
+                final String subStylesOutColor = subStylesElem.getAttributeNode("outline_colour").getNodeValue();
+                final String subStylesBacColor = subStylesElem.getAttributeNode("back_colour").getNodeValue();
+                final String subStylesUnderline = subStylesElem.getAttributeNode("underline").getNodeValue();
+                final String subStylesStrikeout = subStylesElem.getAttributeNode("strikeout").getNodeValue();
+                final String subStylesAlignment = subStylesElem.getAttributeNode("alignment").getNodeValue();
+                final String subStylesSpacing = subStylesElem.getAttributeNode("spacing").getNodeValue();
+                final String subStylesItalic = subStylesElem.getAttributeNode("italic").getNodeValue();
+                String subStylesScaleX = subStylesElem.getAttributeNode("scale_x").getNodeValue();
+                String subStylesScaleY = subStylesElem.getAttributeNode("scale_y").getNodeValue();
+                final String subStylesBorder = subStylesElem.getAttributeNode("border_style").getNodeValue();
+                final String subStylesShadow = subStylesElem.getAttributeNode("shadow").getNodeValue();
+                final String subStylesBold = subStylesElem.getAttributeNode("bold").getNodeValue();
+                final String subStylesAngle = subStylesElem.getAttributeNode("angle").getNodeValue();
+                final String subStylesOutline = subStylesElem.getAttributeNode("outline").getNodeValue();
+                final String subStylesMarginL = subStylesElem.getAttributeNode("margin_l").getNodeValue();
+                final String subStylesMarginR = subStylesElem.getAttributeNode("margin_r").getNodeValue();
+                final String subStylesMarginV = subStylesElem.getAttributeNode("margin_v").getNodeValue();
+                final String subStylesEncoding = subStylesElem.getAttributeNode("encoding").getNodeValue();
+
+                if (subStylesScaleX.equals("0")) {
+                    subStylesScaleX = "100";
+                }
+                if (subStylesScaleY.equals("0")) {
+                    subStylesScaleY = "100";
+                }
+
+                subStyles += "Style: " + subStylesName + ", " + subStylesFontName + ", " + subStylesFontSize + ", " + subStylesPriColor + ", " + subStylesSecColor + ", " + subStylesOutColor + ", " + subStylesBacColor + ", " + subStylesBold + ", " + subStylesItalic + ", " + subStylesUnderline + ", " + subStylesStrikeout + ", " + subStylesScaleX + ", " + subStylesScaleY + ", " + subStylesSpacing + ", " + subStylesAngle + ", " + subStylesBorder + ", " + subStylesOutline + ", " + subStylesShadow + ", " + subStylesAlignment + ", " + subStylesMarginL + ", " + subStylesMarginR + ", " + subStylesMarginV + ", " + subStylesEncoding + "\n";
+            }
+
+            // Get the elements
+            String subEvents = "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n";
+            final NodeList subEventsNodes = subs.getElementsByTagName("event");
+
+            for (int i = 0; i < subEventsNodes.getLength(); i++) {
+                final Element subEventsElem = (Element) subEventsNodes.item(i);
+                final String subEventsStart = subEventsElem.getAttributeNode("start").getNodeValue();
+                final String subEventsEnd = subEventsElem.getAttributeNode("end").getNodeValue();
+                final String subEventsStyle = subEventsElem.getAttributeNode("style").getNodeValue();
+                final String subEventsName = subEventsElem.getAttributeNode("name").getNodeValue();
+                final String subEventsMarginL = subEventsElem.getAttributeNode("margin_l").getNodeValue();
+                final String subEventsMarginR = subEventsElem.getAttributeNode("margin_r").getNodeValue();
+                final String subEventsMarginV = subEventsElem.getAttributeNode("margin_v").getNodeValue();
+                final String subEventsEffect = subEventsElem.getAttributeNode("effect").getNodeValue();
+                final String subEventsText = subEventsElem.getAttributeNode("text").getNodeValue();
+
+                subEvents += "Dialogue: 0," + subEventsStart + "," + subEventsEnd + "," + subEventsStyle + "," + subEventsName + "," + subEventsMarginL + "," + subEventsMarginR + "," + subEventsMarginV + "," + subEventsEffect + "," + subEventsText + "\n";
+            }
+
+            // Output to the original file
+            final FileWriter subOutFile = new FileWriter(downloadLink.getFileOutput());
+            final BufferedWriter subOut = new BufferedWriter(subOutFile);
+
+            try {
+                subOut.write(subHeader + "\n");
+                subOut.write(subStyles + "\n");
+                subOut.write(subEvents);
+            } catch (final Throwable e) {
+                subOut.close();
+                subOutFile.close();
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.subtitlessavefail", "Error writing decrypted subtitles"));
+                throw new IOException("Error writing decrypted subtitles '" + downloadLink.getFileOutput() + "'");
+            }
+
+            subOut.close();
+            subOutFile.close();
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptedsubtitles", "Decrypted subtitles"));
+        } catch (final SAXException e) {
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptingsubtitlessaxerror", "Failed to decrypt: Invalid XML file"));
+        } catch (final DOMException e) {
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptingsubtitlesdomerror", "Failed to decrypt: XML file changed"));
+        } catch (final Throwable e) {
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptingsubtitleserror", "Failed to decrypt"));
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -94,24 +248,24 @@ public class CrunchyRollCom extends PluginForHost {
      * @param downloadLink
      *            The DownloadLink to try and download using RTMP
      */
-    private void downloadRTMP(DownloadLink downloadLink) throws Exception {
+    private void downloadRTMP(final DownloadLink downloadLink) throws Exception {
         // Check if the link appears to be valid
         if ((Boolean) downloadLink.getProperty("valid", false) && downloadLink.getStringProperty("rtmphost").startsWith("rtmp")) {
-            String url = downloadLink.getStringProperty("rtmphost") + "/" + downloadLink.getStringProperty("rtmpfile");
-            RtmpDump rtmpTest = new RtmpDump(this, downloadLink, url);
+            final String url = downloadLink.getStringProperty("rtmphost") + "/" + downloadLink.getStringProperty("rtmpfile");
+            final RtmpDump rtmpTest = new RtmpDump(this, downloadLink, url);
 
             // Make sure we have a new enough version
-            String rtmpVer = normaliseRtmpVersion(rtmpTest.getRtmpDumpVersion(), ".", 5);
-            String minVer = normaliseRtmpVersion(RTMPDUMP_MIN_VER, ".", 5);
+            final String rtmpVer = this.normaliseRtmpVersion(rtmpTest.getRtmpDumpVersion(), ".", 5);
+            final String minVer = this.normaliseRtmpVersion(CrunchyRollCom.RTMPDUMP_MIN_VER, ".", 5);
             if (rtmpVer.compareTo(minVer) < 0) {
-                String versionError = "RTMPDump v" + RTMPDUMP_MIN_VER + " or newer required";
+                final String versionError = "RTMPDump v" + CrunchyRollCom.RTMPDUMP_MIN_VER + " or newer required";
                 downloadLink.setComment(versionError);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, versionError);
             }
 
             // Create the download
-            dl = new RTMPDownload(this, downloadLink, url);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            this.dl = new RTMPDownload(this, downloadLink, url);
+            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) this.dl).getRtmpConnection();
 
             // Set all of the needed rtmpdump parameters
             rtmp.setUrl(url);
@@ -120,7 +274,7 @@ public class CrunchyRollCom extends PluginForHost {
             rtmp.setSwfVfy(downloadLink.getStringProperty("swfdir") + downloadLink.getStringProperty("rtmpswf"));
             rtmp.setResume(true);
 
-            ((RTMPDownload) dl).startDownload();
+            ((RTMPDownload) this.dl).startDownload();
         } else {
             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, "Invalid download");
         }
@@ -132,7 +286,7 @@ public class CrunchyRollCom extends PluginForHost {
      * @param downloadLink
      *            The DownloadLink to try and download convert to .ass
      */
-    private void downloadSubs(DownloadLink downloadLink) throws Exception {
+    private void downloadSubs(final DownloadLink downloadLink) throws Exception {
         if ((Boolean) downloadLink.getProperty("valid", false)) {
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), true, 0);
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().endsWith("xml")) {
@@ -183,24 +337,24 @@ public class CrunchyRollCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         downloadLink.setProperty("valid", false);
         this.requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().contains(RCP_API_VIDEO_PLAYER)) {
+        if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_VIDEO_PLAYER)) {
             this.downloadRTMP(downloadLink);
-        } else if (downloadLink.getDownloadURL().contains(RCP_API_SUBTITLE)) {
+        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
             this.downloadSubs(downloadLink);
         }
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         downloadLink.setProperty("valid", false);
         this.login(account, this.br, false, true);
         this.requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().contains(RCP_API_VIDEO_PLAYER)) {
+        if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_VIDEO_PLAYER)) {
             this.downloadRTMP(downloadLink);
-        } else if (downloadLink.getDownloadURL().contains(RCP_API_SUBTITLE)) {
+        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
             this.downloadSubs(downloadLink);
         }
     }
@@ -220,7 +374,7 @@ public class CrunchyRollCom extends PluginForHost {
      * @param showDialog
      *            Display warning dialog if login fails.
      */
-    public void login(final Account account, Browser br, boolean refresh, boolean showDialog) throws Exception {
+    public void login(final Account account, Browser br, final boolean refresh, final boolean showDialog) throws Exception {
         synchronized (CrunchyRollCom.lock) {
             if (br == null) {
                 br = this.br;
@@ -229,8 +383,8 @@ public class CrunchyRollCom extends PluginForHost {
                 this.setBrowserExclusive();
 
                 // Load cookies from the cache if allowed, and they exist
-                if (refresh == false && loginCookies.containsKey(account)) {
-                    HashMap<String, String> cookies = loginCookies.get(account);
+                if (refresh == false && CrunchyRollCom.loginCookies.containsKey(account)) {
+                    final HashMap<String, String> cookies = CrunchyRollCom.loginCookies.get(account);
                     if (cookies != null) {
                         if (cookies.containsKey("c_userid")) {
                             // Save cookies to the browser
@@ -245,7 +399,7 @@ public class CrunchyRollCom extends PluginForHost {
                 }
 
                 // Set the POST parameters to log in
-                LinkedHashMap<String, String> post = new LinkedHashMap<String, String>();
+                final LinkedHashMap<String, String> post = new LinkedHashMap<String, String>();
                 post.put("formname", "RpcApiUser_Login");
                 post.put("next_url", Encoding.urlEncode("http://www.crunchyroll.com/acct/?action=status"));
                 post.put("fail_url", Encoding.urlEncode("http://www.crunchyroll.com/login"));
@@ -260,7 +414,9 @@ public class CrunchyRollCom extends PluginForHost {
                 // Check if we successfully logged in
                 if (!br.containsHTML("Welcome back, .+?!") && !br.containsHTML("<title>Redirecting\\.\\.\\.</title>")) {
                     // Not successfuly, display dialog if we were asked to
-                    if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Crunchyroll Login Error", "Account check needed for crunchyroll.com!");
+                    if (showDialog) {
+                        UserIO.getInstance().requestMessageDialog(0, "Crunchyroll Login Error", "Account check needed for crunchyroll.com!");
+                    }
                     // Set account to invalid and quit
                     account.setValid(false);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -274,24 +430,47 @@ public class CrunchyRollCom extends PluginForHost {
                     cookies.put(c.getKey(), c.getValue());
                 }
                 // Save the cookies to the cache
-                loginCookies.put(account, cookies);
-            } catch (PluginException e) {
-                loginCookies.remove(account);
+                CrunchyRollCom.loginCookies.put(account, cookies);
+            } catch (final PluginException e) {
+                CrunchyRollCom.loginCookies.remove(account);
                 throw e;
             }
         }
     }
 
+    /**
+     * Pad and format version numbers so that the String.compare() method can be
+     * used simply. ("9.10.2", ".", 4) would result in "000900100002".
+     * 
+     * @param version
+     *            The version number string to format (e.g. '9.10.2')
+     * @param sep
+     *            The character(s) to split the numbers by (e.g. '.')
+     * @param maxWidth
+     *            The number of digits to pad the numbers to (e.g. 5 would make
+     *            '12' become '00012'). Note that numbers which exceed this are
+     *            not truncated.
+     * @return The formatted version number ready to be compared
+     */
+    private String normaliseRtmpVersion(final String version, final String sep, final int maxWidth) {
+        final String[] split = Pattern.compile(sep, Pattern.LITERAL).split(version);
+        final StringBuilder sb = new StringBuilder();
+        for (final String s : split) {
+            sb.append(String.format("%" + maxWidth + 's', s).replace(' ', '0'));
+        }
+        return sb.toString();
+    }
+
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         downloadLink.setProperty("valid", false);
 
         // Try and find which download type it is
-        if (downloadLink.getDownloadURL().contains(RCP_API_VIDEO_PLAYER)) {
+        if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_VIDEO_PLAYER)) {
             // Attempt to login
-            if (br.getCookies("crunchyroll.com").isEmpty()) {
-                Account account = AccountController.getInstance().getValidAccount(this);
+            if (this.br.getCookies("crunchyroll.com").isEmpty()) {
+                final Account account = AccountController.getInstance().getValidAccount(this);
                 if (account != null) {
                     try {
                         this.login(account, this.br, false, true);
@@ -309,13 +488,13 @@ public class CrunchyRollCom extends PluginForHost {
 
             downloadLink.setProperty("valid", true);
             return AvailableStatus.TRUE;
-        } else if (downloadLink.getDownloadURL().contains(RCP_API_SUBTITLE)) {
+        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
             // Validate the URL and set filename
-            String subId = new Regex(downloadLink.getDownloadURL(), "subtitle_script_id=([0-9]+)").getMatch(0);
+            final String subId = new Regex(downloadLink.getDownloadURL(), "subtitle_script_id=([0-9]+)").getMatch(0);
             if (subId == null) { return AvailableStatus.FALSE; }
 
             if (downloadLink.getStringProperty("filename") == null) {
-                String filename = "CrunchyRoll." + subId;
+                final String filename = "CrunchyRoll." + subId;
                 downloadLink.setProperty("filename", filename);
                 downloadLink.setFinalFileName(filename + ".ass");
             } else if (downloadLink.getFinalFileName() == null) {
@@ -324,10 +503,10 @@ public class CrunchyRollCom extends PluginForHost {
 
             // Get the HTTP response headers of the XML file to check for
             // validity
-            URLConnectionAdapter conn = br.openGetConnection(downloadLink.getDownloadURL());
-            long respCode = 200;
-            long length = conn.getLongContentLength();
-            String contType = conn.getContentType();
+            final URLConnectionAdapter conn = this.br.openGetConnection(downloadLink.getDownloadURL());
+            final long respCode = 200;
+            final long length = conn.getLongContentLength();
+            final String contType = conn.getContentType();
 
             conn.disconnect();
             if (respCode == 200 && contType.endsWith("xml")) {
@@ -348,159 +527,11 @@ public class CrunchyRollCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    /**
-     * Decrypt and convert the downloaded file from CrunchyRoll's own encrypted
-     * xml format into its .ass equivalent.
-     * 
-     * @param downloadLink
-     *            The DownloadLink to convert to .ass
-     */
-    private void convertSubs(DownloadLink downloadLink) throws Exception {
-        downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptingsubtitles", "Decrypting subtitles..."));
-        try {
-            // Create the XML Parser
-            DocumentBuilderFactory xmlDocBuilderFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder xmlDocBuilder = xmlDocBuilderFactory.newDocumentBuilder();
-            Document xml = xmlDocBuilder.parse(new File(downloadLink.getFileOutput()));
-
-            // normalize text representation
-            xml.getDocumentElement().normalize();
-
-            // Get the subtitle information
-            Element xmlSub = (Element) xml.getElementsByTagName("subtitle").item(0);
-
-            Node xmlId = xmlSub.getAttributeNode("id");
-            Node xmlIv = xmlSub.getElementsByTagName("iv").item(0);
-            Node xmlData = xmlSub.getElementsByTagName("data").item(0);
-
-            int subId = Integer.parseInt(xmlId.getNodeValue());
-            String subIv = xmlIv.getTextContent();
-            String subData = xmlData.getTextContent();
-
-            // Generate the AES parameters
-            byte[] key = subsGenerateKey(subId, 32);
-            byte[] decIv = DatatypeConverter.parseBase64Binary(subIv);
-            byte[] decData = DatatypeConverter.parseBase64Binary(subData);
-
-            SecretKey aesKey = new SecretKeySpec(key, "AES");
-            IvParameterSpec ips = new IvParameterSpec(decIv);
-
-            // Decrypt the subtitles
-            Cipher decryptCipher = Cipher.getInstance("AES/CBC/NoPadding");
-            decryptCipher.init(Cipher.DECRYPT_MODE, aesKey, ips);
-            byte[] decrypted = decryptCipher.doFinal(decData);
-
-            // Create the XML Parser (and decompress using InflaterInputStream)
-            DocumentBuilderFactory subsDocBuilderFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder subsDocBuilder = subsDocBuilderFactory.newDocumentBuilder();
-            Document subs = subsDocBuilder.parse(new InflaterInputStream(new ByteArrayInputStream(decrypted)));
-
-            // Get the header
-            Element subHeaderElem = (Element) subs.getElementsByTagName("subtitle_script").item(0);
-            String subHeaderTitle = subHeaderElem.getAttributeNode("title").getNodeValue();
-            String subHeaderWrap = subHeaderElem.getAttributeNode("wrap_style").getNodeValue();
-            String subHeaderResX = subHeaderElem.getAttributeNode("play_res_x").getNodeValue();
-            String subHeaderResY = subHeaderElem.getAttributeNode("play_res_y").getNodeValue();
-
-            String subHeader = "[Script Info]\nTitle: " + subHeaderTitle + "\nScriptType: v4.00+\nWrapStyle: " + subHeaderWrap + "\nPlayResX: " + subHeaderResX + "\nPlayResY: " + subHeaderResY + "\n";
-
-            // Get the styles
-            String subStyles = "[V4 Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n";
-            NodeList subStylesNodes = subs.getElementsByTagName("style");
-
-            for (int i = 0; i < subStylesNodes.getLength(); i++) {
-                Element subStylesElem = (Element) subStylesNodes.item(i);
-                String subStylesName = subStylesElem.getAttributeNode("name").getNodeValue();
-                String subStylesFontName = subStylesElem.getAttributeNode("font_name").getNodeValue();
-                String subStylesFontSize = subStylesElem.getAttributeNode("font_size").getNodeValue();
-                String subStylesPriColor = subStylesElem.getAttributeNode("primary_colour").getNodeValue();
-                String subStylesSecColor = subStylesElem.getAttributeNode("secondary_colour").getNodeValue();
-                String subStylesOutColor = subStylesElem.getAttributeNode("outline_colour").getNodeValue();
-                String subStylesBacColor = subStylesElem.getAttributeNode("back_colour").getNodeValue();
-                String subStylesUnderline = subStylesElem.getAttributeNode("underline").getNodeValue();
-                String subStylesStrikeout = subStylesElem.getAttributeNode("strikeout").getNodeValue();
-                String subStylesAlignment = subStylesElem.getAttributeNode("alignment").getNodeValue();
-                String subStylesSpacing = subStylesElem.getAttributeNode("spacing").getNodeValue();
-                String subStylesItalic = subStylesElem.getAttributeNode("italic").getNodeValue();
-                String subStylesScaleX = subStylesElem.getAttributeNode("scale_x").getNodeValue();
-                String subStylesScaleY = subStylesElem.getAttributeNode("scale_y").getNodeValue();
-                String subStylesBorder = subStylesElem.getAttributeNode("border_style").getNodeValue();
-                String subStylesShadow = subStylesElem.getAttributeNode("shadow").getNodeValue();
-                String subStylesBold = subStylesElem.getAttributeNode("bold").getNodeValue();
-                String subStylesAngle = subStylesElem.getAttributeNode("angle").getNodeValue();
-                String subStylesOutline = subStylesElem.getAttributeNode("outline").getNodeValue();
-                String subStylesMarginL = subStylesElem.getAttributeNode("margin_l").getNodeValue();
-                String subStylesMarginR = subStylesElem.getAttributeNode("margin_r").getNodeValue();
-                String subStylesMarginV = subStylesElem.getAttributeNode("margin_v").getNodeValue();
-                String subStylesEncoding = subStylesElem.getAttributeNode("encoding").getNodeValue();
-
-                if (subStylesScaleX.equals("0")) {
-                    subStylesScaleX = "100";
-                }
-                if (subStylesScaleY.equals("0")) {
-                    subStylesScaleY = "100";
-                }
-
-                subStyles += "Style: " + subStylesName + ", " + subStylesFontName + ", " + subStylesFontSize + ", " + subStylesPriColor + ", " + subStylesSecColor + ", " + subStylesOutColor + ", " + subStylesBacColor + ", " + subStylesBold + ", " + subStylesItalic + ", " + subStylesUnderline + ", " + subStylesStrikeout + ", " + subStylesScaleX + ", " + subStylesScaleY + ", " + subStylesSpacing + ", " + subStylesAngle + ", " + subStylesBorder + ", " + subStylesOutline + ", " + subStylesShadow + ", " + subStylesAlignment + ", " + subStylesMarginL + ", " + subStylesMarginR + ", " + subStylesMarginV + ", " + subStylesEncoding + "\n";
-            }
-
-            // Get the elements
-            String subEvents = "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n";
-            NodeList subEventsNodes = subs.getElementsByTagName("event");
-
-            for (int i = 0; i < subEventsNodes.getLength(); i++) {
-                Element subEventsElem = (Element) subEventsNodes.item(i);
-                String subEventsStart = subEventsElem.getAttributeNode("start").getNodeValue();
-                String subEventsEnd = subEventsElem.getAttributeNode("end").getNodeValue();
-                String subEventsStyle = subEventsElem.getAttributeNode("style").getNodeValue();
-                String subEventsName = subEventsElem.getAttributeNode("name").getNodeValue();
-                String subEventsMarginL = subEventsElem.getAttributeNode("margin_l").getNodeValue();
-                String subEventsMarginR = subEventsElem.getAttributeNode("margin_r").getNodeValue();
-                String subEventsMarginV = subEventsElem.getAttributeNode("margin_v").getNodeValue();
-                String subEventsEffect = subEventsElem.getAttributeNode("effect").getNodeValue();
-                String subEventsText = subEventsElem.getAttributeNode("text").getNodeValue();
-
-                subEvents += "Dialogue: 0," + subEventsStart + "," + subEventsEnd + "," + subEventsStyle + "," + subEventsName + "," + subEventsMarginL + "," + subEventsMarginR + "," + subEventsMarginV + "," + subEventsEffect + "," + subEventsText + "\n";
-            }
-
-            // Output to the original file
-            FileWriter subOutFile = new FileWriter(downloadLink.getFileOutput());
-            BufferedWriter subOut = new BufferedWriter(subOutFile);
-
-            try {
-                subOut.write(subHeader + "\n");
-                subOut.write(subStyles + "\n");
-                subOut.write(subEvents);
-            } catch (Throwable e) {
-                subOut.close();
-                subOutFile.close();
-                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.subtitlessavefail", "Error writing decrypted subtitles"));
-                throw new IOException("Error writing decrypted subtitles '" + downloadLink.getFileOutput() + "'");
-            }
-
-            subOut.close();
-            subOutFile.close();
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptedsubtitles", "Decrypted subtitles"));
-        } catch (SAXException e) {
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptingsubtitlessaxerror", "Failed to decrypt: Invalid XML file"));
-        } catch (DOMException e) {
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptingsubtitlesdomerror", "Failed to decrypt: XML file changed"));
-        } catch (InvalidKeyException e) {
-            // 256-bit key not available in the default JVM. Installation of
-            // 'Java Cryptography Extension (JCE) Unlimited Strength
-            // Jurisdiction Policy Files' required for support.
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptsubtitles256bit", "Java Cryptography Extension (JCE) Unlimited Strength needed to decrypt"));
-        } catch (Throwable e) {
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptingsubtitleserror", "Failed to decrypt"));
-            e.printStackTrace();
-        }
     }
 
     /**
@@ -514,60 +545,37 @@ public class CrunchyRollCom extends PluginForHost {
      *            key)
      * @return The byte formatted key to be used in AES decryption
      */
-    private byte[] subsGenerateKey(int id, int size) throws NoSuchAlgorithmException {
+    private byte[] subsGenerateKey(final int id, final int size) throws NoSuchAlgorithmException {
         // Generate fibonacci salt
         String magicStr = "";
         int fibA = 1;
         int fibB = 2;
         for (int i = 2; i < 22; i++) {
-            int newChr = fibA + fibB;
+            final int newChr = fibA + fibB;
             fibA = fibB;
             fibB = newChr;
             magicStr += Character.toString((char) (newChr % 97 + 33));
         }
 
         // Calculate magic number
-        int magic1 = (int) Math.floor(Math.sqrt(6.9) * Math.pow(2, 25));
-        long magic2 = (id ^ magic1) ^ (id ^ magic1) >>> 3 ^ (magic1 ^ id) * 32l;
+        final int magic1 = (int) Math.floor(Math.sqrt(6.9) * Math.pow(2, 25));
+        final long magic2 = id ^ magic1 ^ (id ^ magic1) >>> 3 ^ (magic1 ^ id) * 32l;
 
         magicStr += magic2;
 
         // Calculate the hash using SHA-1
-        MessageDigest md = MessageDigest.getInstance("SHA-1");
-        byte[] magicBytes = magicStr.getBytes();
+        final MessageDigest md = MessageDigest.getInstance("SHA-1");
+        final byte[] magicBytes = magicStr.getBytes();
         md.update(magicBytes, 0, magicBytes.length);
-        byte[] hashBytes = md.digest();
+        final byte[] hashBytes = md.digest();
 
         // Create the key using the given length
-        byte[] key = new byte[size];
+        final byte[] key = new byte[size];
         Arrays.fill(key, (byte) 0);
 
         for (int i = 0; i < key.length && i < hashBytes.length; i++) {
             key[i] = hashBytes[i];
         }
         return key;
-    }
-
-    /**
-     * Pad and format version numbers so that the String.compare() method can be
-     * used simply. ("9.10.2", ".", 4) would result in "000900100002".
-     * 
-     * @param version
-     *            The version number string to format (e.g. '9.10.2')
-     * @param sep
-     *            The character(s) to split the numbers by (e.g. '.')
-     * @param maxWidth
-     *            The number of digits to pad the numbers to (e.g. 5 would make
-     *            '12' become '00012'). Note that numbers which exceed this are
-     *            not truncated.
-     * @return The formatted version number ready to be compared
-     */
-    private String normaliseRtmpVersion(String version, String sep, int maxWidth) {
-        String[] split = Pattern.compile(sep, Pattern.LITERAL).split(version);
-        StringBuilder sb = new StringBuilder();
-        for (String s : split) {
-            sb.append(String.format("%" + maxWidth + 's', s).replace(' ', '0'));
-        }
-        return sb.toString();
     }
 }
