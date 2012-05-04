@@ -36,13 +36,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.network.rtmp.RtmpDump;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -52,11 +53,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.CrhyRllCom;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.Regex;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.engines.AESEngine;
@@ -74,6 +73,7 @@ import org.xml.sax.SAXException;
 public class CrunchyRollCom extends PluginForHost {
 
     static private final Pattern                             CONFIG_URL           = Pattern.compile("(http://www\\.crunchyroll\\.com/xml/\\?req=RpcApiVideoPlayer_GetStandardConfig.*video_quality=)([0-9]*)(.*)", Pattern.CASE_INSENSITIVE);
+
     static private Object                                    lock                 = new Object();
     static private HashMap<Account, HashMap<String, String>> loginCookies         = new HashMap<Account, HashMap<String, String>>();
     static private final String                              RCP_API_SUBTITLE     = "RpcApiSubtitle_GetXml";
@@ -87,8 +87,7 @@ public class CrunchyRollCom extends PluginForHost {
     }
 
     /**
-     * Decrypt and convert the downloaded file from CrunchyRoll's own encrypted
-     * xml format into its .ass equivalent.
+     * Decrypt and convert the downloaded file from CrunchyRoll's own encrypted xml format into its .ass equivalent.
      * 
      * @param downloadLink
      *            The DownloadLink to convert to .ass
@@ -119,25 +118,29 @@ public class CrunchyRollCom extends PluginForHost {
             final byte[] key = this.subsGenerateKey(subId, 32);
             final byte[] ivData = DatatypeConverter.parseBase64Binary(subIv);
             final byte[] encData = DatatypeConverter.parseBase64Binary(subData);
+            byte[] decrypted = null;
+            try {
+                final KeyParameter keyParam = new KeyParameter(key);
+                final CipherParameters cipherParams = new ParametersWithIV(keyParam, ivData);
 
-            final KeyParameter keyParam = new KeyParameter(key);
-            final CipherParameters cipherParams = new ParametersWithIV(keyParam, ivData);
+                // Decrypt the subtitles
+                final BufferedBlockCipher cipher = new BufferedBlockCipher(new CBCBlockCipher(new AESEngine()));
+                cipher.reset();
+                cipher.init(false, cipherParams);
 
-            // Decrypt the subtitles
-            final BufferedBlockCipher cipher = new BufferedBlockCipher(new CBCBlockCipher(new AESEngine()));
-            cipher.reset();
-            cipher.init(false, cipherParams);
+                // create a temporary buffer to decode into (it'll include padding)
+                final byte[] decBuffer = new byte[cipher.getOutputSize(encData.length)];
+                int decLength = cipher.processBytes(encData, 0, encData.length, decBuffer, 0);
+                decLength += cipher.doFinal(decBuffer, decLength);
 
-            // create a temporary buffer to decode into (it'll include padding)
-            final byte[] decBuffer = new byte[cipher.getOutputSize(encData.length)];
-            int decLength = cipher.processBytes(encData, 0, encData.length, decBuffer, 0);
-            decLength += cipher.doFinal(decBuffer, decLength);
-
-            // TODO Check this code (I don't think it will always be needed)
-            // remove padding
-            final byte[] decrypted = new byte[decLength];
-            System.arraycopy(decBuffer, 0, decrypted, 0, decLength);
-
+                // TODO Check this code (I don't think it will always be needed)
+                // remove padding
+                decrypted = new byte[decLength];
+                System.arraycopy(decBuffer, 0, decrypted, 0, decLength);
+            } catch (final Throwable e) {
+                JDLogger.exception(e);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             // Create the XML Parser (and decompress using InflaterInputStream)
             final DocumentBuilderFactory subsDocBuilderFactory = DocumentBuilderFactory.newInstance();
             final DocumentBuilder subsDocBuilder = subsDocBuilderFactory.newDocumentBuilder();
@@ -240,10 +243,8 @@ public class CrunchyRollCom extends PluginForHost {
     }
 
     /**
-     * Attempt to download the given file using RTMP (rtmpdump). Needs to use
-     * the properties "valid", "rtmphost", "rtmpfile", "rtmpswf", "swfdir".
-     * These are set by jd.plugins.decrypter.CrchyRollCom.setRMP() through
-     * requestFileInformation()
+     * Attempt to download the given file using RTMP (rtmpdump). Needs to use the properties "valid", "rtmphost", "rtmpfile", "rtmpswf", "swfdir". These are set
+     * by jd.plugins.decrypter.CrchyRollCom.setRMP() through requestFileInformation()
      * 
      * @param downloadLink
      *            The DownloadLink to try and download using RTMP
@@ -252,7 +253,7 @@ public class CrunchyRollCom extends PluginForHost {
         // Check if the link appears to be valid
         if ((Boolean) downloadLink.getProperty("valid", false) && downloadLink.getStringProperty("rtmphost").startsWith("rtmp")) {
             final String url = downloadLink.getStringProperty("rtmphost") + "/" + downloadLink.getStringProperty("rtmpfile");
-            final RtmpDump rtmpTest = new RtmpDump(this, downloadLink, url);
+            final jd.network.rtmp.RtmpDump rtmpTest = new jd.network.rtmp.RtmpDump(this, downloadLink, url);
 
             // Make sure we have a new enough version
             final String rtmpVer = this.normaliseRtmpVersion(rtmpTest.getRtmpDumpVersion(), ".", 5);
@@ -360,17 +361,14 @@ public class CrunchyRollCom extends PluginForHost {
     }
 
     /**
-     * Attempt to log into crunchyroll.com using the given account. Cookies are
-     * cached to 'loginCookies'.
+     * Attempt to log into crunchyroll.com using the given account. Cookies are cached to 'loginCookies'.
      * 
      * @param account
      *            The account to use to log in.
      * @param br
-     *            The browser to use to log in. This is the browser where the
-     *            cookies will be saved.
+     *            The browser to use to log in. This is the browser where the cookies will be saved.
      * @param refresh
-     *            Should new cookies be retrieved (fresh login) even if cookies
-     *            have previously been cached.
+     *            Should new cookies be retrieved (fresh login) even if cookies have previously been cached.
      * @param showDialog
      *            Display warning dialog if login fails.
      */
@@ -381,7 +379,6 @@ public class CrunchyRollCom extends PluginForHost {
             }
             try {
                 this.setBrowserExclusive();
-
                 // Load cookies from the cache if allowed, and they exist
                 if (refresh == false && CrunchyRollCom.loginCookies.containsKey(account)) {
                     final HashMap<String, String> cookies = CrunchyRollCom.loginCookies.get(account);
@@ -439,17 +436,14 @@ public class CrunchyRollCom extends PluginForHost {
     }
 
     /**
-     * Pad and format version numbers so that the String.compare() method can be
-     * used simply. ("9.10.2", ".", 4) would result in "000900100002".
+     * Pad and format version numbers so that the String.compare() method can be used simply. ("9.10.2", ".", 4) would result in "000900100002".
      * 
      * @param version
      *            The version number string to format (e.g. '9.10.2')
      * @param sep
      *            The character(s) to split the numbers by (e.g. '.')
      * @param maxWidth
-     *            The number of digits to pad the numbers to (e.g. 5 would make
-     *            '12' become '00012'). Note that numbers which exceed this are
-     *            not truncated.
+     *            The number of digits to pad the numbers to (e.g. 5 would make '12' become '00012'). Note that numbers which exceed this are not truncated.
      * @return The formatted version number ready to be compared
      */
     private String normaliseRtmpVersion(final String version, final String sep, final int maxWidth) {
@@ -484,7 +478,7 @@ public class CrunchyRollCom extends PluginForHost {
             if (plugin == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Cannot decrypt video link"); }
 
             // Set the RTMP details (exception on error)
-            ((CrhyRllCom) plugin).setRTMP(downloadLink, this.br);
+            ((jd.plugins.decrypter.CrhyRllCom) plugin).setRTMP(downloadLink, this.br);
 
             downloadLink.setProperty("valid", true);
             return AvailableStatus.TRUE;
@@ -504,7 +498,7 @@ public class CrunchyRollCom extends PluginForHost {
             // Get the HTTP response headers of the XML file to check for
             // validity
             final URLConnectionAdapter conn = this.br.openGetConnection(downloadLink.getDownloadURL());
-            final long respCode = 200;
+            final long respCode = conn.getResponseCode();
             final long length = conn.getLongContentLength();
             final String contType = conn.getContentType();
 
@@ -535,14 +529,12 @@ public class CrunchyRollCom extends PluginForHost {
     }
 
     /**
-     * Generate the AES decryption key based on the subtitle's id using some
-     * obfuscation and SHA-1 hashing.
+     * Generate the AES decryption key based on the subtitle's id using some obfuscation and SHA-1 hashing.
      * 
      * @param id
      *            The id of the subtitles to generate the key for
      * @param size
-     *            The number of bytes to make the key (e.g. 32 bytes for 256-bit
-     *            key)
+     *            The number of bytes to make the key (e.g. 32 bytes for 256-bit key)
      * @return The byte formatted key to be used in AES decryption
      */
     private byte[] subsGenerateKey(final int id, final int size) throws NoSuchAlgorithmException {
