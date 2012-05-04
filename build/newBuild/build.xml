@@ -252,12 +252,17 @@
 				<exclude name="jd/http/**" />
 				<exclude name="jd/nutils/**" />
 				<exclude name="jd/plugins/hoster/**" />
+				<include name="jd/plugins/hoster/RTMPDownload.class" />
 				<exclude name="jd/plugins/decrypter/**" />
 				<exclude name="org/jdownloader/extensions/*/**/*" />
 				<exclude name="jd/utils/dev/**" />
 				<exclude name="tests/**" />
 				<exclude name="**/test/**" />
 			</fileset>
+			
+			<fileset dir="${cls}">						
+							<include name="jd/plugins/hoster/RTMPDownload.class" />						
+				</fileset>
 			<fileset dir="${dep.updateclient}/src">
 				<include name="**/*.lng" />
 				<include name="**/*.png" />
@@ -281,6 +286,7 @@
 		<copy todir="${dist}/jd/plugins/hoster/">
 			<fileset dir="${cls}/jd/plugins/hoster/">
 				<include name="**/*" />
+				<exclude name="RTMPDownload*"/>
 			</fileset>
 		</copy>
 		<mkdir dir="${dist}/jd/plugins/decrypter/" />
