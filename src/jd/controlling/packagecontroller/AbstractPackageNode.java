@@ -1,5 +1,6 @@
 package jd.controlling.packagecontroller;
 
+import java.util.Comparator;
 import java.util.List;
 
 public interface AbstractPackageNode<V extends AbstractPackageChildrenNode<E>, E extends AbstractPackageNode<V, E>> extends AbstractNode, AbstractNodeNotifier<V> {
@@ -9,6 +10,10 @@ public interface AbstractPackageNode<V extends AbstractPackageChildrenNode<E>, E
     void setControlledBy(PackageController<E, V> controller);
 
     List<V> getChildren();
+
+    void sort(Comparator<V> comparator);
+
+    Comparator<V> getCurrentSorter();
 
     ChildrenView<V> getView();
 

@@ -67,7 +67,7 @@ public class MergeToPackageAction extends AppAction {
                             }
                         }
                     }
-                    LinkCollector.getInstance().addmoveChildren(newPackage, new ArrayList<CrawledLink>(links), 0);
+                    LinkCollector.getInstance().moveOrAddAt(newPackage, new ArrayList<CrawledLink>(links), 0);
                     return null;
                 }
 

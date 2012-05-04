@@ -81,7 +81,7 @@ public class SplitPackagesByHost extends AppAction {
 
                         @Override
                         protected Object run() {
-                            LinkCollector.getInstance().addmoveChildren(newPkg, links, -1);
+                            LinkCollector.getInstance().moveOrAddAt(newPkg, links, -1);
                             return null;
                         }
 

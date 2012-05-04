@@ -204,7 +204,7 @@ public class SetDownloadFolderInLinkgrabberAction extends AppAction {
 
                             @Override
                             protected Object run() {
-                                LinkCollector.getInstance().addmoveChildren(pkg, entry.getValue(), -1);
+                                LinkCollector.getInstance().moveOrAddAt(pkg, entry.getValue(), -1);
                                 return null;
                             }
 

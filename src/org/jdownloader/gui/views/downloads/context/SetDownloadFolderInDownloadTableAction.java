@@ -199,7 +199,7 @@ public class SetDownloadFolderInDownloadTableAction extends AppAction {
                         IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>() {
                             @Override
                             protected Object run() {
-                                DownloadController.getInstance().addmoveChildren(pkg, entry.getValue(), -1);
+                                DownloadController.getInstance().moveOrAddAt(pkg, entry.getValue(), -1);
                                 return null;
                             }
                         });

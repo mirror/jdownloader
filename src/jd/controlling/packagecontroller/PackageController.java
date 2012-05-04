@@ -45,9 +45,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     private final WriteLock              writeLock = this.lock.writeLock();
 
     /**
-     * add a Package at given position position in this PackageController. in
-     * case the Package is already controlled by this PackageController this
-     * function does move it to the given position
+     * add a Package at given position position in this PackageController. in case the Package is already controlled by this
+     * PackageController this function does move it to the given position
      * 
      * @param pkg
      * @param index
@@ -64,10 +63,9 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                 protected Void run() throws RuntimeException {
                     writeLock();
                     try {
-                        synchronized (pkg) {
-                            List<ChildType> children = pkg.getChildren();
-                            Collections.sort(children, comparator);
-                        }
+
+                        pkg.sort(comparator);
+
                     } finally {
                         writeUnlock();
                     }
@@ -93,8 +91,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     boolean isNew = true;
 
                     /**
-                     * iterate through all packages, remove the existing one and
-                     * add at given position
+                     * iterate through all packages, remove the existing one and add at given position
                      */
                     PackageController<PackageType, ChildType> controller = pkg.getControlledBy();
                     boolean need2Remove = false;
@@ -124,14 +121,12 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             PackageType c = li.next();
                             if (c == pkg && currentIndex == index) {
                                 /*
-                                 * current element is pkg and index is correct,
-                                 * nothing to do
+                                 * current element is pkg and index is correct, nothing to do
                                  */
                                 return null;
                             } else if (currentIndex == index) {
                                 /*
-                                 * current position is wished index, lets add
-                                 * pkg here
+                                 * current position is wished index, lets add pkg here
                                  */
                                 PackageType replaced = c;
                                 li.set(pkg);
@@ -292,7 +287,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                 int positionMerge = mergeTop ? 0 : -1;
                 if (srcLinks != null) {
                     /* move srcLinks to dest */
-                    addmoveChildren(dest, srcLinks, positionMerge);
+                    moveOrAddAt(dest, srcLinks, positionMerge);
                     if (positionMerge != -1) {
                         /* update positionMerge in case we want merge@top */
                         positionMerge += srcLinks.size();
@@ -302,7 +297,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     for (PackageType pkg : srcPkgs) {
                         /* move links from srcPkgs to dest */
                         int size = pkg.getChildren().size();
-                        addmoveChildren(dest, pkg.getChildren(), positionMerge);
+                        moveOrAddAt(dest, pkg.getChildren(), positionMerge);
                         if (positionMerge != -1) {
                             /* update positionMerge in case we want merge@top */
                             positionMerge += size;
@@ -314,24 +309,23 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         });
     }
 
-    public void addmoveChildren(final PackageType pkg, final List<ChildType> movechildren, final int index) {
+    public void moveOrAddAt(final PackageType pkg, final List<ChildType> movechildren, final int index) {
         if (pkg != null && movechildren != null && movechildren.size() > 0) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    LinkedList<ChildType> children = new LinkedList<ChildType>(movechildren);
+                    LinkedList<ChildType> elementsToMove = new LinkedList<ChildType>(movechildren);
                     if (PackageController.this != pkg.getControlledBy()) {
                         /*
-                         * package not yet under control of this
-                         * PackageController so lets add it
+                         * package not yet under control of this PackageController so lets add it
                          */
                         PackageController.this.addmovePackageAt(pkg, -1, true);
                     }
                     /* build map for removal of children links */
                     boolean newChildren = false;
                     HashMap<PackageType, LinkedList<ChildType>> removeaddMap = new HashMap<PackageType, LinkedList<ChildType>>();
-                    for (ChildType child : children) {
+                    for (ChildType child : elementsToMove) {
                         PackageType parent = child.getParentNode();
                         if (parent == null || pkg == parent) {
                             /* parent is our destination, so no need here */
@@ -367,24 +361,30 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             List<ChildType> pkgchildren = pkg.getChildren();
                             /* remove all */
                             /*
-                             * TODO: speed optimization, we have to correct the
-                             * index to match changes in children structure
+                             * TODO: speed optimization, we have to correct the index to match changes in children structure
                              */
-                            for (ChildType child : children) {
+
+                            for (ChildType child : elementsToMove) {
                                 int childI = pkgchildren.indexOf(child);
                                 if (childI >= 0) {
                                     if (childI < destIndex) destIndex -= 1;
                                     pkgchildren.remove(childI);
                                 }
                             }
+
                             /* add at wanted position */
-                            if (destIndex < 0 || destIndex > pkgchildren.size() - 1) {
+                            if (destIndex < 0 || destIndex > pkgchildren.size()) {
                                 /* add at the end */
-                                pkgchildren.addAll(children);
+
+                                pkgchildren.addAll(elementsToMove);
+
+                                // TODO: Speed optimization
+                                Collections.sort(pkgchildren, pkg.getCurrentSorter());
                             } else {
-                                pkgchildren.addAll(destIndex, children);
+                                pkgchildren.addAll(destIndex, elementsToMove);
                             }
-                            for (ChildType child : children) {
+
+                            for (ChildType child : elementsToMove) {
                                 child.setParentNode(pkg);
                             }
                             autoFileNameCorrection(pkgchildren);
@@ -407,8 +407,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * remove the given children from the package. also removes the package from
-     * this PackageController in case it is empty after removal of the children
+     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of
+     * the children
      * 
      * @param pkg
      * @param children
@@ -434,8 +434,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                                 ChildType dl = it.next();
                                 if (pkgchildren.remove(dl)) {
                                     /*
-                                     * set FilePackage to null if the link was
-                                     * controlled by this FilePackage
+                                     * set FilePackage to null if the link was controlled by this FilePackage
                                      */
                                     if (dl.getParentNode() == pkg) {
                                         dl.setParentNode(null);
@@ -528,7 +527,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     }
                     destination = Math.max(destI, 0) + 1;
                 }
-                addmoveChildren(dstPkg, srcLinks, destination);
+                moveOrAddAt(dstPkg, srcLinks, destination);
                 return null;
             }
         });

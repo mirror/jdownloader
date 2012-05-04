@@ -191,7 +191,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
                 @Override
                 protected Object run() {
-                    LinkCollector.getInstance().addmoveChildren(pkg, links, -1);
+                    LinkCollector.getInstance().moveOrAddAt(pkg, links, -1);
                     return null;
                 }
 

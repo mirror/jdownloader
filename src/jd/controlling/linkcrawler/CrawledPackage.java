@@ -1,6 +1,8 @@
 package jd.controlling.linkcrawler;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
@@ -17,6 +19,38 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     protected static final String                          PACKAGETAG            = "<jd:" + PackagizerController.PACKAGENAME + ">";
 
+    public static final Comparator<CrawledLink>            SORTER_ASC            = new Comparator<CrawledLink>() {
+
+                                                                                     @Override
+                                                                                     public int compare(CrawledLink o1, CrawledLink o2) {
+                                                                                         String o1s = o1.getName();
+                                                                                         String o2s = o2.getName();
+                                                                                         if (o1s == null) {
+                                                                                             o1s = "";
+                                                                                         }
+                                                                                         if (o2s == null) {
+                                                                                             o2s = "";
+                                                                                         }
+                                                                                         return o1s.compareToIgnoreCase(o2s);
+
+                                                                                     }
+                                                                                 };
+    public static final Comparator<CrawledLink>            SORTER_DESC           = new Comparator<CrawledLink>() {
+
+                                                                                     @Override
+                                                                                     public int compare(CrawledLink o1, CrawledLink o2) {
+                                                                                         String o1s = o1.getName();
+                                                                                         String o2s = o2.getName();
+                                                                                         if (o1s == null) {
+                                                                                             o1s = "";
+                                                                                         }
+                                                                                         if (o2s == null) {
+                                                                                             o2s = "";
+                                                                                         }
+                                                                                         return o2s.compareToIgnoreCase(o1s);
+
+                                                                                     }
+                                                                                 };
     private boolean                                        autoExtractionEnabled = true;
 
     private ArrayList<CrawledLink>                         children;
@@ -36,9 +70,12 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private HashSet<String>                                extractionPasswords   = new HashSet<String>();
     protected CrawledPackageView                           view;
 
+    private Comparator<CrawledLink>                        sorter;
+
     public CrawledPackage() {
         children = new ArrayList<CrawledLink>();
         view = new CrawledPackageView();
+        sorter = SORTER_ASC;
     }
 
     public void copyPropertiesTo(CrawledPackage dest) {
@@ -47,6 +84,14 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         dest.comment = comment;
         if (this.isDownloadFolderSet()) dest.setDownloadFolder(getRawDownloadFolder());
         dest.getExtractionPasswords().addAll(extractionPasswords);
+    }
+
+    @Override
+    public void sort(Comparator<CrawledLink> comparator) {
+        synchronized (this) {
+            if (comparator != null) sorter = comparator;
+            Collections.sort(children, sorter);
+        }
     }
 
     public List<CrawledLink> getChildren() {
@@ -87,9 +132,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     /**
-     * Returns the raw Downloadfolder String. This link may contain wildcards
-     * like <jd:packagename>. Use {@link #getDownloadFolder()} to return the
-     * actuall downloadloadfolder
+     * Returns the raw Downloadfolder String. This link may contain wildcards like <jd:packagename>. Use {@link #getDownloadFolder()} to
+     * return the actuall downloadloadfolder
      * 
      * @return
      */
@@ -179,6 +223,11 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         synchronized (this) {
             return children.indexOf(child);
         }
+    }
+
+    @Override
+    public Comparator<CrawledLink> getCurrentSorter() {
+        return sorter;
     }
 
 }

@@ -125,7 +125,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 for (ShutdownVetoException ex : vetos) {
                     if (this == ex.getSource()) return;
                 }
-                /* none of the exceptions belong to us, so we can decrement the shutdownRequests */
+                /*
+                 * none of the exceptions belong to us, so we can decrement the
+                 * shutdownRequests
+                 */
                 shutdownRequests.decrementAndGet();
             }
 
@@ -134,7 +137,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (vetos.length > 0) {
                     /* we already abort shutdown, no need to ask again */
                     /*
-                     * we need this ShutdownVetoException here to avoid count issues with shutdownRequests
+                     * we need this ShutdownVetoException here to avoid count
+                     * issues with shutdownRequests
                      */
                     throw new ShutdownVetoException("Shutdown already cancelled!", this);
                 }
@@ -164,7 +168,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (vetos.length > 0) {
                     /* we already abort shutdown, no need to ask again */
                     /*
-                     * we need this ShutdownVetoException here to avoid count issues with shutdownRequests
+                     * we need this ShutdownVetoException here to avoid count
+                     * issues with shutdownRequests
                      */
                     throw new ShutdownVetoException("Shutdown already cancelled!", this);
                 }
@@ -185,7 +190,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 while (retry > 0) {
                     if (!LinkChecker.isChecking() && !LinkCrawler.isCrawling()) {
                         /*
-                         * we wait till the LinkCollector is finished or max 10 secs
+                         * we wait till the LinkCollector is finished or max 10
+                         * secs
                          */
                         break;
                     }
@@ -352,7 +358,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
                 if (newName != null && !name.equals(newName)) {
                     /*
-                     * we do not force a filename if newName equals to name set by plugin!
+                     * we do not force a filename if newName equals to name set
+                     * by plugin!
                      */
                     link.getDownloadLink().forceFileName(newName);
                 }
@@ -361,6 +368,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     private void addCrawledLink(final CrawledLink link) {
+
         /* try to find good matching package or create new one */
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
@@ -373,16 +381,16 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
                 packageMap.put(identifier, pkg);
                 if (links != null && links.size() > 0) {
-                    LinkCollector.this.addmoveChildren(pkg, links, -1);
+                    LinkCollector.this.moveOrAddAt(pkg, links, -1);
                 }
                 // check of we have matching links in offline maper
                 ArrayList<CrawledLink> list = offlineMap.remove(identifier);
                 if (list != null && list.size() > 0) {
-                    LinkCollector.this.addmoveChildren(pkg, list, -1);
+                    LinkCollector.this.moveOrAddAt(pkg, list, -1);
                 }
                 list = variousMap.remove(identifier);
                 if (list != null && list.size() > 0) {
-                    LinkCollector.this.addmoveChildren(pkg, list, -1);
+                    LinkCollector.this.moveOrAddAt(pkg, list, -1);
                 }
             }
 
@@ -470,7 +478,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                     CrawledPackage existing = newMap.get(newID);
 
                                     if (existing != null) {
-                                        addmoveChildren(next.getValue(), existing.getChildren(), -1);
+                                        moveOrAddAt(next.getValue(), existing.getChildren(), -1);
                                     }
                                     newMap.put(newID, next.getValue());
                                 }
@@ -481,7 +489,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 CrawledPackage current = packageMap.remove(next.getKey());
 
                                 if (current != null) {
-                                    addmoveChildren(current, next.getValue().getChildren(), -1);
+                                    moveOrAddAt(current, next.getValue().getChildren(), -1);
                                 } else {
                                     packageMap.put(next.getKey(), next.getValue());
                                 }
@@ -503,14 +511,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             getPermanentOfflineCrawledPackage();
                             List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                             add.add(link);
-                            LinkCollector.this.addmoveChildren(getPermanentOfflineCrawledPackage(), add, -1);
+                            LinkCollector.this.moveOrAddAt(getPermanentOfflineCrawledPackage(), add, -1);
                         } else if (!ignoreSpecialPackages && link.getLinkState() == LinkState.OFFLINE && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.OFFLINE_PACKAGE_ENABLED.getValue()) {
                             getOfflineCrawledPackage();
                             ArrayList<CrawledLink> list = getIdentifiedMap(identifier, offlineMap);
                             list.add(link);
                             List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                             add.add(link);
-                            LinkCollector.this.addmoveChildren(getOfflineCrawledPackage(), add, -1);
+                            LinkCollector.this.moveOrAddAt(getOfflineCrawledPackage(), add, -1);
                         } else if (!ignoreSpecialPackages && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue() > 0) {
                             getVariousCrawledPackage();
                             ArrayList<CrawledLink> list = getIdentifiedMap(identifier, variousMap);
@@ -520,7 +528,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             } else {
                                 List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                                 add.add(link);
-                                LinkCollector.this.addmoveChildren(getVariousCrawledPackage(), add, -1);
+                                LinkCollector.this.moveOrAddAt(getVariousCrawledPackage(), add, -1);
                             }
                         } else {
                             ArrayList<CrawledLink> add = new ArrayList<CrawledLink>(1);
@@ -530,7 +538,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     } else {
                         List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                         add.add(link);
-                        LinkCollector.this.addmoveChildren(pkg, add, -1);
+                        LinkCollector.this.moveOrAddAt(pkg, add, -1);
                     }
                     eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ADDED_LINK, link, QueuePriority.NORM));
                     return null;
@@ -701,7 +709,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             lc.setHandler(this);
             String jobText = job.getText();
             /*
-             * we don't want to keep reference on text during the whole link grabbing/checking/collecting way
+             * we don't want to keep reference on text during the whole link
+             * grabbing/checking/collecting way
              */
             job.setText(null);
             lc.crawl(jobText, null, job.isDeepAnalyse());
@@ -749,7 +758,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     /*
      * converts a CrawledPackage into a FilePackage
      * 
-     * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
+     * if plinks is not set, then the original children of the CrawledPackage
+     * will get added to the FilePackage
      * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
@@ -772,7 +782,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 DownloadLink dl = link.getDownloadLink();
                 if (dl != null) {
                     /*
-                     * change filename if it is different than original downloadlink
+                     * change filename if it is different than original
+                     * downloadlink
                      */
                     if (link.isNameSet()) dl.forceFileName(link.getName());
                     /* set correct enabled/disabled state */
@@ -1198,7 +1209,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         if (!StringUtils.isEmpty(oldJDRoot)) {
                             String newRoot = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
                             /*
-                             * convert pathes relative to JDownloader root,only in jared version
+                             * convert pathes relative to JDownloader root,only
+                             * in jared version
                              */
                             for (CrawledPackage pkg : ret2) {
                                 if (!CrossSystem.isAbsolutePath(pkg.getDownloadFolder())) {
@@ -1292,7 +1304,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         zip.addByteArry(check.getBytes("UTF-8"), true, "", getCheckFileName());
                         try {
                             /*
-                             * add current JDRoot directory to savefile so we can convert pathes if needed
+                             * add current JDRoot directory to savefile so we
+                             * can convert pathes if needed
                              */
                             String currentROOT = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
                             zip.addByteArry(currentROOT.getBytes("UTF-8"), true, "", getJDRootFileName());
@@ -1337,7 +1350,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     /**
-     * save the current CrawledPackages/CrawledLinks controlled by this LinkCollector
+     * save the current CrawledPackages/CrawledLinks controlled by this
+     * LinkCollector
      */
     public void saveLinkCollectorLinks() {
         if (isSaveAllowed() == false) return;
