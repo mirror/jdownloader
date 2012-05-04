@@ -119,14 +119,20 @@ public class CrhyRllCom extends PluginForDecrypt {
             final String title = vidSeries + "-" + vidEpisode + vidTitle;
 
             // Get the link to the XML file
-            final String configUrlSearch = this.br.getRegex("\"config_url\":\"(.+?)\"").getMatch(0);
-            final String configUrlDecode = Encoding.htmlDecode(configUrlSearch);
+            final Regex configUrlSearch = this.br.getRegex("\"config_url\":\"(.+?)\"");
+            if (!configUrlSearch.matches()) { throw new DecrypterException("Failed to get config url"); }
+
+            final String configUrlDecode = Encoding.htmlDecode(configUrlSearch.getMatch(0));
             final Regex configUrl = new Regex(configUrlDecode, CrhyRllCom.CONFIG_URL);
+            if (!configUrl.matches()) { throw new DecrypterException("Invalid config url"); }
 
             // Get the link to the SWF file
-            final String swfUrlSearch = this.br.getRegex("swfobject.embedSWF\\(\"(.*?)\"").getMatch(0).replaceAll("\\\\/", "/");
-            final String swfUrlDecode = Encoding.htmlDecode(swfUrlSearch);
+            final Regex swfUrlSearch = this.br.getRegex("swfobject.embedSWF\\(\"(.*?)\"");
+            if (!swfUrlSearch.matches()) { throw new DecrypterException("Failed to get SWF url"); }
+
+            final String swfUrlDecode = Encoding.htmlDecode(swfUrlSearch.getMatch(0).replaceAll("\\\\/", "/"));
             final Regex swfUrl = new Regex(swfUrlDecode, CrhyRllCom.SWF_URL);
+            if (!swfUrl.matches()) { throw new DecrypterException("Invalid SWF url"); }
 
             // Find the available qualities by looking for the buttons
             final String[] qualities = this.br.getRegex("\\?p([0-9]+)=1").getColumn(0);
