@@ -90,5 +90,6 @@
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-core.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-mapper.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/miglayout.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/bcprov-jdk15on-147.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
