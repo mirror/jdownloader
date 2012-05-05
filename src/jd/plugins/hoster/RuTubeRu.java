@@ -51,7 +51,7 @@ public class RuTubeRu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String linkurl = br.getRegex("player.swf\\?buffer_first=1\\.0&file=(.*?)&xurl").getMatch(0);
+        String linkurl = br.getRegex("player\\.swf\\?buffer_first=1\\.0\\&file=(.*?)\\&xurl").getMatch(0);
         if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         linkurl = Encoding.urlDecode(linkurl, true);
         final String video_id = linkurl.substring(linkurl.lastIndexOf("/") + 1, linkurl.lastIndexOf("."));
@@ -59,8 +59,13 @@ public class RuTubeRu extends PluginForHost {
         linkurl = linkurl + "?referer=" + Encoding.urlEncode(downloadLink.getDownloadURL() + "?v=" + video_id);
         br.getPage(linkurl);
         linkurl = br.getRegex("\\[CDATA\\[(.*?)\\]").getMatch(0);
-        if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        if (linkurl.startsWith("rtmp:")) {
+        if (linkurl == null) {
+            // Enable if RTMP download is possible
+            br.getPage("http://bl.rutube.ru/" + video_id + ".f4m");
+            linkurl = br.getRegex("<media url=\"(/rutube[^<>\"]*?)\"").getMatch(0);
+        }
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (linkurl.startsWith("rtmp:") || br.containsHTML("<baseURL>rtmp://")) {
             try {
                 dl = new RTMPDownload(this, downloadLink, linkurl);
                 final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
