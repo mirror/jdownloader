@@ -277,7 +277,6 @@ public class JumboFilesCom extends PluginForHost {
                 }
             }
         }
-        ;
     }
 
     private void handleErrors() throws PluginException {

@@ -20,49 +20,33 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sdx.cc" }, urls = { "http://[\\w\\.]*?sdx\\.cc/infusions/(pro_download_panel|user_uploads)/download\\.php\\?did=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sdx.cc" }, urls = { "http://(www\\.)?sdx\\.cc/downloads_detail\\.php\\?download_id=\\d+" }, flags = { 0 })
 public class SdxCc extends PluginForDecrypt {
 
     public SdxCc(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.getPage(cryptedLink.toString());
-        String pw = br.getRegex("Passwort:<br.*?/>(.*?)</td>").getMatch(0);
+        final String parameter = cryptedLink.toString();
+        br.getPage(parameter);
+        String pw = br.getRegex("<tr>[\t\n\r ]+<td align=\"center\" valign=\"top\" width=\"20%\">([^<>\"]*?)</td>").getMatch(0);
         pw = pw != null ? pw.trim() : "sdx.cc";
-        br.setFollowRedirects(false);
-        for (String link : br.getRegex("align='center'.*?><a href=\"(.*?file.+?)\"").getColumn(0)) {
-            Browser brc = br.cloneBrowser();
-            brc.getPage(link);
-            String red = brc.getRedirectLocation();
-            decryptedLinks.add(createDownloadlink(red));
-        }
-
-        String[] links = br.getRegex("<center><a href='(.*?)'").getColumn(0);
+        String[] links = br.getRegex("\\'(http://(www\\.)?relink\\.us/(f/|view\\.php\\?id=)[a-z0-9]+)\\'").getColumn(0);
         for (String link : links) {
             decryptedLinks.add(createDownloadlink(link));
         }
-        links = br.getRegex("<br />.*?<a href='(http.*?)'").getColumn(0);
-        for (String link : links) {
-            decryptedLinks.add(createDownloadlink(link));
-        }
-
         for (DownloadLink dlLink : decryptedLinks) {
             dlLink.addSourcePluginPassword(pw);
             dlLink.setDecrypterPassword(pw);
         }
         return decryptedLinks.size() > 0 ? decryptedLinks : null;
     }
-
-    // @Override
 
 }

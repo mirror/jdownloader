@@ -34,7 +34,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axifile.com" }, urls = { "http://(www\\.)?axifile\\.com/en/[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axifile.com" }, urls = { "http://(www\\.)?axifile\\.com/(en/|\\?)[A-Z0-9]+" }, flags = { 0 })
 public class AxiFileCom extends PluginForHost {
     private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
     private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
@@ -43,6 +43,10 @@ public class AxiFileCom extends PluginForHost {
 
     public AxiFileCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("axifile.com/?)", "axifile.com/en/"));
     }
 
     private String findLink() throws Exception {

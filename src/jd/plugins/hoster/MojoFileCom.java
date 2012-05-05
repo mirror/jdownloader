@@ -270,8 +270,7 @@ public class MojoFileCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        // 1 dl starts->30 minute waittime->2nd possible->And so on
-        return -1;
+        return 1;
     }
 
     /** This removes fake messages which can kill the plugin */

@@ -47,6 +47,8 @@ public class IFileIt extends PluginForHost {
     private int                 MAXFREECHUNKS           = 0;
     private static final String ONLY4REGISTERED         = "You need to be a registered user in order to download this file";
     private static final String ONLY4REGISTEREDUSERTEXT = JDL.LF("plugins.hoster.ifileit.only4registered", "Only downloadable for registered users");
+    private static final String NOCHUNKS                = null;
+    private static final String NORESUME                = null;
 
     public IFileIt(final PluginWrapper wrapper) {
         super(wrapper);
@@ -88,13 +90,35 @@ public class IFileIt extends PluginForHost {
         }
         dllink = dllink.replace("\\", "");
         br.setFollowRedirects(false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, MAXFREECHUNKS);
+        int chunks = MAXFREECHUNKS;
+        if (downloadLink.getBooleanProperty(IFileIt.NOCHUNKS, false) || resume == false) {
+            chunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+                if (downloadLink.getBooleanProperty(IFileIt.NORESUME, false) == false) {
+                    downloadLink.setChunksProgress(null);
+                    downloadLink.setProperty(IFileIt.NORESUME, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            } else {
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(IFileIt.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(IFileIt.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        }
     }
 
     @Override

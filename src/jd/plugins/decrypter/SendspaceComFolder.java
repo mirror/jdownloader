@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Sendspace.com folder" }, urls = { "http://[\\w\\.]*?sendspace\\.com/folder/[0-9a-zA-Z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Sendspace.com folder" }, urls = { "http://(www\\.)?sendspace\\.com/folder/[0-9a-zA-Z]+" }, flags = { 0 })
 public class SendspaceComFolder extends PluginForDecrypt {
 
     public SendspaceComFolder(PluginWrapper wrapper) {
@@ -33,8 +33,13 @@ public class SendspaceComFolder extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        br.getPage(param.getCryptedUrl());
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
+        br.getPage(parameter);
+        if (br.containsHTML("(404 Page Not Found|It has either been moved)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String[] files = br.getRegex("<td class=\"dl\" nowrap><a href=\"(.*?)\" title=").getColumn(0);
         for (String file : files) {
             decryptedLinks.add(createDownloadlink(file));
