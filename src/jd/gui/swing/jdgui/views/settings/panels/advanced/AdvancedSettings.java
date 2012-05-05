@@ -127,22 +127,22 @@ public class AdvancedSettings extends AbstractConfigPanel implements DocumentLis
 
     @Override
     public void updateContents() {
-        delayedRefresh.delayedrun();
+        delayedRefresh.resetAndStart();
     }
 
     public void insertUpdate(DocumentEvent e) {
-        delayedRefresh.run();
+        delayedRefresh.resetAndStart();
     }
 
     public void removeUpdate(DocumentEvent e) {
-        delayedRefresh.run();
+        delayedRefresh.resetAndStart();
     }
 
     public void changedUpdate(DocumentEvent e) {
-        delayedRefresh.run();
+        delayedRefresh.resetAndStart();
     }
 
     public void onAdvancedConfigUpdate() {
-        delayedRefresh.run();
+        delayedRefresh.resetAndStart();
     }
 }

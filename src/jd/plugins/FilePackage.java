@@ -116,7 +116,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     /**
-     * returns defaultFilePackage, used only to avoid NullPointerExceptions, you cannot add/remove links in it
+     * returns defaultFilePackage, used only to avoid NullPointerExceptions, you
+     * cannot add/remove links in it
      * 
      * @return
      */
@@ -184,7 +185,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     /**
-     * private constructor for FilePackage, sets created timestamp and downloadDirectory
+     * private constructor for FilePackage, sets created timestamp and
+     * downloadDirectory
      */
     private FilePackage() {
         uniqueID = new UniqueSessionID();
@@ -196,7 +198,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     /**
-     * restore this FilePackage from an ObjectInputStream and do some conversations, restoring some transient variables
+     * restore this FilePackage from an ObjectInputStream and do some
+     * conversations, restoring some transient variables
      * 
      * @param stream
      * @throws IOException
@@ -228,7 +231,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     /**
-     * add given DownloadLink to this FilePackage. delegates the call to DownloadControllerInterface if it is set
+     * add given DownloadLink to this FilePackage. delegates the call to
+     * DownloadControllerInterface if it is set
      * 
      * @param link
      */
@@ -237,7 +241,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     /**
-     * add the given DownloadLinks to this FilePackage. delegates the call to the DownloadControllerInterface if it is set
+     * add the given DownloadLinks to this FilePackage. delegates the call to
+     * the DownloadControllerInterface if it is set
      * 
      * @param links
      */
@@ -247,7 +252,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     /**
-     * add the given DownloadLinks to this FilePackage. delegates the call to the DownloadControllerInterface if it is set
+     * add the given DownloadLinks to this FilePackage. delegates the call to
+     * the DownloadControllerInterface if it is set
      * 
      * @param links
      */
@@ -269,11 +275,16 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     @Override
-    public void sort(Comparator<DownloadLink> comparator) {
+    public void sort() {
         synchronized (this) {
-            if (comparator != null) sorter = comparator;
+            if (sorter == null) return;
             Collections.sort(downloadLinkList, sorter);
         }
+    }
+
+    @Override
+    public void setCurrentSorter(Comparator<DownloadLink> comparator) {
+        sorter = comparator;
     }
 
     /**
@@ -338,7 +349,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     /**
-     * remove the given DownloadLinks from this FilePackage. delegates remove call to DownloadControllerInterface if it is set
+     * remove the given DownloadLinks from this FilePackage. delegates remove
+     * call to DownloadControllerInterface if it is set
      * 
      * @param link
      */
@@ -349,7 +361,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
                 for (DownloadLink link : links) {
                     if ((this.downloadLinkList.remove(link))) {
                         /*
-                         * set FilePackage to null if the link was controlled by this FilePackage
+                         * set FilePackage to null if the link was controlled by
+                         * this FilePackage
                          */
                         if (link.getFilePackage() == this) link._setFilePackage(null);
                     }
