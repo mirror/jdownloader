@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -49,24 +49,36 @@ public class TeraFilesNet extends PluginForHost {
         if (fileID == null || sessID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.terafiles.net/ftp_download.php?id=" + fileID + "&sessdl=" + sessID);
         if (br.containsHTML("Warning</b>:  include(includes-download/captcha_error\\.php)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l);
-        String dllink = br.getRegex("<META HTTP-EQUIV=\"Refresh\" CONTENT=\"\\d+;URL=(ftp://.*?)\">").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex(">Connexion au serveur FTP en cours\\. Merci de patienter\\.<br /><a href=\"(ftp://.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("\"(ftp://ftpuser.*?@srv\\d+\\.terafiles\\.net/dl/[a-z0-9]+/.*?)\"").getMatch(0);
+        String http_dl = br.getRegex("<a href=\"(http[^\"]+)\">ce second lien</a>").getMatch(0);
+        if (http_dl != null) {
+            // http method preferred as chunks are possible!
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, http_dl, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        try {
-            ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(Encoding.urlDecode(dllink, true), downloadLink, false);
-        } catch (InterruptedIOException e) {
-            if (downloadLink.isAborted()) return;
-            throw e;
-        } catch (IOException e) {
-            if (e.toString().contains("maximum number of clients")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-            } else
+            dl.startDownload();
+        } else {
+            String ftp_dl = br.getRegex("<META HTTP-EQUIV=\"Refresh\" CONTENT=\"\\d+;URL=(ftp://.*?)\">").getMatch(0);
+            if (ftp_dl == null) {
+                ftp_dl = br.getRegex(">Connexion au serveur FTP en cours\\. Merci de patienter\\.<br /><a href=\"(ftp://.*?)\"").getMatch(0);
+                if (ftp_dl == null) {
+                    ftp_dl = br.getRegex("\"(ftp://ftpuser.*?@srv\\d+\\.terafiles\\.net/dl/[a-z0-9]+/.*?)\"").getMatch(0);
+                }
+            }
+            if (ftp_dl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            try {
+                ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(Encoding.urlDecode(ftp_dl, true), downloadLink, false);
+            } catch (InterruptedIOException e) {
+                if (downloadLink.isAborted()) return;
                 throw e;
+            } catch (IOException e) {
+                if (e.toString().contains("maximum number of clients")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+                } else
+                    throw e;
+            }
         }
     }
 
