@@ -2,16 +2,17 @@ package jd.controlling.linkcrawler;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.ChildComparator;
 import jd.controlling.packagecontroller.PackageController;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.settings.GeneralSettings;
@@ -20,9 +21,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     protected static final String                          PACKAGETAG            = "<jd:" + PackagizerController.PACKAGENAME + ">";
 
-    public static final Comparator<CrawledLink>            SORTER_ASC            = new Comparator<CrawledLink>() {
+    public static final ChildComparator<CrawledLink>       SORTER_ASC            = new ChildComparator<CrawledLink>() {
 
-                                                                                     @Override
                                                                                      public int compare(CrawledLink o1, CrawledLink o2) {
                                                                                          String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
                                                                                          String o2s = o2.getName().toLowerCase(Locale.ENGLISH);
@@ -35,10 +35,19 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
                                                                                          return o1s.compareTo(o2s);
 
                                                                                      }
-                                                                                 };
-    public static final Comparator<CrawledLink>            SORTER_DESC           = new Comparator<CrawledLink>() {
 
                                                                                      @Override
+                                                                                     public String getID() {
+                                                                                         return "jd.controlling.linkcrawler.CrawledPackage";
+                                                                                     }
+
+                                                                                     @Override
+                                                                                     public boolean isAsc() {
+                                                                                         return true;
+                                                                                     }
+                                                                                 };
+    public static final ChildComparator<CrawledLink>       SORTER_DESC           = new ChildComparator<CrawledLink>() {
+
                                                                                      public int compare(CrawledLink o1, CrawledLink o2) {
                                                                                          String o1s = o1.getName();
                                                                                          String o2s = o2.getName();
@@ -50,6 +59,16 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
                                                                                          }
                                                                                          return o2s.compareToIgnoreCase(o1s);
 
+                                                                                     }
+
+                                                                                     @Override
+                                                                                     public String getID() {
+                                                                                         return "jd.controlling.linkcrawler.CrawledPackage";
+                                                                                     }
+
+                                                                                     @Override
+                                                                                     public boolean isAsc() {
+                                                                                         return false;
                                                                                      }
                                                                                  };
     private boolean                                        autoExtractionEnabled = true;
@@ -71,12 +90,14 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private HashSet<String>                                extractionPasswords   = new HashSet<String>();
     protected CrawledPackageView                           view;
 
-    private Comparator<CrawledLink>                        sorter;
+    private ChildComparator<CrawledLink>                   sorter;
 
     public CrawledPackage() {
         children = new ArrayList<CrawledLink>();
         view = new CrawledPackageView();
-        sorter = SORTER_ASC;
+        if (JsonConfig.create(GeneralSettings.class).isAutoSortChildrenEnabled()) {
+            sorter = SORTER_ASC;
+        }
     }
 
     public void copyPropertiesTo(CrawledPackage dest) {
@@ -228,12 +249,22 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     @Override
-    public Comparator<CrawledLink> getCurrentSorter() {
+    public ChildComparator<CrawledLink> getCurrentSorter() {
         return sorter;
     }
 
     @Override
-    public void setCurrentSorter(Comparator<CrawledLink> comparator) {
+    public void setCurrentSorter(ChildComparator<CrawledLink> comparator) {
+
+        if (comparator != null) {
+            if (comparator.isAsc()) {
+                Log.L.info("Sort ASC " + comparator.getID());
+            } else {
+                Log.L.info("Sort DESC " + comparator.getID());
+            }
+        } else {
+            Log.L.info("UNSORTED");
+        }
         sorter = comparator;
     }
 

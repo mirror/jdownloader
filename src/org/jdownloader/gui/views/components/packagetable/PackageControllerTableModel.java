@@ -2,7 +2,6 @@ package org.jdownloader.gui.views.components.packagetable;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,6 +13,7 @@ import javax.swing.Icon;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.ChildComparator;
 import jd.controlling.packagecontroller.PackageController;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -127,7 +127,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         refreshModel(true);
     }
 
-    public void sortPackageChildren(final AbstractPackageNode pkg, Comparator<ChildrenType> comparator) {
+    public void sortPackageChildren(final AbstractPackageNode pkg, ChildComparator<ChildrenType> comparator) {
         pc.sortPackageChildren((PackageType) pkg, comparator);
     }
 

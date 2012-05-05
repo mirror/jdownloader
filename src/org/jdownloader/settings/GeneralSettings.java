@@ -253,6 +253,12 @@ public interface GeneralSettings extends ConfigInterface {
     @DefaultBooleanValue(false)
     boolean isUseOriginalLastModified();
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isAutoSortChildrenEnabled();
+
+    void setAutoSortChildrenEnabled(boolean b);
+
     void setAddNewLinksOnTop(boolean selected);
 
     void setAutoaddLinksAfterLinkcheck(boolean selected);

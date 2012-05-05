@@ -2,11 +2,11 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
-import java.util.Comparator;
 
 import jd.controlling.IOEQ;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.ChildComparator;
 
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
@@ -25,7 +25,6 @@ public class SortAction extends AppAction {
     private ExtColumn<AbstractNode> column;
     private ArrayList<AbstractNode> selection2;
     private AbstractNode            contextObject;
-    private static String           sortOrder        = null;
 
     public SortAction(AbstractNode contextObject, ArrayList<AbstractNode> selection2, ExtColumn<AbstractNode> column2) {
         this.column = column2;
@@ -44,25 +43,55 @@ public class SortAction extends AppAction {
             @Override
             protected Void run() throws RuntimeException {
                 ArrayList<AbstractPackageNode> selection = LinkTreeUtils.getPackages(contextObject, selection2, new ArrayList<AbstractPackageNode>());
-                if (sortOrder == null || ExtColumn.SORT_DESC == sortOrder) {
-                    sortOrder = ExtColumn.SORT_ASC;
-                } else {
-                    sortOrder = ExtColumn.SORT_DESC;
-                }
+
                 if (column.getModel() instanceof PackageControllerTableModel) {
                     PackageControllerTableModel model = (PackageControllerTableModel) column.getModel();
-                    Comparator<AbstractNode> comparator = new Comparator<AbstractNode>() {
 
-                        public int compare(AbstractNode o1, AbstractNode o2) {
-                            if (ExtColumn.SORT_ASC == sortOrder) {
-                                return column.getRowSorter().compare(o2, o1);
-                            } else {
-                                return column.getRowSorter().compare(o1, o2);
-                            }
-                        }
-                    };
+                    ChildComparator<AbstractNode> comparator = null;
                     for (AbstractNode node : selection) {
                         if (node instanceof AbstractPackageNode) {
+                            if (comparator == null) {
+                                if (((AbstractPackageNode) node).getCurrentSorter() == null || !((AbstractPackageNode) node).getCurrentSorter().getID().equals(column.getModel().getModelID() + ".Column." + column.getID()) || ((AbstractPackageNode) node).getCurrentSorter().isAsc()) {
+                                    comparator = new ChildComparator<AbstractNode>() {
+
+                                        public int compare(AbstractNode o1, AbstractNode o2) {
+
+                                            return column.getRowSorter().compare(o2, o1);
+
+                                        }
+
+                                        @Override
+                                        public String getID() {
+                                            return column.getModel().getModelID() + ".Column." + column.getID();
+                                        }
+
+                                        @Override
+                                        public boolean isAsc() {
+                                            return false;
+                                        }
+                                    };
+
+                                } else {
+                                    comparator = new ChildComparator<AbstractNode>() {
+
+                                        public int compare(AbstractNode o1, AbstractNode o2) {
+
+                                            return column.getRowSorter().compare(o1, o2);
+
+                                        }
+
+                                        @Override
+                                        public String getID() {
+                                            return column.getModel().getModelID() + ".Column." + column.getID();
+                                        }
+
+                                        @Override
+                                        public boolean isAsc() {
+                                            return true;
+                                        }
+                                    };
+                                }
+                            }
                             model.sortPackageChildren((AbstractPackageNode) node, comparator);
                         }
                     }

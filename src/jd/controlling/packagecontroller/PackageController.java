@@ -2,7 +2,6 @@ package jd.controlling.packagecontroller;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -56,7 +55,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         addmovePackageAt(pkg, index, false);
     }
 
-    public void sortPackageChildren(final PackageType pkg, final Comparator<ChildType> comparator) {
+    public void sortPackageChildren(final PackageType pkg, final ChildComparator<ChildType> comparator) {
         if (pkg != null && comparator != null) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
@@ -316,24 +315,30 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     public void moveOrAddAt(final PackageType pkg, final List<ChildType> movechildren, final int index) {
         if (pkg != null && movechildren != null && movechildren.size() > 0) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
-                protected int search(List<ChildType> pkgchildren, LinkedList<ChildType> elementsToMove, Comparator<ChildType> sorter) {
+                /**
+                 * Kinf of binarysearch to add new links in a sorted list
+                 * 
+                 * @param pkgchildren
+                 * @param elementsToMove
+                 * @param sorter
+                 * @return
+                 */
+                protected int search(List<ChildType> pkgchildren, LinkedList<ChildType> elementsToMove, ChildComparator<ChildType> sorter) {
 
                     int min = 0;
                     int max = pkgchildren.size() - 1;
                     ChildType first = elementsToMove.get(0);
-                    ChildType last = elementsToMove.get(elementsToMove.size() - 1);
+
                     int mid = 0;
+                    int comp;
                     while (min <= max) {
                         if (min == max) return min;
                         mid = (max + min) / 2;
-                        ChildType minValue = pkgchildren.get(min);
-                        ChildType maxValue = pkgchildren.get(max);
                         ChildType midValue = pkgchildren.get(mid);
-                        int c = sorter.compare(first, midValue);
-                        // if c<0 first<midValue
-                        if (c < 0) {
+                        comp = sorter.compare(first, midValue);
+                        if (comp < 0) {
                             max = mid;
-                        } else if (c > 0) {
+                        } else if (comp > 0) {
                             min = mid + 1;
                         } else {
                             return mid;
@@ -407,16 +412,13 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             /* add at wanted position */
                             if (destIndex < 0 || destIndex > pkgchildren.size()) {
                                 /* add at the end */
-                                Comparator<ChildType> sorter = pkg.getCurrentSorter();
+                                ChildComparator<ChildType> sorter = pkg.getCurrentSorter();
                                 if (sorter != null) {
                                     Collections.sort(elementsToMove, sorter);
-                                    int i = search(pkgchildren, elementsToMove, sorter);
-                                    pkgchildren.addAll(i, elementsToMove);
+                                    pkgchildren.addAll(search(pkgchildren, elementsToMove, sorter), elementsToMove);
                                 } else {
                                     pkgchildren.addAll(elementsToMove);
                                 }
-
-                                // TODO: Speed optimization
 
                             } else {
                                 pkg.setCurrentSorter(null);

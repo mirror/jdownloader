@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -31,6 +30,7 @@ import java.util.Set;
 
 import jd.config.Property;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.ChildComparator;
 import jd.controlling.packagecontroller.PackageController;
 
 import org.appwork.utils.StringUtils;
@@ -148,9 +148,9 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         return uniqueID;
     }
 
-    private transient FilePackageView fpInfo = null;
+    private transient FilePackageView     fpInfo = null;
 
-    private Comparator<DownloadLink>  sorter;
+    private ChildComparator<DownloadLink> sorter;
 
     /*
      * (non-Javadoc)
@@ -195,6 +195,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         /* till refactoring is complete */
         this.downloadLinkList = new ArrayList<DownloadLink>();
         setName(null);
+
     }
 
     /**
@@ -283,7 +284,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     @Override
-    public void setCurrentSorter(Comparator<DownloadLink> comparator) {
+    public void setCurrentSorter(ChildComparator<DownloadLink> comparator) {
         sorter = comparator;
     }
 
@@ -534,7 +535,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     @Override
-    public Comparator<DownloadLink> getCurrentSorter() {
+    public ChildComparator<DownloadLink> getCurrentSorter() {
         return sorter;
     }
 

@@ -4,8 +4,13 @@ import java.util.ArrayList;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.ChildComparator;
 
 import org.appwork.storage.Storable;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.utils.logging.Log;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 
 public class CrawledPackageStorable implements Storable {
 
@@ -41,6 +46,81 @@ public class CrawledPackageStorable implements Storable {
 
     public String getComment() {
         return pkg.getComment();
+    }
+
+    public String getSorterId() {
+        if (pkg.getCurrentSorter() == null) return null;
+        boolean asc = pkg.getCurrentSorter().isAsc();
+        return ((asc ? "ASC" : "DSC") + "." + pkg.getCurrentSorter().getID());
+    }
+
+    public void setSorterId(String id) {
+        try {
+            /*
+             * Ugly Restoremethod for the current package sorter
+             */
+            if (id == null) {
+                pkg.setCurrentSorter(null);
+                return;
+            }
+            boolean asc = id.startsWith("ASC.");
+            int index = id.indexOf("Column.");
+            if (id.endsWith("jd.controlling.linkcrawler.CrawledPackage")) {
+                // default sorter
+                pkg.setCurrentSorter(asc ? CrawledPackage.SORTER_ASC : CrawledPackage.SORTER_DESC);
+                return;
+            }
+
+            // Column Sorter
+            String colID = id.substring(index + 7);
+            for (final ExtColumn<AbstractNode> c : LinkGrabberTableModel.getInstance().getColumns()) {
+                if (colID.equals(c.getID())) {
+                    if (asc) {
+                        pkg.setCurrentSorter(new ChildComparator<CrawledLink>() {
+
+                            public int compare(CrawledLink o1, CrawledLink o2) {
+
+                                return c.getRowSorter().compare(o1, o2);
+
+                            }
+
+                            @Override
+                            public String getID() {
+                                return c.getModel().getModelID() + ".Column." + c.getID();
+                            }
+
+                            @Override
+                            public boolean isAsc() {
+                                return true;
+                            }
+                        });
+                    } else {
+                        pkg.setCurrentSorter(new ChildComparator<CrawledLink>() {
+
+                            public int compare(CrawledLink o1, CrawledLink o2) {
+
+                                return c.getRowSorter().compare(o2, o1);
+
+                            }
+
+                            @Override
+                            public String getID() {
+                                return c.getModel().getModelID() + ".Column." + c.getID();
+                            }
+
+                            @Override
+                            public boolean isAsc() {
+                                return false;
+                            }
+                        });
+                    }
+                    break;
+                }
+            }
+        } catch (Throwable t) {
+            Log.exception(t);
+        }
+
     }
 
     public void setComment(String comment) {
