@@ -267,6 +267,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      * Deletes the archive files.
      */
     private void removeArchiveFiles() {
+
         for (ArchiveFile link : archive.getArchiveFiles()) {
             if (removeAfterExtraction) {
                 if (!link.deleteFile()) {

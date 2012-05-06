@@ -25,7 +25,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     private static final CrawlerPluginController INSTANCE = new CrawlerPluginController();
 
     /**
-     * get the only existing instance of HostPluginController. This is a singleton
+     * get the only existing instance of HostPluginController. This is a
+     * singleton
      * 
      * @return
      */
@@ -40,7 +41,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class.
+     * Access the only existing instance by using {@link #getInstance()}.
      */
     private CrawlerPluginController() {
         list = null;
@@ -122,22 +124,27 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                     for (int i = 0; i < names.length; i++) {
                         try {
                             String displayName = new String(names[i]);
-                            AbstractCrawlerPlugin existingPlugin = ret.get(displayName);
+                            AbstractCrawlerPlugin existingPlugin = ret.get(displayName + patterns[i]);
                             if (existingPlugin != null && existingPlugin.getInterfaceVersion() > a.interfaceVersion()) {
-                                /* we already loaded a plugin with higher interfaceVersion, so skip older one */
+                                /*
+                                 * we already loaded a plugin with higher
+                                 * interfaceVersion, so skip older one
+                                 */
                                 continue;
                             }
                             AbstractCrawlerPlugin ap = new AbstractCrawlerPlugin(new String(c.getClazz().getSimpleName()));
                             ap.setDisplayName(displayName);
+
+                            // why new String?
                             ap.setPattern(new String(patterns[i]));
                             ap.setVersion(revision);
                             ap.setInterfaceVersion(a.interfaceVersion());
                             LazyCrawlerPlugin l = new LazyCrawlerPlugin(ap, null, classLoader);
-                            existingPlugin = ret.put(ap.getDisplayName(), ap);
+                            existingPlugin = ret.put(ap.getDisplayName() + ap.getPattern(), ap);
                             if (existingPlugin != null) {
                                 Log.L.finest("@CrawlerPlugin replaced:" + simpleName + " " + names[i]);
                             }
-                            ret2.put(ap.getDisplayName(), l);
+                            ret2.put(ap.getDisplayName() + ap.getPattern(), l);
                             Log.L.finest("@CrawlerPlugin ok:" + simpleName + " " + names[i]);
                         } catch (Throwable e) {
                             Log.L.severe("@CrawlerPlugin failed:" + simpleName + " " + names[i]);

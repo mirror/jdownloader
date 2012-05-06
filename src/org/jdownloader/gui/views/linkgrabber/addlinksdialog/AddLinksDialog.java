@@ -10,8 +10,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
@@ -23,11 +21,14 @@ import java.util.Iterator;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.JScrollPane;
+import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
@@ -41,6 +42,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.app.gui.MigPanel;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
@@ -57,6 +59,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.OffScreenException;
 import org.appwork.utils.swing.dialog.SimpleTextBallon;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
@@ -76,7 +79,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private ExtTextField                        password;
 
-    private JButton                             extractToggle;
+    private ExtCheckBox                         extractToggle;
 
     private JButton                             confirmOptions;
 
@@ -90,6 +93,10 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private DelayedRunnable                     delayedValidate;
     private WindowListener                      listener    = null;
+
+    private ExtTextField                        downloadPassword;
+
+    private JComboBox                           priority;
 
     public boolean isDeepAnalyse() {
         return deepAnalyse;
@@ -114,7 +121,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     @Override
     protected JPanel getDefaultButtonPanel() {
-        final JPanel ret = new JPanel(new MigLayout("ins 0", "[grow,fill][]0[][]", "0[fill]0"));
+        final JPanel ret = new JPanel(new MigLayout("ins 0 0 0 0", "[grow,fill][]0[][]", "0[fill]0"));
 
         confirmOptions = new JButton(new ConfirmOptionsAction(okButton, this)) {
             public void setBounds(int x, int y, int width, int height) {
@@ -148,11 +155,16 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     protected LinkCollectingJob createReturnValue() {
         LinkCollectingJob ret = new LinkCollectingJob();
         ret.setText(input.getText());
-        if (destination.getSelectedIndex() > 0) ret.setOutputFolder(new File(destination.getText()));
+        // if (destination.getSelectedIndex() > 0) {
+        //
+        ret.setOutputFolder(new File(destination.getText()));
+        // }
         ret.setDeepAnalyse(isDeepAnalyse());
         ret.setPackageName(packagename.getText());
-        ret.setAutoExtract(config.isAutoExtractionEnabled());
+        ret.setAutoExtract(this.extractToggle.isSelected());
         ret.setExtractPassword(password.getText());
+        ret.setPriority((Priority) priority.getSelectedItem());
+        ret.setDownloadPassword(downloadPassword.getText());
         if (!StringUtils.isEmpty(ret.getPackageName())) {
             boolean found = false;
             for (PackageHistoryEntry pe : packageHistory) {
@@ -199,7 +211,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     @Override
     public JComponent layoutDialogContent() {
 
-        MigPanel p = new MigPanel("ins 4,wrap 2", "[][grow,fill]", "[fill,grow][][][]");
+        MigPanel p = new MigPanel("ins 0 0 3 0,wrap 3", "[][grow,fill][]", "[fill,grow][grow,24!][grow,24!][grow,24!][grow,24!]");
 
         destination = new SearchComboBox<DownloadPath>() {
 
@@ -299,31 +311,33 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         password = new ExtTextField();
         password.setHelpText(_GUI._.AddLinksDialog_createExtracOptionsPanel_password());
         password.setBorder(BorderFactory.createCompoundBorder(password.getBorder(), BorderFactory.createEmptyBorder(2, 6, 2, 6)));
-        password.addMouseListener(new MouseAdapter() {
 
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                config.setAutoExtractionEnabled(true);
-                updateExtractionOptions();
-                password.requestFocus();
+        priority = new JComboBox(Priority.values());
+        final ListCellRenderer org = priority.getRenderer();
+        priority.setRenderer(new ListCellRenderer() {
+
+            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                JLabel r = (JLabel) org.getListCellRendererComponent(list, ((Priority) value)._(), index, isSelected, cellHasFocus);
+                r.setIcon(((Priority) value).loadIcon(20));
+                return r;
             }
         });
-        extractToggle = new JButton();
+        priority.setSelectedItem(Priority.DEFAULT);
+        downloadPassword = new ExtTextField();
+        downloadPassword.setHelpText(_GUI._.AddLinksDialog_createExtracOptionsPanel_downloadpassword());
+        downloadPassword.setBorder(BorderFactory.createCompoundBorder(downloadPassword.getBorder(), BorderFactory.createEmptyBorder(2, 6, 2, 6)));
 
-        extractToggle.setBorderPainted(false);
-        extractToggle.addActionListener(new ActionListener() {
+        extractToggle = new ExtCheckBox();
+        extractToggle.setSelected(config.isAutoExtractionEnabled());
+        // extractToggle.setBorderPainted(false);
 
-            public void actionPerformed(ActionEvent e) {
-                config.setAutoExtractionEnabled(!config.isAutoExtractionEnabled());
-                updateExtractionOptions();
-            }
-        });
+        extractToggle.setToolTipText(_GUI._.AddLinksDialog_layoutDialogContent_autoextract_tooltip());
         p.add(new JLabel(NewTheme.I().getIcon("linkgrabber", 32)), "aligny top,height 32!,width 32!");
 
-        p.add(sp, "height 30:100:n");
-        p.add(createIconLabel("save", _GUI._.AddLinksDialog_layoutDialogContent_save_tt()), "aligny top,height 32!,width 32!");
-        p.add(destination, "split 2,pushx,growx,height 24!");
-        p.add(browseButton, "height 24!");
+        p.add(sp, "height 30:100:n,spanx");
+        p.add(createIconLabel("save", _GUI._.AddLinksDialog_layoutDialogContent_save_tt()), "aligny center,width 32!");
+        p.add(destination, "height 24!");
+        p.add(browseButton, "sg right");
         browseButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -339,13 +353,25 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
             }
         });
-        p.add(createIconLabel("package_open", _GUI._.AddLinksDialog_layoutDialogContent_package_tt()), "aligny top,height 32!,width 32!");
-        p.add(packagename, "pushx,growx,height 24!");
-        p.add(extractToggle, "aligny top,height 32!,width 32!");
+        p.add(createIconLabel("package_open", _GUI._.AddLinksDialog_layoutDialogContent_package_tt()), "aligny center,width 32!");
+        p.add(packagename, "spanx,height 24!");
+
+        p.add(createIconLabel("archivepassword", _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,height 24!,width 32!");
 
         p.add(password, "pushx,growx,height 24!");
+        MigPanel subpanel = new MigPanel("ins 0", "[grow,fill][]", "[24!,grow]");
 
-        updateExtractionOptions();
+        p.add(subpanel, "sg right");
+        JLabel lbl;
+        subpanel.add(lbl = new JLabel(_GUI._.AddLinksDialog_layoutDialogContent_autoextract_lbl()));
+        lbl.setHorizontalAlignment(SwingConstants.RIGHT);
+        subpanel.add(extractToggle, "aligny center");
+
+        p.add(createIconLabel("downloadpassword", _GUI._.AddLinksDialog_layoutDialogContent_downloadpassword_tt()), "aligny center,width 32!");
+
+        p.add(downloadPassword);
+        p.add(priority, "sg right");
+
         if (Application.getJavaVersion() >= 17000000) {
             J17DragAndDropDelegater dnd = new J17DragAndDropDelegater(input);
             input.setTransferHandler(dnd);
@@ -520,19 +546,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         File file = new File(text);
         if (file.isDirectory() && file.exists()) return true;
         return file.getParentFile() != null && file.getParentFile().exists();
-    }
-
-    private void updateExtractionOptions() {
-        if (config.isAutoExtractionEnabled()) {
-            password.setEnabled(true);
-            extractToggle.setToolTipText(_GUI._.AddLinksDialog_layoutDialogContent_autoextract_tooltip_enabled());
-            extractToggle.setIcon(NewTheme.I().getCheckBoxImage("archive", true, 24));
-
-        } else {
-            extractToggle.setToolTipText(_GUI._.AddLinksDialog_layoutDialogContent_autoextract_tooltip());
-            extractToggle.setIcon(NewTheme.I().getCheckBoxImage("archive", false, 24));
-            password.setEnabled(false);
-        }
     }
 
     private void inform() {

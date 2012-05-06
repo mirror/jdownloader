@@ -3721,4 +3721,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Your Installation of JDownloader is currupt, and cannot be fixed by updating it.\r\nPlease download the latest version at http://jdownloader.org/download and install it." })
     String JDUpdater_run_lasttry_msg_();
 
+    @Default(lngs = { "en" }, values = { "Enter a Password if the Download is Password protected" })
+    String AddLinksDialog_layoutDialogContent_downloadpassword_tt();
+
+    @Default(lngs = { "en" }, values = { "Enter a Password for protected Links" })
+    String AddLinksDialog_createExtracOptionsPanel_downloadpassword();
+
+    @Default(lngs = { "en" }, values = { "Auto Extract" })
+    String AddLinksDialog_layoutDialogContent_autoextract_lbl();
+
 }

@@ -2,10 +2,32 @@ package jd.controlling.linkcollector;
 
 import java.io.File;
 
+import org.jdownloader.controlling.Priority;
+
 public class LinkCollectingJob {
-    private String  text;
-    private String  customSourceUrl;
-    private String  customComment;
+    private String   text;
+    private String   customSourceUrl;
+    private String   customComment;
+    private Priority priority = Priority.DEFAULT;
+
+    public Priority getPriority() {
+        return priority;
+    }
+
+    public void setPriority(Priority priority) {
+        this.priority = priority;
+    }
+
+    private String downloadPassword;
+
+    public String getDownloadPassword() {
+        return downloadPassword;
+    }
+
+    public void setDownloadPassword(String downloadPassword) {
+        this.downloadPassword = downloadPassword;
+    }
+
     private boolean autoStart = false;
 
     public boolean isAutoStart() {
