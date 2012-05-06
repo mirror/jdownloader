@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -43,7 +42,7 @@ public class ClipHunterCom extends PluginForHost {
         super(wrapper);
     }
 
-    public String decryptUrl(final String fun, final String value) throws Exception {
+    public String decryptUrl(final String fun, final String value) {
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine engine = manager.getEngineByName("javascript");
@@ -51,15 +50,33 @@ public class ClipHunterCom extends PluginForHost {
         try {
             engine.eval(fun);
             result = inv.invokeFunction("decrypt", value);
-        } catch (final ScriptException e) {
+        } catch (final Throwable e) {
             return null;
         }
-        return (String) result;
+        return result != null ? result.toString() : null;
     }
 
     @Override
     public String getAGBLink() {
         return "http://www.cliphunter.com/terms/";
+    }
+
+    private String getHighestQuality(final String[] enc, final String dec) {
+        String tmpSr, tmpUrl, out = null;
+        int sr = -1;
+        for (final String s : enc) {
+            tmpUrl = decryptUrl(dec, s);
+            tmpSr = new Regex(tmpUrl, "sr=(\\d+)").getMatch(0);
+            if (tmpSr == null) {
+                continue;
+            }
+            if (sr > Integer.parseInt(tmpSr)) {
+                continue;
+            }
+            sr = Integer.parseInt(tmpSr);
+            out = tmpUrl;
+        }
+        return out;
     }
 
     @Override
@@ -82,23 +99,24 @@ public class ClipHunterCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCookie("cliphunter.com", "qchange", "h");
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("<title>(.*?) -.*?</title>").getMatch(0);
         final String jsUrl = br.getRegex("<script.*src=\"(http://s\\.gexo.*?player\\.js)\"").getMatch(0);
-        final String encryptedUrl = br.getRegex("var pl_fiji_p = '(.*?)'").getMatch(0);
+        final String[] encryptedUrls = br.getRegex("var pl_fiji(_p|_i)? = '(.*?)'").getColumn(1);
         if (filename == null) {
             filename = br.getRegex("<h1 style=\"font-size: 2em;\">(.*?) </h1>").getMatch(0);
         }
-        if (filename == null || jsUrl == null || encryptedUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || jsUrl == null || encryptedUrls == null || encryptedUrls.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         // parse decryptalgo
         final Browser br2 = br.cloneBrowser();
         br2.getPage(jsUrl);
         String decryptAlgo = new Regex(br2, "decrypt\\:function(.*?)\\}\\;var").getMatch(0);
         if (decryptAlgo == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         decryptAlgo = "function decrypt" + decryptAlgo + ";";
-        DLLINK = decryptUrl(decryptAlgo, encryptedUrl);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = getHighestQuality(encryptedUrls, decryptAlgo);
+        if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
