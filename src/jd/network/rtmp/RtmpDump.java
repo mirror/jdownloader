@@ -79,8 +79,9 @@ public class RtmpDump extends RTMPDownload {
     }
 
     /**
-     * Attempt to locate a rtmpdump executable. The local tools folder is searched first, then *nix /usr bin folders. If found, the path will is saved to the
-     * variable RTMPDUMP.
+     * Attempt to locate a rtmpdump executable. The local tools folder is
+     * searched first, then *nix /usr bin folders. If found, the path will is
+     * saved to the variable RTMPDUMP.
      * 
      * @return Whether or not rtmpdump executable was found
      */
@@ -93,24 +94,43 @@ public class RtmpDump extends RTMPDownload {
         } else if (CrossSystem.isMac()) {
             RTMPDUMP = Application.getResource("tools/mac/rtmpdump/rtmpdump").getAbsolutePath();
         }
-        if (RTMPDUMP != null && !new File(RTMPDUMP).exists()) RTMPDUMP = null;
-        if (RTMPDUMP == null && (CrossSystem.isLinux() || CrossSystem.isMac())) {
-            if (RTMPDUMP == null && (RTMPDUMP = "/usr/bin/rtmpdump") != null && !new File(RTMPDUMP).exists()) RTMPDUMP = null;
-            if (RTMPDUMP == null && (RTMPDUMP = "/usr/local/bin/rtmpdump") != null && !new File(RTMPDUMP).exists()) RTMPDUMP = null;
+        if (RTMPDUMP != null && !new File(RTMPDUMP).exists()) {
+            RTMPDUMP = null;
         }
-        if (RTMPDUMP == null) RTMPDUMP = "";
+        if (RTMPDUMP == null && (CrossSystem.isLinux() || CrossSystem.isMac())) {
+            if (RTMPDUMP == null && (RTMPDUMP = "/usr/bin/rtmpdump") != null && !new File(RTMPDUMP).exists()) {
+                RTMPDUMP = null;
+            }
+            if (RTMPDUMP == null && (RTMPDUMP = "/usr/local/bin/rtmpdump") != null && !new File(RTMPDUMP).exists()) {
+                RTMPDUMP = null;
+            }
+        }
+        if (RTMPDUMP == null) {
+            RTMPDUMP = "";
+        }
         return RTMPDUMP.length() > 0;
     }
 
+    private void getProcessId() {
+        try {
+            final Field pidField = P.getClass().getDeclaredField("pid");
+            pidField.setAccessible(true);
+            PID = pidField.getInt(P);
+        } catch (final Exception e) {
+            PID = -1;
+        }
+    }
+
     /**
-     * Attempt to locate a rtmpdump executable and parse the version number from the 'rtmpdump -h' output.
+     * Attempt to locate a rtmpdump executable and parse the version number from
+     * the 'rtmpdump -h' output.
      * 
      * @return The version number of the RTMPDump executable
      */
     public synchronized String getRtmpDumpVersion() throws Exception {
-        if (RTMPVERSION != null) return RTMPVERSION;
+        if (RTMPVERSION != null) { return RTMPVERSION; }
         if (!findRtmpDump()) { throw new Exception("Error " + RTMPDUMP + " not found!"); }
-        String arg = " -h";
+        final String arg = " -h";
         NativeProcess verNP = null;
         Process verP = null;
         InputStreamReader verR = null;
@@ -123,10 +143,10 @@ public class RtmpDump extends RTMPDownload {
                 verR = new InputStreamReader(verP.getErrorStream());
             }
             final BufferedReader br = new BufferedReader(verR);
-            Pattern reg = Pattern.compile("RTMPDump v([0-9.]+)");
+            final Pattern reg = Pattern.compile("RTMPDump v([0-9.]+)");
             String line = null;
             while ((line = br.readLine()) != null) {
-                Matcher match = reg.matcher(line);
+                final Matcher match = reg.matcher(line);
                 if (match.find()) {
                     RTMPVERSION = match.group(1);
                     return RTMPVERSION;
@@ -151,14 +171,9 @@ public class RtmpDump extends RTMPDownload {
         }
     }
 
-    private void getProcessId() {
-        try {
-            final Field pidField = P.getClass().getDeclaredField("pid");
-            pidField.setAccessible(true);
-            PID = pidField.getInt(P);
-        } catch (final Exception e) {
-            PID = -1;
-        }
+    @Override
+    public long getTotalLinkBytesLoadedLive() {
+        return BYTESLOADED;
     }
 
     private void sendSIGINT() {
@@ -319,7 +334,7 @@ public class RtmpDump extends RTMPDownload {
                 downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
             } else {
                 logger.severe("cmd: " + cmd);
-                throw new PluginException(LinkStatus.ERROR_FATAL, error);
+                throw new Exception(error);
             }
             return true;
         } finally {
@@ -334,11 +349,6 @@ public class RtmpDump extends RTMPDownload {
             } catch (final Throwable e) {
             }
         }
-    }
-
-    @Override
-    public long getTotalLinkBytesLoadedLive() {
-        return BYTESLOADED;
     }
 
 }

@@ -54,29 +54,25 @@ public class RuTubeRu extends PluginForHost {
         String linkurl = br.getRegex("player\\.swf\\?buffer_first=1\\.0\\&file=(.*?)\\&xurl").getMatch(0);
         if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         linkurl = Encoding.urlDecode(linkurl, true);
-        final String video_id = linkurl.substring(linkurl.lastIndexOf("/") + 1, linkurl.lastIndexOf("."));
-        linkurl = linkurl.replaceFirst(linkurl.substring(linkurl.lastIndexOf(".") + 1, linkurl.length()), "xml");
-        linkurl = linkurl + "?referer=" + Encoding.urlEncode(downloadLink.getDownloadURL() + "?v=" + video_id);
+        linkurl = linkurl.replaceFirst(linkurl.substring(linkurl.lastIndexOf(".") + 1, linkurl.length()), "f4m");
+
         br.getPage(linkurl);
-        linkurl = br.getRegex("\\[CDATA\\[(.*?)\\]").getMatch(0);
-        if (linkurl == null) {
-            // Enable if RTMP download is possible
-            br.getPage("http://bl.rutube.ru/" + video_id + ".f4m");
-            linkurl = br.getRegex("<media url=\"(/rutube[^<>\"]*?)\"").getMatch(0);
-        }
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (linkurl.startsWith("rtmp:") || br.containsHTML("<baseURL>rtmp://")) {
+        String baseUrl = br.getRegex("<baseURL>(.*?)</baseURL>").getMatch(0);
+        String mediaUrl = br.getRegex("<media url=\"(/rutube[^<>\"]*?)\"").getMatch(0);
+
+        if (baseUrl == null || mediaUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        mediaUrl = Encoding.htmlDecode(mediaUrl);
+
+        if (baseUrl.startsWith("rtmp:")) {
             try {
-                dl = new RTMPDownload(this, downloadLink, linkurl);
+                dl = new RTMPDownload(this, downloadLink, baseUrl + mediaUrl);
                 final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
-                final String playpath = linkurl.substring(linkurl.lastIndexOf("mp4:"));
-                String host = new Regex(linkurl, "(.*?)(rutube.ru/|rutube.ru:1935/)").getMatch(-1);
-                final String app = linkurl.replace(playpath, "").replace(host, "");
-                if (playpath == null || host == null || app == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-                if (host.endsWith("ru/")) {
-                    host = host.replace("ru/", "ru:1935/");
-                }
+                final String playpath = mediaUrl.substring(mediaUrl.lastIndexOf("mp4:"));
+                final String app = mediaUrl.replace(playpath, "").replace("/", "");
+                if (playpath == null || baseUrl == null || app == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                baseUrl = baseUrl.endsWith("ru") ? baseUrl + ":1935" : baseUrl;
+
                 if (app.equals("vod/")) {
                     rtmp.setLive(true);
                 } else {
@@ -84,13 +80,12 @@ public class RuTubeRu extends PluginForHost {
                 }
                 rtmp.setPlayPath(playpath);
                 rtmp.setApp(app);
-                rtmp.setUrl(host + app);
+                rtmp.setUrl(baseUrl + "/" + app);
                 rtmp.setSwfUrl("http://rutube.ru/player.swf");
 
                 ((RTMPDownload) dl).startDownload();
             } catch (final Throwable e) {
-                e.printStackTrace();
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD needed!");
+                throw new PluginException(LinkStatus.ERROR_FATAL, e.getMessage());
             }
         } else {
             br.setFollowRedirects(true);
@@ -111,23 +106,30 @@ public class RuTubeRu extends PluginForHost {
         // embeded links (md5 hash)
         if (downloadLink.getDownloadURL().matches("http://[\\w\\.]*?rutube\\.ru/[a-z0-9]{32}")) {
             if (br.getRedirectLocation() != null) {
-                String redirect = Encoding.urlDecode(new Regex(br.getRedirectLocation(), "(.*)").getMatch(0), false);
-                String xml = new Regex(redirect, "xurl=(http[^\\&]+)").getMatch(0);
-                if (xml == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final String redirect = Encoding.urlDecode(new Regex(br.getRedirectLocation(), "(.*)").getMatch(0), false);
+                final String xml = new Regex(redirect, "xurl=(http[^\\&]+)").getMatch(0);
+                if (xml == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 br.getPage(xml);
                 String trackURL = br.getRegex("<location_url>(https?://([\\w\\.]+)?rutube\\.ru/tracks/\\d+\\.html)").getMatch(0);
-                if (trackURL == null) trackURL = br.getRegex("<track_url>(https?://([\\w\\.]+)?rutube\\.ru/tracks/\\d+\\.html)").getMatch(0);
-                if (trackURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (trackURL == null) {
+                    trackURL = br.getRegex("<track_url>(https?://([\\w\\.]+)?rutube\\.ru/tracks/\\d+\\.html)").getMatch(0);
+                }
+                if (trackURL == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 br.getPage(trackURL);
-            } else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         if (br.getRedirectLocation() != null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final String fsk18 = br.getRegex("<p><b>.*?18.*?href=\"(http://rutube.ru/.*?confirm=.*?)\"").getMatch(0);
-        if (fsk18 != null) br.getPage(fsk18);
+        if (fsk18 != null) {
+            br.getPage(fsk18);
+        }
         br.setFollowRedirects(true);
         String filename = br.getRegex("class=\"trackTitleLnk\">([^<>\"]*?)</a></h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("type=\"hidden\" name=\"subject\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("type=\"hidden\" name=\"subject\" value=\"([^<>\"]*?)\"").getMatch(0);
+        }
         final String filesize = br.getRegex("<span class=\"icn\\-size\"[^>]*>(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         filename = filename.replaceFirst("::", "-");
