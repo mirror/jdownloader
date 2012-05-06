@@ -2,7 +2,9 @@ package org.jdownloader.extensions.extraction.bindings.downloadlink;
 
 import java.awt.Color;
 import java.io.File;
+import java.util.ArrayList;
 
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginProgress;
@@ -44,8 +46,10 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         return !downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS);
     }
 
-    public boolean delete() {
+    public boolean deleteFile() {
+
         return new File(downloadLink.getFileOutput()).delete();
+
     }
 
     public boolean exists() {
@@ -122,6 +126,13 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
         }
 
+    }
+
+    @Override
+    public void deleteLink() {
+        ArrayList<DownloadLink> list = new ArrayList<DownloadLink>();
+        list.add(downloadLink);
+        DownloadController.getInstance().removeChildren(list);
     }
 
 }

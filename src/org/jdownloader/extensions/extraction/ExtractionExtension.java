@@ -212,6 +212,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         ExtractionController controller = new ExtractionController(archive, logger);
 
         controller.setRemoveAfterExtract(getSettings().isDeleteArchiveFilesAfterExtraction());
+        controller.setRemoveDownloadLinksAfterExtraction(getSettings().isDeleteArchiveDownloadlinksAfterExtraction());
 
         archive.setActive(true);
         extractor.setConfig(getSettings());

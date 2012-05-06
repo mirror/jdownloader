@@ -49,6 +49,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private ScheduledFuture<?> timer;
     private Type               latestEvent;
     private double             progress;
+    private boolean            removeDownloadLinksAfterExtraction;
 
     ExtractionController(Archive archiv, Logger logger) {
         this.archive = archiv;
@@ -210,7 +211,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 switch (archive.getExitCode()) {
                 case ExtractionControllerConstants.EXIT_CODE_SUCCESS:
                     logger.info("Unpacking successful for " + archive);
-                    if (!archive.getGotInterrupted() && removeAfterExtraction) {
+                    if (!archive.getGotInterrupted()) {
                         removeArchiveFiles();
                     }
                     fireEvent(ExtractionEvent.Type.FINISHED);
@@ -267,8 +268,13 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      */
     private void removeArchiveFiles() {
         for (ArchiveFile link : archive.getArchiveFiles()) {
-            if (!link.delete()) {
-                JDLogger.getLogger().warning("Could not delete archive: " + link);
+            if (removeAfterExtraction) {
+                if (!link.deleteFile()) {
+                    JDLogger.getLogger().warning("Could not delete archive: " + link);
+                }
+            }
+            if (isRemoveDownloadLinksAfterExtraction()) {
+                link.deleteLink();
             }
         }
     }
@@ -352,5 +358,13 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      */
     public double getProgress() {
         return progress;
+    }
+
+    public void setRemoveDownloadLinksAfterExtraction(boolean deleteArchiveDownloadlinksAfterExtraction) {
+        this.removeDownloadLinksAfterExtraction = deleteArchiveDownloadlinksAfterExtraction;
+    }
+
+    public boolean isRemoveDownloadLinksAfterExtraction() {
+        return removeDownloadLinksAfterExtraction;
     }
 }

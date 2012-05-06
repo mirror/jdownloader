@@ -129,8 +129,11 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Queued for extracting" })
     String plugins_optional_extraction_status_queued();
 
-    @Default(lngs = { "en" }, values = { "Delete archives after suc. extraction?" })
+    @Default(lngs = { "en" }, values = { "Delete Archive Files after suc. extraction?" })
     String settings_remove_after_extract();
+
+    @Default(lngs = { "en" }, values = { "Delete Archive Downloadlinks after suc. extraction?" })
+    String settings_remove_after_extract_downloadlink();
 
     @Default(lngs = { "en" }, values = { "Subfolder settings" })
     String plugins_optional_extraction_config_subfolder();

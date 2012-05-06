@@ -44,6 +44,7 @@ public class CleanupDownloads extends ActionAdapter {
                 if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.jd_gui_swing_jdgui_menu_actions_CleanupDownload_message()))) return;
 
                 DownloadController dlc = DownloadController.getInstance();
+
                 LinkedList<DownloadLink> downloadstodelete = new LinkedList<DownloadLink>();
                 final boolean readL = dlc.readLock();
                 try {

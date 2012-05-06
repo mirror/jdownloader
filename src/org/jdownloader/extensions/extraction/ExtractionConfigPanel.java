@@ -33,6 +33,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
     private Pair<Checkbox>         toggleUseOriginalFileDate;
     private Pair<ComboBox<String>> cpupriority;
     private Pair<TextArea>         passwordlist;
+    private Pair<Checkbox>         toggleDeleteArchiveDownloadLinks;
 
     public ExtractionConfigPanel(ExtractionExtension plg) {
         super(plg);
@@ -54,6 +55,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
 
         this.addHeader(T._.settings_various(), NewTheme.I().getIcon("settings", 32));
         toggleDeleteArchives = this.addPair(T._.settings_remove_after_extract(), null, new Checkbox());
+        toggleDeleteArchiveDownloadLinks = this.addPair(T._.settings_remove_after_extract_downloadlink(), null, new Checkbox());
         toggleOverwriteExisting = this.addPair(T._.settings_overwrite(), null, new Checkbox());
         cpupriority = this.addPair(T._.settings_cpupriority(), null, new ComboBox<String>(T._.settings_cpupriority_high(), T._.settings_cpupriority_middle(), T._.settings_cpupriority_low()));
 
@@ -76,6 +78,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                 if (path == null) path = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder(), "extracted").getAbsolutePath();
                 customPath.getComponent().setText(path);
                 toggleDeleteArchives.getComponent().setSelected(s.isDeleteArchiveFilesAfterExtraction());
+                toggleDeleteArchiveDownloadLinks.getComponent().setSelected(s.isDeleteArchiveDownloadlinksAfterExtraction());
                 toggleOverwriteExisting.getComponent().setSelected(s.isOverwriteExistingFilesEnabled());
                 toggleUseSubpath.getComponent().setSelected(s.isSubpathEnabled());
                 subPath.getComponent().setText(s.getSubPath());
@@ -115,6 +118,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         s.setCustomExtractionPathEnabled(toggleCustomizedPath.getComponent().isSelected());
         s.setCustomExtractionPath(customPath.getComponent().getText());
         s.setDeleteArchiveFilesAfterExtraction(toggleDeleteArchives.getComponent().isSelected());
+        s.setDeleteArchiveDownloadlinksAfterExtraction(toggleDeleteArchiveDownloadLinks.getComponent().isSelected());
         s.setOverwriteExistingFilesEnabled(toggleOverwriteExisting.getComponent().isSelected());
         s.setSubpathEnabled(toggleUseSubpath.getComponent().isSelected());
         s.setSubPath(subPath.getComponent().getText());

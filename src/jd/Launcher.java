@@ -279,6 +279,7 @@ public class Launcher {
 
         if (!Application.isJared(Launcher.class)) {
             JDInitFlags.SWITCH_DEBUG = true;
+            JDInitFlags.REFRESH_CACHE = true;
         }
 
         Launcher.preInitChecks();

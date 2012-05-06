@@ -40,7 +40,7 @@ public class FileArchiveFile implements ArchiveFile {
         return exists();
     }
 
-    public boolean delete() {
+    public boolean deleteFile() {
         return file.delete();
     }
 
@@ -63,6 +63,10 @@ public class FileArchiveFile implements ArchiveFile {
     }
 
     public void setProgress(long value, long max, Color color) {
+    }
+
+    @Override
+    public void deleteLink() {
     }
 
 }

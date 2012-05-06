@@ -50,7 +50,7 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
         return true;
     }
 
-    public boolean delete() {
+    public boolean deleteFile() {
         return false;
     }
 
@@ -69,6 +69,10 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     }
 
     public void setProgress(long value, long max, Color color) {
+    }
+
+    @Override
+    public void deleteLink() {
     }
 
 }

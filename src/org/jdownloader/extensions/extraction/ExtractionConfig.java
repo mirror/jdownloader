@@ -72,6 +72,13 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     @AboutConfig
     boolean isDeleteArchiveFilesAfterExtraction();
 
+    @Description("Delete archive DownloadLinks after successfull extraction?")
+    @DefaultBooleanValue(false)
+    @AboutConfig
+    boolean isDeleteArchiveDownloadlinksAfterExtraction();
+
+    void setDeleteArchiveDownloadlinksAfterExtraction(boolean b);
+
     @Description("Info File Extension is able to create Info files for all downloaded files. Extraction Extension can remove these files")
     @DefaultBooleanValue(false)
     @AboutConfig
