@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashx.tv" }, urls = { "http://(www\\.)?flashx\\.tv/video/[A-Z0-9]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashx.tv" }, urls = { "http://((www\\.)?flashx\\.tv/video/[A-Z0-9]+/|play\\.flashx\\.tv/player/embed\\.php\\?.+)" }, flags = { 0 })
 public class FlashxTv extends PluginForHost {
 
     public FlashxTv(PluginWrapper wrapper) {
@@ -38,6 +38,14 @@ public class FlashxTv extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://flashx.tv/page/3/terms-of-service";
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        if (link.getDownloadURL().matches(".+play\\.flashx\\.tv/player.+")) {
+            String hash = new Regex(link.getDownloadURL(), "(?i-)hash=([A-Z0-9]{12})").getMatch(0);
+            if (hash != null) link.setUrlDownload(link.getDownloadURL().replaceAll("http://play.flashx.tv/player/.+", "http://www.flashx.tv/video/" + hash + "/"));
+        }
     }
 
     @Override

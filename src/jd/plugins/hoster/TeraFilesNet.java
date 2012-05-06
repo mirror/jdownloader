@@ -43,6 +43,7 @@ public class TeraFilesNet extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+        boolean dl_fail = false;
         br.setFollowRedirects(false);
         String fileID = new Regex(downloadLink.getDownloadURL(), "terafiles\\.net/v-(\\d+)\\.html").getMatch(0);
         String sessID = br.getRegex("sessdl=([a-z0-9]+)\\'").getMatch(0);
@@ -56,10 +57,11 @@ public class TeraFilesNet extends PluginForHost {
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dl_fail = true;
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl.startDownload();
-        } else {
+            if (!dl.getConnection().getContentType().contains("html")) dl.startDownload();
+        } else if (http_dl == null || dl_fail == true) {
             String ftp_dl = br.getRegex("<META HTTP-EQUIV=\"Refresh\" CONTENT=\"\\d+;URL=(ftp://.*?)\">").getMatch(0);
             if (ftp_dl == null) {
                 ftp_dl = br.getRegex(">Connexion au serveur FTP en cours\\. Merci de patienter\\.<br /><a href=\"(ftp://.*?)\"").getMatch(0);
