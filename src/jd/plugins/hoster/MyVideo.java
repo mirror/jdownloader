@@ -28,6 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
 import jd.utils.JDHexUtils;
 
 // Altes Decrypterplugin bis Revision 14394 
@@ -44,7 +45,7 @@ public class MyVideo extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
+    public void correctDownloadLink(final DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("myvideo.at/", "myvideo.de/"));
     }
 
@@ -56,35 +57,10 @@ public class MyVideo extends PluginForHost {
         return Encoding.htmlDecode(new String(plain));
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://www.myvideo.de/AGB";
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        final AvailableStatus status = requestFileInformation(downloadLink);
-        if (status == AvailableStatus.UNCHECKABLE) { throw new PluginException(LinkStatus.ERROR_FATAL, "Wait for next available JDownloader version"); }
+    private void download(final DownloadLink downloadLink) throws Exception {
         if (CLIPURL.startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, CLIPURL);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-            final String app = CLIPURL.replaceAll("\\w+://[\\w\\.]+/", "");
-            if (!CLIPURL.contains("token")) {
-                rtmp.setProtocol(0);
-            }
-
-            rtmp.setPlayPath(CLIPPATH);
-            rtmp.setApp(app);
-            rtmp.setUrl(CLIPURL);
-            rtmp.setSwfVfy(SWFURL);
-            rtmp.setPageUrl(downloadLink.getDownloadURL());
-            rtmp.setResume(true);
-
+            setupRTMPConnection(dl);
             ((RTMPDownload) dl).startDownload();
 
         } else if (CLIPURL.startsWith("http")) {
@@ -99,6 +75,22 @@ public class MyVideo extends PluginForHost {
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.myvideo.de/AGB";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        download(downloadLink);
     }
 
     @Override
@@ -119,7 +111,8 @@ public class MyVideo extends PluginForHost {
         String filename = Encoding.htmlDecode(br.getRegex("name=\'title\' content=\'(.*?)-? (Film|Musik|TV Serie)").getMatch(0));
         // get encUrl
         final HashMap<String, String> p = new HashMap<String, String>();
-        final String[][] encUrl = br.getRegex("p\\.addVariable\\('(.*?)',\\s?'(.*?)'\\)").getMatches();
+        final String values = br.getRegex("flashvars=\\{(.*?)\\}").getMatch(0);
+        final String[][] encUrl = new Regex(values, "(.*?):\'(.*?)\',").getMatches();
         for (final String[] tmp : encUrl) {
             if (tmp.length != 2) {
                 continue;
@@ -180,6 +173,20 @@ public class MyVideo extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    private void setupRTMPConnection(final DownloadInterface dl) {
+        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        final String app = CLIPURL.replaceAll("\\w+://[\\w\\.]+/", "");
+        if (!CLIPURL.contains("token")) {
+            rtmp.setProtocol(0);
+        }
+
+        rtmp.setPlayPath(CLIPPATH);
+        rtmp.setApp(app);
+        rtmp.setUrl(CLIPURL);
+        rtmp.setSwfVfy(SWFURL);
+        rtmp.setResume(true);
     }
 
 }
