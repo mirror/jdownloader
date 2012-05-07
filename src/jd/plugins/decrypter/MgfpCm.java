@@ -38,6 +38,8 @@ public class MgfpCm extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<String> allPages = new ArrayList<String>();
+        allPages.add("0");
         br.setFollowRedirects(false);
         String parameter = param.toString();
         parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
@@ -75,19 +77,29 @@ public class MgfpCm extends PluginForDecrypt {
         if (authorsName == null) authorsName = "Anonymous";
         galleryName = Encoding.htmlDecode(galleryName);
         authorsName = Encoding.htmlDecode(authorsName);
+        /**
+         * Max number of images per page = 1000, if we got more we always have
+         * at least 2 pages
+         */
+        final String[] pages = br.getRegex("<a class=link3 href=\"\\?pgid=\\&amp;gid=\\d+\\&amp;page=(\\d+)").getColumn(0);
+        if (pages != null && pages.length != 0) for (final String page : pages)
+            if (!allPages.contains(page)) allPages.add(page);
         int counter = 1;
         DecimalFormat df = new DecimalFormat("0000");
-        String links[] = br.getRegex("<a name=\"\\d+\" href=\"/image\\.php\\?id=(\\d+)\\&").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String element : links) {
-            final String orderID = df.format(counter);
-            final DownloadLink link = createDownloadlink("http://imagefap.com/image.php?id=" + element);
-            link.setProperty("orderid", orderID);
-            link.setProperty("galleryname", galleryName);
-            link.setProperty("authorsname", authorsName);
-            link.setName(orderID);
-            decryptedLinks.add(link);
-            counter++;
+        for (final String page : allPages) {
+            if (!page.equals("0")) br.getPage(parameter + "&page=" + page);
+            String links[] = br.getRegex("<a name=\"\\d+\" href=\"/image\\.php\\?id=(\\d+)\\&").getColumn(0);
+            if (links == null || links.length == 0) return null;
+            for (String element : links) {
+                final String orderID = df.format(counter);
+                final DownloadLink link = createDownloadlink("http://imagefap.com/image.php?id=" + element);
+                link.setProperty("orderid", orderID);
+                link.setProperty("galleryname", galleryName);
+                link.setProperty("authorsname", authorsName);
+                link.setName(orderID);
+                decryptedLinks.add(link);
+                counter++;
+            }
         }
         // Finally set the packagename even if its set again in the linkgrabber
         // available check of the imagefap hosterplugin

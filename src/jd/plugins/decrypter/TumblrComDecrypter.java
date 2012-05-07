@@ -20,12 +20,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tumblr.com" }, urls = { "http://(www\\.)?tumblr\\.com/audio_file/\\d+/tumblr_[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tumblr.com" }, urls = { "http://(www\\.)?(tumblr\\.com/audio_file/\\d+/tumblr_[A-Za-z0-9]+|[\\w\\.\\-]*?tumblr\\.com/post/\\d+)" }, flags = { 0 })
 public class TumblrComDecrypter extends PluginForDecrypt {
 
     public TumblrComDecrypter(PluginWrapper wrapper) {
@@ -34,15 +36,35 @@ public class TumblrComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(false);
         String parameter = param.toString();
-        br.getPage(parameter);
-        String finallink = br.getRedirectLocation();
-        if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        if (parameter.matches("http://(www\\.)?tumblr\\.com/audio_file/\\d+/tumblr_[A-Za-z0-9]+")) {
+            br.setFollowRedirects(false);
+            br.getPage(parameter);
+            String finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
+        } else {
+            br.setFollowRedirects(true);
+            br.getPage(parameter);
+            final String fpName = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
+            final String[] links = br.getRegex("<meta property=\"og:image\" content=\"(http://[^<>\"]*?)\"").getColumn(0);
+            if (links != null && links.length > 1) {
+                for (final String piclink : links) {
+                    decryptedLinks.add(createDownloadlink("directhttp://" + piclink));
+                }
+                if (fpName != null) {
+                    FilePackage fp = FilePackage.getInstance();
+                    fp.setName(Encoding.htmlDecode(fpName.trim()));
+                    fp.addLinks(decryptedLinks);
+                }
+            } else {
+                // Single links go to the host plugin, could be videos/mp3s
+                decryptedLinks.add(createDownloadlink(parameter.replace("tumblr.com/", "tumblrdecrypted.com/")));
+            }
         }
-        decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
     }
 

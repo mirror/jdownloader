@@ -55,8 +55,9 @@ public class VideoMediasetIt extends PluginForHost {
         String filename = br.getRegex("\"title\": \"\\\\\"([^<>\"]*?)\\\\\"\"").getMatch(0);
         if (filename == null) filename = br.getRegex("\"title\": \"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://cdnselector.xuniplay.fdnames.com/GetCDN.aspx?streamid=" + new Regex(downloadLink.getDownloadURL(), "video\\.mediaset\\.it/video/[^<>/\"]*?/[^<>/\"]*?/(\\d+)/").getMatch(0) + "&type=video-f4v");
-        DLLINK = br.getRegex("<video src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        // http://cdnselector.xuniplay.fdnames.com/GetCDN.aspx?streamid=299324
+        br.getPage("http://cdnselector.xuniplay.fdnames.com/GetCDN.aspx?streamid=" + new Regex(downloadLink.getDownloadURL(), "video\\.mediaset\\.it/video/[^<>/\"]*?/[^<>/\"]*?/(\\d+)/").getMatch(0));
+        DLLINK = br.getRegex("\"(http://[a-z0-9\\.]*?/(flv2|wmv2|iPhone_SportMediaset)/[^<>\"]*?\\.(f4v|wmv|mp4))\"").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (DLLINK.contains("Error400")) throw new PluginException(LinkStatus.ERROR_FATAL, "Silverlight videos are currently not supported!");
         DLLINK = Encoding.htmlDecode(DLLINK);

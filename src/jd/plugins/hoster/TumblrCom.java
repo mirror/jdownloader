@@ -30,13 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tumblr.com" }, urls = { "http://[\\w\\.\\-]*?tumblr\\.com/post/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tumblr.com" }, urls = { "http://[\\w\\.\\-]*?tumblrdecrypted\\.com/post/\\d+" }, flags = { 0 })
 public class TumblrCom extends PluginForHost {
 
     private String dllink = null;
-
-    // private static final String AUTH =
-    // "P3BsZWFkPXBsZWFzZS1kb250LWRvd25sb2FkLXRoaXMtb3Itb3VyLWxhd3llcnMtd29udC1sZXQtdXMtaG9zdC1hdWRpbw==";
 
     public TumblrCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,10 +44,15 @@ public class TumblrCom extends PluginForHost {
         return "http://www.tumblr.com/terms_of_service";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        // Links come from a decrypter
+        link.setUrlDownload(link.getDownloadURL().replace("tumblrdecrypted.com/", "tumblr.com/"));
+    }
+
     private void getDllink() throws IOException {
         br.setFollowRedirects(false);
         dllink = br.getRegex("\"><img src=\"(( +)?http://\\d+\\.media\\.tumblr\\.com/[^<>\"/\\']*?\\.jpg)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(( +)?http://\\d+\\.media\\.tumblr\\.com/[^<>\"/\\']*?\\.jpg)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(( +)?http://\\d+\\.media\\.tumblr\\.com/[^<>\"/\\']*?\\.(jpg|gif|png))\"").getMatch(0);
     }
 
     @Override

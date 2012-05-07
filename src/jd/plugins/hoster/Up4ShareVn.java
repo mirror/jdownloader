@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -90,9 +91,13 @@ public class Up4ShareVn extends PluginForHost {
         br.setFollowRedirects(false);
         String captchaurl = "http://up.4share.vn/code.html?width=40&height=28&characters=2";
         String dllink = null;
+        int wait = 60;
+        final String waittime = br.getRegex("var counter=(\\d+);").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        sleep(wait * 1001l, downloadLink);
         for (int i = 0; i <= 3; i++) {
             String code = getCaptchaCode(captchaurl, downloadLink);
-            br.postPage(downloadLink.getDownloadURL(), "security_code=" + code + "&submit=DOWNLOAD&s=");
+            br.postPage(downloadLink.getDownloadURL(), "&submit=DOWNLOAD&s=&security_code=" + code);
             dllink = br.getRedirectLocation();
             if (br.containsHTML("/code.html")) continue;
             break;
@@ -153,9 +158,10 @@ public class Up4ShareVn extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-        if (br.containsHTML("<b>Kh&#244;ng c&#243; File / File &#273;&#227; b&#7883; x&#243;a! </b>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("size=\"2\" face=\"Verdana\"><img src='/.*?'><b>(.*?)</b>").getMatch(0);
-        String filesize = br.getRegex("size=\"2\" face=\"Verdana\"><img src='/.*?'><b>.*?</b>[ ]+\\((.*?)\\)<br>").getMatch(0);
+        if (br.containsHTML(">FID Không hợp lệ\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final Regex fileInfo = br.getRegex(">Tập tin: <b> ([^<>\"]*?)</b> <br /> Kích thước: <strong>([^<>\"]*?)</strong>");
+        String filename = fileInfo.getMatch(0);
+        String filesize = fileInfo.getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
