@@ -268,7 +268,7 @@ public class CrockoCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-        if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Requested file is deleted|<h1>Sorry,<br />the page you're looking for <br />isn't here\\.</h1>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">Download: +<strong>(.*?)</strong>").getMatch(0);
         if (filename == null) filename = br.getRegex(">Download:</span> <br />[\t\n\r ]+<strong>(.*?)</strong>").getMatch(0);
         final String filesize = br.getRegex("<span class=\"tip1\"><span class=\"inner\">(.*?)</span></span>").getMatch(0);

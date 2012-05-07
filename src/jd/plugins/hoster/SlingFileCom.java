@@ -56,24 +56,32 @@ public class SlingFileCom extends PluginForHost {
      * wrong information: http://www.slingfile.com/check-files
      * */
     private static final Object LOCK     = new Object();
-    private static final String MAINPAGE = "http://slingfile.com/";
+    private static final String MAINPAGE = "http://slingfile.com";
+    private static final String UA       = RandomUserAgent.generate();
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://").replaceAll("/(audio|video|dl)/", "file"));
     }
 
     public String getAGBLink() {
-        return "http://www.slingfile.com/pages/tos.html";
+        return MAINPAGE + "/pages/tos.html";
     }
 
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
 
+    public void prepBrowser() {
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.setCookie(MAINPAGE, "lang", "english");
+        br.getHeaders().put("User-Agent", UA);
+    }
+
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        prepBrowser();
         br.setFollowRedirects(false);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
         // Prevents errors, i don't know why the page sometimes shows this
         // error!
@@ -162,6 +170,7 @@ public class SlingFileCom extends PluginForHost {
             // Load cookies
             try {
                 br.setCookiesExclusive(true);
+                prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -177,6 +186,7 @@ public class SlingFileCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
+                br.getPage("http://www.slingfile.com/login");
                 br.postPage("http://www.slingfile.com/login", "f_user=" + Encoding.urlEncode(account.getUser()) + "&f_password=" + Encoding.urlEncode(account.getPass()) + "&f_keepMeLoggedIn=1&submit=Login+%C2%BB");
                 if (br.getCookie(MAINPAGE, "cookielogin") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies

@@ -83,7 +83,6 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
                 if (parameter.contains("flameupload.com")) {
                     dllink = brc.getRegex(">Download Link:<br><a href=\"([^\"]+)").getMatch(0);
                 } else {
-
                     dllink = brc.getRedirectLocation();
                     if (dllink == null) {
                         dllink = brc.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);

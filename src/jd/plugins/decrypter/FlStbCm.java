@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?(filestube\\.com/(?!source|search)|video\\.filestube\\.com/watch,[a-z0-9]+/).+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?(filestube\\.com/(?!source|search|look_for\\.html.+|sponsored_go.html.+)|video\\.filestube\\.com/watch,[a-z0-9]+/).+\\.html" }, flags = { 0 })
 public class FlStbCm extends PluginForDecrypt {
 
     public FlStbCm(PluginWrapper wrapper) {
@@ -44,7 +44,7 @@ public class FlStbCm extends PluginForDecrypt {
         FilePackage fp = FilePackage.getInstance();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("(Requested file was not found|Error 404 \\-)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(Requested file was not found|Error 404 \\-|> ?File no longer available ?<)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         if (parameter.contains("/go.html")) {
             String finallink = br.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
             if (finallink == null) finallink = br.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
