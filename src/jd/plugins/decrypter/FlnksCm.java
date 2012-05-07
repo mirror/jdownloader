@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -41,11 +42,15 @@ public class FlnksCm extends PluginForDecrypt {
         try {
             br.getPage(parameter);
             String pw = br.getRegex("<b>Passwort =(.*?)</b>").getMatch(0);
+            ArrayList<String> pwList = null;
+            if (pw != null) {
+                pwList = new ArrayList<String>(Arrays.asList(new String[] { pw.trim() }));
+            }
             String[] links = br.getRegex("\\<input type=\"hidden\" name=\"url\" value=\"(.*?)\" \\/\\>").getColumn(0);
             progress.setRange(links.length);
             for (String link : links) {
                 DownloadLink dlLink = createDownloadlink(link);
-                if (pw != null) dlLink.addSourcePluginPassword(pw.trim());
+                if (pwList != null) dlLink.setSourcePluginPasswordList(pwList);
                 decryptedLinks.add(dlLink);
                 progress.increase(1);
             }

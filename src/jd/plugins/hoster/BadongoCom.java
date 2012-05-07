@@ -310,7 +310,7 @@ public class BadongoCom extends PluginForHost {
                 pwForm.put("pwd", pass);
                 br.submitForm(pwForm);
                 if (!br.containsHTML("Falsches Passwort!")) {
-                    downloadLink.setDecrypterPassword(pass);
+                    downloadLink.setProperty("pass", null);
                     break;
                 }
             }

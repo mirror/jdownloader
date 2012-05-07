@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -90,16 +91,16 @@ public class Srnnks extends PluginForDecrypt {
         }
     }
 
-    private final static String[] passwords           = { "serienjunkies.dl.am", "serienjunkies.org", "dokujunkies.org" };
-    private static long           LATEST_BLOCK_DETECT = 0;
+    private final static ArrayList<String> passwords           = new ArrayList<String>(Arrays.asList(new String[] { "serienjunkies.dl.am", "serienjunkies.org", "dokujunkies.org" }));
+    private static long                    LATEST_BLOCK_DETECT = 0;
 
-    private static long           LATEST_RECONNECT    = 0;
-    private static Object         GLOBAL_LOCK         = new Object();
+    private static long                    LATEST_RECONNECT    = 0;
+    private static Object                  GLOBAL_LOCK         = new Object();
 
     // seems like sj does block ips if requestlimit is not ok
-    private static final long     FW_WAIT             = 300;
-    private static final Object   LOCK                = new Object();
-    private static AtomicInteger  RUNNING             = new AtomicInteger(0);
+    private static final long              FW_WAIT             = 300;
+    private static final Object            LOCK                = new Object();
+    private static AtomicInteger           RUNNING             = new AtomicInteger(0);
 
     private synchronized static boolean limitsReached(final Browser br) throws IOException {
         int ret = -100;
@@ -167,7 +168,7 @@ public class Srnnks extends PluginForDecrypt {
     @Override
     protected DownloadLink createDownloadlink(final String link) {
         final DownloadLink dlink = super.createDownloadlink(link);
-        dlink.addSourcePluginPasswords(Srnnks.passwords);
+        dlink.setSourcePluginPasswordList(Srnnks.passwords);
         try {
             this.distribute(dlink);
         } catch (Throwable t) {
@@ -261,8 +262,7 @@ public class Srnnks extends PluginForDecrypt {
                             }
                             if (form.getRegex("img.*?src=\"([^\"]*?secure)").matches()) {
                                 /*
-                                 * this form contains captcha image, so it must
-                                 * be valid
+                                 * this form contains captcha image, so it must be valid
                                  */
                             } else if (bestdist > 100) {
                                 form = null;

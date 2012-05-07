@@ -146,8 +146,7 @@ public class AccountController implements AccountControllerListener {
             }
             if ((System.currentTimeMillis() - account.lastUpdateTime()) < account.getRefreshTimeout()) {
                 /*
-                 * account was checked before, timeout for recheck not reached,
-                 * no need to update
+                 * account was checked before, timeout for recheck not reached, no need to update
                  */
                 return ai;
             }
@@ -178,8 +177,7 @@ public class AccountController implements AccountControllerListener {
             ClassLoader oldClassLoader = currentThread.getContextClassLoader();
             try {
                 /*
-                 * make sure the current Thread uses the PluginClassLoaderChild
-                 * of the Plugin in use
+                 * make sure the current Thread uses the PluginClassLoaderChild of the Plugin in use
                  */
                 currentThread.setContextClassLoader(plugin.getLazyP().getClassLoader());
                 ai = plugin.fetchAccountInfo(account);
@@ -240,8 +238,7 @@ public class AccountController implements AccountControllerListener {
                     onlineCheck.getExternalIP();
                 } catch (final OfflineException e2) {
                     /*
-                     * we are offline, so lets just return without any account
-                     * update
+                     * we are offline, so lets just return without any account update
                      */
                     logger.clear();
                     logger.info("It seems Computer is currently offline, skipped Accountcheck for " + whoAmI);
@@ -288,8 +285,7 @@ public class AccountController implements AccountControllerListener {
                     Account acc;
                     list.add(acc = ad.toAccount());
                     /*
-                     * make sure hostername is set and share same String
-                     * instance
+                     * make sure hostername is set and share same String instance
                      */
                     acc.setHoster(next.getKey());
                 }
@@ -357,8 +353,7 @@ public class AccountController implements AccountControllerListener {
             if (ret == null) return false;
             if (System.currentTimeMillis() > ret) {
                 /*
-                 * timeout is over, lets remove the account as it is no longer
-                 * blocked
+                 * timeout is over, lets remove the account as it is no longer blocked
                  */
                 blockedAccounts.remove(account);
                 return false;
@@ -438,8 +433,7 @@ public class AccountController implements AccountControllerListener {
                 for (Account acc : next.getValue()) {
                     if (!acc.isEnabled() || !acc.isValid()) {
                         /*
-                         * we remove every invalid/disabled/tempdisabled/blocked
-                         * account
+                         * we remove every invalid/disabled/tempdisabled/blocked account
                          */
                         continue;
                     }
@@ -448,16 +442,14 @@ public class AccountController implements AccountControllerListener {
                     Object supported = null;
                     synchronized (ai) {
                         /*
-                         * synchronized on accountinfo because properties are
-                         * not threadsafe
+                         * synchronized on accountinfo because properties are not threadsafe
                          */
                         supported = ai.getProperty("multiHostSupport", Property.NULL);
                     }
                     if (Property.NULL == supported || supported == null) continue;
                     synchronized (supported) {
                         /*
-                         * synchronized on list because plugins can change the
-                         * list in runtime
+                         * synchronized on list because plugins can change the list in runtime
                          */
                         if (supported instanceof ArrayList) {
                             for (String sup : (ArrayList<String>) supported) {
@@ -558,8 +550,7 @@ public class AccountController implements AccountControllerListener {
                 for (Account acc : next.getValue()) {
                     if (!acc.isEnabled() || !acc.isValid() || acc.isTempDisabled()) {
                         /*
-                         * we remove every invalid/disabled/tempdisabled/blocked
-                         * account
+                         * we remove every invalid/disabled/tempdisabled/blocked account
                          */
                         continue;
                     }
@@ -568,16 +559,14 @@ public class AccountController implements AccountControllerListener {
                     Object supported = null;
                     synchronized (ai) {
                         /*
-                         * synchronized on accountinfo because properties are
-                         * not threadsafe
+                         * synchronized on accountinfo because properties are not threadsafe
                          */
                         supported = ai.getProperty("multiHostSupport", Property.NULL);
                     }
                     if (Property.NULL == supported || supported == null) continue;
                     synchronized (supported) {
                         /*
-                         * synchronized on list because plugins can change the
-                         * list in runtime
+                         * synchronized on list because plugins can change the list in runtime
                          */
                         if (supported instanceof ArrayList) {
                             for (String sup : (ArrayList<String>) supported) {

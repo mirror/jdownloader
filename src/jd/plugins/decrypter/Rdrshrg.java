@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -43,6 +44,10 @@ public class Rdrshrg extends PluginForDecrypt {
         br.getPage(parameter);
         String title = br.getRegex("<big><strong>(.*?)</strong></big>").getMatch(0);
         String pass = br.getRegex("<strong>Passwort\\:</strong> <small>(.*?)</small>").getMatch(0);
+        ArrayList<String> pwList = null;
+        if (pass != null) {
+            pwList = new ArrayList<String>(Arrays.asList(new String[] { pass.trim() }));
+        }
         FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
 
@@ -53,7 +58,7 @@ public class Rdrshrg extends PluginForDecrypt {
             String link = br.getRegex("unescape\\(\"(.*?)\"\\)").getMatch(0);
             link = new Regex(Encoding.htmlDecode(link), "\"0\"><frame src\\=\"(.*?)\" name\\=\"GO_SAVE\"").getMatch(0);
             DownloadLink dl = createDownloadlink(link);
-            dl.addSourcePluginPassword(pass);
+            if (pwList != null) dl.setSourcePluginPasswordList(pwList);
             fp.add(dl);
             decryptedLinks.add(dl);
             progress.increase(1);

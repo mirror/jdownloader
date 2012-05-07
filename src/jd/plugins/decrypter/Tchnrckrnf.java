@@ -28,6 +28,11 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "technorocker.info" }, urls = { "http://[\\w\\.]*?technorocker\\.info/download/[0-9]+/.*" }, flags = { 0 })
 public class Tchnrckrnf extends PluginForDecrypt {
 
+    private static ArrayList<String> pwList = new ArrayList<String>();
+    static {
+        pwList.add("technorocker");
+    }
+
     public Tchnrckrnf(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,7 +45,7 @@ public class Tchnrckrnf extends PluginForDecrypt {
         String link = br.getRegex("window\\.location\\.href = \\'(.*?)\\';").getMatch(0);
         if (link == null) return null;
         DownloadLink dl_link = createDownloadlink(link);
-        dl_link.addSourcePluginPassword("technorocker");
+        dl_link.setSourcePluginPasswordList(pwList);
         decryptedLinks.add(dl_link);
 
         return decryptedLinks;

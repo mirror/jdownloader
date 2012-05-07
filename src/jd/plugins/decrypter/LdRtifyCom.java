@@ -67,7 +67,7 @@ public class LdRtifyCom extends PluginForDecrypt {
         for (String elem : links) {
             if (elem.contains("ld.rtify.com")) continue;
             decryptedLinks.add(dl = createDownloadlink(elem));
-            dl.addSourcePluginPasswordList(pws);
+            if (pws != null && pws.size() > 0) dl.setSourcePluginPasswordList(pws);
         }
 
         return decryptedLinks;

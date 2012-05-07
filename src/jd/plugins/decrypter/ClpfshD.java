@@ -51,7 +51,6 @@ public class ClpfshD extends PluginForDecrypt {
         filePackage.add(downloadLink);
         downloadLink.setFinalFileName(name + ".tmp");
         downloadLink.setBrowserUrl(cryptedLink.getCryptedUrl());
-        downloadLink.setSourcePluginComment("Convert to " + convertTo.getText());
         downloadLink.setProperty("convertto", convertTo.name());
         decryptedLinks.add(downloadLink);
     }

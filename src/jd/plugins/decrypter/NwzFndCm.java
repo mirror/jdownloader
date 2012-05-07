@@ -45,7 +45,7 @@ public class NwzFndCm extends PluginForDecrypt {
         progress.setRange(links.length);
         for (String element : links) {
             DownloadLink dl_link = createDownloadlink(element);
-            dl_link.addSourcePluginPasswordList(passwords);
+            if (passwords != null && passwords.size() > 0) dl_link.setSourcePluginPasswordList(passwords);
             decryptedLinks.add(dl_link);
             progress.increase(1);
         }

@@ -44,8 +44,8 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     private final WriteLock              writeLock = this.lock.writeLock();
 
     /**
-     * add a Package at given position position in this PackageController. in case the Package is already controlled by this
-     * PackageController this function does move it to the given position
+     * add a Package at given position position in this PackageController. in case the Package is already controlled by this PackageController this function
+     * does move it to the given position
      * 
      * @param pkg
      * @param index
@@ -62,9 +62,10 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                 protected Void run() throws RuntimeException {
                     writeLock();
                     try {
-                        pkg.setCurrentSorter(comparator);
-                        pkg.sort();
-
+                        synchronized (pkg) {
+                            pkg.setCurrentSorter(comparator);
+                            pkg.sort();
+                        }
                     } finally {
                         writeUnlock();
                     }
@@ -455,8 +456,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     /**
-     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of
-     * the children
+     * remove the given children from the package. also removes the package from this PackageController in case it is empty after removal of the children
      * 
      * @param pkg
      * @param children

@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -48,10 +49,14 @@ public class BlgXXNt extends PluginForDecrypt {
         String password = new Regex(decrypted, Pattern.compile("<div class=\"d.*?>Password:</div>.*?<div class=\"d.*?>(.*?)</div>", Pattern.DOTALL)).getMatch(0);
         String[] links = new Regex(decrypted, "url=(.*?)\" target").getColumn(0);
         progress.setRange(links.length);
+        ArrayList<String> pwList = null;
+        if (password != null) {
+            pwList = new ArrayList<String>(Arrays.asList(new String[] { password }));
+        }
         DownloadLink dLink;
         for (String link : links) {
             decryptedLinks.add(dLink = createDownloadlink(link));
-            dLink.addSourcePluginPassword(password);
+            if (pwList != null) dLink.setSourcePluginPasswordList(pwList);
             progress.increase(1);
         }
 

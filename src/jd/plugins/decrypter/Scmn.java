@@ -30,6 +30,11 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scum.in" }, urls = { "http://[\\w\\.]*?scum\\.in/(index\\.php\\?id=\\d+|[0-9]+-.*?\\.html)" }, flags = { 0 })
 public class Scmn extends PluginForDecrypt {
 
+    private static ArrayList<String> pwList = new ArrayList<String>();
+    static {
+        pwList.add("scum.in");
+    }
+
     public Scmn(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -47,7 +52,7 @@ public class Scmn extends PluginForDecrypt {
         progress.setRange(links.length);
         for (String element : links) {
             DownloadLink dLink = createDownloadlink(element);
-            dLink.addSourcePluginPassword("scum.in");
+            dLink.setSourcePluginPasswordList(pwList);
             decryptedLinks.add(dLink);
             progress.increase(1);
         }

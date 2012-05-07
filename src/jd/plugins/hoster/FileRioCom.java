@@ -90,6 +90,7 @@ public class FileRioCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        correctDownloadLink(link);
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         getPage(link.getDownloadURL());
@@ -144,8 +145,7 @@ public class FileRioCom extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -427,12 +427,19 @@ public class FileRioCom extends PluginForHost {
         if (dllink != null) {
             try {
                 Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                URLConnectionAdapter con = null;
+                try {
+                    con = br2.openGetConnection(dllink);
+                    if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                        downloadLink.setProperty(property, Property.NULL);
+                        dllink = null;
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
-                con.disconnect();
             } catch (Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
@@ -526,6 +533,7 @@ public class FileRioCom extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
+                br.setCookie(COOKIE_HOST, "lang", "english");
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -540,7 +548,6 @@ public class FileRioCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setCookie(COOKIE_HOST, "lang", "english");
                 getPage(COOKIE_HOST + "/login.html");
                 Form loginform = br.getForm(0);
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

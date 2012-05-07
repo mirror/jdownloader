@@ -73,7 +73,7 @@ public class Tnypst extends PluginForDecrypt {
             /* prevent recursion */
             if (element.contains("tinypaste.com")) continue;
             decryptedLinks.add(dl = createDownloadlink(element));
-            dl.addSourcePluginPasswordList(pws);
+            if (pws != null && pws.size() > 0) dl.setSourcePluginPasswordList(pws);
         }
         return decryptedLinks;
     }

@@ -29,8 +29,13 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cine.to" }, urls = { "http://[\\w\\.]*?cine\\.to/index\\.php\\?do=show_download&id=[\\w]+|http://[\\w\\.]*?cine\\.to/index\\.php\\?do=protect&id=[\\w]+|http://[\\w\\.]*?cine\\.to/pre/index\\.php\\?do=show_download&id=[\\w]+|http://[\\w\\.]*?cine\\.to/pre/index\\.php\\?do=protect&id=[\\w]+" }, flags = { 0 })
 public class CnT extends PluginForDecrypt {
 
-    private static final String patternLink_Protected = "http://[\\w\\.]*?cine\\.to/index\\.php\\?do=protect\\&id=[a-zA-Z0-9]+|http://[\\w\\.]*?cine\\.to/index\\.php\\?do=protect\\&id=[a-zA-Z0-9]+|http://[\\w\\.]*?cine\\.to/pre/index\\.php\\?do=protect\\&id=[a-zA-Z0-9]+";
-    final static private Object LOCK = new Object();
+    private static final String      patternLink_Protected = "http://[\\w\\.]*?cine\\.to/index\\.php\\?do=protect\\&id=[a-zA-Z0-9]+|http://[\\w\\.]*?cine\\.to/index\\.php\\?do=protect\\&id=[a-zA-Z0-9]+|http://[\\w\\.]*?cine\\.to/pre/index\\.php\\?do=protect\\&id=[a-zA-Z0-9]+";
+    final static private Object      LOCK                  = new Object();
+
+    private static ArrayList<String> pwList                = new ArrayList<String>();
+    static {
+        pwList.add("cine.to");
+    }
 
     public CnT(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,8 +51,7 @@ public class CnT extends PluginForDecrypt {
                 for (int i = 0; i < 15; i++) {
                     String code = getCaptchaCode("http://cine.to/securimage_show.php", param);
                     br.postPage(param.toString(), "captcha=" + code + "&submit=Senden");
-                    if (!br.containsHTML("Code ist falsch"))
-                        break;
+                    if (!br.containsHTML("Code ist falsch")) break;
                 }
 
                 if (br.containsHTML("Code ist falsch")) throw new DecrypterException(DecrypterException.CAPTCHA);
@@ -55,7 +59,7 @@ public class CnT extends PluginForDecrypt {
                 progress.setRange(links.length);
                 for (String element : links) {
                     DownloadLink link = createDownloadlink(element);
-                    link.addSourcePluginPassword("cine.to");
+                    link.setSourcePluginPasswordList(pwList);
                     decryptedLinks.add(link);
                     progress.increase(1);
                 }

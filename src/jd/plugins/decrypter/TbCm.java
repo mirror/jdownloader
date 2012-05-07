@@ -272,7 +272,6 @@ public class TbCm extends PluginForDecrypt {
                     thislink.setProperty("ALLOW_DUPE", true);
                     thislink.setBrowserUrl(info[2]);
                     thislink.setFinalFileName(info[0]);
-                    thislink.setSourcePluginComment("Convert to " + DestinationFormat.valueOf(info[3]).getText());
                     thislink.setProperty("convertto", info[3]);
 
                     decryptedLinks.add(thislink);
@@ -359,8 +358,7 @@ public class TbCm extends PluginForDecrypt {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                         /*
-                         * we do not want to download unknown formats at the
-                         * moment
+                         * we do not want to download unknown formats at the moment
                          */
                         continue;
                     }
@@ -409,7 +407,6 @@ public class TbCm extends PluginForDecrypt {
                         filePackage.add(thislink);
                         thislink.setBrowserUrl(parameter);
                         thislink.setFinalFileName(YT_FILENAME + info.desc + convertTo.getExtFirst());
-                        thislink.setSourcePluginComment("Convert to " + convertTo.getText());
                         thislink.setProperty("size", info.size);
                         String name = null;
                         if (convertTo != DestinationFormat.AUDIOMP3) {
@@ -417,8 +414,7 @@ public class TbCm extends PluginForDecrypt {
                             thislink.setProperty("name", name);
                         } else {
                             /*
-                             * because demuxer will fail when mp3 file already
-                             * exists
+                             * because demuxer will fail when mp3 file already exists
                              */
                             name = YT_FILENAME + info.desc + ".tmp";
                             thislink.setProperty("name", name);

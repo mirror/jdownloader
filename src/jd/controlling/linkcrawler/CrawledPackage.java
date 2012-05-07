@@ -49,15 +49,17 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     public static final ChildComparator<CrawledLink>       SORTER_DESC           = new ChildComparator<CrawledLink>() {
 
                                                                                      public int compare(CrawledLink o1, CrawledLink o2) {
-                                                                                         String o1s = o1.getName();
-                                                                                         String o2s = o2.getName();
+                                                                                         String o1s = o1.getName().toLowerCase(Locale.ENGLISH);
+                                                                                         ;
+                                                                                         String o2s = o2.getName().toLowerCase(Locale.ENGLISH);
+                                                                                         ;
                                                                                          if (o1s == null) {
                                                                                              o1s = "";
                                                                                          }
                                                                                          if (o2s == null) {
                                                                                              o2s = "";
                                                                                          }
-                                                                                         return o2s.compareToIgnoreCase(o1s);
+                                                                                         return o2s.compareTo(o1s);
 
                                                                                      }
 
@@ -154,9 +156,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     /**
-     * Returns the raw Downloadfolder String. This link may contain wildcards
-     * like <jd:packagename>. Use {@link #getDownloadFolder()} to return the
-     * actuall downloadloadfolder
+     * Returns the raw Downloadfolder String. This link may contain wildcards like <jd:packagename>. Use {@link #getDownloadFolder()} to return the actuall
+     * downloadloadfolder
      * 
      * @return
      */

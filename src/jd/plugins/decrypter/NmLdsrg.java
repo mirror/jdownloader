@@ -37,8 +37,7 @@ public class NmLdsrg extends PluginForDecrypt {
     }
 
     /*
-     * Note: FilePackage gets overridden when crypt-it.com (link protection
-     * service) used. Old posts + streaming links still get caught.
+     * Note: FilePackage gets overridden when crypt-it.com (link protection service) used. Old posts + streaming links still get caught.
      */
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -83,7 +82,6 @@ public class NmLdsrg extends PluginForDecrypt {
             }
             DownloadLink dl = createDownloadlink(Encoding.htmlDecode(dllink));
             dl.setSourcePluginPasswordList(passwords);
-            dl.setDecrypterPassword(passwords.get(0));
             decryptedLinks.add(dl);
             progress.increase(1);
         }

@@ -124,7 +124,7 @@ public class Wrdprss extends PluginForDecrypt {
         for (String link : links) {
             if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
                 DownloadLink dLink = createDownloadlink(link);
-                dLink.setSourcePluginPasswordList(link_passwds);
+                if (link_passwds != null && link_passwds.size() > 0) dLink.setSourcePluginPasswordList(link_passwds);
                 decryptedLinks.add(dLink);
                 progress.increase(1);
             }

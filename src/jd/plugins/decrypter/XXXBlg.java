@@ -35,6 +35,12 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.org" }, urls = { "http://(www\\.)?xxx-blog\\.(org|to)/((share|sto|com-|u|filefactory/|relink/)[\\w\\./-]+|.*?\\.html|blog/(dvd-rips|scenes|amateur-clips|hd-(scenes|movies)|site-rips|image-sets|games)/.+/)" }, flags = { 0 })
 public class XXXBlg extends PluginForDecrypt {
 
+    private static ArrayList<String> pwList = new ArrayList<String>();
+    static {
+        pwList.add("xxx-blog.dl.am");
+        pwList.add("xxx-blog.org");
+    }
+
     public XXXBlg(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -57,8 +63,7 @@ public class XXXBlg extends PluginForDecrypt {
             if (links == null || links.length == 0) return null;
             for (String link : links) {
                 DownloadLink dlink = createDownloadlink(link);
-                dlink.addSourcePluginPassword("xxx-blog.dl.am");
-                dlink.addSourcePluginPassword("xxx-blog.org");
+                dlink.setSourcePluginPasswordList(pwList);
                 decryptedLinks.add(dlink);
             }
             if (fpname != null) {
@@ -76,8 +81,7 @@ public class XXXBlg extends PluginForDecrypt {
                 dLink = createDownloadlink(form.getAction(null));
                 if (!parameter.matches("http://(www\\.)?xxx-blog\\.(org|to)/((share|sto|com-|u|filefactory/|relink/)[\\w\\./-]+|.*?\\.html|blog/(dvd-rips|scenes|amateur-clips|hd-(scenes|movies)|site-rips|image-sets|games)/.+/)")) decryptedLinks.add(createDownloadlink(parameter));
             }
-            dLink.addSourcePluginPassword("xxx-blog.dl.am");
-            dLink.addSourcePluginPassword("xxx-blog.org");
+            dLink.setSourcePluginPasswordList(pwList);
             decryptedLinks.add(dLink);
         }
 

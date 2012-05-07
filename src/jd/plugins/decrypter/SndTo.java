@@ -29,6 +29,11 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sound.to" }, urls = { "http://(www\\.)?sound\\.to/(en|de|fr)/music/download/files/.+" }, flags = { 0 })
 public class SndTo extends PluginForDecrypt {
 
+    private static ArrayList<String> pwList = new ArrayList<String>();
+    static {
+        pwList.add("sound.to");
+    }
+
     public SndTo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -45,7 +50,7 @@ public class SndTo extends PluginForDecrypt {
         if (links == null || links.length == 0) return null;
         for (String aLink : links) {
             DownloadLink dl = createDownloadlink(aLink);
-            dl.addSourcePluginPassword("sound.to");
+            dl.setSourcePluginPasswordList(pwList);
             decryptedLinks.add(dl);
         }
         if (fpName != null) {

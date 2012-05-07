@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -117,11 +118,11 @@ public class CNL extends PluginForDecrypt {
         final byte[] baseDecoded = Base64.decode(crypted);
         final String decryted = decrypt(baseDecoded, key).trim();
 
-        final String passwords[] = Regex.getLines(password);
+        final ArrayList<String> passwords = new ArrayList<String>(Arrays.asList(Regex.getLines(password)));
 
         final ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(decryted)).findLinks();
         for (final DownloadLink link : links) {
-            link.addSourcePluginPasswords(passwords);
+            if (passwords != null && passwords.size() > 0) link.setSourcePluginPasswordList(passwords);
         }
         for (final DownloadLink l : links) {
             if (source != null) {

@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -99,6 +100,7 @@ public class CMS extends PluginForDecrypt {
             if (!host.startsWith("http")) {
                 host = "http://" + host;
             }
+            ArrayList<String> pwList = null;
             String pass = br.getRegex(Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (pass == null) {
                 pass = br.getRegex("<B>Passwort:</B> <input value=\"(.*?)\".*?<").getMatch(0);
@@ -114,6 +116,9 @@ public class CMS extends PluginForDecrypt {
                 if (pass.equals("keins ben&ouml;tigt") || pass.equals("kein pw") || pass.equals("N/A") || pass.equals("n/a") || pass.equals("-") || pass.equals("-kein Passwort-") || pass.equals("-No Pass-") || pass.equals("ohne PW")) {
                     pass = null;
                 }
+            }
+            if (pass != null) {
+                pwList = new ArrayList<String>(Arrays.asList(new String[] { pass.trim() }));
             }
 
             final String forms[][] = br.getRegex(Pattern.compile("<FORM ACTION=\"([^\"]*)\" ENCTYPE=\"multipart/form-data\" METHOD=\"POST\" NAME=\"(mirror|download)[^\"]*\"(.*?)</FORM>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
@@ -156,8 +161,7 @@ public class CMS extends PluginForDecrypt {
                         }
                     }
                     /*
-                     * Bei hardcoremetal.biz wird mittlerweile der Download als
-                     * DLC-Container angeboten! Workaround für diese Seite
+                     * Bei hardcoremetal.biz wird mittlerweile der Download als DLC-Container angeboten! Workaround für diese Seite
                      */
                     if (br.containsHTML("ACTION=\"/download\\.php\"")) {
                         final Form forms2[] = br.getForms();
@@ -184,7 +188,7 @@ public class CMS extends PluginForDecrypt {
                         }
                         for (final String element2 : links) {
                             final DownloadLink link = createDownloadlink(Encoding.htmlDecode(element2));
-                            link.addSourcePluginPassword(pass);
+                            if (pwList != null) link.setSourcePluginPasswordList(pwList);
                             decryptedLinks.add(link);
                         }
                     }
@@ -238,7 +242,7 @@ public class CMS extends PluginForDecrypt {
                                 }
                             }
                             final DownloadLink link = createDownloadlink(dl);
-                            link.addSourcePluginPassword(pass);
+                            if (pwList != null) link.setSourcePluginPasswordList(pwList);
                             decryptedLinks.add(link);
                         }
                     }
@@ -249,7 +253,7 @@ public class CMS extends PluginForDecrypt {
                 final String[] links2 = br.getRegex("onclick=\"window.open\\(\\'([^']*)\\'\\)\\;\" value=\"Download\"").getColumn(0);
                 for (final String dl : links2) {
                     final DownloadLink link = createDownloadlink(dl);
-                    link.addSourcePluginPassword(pass);
+                    if (pwList != null) link.setSourcePluginPasswordList(pwList);
                     decryptedLinks.add(link);
                 }
             }

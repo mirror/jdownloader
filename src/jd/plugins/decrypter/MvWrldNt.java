@@ -52,6 +52,7 @@ public class MvWrldNt extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML("<h1>Dieses Release ist nur noch bei <a")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
         final String password = br.getRegex("class=\"password\">Password: (.*?)</p>").getMatch(0);
+        ArrayList<String> pwList = null;
         String captchaUrl = br.getRegex("\"(/captcha/\\w+\\.gif)\"").getMatch(0);
         final Form captchaForm = br.getForm(0);
         if (captchaUrl == null && !captchaForm.containsHTML("Captcha")) { return null; }
@@ -118,10 +119,15 @@ public class MvWrldNt extends PluginForDecrypt {
             if (toManyLinks) {
                 downLink.setAvailable(true);
             }
-            downLink.addSourcePluginPassword(Browser.getHost(parameter));
+            pwList = new ArrayList<String>();
+            String host = Browser.getHost(parameter);
             if (password != null && !password.equals("")) {
-                downLink.addSourcePluginPassword(password.trim());
+                pwList.add(password.trim());
             }
+            if (host != null) {
+                pwList.add(host.trim());
+            }
+            downLink.setSourcePluginPasswordList(pwList);
             try {
                 distribute(downLink);
             } catch (final Throwable e) {

@@ -20,6 +20,7 @@ import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -132,12 +133,16 @@ public class LinkStoreUs extends PluginForDecrypt {
             // stehen (kann vorkommen)
             String uncryptedLinksPagepiece = br.getRegex("class=\\'textarea linklist\\'.+readonly>(.*?)</textarea></div><br><br><br").getMatch(0);
             String[] uncryptedLinks = null;
+            ArrayList<String> pwList = null;
+            if (password != null) {
+                pwList = new ArrayList<String>(Arrays.asList(new String[] { password }));
+            }
             if (uncryptedLinksPagepiece != null) uncryptedLinks = HTMLParser.getHttpLinks(uncryptedLinksPagepiece, "");
             if (uncryptedLinks != null && uncryptedLinks.length != 0) {
                 logger.info("Found uncrypted links....");
                 for (String uncryptedLink : uncryptedLinks) {
                     DownloadLink dl = createDownloadlink(uncryptedLink);
-                    if (password != null) dl.addSourcePluginPassword(password);
+                    if (pwList != null) dl.setSourcePluginPasswordList(pwList);
                     decryptedLinks.add(dl);
                 }
             } else {
@@ -153,7 +158,7 @@ public class LinkStoreUs extends PluginForDecrypt {
                     String finallink = getSingleLoadlink(MAINPAGE + singleLink);
                     if (finallink == null) return null;
                     DownloadLink dl = createDownloadlink(finallink);
-                    if (password != null) dl.addSourcePluginPassword(password);
+                    if (pwList != null) dl.setSourcePluginPasswordList(pwList);
                     decryptedLinks.add(dl);
                     progress.increase(1);
                 }

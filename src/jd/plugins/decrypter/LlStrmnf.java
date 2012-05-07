@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -46,12 +47,16 @@ public class LlStrmnf extends PluginForDecrypt {
             }
         }
         String password = br.getRegex("<b>Passwort:</b><a href=\"\" onClick=\"CopyToClipboard\\(this\\); return\\(false\\);\">(.*?)</a></P>").getMatch(0);
+        ArrayList<String> pwList = null;
         if (password != null && (password.equals(" keine Angabe"))) password = null;
+        if (password != null) {
+            pwList = new ArrayList<String>(Arrays.asList(new String[] { password }));
+        }
         String[] additionalStreamlinks = br.getRegex("name=\"movie\" value=\"(http://.*?)\"").getColumn(0);
         if (additionalStreamlinks != null && additionalStreamlinks.length != 0) {
             for (String streamlink : additionalStreamlinks) {
                 DownloadLink dl = createDownloadlink(streamlink);
-                if (password != null) dl.addSourcePluginPassword(password);
+                if (pwList != null) dl.setSourcePluginPasswordList(pwList);
                 decryptedLinks.add(dl);
             }
         }
@@ -64,7 +69,7 @@ public class LlStrmnf extends PluginForDecrypt {
             if (links == null || links.length == 0) return null;
             for (String link : links) {
                 DownloadLink dl = createDownloadlink(link);
-                if (password != null) dl.addSourcePluginPassword(password);
+                if (pwList != null) dl.setSourcePluginPasswordList(pwList);
                 decryptedLinks.add(dl);
             }
             progress.increase(1);

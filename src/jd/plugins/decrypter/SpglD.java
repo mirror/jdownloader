@@ -43,9 +43,8 @@ public class SpglD extends PluginForDecrypt {
     private static final Pattern PATTERN_TEASER               = Pattern.compile("<teaser>(.+?)</teaser>");
 
     /*
-     * Type 1: h263 flv Type 2: flv mid (VP6) Type 3: h263 low Type 4: flv low
-     * (VP6) Type 5: flv high (VP6) (680544) Type 6: h263 3gp Type 7: h263 3gp
-     * low Type 8: iphone mp4 Type 9: podcast mp4 640480
+     * Type 1: h263 flv Type 2: flv mid (VP6) Type 3: h263 low Type 4: flv low (VP6) Type 5: flv high (VP6) (680544) Type 6: h263 3gp Type 7: h263 3gp low Type
+     * 8: iphone mp4 Type 9: podcast mp4 640480
      */
 
     private static final Pattern PATTERN_FILENAME             = Pattern.compile("<filename>(.+?)</filename>");
@@ -66,7 +65,6 @@ public class SpglD extends PluginForDecrypt {
         final FilePackage filePackage = FilePackage.getInstance();
         filePackage.setName("Spielel.de" + convertTo.getText() + "(" + convertTo.getExtFirst() + ")");
         filePackage.add(downloadLink);
-        downloadLink.setSourcePluginComment(comment);
         downloadLink.setBrowserUrl(cryptedLink.getCryptedUrl());
         downloadLink.setProperty("convertto", convertTo.name());
         decryptedLinks.add(downloadLink);

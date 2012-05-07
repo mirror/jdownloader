@@ -20,7 +20,6 @@ public class PluginClassLoader extends URLClassLoader {
 
         public PluginClassLoaderChild(ClassLoader parent) {
             super(new URL[] { Application.getRootUrlByClass(jd.Launcher.class, null) }, parent);
-            jared = true;
         }
 
         public boolean isUpdateRequired(String name) {

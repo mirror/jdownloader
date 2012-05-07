@@ -139,21 +139,29 @@ public class HostPluginController extends PluginController<PluginForHost> {
                         long revision = Formatter.getRevision(a.revision());
                         String[] names = a.names();
                         String[] patterns = a.urls();
+                        int[] flags = a.flags();
                         if (names.length == 0) {
                             /* create multiple hoster plugins from one source */
                             patterns = (String[]) c.getClazz().getDeclaredMethod("getAnnotationUrls", new Class[] {}).invoke(null, new Object[] {});
                             names = (String[]) c.getClazz().getDeclaredMethod("getAnnotationNames", new Class[] {}).invoke(null, new Object[] {});
+                            flags = (int[]) c.getClazz().getDeclaredMethod("getAnnotationFlags", new Class[] {}).invoke(null, new Object[] {});
                         }
                         if (patterns.length != names.length) throw new WTFException("names.length != patterns.length");
+                        if (flags.length != names.length && a.interfaceVersion() == 2) {
+                            /* interfaceVersion 2 is for Stable/Nightly */
+                            Log.exception(new WTFException("PLUGIN STABLE ISSUE!! names.length(" + names.length + ")!= flags.length(" + flags.length + ")->" + simpleName));
+                        }
                         if (names.length == 0) { throw new WTFException("names.length=0"); }
                         for (int i = 0; i < names.length; i++) {
                             try {
                                 String displayName = new String(names[i]);
+                                /* HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin for each downloadLink */
                                 AbstractHostPlugin existingPlugin = ret.get(displayName);
                                 if (existingPlugin != null && existingPlugin.getInterfaceVersion() > a.interfaceVersion()) {
                                     /* we already loaded a plugin with higher interfaceVersion, so skip older one */
                                     continue;
                                 }
+                                /* we use new String() here to dereference the Annotation and it's loaded class */
                                 AbstractHostPlugin ap = new AbstractHostPlugin(new String(c.getClazz().getSimpleName()));
                                 ap.setDisplayName(displayName);
                                 ap.setPattern(new String(patterns[i]));

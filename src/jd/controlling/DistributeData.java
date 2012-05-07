@@ -17,6 +17,7 @@
 package jd.controlling;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -26,8 +27,7 @@ import jd.plugins.DownloadLink;
 import org.jdownloader.controlling.filter.LinkFilterController;
 
 /**
- * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage
- * an (unter Umständen auch mehrere) Plugins Die gefundenen Treffer werden
+ * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage an (unter Umständen auch mehrere) Plugins Die gefundenen Treffer werden
  * ausgeschnitten.
  * 
  * @author astaldo
@@ -42,8 +42,7 @@ public class DistributeData {
     private final ArrayList<String> foundPasswords = new ArrayList<String>();
 
     /**
-     * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll. Die
-     * übergebenen Daten werden durch einen URLDecoder geschickt.
+     * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll. Die übergebenen Daten werden durch einen URLDecoder geschickt.
      * 
      * @param data
      *            Daten, die verteilt werden sollen
@@ -75,7 +74,14 @@ public class DistributeData {
         for (final CrawledLink link : lf.getCrawledLinks()) {
             DownloadLink dl = link.getDownloadLink();
             if (dl != null) {
-                dl.addSourcePluginPasswordList(foundPasswords);
+                List<String> oldList = dl.getSourcePluginPasswordList();
+                if (oldList != null && oldList.size() > 0) {
+                    oldList = new ArrayList<String>(oldList);
+                    oldList.addAll(foundPasswords);
+                    dl.setSourcePluginPasswordList(foundPasswords);
+                } else {
+                    if (foundPasswords.size() > 0) dl.setSourcePluginPasswordList(foundPasswords);
+                }
                 ret.add(dl);
             }
         }

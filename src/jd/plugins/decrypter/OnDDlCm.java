@@ -53,7 +53,7 @@ public class OnDDlCm extends PluginForDecrypt {
         for (String link : links) {
             if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
                 DownloadLink dLink = createDownloadlink(link);
-                dLink.addSourcePluginPasswordList(passwords);
+                if (passwords != null && passwords.size() > 0) dLink.setSourcePluginPasswordList(passwords);
                 decryptedLinks.add(dLink);
             }
         }

@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -64,6 +65,10 @@ public class Sxrcm extends PluginForDecrypt {
                 downloadId = new Regex(parameter, PATTERN_SUPPORTED_CRYPT).getMatch(0);
                 br.getPage("http://sexuria.com/Pornos_Kostenlos_info_" + downloadId + ".html");
                 password = br.getRegex(PATTERN_PASSWORD).getMatch(0);
+                ArrayList<String> pwList = null;
+                if (password != null) {
+                    pwList = new ArrayList<String>(Arrays.asList(new String[] { password.trim() }));
+                }
                 Thread.sleep(1000);
                 br.getPage(parameter);
                 String links[] = br.getRegex(PATTERN_REDIRECT_LINKS).getColumn(0);
@@ -71,8 +76,7 @@ public class Sxrcm extends PluginForDecrypt {
                     Thread.sleep(1000);
                     br.getPage(link);
                     DownloadLink dlLink = createDownloadlink(br.getRedirectLocation());
-                    dlLink.addSourcePluginPassword(password);
-                    dlLink.setDecrypterPassword(password);
+                    if (pwList != null) dlLink.setSourcePluginPasswordList(pwList);
                     decryptedLinks.add(dlLink);
                 }
                 return decryptedLinks;

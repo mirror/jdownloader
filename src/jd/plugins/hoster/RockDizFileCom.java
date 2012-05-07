@@ -112,7 +112,7 @@ public class RockDizFileCom extends PluginForHost {
             if (filename == null) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = new Regex(correctedBR, "(?i)(File)?name ?:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(2);
+                    filename = new Regex(correctedBR, "(?i)(File)?name ?:? ?(<[^>]+> ?)+?([^<>\"]+)").getMatch(2);
                     if (filename == null) {
                         filename = new Regex(correctedBR, "(?i)<meta property=\"og:title\" content=\"([^\"<>]+)").getMatch(0);
                         if (filename == null) filename = new Regex(correctedBR, "(?i)>[\r\n]+([^\"<>]+)<br />[\r\n]+[\\d\\.]+ ?(GB|MB)<br />").getMatch(0);
@@ -158,8 +158,7 @@ public class RockDizFileCom extends PluginForHost {
         // previous download saved final dllink
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         // they have public final dllink on the first page!
         if (dllink == null) dllink = getDllink();
@@ -561,7 +560,11 @@ public class RockDizFileCom extends PluginForHost {
                 br.getPage(COOKIE_HOST + "/?op=my_account");
                 doSomething();
                 if (!new Regex(correctedBR, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!new Regex(correctedBR, "(Premium\\-Account expire|>Renew premium<)").matches()) {account.setProperty("nopremium", true);                } else {                    account.setProperty("nopremium", false);               }
+                if (!new Regex(correctedBR, "(Premium\\-Account expire|>Renew premium<)").matches()) {
+                    account.setProperty("nopremium", true);
+                } else {
+                    account.setProperty("nopremium", false);
+                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);

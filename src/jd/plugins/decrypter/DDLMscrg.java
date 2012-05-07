@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.regex.Pattern;
 
@@ -79,6 +80,10 @@ public class DDLMscrg extends PluginForDecrypt {
             if (password != null && password.contains("(kein Passwort)")) {
                 password = null;
             }
+            ArrayList<String> pwList = null;
+            if (password != null) {
+                pwList = new ArrayList<String>(Arrays.asList(new String[] { password.trim() }));
+            }
             String allLinks[] = br.getRegex("\"(download/links/[a-z0-9]+/(mirror/\\d+/)?)\"").getColumn(0);
             if (allLinks == null || allLinks.length == 0) {
                 logger.warning("Couldn't find any links...");
@@ -86,7 +91,7 @@ public class DDLMscrg extends PluginForDecrypt {
             }
             for (String singleLink : allLinks) {
                 DownloadLink dLink = createDownloadlink("http://ddl-music.org/" + singleLink);
-                if (password != null) dLink.addSourcePluginPassword(password);
+                if (pwList != null) dLink.setSourcePluginPasswordList(pwList);
                 decryptedLinks.add(dLink);
             }
             if (fpName != null) {

@@ -3,7 +3,9 @@ package org.jdownloader.plugins.controller.crawler;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 
 import jd.JDInitFlags;
 import jd.nutils.Formatter;
@@ -40,8 +42,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * 
      */
     private CrawlerPluginController() {
         list = null;
@@ -102,63 +104,90 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     static public byte[] KEY = new byte[] { 0x01, 0x03, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
 
     private List<LazyCrawlerPlugin> update() throws MalformedURLException {
-        HashMap<String, AbstractCrawlerPlugin> ret = new HashMap<String, AbstractCrawlerPlugin>();
+        HashMap<String, LinkedList<AbstractCrawlerPlugin>> ret = new HashMap<String, LinkedList<AbstractCrawlerPlugin>>();
         HashMap<String, LazyCrawlerPlugin> ret2 = new HashMap<String, LazyCrawlerPlugin>();
         PluginClassLoaderChild classLoader = PluginClassLoader.getInstance().getChild();
-        for (PluginInfo<PluginForDecrypt> c : scan("jd/plugins/decrypter")) {
-            String simpleName = c.getClazz().getSimpleName();
-            DecrypterPlugin a = c.getClazz().getAnnotation(DecrypterPlugin.class);
-            if (a != null) {
-                try {
-                    long revision = Formatter.getRevision(a.revision());
-                    String[] names = a.names();
-                    String[] patterns = a.urls();
-                    if (names.length == 0) {
-                        /* create multiple crawler plugins from one source */
-                        patterns = (String[]) c.getClazz().getDeclaredMethod("getAnnotationUrls", new Class[] {}).invoke(null, new Object[] {});
-                        names = (String[]) c.getClazz().getDeclaredMethod("getAnnotationNames", new Class[] {}).invoke(null, new Object[] {});
-                    }
-                    if (patterns.length != names.length) throw new WTFException("names.length != patterns.length");
-                    if (names.length == 0) { throw new WTFException("names.length=0"); }
-                    for (int i = 0; i < names.length; i++) {
-                        try {
-                            String displayName = new String(names[i]);
-                            AbstractCrawlerPlugin existingPlugin = ret.get(displayName + patterns[i]);
-                            if (existingPlugin != null && existingPlugin.getInterfaceVersion() > a.interfaceVersion()) {
-                                /*
-                                 * we already loaded a plugin with higher interfaceVersion, so skip older one
-                                 */
-                                continue;
-                            }
-                            AbstractCrawlerPlugin ap = new AbstractCrawlerPlugin(new String(c.getClazz().getSimpleName()));
-                            ap.setDisplayName(displayName);
-
-                            // why new String?
-                            ap.setPattern(new String(patterns[i]));
-                            ap.setVersion(revision);
-                            ap.setInterfaceVersion(a.interfaceVersion());
-                            LazyCrawlerPlugin l = new LazyCrawlerPlugin(ap, null, classLoader);
-                            existingPlugin = ret.put(ap.getDisplayName() + ap.getPattern(), ap);
-                            if (existingPlugin != null) {
-                                Log.L.finest("@CrawlerPlugin replaced:" + simpleName + " " + names[i]);
-                            }
-                            ret2.put(ap.getDisplayName() + ap.getPattern(), l);
-                            Log.L.finest("@CrawlerPlugin ok:" + simpleName + " " + names[i]);
-                        } catch (Throwable e) {
-                            Log.L.severe("@CrawlerPlugin failed:" + simpleName + " " + names[i]);
-                            Log.exception(e);
+        try {
+            /* during init we dont want dummy libs being created */
+            classLoader.setCreateDummyLibs(false);
+            for (PluginInfo<PluginForDecrypt> c : scan("jd/plugins/decrypter")) {
+                String simpleName = c.getClazz().getSimpleName();
+                DecrypterPlugin a = c.getClazz().getAnnotation(DecrypterPlugin.class);
+                if (a != null) {
+                    try {
+                        long revision = Formatter.getRevision(a.revision());
+                        String[] names = a.names();
+                        String[] patterns = a.urls();
+                        int[] flags = a.flags();
+                        if (names.length == 0) {
+                            /* create multiple crawler plugins from one source */
+                            patterns = (String[]) c.getClazz().getDeclaredMethod("getAnnotationUrls", new Class[] {}).invoke(null, new Object[] {});
+                            names = (String[]) c.getClazz().getDeclaredMethod("getAnnotationNames", new Class[] {}).invoke(null, new Object[] {});
+                            flags = (int[]) c.getClazz().getDeclaredMethod("getAnnotationFlags", new Class[] {}).invoke(null, new Object[] {});
                         }
+                        if (patterns.length != names.length) throw new WTFException("names.length != patterns.length");
+                        if (flags.length != names.length && a.interfaceVersion() == 2) {
+                            /* interfaceVersion 2 is for Stable/Nightly */
+                            Log.exception(new WTFException("PLUGIN STABLE ISSUE!! names.length(" + names.length + ")!= flags.length(" + flags.length + ")->" + simpleName));
+                        }
+                        if (names.length == 0) { throw new WTFException("names.length=0"); }
+                        for (int i = 0; i < names.length; i++) {
+                            try {
+                                String displayName = new String(names[i]);
+                                LinkedList<AbstractCrawlerPlugin> existingPlugin = ret.get(displayName);
+                                /* we use new String() here to dereference the Annotation and it's loaded class */
+                                AbstractCrawlerPlugin ap = new AbstractCrawlerPlugin(new String(c.getClazz().getSimpleName()));
+                                ap.setDisplayName(displayName);
+                                ap.setPattern(new String(patterns[i]));
+                                ap.setVersion(revision);
+                                ap.setInterfaceVersion(a.interfaceVersion());
+                                LazyCrawlerPlugin l = new LazyCrawlerPlugin(ap, null, classLoader);
+                                if (existingPlugin == null) {
+                                    existingPlugin = new LinkedList<AbstractCrawlerPlugin>();
+                                    ret.put(displayName, existingPlugin);
+                                }
+                                boolean added = false;
+                                ListIterator<AbstractCrawlerPlugin> it = existingPlugin.listIterator();
+                                /* plugins with higher interfaceVersion will be sorted in list */
+                                while (it.hasNext()) {
+                                    AbstractCrawlerPlugin next = it.next();
+                                    if (a.interfaceVersion() > next.getInterfaceVersion()) {
+                                        it.add(ap);
+                                        added = true;
+                                        break;
+                                    }
+                                }
+                                if (added == false) {
+                                    /* add plugin at the end of list */
+                                    existingPlugin.add(ap);
+                                }
+                                if (existingPlugin.size() > 1) {
+                                    Log.L.finest("@CrawlerPlugin multiple crawler:" + displayName + "->" + simpleName);
+                                }
+                                ret2.put(ap.getDisplayName() + ap.getPattern(), l);
+                                Log.L.finest("@CrawlerPlugin ok:" + simpleName + " " + names[i]);
+                            } catch (Throwable e) {
+                                Log.L.severe("@CrawlerPlugin failed:" + simpleName + " " + names[i]);
+                                Log.exception(e);
+                            }
+                        }
+                    } catch (final Throwable e) {
+                        Log.L.severe("@CrawlerPlugin failed:" + simpleName);
+                        Log.exception(e);
                     }
-                } catch (final Throwable e) {
-                    Log.L.severe("@CrawlerPlugin failed:" + simpleName);
-                    Log.exception(e);
+                } else {
+                    Log.L.severe("@CrawlerPlugin missing:" + simpleName);
                 }
-
-            } else {
-                Log.L.severe("@CrawlerPlugin missing:" + simpleName);
             }
+        } finally {
+            /* now the pluginClassLoad may create dummy libraries */
+            classLoader.setCreateDummyLibs(true);
         }
-        save(new ArrayList<AbstractCrawlerPlugin>(ret.values()));
+        ArrayList<AbstractCrawlerPlugin> saveList = new ArrayList<AbstractCrawlerPlugin>();
+        for (LinkedList<AbstractCrawlerPlugin> crawler : ret.values()) {
+            saveList.addAll(crawler);
+        }
+        save(saveList);
         return new ArrayList<LazyCrawlerPlugin>(ret2.values());
     }
 

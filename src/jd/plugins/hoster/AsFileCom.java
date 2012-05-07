@@ -197,6 +197,10 @@ public class AsFileCom extends PluginForHost {
         String dllink = br.getRegex("\"(http://s\\d+\\.asfile\\.com/file/premium/[a-z0-9]+/\\d+/[A-Za-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("<p><a href=\"(http://[^<>\"\\'/]+)\"").getMatch(0);
         if (dllink == null) {
+            if (br.containsHTML("You have exceeded the download limit for today")) {
+                logger.info("You have exceeded the download limit for today");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -42,9 +43,9 @@ public class SdxCc extends PluginForDecrypt {
         for (String link : links) {
             decryptedLinks.add(createDownloadlink(link));
         }
+        ArrayList<String> pwList = new ArrayList<String>(Arrays.asList(new String[] { pw }));
         for (DownloadLink dlLink : decryptedLinks) {
-            dlLink.addSourcePluginPassword(pw);
-            dlLink.setDecrypterPassword(pw);
+            dlLink.setSourcePluginPasswordList(pwList);
         }
         return decryptedLinks.size() > 0 ? decryptedLinks : null;
     }

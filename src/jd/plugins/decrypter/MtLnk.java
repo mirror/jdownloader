@@ -43,11 +43,11 @@ public class MtLnk extends PluginForDecrypt {
     private ArrayList<DownloadLink> decryptedLinks;
 
     /* we use identity as package name if available */
-    private String packageName = null;
+    private String                  packageName   = null;
 
-    private String publisherName = null;
+    private String                  publisherName = null;
 
-    private String publisherURL = null;
+    private String                  publisherURL  = null;
 
     public MtLnk(PluginWrapper wrapper) {
         super(wrapper);
@@ -90,10 +90,10 @@ public class MtLnk extends PluginForDecrypt {
     }
 
     public class MetalinkSAXHandler extends DefaultHandler {
-        private CharArrayWriter text = new CharArrayWriter();
-        Attributes atr;
-        String path = "";
-        private DownloadLink dLink = null;
+        private CharArrayWriter text  = new CharArrayWriter();
+        Attributes              atr;
+        String                  path  = "";
+        private DownloadLink    dLink = null;
 
         public MetalinkSAXHandler() {
         }
@@ -134,13 +134,6 @@ public class MtLnk extends PluginForDecrypt {
                 downloadLink.setDownloadSize(dLink.getDownloadSize());
                 downloadLink.setMD5Hash(dLink.getMD5Hash());
                 downloadLink.setSha1Hash(dLink.getSha1Hash());
-                if (publisherName != null && publisherURL != null) {
-                    downloadLink.setSourcePluginComment(publisherName + " (" + publisherURL + ")");
-                } else if (publisherName != null) {
-                    downloadLink.setSourcePluginComment(publisherName);
-                } else if (publisherURL != null) {
-                    downloadLink.setSourcePluginComment(publisherURL);
-                }
                 decryptedLinks.add(downloadLink);
             }
             path = path.substring(0, path.length() - qName.length() - 1);

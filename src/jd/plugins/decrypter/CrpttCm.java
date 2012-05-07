@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
@@ -158,8 +159,10 @@ public class CrpttCm extends PluginForDecrypt {
             if (pass == null) pass = "";/* falls kein passwort korrekt war */
             String packagename = br.getRegex(Pattern.compile("class=\"folder\">(.*?)</", Pattern.CASE_INSENSITIVE)).getMatch(0);
             String password = br.getRegex(Pattern.compile("<b>Password:</b>(.*?)<", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-            if (password != null) password = password.trim();
-
+            ArrayList<String> pwList = null;
+            if (password != null) {
+                pwList = new ArrayList<String>(Arrays.asList(new String[] { password.trim() }));
+            }
             byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x11, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74, 0x32, 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x11, 0x0a, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x06 };
             byte[] b2 = new byte[] { 0x02, 0x00 };
             br.getHeaders().put("Content-Type", "application/x-amf");
@@ -179,7 +182,7 @@ public class CrpttCm extends PluginForDecrypt {
                 String[] links = HTMLParser.getHttpLinks(linktext, null);
                 if (links.length > 0 && links[0].startsWith("http")) {
                     DownloadLink link = createDownloadlink(links[0]);
-                    link.addSourcePluginPassword(password);
+                    if (pwList != null) link.setSourcePluginPasswordList(pwList);
                     fp.add(link);
                     decryptedLinks.add(link);
                 }

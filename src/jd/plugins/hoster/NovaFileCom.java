@@ -136,7 +136,7 @@ public class NovaFileCom extends PluginForHost {
         if (md5hash != null) link.setMD5Hash(md5hash.trim());
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setProperty("plainfilename", filename);
-        link.setFinalFileName(filename.trim());
+        link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null && !filesize.equals("")) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
