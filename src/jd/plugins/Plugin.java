@@ -36,13 +36,13 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 /**
- * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins
- * müssen von dieser Klasse abgeleitet werden.
+ * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
  * 
  * Alle Plugins verfügen über einen Event Mechanismus
  */
@@ -60,13 +60,13 @@ public abstract class Plugin implements ActionListener {
     protected JDPluginLogger   logger           = JDPluginLogger.Trash;
 
     /**
-     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den
-     * dateinamen zuzugreifen sollte bis auf Ausnamen immer
-     * DownloadLink.getName() verwendet werden
+     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer DownloadLink.getName() verwendet
+     * werden
      * 
      * @return Datename des Downloads.
      */
     public static String extractFileNameFromURL(String filename) {
+        if (StringUtils.isEmpty(filename)) return null;
         int index = filename.indexOf("?");
         /*
          * erst die Get-Parameter abschneiden
@@ -87,8 +87,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Holt den Dateinamen aus einem Content-Disposition header. wird dieser
-     * nicht gefunden, wird der dateiname aus der url ermittelt
+     * Holt den Dateinamen aus einem Content-Disposition header. wird dieser nicht gefunden, wird der dateiname aus der url ermittelt
      * 
      * @param urlConnection
      * @return Filename aus dem header (content disposition) extrahiert
@@ -105,8 +104,7 @@ public abstract class Plugin implements ActionListener {
     /**
      * 
      * @param message
-     *            The message to be displayed or <code>null</code> to display a
-     *            Password prompt
+     *            The message to be displayed or <code>null</code> to display a Password prompt
      * @param link
      *            the {@link CryptedLink}
      * @return the entered password
@@ -122,8 +120,7 @@ public abstract class Plugin implements ActionListener {
     /**
      * 
      * @param message
-     *            The message to be displayed or <code>null</code> to display a
-     *            Password prompt
+     *            The message to be displayed or <code>null</code> to display a Password prompt
      * @param link
      *            the {@link DownloadLink}
      * @return the entered password
@@ -152,9 +149,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon
-     * handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des Patterns
-     * vorhanden ist.
+     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des Patterns vorhanden ist.
      * 
      * @param data
      *            der zu prüfende Text
@@ -175,8 +170,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Gibt das Konfigurationsobjekt der Instanz zurück. Die Gui kann daraus
-     * Dialogelement zaubern
+     * Gibt das Konfigurationsobjekt der Instanz zurück. Die Gui kann daraus Dialogelement zaubern
      * 
      * @return gibt die aktuelle Configuration Instanz zurück
      */
@@ -224,8 +218,7 @@ public abstract class Plugin implements ActionListener {
      * Gibt die Datei zurück in die der aktuelle captcha geladen werden soll.
      * 
      * @param plugin
-     * @return Gibt einen Pfad zurück der für die nächste Captchadatei
-     *         reserviert ist
+     * @return Gibt einen Pfad zurück der für die nächste Captchadatei reserviert ist
      */
     protected File getLocalCaptchaFile(String extension) {
         if (extension == null) {
@@ -240,16 +233,14 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * p gibt das interne properties objekt zurück indem die Plugineinstellungen
-     * gespeichert werden
+     * p gibt das interne properties objekt zurück indem die Plugineinstellungen gespeichert werden
      * 
      * @return internes property objekt
      */
     public abstract SubConfiguration getPluginConfig();
 
     /**
-     * Ein regulärer Ausdruck, der anzeigt, welche Links von diesem Plugin
-     * unterstützt werden
+     * Ein regulärer Ausdruck, der anzeigt, welche Links von diesem Plugin unterstützt werden
      * 
      * @return Ein regulärer Ausdruck
      * @see Pattern
@@ -270,8 +261,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Can be overridden, to return a descriptio of the hoster, or a short help
-     * forit's settings
+     * Can be overridden, to return a descriptio of the hoster, or a short help forit's settings
      * 
      * @return
      */
