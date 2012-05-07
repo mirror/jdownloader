@@ -41,8 +41,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
     @Override
     protected Transferable createTransferable(JComponent c) {
         /*
-         * get all selected packages and children and create a transferable if
-         * possible
+         * get all selected packages and children and create a transferable if possible
          */
         ArrayList<PackageType> packages = table.getSelectedPackages();
         ArrayList<ChildrenType> links = table.getSelectedChildren();
@@ -118,15 +117,13 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                     if (beforeElement != null) {
                         if (beforeElement instanceof AbstractPackageChildrenNode) {
                             /*
-                             * beforeElement is child->we are inside an expanded
-                             * package
+                             * beforeElement is child->we are inside an expanded package
                              */
                             fp = (PackageType) ((AbstractPackageChildrenNode) beforeElement).getParentNode();
                         } else {
                             if (afterElement != null && afterElement instanceof AbstractPackageChildrenNode) {
                                 /*
-                                 * beforeElement is child->we are inside an
-                                 * expanded package
+                                 * beforeElement is child->we are inside an expanded package
                                  */
                                 fp = (PackageType) ((AbstractPackageChildrenNode) afterElement).getParentNode();
                             }
@@ -136,8 +133,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                     if (packagesAvailable) {
                         if (afterElement != null && !(afterElement instanceof AbstractPackageNode)) {
                             /*
-                             * we dont allow packages get get insert inside a
-                             * package
+                             * we dont allow packages get get insert inside a package
                              */
                             return false;
                         } else {
@@ -146,8 +142,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                         ArrayList<PackageType> packages = content.getPackages();
                         ;
                         /*
-                         * we do not allow drop on items that are part of our
-                         * transferable
+                         * we do not allow drop on items that are part of our transferable
                          */
                         for (PackageType p : packages) {
                             if (p == fp) { return false; }
@@ -172,8 +167,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                     /* only drop on packages is allowed */
                     ArrayList<PackageType> packages = content.getPackages();
                     /*
-                     * we do not allow drop on items that are part of our
-                     * transferable
+                     * we do not allow drop on items that are part of our transferable
                      */
                     for (PackageType p : packages) {
                         if (p == onElement) return false;
@@ -263,7 +257,13 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        table.getController().merge((PackageType) element, links, packages, org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR.DO_MERGE_TOP_BOTTOM.getValue());
+                        if (((PackageType) element).getCurrentSorter() == null) {
+                            table.getController().merge((PackageType) element, links, packages, org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR.DO_MERGE_TOP_BOTTOM.getValue() ? MergePosition.BOTTOM : MergePosition.TOP);
+                        } else {
+                            // we have a sorter.neither top nor bottom but sorted insert
+                            table.getController().merge((PackageType) element, links, packages, MergePosition.SORTED);
+
+                        }
                         return null;
                     }
                 });

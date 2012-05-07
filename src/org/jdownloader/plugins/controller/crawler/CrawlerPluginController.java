@@ -25,8 +25,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     private static final CrawlerPluginController INSTANCE = new CrawlerPluginController();
 
     /**
-     * get the only existing instance of HostPluginController. This is a
-     * singleton
+     * get the only existing instance of HostPluginController. This is a singleton
      * 
      * @return
      */
@@ -41,8 +40,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private CrawlerPluginController() {
         list = null;
@@ -127,8 +126,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                             AbstractCrawlerPlugin existingPlugin = ret.get(displayName + patterns[i]);
                             if (existingPlugin != null && existingPlugin.getInterfaceVersion() > a.interfaceVersion()) {
                                 /*
-                                 * we already loaded a plugin with higher
-                                 * interfaceVersion, so skip older one
+                                 * we already loaded a plugin with higher interfaceVersion, so skip older one
                                  */
                                 continue;
                             }
@@ -155,6 +153,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                     Log.L.severe("@CrawlerPlugin failed:" + simpleName);
                     Log.exception(e);
                 }
+
             } else {
                 Log.L.severe("@CrawlerPlugin missing:" + simpleName);
             }

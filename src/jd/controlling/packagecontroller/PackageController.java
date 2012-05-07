@@ -18,6 +18,7 @@ import jd.controlling.IOEQ;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.gui.views.components.packagetable.dragdrop.MergePosition;
 
 public abstract class PackageController<PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> implements AbstractNodeNotifier<PackageType> {
     private final AtomicLong structureChanged = new AtomicLong(0);
@@ -276,13 +277,24 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         return ret;
     }
 
-    public void merge(final PackageType dest, final ArrayList<ChildType> srcLinks, final ArrayList<PackageType> srcPkgs, final boolean mergeTop) {
+    public void merge(final PackageType dest, final ArrayList<ChildType> srcLinks, final ArrayList<PackageType> srcPkgs, final MergePosition mergeposition) {
         if (dest == null) return;
         if (srcLinks == null && srcPkgs == null) return;
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
-                int positionMerge = mergeTop ? 0 : -1;
+                int positionMerge = 0;
+
+                switch (mergeposition) {
+                case BOTTOM:
+                    positionMerge = dest.getChildren().size();
+                    break;
+                case TOP:
+                    positionMerge = 0;
+                    break;
+                default:
+                    positionMerge = -1;
+                }
                 if (srcLinks != null) {
                     /* move srcLinks to dest */
                     moveOrAddAt(dest, srcLinks, positionMerge);
