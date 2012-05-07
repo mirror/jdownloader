@@ -101,6 +101,13 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         // filteredAdd.setVisible(false);
         LinkCollector.getInstance().getEventsender().addListener(new LinkCollectorHighlightListener() {
+            public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+                setFilteredAvailable(LinkCollector.getInstance().getfilteredStuffSize());
+            }
+
+            public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+                setFilteredAvailable(0);
+            }
 
             @Override
             public void onHighLight(CrawledLink parameter) {
@@ -127,6 +134,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
 
         });
+
         autoConfirm = new AutoConfirmButton();
         autoConfirm.setVisible(false);
         setFilteredAvailable(LinkCollector.getInstance().getfilteredStuffSize());

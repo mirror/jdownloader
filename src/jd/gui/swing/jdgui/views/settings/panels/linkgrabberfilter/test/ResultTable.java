@@ -1,5 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test;
 
+import java.awt.Dimension;
 import java.awt.event.MouseEvent;
 
 import jd.controlling.linkcrawler.CrawledLink;
@@ -15,6 +16,7 @@ public class ResultTable extends BasicJDTable<CrawledLink> {
     public ResultTable(TestWaitDialog testWaitDialog, ExtTableModel<CrawledLink> model) {
         super(model);
         owner = testWaitDialog;
+        this.setPreferredScrollableViewportSize(new Dimension(450, 450));
     }
 
     @Override
