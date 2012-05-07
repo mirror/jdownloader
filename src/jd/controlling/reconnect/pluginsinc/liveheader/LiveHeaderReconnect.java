@@ -82,7 +82,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
 
     void editScript() {
 
-        final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE, "Script Editor", "Please enter a Liveheader script below.", settings.getScript(), NewTheme.I().getIcon("edit", 18), T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save(), null);
+        final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, "Script Editor", "Please enter a Liveheader script below.", settings.getScript(), NewTheme.I().getIcon("edit", 18), T._.jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save(), null);
         dialog.setPreferredSize(new Dimension(700, 400));
         // CLR Import
         // dialog.setLeftActions(new AbstractAction("Browser Scripts") {

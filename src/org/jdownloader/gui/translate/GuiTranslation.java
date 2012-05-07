@@ -739,7 +739,7 @@ public interface GuiTranslation extends TranslateInterface {
     String gui_config_download_preferreconnect();
 
     @Default(lngs = { "en" }, values = { "Maximum of simultaneous downloads per host" })
-    String gui_config_download_simultan_downloads_per_host();
+    String gui_config_download_simultan_downloads_per_host2();
 
     @Default(lngs = { "en" }, values = { "File writing" })
     String gui_config_download_write();
