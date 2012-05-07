@@ -105,7 +105,7 @@ public class BuyAction extends AbstractAction {
 
                         @Override
                         protected JComboBox getComboBox(final Object[] options2) {
-                            System.out.println(2);
+
                             combo = new SearchComboBox<LazyHostPlugin>(plugins) {
 
                                 /**
@@ -126,7 +126,7 @@ public class BuyAction extends AbstractAction {
                                 }
 
                             };
-                            System.out.println(3);
+
                             final ComboBoxDialog _this = this;
                             combo.addActionListener(new ActionListener() {
 
