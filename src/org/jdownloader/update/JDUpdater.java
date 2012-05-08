@@ -148,8 +148,7 @@ public class JDUpdater extends AppUpdater {
     }
 
     /**
-     * Create a new instance of JDUpdater. This is a singleton class. Access the
-     * only existing instance by using {@link #getInstance()}.
+     * Create a new instance of JDUpdater. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private JDUpdater() {
         super();
