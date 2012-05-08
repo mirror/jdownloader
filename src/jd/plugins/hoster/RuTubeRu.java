@@ -150,4 +150,5 @@ public class RuTubeRu extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }

@@ -31,8 +31,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.LnkCrptWs;
 import jd.utils.JDHexUtils;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -45,7 +45,7 @@ public class OneThousandEbCom extends PluginForHost {
 
     private String fortyTwo(String s) {
         s = Encoding.Base64Decode(s);
-        return JDHexUtils.toString(LnkCrptWs.IMAGEREGEX(s));
+        return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s));
     }
 
     @Override
@@ -60,6 +60,7 @@ public class OneThousandEbCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
         final String js = br.getRegex(fortyTwo("RkM4QkZBRjFGQTAwQzhCMjFGOTZCMjk1REU1RDQzRkMyODkwNzBCRjBEMEFEQzk4MUU0QzVFMzgxNDY4ODY4NTU4OEZGQzMzODgwQUUxNkYyNTQ2NTVCREVBNzUxQzI2RTE3NzJEOUNDNUNDNjU2MkE4NzREMkU1NkY1QTM2Njg1RUExQ0Q3OTVDNzlGQjk5MjRGODJBRUY1MjNFQ0ZCMzQyRkE4QkRFNkJBRDlGRkQ5Q0Q4MkI5MjJDMzU3QzRFQzcyMDNFNTc2RkQ5ODUzNzNBMTMwNEZDMTg2NTEyN0UwMEU2OEE3MjMxRkE3M0M2ODA5NzYwN0E0QTZGNThDNDhCMzI=")).getMatch(0);
         final String dllink = requestDownloadLink(js);
@@ -135,7 +136,6 @@ public class OneThousandEbCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        final String REGEX = JDHexUtils.getHexString("getDownLink");
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
