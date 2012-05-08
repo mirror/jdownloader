@@ -284,7 +284,25 @@ public class HellShareCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.getHeaders().put("Accept-Language", "en-gb;q=0.9, en;q=0.8");
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        try {
+            try {
+                /* not available in 0.9.* && nightly */
+                br.setAllowedResponseCodes(new int[] { 502 });
+            } catch (final Throwable e) {
+            }
+            br.getPage(link.getDownloadURL());
+            if (this.br.containsHTML(">We are sorry, but HellShare is unavailable in \\w+\\.?<")) {
+                logger.warning(">We are sorry, but HellShare is unavailable in your Country");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.HellShareCom.error.CountryBlock", "We are sorry, but HellShare is unavailable in your Country"));
+            }
+        } catch (final Exception e) {
+            // for stable: we assume that 502 == country block.
+            if (e.getMessage().contains("502 Bad Gateway")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.HellShareCom.error.CountryBlock", "We are sorry, but HellShare is unavailable in your Country"));
+            } else {
+                return AvailableStatus.UNCHECKABLE;
+            }
+        }
         if (br.containsHTML("<h1>File not found</h1>") || br.containsHTML("<h1>Soubor nenalezen</h1>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filesize = br.getRegex("FileSize_master\">(.*?)</strong>").getMatch(0);
         if (filesize == null) {
