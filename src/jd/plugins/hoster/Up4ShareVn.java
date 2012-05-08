@@ -91,18 +91,20 @@ public class Up4ShareVn extends PluginForHost {
         br.setFollowRedirects(false);
         String captchaurl = "http://up.4share.vn/code.html?width=40&height=28&characters=2";
         String dllink = null;
-        int wait = 60;
-        final String waittime = br.getRegex("var counter=(\\d+);").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait * 1001l, downloadLink);
+        // Can be skipped
+        // int wait = 60;
+        // final String waittime =
+        // br.getRegex("var counter=(\\d+);").getMatch(0);
+        // if (waittime != null) wait = Integer.parseInt(waittime);
+        // sleep(wait * 1001l, downloadLink);
         for (int i = 0; i <= 3; i++) {
             String code = getCaptchaCode(captchaurl, downloadLink);
             br.postPage(downloadLink.getDownloadURL(), "&submit=DOWNLOAD&s=&security_code=" + code);
             dllink = br.getRedirectLocation();
-            if (br.containsHTML("/code.html")) continue;
+            if (dllink == null && br.containsHTML("/code.html")) continue;
             break;
         }
-        if (br.containsHTML("/code.html")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (dllink == null && br.containsHTML("/code.html")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
