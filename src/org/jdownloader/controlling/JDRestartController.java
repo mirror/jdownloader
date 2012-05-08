@@ -14,8 +14,7 @@ public class JDRestartController extends RestartController {
     private static final JDRestartController INSTANCE = new JDRestartController();
 
     /**
-     * get the only existing instance of JDRestartController. This is a
-     * singleton
+     * get the only existing instance of JDRestartController. This is a singleton
      * 
      * @return
      */
@@ -43,8 +42,8 @@ public class JDRestartController extends RestartController {
     }
 
     /**
-     * Create a new instance of JDRestartController. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of JDRestartController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private JDRestartController() {
         super();
@@ -52,7 +51,8 @@ public class JDRestartController extends RestartController {
     }
 
     public void bootstrapRestartASAP() {
-        System.out.println(1);
+        // Disabled to workaround the updateloop
+        if (true) return;
         new Thread("Wait For Restart") {
             public void run() {
                 while (true) {
