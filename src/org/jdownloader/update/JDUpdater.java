@@ -147,7 +147,8 @@ public class JDUpdater extends AppUpdater {
         // Force a Updater.jar Update
         if (readVersion() <= 781) {
             //
-            return "http://upd0.appwork.org/jcgi/FILELIST?version=100000&protocol=3&keyHash=429a462c23267b0350dc91cde0bc0744&app=JDownloader&branch=beta";
+            // return
+            // "http://upd0.appwork.org/jcgi/FILELIST?version=100000&protocol=3&keyHash=429a462c23267b0350dc91cde0bc0744&app=JDownloader&branch=beta";
         }
 
         return sb.toString();
