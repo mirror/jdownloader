@@ -21,6 +21,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.exchange.UpdateFile;
 import org.appwork.update.inapp.AppUpdater;
+import org.appwork.update.inapp.RestartViaUpdaterEvent;
 import org.appwork.update.inapp.UpdaterGUI;
 import org.appwork.update.standalone.KeyChangeRequest;
 import org.appwork.update.updateclient.Actions;
@@ -147,19 +148,21 @@ public class JDUpdater extends AppUpdater {
         // Force a Updater.jar Update
         if (readVersion() <= 781) {
             //
-            // return
-            // "http://upd0.appwork.org/jcgi/FILELIST?version=100000&protocol=3&keyHash=429a462c23267b0350dc91cde0bc0744&app=JDownloader&branch=beta";
+            RestartViaUpdaterEvent.getInstance().setBootstrappath(null);
+            return "http://upd0.appwork.org/jcgi/FILELIST?version=100000&protocol=3&keyHash=429a462c23267b0350dc91cde0bc0744&app=JDownloader&branch=beta";
         }
 
         return sb.toString();
     }
 
     /**
-     * Create a new instance of JDUpdater. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of JDUpdater. This is a singleton class. Access the
+     * only existing instance by using {@link #getInstance()}.
      */
     private JDUpdater() {
         super();
         setRestartArgs(Launcher.PARAMETERS);
+        setRestartAfterUpdaterUpdateAction(RestartViaUpdaterEvent.getInstance());
         icon = new UpdateProgress();
         ((org.appwork.swing.components.circlebar.ImagePainter) icon.getValueClipPainter()).setBackground(Color.LIGHT_GRAY);
         ((org.appwork.swing.components.circlebar.ImagePainter) icon.getValueClipPainter()).setForeground(Color.GREEN);
