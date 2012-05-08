@@ -21,14 +21,11 @@ import javax.swing.ImageIcon;
 import jd.controlling.IOEQ;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.extensions.Header;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 public class Linkgrabber extends AbstractConfigPanel implements CheckBoxedEntry {
@@ -70,7 +67,6 @@ public class Linkgrabber extends AbstractConfigPanel implements CheckBoxedEntry 
 
     @Override
     public void updateContents() {
-        GeneralSettings st = JsonConfig.create(GeneralSettings.class);
 
         IOEQ.add(new Runnable() {
 

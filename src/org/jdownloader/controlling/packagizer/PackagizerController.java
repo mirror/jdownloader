@@ -26,12 +26,10 @@ import org.appwork.utils.logging.Log;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.controlling.filter.BooleanFilter;
 import org.jdownloader.controlling.filter.NoDownloadLinkException;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchive;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
-import org.jdownloader.translate._JDT;
 
 public class PackagizerController implements PackagizerInterface, FileCreationListener {
     private PackagizerSettings                  config;
@@ -70,16 +68,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
         if (list == null) list = new ArrayList<PackagizerRule>();
 
-        // workaround to add folder by package rule
-        if (list.size() == 0) {
-            PackagizerRule folderByPackage = new PackagizerRule();
-            folderByPackage.setMatchAlwaysFilter(new BooleanFilter(true));
-            folderByPackage.setDownloadDestination("<jd:packagename>");
-            folderByPackage.setIconKey("folder");
-            folderByPackage.setName(_JDT._.PackagizerSettings_folderbypackage_rule_name());
-            folderByPackage.setEnabled(false);
-            list.add(folderByPackage);
-        }
         update();
 
         if (!testInstance) {

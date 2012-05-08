@@ -75,9 +75,7 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
     /*
      * (non-Javadoc)
      * 
-     * @see
-     * org.appwork.swing.exttable.ExtTable#onContextMenu(javax.swing.JPopupMenu
-     * , java.lang.Object, java.util.ArrayList,
+     * @see org.appwork.swing.exttable.ExtTable#onContextMenu(javax.swing.JPopupMenu , java.lang.Object, java.util.ArrayList,
      * org.appwork.swing.exttable.ExtColumn)
      */
     @Override
@@ -86,6 +84,8 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
         popup.add(new JMenuItem(new RemoveAction(this, selection, false).toContextMenuAction()));
 
         popup.add(new JMenuItem(new DuplicateAction(contextObject, this).toContextMenuAction()));
+        popup.addSeparator();
+        popup.add(new DefaultRulesAction());
         popup.addSeparator();
         popup.add(new ExportAction(selection).toContextMenuAction());
         return popup;
@@ -108,9 +108,7 @@ public class PackagizerFilterTable extends BasicJDTable<PackagizerRule> {
     /*
      * (non-Javadoc)
      * 
-     * @see
-     * org.appwork.swing.exttable.ExtTable#onShortcutDelete(java.util.ArrayList
-     * , java.awt.event.KeyEvent, boolean)
+     * @see org.appwork.swing.exttable.ExtTable#onShortcutDelete(java.util.ArrayList , java.awt.event.KeyEvent, boolean)
      */
     @Override
     protected boolean onShortcutDelete(ArrayList<PackagizerRule> selectedObjects, KeyEvent evt, boolean direct) {

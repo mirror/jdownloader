@@ -692,7 +692,6 @@ public class LinkCrawler implements IOPermission {
 
     }
 
-    @SuppressWarnings("deprecation")
     protected void forwardDownloadLinkInfos(DownloadLink source, List<DownloadLink> dests) {
         if (source == null || dests == null || dests.size() == 0) return;
         // source.getFilePackage().remove(source);

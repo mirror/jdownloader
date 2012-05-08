@@ -2857,6 +2857,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Import Filterrules" })
     String LinkgrabberFilter_import_dialog_title();
 
+    @Default(lngs = { "en" }, values = { "Default Rules" })
+    String LinkgrabberFilter_default_rules();
+
     @Default(lngs = { "en" }, values = { "Rule File %s1 is empty or is invalid." })
     String LinkgrabberFilter_LinkgrabberFilter_import_invalid(String name);
 
