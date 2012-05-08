@@ -4,6 +4,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
@@ -35,6 +36,7 @@ public class DownloadPasswordColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public boolean isEnabled(final AbstractNode obj) {
         if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
+        if (obj instanceof FilePackage) { return ((FilePackage) obj).getView().isEnabled(); }
         return obj.isEnabled();
     }
 
