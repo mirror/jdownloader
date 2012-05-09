@@ -74,8 +74,8 @@ public class FileImCom extends PluginForHost {
         br.getPage("http://www.fileim.com/ajax/download/setTimer.ashx?fid=" + fid + "&f=0");
         sleep(wait * 1001l, downloadLink);
         br.getPage("http://www.fileim.com/libs/downloader.aspx?a=0%2C" + new Regex(downloadLink.getDownloadURL(), "fileim\\.com/file/([^<>\"]*?)\\.html").getMatch(0) + "&f=0");
-        String dllink = br.getRegex("<div class=\"downarea\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.fileim\\.com/download\\.ashx\\?a=[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("<div class=\"downarea\">([\r\n\t ]+)?<a href=\"(https?://[^\"]+)").getMatch(1);
+        if (dllink == null) dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fileim\\.com/download\\.ashx\\?a=[^\"]+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);

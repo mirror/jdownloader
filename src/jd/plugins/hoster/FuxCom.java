@@ -69,14 +69,14 @@ public class FuxCom extends PluginForHost {
         DLLINK = br.getRegex("config : \\'(/.*?)\\'").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.fux.com" + Encoding.htmlDecode(DLLINK));
-        System.out.print(br.toString());
         DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = filename.trim();
+        DLLINK = Encoding.htmlDecode(DLLINK);
+        filename = Encoding.htmlDecode(filename.trim());
         if (DLLINK.contains(".m4v"))
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".m4v");
+            downloadLink.setFinalFileName(filename + ".m4v");
         else
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+            downloadLink.setFinalFileName(filename + ".flv");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

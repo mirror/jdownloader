@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -44,18 +44,37 @@ public class SpeedyShareCom extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
-
-    }
-
-    @Override
     public String getAGBLink() {
         return "http://www.speedyshare.com/terms.php";
     }
 
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasCaptcha() {
+        return true;
+    }
+
+    public void prepBrowser() {
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+    }
+
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        prepBrowser();
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+        if (br.containsHTML("(class=sizetagtext>not found<|File not found|It has been deleted<|>or it never existed at all)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("\"(og:title|name)\" content=\"Download File: ([^\"]+)").getMatch(1);
+        if (filename == null) filename = br.getRegex("<title>(.+) - Speedy Share - .+</title>").getMatch(0);
+        String filesize = br.getRegex("<div class=sizetagtext>(.*?)</div>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("([\\d\\.]+ (KB|MB|GB|TB))").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setName(Encoding.htmlDecode(filename));
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.containsHTML(PREMIUMONLY)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.speedysharecom.errors.only4premium", PREMIUMONLYTEXT));
+        return AvailableStatus.TRUE;
+
     }
 
     @Override
@@ -108,30 +127,9 @@ public class SpeedyShareCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.setCookie("http://speedyshare.com/", "trans", "en");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        if (br.containsHTML("(class=sizetagtext>not found<|File not found|It has been deleted<|>or it never existed at all)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("property=\"og:title\" content=\"(.*?) \\- download at SpeedyShare\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("itemprop=\"name\" content=\"(.*?) \\- download at SpeedyShare\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("class=downloadfilename>(.*?)</").getMatch(0);
-        if (filename == null) filename = br.getRegex("class=downloadfilename href.*?>(.*?)</").getMatch(0);
-        String filesize = br.getRegex("valign=top><div class=sizetagtext>(.*?)</div>").getMatch(0);
-        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(Encoding.htmlDecode(filename));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (br.containsHTML(PREMIUMONLY)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.speedysharecom.errors.only4premium", PREMIUMONLYTEXT));
-        return AvailableStatus.TRUE;
-
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override

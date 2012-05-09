@@ -91,8 +91,7 @@ public class SockShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(">You have exceeded the daily stream limit for your country")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 4 * 60 * 60 * 1000l);
-        if (br.containsHTML("You can wait until tomorrow, or get a")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+        if (br.containsHTML("(>You have exceeded the daily stream limit for your country|You can wait until tomorrow, or get a)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 4 * 60 * 60 * 1000l);
         br.setDebug(true);
         String hash = br.getRegex("<input type=\"hidden\" value=\"([a-z0-9]+)\" name=\"hash\">").getMatch(0);
         if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

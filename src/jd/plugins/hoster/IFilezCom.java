@@ -71,7 +71,7 @@ public class IFilezCom extends PluginForHost {
         br.setCookie(MAINPAGE, "sdlanguageid", "2");
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Файл не найден в базе i\\-filez\\.com\\. Возможно Вы неправильно указали ссылку\\.<|>File was not found in the i\\-filez\\.com database|It is possible that you provided wrong link\\.</p>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>Файл не найден в базе i\\-filez\\.com\\. Возможно Вы неправильно указали ссылку\\.<|>File was not found in the i\\-filez\\.com database|It is possible that you provided wrong link\\.</p>|>The file was blocked by the copyright holder\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = new Regex(link.getDownloadURL(), "i-filez\\.com/downloads/i/\\d+/f/(.+)").getMatch(0);
         String filesize = br.getRegex("<th>Size:</th>[\r\t\n ]+<td>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
