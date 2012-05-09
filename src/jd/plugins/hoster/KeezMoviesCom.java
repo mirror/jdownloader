@@ -45,8 +45,52 @@ public class KeezMoviesCom extends PluginForHost {
     private String DLLINK    = null;
     private String FLASHVARS = null;
 
-    public KeezMoviesCom(PluginWrapper wrapper) {
+    public KeezMoviesCom(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    /**
+     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in
+     * JavaScript by Chris Veness
+     * 
+     * @see <a
+     *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
+     */
+    private String AESCounterModeDecrypt(final String cipherText, final String key, int nBits) {
+        if (!(nBits == 128 || nBits == 192 || nBits == 256)) { return "Error: Must be a key mode of either 128, 192, 256 bits"; }
+        if (cipherText == null || key == null) { return "Error: cipher and/or key equals null"; }
+        String res = null;
+        nBits = nBits / 8;
+        final byte[] data = Base64.decode(cipherText.toCharArray());
+        final byte[] k = Arrays.copyOf(key.getBytes(), nBits);
+        try {
+            final Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+            final SecretKey secretKey = generateSecretKey(k, nBits);
+            final byte[] nonceBytes = Arrays.copyOf(Arrays.copyOf(data, 8), nBits / 2);
+            final IvParameterSpec nonce = new IvParameterSpec(nonceBytes);
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, nonce);
+            res = new String(cipher.doFinal(data, 8, data.length - 8));
+        } catch (final Throwable e) {
+        }
+        return res;
+    }
+
+    private SecretKey generateSecretKey(byte[] keyBytes, final int nBits) throws Exception {
+        try {
+            final SecretKey secretKey = new SecretKeySpec(keyBytes, "AES");
+            final Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+            keyBytes = cipher.doFinal(keyBytes);
+        } catch (final InvalidKeyException e) {
+            if (e.getMessage().contains("Illegal key size")) {
+                getPolicyFiles();
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unlimited Strength JCE Policy Files needed!");
+        } catch (final Throwable e1) {
+            return null;
+        }
+        System.arraycopy(keyBytes, 0, keyBytes, nBits / 2, nBits / 2);
+        return new SecretKeySpec(keyBytes, "AES");
     }
 
     @Override
@@ -57,106 +101,6 @@ public class KeezMoviesCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    private String getValue(String s) {
-        return new Regex(FLASHVARS, "\\&" + s + "=(.*?)(\\&|$)").getMatch(0);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        // Set cookie so we can watch all videos ;)
-        br.setCookie("http://www.keezmovies.com/", "age_verified", "1");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1 class=\"title\">(.*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) - KeezMovies\\.com</title>").getMatch(0);
-        FLASHVARS = br.getRegex("<param name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
-        if (FLASHVARS == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
-        FLASHVARS = Encoding.htmlDecode(FLASHVARS);
-        String isEncrypted = getValue("encrypted");
-        if ("1".equals(isEncrypted) || Boolean.parseBoolean(isEncrypted)) {
-            DLLINK = AESCounterModeDecrypt(getValue("video_url"), getValue("video_title"), 256);
-            if (DLLINK.startsWith("Error:")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, DLLINK); }
-        } else {
-            DLLINK = getValue("video_url");
-        }
-
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setFinalFileName(filename.trim() + ".flv");
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        URLConnectionAdapter con = br.openGetConnection(DLLINK);
-        try {
-            con = br.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
-    }
-
-    /**
-     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in
-     * JavaScript by Chris Veness
-     * 
-     * @see <a
-     *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
-     */
-    private String AESCounterModeDecrypt(String cipherText, String key, int nBits) {
-        if (!(nBits == 128 || nBits == 192 || nBits == 256)) { return "Error: Must be a key mode of either 128, 192, 256 bits"; }
-        if (cipherText == null || key == null) { return "Error: cipher and/or key equals null"; }
-        String res = null;
-        nBits = nBits / 8;
-        byte[] data = Base64.decode(cipherText.toCharArray());
-        byte[] k = Arrays.copyOf(key.getBytes(), nBits);
-        try {
-            final Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
-            SecretKey secretKey = generateSecretKey(k, nBits);
-            byte[] nonceBytes = Arrays.copyOf(Arrays.copyOf(data, 8), nBits / 2);
-            IvParameterSpec nonce = new IvParameterSpec(nonceBytes);
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey, nonce);
-            res = new String(cipher.doFinal(data, 8, data.length - 8));
-        } catch (Throwable e) {
-        }
-        return res;
-    }
-
-    private SecretKey generateSecretKey(byte[] keyBytes, int nBits) throws Exception {
-        try {
-            SecretKey secretKey = new SecretKeySpec(keyBytes, "AES");
-            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-            keyBytes = cipher.doFinal(keyBytes);
-        } catch (final InvalidKeyException e) {
-            if (e.getMessage().contains("Illegal key size")) {
-                getPolicyFiles();
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unlimited Strength JCE Policy Files needed!");
-        } catch (Throwable e1) {
-            return null;
-        }
-        System.arraycopy(keyBytes, 0, keyBytes, nBits / 2, nBits / 2);
-        return new SecretKeySpec(keyBytes, "AES");
     }
 
     private void getPolicyFiles() throws Exception {
@@ -173,11 +117,71 @@ public class KeezMoviesCom extends PluginForHost {
         }
     }
 
+    private String getValue(final String s) {
+        return new Regex(FLASHVARS, "\\&" + s + "=(.*?)(\\&|$)").getMatch(0);
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(false);
+        // Set cookie so we can watch all videos ;)
+        br.setCookie("http://www.keezmovies.com/", "age_verified", "1");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = br.getRegex("<h1 class=\"title\">(.*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?) - KeezMovies\\.com</title>").getMatch(0);
+        }
+        FLASHVARS = br.getRegex("<param name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
+        if (FLASHVARS == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+
+        FLASHVARS = Encoding.htmlDecode(FLASHVARS);
+        final String isEncrypted = getValue("encrypted");
+        if ("1".equals(isEncrypted) || Boolean.parseBoolean(isEncrypted)) {
+            DLLINK = AESCounterModeDecrypt(getValue("video_url"), getValue("video_title"), 256);
+            if (DLLINK != null && DLLINK.startsWith("Error:")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, DLLINK); }
+        } else {
+            DLLINK = getValue("video_url");
+        }
+
+        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        downloadLink.setFinalFileName(filename.trim() + ".flv");
+        DLLINK = Encoding.htmlDecode(DLLINK);
+        URLConnectionAdapter con = br.openGetConnection(DLLINK);
+        try {
+            con = br.openGetConnection(DLLINK);
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+    }
+
     @Override
     public void reset() {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
+
 }
