@@ -119,7 +119,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                 progress.setTotal(max);
             } else {
                 progress = new PluginProgress(value, max, color);
-                progress.setIcon(NewTheme.I().getIcon("update", 16));
+                progress.setIcon(NewTheme.I().getIcon("unpack", 16));
                 progress.setProgressSource(this);
                 getDownloadLink().setPluginProgress(progress);
             }
