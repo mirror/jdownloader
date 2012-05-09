@@ -13,7 +13,6 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.update.inapp.RestartDirectEvent;
 import org.appwork.update.inapp.RestartViaUpdaterEvent;
 import org.appwork.update.inapp.SilentUpdaterEvent;
-import org.appwork.update.lastchance.RestartUpdater;
 
 public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
     private static final RunUpdaterOnEndAtLeastOnceDaily INSTANCE = new RunUpdaterOnEndAtLeastOnceDaily();
@@ -102,7 +101,7 @@ public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
             String appname = "JDownloader.app";
             File apppath = null;
 
-            File root = getRootByClass(RestartUpdater.class, null);
+            File root = getRootByClass(RunUpdaterOnEndAtLeastOnceDaily.class, null);
             final HashSet<File> loopMap = new HashSet<File>();
             while (root != null && loopMap.add(root)) {
                 if (root.getName().endsWith(".app")) {
@@ -187,7 +186,7 @@ public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
     }
 
     public static File getResource(final String relative) {
-        return getRootByClass(RestartUpdater.class, relative);
+        return getRootByClass(RunUpdaterOnEndAtLeastOnceDaily.class, relative);
     }
 
     public static File getRootByClass(final Class<?> class1, final String subPaths) {
@@ -265,7 +264,7 @@ public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
          */
         File pbroot = null;
 
-        pbroot = getRootByClass(RestartUpdater.class, null);
+        pbroot = getRootByClass(RunUpdaterOnEndAtLeastOnceDaily.class, null);
 
         pb.directory(pbroot);
         try {
