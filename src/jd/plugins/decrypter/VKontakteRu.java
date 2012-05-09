@@ -89,7 +89,7 @@ public class VKontakteRu extends PluginForDecrypt {
                         logger.info("Logindata invalid/refreshing cookies failed, stopping...");
                         return null;
                     }
-                    logger.info("Cookies refreshed successfully, continueing to decrypt...");
+                    logger.info("Cookies refreshed successfully, continuing to decrypt...");
                 }
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(DOMAIN);
