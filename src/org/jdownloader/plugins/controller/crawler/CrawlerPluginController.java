@@ -162,12 +162,12 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                                     existingPlugin.add(ap);
                                 }
                                 if (existingPlugin.size() > 1) {
-                                    Log.L.finest("@CrawlerPlugin multiple crawler:" + displayName + "->" + simpleName);
+                                    Log.L.finest("@CrawlerPlugin multiple crawler:" + displayName + "->" + simpleName + " " + revision);
                                 }
                                 ret2.put(ap.getDisplayName() + ap.getPattern(), l);
-                                Log.L.finest("@CrawlerPlugin ok:" + simpleName + " " + names[i]);
+                                Log.L.finest("@CrawlerPlugin ok:" + simpleName + " " + names[i] + " " + revision);
                             } catch (Throwable e) {
-                                Log.L.severe("@CrawlerPlugin failed:" + simpleName + " " + names[i]);
+                                Log.L.severe("@CrawlerPlugin failed:" + simpleName + " " + names[i] + " " + revision);
                                 Log.exception(e);
                             }
                         }

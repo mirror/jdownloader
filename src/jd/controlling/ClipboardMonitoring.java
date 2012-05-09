@@ -22,6 +22,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 
 public class ClipboardMonitoring {
 
@@ -56,6 +57,10 @@ public class ClipboardMonitoring {
                     try {
                         Transferable currentContent = clipboard.getContents(null);
                         if (currentContent == null) continue;
+                        if (currentContent.isDataFlavorSupported(PackageControllerTableTransferable.FLAVOR)) {
+                            /* we have Package/Children in clipboard, skip them */
+                            continue;
+                        }
                         String handleThisRound = null;
                         try {
                             /* change detection for List/URI content */
@@ -77,14 +82,12 @@ public class ClipboardMonitoring {
                             try {
                                 if (changeDetector(oldStringContent, newStringContent)) {
                                     /*
-                                     * we only use normal String Content to
-                                     * detect a change
+                                     * we only use normal String Content to detect a change
                                      */
                                     handleThisRound = newStringContent;
                                     try {
                                         /*
-                                         * lets fetch fresh HTML Content if
-                                         * available
+                                         * lets fetch fresh HTML Content if available
                                          */
                                         String htmlContent = getHTMLTransferData(currentContent);
                                         if (htmlContent != null) {
@@ -204,9 +207,7 @@ public class ClipboardMonitoring {
     public static String getHTMLTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException {
         DataFlavor htmlFlavor = null;
         /*
-         * for our workaround for
-         * https://bugzilla.mozilla.org/show_bug.cgi?id=385421, it would be good
-         * if we have utf8 charset
+         * for our workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=385421, it would be good if we have utf8 charset
          */
         for (final DataFlavor flav : transferable.getTransferDataFlavors()) {
             if (flav.getMimeType().contains("html") && flav.getRepresentationClass().isAssignableFrom(byte[].class)) {
@@ -230,12 +231,10 @@ public class ClipboardMonitoring {
             byte[] htmlBytes = (byte[]) transferable.getTransferData(htmlFlavor);
             if (CrossSystem.isLinux()) {
                 /*
-                 * workaround for firefox bug https://bugzilla
-                 * .mozilla.org/show_bug .cgi?id=385421
+                 * workaround for firefox bug https://bugzilla .mozilla.org/show_bug .cgi?id=385421
                  */
                 /*
-                 * write check to skip broken first bytes and discard 0 bytes if
-                 * they are in intervalls
+                 * write check to skip broken first bytes and discard 0 bytes if they are in intervalls
                  */
                 int indexOriginal = 0;
                 for (int i = 6; i < htmlBytes.length - 1; i++) {
@@ -266,8 +265,7 @@ public class ClipboardMonitoring {
     public static boolean hasSupportedTransferData(final Transferable transferable) {
         if (transferable.isDataFlavorSupported(DataFlavor.stringFlavor)) {
             /*
-             * string and html always come together, so no need to check for
-             * html
+             * string and html always come together, so no need to check for html
              */
             return true;
         } else if (urlFlavor != null && transferable.isDataFlavorSupported(urlFlavor)) {

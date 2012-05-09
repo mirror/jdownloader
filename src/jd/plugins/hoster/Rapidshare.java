@@ -61,8 +61,7 @@ public class Rapidshare extends PluginForHost {
             ret.id = Long.parseLong(new Regex(ret.url, "files/(\\d+)/").getMatch(0));
             if (ret.link.getProperty("htmlworkaround", null) == null) {
                 /*
-                 * remove html ending, because rs now checks the complete
-                 * filename
+                 * remove html ending, because rs now checks the complete filename
                  */
                 ret.name = new Regex(ret.url, "files/\\d+/(.*?/)?(.*?)(\\.html?|$|;$)").getMatch(1);
                 ret.secMD5 = new Regex(ret.url, "files/\\d+/t(.*?)-(.*?)/").getMatch(1);
@@ -175,8 +174,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     /**
-     * Bietet der hoster eine Möglichkeit mehrere links gleichzeitig zu prüfen,
-     * kann das über diese Funktion gemacht werden.
+     * Bietet der hoster eine Möglichkeit mehrere links gleichzeitig zu prüfen, kann das über diese Funktion gemacht werden.
      */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -741,10 +739,8 @@ public class Rapidshare extends PluginForHost {
                 this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, directurl, true, 0);
                 final URLConnectionAdapter urlConnection = this.dl.getConnection();
                 /*
-                 * Download starten prüft ob ein content disposition header
-                 * geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei
-                 * oder eine Fehlerseite. BIldfiles haben keinen Cache-Control
-                 * Header
+                 * Download starten prüft ob ein content disposition header geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei oder eine Fehlerseite.
+                 * BIldfiles haben keinen Cache-Control Header
                  */
                 if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
                     // Lädt die zuletzt aufgebaute vernindung
@@ -802,8 +798,7 @@ public class Rapidshare extends PluginForHost {
             final String prtotcol = ssl ? "https" : "http";
 
             /*
-             * we can use cookie login if user does not want to get asked before
-             * package upgrade. we dont need live traffic stats here
+             * we can use cookie login if user does not want to get asked before package upgrade. we dont need live traffic stats here
              */
             Object cookiesRet = account.getProperty(Rapidshare.COOKIEPROP);
             Object cookieEnc = account.getProperty(Rapidshare.COOKIEPROPENC);
@@ -874,8 +869,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     /**
-     * requests the API url req. if the http ip is blocked (UK-BT isp returns
-     * 500 or 502 error) https is used.
+     * requests the API url req. if the http ip is blocked (UK-BT isp returns 500 or 502 error) https is used.
      * 
      * @param br
      * @param req

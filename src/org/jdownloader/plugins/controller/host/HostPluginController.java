@@ -180,7 +180,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                     l.setPremiumUrl(purl);
                                 } catch (Throwable e) {
                                     if (e instanceof UpdateRequiredClassNotFoundException) {
-                                        Log.L.finest("@HostPlugin incomplete:" + simpleName + " " + names[i] + " " + e.getMessage());
+                                        Log.L.finest("@HostPlugin incomplete:" + simpleName + " " + names[i] + " " + e.getMessage() + " " + revision);
                                     } else
                                         throw e;
                                 }
@@ -192,11 +192,11 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                 }
                                 existingPlugin = ret.put(ap.getDisplayName(), ap);
                                 if (existingPlugin != null) {
-                                    Log.L.finest("@HostPlugin replaced:" + simpleName + " " + names[i]);
+                                    Log.L.finest("@HostPlugin replaced:" + simpleName + " " + names[i] + " " + revision);
                                 }
-                                Log.L.finer("@HostPlugin ok:" + simpleName + " " + names[i]);
+                                Log.L.finer("@HostPlugin ok:" + simpleName + " " + names[i] + " " + revision);
                             } catch (Throwable e) {
-                                Log.L.severe("@HostPlugin failed:" + simpleName + " " + names[i]);
+                                Log.L.severe("@HostPlugin failed:" + simpleName + " " + names[i] + " " + revision);
                                 Log.exception(e);
                             }
                         }

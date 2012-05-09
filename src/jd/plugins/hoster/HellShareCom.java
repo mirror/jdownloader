@@ -225,8 +225,7 @@ public class HellShareCom extends PluginForHost {
         dllink = dllink.replaceAll("\\\\", "");
         int retry = 2;
         /*
-         * set max chunks to 1 because each range request counts as download,
-         * reduces traffic very fast ;)
+         * set max chunks to 1 because each range request counts as download, reduces traffic very fast ;)
          */
         while (retry > 0) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -263,8 +262,7 @@ public class HellShareCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.postPage("http://www.hellshare.com/login?do=loginForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&login=odeslat&DownloadRedirect=");
         /*
-         * this will change account language to eng,needed because language is
-         * saved in profile
+         * this will change account language to eng,needed because language is saved in profile
          */
         final String changetoeng = br.getRegex("\"(http://www\\.en\\.hellshare\\.com/--.*?profile.*?)\"").getMatch(0);
         if (changetoeng == null) {
@@ -296,12 +294,9 @@ public class HellShareCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.HellShareCom.error.CountryBlock", "We are sorry, but HellShare is unavailable in your Country"));
             }
         } catch (final Exception e) {
+            if (e instanceof PluginException) throw (PluginException) e;
             // for stable: we assume that 502 == country block.
-            if (e.getMessage().contains("502 Bad Gateway")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.HellShareCom.error.CountryBlock", "We are sorry, but HellShare is unavailable in your Country"));
-            } else {
-                return AvailableStatus.UNCHECKABLE;
-            }
+            if (e.getMessage().contains("502 Bad Gateway")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.HellShareCom.error.CountryBlock", "We are sorry, but HellShare is unavailable in your Country")); }
         }
         if (br.containsHTML("<h1>File not found</h1>") || br.containsHTML("<h1>Soubor nenalezen</h1>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filesize = br.getRegex("FileSize_master\">(.*?)</strong>").getMatch(0);
