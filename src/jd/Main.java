@@ -17,15 +17,19 @@
 
 package jd;
 
+import org.appwork.shutdown.ShutdownController;
+
 public class Main {
 
     static {
         org.appwork.utils.Application.setApplication(".jd_home");
         org.appwork.utils.Application.getRoot(Launcher.class);
+
     }
 
     public static void main(String[] args) {
         try {
+            ShutdownController.getInstance().addShutdownEvent(RunUpdaterOnEndAtLeastOnceDaily.getInstance());
             jd.Launcher.mainStart(args);
         } catch (Throwable e) {
             e.printStackTrace();
