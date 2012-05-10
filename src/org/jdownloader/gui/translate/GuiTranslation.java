@@ -3736,4 +3736,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Subfolder by Package" })
     String SetDownloadFolderInDownloadTableAction_modifiyNamePanel_package_();
 
+    @Default(lngs = { "en" }, values = { "You really should know that..." })
+    String literall_usage_tipp();
+
+    @Default(lngs = { "en" }, values = { "... a single click and a double click on the Downloadfolder Column have different functions:\r\n            A single click opens a Dialog to choose a new Downloadfolder\r\n            A double click opens the current Downloadfolder in the Explorer " })
+    String DownloadFolderColumn_onSingleClick_object_();
+
 }

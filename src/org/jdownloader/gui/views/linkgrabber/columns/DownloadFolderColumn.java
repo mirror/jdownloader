@@ -1,12 +1,9 @@
 package org.jdownloader.gui.views.linkgrabber.columns;
 
-import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
-
-import javax.swing.JTextField;
 
 import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
@@ -16,10 +13,11 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import net.miginfocom.swing.MigLayout;
+import jd.gui.swing.jdgui.JDGui;
 
-import org.appwork.swing.action.BasicAction;
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.ExtButton;
+import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -29,7 +27,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderInLinkgrabberAction;
+import org.jdownloader.gui.views.downloads.context.SetDownloadFolderInDownloadTableAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
@@ -40,75 +38,19 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     private static final long serialVersionUID = 1L;
     private AbstractNode      editing;
     private ExtButton         open;
+    private DelayedRunnable   clickDelayer;
+    private AbstractNode      clicked;
 
     public DownloadFolderColumn() {
         super(_GUI._.LinkGrabberTableModel_initColumns_folder());
         setClickcount(2);
-
-        editorField.setBorder(new JTextField().getBorder());
-        ExtButton bt = new ExtButton(new BasicAction() {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 5187588042473800725L;
-
-            {
-                setSmallIcon(NewTheme.I().getIcon("edit", 16));
-                setTooltipText(_GUI._.DownloadFolderColiumn_edit_tt_());
+        clickDelayer = new DelayedRunnable(ToolTipController.EXECUTER, 200) {
+            @Override
+            public void delayedrun() {
+                new SetDownloadFolderInDownloadTableAction(clicked, null).actionPerformed(null);
             }
+        };
 
-            public void actionPerformed(ActionEvent e) {
-                editorField.selectAll();
-                noset = true;
-                SetDownloadFolderInLinkgrabberAction sna = new SetDownloadFolderInLinkgrabberAction(editing, null);
-                sna.actionPerformed(null);
-                if (sna.newValueSet()) {
-                    DownloadFolderColumn.this.stopCellEditing();
-                } else {
-                    noset = false;
-                }
-            }
-        });
-        open = new ExtButton(new BasicAction() {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = -2832597849544070872L;
-
-            {
-                setSmallIcon(NewTheme.I().getIcon("load", 16));
-                setTooltipText(_GUI._.DownloadFolderColiumn_open_tt_());
-            }
-
-            public void actionPerformed(ActionEvent e) {
-                noset = true;
-                try {
-                    CrossSystem.openFile(LinkTreeUtils.getDownloadDirectory(editing));
-                } finally {
-                    DownloadFolderColumn.this.stopCellEditing();
-                }
-            }
-        });
-        // bt.setRolloverEffectEnabled(true);
-        editor.setLayout(new MigLayout("ins 1 4 1 0", "[grow,fill][][]", "[fill,grow]"));
-        editor.removeAll();
-        editor.add(this.editorField, "height 20!");
-        editor.add(bt, "height 20!,width 20!");
-        editor.add(open, "height 20!,width 20!");
-
-    }
-
-    @Override
-    public void configureEditorComponent(AbstractNode value, boolean isSelected, int row, int column) {
-        super.configureEditorComponent(value, isSelected, row, column);
-        this.editing = value;
-        noset = false;
-        boolean enabled = false;
-        if (CrossSystem.isOpenFileSupported() && value != null) {
-            File ret = LinkTreeUtils.getDownloadDirectory(value);
-            if (ret != null && ret.exists() && ret.isDirectory()) enabled = true;
-        }
-        open.setEnabled(enabled);
     }
 
     @Override
@@ -118,16 +60,26 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public boolean isEditable(AbstractNode obj) {
-        return true;
-    }
-
-    protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
-        /* needed so we can edit even is row is disabled */
-        return isEditable(obj);
+        return false;
     }
 
     @Override
-    protected boolean onDoubleClick(MouseEvent e, AbstractNode obj) {
+    protected boolean onDoubleClick(MouseEvent e, AbstractNode value) {
+        if (CrossSystem.isOpenFileSupported() && value != null && clickDelayer.stop()) {
+
+            File ret = LinkTreeUtils.getDownloadDirectory(value);
+            if (ret != null && ret.exists() && ret.isDirectory()) CrossSystem.openFile(ret);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    protected boolean onSingleClick(MouseEvent e, AbstractNode obj) {
+        clicked = obj;
+        clickDelayer.resetAndStart();
+
+        JDGui.help(_GUI._.literall_usage_tipp(), _GUI._.DownloadFolderColumn_onSingleClick_object_(), NewTheme.I().getIcon("smart", 48));
         return false;
     }
 

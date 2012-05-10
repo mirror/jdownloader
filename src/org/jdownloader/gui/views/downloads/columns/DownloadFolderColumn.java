@@ -8,18 +8,25 @@ import javax.swing.JTextField;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.JDGui;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.downloads.context.SetDownloadFolderInDownloadTableAction;
+import org.jdownloader.images.NewTheme;
 
 public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     /**
      * 
      */
     private static final long serialVersionUID = 1L;
+    private DelayedRunnable   clickDelayer;
+    private AbstractNode      clicked;
 
     public DownloadFolderColumn() {
         super(_GUI._.LinkGrabberTableModel_initColumns_folder());
@@ -29,6 +36,12 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
         editor.setLayout(new MigLayout("ins 1 4 1 0", "[grow,fill][][]", "[fill,grow]"));
         editor.removeAll();
         editor.add(this.editorField, "height 20!");
+        clickDelayer = new DelayedRunnable(ToolTipController.EXECUTER, 200) {
+            @Override
+            public void delayedrun() {
+                new SetDownloadFolderInDownloadTableAction(clicked, null).actionPerformed(null);
+            }
+        };
     }
 
     @Override
@@ -42,11 +55,20 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected boolean onDoubleClick(MouseEvent e, AbstractNode value) {
-        if (CrossSystem.isOpenFileSupported() && value != null) {
+        if (CrossSystem.isOpenFileSupported() && value != null && clickDelayer.stop()) {
+
             File ret = LinkTreeUtils.getDownloadDirectory(value);
             if (ret != null && ret.exists() && ret.isDirectory()) CrossSystem.openFile(ret);
             return true;
         }
+        return false;
+    }
+
+    @Override
+    protected boolean onSingleClick(MouseEvent e, AbstractNode obj) {
+        clicked = obj;
+        clickDelayer.resetAndStart();
+        JDGui.help(_GUI._.literall_usage_tipp(), _GUI._.DownloadFolderColumn_onSingleClick_object_(), NewTheme.I().getIcon("smart", 48));
         return false;
     }
 

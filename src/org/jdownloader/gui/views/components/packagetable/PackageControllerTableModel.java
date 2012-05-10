@@ -128,6 +128,8 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     public void sortPackageChildren(final AbstractPackageNode pkg, ChildComparator<ChildrenType> comparator) {
+        this.resetSorting();
+        this.sort(getTableData(), null);
         pc.sortPackageChildren((PackageType) pkg, comparator);
     }
 
@@ -227,9 +229,8 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     /*
-     * we override sort to have a better sorting of packages/files, to keep
-     * their structure alive,data is only used to specify the size of the new
-     * ArrayList
+     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of
+     * the new ArrayList
      */
     @Override
     public ArrayList<AbstractNode> sort(final ArrayList<AbstractNode> data, ExtColumn<AbstractNode> column) {

@@ -4,6 +4,7 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
 import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
@@ -53,6 +54,8 @@ import org.jdownloader.controlling.filter.BooleanFilter;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.DownloadFolderChooserDialog;
+import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
 import org.jdownloader.images.NewTheme;
 
 public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> {
@@ -142,8 +145,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     }
 
     /**
-     * Returns a Linkgrabberfilter representing current settings. does NOT save
-     * the original one
+     * Returns a Linkgrabberfilter representing current settings. does NOT save the original one
      * 
      * @return
      */
@@ -189,6 +191,12 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         rule.setFiletypeFilter(getFiletypeFilter());
         rule.setMatchAlwaysFilter(getMatchAlwaysFilter());
         rule.setDownloadDestination(cbDest.isSelected() ? fpDest.getPath() : null);
+
+        if (cbDest.isSelected()) {
+            DownloadPath.saveList(fpDest.getPath());
+
+        }
+
         rule.setChunks(cbChunks.isSelected() ? ((Number) spChunks.getValue()).intValue() : -1);
         rule.setPriority(cbPriority.isSelected() ? prio : null);
         rule.setPackageName(cbPackagename.isSelected() ? txtPackagename.getText() : null);
@@ -221,7 +229,9 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         txtPackagename.setText(rule.getPackageName());
         txtNewFilename.setText(rule.getFilename());
         txtTestUrl.setText(rule.getTestUrl());
+        fpDest.setQuickSelectionList(DownloadPath.loadList(rule.getDownloadDestination()));
         fpDest.setPath(rule.getDownloadDestination());
+
         cbExtract.setSelected(rule.isAutoExtractionEnabled() != null);
 
         if (rule.getChunks() > 0) {
@@ -334,12 +344,24 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         cobExtract = createEnabledBox();
         cobAutostart = createEnabledBox();
         cobAutoAdd = createEnabledBox();
-        fpDest = new PathChooser("PackagizerDest") {
+        fpDest = new PathChooser("PackagizerDest", true) {
 
             /**
              * 
              */
             private static final long serialVersionUID = 1L;
+
+            public File doFileChooser() {
+                try {
+                    return DownloadFolderChooserDialog.open(getFile(), true, getDialogTitle());
+                } catch (DialogClosedException e) {
+                    e.printStackTrace();
+                } catch (DialogCanceledException e) {
+                    e.printStackTrace();
+                }
+                return null;
+
+            }
 
             @Override
             public JPopupMenu getPopupMenu(ExtTextField txt, CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
@@ -357,6 +379,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             }
 
         };
+
         fpDest.setHelpText(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_dest_help());
         fpPriority = new FilterPanel("ins 0", "[]0[]8[]0[]8[]0[]8[]0[]8[]0[]", "[]");
         PriorityAction pa_1 = new PriorityAction(Priority.LOWER);
