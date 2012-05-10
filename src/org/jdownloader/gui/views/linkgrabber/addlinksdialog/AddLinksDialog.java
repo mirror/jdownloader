@@ -7,7 +7,6 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.awt.event.WindowEvent;
@@ -45,6 +44,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.swing.components.pathchooser.PathChooser;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.utils.Application;
 import org.appwork.utils.Lists;
@@ -53,13 +53,12 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserType;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -67,8 +66,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private ExtTextArea                         input;
 
-    private SearchComboBox<DownloadPath>        destination;
-    private JButton                             browseButton;
+    private PathChooser                         destination;
 
     private SearchComboBox<PackageHistoryEntry> packagename;
 
@@ -83,8 +81,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     private JButton                             confirmOptions;
 
     private boolean                             deepAnalyse = false;
-
-    private ArrayList<DownloadPath>             downloadDestinationHistory;
 
     private ArrayList<PackageHistoryEntry>      packageHistory;
 
@@ -156,7 +152,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         ret.setText(input.getText());
         // if (destination.getSelectedIndex() > 0) {
         //
-        ret.setOutputFolder(new File(destination.getText()));
+        ret.setOutputFolder(destination.getFile());
         // }
         ret.setDeepAnalyse(isDeepAnalyse());
         ret.setPackageName(packagename.getText());
@@ -179,19 +175,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             config.setPackageNameHistory(Lists.unique(packageHistory));
         }
         if (ret.getOutputFolder() != null) {
-            boolean found = false;
-            for (DownloadPath pe : downloadDestinationHistory) {
-                if (pe != null && pe.getPath().equalsIgnoreCase(ret.getOutputFolder().getAbsolutePath())) {
-                    pe.setTime(System.currentTimeMillis());
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                downloadDestinationHistory.add(new DownloadPath(ret.getOutputFolder().getAbsolutePath()));
-            }
 
-            config.setDownloadDestinationHistory(Lists.unique(downloadDestinationHistory));
+            DownloadPath.saveList(ret.getOutputFolder().getAbsolutePath());
+
             config.setLatestDownloadDestinationFolder(ret.getOutputFolder().getAbsolutePath());
         }
 
@@ -212,28 +198,28 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
         MigPanel p = new MigPanel("ins 0 0 3 0,wrap 3", "[][grow,fill][]", "[fill,grow][grow,24!][grow,24!][grow,24!][grow,24!]");
 
-        destination = new SearchComboBox<DownloadPath>() {
-
-            @Override
-            protected Icon getIconForValue(DownloadPath value) {
-                return null;
-            }
-
-            @Override
-            protected String getTextForValue(DownloadPath value) {
-                return value == null ? null : value.getPath();
-            }
-
-            @Override
-            public void onChanged() {
+        destination = new PathChooser("ADDLinks", true) {
+            protected void onChanged(ExtTextField txt2) {
                 delayedValidate.run();
             }
 
+            public File doFileChooser() {
+                try {
+                    return DownloadFolderChooserDialog.open(getFile(), true, getDialogTitle());
+                } catch (DialogClosedException e) {
+                    e.printStackTrace();
+                } catch (DialogCanceledException e) {
+                    e.printStackTrace();
+                }
+                return null;
+
+            }
+
+            protected String getHelpText() {
+                return _GUI._.AddLinksDialog_layoutDialogContent_help_destination();
+            }
         };
-        destination.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_help_destination());
-        destination.setUnkownTextInputAllowed(true);
-        destination.setBadColor(null);
-        destination.setSelectedItem(null);
+
         packagename = new SearchComboBox<PackageHistoryEntry>() {
 
             @Override
@@ -275,23 +261,16 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         packagename.setUnkownTextInputAllowed(true);
         packagename.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_packagename_help());
         packagename.setSelectedItem(null);
-        ArrayList<DownloadPath> history = config.getDownloadDestinationHistory();
-        if (history == null) {
-            history = new ArrayList<DownloadPath>();
-        }
-        history.add(0, new DownloadPath(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
-        downloadDestinationHistory = Lists.unique(history);
-        for (Iterator<DownloadPath> it = downloadDestinationHistory.iterator(); it.hasNext();) {
-            DownloadPath path = it.next();
-            if (!validateFolder(path.getPath())) it.remove();
-        }
 
-        destination.setList(downloadDestinationHistory);
+        destination.setQuickSelectionList(DownloadPath.loadList(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
+
         String latest = config.getLatestDownloadDestinationFolder();
         if (latest == null || !config.isUseLastDownloadDestinationAsDefault()) {
-            destination.setText(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
+            destination.setFile(new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
+
         } else {
-            destination.setText(latest);
+            destination.setFile(new File(latest));
+
         }
         input = new ExtTextArea() {
 
@@ -306,7 +285,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         input.setHelpText(_GUI._.AddLinksDialog_layoutDialogContent_input_help());
         sp = new JScrollPane(input);
         sp.setViewportBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
-        browseButton = new JButton(_GUI._.literally_browse());
+
         password = new ExtTextField();
         password.setHelpText(_GUI._.AddLinksDialog_createExtracOptionsPanel_password());
         password.setBorder(BorderFactory.createCompoundBorder(password.getBorder(), BorderFactory.createEmptyBorder(2, 6, 2, 6)));
@@ -336,22 +315,8 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         p.add(sp, "height 30:100:n,spanx");
         p.add(createIconLabel("save", _GUI._.AddLinksDialog_layoutDialogContent_save_tt()), "aligny center,width 32!");
         p.add(destination, "height 24!");
-        p.add(browseButton, "sg right");
-        browseButton.addActionListener(new ActionListener() {
+        p.add(destination.getButton(), "sg right");
 
-            public void actionPerformed(ActionEvent e) {
-
-                try {
-                    File[] ret = Dialog.getInstance().showFileChooser("addlinksdialog", _GUI._.AddLinksDialog_actionPerformed_browse(), FileChooserSelectionMode.DIRECTORIES_ONLY, null, false, FileChooserType.OPEN_DIALOG, new File(destination.getText()));
-                    destination.setText(ret[0].getAbsolutePath());
-                } catch (DialogCanceledException e1) {
-                    e1.printStackTrace();
-                } catch (DialogClosedException e1) {
-                    e1.printStackTrace();
-                }
-
-            }
-        });
         p.add(createIconLabel("package_open", _GUI._.AddLinksDialog_layoutDialogContent_package_tt()), "aligny center,width 32!");
         p.add(packagename, "spanx,height 24!");
 
@@ -521,7 +486,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     input.setToolTipText(null);
                     input.setBadgeIcon(null);
                 }
-                if (!validateFolder(destination.getText())) {
+                if (!validateFolder(destination.getFile().getAbsolutePath())) {
                     if (errorLabel.getText().length() == 0) errorLabel.setText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
 
                     okButton.setEnabled(false);
