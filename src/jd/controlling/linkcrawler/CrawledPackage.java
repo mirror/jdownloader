@@ -19,7 +19,7 @@ import org.jdownloader.settings.GeneralSettings;
 
 public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledPackage> {
 
-    protected static final String                          PACKAGETAG            = "<jd:" + PackagizerController.PACKAGENAME + ">";
+    public static final String                             PACKAGETAG            = "<jd:" + PackagizerController.PACKAGENAME + ">";
 
     public static final ChildComparator<CrawledLink>       SORTER_ASC            = new ChildComparator<CrawledLink>() {
 
@@ -156,8 +156,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     /**
-     * Returns the raw Downloadfolder String. This link may contain wildcards like <jd:packagename>. Use {@link #getDownloadFolder()} to return the actuall
-     * downloadloadfolder
+     * Returns the raw Downloadfolder String. This link may contain wildcards like <jd:packagename>. Use {@link #getDownloadFolder()} to
+     * return the actuall downloadloadfolder
      * 
      * @return
      */
