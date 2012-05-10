@@ -10,6 +10,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
@@ -29,6 +30,7 @@ public class NewPackageAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         if (true) {
             /* not finished yet */
+            Dialog.getInstance().showExceptionDialog("Dauniel Bug!", "You got Daunieled", new WTFException("This feature has not been finised yet."));
             return;
         }
         FilePackage fp = links.get(0).getFilePackage();
