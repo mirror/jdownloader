@@ -24,10 +24,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.OffScreenException;
-import org.appwork.utils.swing.dialog.SimpleTextBallon;
+import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -134,29 +131,10 @@ public class AddLinksProgress extends AbstractDialog<Object> {
 
             new Thread("SimpleTextBallon") {
                 public void run() {
-                    try {
-                        SimpleTextBallon d = new SimpleTextBallon(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksProgress_setReturnmask_title_(), _GUI._.AddLinksProgress_setReturnmask_msg_(), NewTheme.I().getIcon("linkgrabber", 32)) {
-                            {
-                                IconedProcessIndicator iconComp = JDGui.getInstance().getStatusBar().getLinkGrabberIndicator();
-                                Point loc = iconComp.getLocationOnScreen();
-                                setDesiredLocation(new Point(loc.x + iconComp.getWidth() / 2, loc.y + iconComp.getHeight() / 2));
-                            }
+                    IconedProcessIndicator iconComp = JDGui.getInstance().getStatusBar().getLinkGrabberIndicator();
+                    Point loc = iconComp.getLocationOnScreen();
+                    HelpDialog.show(new Point(loc.x + iconComp.getWidth() / 2, loc.y + iconComp.getHeight() / 2), "linkcrawlerprogressdialog", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksProgress_setReturnmask_title_(), _GUI._.AddLinksProgress_setReturnmask_msg_(), NewTheme.I().getIcon("linkgrabber", 32));
 
-                            @Override
-                            protected String getDontShowAgainKey() {
-                                return "linkcrawlerprogressdialog";
-                            }
-
-                        };
-
-                        Dialog.getInstance().showDialog(d);
-                    } catch (OffScreenException e1) {
-                        e1.printStackTrace();
-                    } catch (DialogClosedException e1) {
-                        e1.printStackTrace();
-                    } catch (DialogCanceledException e1) {
-                        e1.printStackTrace();
-                    }
                 }
             }.start();
 

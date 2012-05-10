@@ -27,7 +27,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
-import org.jdownloader.gui.views.downloads.context.SetDownloadFolderInDownloadTableAction;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderInLinkgrabberAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
@@ -47,7 +47,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
         clickDelayer = new DelayedRunnable(ToolTipController.EXECUTER, 200) {
             @Override
             public void delayedrun() {
-                new SetDownloadFolderInDownloadTableAction(clicked, null).actionPerformed(null);
+                new SetDownloadFolderInLinkgrabberAction(clicked, null).actionPerformed(null);
             }
         };
 

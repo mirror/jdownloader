@@ -40,7 +40,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     public DownloadFolderChooserDialog(File path, String title, String okOption, String cancelOption) {
         super(0, title, okOption, cancelOption);
         this.path = path;
-        if (path.getName().equals(CrawledPackage.PACKAGETAG)) {
+        if (path != null && path.getName().equals(CrawledPackage.PACKAGETAG)) {
             subfolder = true;
             this.path = path.getParentFile();
         }
@@ -67,27 +67,30 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
 
         MigPanel ret = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[]");
         ExtTextField lbl = new ExtTextField();
-        lbl.setText(_GUI._.OpenDownloadFolderAction_layoutDialogContent_current_(path.getAbsolutePath()));
-        lbl.setEditable(false);
-        if (CrossSystem.isOpenFileSupported()) {
-            ret.add(lbl);
+        if (path != null) {
+            lbl.setText(_GUI._.OpenDownloadFolderAction_layoutDialogContent_current_(path.getAbsolutePath()));
 
-            ret.add(new JButton(new AppAction() {
-                {
-                    setName(_GUI._.OpenDownloadFolderAction_actionPerformed_button_());
-                }
+            lbl.setEditable(false);
+            if (CrossSystem.isOpenFileSupported()) {
+                ret.add(lbl);
 
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    CrossSystem.openFile(path);
-                }
+                ret.add(new JButton(new AppAction() {
+                    {
+                        setName(_GUI._.OpenDownloadFolderAction_actionPerformed_button_());
+                    }
 
-            }), "height 20!");
-        } else {
-            ret.add(lbl, "spanx");
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        CrossSystem.openFile(path);
+                    }
+
+                }), "height 20!");
+            } else {
+                ret.add(lbl, "spanx");
+            }
+
+            ret.add(new JSeparator(), "spanx");
         }
-
-        ret.add(new JSeparator(), "spanx");
         ret.add(new JLabel(_GUI._.OpenDownloadFolderAction_layoutDialogContent_object_()), "spanx");
         ret.add(super.layoutDialogContent(), "spanx");
 
@@ -137,7 +140,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
             });
         }
 
-        d.setQuickSelectionList(DownloadPath.loadList(path.getAbsolutePath()));
+        d.setQuickSelectionList(DownloadPath.loadList(path != null ? path.getAbsolutePath() : null));
         d.setPreSelection(path);
         d.setFileSelectionMode(FileChooserSelectionMode.DIRECTORIES_ONLY);
 

@@ -31,10 +31,7 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.OffScreenException;
-import org.appwork.utils.swing.dialog.SimpleTextBallon;
+import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.context.DeleteAction;
@@ -134,26 +131,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                 t.stop();
                 if (oldSortColumn == getExtTableModel().getSortColumn()) return;
                 if (getExtTableModel().getSortColumn() != null) {
-
-                    try {
-
-                        SimpleTextBallon d = new SimpleTextBallon(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsTable_actionPerformed_sortwarner_title(getExtTableModel().getSortColumn().getName()), _GUI._.DownloadsTable_actionPerformed_sortwarner_text(), NewTheme.I().getIcon("sort", 32)) {
-
-                            @Override
-                            protected String getDontShowAgainKey() {
-                                return "downloadtabe_sortwarner";
-                            }
-
-                        };
-                        d.setDesiredLocation(e1.getLocationOnScreen());
-                        Dialog.getInstance().showDialog(d);
-                    } catch (OffScreenException e1) {
-                        e1.printStackTrace();
-                    } catch (DialogClosedException e1) {
-                        e1.printStackTrace();
-                    } catch (DialogCanceledException e1) {
-                        e1.printStackTrace();
-                    }
+                    HelpDialog.show(e1.getLocationOnScreen(), "downloadtabe_sortwarner", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadsTable_actionPerformed_sortwarner_title(getExtTableModel().getSortColumn().getName()), _GUI._.DownloadsTable_actionPerformed_sortwarner_text(), NewTheme.I().getIcon("sort", 32));
 
                 }
 

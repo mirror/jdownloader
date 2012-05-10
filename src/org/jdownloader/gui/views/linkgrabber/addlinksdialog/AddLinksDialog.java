@@ -57,9 +57,8 @@ import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.Dialog.FileChooserType;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.OffScreenException;
-import org.appwork.utils.swing.dialog.SimpleTextBallon;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
@@ -561,28 +560,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     @Override
                     protected void runInEDT() {
                         if (input.isShowing()) {
-                            try {
-                                SimpleTextBallon d = new SimpleTextBallon(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksDialog_AddLinksDialog_(), _GUI._.AddLinksDialog_layoutDialogContent_description(), NewTheme.I().getIcon("linkgrabber", 32)) {
-                                    public boolean doExpandToBottom(boolean b) {
-                                        return false;
-                                    }
 
-                                    public boolean doExpandToRight(boolean b) {
+                            HelpDialog.show(Boolean.FALSE, Boolean.TRUE, new Point(input.getLocationOnScreen().x + input.getWidth() / 2, input.getLocationOnScreen().y + 10), null, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksDialog_AddLinksDialog_(), _GUI._.AddLinksDialog_layoutDialogContent_description(), NewTheme.I().getIcon("linkgrabber", 32));
 
-                                        return true;
-                                    }
-                                };
-
-                                d.setDesiredLocation(new Point(input.getLocationOnScreen().x + input.getWidth() / 2, input.getLocationOnScreen().y + 10));
-
-                                Dialog.getInstance().showDialog(d);
-                            } catch (DialogClosedException e) {
-                                e.printStackTrace();
-                            } catch (DialogCanceledException e) {
-                                e.printStackTrace();
-                            } catch (OffScreenException e) {
-                                e.printStackTrace();
-                            }
                         }
                     }
                 };

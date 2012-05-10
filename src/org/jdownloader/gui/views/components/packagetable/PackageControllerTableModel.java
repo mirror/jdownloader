@@ -129,7 +129,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
     public void sortPackageChildren(final AbstractPackageNode pkg, ChildComparator<ChildrenType> comparator) {
         this.resetSorting();
-        this.sort(getTableData(), null);
+
         pc.sortPackageChildren((PackageType) pkg, comparator);
     }
 
