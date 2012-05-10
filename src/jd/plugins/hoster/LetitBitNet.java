@@ -545,6 +545,9 @@ public class LetitBitNet extends PluginForHost {
                             msg = msg == null ? "OK!" : msg;
                             UserIO.getInstance().requestMessageDialog("SkyMonk server answer", msg);
                         }
+                    } else {
+                        logger.warning("SkyMonk debug output: " + skymonk.toString());
+                        UserIO.getInstance().requestMessageDialog("SkyMonk: Unknown error occured", "Please upload now a logfile, contact our support and add this loglink to your bugreport!");
                     }
                     getPluginConfig().save();
                 } else {
