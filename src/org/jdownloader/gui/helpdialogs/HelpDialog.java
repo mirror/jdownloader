@@ -1,6 +1,7 @@
 package org.jdownloader.gui.helpdialogs;
 
 import java.awt.Point;
+import java.awt.event.WindowEvent;
 
 import javax.swing.ImageIcon;
 
@@ -22,7 +23,7 @@ public class HelpDialog {
     }
 
     public static void show(final Boolean expandToBottom, final Boolean expandToRight, final Point point, final String dontShowAgainKey, int flags, String title, String msg, ImageIcon icon) {
-        if (CrossSystem.isWindows() && false) {
+        if (CrossSystem.isWindows()) {
             try {
 
                 SimpleTextBallon d = new SimpleTextBallon(flags, title, msg, icon) {
@@ -68,6 +69,11 @@ public class HelpDialog {
                     protected Point getDesiredLocation() {
                         if (point != null) return point;
                         return super.getDesiredLocation();
+                    }
+
+                    public void windowClosing(final WindowEvent arg0) {
+                        setReturnmask(false);
+                        this.dispose();
                     }
 
                 };
