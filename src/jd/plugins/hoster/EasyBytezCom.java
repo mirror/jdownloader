@@ -144,7 +144,7 @@ public class EasyBytezCom extends PluginForHost {
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (new Regex(BRBEFORE, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        if (new Regex(BRBEFORE, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
+        if (new Regex(BRBEFORE, "(Not Found|<h1>(404 )?Not Found</h1>)").matches()) {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -345,8 +345,7 @@ public class EasyBytezCom extends PluginForHost {
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             /**
-             * Who needs half points ? If we have a dot in the points, just
-             * remove it
+             * Who needs half points ? If we have a dot in the points, just remove it
              */
             if (points.contains(".")) {
                 String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
@@ -532,7 +531,11 @@ public class EasyBytezCom extends PluginForHost {
             br.getPage(COOKIE_HOST + "/?op=my_account");
             doSomething();
             if (!new Regex(BRBEFORE, "(Premium\\-Account expire|/\\?op=payments\">Get Premium<|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) {account.setProperty("nopremium", true);                } else {                    account.setProperty("nopremium", false);               }
+            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) {
+                account.setProperty("nopremium", true);
+            } else {
+                account.setProperty("nopremium", false);
+            }
             /** Save cookies */
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(COOKIE_HOST);

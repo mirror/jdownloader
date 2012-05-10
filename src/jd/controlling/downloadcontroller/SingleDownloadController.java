@@ -137,6 +137,16 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         this.setCurrentProxy(proxy);
     }
 
+    @Override
+    public boolean isDebug() {
+        return true;
+    }
+
+    @Override
+    public boolean isVerbose() {
+        return true;
+    }
+
     public Account getAccount() {
         return account;
     }
@@ -654,10 +664,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             if (livePlugin != null && originalPlugin != null) {
                 livePlugin.setIOPermission(ioP);
                 livePlugin.setLogger(llogger);
+
                 /*
                  * handle is only called in download situation, that why we create a new browser instance here
                  */
-                livePlugin.setBrowser(new Browser());
+                Browser br;
+                livePlugin.setBrowser(br = new Browser());
                 if (originalPlugin != livePlugin) {
                     /* we have 2 different plugins -> multihoster */
                     originalPlugin.setBrowser(new Browser());

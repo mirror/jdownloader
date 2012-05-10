@@ -445,4 +445,8 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
     }
 
+    @Override
+    public void onRemoveFile(Object caller, File[] fileList) {
+    }
+
 }

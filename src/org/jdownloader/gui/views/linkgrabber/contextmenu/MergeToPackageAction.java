@@ -55,17 +55,29 @@ public class MergeToPackageAction extends AppAction {
                 @Override
                 protected Void run() throws RuntimeException {
                     CrawledPackage newPackage = new CrawledPackage();
-
                     newPackage.setName(name);
+                    HashSet<String> rawDownloadFolder = new HashSet<String>();
                     HashSet<CrawledLink> links = new HashSet<CrawledLink>();
                     for (AbstractNode node : selection) {
                         if (node instanceof CrawledLink) {
-                            links.add(((CrawledLink) node));
+                            CrawledLink link = (CrawledLink) node;
+                            links.add(link);
+                            CrawledPackage parent = link.getParentNode();
+                            if (parent != null) {
+                                rawDownloadFolder.add(parent.getRawDownloadFolder());
+                            }
                         } else if (node instanceof CrawledPackage) {
+                            CrawledPackage parent = (CrawledPackage) node;
+                            if (parent != null) {
+                                rawDownloadFolder.add(parent.getRawDownloadFolder());
+                            }
                             synchronized (node) {
-                                links.addAll(((CrawledPackage) node).getChildren());
+                                links.addAll(parent.getChildren());
                             }
                         }
+                    }
+                    if (rawDownloadFolder.size() == 1) {
+                        newPackage.setDownloadFolder(new ArrayList<String>(rawDownloadFolder).get(0));
                     }
                     LinkCollector.getInstance().moveOrAddAt(newPackage, new ArrayList<CrawledLink>(links), 0);
                     return null;

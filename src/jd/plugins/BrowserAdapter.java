@@ -33,7 +33,6 @@ public class BrowserAdapter {
             } catch (Throwable e2) {
             }
             if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
-
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
                     dl = RAFDownload.download(downloadLink, br.createGetRequestRedirectedRequest(dl.getRequest()));

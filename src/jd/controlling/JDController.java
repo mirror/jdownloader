@@ -18,7 +18,6 @@ package jd.controlling;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.logging.Logger;
 
 import jd.plugins.DownloadLink;
 
@@ -36,18 +35,12 @@ public class JDController {
     }
 
     /**
-     * Der Logger
-     */
-    private static final Logger LOGGER       = JDLogger.getLogger();
-
-    /**
      * Der Download Watchdog verwaltet die Downloads
      */
 
-    private static JDController INSTANCE     = new JDController();
+    private static JDController INSTANCE = new JDController();
 
-    private static final Object SHUTDOWNLOCK = new Object();
-
+    @Deprecated
     public ArrayList<DownloadLink> getContainerLinks(File file) {
         return new DLCFactory().getContainerLinks(file);
 

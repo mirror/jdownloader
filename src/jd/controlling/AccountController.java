@@ -33,6 +33,7 @@ import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.OfflineException;
 import jd.http.Browser;
+import jd.http.BrowserSettingsThread;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -160,10 +161,18 @@ public class AccountController implements AccountControllerListener {
         String whoAmI = account.getUser() + "->" + account.getHoster();
         JDPluginLogger logger = new JDPluginLogger("AccountCheck: " + whoAmI);
         plugin.setLogger(logger);
-        Browser br = new Browser();
-        br.setLogger(logger);
-        plugin.setBrowser(br);
+        Thread currentThread = Thread.currentThread();
+        BrowserSettingsThread bThread = null;
+        if (currentThread instanceof BrowserSettingsThread) {
+            bThread = (BrowserSettingsThread) currentThread;
+        }
+        if (bThread != null) {
+            /* set logger to browserSettingsThread */
+            bThread.setLogger(logger);
+        }
         try {
+            Browser br = new Browser();
+            plugin.setBrowser(br);
             /* not every plugin sets this info correct */
             account.setValid(true);
             /* get previous account info and resets info for new update */
@@ -173,7 +182,6 @@ public class AccountController implements AccountControllerListener {
                 ai.setExpired(false);
                 ai.setValidUntil(-1);
             }
-            Thread currentThread = Thread.currentThread();
             ClassLoader oldClassLoader = currentThread.getContextClassLoader();
             try {
                 /*
@@ -255,6 +263,10 @@ public class AccountController implements AccountControllerListener {
             this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.INVALID, account));
         } finally {
             logger.logInto(JDLogger.getLogger());
+            if (bThread != null) {
+                /* remove logger from browserSettingsThread */
+                bThread.setLogger(null);
+            }
         }
         return ai;
     }

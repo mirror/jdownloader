@@ -13,6 +13,7 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.update.inapp.RestartDirectEvent;
 import org.appwork.update.inapp.RestartViaUpdaterEvent;
 import org.appwork.update.inapp.SilentUpdaterEvent;
+import org.appwork.utils.Application;
 
 public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
     private static final RunUpdaterOnEndAtLeastOnceDaily INSTANCE = new RunUpdaterOnEndAtLeastOnceDaily();
@@ -27,8 +28,7 @@ public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
     }
 
     /**
-     * Create a new instance of RunUpdaterOnEndAtLeastOnceDaily. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of RunUpdaterOnEndAtLeastOnceDaily. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private RunUpdaterOnEndAtLeastOnceDaily() {
         setHookPriority(Integer.MIN_VALUE);
@@ -38,8 +38,15 @@ public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
     private static final byte MAC     = 0;
     private static final byte LINUX   = 0;
     private static byte       OS;
+    static {
+        OS = getOSID(System.getProperty("os.name"));
+    }
 
     public static byte getOSID(final String osString) {
+        if (osString == null) {
+            /* fallback to Windows */
+            return WINDOWS;
+        }
         final String OS = osString.toLowerCase();
         if (OS.contains("windows 7")) {
             return WINDOWS;
@@ -212,7 +219,6 @@ public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
 
     private static String getJavaBinary() {
         String jvmPath = null;
-
         String javaBinary = "java";
         if (OS == WINDOWS) {
             javaBinary = "javaw.exe";
@@ -232,12 +238,12 @@ public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
 
     @Override
     public void run() {
+        if (!Application.isJared(Launcher.class)) return;
         if (ShutdownController.getInstance().hasShutdownEvent(RestartViaUpdaterEvent.getInstance())) return;
         if (ShutdownController.getInstance().hasShutdownEvent(RestartDirectEvent.getInstance())) return;
         if (ShutdownController.getInstance().hasShutdownEvent(SilentUpdaterEvent.getInstance())) return;
 
         ArrayList<String> command = new ArrayList<String>();
-        OS = getOSID(System.getProperty("os.name"));
         command.add(getJavaBinary());
         command.add("-jar");
         command.add("Updater.jar");
@@ -274,5 +280,4 @@ public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
         }
 
     }
-
 }

@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.AccountController;
+import jd.http.BrowserSettingsThread;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 
@@ -120,7 +121,7 @@ public class AccountChecker {
             Thread thread = checkThreads.get(hoster);
             if (thread == null || !thread.isAlive()) {
                 started = checkThreads.isEmpty();
-                thread = new Thread(new Runnable() {
+                thread = new BrowserSettingsThread(new Runnable() {
 
                     public void run() {
                         AccountCheckJob job = null;
@@ -148,7 +149,17 @@ public class AccountChecker {
                         }
                     }
 
-                });
+                }) {
+                    @Override
+                    public boolean isVerbose() {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean isDebug() {
+                        return true;
+                    }
+                };
                 thread.setName("AccountChecker: " + hoster);
                 thread.setDaemon(true);
                 checkThreads.put(hoster, thread);

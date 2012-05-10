@@ -1017,4 +1017,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
     }
 
+    @Override
+    public void onRemoveFile(Object caller, File[] fileList) {
+    }
+
 }
