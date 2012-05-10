@@ -59,6 +59,7 @@ public class Mv2kTo extends PluginForDecrypt {
         for (String[] regex : regexes) {
             String finallink = br.getRegex(Pattern.compile(regex[0], Pattern.CASE_INSENSITIVE)).getMatch(Integer.parseInt(regex[1]));
             if (finallink != null) {
+                if (finallink.contains("facebook.com/")) continue;
                 if (finallink.matches("http://embed\\.stream2k\\.com/[^<>\"]+")) {
                     br2.getPage(finallink);
                     finallink = br2.getRegex("file: \\'(http://[^<>\"]*?)\\',").getMatch(0);
