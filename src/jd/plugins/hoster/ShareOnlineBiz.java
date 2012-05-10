@@ -407,7 +407,6 @@ public class ShareOnlineBiz extends PluginForHost {
             if (infos == null || forceLogin) {
                 boolean follow = br.isFollowingRedirects();
                 br.setFollowRedirects(true);
-                br.forceDebug(true);
                 String page = null;
                 try {
                     page = br.getPage("http://api.share-online.biz/cgi-bin?q=userdetails&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));

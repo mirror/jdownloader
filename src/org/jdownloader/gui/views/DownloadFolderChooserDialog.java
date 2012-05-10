@@ -109,8 +109,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     }
 
     /**
-     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
-     * exist
+     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must exist
      * 
      * @param file
      * @return
@@ -123,7 +122,11 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         return false;
     }
 
-    public static File open(final File path, boolean packager, String title) throws DialogClosedException, DialogCanceledException {
+    public static File open(File path, boolean packager, String title) throws DialogClosedException, DialogCanceledException {
+        if (!CrossSystem.isAbsolutePath(path.getPath())) {
+            path = new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), path.getPath());
+        }
+        final File path2 = path;
         final DownloadFolderChooserDialog d = new DownloadFolderChooserDialog(path, title, _GUI._.OpenDownloadFolderAction_actionPerformed_save_(), null);
         d.setPackageSubFolderSelectionVisible(packager);
         if (CrossSystem.isOpenFileSupported()) {
@@ -134,7 +137,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    CrossSystem.openFile(d.getSelection()[0] == null ? path : d.getSelection()[0]);
+                    CrossSystem.openFile(d.getSelection()[0] == null ? path2 : d.getSelection()[0]);
                 }
 
             });

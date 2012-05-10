@@ -7,12 +7,10 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.plugins.DownloadLink;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.app.gui.MigPanel;
@@ -242,9 +240,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     private int getHosterCounter(AbstractNode value) {
         if (value instanceof AbstractPackageNode) {
             return ((AbstractPackageNode<?, ?>) value).getView().getDomainInfos().length;
-        } else if (value instanceof CrawledLink) {
-            return ((CrawledLink) value).getDomainInfo().getTld().hashCode();
-        } else if (value instanceof DownloadLink) { return ((DownloadLink) value).getDomainInfo().getTld().hashCode(); }
+        } else if (value instanceof AbstractPackageChildrenNode) { return ((AbstractPackageChildrenNode<?>) value).getDomainInfo().getTld().hashCode(); }
         return 1;
     }
 

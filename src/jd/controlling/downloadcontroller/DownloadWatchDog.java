@@ -244,23 +244,24 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
              */
             return DISKSPACECHECK.UNKNOWN;
         }
+        /* Set 500MB(default) extra Buffer */
+        long spaceneeded = 1024l * 1024 * Math.max(0, config.getForcedFreeSpaceOnDisk());
         /* this HashSet contains all Path-parts of the File we want to download */
-        long freeSpace = -1;
+        File freeSpace = null;
         ArrayList<String> pathes = new ArrayList<String>();
         if (file2Root != null && file2Root.isFile()) {
             file2Root = file2Root.getParentFile();
         }
         if (file2Root != null) pathes.add(file2Root.getAbsolutePath().toLowerCase(Locale.ENGLISH));
         while (file2Root != null) {
-            if (file2Root.exists() && freeSpace == -1) {
-                freeSpace = file2Root.getUsableSpace();
+            if (file2Root.exists() && freeSpace == null) {
+                freeSpace = file2Root;
+                if (freeSpace.getUsableSpace() < (spaceneeded + diskspace)) { return DISKSPACECHECK.FAILED; }
             }
             file2Root = file2Root.getParentFile();
             if (file2Root != null) pathes.add(file2Root.getAbsolutePath().toLowerCase(Locale.ENGLISH));
         }
-        if (freeSpace == -1) { return DISKSPACECHECK.INVALIDFOLDER; }
-        /* Set 500MB(default) extra Buffer */
-        long spaceneeded = 1024l * 1024 * Math.max(0, config.getForcedFreeSpaceOnDisk());
+        if (freeSpace == null) { return DISKSPACECHECK.INVALIDFOLDER; }
         /* calc the needed space for the current running downloads */
         synchronized (this.DownloadControllers) {
             for (final SingleDownloadController con : this.DownloadControllers) {
@@ -281,7 +282,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
         }
         /* enough space for needed diskspace */
-        if (freeSpace < (spaceneeded + diskspace)) { return DISKSPACECHECK.FAILED; }
+        if (freeSpace.getUsableSpace() < (spaceneeded + diskspace)) { return DISKSPACECHECK.FAILED; }
         return DISKSPACECHECK.OK;
     }
 

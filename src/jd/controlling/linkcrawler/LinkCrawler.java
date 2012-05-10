@@ -532,6 +532,7 @@ public class LinkCrawler implements IOPermission {
                                     FilePackage sourcePackage = null;
                                     if (possibleCryptedLink.getDownloadLink() != null) {
                                         sourcePackage = possibleCryptedLink.getDownloadLink().getFilePackage();
+                                        if (FilePackage.isDefaultFilePackage(sourcePackage)) sourcePackage = null;
                                     }
                                     ArrayList<DownloadLink> hosterLinks = plg.getDownloadLinks(url, sourcePackage);
                                     if (hosterLinks != null) {
