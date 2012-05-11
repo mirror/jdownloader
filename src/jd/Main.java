@@ -30,7 +30,7 @@ public class Main {
     public static void main(String[] args) {
         try {
             ShutdownController.getInstance().addShutdownEvent(RunUpdaterOnEndAtLeastOnceDaily.getInstance());
-            System.out.println("StartTest");
+            System.out.printl("StartTest");
             jd.Launcher.mainStart(args);
         } catch (Throwable e) {
             e.printStackTrace();
