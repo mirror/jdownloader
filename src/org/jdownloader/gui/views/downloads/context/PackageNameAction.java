@@ -1,31 +1,31 @@
 package org.jdownloader.gui.views.downloads.context;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import jd.gui.UserIO;
+import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 
 public class PackageNameAction extends AppAction {
 
-    private static final long            serialVersionUID = -5155537516674035401L;
+    private static final long                        serialVersionUID = -5155537516674035401L;
+    private SelectionInfo<FilePackage, DownloadLink> si;
 
-    private final ArrayList<FilePackage> packages;
-
-    public PackageNameAction(ArrayList<FilePackage> packages) {
-        this.packages = packages;
+    public PackageNameAction(SelectionInfo<FilePackage, DownloadLink> si) {
+        this.si = si;
         setName(_GUI._.gui_table_contextmenu_editpackagename());
         setIconKey("edit");
     }
 
     public void actionPerformed(ActionEvent e) {
-        String name = UserIO.getInstance().requestInputDialog(0, _GUI._.gui_linklist_editpackagename_message(), packages.get(0).getName());
+        String name = UserIO.getInstance().requestInputDialog(0, _GUI._.gui_linklist_editpackagename_message(), si.getContextPackage().getName());
         if (name == null) return;
 
-        for (FilePackage packagee : packages) {
+        for (FilePackage packagee : si.getAllPackages()) {
             packagee.setName(name);
         }
     }

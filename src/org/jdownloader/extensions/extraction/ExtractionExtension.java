@@ -687,11 +687,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     }
 
     private void onExtendPopupMenuLinkgrabberTable(LinkgrabberTableContext context) {
-        boolean isLinkContext = context.getClickedObject() instanceof CrawledLink;
-        boolean isShift = context.getMouseEvent().isShiftDown();
-        boolean isPkgContext = context.getClickedObject() instanceof CrawledPackage;
-        CrawledLink link = isLinkContext ? (CrawledLink) context.getClickedObject() : null;
-        CrawledPackage pkg = isPkgContext ? (CrawledPackage) context.getClickedObject() : null;
+        boolean isLinkContext = context.getSelectionInfo().isChildContext();
+        boolean isShift = context.getSelectionInfo().isShiftDown();
+        boolean isPkgContext = context.getSelectionInfo().getContextObject() instanceof CrawledPackage;
+        CrawledLink link = isLinkContext ? (CrawledLink) context.getSelectionInfo().getContextObject() : null;
+        CrawledPackage pkg = isPkgContext ? (CrawledPackage) context.getSelectionInfo().getContextObject() : null;
         JMenu menu = new JMenu(T._.contextmenu_main()) {
             protected JMenuItem createActionComponent(Action a) {
                 if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
@@ -702,7 +702,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
         context.getMenu().add(menu);
         menu.setIcon(getIcon(18));
         menu.setEnabled(false);
-        ValidateArchiveAction validation = new ValidateArchiveAction(this, context.getSelectedObjects());
+        ValidateArchiveAction<CrawledPackage, CrawledLink> validation = new ValidateArchiveAction<CrawledPackage, CrawledLink>(this, context.getSelectionInfo());
+
         for (final Archive a : validation.getArchives()) {
             menu.setEnabled(true);
             JMenu parent = menu;
@@ -773,9 +774,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             }
         };
 
-        if (context.getClickedObject() instanceof DownloadLink) {
-            final DownloadLink link = (DownloadLink) context.getClickedObject();
-            final ValidateArchiveAction validateAction = new ValidateArchiveAction(this, context.getSelectedObjects());
+        if (context.getSelectionInfo().getContextObject() instanceof DownloadLink) {
+            final DownloadLink link = (DownloadLink) context.getSelectionInfo().getContextObject();
+            final ValidateArchiveAction<FilePackage, DownloadLink> validateAction = new ValidateArchiveAction<FilePackage, DownloadLink>(this, context.getSelectionInfo());
             menu.add(new AppAction() {
                 {
                     setName(T._.contextmenu_extract());
@@ -787,7 +788,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
                 public void actionPerformed(ActionEvent e) {
                     boolean found = false;
-                    for (AbstractNode link : context.getSelectedObjects()) {
+                    for (AbstractNode link : context.getSelectionInfo().getSelectedChildren()) {
                         if (link instanceof DownloadLink) {
                             try {
                                 final Archive archive = buildArchive(new DownloadLinkArchiveFactory((DownloadLink) link));
@@ -837,7 +838,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
                 public void actionPerformed(ActionEvent e) {
 
-                    for (AbstractNode link : context.getSelectedObjects()) {
+                    for (AbstractNode link : context.getSelectionInfo().getSelectedChildren()) {
                         if (link instanceof DownloadLink) {
                             ((DownloadLink) link).getFilePackage().setPostProcessing(isSelected());
                         }
@@ -878,7 +879,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                     File[] files = UserIO.getInstance().requestFileChooser("_EXTRACTION_", null, UserIO.DIRECTORIES_ONLY, ff, null, extractto, null);
                     if (files == null) return;
 
-                    for (AbstractNode link : context.getSelectedObjects()) {
+                    for (AbstractNode link : context.getSelectionInfo().getSelectedChildren()) {
                         if (link instanceof DownloadLink) {
                             try {
                                 Archive archive0 = buildArchive(new DownloadLinkArchiveFactory((DownloadLink) link));
@@ -927,7 +928,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             // + "2", dir.getAbsolutePath());
             // m.setProperty("LINK", link);
         } else {
-            final FilePackage fp = (FilePackage) context.getClickedObject();
+            final FilePackage fp = (FilePackage) context.getSelectionInfo().getContextObject();
             if (fp != null) {
 
                 menu.add(new AppAction() {
@@ -944,7 +945,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                         ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
                         final boolean readL = DownloadController.getInstance().readLock();
                         try {
-                            for (AbstractNode link : context.getSelectedObjects()) {
+                            for (AbstractNode link : context.getSelectionInfo().getSelectedChildren()) {
                                 if (link instanceof FilePackage) {
                                     synchronized (fp) {
                                         for (DownloadLink l : fp.getChildren()) {
@@ -975,7 +976,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                     }
                 });
 
-                ValidateArchiveAction validateAction = new ValidateArchiveAction(this, context.getSelectedObjects());
+                ValidateArchiveAction<FilePackage, DownloadLink> validateAction = new ValidateArchiveAction<FilePackage, DownloadLink>(this, context.getSelectionInfo());
                 if (validateAction.getArchives().size() == 1) {
                     menu.add(validateAction.toContextMenuAction());
                 } else if (validateAction.getArchives().size() > 1) {
@@ -983,7 +984,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
                     validate.setIcon(validateAction.getSmallIcon());
                     for (Archive a : validateAction.getArchives()) {
-                        validate.add(new ValidateArchiveAction(this, a));
+                        validate.add(new ValidateArchiveAction<FilePackage, DownloadLink>(this, a));
                     }
                     menu.add(validate);
 
@@ -1001,7 +1002,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
                     public void actionPerformed(ActionEvent e) {
 
-                        for (AbstractNode link : context.getSelectedObjects()) {
+                        for (AbstractNode link : context.getSelectionInfo().getSelectedChildren()) {
                             if (link instanceof FilePackage) {
 
                                 ((FilePackage) link).setPostProcessing(isSelected());

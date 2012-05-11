@@ -1,37 +1,39 @@
 package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
+import java.util.List;
 
 import jd.controlling.IOEQ;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class SetDownloadPassword extends AppAction {
+public class SetDownloadPassword<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
 
     /**
      * 
      */
-    private static final long       serialVersionUID = -8280535886054721277L;
-    private ArrayList<AbstractNode> selection;
+    private static final long                        serialVersionUID = -8280535886054721277L;
+    private SelectionInfo<PackageType, ChildrenType> si;
 
-    public SetDownloadPassword(AbstractNode node, ArrayList<AbstractNode> selection2) {
-        this.selection = selection2;
+    public SetDownloadPassword(SelectionInfo<PackageType, ChildrenType> si) {
+        this.si = si;
         setName(_GUI._.SetDownloadPassword_SetDownloadPassword_());
         setIconKey("password");
     }
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        final ArrayList<AbstractNode> newSelection = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<AbstractNode>());
+        final List<ChildrenType> newSelection = si.getSelectedChildren();
         String defaultPW = "";
         AbstractNode node = newSelection.get(0);
         if (node instanceof DownloadLink) {
@@ -63,7 +65,7 @@ public class SetDownloadPassword extends AppAction {
 
     @Override
     public boolean isEnabled() {
-        return selection != null && selection.size() > 0;
+        return !si.isEmpty();
     }
 
 }

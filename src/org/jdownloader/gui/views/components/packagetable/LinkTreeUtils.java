@@ -56,7 +56,7 @@ public class LinkTreeUtils {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public static <T extends AbstractNode> ArrayList<T> getSelectedChildren(ArrayList<AbstractNode> selection2, ArrayList<T> container) {
+    public static <T extends AbstractNode> ArrayList<T> getSelectedChildren(List<AbstractNode> selection2, ArrayList<T> container) {
         HashSet<AbstractNode> has = new HashSet<AbstractNode>(selection2);
         HashSet<T> ret = new HashSet<T>();
         for (AbstractNode node : selection2) {
@@ -115,6 +115,23 @@ public class LinkTreeUtils {
         return getDownloadDirectory(directory);
     }
 
+    public static File getRawDownloadDirectory(AbstractNode node) {
+        String directory = null;
+        if (node instanceof DownloadLink) {
+            FilePackage parent = ((DownloadLink) node).getFilePackage();
+            if (parent != null) directory = parent.getDownloadDirectory();
+        } else if (node instanceof FilePackage) {
+            directory = ((FilePackage) node).getDownloadDirectory();
+        } else if (node instanceof CrawledLink) {
+            CrawledPackage parent = ((CrawledLink) node).getParentNode();
+            if (parent != null) directory = parent.getRawDownloadFolder();
+        } else if (node instanceof CrawledPackage) {
+            directory = ((CrawledPackage) node).getRawDownloadFolder();
+        } else
+            throw new WTFException("Unknown Type: " + node.getClass());
+        return getDownloadDirectory(directory);
+    }
+
     public static File getDownloadDirectory(String path) {
         if (path == null) return null;
         if (CrossSystem.isAbsolutePath(path)) {
@@ -124,7 +141,7 @@ public class LinkTreeUtils {
         }
     }
 
-    public static HashSet<String> getURLs(ArrayList<AbstractNode> links) {
+    public static HashSet<String> getURLs(List<AbstractNode> links) {
         HashSet<String> urls = new HashSet<String>();
         if (links == null) return urls;
         for (AbstractNode node : links) {

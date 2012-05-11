@@ -26,7 +26,6 @@ import java.util.logging.Level;
 
 import javax.swing.ImageIcon;
 
-import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -178,11 +177,8 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
                 /*
                  * SwingUtilities.invokeLater(new Runnable() { // @Override
                  * 
-                 * public void run() {
-                 * JOptionPane.showMessageDialog(SwingGui.getInstance
-                 * ().getMainFrame(), _NT._.failed_WatchAsYouDownload_Message()
-                 * + "\n" + jdds.toString(),
-                 * _NT._.failed_WatchAsYouDownload_Title(),
+                 * public void run() { JOptionPane.showMessageDialog(SwingGui.getInstance ().getMainFrame(),
+                 * _NT._.failed_WatchAsYouDownload_Message() + "\n" + jdds.toString(), _NT._.failed_WatchAsYouDownload_Title(),
                  * JOptionPane.ERROR_MESSAGE); } });
                  */
 
@@ -253,8 +249,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
     }
 
     /**
-     * Has to return the Extension MAIN Icon. This icon will be used,for
-     * example, in the settings pane
+     * Has to return the Extension MAIN Icon. This icon will be used,for example, in the settings pane
      */
     @Override
     public ImageIcon getIcon(int size) {
@@ -280,8 +275,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
     }
 
     /**
-     * Returns the Settingspanel for this extension. If this extension does not
-     * have a configpanel, null can be returned
+     * Returns the Settingspanel for this extension. If this extension does not have a configpanel, null can be returned
      */
     @Override
     public ExtensionConfigPanel<?> getConfigPanel() {
@@ -336,17 +330,17 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
     }
 
     private void onExtendLinkgrabberTablePopupMenu(LinkgrabberTableContext context) {
-        context.getMenu().add(new WatchAsYouDownloadLinkgrabberAction(context.getMouseEvent().isShiftDown(), context.getSelectedObjects()));
+        context.getMenu().add(new WatchAsYouDownloadLinkgrabberAction(context.getSelectionInfo().isShiftDown(), context.getSelectionInfo().getSelectedChildren()));
     }
 
     private void onExtendDownloadTablePopupMenu(DownloadTableContext context) {
-        if (context.getClickedObject() instanceof FilePackage) {
+        if (context.getSelectionInfo().isPackageContext()) {
             final HashSet<FilePackage> fps = new HashSet<FilePackage>();
-            if (context.getSelectedObjects() != null) {
-                for (final AbstractNode node : context.getSelectedObjects()) {
-                    if (node instanceof FilePackage) {
-                        if ((Boolean) ((FilePackage) node).getProperty(WATCH_AS_YOU_DOWNLOAD_KEY, false) == true) fps.add((FilePackage) node);
-                    }
+            if (!context.getSelectionInfo().isEmpty()) {
+                for (final FilePackage node : context.getSelectionInfo().getAllPackages()) {
+
+                    if ((Boolean) ((FilePackage) node).getProperty(WATCH_AS_YOU_DOWNLOAD_KEY, false) == true) fps.add((FilePackage) node);
+
                 }
             }
             if (fps.size() > 0) context.getMenu().add(new WatchAsYouDownloadAction(new ArrayList<FilePackage>(fps)));

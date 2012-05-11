@@ -1,12 +1,13 @@
 package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import jd.controlling.IOEQ;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -16,14 +17,14 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 
-public class SetCommentAction extends AppAction {
+public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
 
-    private ArrayList<AbstractNode> selection;
+    private SelectionInfo<FilePackage, DownloadLink> si;
 
-    public SetCommentAction(AbstractNode contextObject, ArrayList<AbstractNode> selection) {
-        this.selection = new ArrayList<AbstractNode>(selection);
-        this.selection.add(0, contextObject);
+    public SetCommentAction(SelectionInfo<FilePackage, DownloadLink> si) {
+        this.si = si;
         setName(_GUI._.SetCommentAction_SetCommentAction_object_());
         setIconKey("list");
     }
@@ -31,7 +32,7 @@ public class SetCommentAction extends AppAction {
     @Override
     public void actionPerformed(ActionEvent e) {
         String def = null;
-        for (AbstractNode n : selection) {
+        for (AbstractNode n : si.getRawSelection()) {
             if (n instanceof DownloadLink) {
                 def = ((DownloadLink) n).getComment();
             } else if (n instanceof CrawledLink) {
@@ -50,7 +51,7 @@ public class SetCommentAction extends AppAction {
 
                 @Override
                 public void run() {
-                    for (AbstractNode n : selection) {
+                    for (AbstractNode n : si.getRawSelection()) {
                         if (n instanceof DownloadLink) {
                             ((DownloadLink) n).setComment(comment);
                         } else if (n instanceof CrawledLink) {

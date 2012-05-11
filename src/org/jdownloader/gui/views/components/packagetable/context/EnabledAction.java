@@ -1,22 +1,20 @@
 package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.swing.ImageIcon;
 
 import jd.controlling.IOEQ;
-import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class EnabledAction extends AppAction {
+public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
     /**
      * 
      */
@@ -28,13 +26,14 @@ public class EnabledAction extends AppAction {
         MIXED;
     }
 
-    private ArrayList<AbstractNode> selection;
-    private State                   state = State.MIXED;
+    private State                                    state = State.MIXED;
 
-    public EnabledAction(ArrayList<AbstractNode> selection) {
-        this.selection = selection;
+    private SelectionInfo<PackageType, ChildrenType> selection;
+
+    public EnabledAction(SelectionInfo<PackageType, ChildrenType> si) {
+        this.selection = si;
         setName(_GUI._.EnabledAction_EnabledAction_object_());
-        switch (state = getState(selection)) {
+        switch (state = getState()) {
         case MIXED:
             setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("select", 18), NewTheme.I().getImage("checkbox_undefined", 14), 0, 0, 9, 8)));
             break;
@@ -48,26 +47,15 @@ public class EnabledAction extends AppAction {
 
     }
 
-    private State getState(ArrayList<AbstractNode> selection2) {
-        if (selection2 == null || selection2.size() == 0) return State.ALL_DISABLED;
+    private State getState() {
+        if (selection.isEmpty()) return State.ALL_DISABLED;
         Boolean first = null;
-        for (AbstractNode a : selection2) {
-            if (a instanceof AbstractPackageNode) {
-                /* check children of this package */
-                synchronized (a) {
-                    @SuppressWarnings("unchecked")
-                    AbstractPackageNode<AbstractPackageChildrenNode<?>, ?> pkg = (AbstractPackageNode<AbstractPackageChildrenNode<?>, ?>) a;
-                    List<AbstractPackageChildrenNode<?>> children = pkg.getChildren();
-                    for (AbstractPackageChildrenNode<?> child : children) {
-                        if (first == null) first = child.isEnabled();
-                        if (child.isEnabled() != first) { return State.MIXED; }
-                    }
-                }
-            } else {
-                /* check a child */
-                if (first == null) first = a.isEnabled();
-                if (a.isEnabled() != first) { return State.MIXED; }
-            }
+        for (ChildrenType a : selection.getSelectedChildren()) {
+
+            /* check a child */
+            if (first == null) first = a.isEnabled();
+            if (a.isEnabled() != first) { return State.MIXED; }
+
         }
         return first ? State.ALL_ENABLED : State.ALL_DISABLED;
     }
@@ -78,20 +66,10 @@ public class EnabledAction extends AppAction {
 
             public void run() {
                 boolean enable = state.equals(State.ALL_DISABLED);
-                for (AbstractNode a : selection) {
-                    if (a instanceof AbstractPackageNode) {
-                        List<AbstractPackageChildrenNode<?>> children = null;
-                        synchronized (a) {
-                            @SuppressWarnings("unchecked")
-                            AbstractPackageNode<AbstractPackageChildrenNode<?>, ?> pkg = (AbstractPackageNode<AbstractPackageChildrenNode<?>, ?>) a;
-                            children = new ArrayList<AbstractPackageChildrenNode<?>>(pkg.getChildren());
-                        }
-                        for (AbstractPackageChildrenNode<?> child : children) {
-                            child.setEnabled(enable);
-                        }
-                    } else {
-                        a.setEnabled(enable);
-                    }
+                for (ChildrenType a : selection.getSelectedChildren()) {
+
+                    a.setEnabled(enable);
+
                 }
             }
         }, true);
@@ -99,7 +77,7 @@ public class EnabledAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-        return selection != null && selection.size() > 0;
+        return !selection.isEmpty();
     }
 
 }

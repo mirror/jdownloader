@@ -1,45 +1,46 @@
 package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import jd.controlling.IOEQ;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.Priority;
-import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 
-public class PriorityActionEntry extends AppAction {
+public class PriorityActionEntry<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
 
     /**
      * 
      */
-    private static final long       serialVersionUID = 1L;
-    private Priority                priority;
-    private ArrayList<AbstractNode> orgSelection;
+    private static final long                        serialVersionUID = 1L;
+    private Priority                                 priority;
+    private SelectionInfo<PackageType, ChildrenType> si;
 
-    public PriorityActionEntry(Priority priority, ArrayList<AbstractNode> selection) {
+    public PriorityActionEntry(Priority priority, SelectionInfo<PackageType, ChildrenType> si) {
         setName(priority._());
         setSmallIcon(priority.loadIcon(18));
         this.priority = priority;
-        this.orgSelection = selection;
+        this.si = si;
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (orgSelection == null) return;
+        if (si.isEmpty()) return;
         IOEQ.add(new Runnable() {
 
             @Override
             public void run() {
-                ArrayList<AbstractNode> selection = LinkTreeUtils.getSelectedChildren(orgSelection, new ArrayList<AbstractNode>());
+
                 boolean linkGrabber = false;
                 boolean downloadList = false;
-                for (AbstractNode l : selection) {
+                for (AbstractNode l : si.getSelectedChildren()) {
                     if (l instanceof CrawledLink) {
                         linkGrabber = true;
                         ((CrawledLink) l).setPriority(priority);

@@ -299,7 +299,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 synchronized (filePackage) {
                     for (final DownloadLink link : filePackage.getChildren()) {
                         /*
-                         * do not reset if link is offline, finished , already exist or pluginerror (because only plugin updates can fix this)
+                         * do not reset if link is offline, finished , already exist or pluginerror (because only plugin updates can fix
+                         * this)
                          */
                         link.getLinkStatus().resetStatus(LinkStatus.ERROR_FATAL | LinkStatus.ERROR_PLUGIN_DEFECT | LinkStatus.ERROR_ALREADYEXISTS, LinkStatus.ERROR_FILE_NOT_FOUND, LinkStatus.FINISHED);
                     }
@@ -353,7 +354,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     /**
      * try to force a downloadstart, will ignore maxperhost and maxdownloads limits
      */
-    public void forceDownload(final ArrayList<DownloadLink> linksForce) {
+    public void forceDownload(final List<DownloadLink> linksForce) {
         if (linksForce == null || linksForce.size() == 0) return;
         IOEQ.add(new Runnable() {
             public void run() {
@@ -365,7 +366,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
+                     * link
                      */
                     DownloadWatchDog.this.setStopMark(linksForce.get(0));
                     DownloadWatchDog.this.startDownloads();
@@ -1085,8 +1087,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                         /*
                                          * create a map holding all possible links sorted by their position in list and their priority
                                          * 
-                                         * by doing this we don't have to walk through possible links multiple times to find next download link, as the list
-                                         * itself will already be correct sorted
+                                         * by doing this we don't have to walk through possible links multiple times to find next download
+                                         * link, as the list itself will already be correct sorted
                                          */
                                         HashMap<Long, ArrayList<DownloadLink>> optimizedList = new HashMap<Long, ArrayList<DownloadLink>>();
                                         /*
@@ -1161,8 +1163,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                          */
                                                         if (DownloadWatchDog.this.activeDownloadsbyHosts(link.getHost()) == 0) {
                                                             /*
-                                                             * do not reconnect if the request comes from host with active downloads, this will prevent
-                                                             * reconnect loops for plugins that allow resume and parallel downloads
+                                                             * do not reconnect if the request comes from host with active downloads, this
+                                                             * will prevent reconnect loops for plugins that allow resume and parallel
+                                                             * downloads
                                                              */
                                                             waitingNewIP = true;
                                                             IPController.getInstance().invalidate();
@@ -1179,8 +1182,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                      */
                                                     if (DownloadWatchDog.this.activeDownloadsbyHosts(link.getHost()) == 0) {
                                                         /*
-                                                         * do not reconnect if the request comes from host with active downloads, this will prevent reconnect
-                                                         * loops for plugins that allow resume and parallel downloads
+                                                         * do not reconnect if the request comes from host with active downloads, this will
+                                                         * prevent reconnect loops for plugins that allow resume and parallel downloads
                                                          */
                                                         waitingNewIP = true;
                                                         IPController.getInstance().invalidate();
@@ -1201,7 +1204,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                          */
                                         if (!hasTempDisabledLinks && !hasInProgressLinks && !waitingNewIP && DownloadWatchDog.this.getActiveDownloads() == 0) {
                                             /*
-                                             * no tempdisabled, no in progress, no reconnect and no next download waiting and no active downloads
+                                             * no tempdisabled, no in progress, no reconnect and no next download waiting and no active
+                                             * downloads
                                              */
                                             if (DownloadWatchDog.this.newDLStartAllowed()) {
                                                 /*

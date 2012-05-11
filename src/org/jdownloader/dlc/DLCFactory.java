@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 
 import javax.swing.filechooser.FileFilter;
@@ -85,7 +86,7 @@ public class DLCFactory extends D {
         return ret;
     }
 
-    public void createDLC(ArrayList<DownloadLink> links) {
+    public void createDLC(List<DownloadLink> links) {
 
         File[] files;
         try {

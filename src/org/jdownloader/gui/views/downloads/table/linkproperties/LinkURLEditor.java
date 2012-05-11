@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
@@ -13,8 +14,9 @@ import javax.swing.JScrollPane;
 
 import jd.controlling.ClipboardMonitoring;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.swing.jdgui.BasicJDTable;
-import jd.plugins.DownloadLink;
 
 import org.appwork.app.gui.MigPanel;
 import org.appwork.swing.exttable.ExtColumn;
@@ -22,25 +24,26 @@ import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.UrlColumn;
 import org.jdownloader.images.NewTheme;
 
-public class LinkURLEditor extends MigPanel {
+public class LinkURLEditor<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends MigPanel {
 
-    private ArrayList<AbstractNode> links;
+    private SelectionInfo<PackageType, ChildrenType> si;
 
-    public LinkURLEditor(final DownloadLink contextObject, final ArrayList<AbstractNode> links) {
+    public LinkURLEditor(SelectionInfo<PackageType, ChildrenType> selectionInfo) {
         super("ins 2,wrap 2", "[grow,fill][]", "[][grow,fill]");
 
         setOpaque(false);
-        this.links = links;
+        this.si = selectionInfo;
         JLabel lbl = getLbl(_GUI._.LinkURLEditor(), NewTheme.I().getIcon("url", 18));
         add(SwingUtils.toBold(lbl), "spanx");
         final ExtTableModel<AbstractNode> model = new ExtTableModel<AbstractNode>("linkurleditor") {
             {
-                getTableData().addAll(links);
+                getTableData().addAll(si.getSelectedChildren());
             }
 
             @Override
@@ -120,14 +123,12 @@ public class LinkURLEditor extends MigPanel {
 
             protected boolean onShortcutCopy(final ArrayList<AbstractNode> selectedObjects, final KeyEvent evt) {
                 StringBuilder sb = new StringBuilder();
-                ArrayList<AbstractNode> links = null;
+                List<AbstractNode> links = new ArrayList<AbstractNode>();
                 if (selectedObjects.size() == 0) {
-                    links = LinkURLEditor.this.links;
+                    links.addAll(si.getSelectedChildren());
                 } else {
-                    links = new ArrayList<AbstractNode>(selectedObjects.size());
-                    for (AbstractNode node : selectedObjects) {
-                        if (node instanceof DownloadLink) links.add((DownloadLink) node);
-                    }
+                    links.addAll(selectedObjects);
+
                 }
                 for (String url : LinkTreeUtils.getURLs(links)) {
                     if (sb.length() > 0) sb.append("\r\n");

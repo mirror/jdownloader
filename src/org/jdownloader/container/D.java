@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -914,7 +915,7 @@ public class D extends PluginsC {
         return null;
     }
 
-    public ArrayList<DownloadLink> getPackageFiles(FilePackage filePackage, ArrayList<DownloadLink> links) {
+    public ArrayList<DownloadLink> getPackageFiles(FilePackage filePackage, List<DownloadLink> links) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         // ret.add(DownloadLink);
 
@@ -930,7 +931,7 @@ public class D extends PluginsC {
         return ret;
     }
 
-    public String createContainerString(ArrayList<DownloadLink> links) {
+    public String createContainerString(List<DownloadLink> links) {
         HashMap<String, DownloadLink> map = new HashMap<String, DownloadLink>();
         ArrayList<DownloadLink> filter = new ArrayList<DownloadLink>();
         // filter

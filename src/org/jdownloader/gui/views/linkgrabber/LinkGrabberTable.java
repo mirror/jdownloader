@@ -28,6 +28,7 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ContextMenuFactory;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.RemoveSelectionAction;
@@ -95,7 +96,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
         final ExtColumn<AbstractNode> col = this.getExtColumnAtPoint(e.getPoint());
 
-        for (JMenuItem mm : ContextMenuFactory.fillPropertiesMenu(obj, getExtTableModel().getSelectedObjects(), col)) {
+        for (JMenuItem mm : ContextMenuFactory.fillPropertiesMenu(new SelectionInfo<CrawledPackage, CrawledLink>(obj, getExtTableModel().getSelectedObjects()), col)) {
             m.add(mm);
         }
         m.show(this, e.getPoint().x, e.getPoint().y);

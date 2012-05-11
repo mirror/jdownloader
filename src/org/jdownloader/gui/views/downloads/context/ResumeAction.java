@@ -1,37 +1,38 @@
 package org.jdownloader.gui.views.downloads.context;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 
 public class ResumeAction extends AppAction {
 
-    private static final long             serialVersionUID = 8087143123808363305L;
+    private static final long                              serialVersionUID = 8087143123808363305L;
 
-    private final ArrayList<DownloadLink> links;
+    private final SelectionInfo<FilePackage, DownloadLink> si;
 
-    public ResumeAction(ArrayList<DownloadLink> links) {
-        this.links = links;
+    public ResumeAction(SelectionInfo<FilePackage, DownloadLink> si) {
+        this.si = si;
         setIconKey("resume");
         setName(_GUI._.gui_table_contextmenu_resume());
     }
 
     @Override
     public boolean isEnabled() {
-        return links != null && links.size() > 0;
+        return !si.isEmpty();
     }
 
     public void actionPerformed(ActionEvent e) {
         IOEQ.add(new Runnable() {
             public void run() {
-                for (DownloadLink link : links) {
+                for (DownloadLink link : si.getSelectedChildren()) {
                     if (!link.getLinkStatus().isPluginActive() && (link.getLinkStatus().isFailed() || link.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE))) {
                         link.getLinkStatus().reset(true);
                         DownloadWatchDog.getInstance().removeIPBlockTimeout(link);

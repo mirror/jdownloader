@@ -9,6 +9,8 @@ import javax.swing.JTextField;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -16,6 +18,7 @@ import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.context.SetDownloadFolderInDownloadTableAction;
 import org.jdownloader.images.NewTheme;
@@ -39,7 +42,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
         clickDelayer = new DelayedRunnable(ToolTipController.EXECUTER, 200) {
             @Override
             public void delayedrun() {
-                new SetDownloadFolderInDownloadTableAction(clicked, null).actionPerformed(null);
+                new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(clicked)).actionPerformed(null);
             }
         };
     }

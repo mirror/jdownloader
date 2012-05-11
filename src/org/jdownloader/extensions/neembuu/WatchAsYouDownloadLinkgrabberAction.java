@@ -19,6 +19,7 @@ package org.jdownloader.extensions.neembuu;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.ImageIcon;
 
@@ -44,11 +45,11 @@ public class WatchAsYouDownloadLinkgrabberAction extends AppAction {
     /**
      *
      */
-    private static final long       serialVersionUID = -1123905158192679571L;
-    private ArrayList<AbstractNode> values;
-    private boolean                 autostart;
+    private static final long serialVersionUID = -1123905158192679571L;
+    private List<CrawledLink> values;
+    private boolean           autostart;
 
-    public WatchAsYouDownloadLinkgrabberAction(boolean autostart, ArrayList<AbstractNode> arrayList) {
+    public WatchAsYouDownloadLinkgrabberAction(boolean autostart, List<CrawledLink> arrayList) {
         // if
         // ((org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue()
         // && !autostart) || (autostart &&
@@ -60,9 +61,8 @@ public class WatchAsYouDownloadLinkgrabberAction extends AppAction {
         setSmallIcon(new ImageIcon(ImageProvider.merge(add, play, 0, 0, 9, 10)));
         this.autostart = true;
         /*
-         * } else { setName(_GUI._.ConfirmAction_ConfirmAction_context_add());
-         * setSmallIcon(NewTheme.I().getIcon("add", 20)); this.autostart =
-         * false; }
+         * } else { setName(_GUI._.ConfirmAction_ConfirmAction_context_add()); setSmallIcon(NewTheme.I().getIcon("add", 20)); this.autostart
+         * = false; }
          */
         this.values = arrayList;
     }

@@ -3013,7 +3013,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download Password" })
     String DownloadPasswordColumn_DownloadPasswordColumn_object_();
 
-    @Default(lngs = { "en" }, values = { "Remove" })
+    @Default(lngs = { "en" }, values = { "Delete Links" })
     String ContextMenuFactory_createPopup_cleanup();
 
     @Default(lngs = { "en" }, values = { "Offline Links" })
@@ -3741,5 +3741,23 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "... a single click and a double click on the Downloadfolder Column have different functions:\r\n            A single click opens a Dialog to choose a new Downloadfolder\r\n            A double click opens the current Downloadfolder in the Explorer " })
     String DownloadFolderColumn_onSingleClick_object_();
+
+    @Default(lngs = { "en" }, values = { "Failed Links" })
+    String DeleteFailedAction_DeleteFailedAction_object_();
+
+    @Default(lngs = { "en" }, values = { "from List (keep downloaded files)" })
+    String DownloadTableContextMenuFactory_createDeleteFromList_object_();
+
+    @Default(lngs = { "en" }, values = { "from List & Disk (delete downloaded files)" })
+    String DownloadTableContextMenuFactory_createDeleteFromListAndDisk_object_();
+
+    @Default(lngs = { "en" }, values = { "Succesfull Links" })
+    String DeleteSuccessFulAction_DeleteSuccessFulAction_object_();
+
+    @Default(lngs = { "en" }, values = { "All Selected Links" })
+    String DeleteAllAction_DeleteAllAction_object_();
+
+    @Default(lngs = { "en" }, values = { "Offline Links" })
+    String DeleteOfflineAction_DeleteOfflineAction_object_();
 
 }

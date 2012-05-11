@@ -38,6 +38,7 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.ValidateArchiveAction;
 import org.jdownloader.extensions.extraction.gui.DummyArchiveDialog;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.images.NewTheme;
 
@@ -80,7 +81,7 @@ public class ConfirmAction extends AppAction {
             public void run() {
 
                 try {
-                    for (Archive a : new ValidateArchiveAction((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), new ArrayList<AbstractNode>(values)).getArchives()) {
+                    for (Archive a : new ValidateArchiveAction<CrawledPackage, CrawledLink>((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), new SelectionInfo<CrawledPackage, CrawledLink>(values)).getArchives()) {
                         final DummyArchive da = a.createDummyArchive();
                         if (!da.isComplete()) {
 

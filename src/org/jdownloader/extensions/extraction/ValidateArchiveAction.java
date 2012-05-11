@@ -8,7 +8,8 @@ import javax.swing.ImageIcon;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLink.LinkState;
-import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
@@ -23,14 +24,14 @@ import org.jdownloader.extensions.extraction.gui.DummyArchiveDialog;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.extensions.extraction.translate.T;
-import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class ValidateArchiveAction extends AppAction {
+public class ValidateArchiveAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
 
-    private ArrayList<AbstractNode> selection;
-    private ExtractionExtension     extractor;
-    private ArrayList<Archive>      archives;
+    private ExtractionExtension                      extractor;
+    private ArrayList<Archive>                       archives;
+    private SelectionInfo<PackageType, ChildrenType> si;
 
     public ValidateArchiveAction(ExtractionExtension extractionExtension, Archive a) {
 
@@ -42,15 +43,15 @@ public class ValidateArchiveAction extends AppAction {
         setEnabled(archives.size() > 0);
     }
 
-    public ValidateArchiveAction(ExtractionExtension extractionExtension, ArrayList<AbstractNode> selection) {
+    public ValidateArchiveAction(ExtractionExtension extractionExtension, SelectionInfo<PackageType, ChildrenType> si) {
         setName(T._.ValidateArchiveAction_ValidateArchiveAction_object_());
         setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("archive", 18), NewTheme.I().getImage("ok", 11), -1, 0, 6, 8)));
-        this.selection = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<AbstractNode>());
+        this.si = si;
         // System.out.println(1);
         extractor = extractionExtension;
         archives = new ArrayList<Archive>();
 
-        nextLink: for (AbstractNode l : this.selection) {
+        nextLink: for (ChildrenType l : si.getSelectedChildren()) {
             if (l instanceof CrawledLink) {
                 if (((CrawledLink) l).getLinkState() != LinkState.OFFLINE) {
                     CrawledLinkFactory clf = new CrawledLinkFactory(((CrawledLink) l));

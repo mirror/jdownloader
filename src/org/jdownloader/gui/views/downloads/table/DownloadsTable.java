@@ -33,6 +33,7 @@ import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.context.DeleteAction;
 import org.jdownloader.images.NewTheme;
@@ -70,7 +71,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
         final ExtColumn<AbstractNode> col = this.getExtColumnAtPoint(e.getPoint());
 
-        for (JMenuItem mm : DownloadTableContextMenuFactory.fillPropertiesMenu(obj, getExtTableModel().getSelectedObjects(), col)) {
+        for (JMenuItem mm : DownloadTableContextMenuFactory.fillPropertiesMenu(new SelectionInfo<FilePackage, DownloadLink>(obj, getExtTableModel().getSelectedObjects()), col)) {
             m.add(mm);
         }
         m.show(this, e.getPoint().x, e.getPoint().y);
@@ -79,7 +80,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     protected boolean onShortcutDelete(final ArrayList<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
-        new DeleteAction(getAllSelectedChildren(selectedObjects), direct).actionPerformed(null);
+        new DeleteAction(new SelectionInfo<FilePackage, DownloadLink>(null, selectedObjects, null, evt)).actionPerformed(null);
         return true;
     }
 

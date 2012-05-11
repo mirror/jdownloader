@@ -1,12 +1,11 @@
-package org.jdownloader.gui.views.downloads.table.linkproperties;
+package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import javax.swing.JComponent;
 
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -14,26 +13,26 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.downloads.table.linkproperties.LinkURLEditor;
 import org.jdownloader.images.NewTheme;
 
-public class URLEditorAction extends AppAction {
+public class URLEditorAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
 
-    private DownloadLink            contextObject;
-    private ArrayList<AbstractNode> links;
+    private SelectionInfo<PackageType, ChildrenType> si;
 
-    public URLEditorAction(DownloadLink contextObject, ArrayList<AbstractNode> links) {
+    public URLEditorAction(SelectionInfo<PackageType, ChildrenType> si) {
 
         setName(_GUI._.ContextMenuFactory_createPopup_url());
         setSmallIcon(NewTheme.I().getIcon("url", 20));
-        this.contextObject = contextObject;
-        this.links = links;
+        this.si = si;
 
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         try {
-            final LinkURLEditor comp = new LinkURLEditor(contextObject, links);
+            final LinkURLEditor comp = new LinkURLEditor(si);
             Dialog.getInstance().showDialog(new AbstractDialog<Object>(Dialog.STYLE_HIDE_ICON | Dialog.BUTTONS_HIDE_OK, _GUI._.ContextMenuFactory_createPopup_url(), null, _GUI._.literally_save(), null) {
 
                 @Override

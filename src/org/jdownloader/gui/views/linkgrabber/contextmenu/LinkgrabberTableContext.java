@@ -1,52 +1,32 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
-import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-
 import javax.swing.JPopupMenu;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.gui.menu.MenuContext;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.SelectionInfo;
 
 public class LinkgrabberTableContext extends MenuContext<JPopupMenu> {
 
-    private LinkGrabberTable        table;
-    private AbstractNode            clickedObject;
-    private ArrayList<AbstractNode> selectedObjects;
-    private ExtColumn<AbstractNode> clickedColumn;
-    private MouseEvent              mouseEvent;
+    private ExtColumn<AbstractNode>                    clickedColumn;
+    private SelectionInfo<CrawledPackage, CrawledLink> selectionInfo;
 
-    public LinkgrabberTableContext(LinkGrabberTable downloadsTable, JPopupMenu popup, AbstractNode contextObject, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent ev) {
-        super(popup);
-        table = downloadsTable;
-        clickedObject = contextObject;
-        selectedObjects = selection;
+    public SelectionInfo<CrawledPackage, CrawledLink> getSelectionInfo() {
+        return selectionInfo;
+    }
+
+    public LinkgrabberTableContext(JPopupMenu p, SelectionInfo<CrawledPackage, CrawledLink> si, ExtColumn<AbstractNode> column) {
+        super(p);
         clickedColumn = column;
-        mouseEvent = ev;
-
-    }
-
-    public LinkGrabberTable getTable() {
-        return table;
-    }
-
-    public AbstractNode getClickedObject() {
-        return clickedObject;
-    }
-
-    public ArrayList<AbstractNode> getSelectedObjects() {
-        return selectedObjects;
+        this.selectionInfo = si;
     }
 
     public ExtColumn<AbstractNode> getClickedColumn() {
         return clickedColumn;
-    }
-
-    public MouseEvent getMouseEvent() {
-        return mouseEvent;
     }
 
 }
