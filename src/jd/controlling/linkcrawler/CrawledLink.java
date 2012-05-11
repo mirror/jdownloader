@@ -11,9 +11,7 @@ import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
@@ -74,7 +72,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         this.unknownHandler = unknownHandler;
     }
 
-    private PluginForDecrypt          dPlugin            = null;
     private LinkCollectingJob         sourceJob          = null;
     private long                      created            = -1;
 
@@ -91,12 +88,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info
-     * about how to prozess the file afterwards.
+     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info about how to prozess
+     * the file afterwards.
      * 
      * example:<br>
-     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID
-     * different.
+     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID different.
      * 
      * @return
      */
@@ -118,21 +114,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      */
     public void setSourceJob(LinkCollectingJob sourceJob) {
         this.sourceJob = sourceJob;
-    }
-
-    /**
-     * @return the dPlugin
-     */
-    public PluginForDecrypt getdPlugin() {
-        return dPlugin;
-    }
-
-    /**
-     * @param dPlugin
-     *            the dPlugin to set
-     */
-    public void setdPlugin(PluginForDecrypt dPlugin) {
-        this.dPlugin = dPlugin;
     }
 
     public long getSize() {
@@ -158,17 +139,8 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     private PluginForHost hPlugin = null;
-    private PluginsC      cPlugin = null;
 
-    public PluginsC getcPlugin() {
-        return cPlugin;
-    }
-
-    public void setcPlugin(PluginsC cPlugin) {
-        this.cPlugin = cPlugin;
-    }
-
-    private DownloadLink dlLink = null;
+    private DownloadLink  dlLink  = null;
 
     /**
      * @return the dlLink

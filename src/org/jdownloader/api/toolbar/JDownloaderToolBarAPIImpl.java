@@ -331,9 +331,9 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                     checkSession.linkCrawler.setFilter(new LinkCrawlerFilter() {
                         /* ignore crawler/ftp/http links */
                         public boolean dropByUrl(CrawledLink link) {
-                            if (link.getdPlugin() != null) return true;
                             PluginForHost plugin = link.gethPlugin();
-                            if (plugin != null && ("ftp".equalsIgnoreCase(plugin.getHost()) || "http links".equalsIgnoreCase(plugin.getHost()))) return true;
+                            if (plugin == null) return true;
+                            if (("ftp".equalsIgnoreCase(plugin.getHost()) || "http links".equalsIgnoreCase(plugin.getHost()))) return true;
                             return false;
                         }
 

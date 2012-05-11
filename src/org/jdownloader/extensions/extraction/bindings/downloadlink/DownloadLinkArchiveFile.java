@@ -47,9 +47,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     }
 
     public boolean deleteFile() {
-
         return new File(downloadLink.getFileOutput()).delete();
-
     }
 
     public boolean exists() {
@@ -126,6 +124,11 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
         }
 
+    }
+
+    @Override
+    public long getFileSize() {
+        return downloadLink.getDownloadSize();
     }
 
     @Override

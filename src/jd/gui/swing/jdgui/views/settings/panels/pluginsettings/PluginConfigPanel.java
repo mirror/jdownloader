@@ -33,14 +33,14 @@ public class PluginConfigPanel extends SwitchPanel {
     public static PluginConfigPanel create(LazyPlugin<?> selectedItem) {
         Plugin proto = null;
         try {
-            proto = selectedItem.getPrototype();
+            if (selectedItem != null) proto = selectedItem.getPrototype();
         } catch (UpdateRequiredClassNotFoundException e) {
             Log.exception(e);
-            return null;
         }
 
-        final AddonConfig cp = AddonConfig.getInstance(proto.getConfig(), "", false);
-
+        AddonConfig cp2 = null;
+        if (proto != null) cp2 = AddonConfig.getInstance(proto.getConfig(), "", false);
+        final AddonConfig cp = cp2;
         // ImageIcon icon = null;
         // if (selectedItem instanceof HostPluginWrapper) { ;
         // icon = ((HostPluginWrapper) selectedItem).getIconUnscaled();
@@ -60,29 +60,31 @@ public class PluginConfigPanel extends SwitchPanel {
 
             @Override
             protected void onShow() {
-                cp.setShown();
+                if (cp != null) cp.setShown();
             }
 
             @Override
             protected void onHide() {
-                cp.setHidden();
+                if (cp != null) cp.setHidden();
             }
         };
-        String desc = proto.getDescription();
-        if (desc != null) {
-            JTextArea txt = new JTextArea();
-            txt.setEditable(false);
-            txt.setLineWrap(true);
-            txt.setWrapStyleWord(true);
-            txt.setFocusable(false);
-            txt.setEnabled(false);
+        if (cp != null) {
+            String desc = proto.getDescription();
+            if (desc != null) {
+                JTextArea txt = new JTextArea();
+                txt.setEditable(false);
+                txt.setLineWrap(true);
+                txt.setWrapStyleWord(true);
+                txt.setFocusable(false);
+                txt.setEnabled(false);
 
-            txt.setText(desc);
-            ret.add(txt, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10");
-            ret.add(new JSeparator(), "spanx,growx,pushx,gapbottom 5");
+                txt.setText(desc);
+                ret.add(txt, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10");
+                ret.add(new JSeparator(), "spanx,growx,pushx,gapbottom 5");
 
+            }
+            ret.add(cp, "spanx,growx,pushx,growy,pushy");
         }
-        ret.add(cp, "spanx,growx,pushx,growy,pushy");
         return ret;
     }
 

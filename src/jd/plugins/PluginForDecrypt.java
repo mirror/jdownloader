@@ -35,7 +35,6 @@ import jd.controlling.linkcrawler.LinkCrawlerDistributer;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
-import org.appwork.utils.Regex;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 /**
@@ -292,38 +291,6 @@ public abstract class PluginForDecrypt extends Plugin {
         String cc = new CaptchaController(ioPermission, method, file, defaultValue, explain, this).getCode(flag);
         if (cc == null) throw new DecrypterException(DecrypterException.CAPTCHA);
         return cc;
-    }
-
-    public ArrayList<CrawledLink> getCrawlableLinks(String data) {
-        /*
-         * we dont need memory optimization here as downloadlink, crypted link itself take care of this
-         */
-        String[] hits = new Regex(data, getSupportedLinks()).setMemoryOptimized(false).getColumn(-1);
-        ArrayList<CrawledLink> chits = null;
-        if (hits != null && hits.length > 0) {
-            chits = new ArrayList<CrawledLink>(hits.length);
-        } else {
-            chits = new ArrayList<CrawledLink>();
-        }
-        if (hits != null && hits.length > 0) {
-            for (String hit : hits) {
-                String file = hit;
-                file = file.trim();
-                /* cut of any unwanted chars */
-                while (file.length() > 0 && file.charAt(0) == '"') {
-                    file = file.substring(1);
-                }
-                while (file.length() > 0 && file.charAt(file.length() - 1) == '"') {
-                    file = file.substring(0, file.length() - 1);
-                }
-                file = file.trim();
-
-                CrawledLink cli;
-                chits.add(cli = new CrawledLink(new CryptedLink(file)));
-                cli.setdPlugin(this);
-            }
-        }
-        return chits;
     }
 
     protected void setBrowserExclusive() {

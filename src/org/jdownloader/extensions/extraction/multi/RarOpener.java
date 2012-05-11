@@ -20,7 +20,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import net.sf.sevenzipjbinding.IArchiveOpenCallback;
 import net.sf.sevenzipjbinding.IArchiveOpenVolumeCallback;
@@ -57,6 +59,10 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
         return null;
     }
 
+    public boolean isStreamOpen(String filename) {
+        return openedRandomAccessFileList.containsKey(filename);
+    }
+
     public IInStream getStream(String filename) throws SevenZipException {
         try {
             RandomAccessFile randomAccessFile = openedRandomAccessFileList.get(filename);
@@ -65,11 +71,8 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
                 name = filename;
                 return new RandomAccessFileInStream(randomAccessFile);
             }
-
             randomAccessFile = new RandomAccessFile(filename, "r");
-
             openedRandomAccessFileList.put(filename, randomAccessFile);
-
             name = filename;
             return new RandomAccessFileInStream(randomAccessFile);
         } catch (FileNotFoundException fileNotFoundException) {
@@ -85,11 +88,14 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
      * @throws IOException
      */
     void close() throws IOException {
-        for (RandomAccessFile file : openedRandomAccessFileList.values()) {
+        Iterator<Entry<String, RandomAccessFile>> it = openedRandomAccessFileList.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<String, RandomAccessFile> next = it.next();
             try {
-                file.close();
+                next.getValue().close();
             } catch (final Throwable e) {
             }
+            it.remove();
         }
     }
 

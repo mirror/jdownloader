@@ -72,6 +72,11 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     }
 
     @Override
+    public long getFileSize() {
+        return Math.max(0, link.getSize());
+    }
+
+    @Override
     public void deleteLink() {
     }
 

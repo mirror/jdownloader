@@ -183,27 +183,28 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             @Override
             public void run() {
                 LinkCollector.this.abort();
-                int retry = 10;
-                while (retry > 0) {
-                    if (!LinkChecker.isChecking() && !LinkCrawler.isCrawling()) {
-                        /*
-                         * we wait till the LinkCollector is finished or max 10 secs
-                         */
-                        break;
-                    }
-                    try {
-                        Thread.sleep(1000);
-                    } catch (final InterruptedException e) {
-                        break;
-                    }
-                    retry--;
-                }
+                // int retry = 10;
+                // while (retry > 0) {
+                // if (!LinkChecker.isChecking() && !LinkCrawler.isCrawling()) {
+                // /*
+                // * we wait till the LinkCollector is finished or max 10 secs
+                // */
+                // break;
+                // }
+                // try {
+                // Thread.sleep(1000);
+                // } catch (final InterruptedException e) {
+                // break;
+                // }
+                // retry--;
+                // }
                 /* we try a last save */
                 IOEQ.getQueue().addWait(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
 
                     @Override
                     protected Void run() throws RuntimeException {
                         saveLinkCollectorLinks();
+                        LinkCollector.this.setSaveAllowed(false);
                         return null;
                     }
                 });

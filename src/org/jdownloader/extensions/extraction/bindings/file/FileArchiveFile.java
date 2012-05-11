@@ -66,6 +66,11 @@ public class FileArchiveFile implements ArchiveFile {
     }
 
     @Override
+    public long getFileSize() {
+        return file.length();
+    }
+
+    @Override
     public void deleteLink() {
     }
 

@@ -172,7 +172,7 @@ public class MdfrFldr extends PluginForDecrypt {
             aa = new Account(username, password);
         }
         try {
-            ((MediafireCom) hosterPlugin).login(br, aa);
+            ((MediafireCom) hosterPlugin).login(br, aa, true);
         } catch (final PluginException e) {
             aa.setEnabled(false);
             aa.setValid(false);

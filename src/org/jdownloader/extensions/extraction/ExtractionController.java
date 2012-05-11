@@ -29,11 +29,12 @@ import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
 
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.controlling.FileCreationEvent;
+import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
 
 /**
- * Responsible for the correct procedure of the extraction process. Contains one
- * IExtraction instance.
+ * Responsible for the correct procedure of the extraction process. Contains one IExtraction instance.
  * 
  * @author botzi
  * 
@@ -216,6 +217,10 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     }
                     fireEvent(ExtractionEvent.Type.FINISHED);
                     break;
+                case ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR:
+                    JDLogger.getLogger().warning("Archive seems to be incomplete " + archive);
+                    fireEvent(ExtractionEvent.Type.FILE_NOT_FOUND);
+                    break;
                 case ExtractionControllerConstants.EXIT_CODE_CRC_ERROR:
                     JDLogger.getLogger().warning("A CRC error occurred when unpacking " + archive);
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED_CRC);
@@ -267,17 +272,20 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      * Deletes the archive files.
      */
     private void removeArchiveFiles() {
-
+        ArrayList<File> removed = new ArrayList<File>();
         for (ArchiveFile link : archive.getArchiveFiles()) {
             if (removeAfterExtraction) {
                 if (!link.deleteFile()) {
                     JDLogger.getLogger().warning("Could not delete archive: " + link);
+                } else {
+                    removed.add(new File(link.getFilePath()));
                 }
             }
             if (isRemoveDownloadLinksAfterExtraction()) {
                 link.deleteLink();
             }
         }
+        if (removed.size() > 0) FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.REMOVE_FILES, removed.toArray(new File[removed.size()])));
     }
 
     /**

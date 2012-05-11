@@ -22,8 +22,8 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
+import jd.controlling.JDPluginLogger;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
@@ -43,11 +43,21 @@ import org.appwork.utils.logging.Log;
 
 public abstract class PluginsC {
 
-    private Pattern pattern;
+    private Pattern          pattern;
 
-    private String  name;
+    private String           name;
 
-    private long    version;
+    private long             version;
+
+    protected JDPluginLogger logger = JDPluginLogger.Trash;
+
+    public JDPluginLogger getLogger() {
+        return logger;
+    }
+
+    public void setLogger(JDPluginLogger logger) {
+        this.logger = logger;
+    }
 
     public PluginsC(String name, String pattern, String rev) {
         this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
@@ -138,8 +148,7 @@ public abstract class PluginsC {
     public abstract String[] encrypt(String plain);
 
     /**
-     * Diese Methode liefert eine URL zurück, von der aus der Download gestartet
-     * werden kann
+     * Diese Methode liefert eine URL zurück, von der aus der Download gestartet werden kann
      * 
      * @param downloadLink
      *            Der DownloadLink, dessen URL zurückgegeben werden soll
@@ -150,8 +159,7 @@ public abstract class PluginsC {
     }
 
     /**
-     * Liefert alle in der Containerdatei enthaltenen Dateien als DownloadLinks
-     * zurück.
+     * Liefert alle in der Containerdatei enthaltenen Dateien als DownloadLinks zurück.
      * 
      * @param filename
      *            Die Containerdatei
@@ -188,51 +196,6 @@ public abstract class PluginsC {
         }
     }
 
-    public ArrayList<CrawledLink> getContainerLinks(String data) {
-        /*
-         * we dont need memory optimization here as downloadlink, crypted link
-         * itself take care of this
-         */
-        String[] hits = new Regex(data, getSupportedLinks()).setMemoryOptimized(false).getColumn(-1);
-        ArrayList<CrawledLink> chits = null;
-        if (hits != null && hits.length > 0) {
-            chits = new ArrayList<CrawledLink>(hits.length);
-        } else {
-            chits = new ArrayList<CrawledLink>();
-        }
-        if (hits != null && hits.length > 0) {
-            for (String hit : hits) {
-                String file = hit;
-                file = file.trim();
-                /* cut of any unwanted chars */
-                while (file.length() > 0 && file.charAt(0) == '"') {
-                    file = file.substring(1);
-                }
-                while (file.length() > 0 && file.charAt(file.length() - 1) == '"') {
-                    file = file.substring(0, file.length() - 1);
-                }
-                file = file.trim();
-
-                CrawledLink cli;
-                chits.add(cli = new CrawledLink(file));
-                cli.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
-                    /*
-                     * set new LinkModifier, hides the url if needed
-                     */
-                    public void modifyCrawledLink(CrawledLink link) {
-                        if (hideLinks()) {
-                            /* we hide the links */
-                            DownloadLink dl = link.getDownloadLink();
-                            if (dl != null) dl.setLinkType(DownloadLink.LINKTYPE_CONTAINER);
-                        }
-                    }
-                });
-                cli.setcPlugin(this);
-            }
-        }
-        return chits;
-    }
-
     public ArrayList<CrawledLink> decryptContainer(CrawledLink source) {
         if (source.getURL() == null) return null;
         ArrayList<CrawledLink> retLinks = null;
@@ -249,16 +212,14 @@ public abstract class PluginsC {
             }
         } catch (Throwable e) {
             /*
-             * damn, something must have gone really really bad, lets keep the
-             * log
+             * damn, something must have gone really really bad, lets keep the log
              */
 
             Log.L.log(Level.SEVERE, "Exception", e);
         }
         if (retLinks == null && showException) {
             /*
-             * null as return value? something must have happened, do not clear
-             * log
+             * null as return value? something must have happened, do not clear log
              */
             Log.L.severe("ContainerPlugin out of date: " + this + " :" + getVersion());
 

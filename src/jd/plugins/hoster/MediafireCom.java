@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
@@ -28,6 +30,8 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.ext.BasicBrowserEnviroment;
@@ -119,22 +123,21 @@ public class MediafireCom extends PluginForHost {
         }
     }
 
-    private static final String                   UA                 = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.75 Safari/535.7";
+    private static final String                                    UA                 = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.75 Safari/535.7";
 
-    static private final String                   offlinelink        = "tos_aup_violation";
+    static private final String                                    offlinelink        = "tos_aup_violation";
 
     /** The name of the error page used by MediaFire */
-    private static final String                   ERROR_PAGE         = "error.php";
+    private static final String                                    ERROR_PAGE         = "error.php";
     /**
-     * The number of retries to be performed in order to determine if a file is
-     * available
+     * The number of retries to be performed in order to determine if a file is available
      */
-    private static final int                      NUMBER_OF_RETRIES  = 3;
+    private static final int                                       NUMBER_OF_RETRIES  = 3;
 
     /**
      * Map to cache the configuration keys
      */
-    private static final HashMap<Account, String> CONFIGURATION_KEYS = new HashMap<Account, String>();
+    private static final HashMap<Account, HashMap<String, String>> CONFIGURATION_KEYS = new HashMap<Account, HashMap<String, String>>();
 
     private static int covertToPixel(final String top) {
         if (top == null) { return 0; }
@@ -209,7 +212,7 @@ public class MediafireCom extends PluginForHost {
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
-            this.login(br, account);
+            this.login(br, account, true);
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
@@ -382,8 +385,7 @@ public class MediafireCom extends PluginForHost {
             }
             try {
                 /*
-                 * this call will stop/kill all remaining js from previous
-                 * extBrowser!
+                 * this call will stop/kill all remaining js from previous extBrowser!
                  */
                 Browser loboCleanup = new Browser();
                 eb.eval(loboCleanup);
@@ -457,7 +459,16 @@ public class MediafireCom extends PluginForHost {
                 url = dlURL;
             } else {
                 this.handlePW(downloadLink);
-                url = this.getDownloadUrl(downloadLink);
+                Browser brc = br.cloneBrowser();
+                this.fileID = getID(downloadLink);
+                brc.getPage("http://www.mediafire.com/dynamic/dlget.php?qk=" + fileID);
+                url = brc.getRegex("dllink\":\"(http:.*?)\"").getMatch(0);
+                if (url != null) {
+                    url = url.replaceAll("\\\\", "");
+                } else {
+                    logger.info("Try fallback: " + brc.toString());
+                }
+                if (url == null) url = this.getDownloadUrl(downloadLink);
             }
         }
         if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
@@ -485,13 +496,14 @@ public class MediafireCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         this.requestFileInformation(downloadLink);
-        this.login(br, account);
+        this.login(br, account, false);
         if (account.getBooleanProperty("freeaccount")) {
             doFree(downloadLink, account);
         } else {
             String url = dlURL;
             boolean passwordprotected = false;
-            if (url == null) {
+            boolean useAPI = false;
+            if (url == null && useAPI) {
                 this.fileID = getID(downloadLink);
                 this.br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php", "premium_key=" + MediafireCom.CONFIGURATION_KEYS.get(account) + "&files=" + this.fileID);
                 url = this.br.getRegex("<url>(http.*?)</url>").getMatch(0);
@@ -529,6 +541,27 @@ public class MediafireCom extends PluginForHost {
                     logger.info("Insufficient bandwidth");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
+            } else if (url == null && useAPI == false) {
+                this.fileID = getID(downloadLink);
+                br.setFollowRedirects(false);
+                br.getPage("http://www.mediafire.com/?" + fileID);
+                /* url should be downloadlink when directDownload is enabled */
+                url = br.getRedirectLocation();
+                if (url == null) {
+                    /* try the same */
+                    Browser brc = br.cloneBrowser();
+                    brc.getPage("http://www.mediafire.com/dynamic/dlget.php?qk=" + fileID);
+                    url = brc.getRegex("dllink\":\"(http:.*?)\"").getMatch(0);
+                    if (url != null) {
+                        url = url.replaceAll("\\\\", "");
+                    }
+                }
+                /* pw protected urls are currently not supported, needs to be fixed */
+                // if (url == null || !url.contains("download")) {
+                // this.handlePW(downloadLink);
+                // url = this.getDownloadUrl(downloadLink);
+                // }
+                // if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Private file. No Download possible");
             }
             if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             this.br.setFollowRedirects(true);
@@ -607,37 +640,57 @@ public class MediafireCom extends PluginForHost {
         Browser.setRequestIntervalLimitGlobal(this.getHost(), 250);
     }
 
-    public void login(final Browser br, final Account account) throws Exception {
+    public void login(final Browser br, final Account account, boolean force) throws Exception {
         boolean red = br.isFollowingRedirects();
-        try {
-            this.setBrowserExclusive();
-            br.setFollowRedirects(true);
-            br.getPage("http://www.mediafire.com/");
-            Form form = br.getFormbyProperty("name", "form_login1");
-            if (form == null) {
-                form = br.getFormBySubmitvalue("login_email");
-            }
-            if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            form.put("login_email", Encoding.urlEncode(account.getUser()));
-            form.put("login_pass", Encoding.urlEncode(account.getPass()));
-            br.submitForm(form);
-            br.getPage("http://www.mediafire.com/myfiles.php");
-            final String cookie = br.getCookie("http://www.mediafire.com", "user");
-            if ("x".equals(cookie) || cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            if (MediafireCom.CONFIGURATION_KEYS.get(account) == null) {
-                br.getPage("http://www.mediafire.com/myaccount/download_options.php?enable=1");
-                if (br.containsHTML("setCustomVar\\',1,\\'UserType\\',\\'registered\\']")) {
+        synchronized (CONFIGURATION_KEYS) {
+            try {
+                HashMap<String, String> cookies = null;
+                if (force == false && (cookies = MediafireCom.CONFIGURATION_KEYS.get(account)) != null) {
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie("http://www.mediafire.com/", key, value);
+                        }
+                        return;
+                    }
+                }
+                this.setBrowserExclusive();
+                br.setFollowRedirects(true);
+                br.getPage("http://www.mediafire.com/");
+                Form form = br.getFormbyProperty("name", "form_login1");
+                if (form == null) {
+                    form = br.getFormBySubmitvalue("login_email");
+                }
+                if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                form.put("login_email", Encoding.urlEncode(account.getUser()));
+                form.put("login_pass", Encoding.urlEncode(account.getPass()));
+                br.submitForm(form);
+                br.getPage("https://www.mediafire.com/myfiles.php");
+                final String cookie = br.getCookie("http://www.mediafire.com", "user");
+                if ("x".equals(cookie) || cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.setFollowRedirects(false);
+                br.getPage("https://www.mediafire.com/myaccount/download_options.php");
+                if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("select_account_type")) {
                     account.setProperty("freeaccount", true);
                 } else {
                     account.setProperty("freeaccount", Property.NULL);
-                    String configurationKey = getAPIKEY(br);
-                    if (configurationKey == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    MediafireCom.CONFIGURATION_KEYS.put(account, configurationKey);
+                    String di = br.getRegex("di='(.*?)'").getMatch(0);
+                    br.getPage("http://www.mediafire.com/dynamic/download_options.php?enable_me_from_me=0&nocache=" + new Random().nextInt(1000) + "&di=" + di);
+                    // String configurationKey = getAPIKEY(br);
+                    // if (configurationKey == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-
+                cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies("http://www.mediafire.com");
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                MediafireCom.CONFIGURATION_KEYS.put(account, cookies);
+            } catch (final PluginException e) {
+                MediafireCom.CONFIGURATION_KEYS.remove(account);
+            } finally {
+                br.setFollowRedirects(red);
             }
-        } finally {
-            br.setFollowRedirects(red);
         }
     }
 

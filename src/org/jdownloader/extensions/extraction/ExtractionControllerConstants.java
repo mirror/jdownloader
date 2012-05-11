@@ -40,6 +40,10 @@ public class ExtractionControllerConstants {
      */
     public static final int EXIT_CODE_WRITE_ERROR      = 5;
     /**
+     * Archive is incomplete, part missing?
+     */
+    public static final int EXIT_CODE_INCOMPLETE_ERROR = 4;
+    /**
      * A CRC error occurred when unpacking
      */
     public static final int EXIT_CODE_CRC_ERROR        = 3;

@@ -101,6 +101,8 @@ class MultiCallback implements ISequentialOutStream {
         try {
             ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(buffer);
         } catch (Throwable e) {
+        } finally {
+            buffer = null;
         }
         try {
             fos.flush();

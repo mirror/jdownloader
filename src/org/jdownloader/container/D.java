@@ -558,7 +558,6 @@ public class D extends PluginsC {
                         // ).lastIndexOf("/")
                         // + 1), pHost.getHost(), null, true);
                         nl = new CrawledLink(ls.get(lcs));
-                        nl.setcPlugin(this);
                         nl.setDesiredPackageInfo(dpi);
                         dpi.getExtractionPasswords().addAll(pws);
                         dpi.setComment("from Container: " + d + " : " + pc);
@@ -577,8 +576,7 @@ public class D extends PluginsC {
 
     private void pdx2(Node node, File d) throws InstantiationException, IllegalAccessException {
         /*
-         * Neue Version. Alle user generated inhalte werden jetzt base64
-         * verschlüsselt abgelegt. nur generator nicht
+         * Neue Version. Alle user generated inhalte werden jetzt base64 verschlüsselt abgelegt. nur generator nicht
          */
         cls = new ArrayList<CrawledLink>();
         CrawledLink nl;
@@ -636,7 +634,6 @@ public class D extends PluginsC {
                         // + 1), pHost.getHost(), null, true);
 
                         nl = new CrawledLink(ls.get(lc));
-                        nl.setcPlugin(this);
                         nl.setDesiredPackageInfo(dpi);
                         dpi.getExtractionPasswords().addAll(pws);
                         dpi.setComment("from Container: " + d + " : " + pc);
@@ -766,7 +763,6 @@ public class D extends PluginsC {
                         // ls2.get(lcs).substring(ls2.get(lcs).lastIndexOf("/")
                         // + 1);
                         nl = new CrawledLink(ls2.get(lcs));
-                        nl.setcPlugin(this);
                         nl.setDesiredPackageInfo(dpi);
                         dpi.getExtractionPasswords().addAll(parsePassword(oos));
                         dpi.setComment("(Containerlinks) " + cs2 == null ? "" : cs2);

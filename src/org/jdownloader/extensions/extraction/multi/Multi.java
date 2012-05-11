@@ -241,8 +241,7 @@ public class Multi extends IExtraction {
 
                         if (!l.isValid()) {
                             /*
-                             * this should help finding the link that got
-                             * downloaded
+                             * this should help finding the link that got downloaded
                              */
                             continue;
                         }
@@ -252,8 +251,7 @@ public class Multi extends IExtraction {
 
                         if (!l.isValid()) {
                             /*
-                             * this should help finding the link that got
-                             * downloaded
+                             * this should help finding the link that got downloaded
                              */
                             continue;
                         }
@@ -262,8 +260,7 @@ public class Multi extends IExtraction {
                         archive.setType(ArchiveType.MULTI_RAR);
                         if (!l.isValid()) {
                             /*
-                             * this should help finding the link that got
-                             * downloaded
+                             * this should help finding the link that got downloaded
                              */
                             continue;
                         }
@@ -524,6 +521,7 @@ public class Multi extends IExtraction {
                             return;
                         }
                     } else {
+                        /* skip file */
                         progressInBytes += item.getSize();
                         ctrl.setProgress(progressInBytes / size);
                         continue;
@@ -559,7 +557,6 @@ public class Multi extends IExtraction {
                     /* always close files, thats why its best in finally branch */
                     call.close();
                 }
-
                 // Set last write time
                 if (config.isUseOriginalFileDate()) {
                     Date date = item.getLastWriteTime();
@@ -589,6 +586,11 @@ public class Multi extends IExtraction {
                 // }
 
                 if (item.getSize() != extractTo.length()) {
+                    if (ExtractOperationResult.OK == res) {
+                        logger.info("Size missmatch, but Extraction returned OK?! Archive seems incomplete");
+                        archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR);
+                        return;
+                    }
                     for (ArchiveFile link : getAffectedArchiveFileFromArchvieFiles(item.getPath())) {
                         archive.addCrcError(link);
                     }
@@ -596,7 +598,7 @@ public class Multi extends IExtraction {
                     return;
                 }
 
-                if (res != ExtractOperationResult.OK) {
+                if (ExtractOperationResult.OK != res) {
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
                     return;
                 }
@@ -683,8 +685,7 @@ public class Multi extends IExtraction {
             for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
                 if (item.isFolder() || (item.getSize() == 0 && item.getPackedSize() == 0)) {
                     /*
-                     * we also check for items with size ==0, they should have a
-                     * packedsize>0
+                     * we also check for items with size ==0, they should have a packedsize>0
                      */
                     continue;
                 }
@@ -744,8 +745,7 @@ public class Multi extends IExtraction {
                         // password was accepted.
                         if (!passwordfound.getBoolean()) {
                             /*
-                             * passwordfound is still false, so no valid
-                             * password found
+                             * passwordfound is still false, so no valid password found
                              */
                             return false;
                         }
@@ -787,8 +787,7 @@ public class Multi extends IExtraction {
     }
 
     /**
-     * Returns the ArchiveFiles in which the given extracted file is present.
-     * Works only with Rar multipart files.
+     * Returns the ArchiveFiles in which the given extracted file is present. Works only with Rar multipart files.
      * 
      * @param path
      *            The extracted file.
