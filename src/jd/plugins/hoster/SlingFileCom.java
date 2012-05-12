@@ -87,6 +87,7 @@ public class SlingFileCom extends PluginForHost {
         // error!
         if (br.containsHTML(">Please enable cookies to use this website")) br.getPage(downloadLink.getDownloadURL());
         if ("http://www.slingfile.com/".equals(br.getRedirectLocation())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">The file was deleted due to a DMCA complaint\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.getRedirectLocation() == null) {
             downloadLink.setProperty("directlink", false);
             String filename = br.getRegex("<h3>Downloading <span>(.*?)</span></h3>").getMatch(0);

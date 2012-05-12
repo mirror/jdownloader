@@ -178,8 +178,9 @@ public class RapidGatorNet extends PluginForHost {
                 }
                 code = "";
             }
-            captcha.put("adcopy_response", Encoding.urlEncode(code));
-            captcha.put("adcopy_challenge", Encoding.urlEncode(chid));
+            captcha.put("DownloadCaptchaForm[captcha]", "");
+            captcha.put("adcopy_challenge", chid);
+            captcha.put("adcopy_response", code);
             br.submitForm(captcha);
         }
         if (br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);

@@ -56,12 +56,12 @@ public class NowDownloadEu extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">This file does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fileInfo = br.getRegex(">Downloading</span> <br> ([^<>\"]*?)<br>.*?(\\d+(\\.\\d{1,2})? [A-Za-z]+) </h4>");
-        String filename = fileInfo.getMatch(0);
+        final Regex fileInfo = br.getRegex(">Downloading</span> <br> (.*?) ([\\d+\\.]+ (B|KB|MB|GB|TB))");
+        String filename = fileInfo.getMatch(0).replace("<br>", "");
         String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -84,6 +84,8 @@ public class NowDownloadEu extends PluginForHost {
             dllink = br.getRegex("\"(http://f\\d+\\.nowdownload\\.eu/dl/[a-z0-9]+/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) dllink = br.getRegex("<p class=\"top30\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String filename = new Regex(dllink, ".+/[^_]+_(.+)").getMatch(0);
+            if (filename != null) downloadLink.setFinalFileName(Encoding.urlDecode(filename, false));
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
