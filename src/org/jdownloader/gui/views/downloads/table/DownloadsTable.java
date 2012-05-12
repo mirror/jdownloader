@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.downloads.table;
 
 import java.awt.Color;
 import java.awt.Image;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -22,7 +23,6 @@ import javax.swing.TransferHandler;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -53,6 +53,21 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     }
 
     protected boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
+        showPropertiesMenu(e.getPoint(), obj);
+
+        return false;
+    }
+
+    protected boolean onSingleClick(MouseEvent e, final AbstractNode obj) {
+
+        if (e.isAltDown() || e.isAltGraphDown()) {
+            showPropertiesMenu(e.getPoint(), obj);
+            return true;
+        }
+        return super.onSingleClick(e, obj);
+    }
+
+    private void showPropertiesMenu(Point point, AbstractNode obj) {
         JPopupMenu m = new JPopupMenu();
 
         if (obj instanceof AbstractPackageNode) {
@@ -69,13 +84,12 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             m.add(new JSeparator());
         }
 
-        final ExtColumn<AbstractNode> col = this.getExtColumnAtPoint(e.getPoint());
+        final ExtColumn<AbstractNode> col = this.getExtColumnAtPoint(point);
 
         for (JMenuItem mm : DownloadTableContextMenuFactory.fillPropertiesMenu(new SelectionInfo<FilePackage, DownloadLink>(obj, getExtTableModel().getSelectedObjects()), col)) {
             m.add(mm);
         }
-        m.show(this, e.getPoint().x, e.getPoint().y);
-        return false;
+        m.show(this, point.x, point.y);
     }
 
     @Override
@@ -101,23 +115,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     @Override
     public boolean editCellAt(int row, int column, EventObject e) {
         boolean ret = super.editCellAt(row, column, e);
-        if (ret) {
 
-            AbstractNode object = getExtTableModel().getObjectbyRow(row);
-            if (object instanceof FilePackage) {
-                String title = _GUI._.DownloadsTable_editCellAt_filepackage_title();
-                String msg = _GUI._.DownloadsTable_editCellAt_filepackage_msg();
-                ImageIcon icon = NewTheme.I().getIcon("wizard", 32);
-                JDGui.help(title, msg, icon);
-
-            } else {
-                String title = _GUI._.LinkGrabberTable_editCellAt_link_title();
-                String msg = _GUI._.LinkGrabberTable_editCellAt_link_msg();
-                ImageIcon icon = NewTheme.I().getIcon("edit", 32);
-                JDGui.help(title, msg, icon);
-            }
-
-        }
         return ret;
     }
 

@@ -1,6 +1,8 @@
 package org.jdownloader.gui.views.downloads.columns;
 
 import java.awt.event.FocusEvent;
+import java.awt.event.MouseEvent;
+import java.io.File;
 import java.util.logging.Level;
 
 import javax.swing.BorderFactory;
@@ -15,14 +17,18 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.downloads.context.OpenFileAction;
 import org.jdownloader.images.NewTheme;
 
 import sun.swing.SwingUtilities2;
@@ -48,12 +54,42 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
         iconArchiveOpen = NewTheme.I().getIcon("tree_archive_open", 32);
         iconArchive = NewTheme.I().getIcon("tree_archive", 32);
         iconPackageClosed = NewTheme.I().getIcon("tree_package_closed", 32);
-
+        setClickcount(0);
     }
 
     public boolean isPaintWidthLockIcon() {
 
         return false;
+    }
+
+    @Override
+    protected boolean onDoubleClick(MouseEvent e, AbstractNode contextObject) {
+
+        if (e.getPoint().x - getBounds().x < 30) { return false; }
+        if (contextObject instanceof DownloadLink) {
+            if (CrossSystem.isOpenFileSupported()) {
+                new OpenFileAction(new File(((DownloadLink) contextObject).getFileOutput())).actionPerformed(null);
+
+            }
+        } else if (contextObject instanceof CrawledLink) {
+            if (CrossSystem.isOpenFileSupported()) {
+                new OpenFileAction(LinkTreeUtils.getDownloadDirectory(contextObject)).actionPerformed(null);
+
+            }
+        } else if (contextObject instanceof FilePackage) {
+            if (CrossSystem.isOpenFileSupported()) {
+
+                new OpenFileAction(LinkTreeUtils.getDownloadDirectory(contextObject)).actionPerformed(null);
+
+            }
+        } else if (contextObject instanceof CrawledPackage) {
+            if (CrossSystem.isOpenFileSupported()) {
+                new OpenFileAction(LinkTreeUtils.getDownloadDirectory(contextObject)).actionPerformed(null);
+
+            }
+        }
+
+        return true;
     }
 
     @Override
@@ -74,9 +110,15 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public boolean isEditable(AbstractNode obj) {
-        if (obj instanceof CrawledPackage) return true;
-        if (obj instanceof CrawledLink) return true;
+
         return true;
+    }
+
+    protected boolean onRenameClick(final MouseEvent e, final AbstractNode obj) {
+        if (e.getPoint().x - getBounds().x < 30) { return false; }
+        startEditing(obj);
+        return true;
+
     }
 
     protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
@@ -159,7 +201,14 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
     }
 
     @Override
+    public void focusLost(FocusEvent e) {
+        System.out.println(e);
+        super.focusLost(e);
+    }
+
+    @Override
     public void focusGained(final FocusEvent e) {
+        System.out.println(e);
         String txt = editorField.getText();
         int point = txt.lastIndexOf(".");
         /* select filename only, try to keep the extension/filetype */

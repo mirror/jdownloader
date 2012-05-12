@@ -12,7 +12,7 @@ public class OpenFileAction extends ContextMenuAction {
 
     private static final long serialVersionUID = 1901008532686173167L;
 
-    private final File        file;
+    private File              file;
 
     public OpenFileAction(File file) {
         this.file = file;
@@ -35,7 +35,13 @@ public class OpenFileAction extends ContextMenuAction {
     }
 
     public void actionPerformed(ActionEvent e) {
+        while (!file.exists()) {
+            File p = file.getParentFile();
+            if (p == null || p.equals(file)) return;
+            file = p;
+        }
         CrossSystem.openFile(file);
+
     }
 
 }

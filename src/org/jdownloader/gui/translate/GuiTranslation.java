@@ -3763,4 +3763,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Disabled Links" })
     String DeleteDisabledLinks_DeleteDisabledLinks_object_();
 
+    @Default(lngs = { "en" }, values = { "Cannot open file because:\r\n%s1" })
+    String OpenFileAction_actionPerformed_object_(String localizedMessage);
+
 }
