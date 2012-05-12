@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.downloads.context;
 
 import java.awt.event.ActionEvent;
 
+import jd.gui.UserIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -25,7 +26,13 @@ public class DeleteAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-
+        if (si.isShiftDown() || UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.gui_downloadlist_delete() + " (" + _GUI._.gui_downloadlist_delete_size_packagev2(si.getSelectedChildren().size()) + ")"))) {
+            for (DownloadLink link : si.getSelectedChildren()) {
+                link.setEnabled(false);
+                link.deleteFile(true, false);
+                link.getFilePackage().remove(link);
+            }
+        }
     }
 
     @Override
