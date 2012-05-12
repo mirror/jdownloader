@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
-import java.awt.event.ActionEvent;
 import java.util.List;
 
 import jd.controlling.linkcollector.LinkCollector;
@@ -21,10 +20,6 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
 
     public SetDownloadFolderInLinkgrabberAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
         super(si);
-
-    }
-
-    public void actionPerformed(ActionEvent e) {
 
     }
 
