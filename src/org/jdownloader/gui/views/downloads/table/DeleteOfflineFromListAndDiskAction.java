@@ -9,16 +9,15 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class DeleteSuccessFulAction extends AppAction {
+public class DeleteOfflineFromListAndDiskAction extends AppAction {
 
     private SelectionInfo<FilePackage, DownloadLink> si;
 
-    public DeleteSuccessFulAction(SelectionInfo<FilePackage, DownloadLink> si) {
+    public DeleteOfflineFromListAndDiskAction(SelectionInfo<FilePackage, DownloadLink> si) {
 
         this.si = si;
-        setName(_GUI._.DeleteSuccessFulAction_DeleteSuccessFulAction_object_());
-        setIconKey("remove_ok");
-
+        setName(_GUI._.DeleteOfflineAction_DeleteOfflineAction_object_());
+        setIconKey("remove_offline");
     }
 
     @Override

@@ -9,11 +9,11 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class DeleteSuccessFulAction extends AppAction {
+public class DeleteSuccessFulFromListAndDiskAction extends AppAction {
 
     private SelectionInfo<FilePackage, DownloadLink> si;
 
-    public DeleteSuccessFulAction(SelectionInfo<FilePackage, DownloadLink> si) {
+    public DeleteSuccessFulFromListAndDiskAction(SelectionInfo<FilePackage, DownloadLink> si) {
 
         this.si = si;
         setName(_GUI._.DeleteSuccessFulAction_DeleteSuccessFulAction_object_());

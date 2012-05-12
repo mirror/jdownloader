@@ -9,15 +9,15 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class DeleteSuccessFulAction extends AppAction {
+public class DeleteDisabledLinksFromListAndDiskAction extends AppAction {
 
     private SelectionInfo<FilePackage, DownloadLink> si;
 
-    public DeleteSuccessFulAction(SelectionInfo<FilePackage, DownloadLink> si) {
+    public DeleteDisabledLinksFromListAndDiskAction(SelectionInfo<FilePackage, DownloadLink> si) {
 
         this.si = si;
-        setName(_GUI._.DeleteSuccessFulAction_DeleteSuccessFulAction_object_());
-        setIconKey("remove_ok");
+        setName(_GUI._.DeleteDisabledLinks_DeleteDisabledLinks_object_());
+        setIconKey("remove_disabled");
 
     }
 

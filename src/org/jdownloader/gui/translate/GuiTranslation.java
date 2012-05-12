@@ -3760,4 +3760,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Offline Links" })
     String DeleteOfflineAction_DeleteOfflineAction_object_();
 
+    @Default(lngs = { "en" }, values = { "Disabled Links" })
+    String DeleteDisabledLinks_DeleteDisabledLinks_object_();
+
 }

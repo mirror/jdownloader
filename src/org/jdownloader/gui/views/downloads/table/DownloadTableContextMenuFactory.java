@@ -45,7 +45,8 @@ public class DownloadTableContextMenuFactory {
     private static final DownloadTableContextMenuFactory INSTANCE = new DownloadTableContextMenuFactory();
 
     /**
-     * get the only existing instance of DownloadTableContextMenuFactory. This is a singleton
+     * get the only existing instance of DownloadTableContextMenuFactory. This
+     * is a singleton
      * 
      * @return
      */
@@ -54,7 +55,8 @@ public class DownloadTableContextMenuFactory {
     }
 
     /**
-     * Create a new instance of DownloadTableContextMenuFactory. This is a singleton class. Access the only existing instance by using
+     * Create a new instance of DownloadTableContextMenuFactory. This is a
+     * singleton class. Access the only existing instance by using
      * {@link #getInstance()}.
      */
     private DownloadTableContextMenuFactory() {
@@ -127,10 +129,11 @@ public class DownloadTableContextMenuFactory {
         // new DeleteFromDiskAction(si)
         JMenu ret = new JMenu(_GUI._.DownloadTableContextMenuFactory_createDeleteFromListAndDisk_object_());
         ret.setIcon(NewTheme.I().getIcon("delete", 18));
-        ret.add(new DeleteFailedAction(si));
-        ret.add(new DeleteSuccessFulAction(si));
-        ret.add(new DeleteOfflineAction(si));
-        ret.add(new DeleteAllAction(si));
+        ret.add(new DeleteDisabledLinksFromListAndDiskAction(si));
+        ret.add(new DeleteFailedFromListAndDiskAction(si));
+        ret.add(new DeleteSuccessFulFromListAndDiskAction(si));
+        ret.add(new DeleteOfflineFromListAndDiskAction(si));
+        ret.add(new DeleteAllFromListAndDiskAction(si));
         MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new DownloadTableDeletefromListAndDiskContext(ret, si)));
         return ret;
     }
@@ -140,8 +143,10 @@ public class DownloadTableContextMenuFactory {
         JMenu ret = new JMenu(_GUI._.DownloadTableContextMenuFactory_createDeleteFromList_object_());
         ret.setIcon(NewTheme.I().getIcon("list", 18));
         ret.add(new DeleteFailedAction(si));
+        ret.add(new DeleteDisabledLinksAction(si));
         ret.add(new DeleteSuccessFulAction(si));
         ret.add(new DeleteOfflineAction(si));
+
         ret.add(new DeleteAllAction(si));
         MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new DownloadTableDeletefromListContext(ret, si)));
 
