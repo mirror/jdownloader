@@ -62,6 +62,60 @@ public class TurboBitNet extends PluginForHost {
     }
 
     @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            final Browser br = new Browser();
+            br.setCookie(MAINPAGE, "user_lang", "en");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once */
+                    if (index == urls.length || links.size() > 49) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("links_to_check=");
+                for (final DownloadLink dl : links) {
+                    sb.append(dl.getDownloadURL());
+                    sb.append("%0A");
+                }
+                br.postPage("http://" + getHost() + "/linkchecker/check", sb.toString());
+                for (final DownloadLink dllink : links) {
+                    final String linkID = getID(dllink.getDownloadURL());
+                    final Regex fileInfo = br.getRegex("<td>" + linkID + "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\"><img src=\"/img/icon/(done|error)\\.png\"");
+                    if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
+                        dllink.setAvailable(false);
+                        logger.warning("Linkchecker broken for " + getHost() + " Example link: " + dllink.getDownloadURL());
+                    } else {
+                        if (fileInfo.getMatch(1).equals("error")) {
+                            dllink.setAvailable(false);
+                        } else {
+                            final String name = fileInfo.getMatch(0);
+                            dllink.setAvailable(true);
+                            dllink.setFinalFileName(Encoding.htmlDecode(name.trim()));
+                        }
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     public void correctDownloadLink(final DownloadLink link) {
         final String freeId = new Regex(link.getDownloadURL(), "download/free/([a-z0-9]+)").getMatch(0);
         if (freeId != null) {
@@ -69,6 +123,19 @@ public class TurboBitNet extends PluginForHost {
         } else {
             link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+", "://turbobit.net"));
         }
+    }
+
+    private String escape(final String s) {
+        final byte[] org = s.getBytes();
+        final StringBuilder sb = new StringBuilder();
+        String code;
+        for (final byte element : org) {
+            sb.append('%');
+            code = Integer.toHexString(element);
+            code = code.length() % 2 > 0 ? "0" + code : code;
+            sb.append(code.substring(code.length() - 2));
+        }
+        return sb + "";
     }
 
     @Override
@@ -107,6 +174,10 @@ public class TurboBitNet extends PluginForHost {
         return "http://turbobit.net/rules";
     }
 
+    private String getID(final String downloadlink) {
+        return new Regex(downloadlink, "http://.*?/([a-zA-Z0-9]+)").getMatch(0);
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
@@ -129,7 +200,9 @@ public class TurboBitNet extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>Please wait, searching file|\\'File not found\\. Probably it was deleted)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String fileSize = br.getRegex("File size:</b>(.*?)</div>").getMatch(0);
-        if (fileSize == null) fileSize = br.getRegex("<span class=\\'file\\-icon.*?\\'>.*?</span>.*?\\((.*?)\\)").getMatch(0);
+        if (fileSize == null) {
+            fileSize = br.getRegex("<span class=\\'file\\-icon.*?\\'>.*?</span>.*?\\((.*?)\\)").getMatch(0);
+        }
         if (fileSize != null) {
             fileSize = fileSize.replace("М", "M");
             fileSize = fileSize.replace("к", "k");
@@ -220,25 +293,22 @@ public class TurboBitNet extends PluginForHost {
             if (tt > 250) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l); }
         }
 
-        String fun = escape(br.toString());
+        final String fun = escape(br.toString());
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        String res = parseImageUrl(br.getRegex(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(null)).getMatch(0), false);
 
         // realtime update
         String rtUpdate = getPluginConfig().getStringProperty("rtupdate", null);
-        boolean isUpdateNeeded = getPluginConfig().getBooleanProperty("isUpdateNeeded", false);
+        final boolean isUpdateNeeded = getPluginConfig().getBooleanProperty("isUpdateNeeded", false);
 
         if (isUpdateNeeded || rtUpdate == null) {
-            Browser rt = new Browser();
+            final Browser rt = new Browser();
             rtUpdate = rt.getPage("http://update0.jdownloader.org/pluginstuff/tbupdate.js");
             getPluginConfig().setProperty("rtupdate", rtUpdate);
             getPluginConfig().setProperty("isUpdateNeeded", false);
             getPluginConfig().save();
         }
 
-        if (res == null || res != null && !res.matches(tb(10))) {
-            res = rhino(fun + "@" + rtUpdate, 666);
-        }
+        final String res = rhino(fun + "@" + rtUpdate, 666);
 
         if (res != null && res.matches(tb(10))) {
             sleep(tt * 1001, downloadLink);
@@ -333,7 +403,9 @@ public class TurboBitNet extends PluginForHost {
                      */
                     ua = account.getStringProperty("UA", null);
                 }
-                if (ua == null) ua = UA;
+                if (ua == null) {
+                    ua = UA;
+                }
                 br.getHeaders().put("User-Agent", ua);
                 br.setCookie(MAINPAGE, "set_user_lang_change", "en");
                 br.setCustomCharset("UTF-8");
@@ -382,7 +454,7 @@ public class TurboBitNet extends PluginForHost {
             final String[] next = fun.split(tb(9));
             if (next == null || next.length != 2) {
                 fun = rhino(fun, 0);
-                if (fun == null) return null;
+                if (fun == null) { return null; }
                 fun = new Regex(fun, tb(4)).getMatch(0);
                 return fun == null ? new Regex(fun, tb(5)).getMatch(0) : rhino(fun, 2);
             }
@@ -391,7 +463,36 @@ public class TurboBitNet extends PluginForHost {
         return new Regex(fun, tb(1)).getMatch(0);
     }
 
-    private String rhino(String s, int b) {
+    private void prepareBrowser(final String userAgent) {
+        br.getHeaders().put("Pragma", null);
+        br.getHeaders().put("Cache-Control", null);
+        br.getHeaders().put("Accept-Charset", null);
+        br.getHeaders().put("Accept", "text/html, application/xhtml+xml, */*");
+        br.getHeaders().put("Accept-Language", "en-EN");
+        br.getHeaders().put("User-Agent", userAgent);
+        br.getHeaders().put("Referer", null);
+    }
+
+    // Also check HitFileNet plugin if this one is broken
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        /** Old linkcheck code can be found in rev 16195 */
+        correctDownloadLink(downloadLink);
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public void resetDownloadlink(final DownloadLink link) {
+    }
+
+    private String rhino(final String s, final int b) {
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine engine = manager.getEngineByName("javascript");
@@ -423,106 +524,6 @@ public class TurboBitNet extends PluginForHost {
             return null;
         }
         return result != null ? result.toString() : null;
-    }
-
-    private String escape(String s) {
-        final byte[] org = s.getBytes();
-        final StringBuilder sb = new StringBuilder();
-        String code;
-        for (final byte element : org) {
-            sb.append('%');
-            code = Integer.toHexString(element);
-            code = code.length() % 2 > 0 ? "0" + code : code;
-            sb.append(code.substring(code.length() - 2));
-        }
-        return sb + "";
-    }
-
-    private void prepareBrowser(final String userAgent) {
-        br.getHeaders().put("Pragma", null);
-        br.getHeaders().put("Cache-Control", null);
-        br.getHeaders().put("Accept-Charset", null);
-        br.getHeaders().put("Accept", "text/html, application/xhtml+xml, */*");
-        br.getHeaders().put("Accept-Language", "en-EN");
-        br.getHeaders().put("User-Agent", userAgent);
-        br.getHeaders().put("Referer", null);
-    }
-
-    // Also check HitFileNet plugin if this one is broken
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        /** Old linkcheck code can be found in rev 16195 */
-        correctDownloadLink(downloadLink);
-        checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
-        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            final Browser br = new Browser();
-            br.setCookie(MAINPAGE, "user_lang", "en");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.setCookiesExclusive(true);
-            final StringBuilder sb = new StringBuilder();
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            while (true) {
-                links.clear();
-                while (true) {
-                    /* we test 50 links at once */
-                    if (index == urls.length || links.size() > 49) {
-                        break;
-                    }
-                    links.add(urls[index]);
-                    index++;
-                }
-                sb.delete(0, sb.capacity());
-                sb.append("links_to_check=");
-                for (final DownloadLink dl : links) {
-                    sb.append(dl.getDownloadURL());
-                    sb.append("%0A");
-                }
-                br.postPage("http://" + this.getHost() + "/linkchecker/check", sb.toString());
-                for (final DownloadLink dllink : links) {
-                    final String linkID = getID(dllink.getDownloadURL());
-                    final Regex fileInfo = br.getRegex("<td>" + linkID + "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\"><img src=\"/img/icon/(done|error)\\.png\"");
-                    if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
-                        dllink.setAvailable(false);
-                        logger.warning("Linkchecker broken for " + this.getHost() + " Example link: " + dllink.getDownloadURL());
-                    } else {
-                        if (fileInfo.getMatch(1).equals("error")) {
-                            dllink.setAvailable(false);
-                        } else {
-                            String name = fileInfo.getMatch(0);
-                            dllink.setAvailable(true);
-                            dllink.setFinalFileName(Encoding.htmlDecode(name.trim()));
-                        }
-                    }
-                }
-                if (index == urls.length) {
-                    break;
-                }
-            }
-        } catch (final Exception e) {
-            return false;
-        }
-        return true;
-    }
-
-    private String getID(String downloadlink) {
-        return new Regex(downloadlink, "http://.*?/([a-zA-Z0-9]+)").getMatch(0);
-    }
-
-    @Override
-    public void reset() {
-    }
-
-    @Override
-    public void resetDownloadlink(final DownloadLink link) {
     }
 
     private String tb(final int i) {

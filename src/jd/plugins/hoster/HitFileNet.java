@@ -36,7 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.LnkCrptWs;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -62,6 +61,73 @@ public class HitFileNet extends PluginForHost {
     public HitFileNet(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://hitfile.net/premium/emoney/5");
+    }
+
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            final Browser br = new Browser();
+            br.setCookie(MAINPAGE, "user_lang", "en");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once */
+                    if (index == urls.length || links.size() > 49) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("links_to_check=");
+                for (final DownloadLink dl : links) {
+                    sb.append(dl.getDownloadURL());
+                    sb.append("%0A");
+                }
+                br.postPage("http://" + getHost() + "/linkchecker/check", sb.toString());
+                for (final DownloadLink dllink : links) {
+                    final String linkID = getID(dllink.getDownloadURL());
+                    final Regex fileInfo = br.getRegex("<td>" + linkID + "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\"><img src=\"/img/icon/(done|error)\\.png\"");
+                    if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
+                        dllink.setAvailable(false);
+                        logger.warning("Linkchecker broken for " + getHost());
+                    } else {
+                        if (fileInfo.getMatch(1).equals("error")) {
+                            dllink.setAvailable(false);
+                        } else {
+                            final String name = fileInfo.getMatch(0);
+                            dllink.setAvailable(true);
+                            dllink.setFinalFileName(Encoding.htmlDecode(name.trim()));
+                        }
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    private String escape(final String s) {
+        final byte[] org = s.getBytes();
+        final StringBuilder sb = new StringBuilder();
+        String code;
+        for (final byte element : org) {
+            sb.append('%');
+            code = Integer.toHexString(element);
+            code = code.length() % 2 > 0 ? "0" + code : code;
+            sb.append(code.substring(code.length() - 2));
+        }
+        return sb + "";
     }
 
     @Override
@@ -92,6 +158,10 @@ public class HitFileNet extends PluginForHost {
         return "http://hitfile.net/rules";
     }
 
+    private String getID(final String downloadlink) {
+        return new Regex(downloadlink, getHost() + "/(.+)").getMatch(0);
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
@@ -104,6 +174,7 @@ public class HitFileNet extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -112,7 +183,9 @@ public class HitFileNet extends PluginForHost {
         if (br.containsHTML("(>Please wait, searching file|\\'File not found\\. Probably it was deleted)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final Regex fileInfo = br.getRegex("class=\\'file-icon\\d+ [a-z0-9]+\\'></span><span>(.*?)</span>[\n\t\r ]+<span style=\"color: #626262; font\\-weight: bold; font\\-size: 14px;\">\\((.*?)\\)</span>");
         final String filesize = fileInfo.getMatch(1);
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
+        if (filesize != null) {
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
+        }
         br.setFollowRedirects(false);
         String downloadUrl = null, waittime = null;
         final String fileID = new Regex(downloadLink.getDownloadURL(), "hitfile\\.net/(.+)").getMatch(0);
@@ -159,7 +232,7 @@ public class HitFileNet extends PluginForHost {
         }
 
         // Ticket Time
-        String ttt = parseImageUrl(br.getRegex(LnkCrptWs.IMAGEREGEX(null)).getMatch(0), true);
+        String ttt = parseImageUrl(br.getRegex(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(null)).getMatch(0), true);
         int tt = 60;
         if (ttt != null) {
             tt = Integer.parseInt(ttt);
@@ -174,10 +247,24 @@ public class HitFileNet extends PluginForHost {
 
         boolean waittimeFail = true;
 
+        final String fun = escape(br.toString());
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        String res = parseImageUrl(br.getRegex(LnkCrptWs.IMAGEREGEX(null)).getMatch(0), false);
 
-        if (res != null) {
+        // realtime update
+        String rtUpdate = getPluginConfig().getStringProperty("rtupdate", null);
+        final boolean isUpdateNeeded = getPluginConfig().getBooleanProperty("isUpdateNeeded", false);
+
+        if (isUpdateNeeded || rtUpdate == null) {
+            final Browser rt = new Browser();
+            rtUpdate = rt.getPage("http://update0.jdownloader.org/pluginstuff/tbupdate.js");
+            getPluginConfig().setProperty("rtupdate", rtUpdate);
+            getPluginConfig().setProperty("isUpdateNeeded", false);
+            getPluginConfig().save();
+        }
+
+        final String res = rhino(fun + "@" + rtUpdate, 666);
+
+        if (res != null && !res.matches(hf(10))) {
             sleep(tt * 1001, downloadLink);
             for (int i = 0; i <= 4; i++) {
                 br.getPage(res);
@@ -191,20 +278,24 @@ public class HitFileNet extends PluginForHost {
                 }
                 logger.info("Waittime-Try " + (i + 1) + ", waited additional " + additionalWaittime + "seconds");
             }
-        }
-
-        if (waittimeFail) {
-            logger.warning(br.toString());
-            throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL waittime error");
-        }
-        downloadUrl = br.getRegex("<br/><h1><a href=\\'(/.*?)\\'").getMatch(0);
-        if (downloadUrl == null) {
-            downloadUrl = br.getRegex("If the download does not start - <a href=\\'/(.*?)\\'>try again").getMatch(0);
+            if (waittimeFail) {
+                logger.warning(br.toString());
+                throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL waittime error");
+            }
+            downloadUrl = br.getRegex("<br/><h1><a href=\\'(/.*?)\\'").getMatch(0);
             if (downloadUrl == null) {
-                downloadUrl = br.getRegex("\\'(/download/redirect/[a-z0-9]+/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
+                downloadUrl = br.getRegex("If the download does not start - <a href=\\'/(.*?)\\'>try again").getMatch(0);
+                if (downloadUrl == null) {
+                    downloadUrl = br.getRegex("\\'(/download/redirect/[a-z0-9]+/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
+                    if (downloadUrl == null) {
+                        downloadUrl = rhino(escape(br.toString()) + "@" + rtUpdate, 999);
+                    }
+                }
             }
         }
         if (downloadUrl == null) {
+            getPluginConfig().setProperty("isUpdateNeeded", true);
+            getPluginConfig().save();
             logger.warning("dllink couldn't be found...");
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l);
         }
@@ -257,6 +348,23 @@ public class HitFileNet extends PluginForHost {
         return true;
     }
 
+    private String hf(final int i) {
+        final String[] s = new String[11];
+        s[0] = "fe8cfbfafa57cde31bc2b798df5141ab2dc171ec0852d89a1a135e3f116c83d15d8bf93a";
+        s[1] = "fddbfbfafa57cdef1a90b5cedf5647ae2cc572ec0958dd981e125c68156882d65d82f869";
+        s[2] = "fdd9fbf2fb05cde71a97b69edf5742f1289470bb0a5bd9c81a1b5e39116c85805982fc6e880ce26a201651b8ea211874e4232d90c59b6462ac28d2b26f0537385fa6";
+        s[3] = "f980f8f7fa0acdb21b91b6cbdf5043fc2ac775ea080fd8c71a4f5d68156586d05982fd3e8b5ae33f244555e8eb201d77e12128cbc1c7";
+        s[4] = "f980ffa5fa07cdb01a93b6c8de0642ae299571bb0c0ddb9c1a1b5b6f143d84855ddfff6b8b5de66e254553eeea751d72e17e2d98c19a6760af75d6b46b05";
+        s[5] = "f980ffa5f951ceb31ec7b3c8da5246fa2ac770bc0b0fdc9c1e13";
+        s[6] = "fc8efbf2fb01c9e61bc2b798df5146f82cc075bf0b5fd8c71a4e5f3e153a8781588ff86f890de26a221050eaee701824e4742d9cc1c66238a973";
+        s[7] = "fddefaf6fb07";
+        s[8] = "fe8cfbfafa57cde31bc2b798df5146ad29c071b6080edbca1a135f6f156984d75982fc6e8800e338";
+        s[9] = "ff88";
+        s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f181b5b6f143d85d05dd9f86c8b5be73c254755b5ef741d72e5262ecdc19c";
+        JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+        return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
+    }
+
     private void login(final Account account) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -273,37 +381,13 @@ public class HitFileNet extends PluginForHost {
             final String[] next = fun.split(hf(9));
             if (next == null || next.length != 2) {
                 fun = rhino(fun, 0);
-                if (fun == null) return null;
+                if (fun == null) { return null; }
                 fun = new Regex(fun, hf(4)).getMatch(0);
                 return fun == null ? new Regex(fun, hf(5)).getMatch(0) : rhino(fun, 2);
             }
             return rhino(next[1], 1);
         }
         return new Regex(fun, hf(1)).getMatch(0);
-    }
-
-    private String rhino(String s, int b) {
-        Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        try {
-            switch (b) {
-            case 0:
-                engine.eval(s + hf(6));
-                result = engine.get(hf(7));
-                break;
-            case 1:
-                result = ((Double) engine.eval(hf(8))).longValue();
-                break;
-            case 2:
-                engine.eval("var out=\"" + s + "\";");
-                result = engine.get("out");
-                break;
-            }
-        } catch (final Throwable e) {
-            return null;
-        }
-        return result.toString();
     }
 
     private void prepareBrowser(final String userAgent) {
@@ -328,64 +412,6 @@ public class HitFileNet extends PluginForHost {
     }
 
     @Override
-    public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            final Browser br = new Browser();
-            br.setCookie(MAINPAGE, "user_lang", "en");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.setCookiesExclusive(true);
-            final StringBuilder sb = new StringBuilder();
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            while (true) {
-                links.clear();
-                while (true) {
-                    /* we test 50 links at once */
-                    if (index == urls.length || links.size() > 49) {
-                        break;
-                    }
-                    links.add(urls[index]);
-                    index++;
-                }
-                sb.delete(0, sb.capacity());
-                sb.append("links_to_check=");
-                for (final DownloadLink dl : links) {
-                    sb.append(dl.getDownloadURL());
-                    sb.append("%0A");
-                }
-                br.postPage("http://" + this.getHost() + "/linkchecker/check", sb.toString());
-                for (final DownloadLink dllink : links) {
-                    final String linkID = getID(dllink.getDownloadURL());
-                    final Regex fileInfo = br.getRegex("<td>" + linkID + "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\"><img src=\"/img/icon/(done|error)\\.png\"");
-                    if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
-                        dllink.setAvailable(false);
-                        logger.warning("Linkchecker broken for " + this.getHost());
-                    } else {
-                        if (fileInfo.getMatch(1).equals("error")) {
-                            dllink.setAvailable(false);
-                        } else {
-                            String name = fileInfo.getMatch(0);
-                            dllink.setAvailable(true);
-                            dllink.setFinalFileName(Encoding.htmlDecode(name.trim()));
-                        }
-                    }
-                }
-                if (index == urls.length) {
-                    break;
-                }
-            }
-        } catch (final Exception e) {
-            return false;
-        }
-        return true;
-    }
-
-    private String getID(String downloadlink) {
-        return new Regex(downloadlink, this.getHost() + "/(.+)").getMatch(0);
-    }
-
-    @Override
     public void reset() {
     }
 
@@ -393,19 +419,38 @@ public class HitFileNet extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
     }
 
-    private String hf(final int i) {
-        final String[] s = new String[10];
-        s[0] = "fe8cfbfafa57cde31bc2b798df5141ab2dc171ec0852d89a1a135e3f116c83d15d8bf93a";
-        s[1] = "fddbfbfafa57cdef1a90b5cedf5647ae2cc572ec0958dd981e125c68156882d65d82f869";
-        s[2] = "fdd9fbf2fb05cde71a97b69edf5742f1289470bb0a5bd9c81a1b5e39116c85805982fc6e880ce26a201651b8ea211874e4232d90c59b6462ac28d2b26f0537385fa6";
-        s[3] = "f980f8f7fa0acdb21b91b6cbdf5043fc2ac775ea080fd8c71a4f5d68156586d05982fd3e8b5ae33f244555e8eb201d77e12128cbc1c7";
-        s[4] = "f980ffa5fa07cdb01a93b6c8de0642ae299571bb0c0ddb9c1a1b5b6f143d84855ddfff6b8b5de66e254553eeea751d72e17e2d98c19a6760af75d6b46b05";
-        s[5] = "f980ffa5f951ceb31ec7b3c8da5246fa2ac770bc0b0fdc9c1e13";
-        s[6] = "fc8efbf2fb01c9e61bc2b798df5146f82cc075bf0b5fd8c71a4e5f3e153a8781588ff86f890de26a221050eaee701824e4742d9cc1c66238a973";
-        s[7] = "fddefaf6fb07";
-        s[8] = "fe8cfbfafa57cde31bc2b798df5146ad29c071b6080edbca1a135f6f156984d75982fc6e8800e338";
-        s[9] = "ff88";
-        return JDHexUtils.toString(LnkCrptWs.IMAGEREGEX(s[i]));
+    private String rhino(final String s, final int b) {
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            switch (b) {
+            case 0:
+                engine.eval(s + hf(6));
+                result = engine.get(hf(7));
+                break;
+            case 1:
+                result = ((Double) engine.eval(hf(8))).longValue();
+                break;
+            case 2:
+                engine.eval("var out=\"" + s + "\";");
+                result = engine.get("out");
+                break;
+            case 666:
+                String[] code = s.split("@");
+                engine.eval("var b = new Boolean(true);var inn = \'" + code[0] + "\';" + code[1]);
+                result = engine.get("out");
+                break;
+            case 999:
+                code = s.split("@");
+                engine.eval("var b = new Boolean(false);var inn = \'" + code[0] + "\';" + code[1]);
+                result = engine.get("out");
+                break;
+            }
+        } catch (final Throwable e) {
+            return null;
+        }
+        return result.toString();
     }
 
 }
