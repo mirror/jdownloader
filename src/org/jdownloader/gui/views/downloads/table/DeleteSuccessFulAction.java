@@ -18,6 +18,7 @@ public class DeleteSuccessFulAction extends AppAction {
         this.si = si;
         setName(_GUI._.DeleteSuccessFulAction_DeleteSuccessFulAction_object_());
         setIconKey("ok");
+        setIconSizes(16);
     }
 
     @Override

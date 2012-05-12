@@ -21,7 +21,6 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtColumn;
@@ -51,23 +50,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     @Override
     public boolean editCellAt(int row, int column, EventObject e) {
         boolean ret = super.editCellAt(row, column, e);
-        if (ret) {
 
-            AbstractNode object = getExtTableModel().getObjectbyRow(row);
-            if (object instanceof CrawledPackage) {
-                String title = _GUI._.LinkGrabberTable_editCellAt_filepackage_title();
-                String msg = _GUI._.LinkGrabberTable_editCellAt_filepackage_msg();
-                ImageIcon icon = NewTheme.I().getIcon("edit", 32);
-                JDGui.help(title, msg, icon);
-
-            } else if (object instanceof CrawledLink) {
-                String title = _GUI._.LinkGrabberTable_editCellAt_link_title();
-                String msg = _GUI._.LinkGrabberTable_editCellAt_link_msg();
-                ImageIcon icon = NewTheme.I().getIcon("edit", 32);
-                JDGui.help(title, msg, icon);
-            }
-
-        }
         return ret;
     }
 
