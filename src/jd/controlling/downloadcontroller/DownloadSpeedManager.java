@@ -24,8 +24,14 @@ public class DownloadSpeedManager {
     private Thread                               watchDog           = null;
     protected volatile int                       limit              = 0;
     protected int                                updateSpeed        = 2000;
+    /**
+     * download speed in bytes
+     */
     protected volatile int                       bandwidth          = 0;
     protected SpeedMeterInterface                speedMeter         = new AverageSpeedMeter(10);
+    /**
+     * bytes downloaded
+     */
     protected volatile long                      traffic            = 0;
     protected int                                connections        = 0;
 
@@ -182,6 +188,9 @@ public class DownloadSpeedManager {
         return this.limit;
     }
 
+    /**
+     * @return the current download speed in bytes
+     */
     public int getSpeed() {
         return this.bandwidth;
     }
@@ -190,6 +199,9 @@ public class DownloadSpeedManager {
         return this.speedMeter;
     }
 
+    /**
+     * @return how many bytes have been transfered
+     */
     public long getTraffic() {
         return this.traffic;
     }

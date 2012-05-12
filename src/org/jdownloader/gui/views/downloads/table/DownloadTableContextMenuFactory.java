@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.downloads.table;
 
+import java.awt.Component;
 import java.awt.Image;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -32,6 +33,7 @@ import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction
 import org.jdownloader.gui.views.downloads.context.CreateDLCAction;
 import org.jdownloader.gui.views.downloads.context.ForceDownloadAction;
 import org.jdownloader.gui.views.downloads.context.NewPackageAction;
+import org.jdownloader.gui.views.downloads.context.OpenDirectoryAction;
 import org.jdownloader.gui.views.downloads.context.OpenFileAction;
 import org.jdownloader.gui.views.downloads.context.PackageNameAction;
 import org.jdownloader.gui.views.downloads.context.ResetAction;
@@ -68,9 +70,9 @@ public class DownloadTableContextMenuFactory {
 
         SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(contextObject, selection, ev, null, downloadsTable);
 
+        /* Properties */
         JMenu properties = new JMenu(_GUI._.ContextMenuFactory_createPopup_properties_package());
-        popup.add(properties);
-        popup.add(new JSeparator());
+
         if (si.isPackageContext()) {
             Image back = (si.getPackage().isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) : NewTheme.I().getImage("tree_package_closed", 32));
             properties.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)));
@@ -86,40 +88,57 @@ public class DownloadTableContextMenuFactory {
             }
             if (popup.getComponentCount() > count) popup.add(new JSeparator());
         }
-        for (JMenuItem mm : fillPropertiesMenu(si, column)) {
+        for (Component mm : fillPropertiesMenu(si, column)) {
             properties.add(mm);
         }
-        popup.add(new CheckStatusAction(si).toContextMenuAction());
+
+        popup.add(properties);
+        popup.add(new JSeparator());
+
+        /* Open file / folder */
+        if (CrossSystem.isOpenFileSupported()) {
+            if (si.isChildContext() && new File(si.getContextChild().getFileOutput()).exists()) {
+                popup.add(new OpenFileAction(si));
+            }
+            popup.add(new OpenDirectoryAction(new File(si.getPackage().getDownloadDirectory())));
+        }
+
+        popup.add(new SortAction(contextObject, selection, column).toContextMenuAction());
+
+        popup.add(new EnabledAction<FilePackage, DownloadLink>(si));
+        popup.add(new JSeparator());
         popup.add(new ForceDownloadAction(si));
-        popup.add(new ResumeAction(si));
-        popup.add(new ResetAction(si));
+
         popup.add(new StopsignAction(si));
         popup.add(new JSeparator());
-        popup.add(new NewPackageAction(si));
-        popup.add(new CreateDLCAction(si));
 
-        popup.add(new JSeparator());
-        popup.add(new SortAction(contextObject, selection, column).toContextMenuAction());
-        popup.add(new JSeparator());
-        if (contextObject instanceof FilePackage) {
-            popup.add(new PackageNameAction(si));
-            popup.add(new JSeparator());
-        } else if (contextObject instanceof DownloadLink) {
-            if (CrossSystem.isOpenFileSupported()) {
-                popup.add(new OpenFileAction(new File(((DownloadLink) contextObject).getFileOutput())));
-                popup.add(new JSeparator());
-            }
-        }
+        /* addons */
         int count = popup.getComponentCount();
         MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new DownloadTableContext(popup, si, column)));
-        if (popup.getComponentCount() > count) popup.add(new JSeparator());
+        if (popup.getComponentCount() > count) {
+            popup.add(new JSeparator());
+        }
+
+        /* other menu */
+        JMenu o = new JMenu(_GUI._.ContextMenuFactory_createPopup_other());
+        o.setIcon(NewTheme.I().getIcon("batch", 18));
+
+        o.add(new ResumeAction(si));
+        o.add(new ResetAction(si));
+        o.add(new JSeparator());
+        o.add(new NewPackageAction(si));
+        o.add(new CreateDLCAction(si));
+
+        popup.add(o);
+
+        popup.add(new JSeparator());
 
         /* remove menu */
+        popup.add(new DeleteQuickAction(si));
         JMenu m = new JMenu(_GUI._.ContextMenuFactory_createPopup_cleanup());
         m.setIcon(NewTheme.I().getIcon("clear", 18));
         m.add(createDeleteFromList(si));
         m.add(createDeleteFromListAndDisk(si));
-
         popup.add(m);
 
         return popup;
@@ -129,11 +148,11 @@ public class DownloadTableContextMenuFactory {
         // new DeleteFromDiskAction(si)
         JMenu ret = new JMenu(_GUI._.DownloadTableContextMenuFactory_createDeleteFromListAndDisk_object_());
         ret.setIcon(NewTheme.I().getIcon("delete", 18));
+        ret.add(new DeleteAllFromListAndDiskAction(si));
         ret.add(new DeleteDisabledLinksFromListAndDiskAction(si));
         ret.add(new DeleteFailedFromListAndDiskAction(si));
         ret.add(new DeleteSuccessFulFromListAndDiskAction(si));
         ret.add(new DeleteOfflineFromListAndDiskAction(si));
-        ret.add(new DeleteAllFromListAndDiskAction(si));
         MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new DownloadTableDeletefromListAndDiskContext(ret, si)));
         return ret;
     }
@@ -142,22 +161,30 @@ public class DownloadTableContextMenuFactory {
         // new DeleteFromDiskAction(si)
         JMenu ret = new JMenu(_GUI._.DownloadTableContextMenuFactory_createDeleteFromList_object_());
         ret.setIcon(NewTheme.I().getIcon("list", 18));
+        ret.add(new DeleteAllAction(si));
         ret.add(new DeleteFailedAction(si));
         ret.add(new DeleteDisabledLinksAction(si));
         ret.add(new DeleteSuccessFulAction(si));
         ret.add(new DeleteOfflineAction(si));
-
-        ret.add(new DeleteAllAction(si));
         MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new DownloadTableDeletefromListContext(ret, si)));
-
         return ret;
     }
 
-    public static ArrayList<JMenuItem> fillPropertiesMenu(SelectionInfo<FilePackage, DownloadLink> si, ExtColumn<AbstractNode> column) {
+    public static ArrayList<Component> fillPropertiesMenu(SelectionInfo<FilePackage, DownloadLink> si, ExtColumn<AbstractNode> column) {
 
-        ArrayList<JMenuItem> ret = new ArrayList<JMenuItem>();
-        ret.add(new JMenuItem(new EnabledAction<FilePackage, DownloadLink>(si)));
-        ret.add(new JMenuItem(new URLEditorAction(si)));
+        ArrayList<Component> ret = new ArrayList<Component>();
+
+        ret.add(new JMenuItem(new CheckStatusAction<FilePackage, DownloadLink>(si).toContextMenuAction()));
+
+        // TODO: Handle selection of only one link
+        ret.add(new JMenuItem(new URLEditorAction<FilePackage, DownloadLink>(si)));
+
+        ret.add(new JSeparator());
+
+        if (si.isPackageContext()) {
+            ret.add(new JMenuItem(new PackageNameAction(si)));
+        }
+
         ret.add(new JMenuItem(new SetDownloadFolderInDownloadTableAction(si).toContextMenuAction()));
         ret.add(new JMenuItem(new SetDownloadPassword<FilePackage, DownloadLink>(si).toContextMenuAction()));
         ret.add(new JMenuItem(new SetCommentAction<FilePackage, DownloadLink>(si).toContextMenuAction()));

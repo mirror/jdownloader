@@ -32,16 +32,18 @@ public class EnabledAction<PackageType extends AbstractPackageNode<ChildrenType,
 
     public EnabledAction(SelectionInfo<PackageType, ChildrenType> si) {
         this.selection = si;
-        setName(_GUI._.EnabledAction_EnabledAction_object_());
         switch (state = getState()) {
         case MIXED:
             setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("select", 18), NewTheme.I().getImage("checkbox_undefined", 14), 0, 0, 9, 8)));
+            setName(_GUI._.EnabledAction_EnabledAction_disable());
             break;
         case ALL_DISABLED:
             setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("select", 18), NewTheme.I().getImage("disabled", 14), 0, 0, 9, 8)));
+            setName(_GUI._.EnabledAction_EnabledAction_enable());
             break;
         case ALL_ENABLED:
             setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("select", 18), NewTheme.I().getImage("enabled", 14), 0, 0, 9, 8)));
+            setName(_GUI._.EnabledAction_EnabledAction_disable());
             break;
         }
 

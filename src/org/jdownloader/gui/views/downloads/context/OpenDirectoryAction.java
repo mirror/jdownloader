@@ -12,10 +12,10 @@ public class OpenDirectoryAction extends ContextMenuAction {
 
     private static final long serialVersionUID = 3656369075540437063L;
 
-    private final File        folder;
+    private final File        directory;
 
     public OpenDirectoryAction(File folder) {
-        this.folder = folder;
+        this.directory = folder;
         init();
     }
 
@@ -31,12 +31,12 @@ public class OpenDirectoryAction extends ContextMenuAction {
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
-        CrossSystem.openFile(folder);
+        CrossSystem.openFile(directory);
     }
 
     @Override
     public boolean isEnabled() {
-        return CrossSystem.isOpenFileSupported() && folder != null && folder.exists();
+        return CrossSystem.isOpenFileSupported() && directory != null && directory.exists();
     }
 
 }

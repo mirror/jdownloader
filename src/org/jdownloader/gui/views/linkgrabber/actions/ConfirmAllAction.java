@@ -32,7 +32,7 @@ public class ConfirmAllAction extends AppAction {
             this.autostart = true;
         } else {
             setName(_GUI._.ConfirmAction_ConfirmAction_context_add());
-            setSmallIcon(NewTheme.I().getIcon("add", 20));
+            setSmallIcon(NewTheme.I().getIcon("go-next", 20));
             this.autostart = false;
         }
 

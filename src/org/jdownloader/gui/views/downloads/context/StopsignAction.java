@@ -31,10 +31,10 @@ public class StopsignAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         if (si.isChildContext()) {
             JDGui.help(_GUI._.StopsignAction_actionPerformed_help_title_(), _GUI._.StopsignAction_actionPerformed_help_msg_(), NewTheme.I().getIcon("stopsign", 32));
-            DownloadWatchDog.getInstance().toggleStopMark(si);
+            DownloadWatchDog.getInstance().toggleStopMark(si.getContextObject());
         } else {
             JDGui.help(_GUI._.StopsignAction_actionPerformed_help_title_package_(), _GUI._.StopsignAction_actionPerformed_help_msg_package_(), NewTheme.I().getIcon("stopsign", 32));
-            DownloadWatchDog.getInstance().toggleStopMark(si);
+            DownloadWatchDog.getInstance().toggleStopMark(si.getContextObject());
         }
 
     }

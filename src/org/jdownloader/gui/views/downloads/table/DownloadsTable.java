@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads.table;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
@@ -13,7 +14,6 @@ import java.util.EventObject;
 import javax.swing.DropMode;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
-import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
@@ -86,7 +86,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
         final ExtColumn<AbstractNode> col = this.getExtColumnAtPoint(point);
 
-        for (JMenuItem mm : DownloadTableContextMenuFactory.fillPropertiesMenu(new SelectionInfo<FilePackage, DownloadLink>(obj, getExtTableModel().getSelectedObjects()), col)) {
+        for (Component mm : DownloadTableContextMenuFactory.fillPropertiesMenu(new SelectionInfo<FilePackage, DownloadLink>(obj, getExtTableModel().getSelectedObjects()), col)) {
             m.add(mm);
         }
         m.show(this, point.x, point.y);

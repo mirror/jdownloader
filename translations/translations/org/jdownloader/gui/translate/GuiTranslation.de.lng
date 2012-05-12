@@ -1,4 +1,4 @@
-{
+﻿{
   "gui_taskpanes_download_linkgrabber_config_startofter" : "Sofort starten",
   "ballon_download_finished_stopped" : "Download gestoppt",
   "gui_linkgrabber_finished" : "%s1 Link(s) in %s2 Paket(en)",
@@ -38,7 +38,7 @@
   "gui_treetable_size" : "Größe",
   "gui_config_download_ipcheck_balance" : "Interne IP Überprüfung verwenden",
   "gui_premiumstatus_traffic_tooltip" : "%s1 - %s2 Account(s) -- Sie können heute bis zu %s3 laden.",
-  "gui_table_contextmenu_stopmark_set" : "Haltemarke setzen2",
+  "gui_table_contextmenu_stopmark_set" : "Nach diesem Download stoppen",
   "gui_treetable_loaded" : "Geladen",
   "gui_config_download_ipcheck_website" : "IP prüfen über (Webseite)",
   "gui_fileinfopanel_packagetab_lbl_name" : "Paketname",

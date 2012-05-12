@@ -7,14 +7,14 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.context.DeleteAction;
 
-public class DeleteAllAction extends DeleteAction {
+public class DeleteQuickAction extends DeleteAction {
 
-    private static final long serialVersionUID = 4828124112878883568L;
+    private static final long serialVersionUID = -6140757831031388156L;
 
-    public DeleteAllAction(SelectionInfo<FilePackage, DownloadLink> si) {
+    public DeleteQuickAction(SelectionInfo<FilePackage, DownloadLink> si) {
         super(si);
-        setName(_GUI._.DeleteAllAction_DeleteAllAction_object_());
-        setIconKey("remove");
+        setName(_GUI._.DeleteQuickAction_DeleteQuickAction_object_());
+
     }
 
 }

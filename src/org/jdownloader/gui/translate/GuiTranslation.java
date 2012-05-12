@@ -1152,16 +1152,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Sort" })
     String gui_table_contextmenu_sort();
 
-    @Default(lngs = { "en" }, values = { "Set Stopmark" })
+    @Default(lngs = { "en" }, values = { "Stop after this download" })
     String gui_table_contextmenu_stopmark_set();
 
-    @Default(lngs = { "en" }, values = { "Unset Stopmark" })
+    @Default(lngs = { "en" }, values = { "Remove Stopmark" })
     String gui_table_contextmenu_stopmark_unset();
 
     @Default(lngs = { "en" }, values = { "Watch As you download" })
     String gui_table_contextmenu_watch_as_you_download();
 
-    @Default(lngs = { "en" }, values = { "Force Downloads" })
+    @Default(lngs = { "en" }, values = { "Start Download" })
     String gui_table_contextmenu_tryforcethisdownload();
 
     @Default(lngs = { "en" }, values = { "Drop after '%s1'" })
@@ -2995,26 +2995,32 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Check online status" })
     String FileCheckAction_FileCheckAction_();
 
-    @Default(lngs = { "en" }, values = { "Download Directory" })
+    @Default(lngs = { "en" }, values = { "Set Download Directory" })
     String SetDownloadFolderAction_SetDownloadFolderAction_();
 
-    @Default(lngs = { "en" }, values = { "Download Directory" })
+    @Default(lngs = { "en" }, values = { "Open Download Directory" })
     String OpenDownloadFolderAction_OpenDownloadFolderAction_();
 
     @Default(lngs = { "en" }, values = { "Watch As You Download" })
     String WatchAsYouDownload_WatchAsYouDownloadAction_();
 
-    @Default(lngs = { "en" }, values = { "Enabled" })
-    String EnabledAction_EnabledAction_object_();
+    @Default(lngs = { "en" }, values = { "Enable" })
+    String EnabledAction_EnabledAction_enable();
 
-    @Default(lngs = { "en" }, values = { "Download Password" })
+    @Default(lngs = { "en" }, values = { "Disable" })
+    String EnabledAction_EnabledAction_disable();
+
+    @Default(lngs = { "en" }, values = { "Set Download Password" })
     String SetDownloadPassword_SetDownloadPassword_();
 
     @Default(lngs = { "en" }, values = { "Download Password" })
     String DownloadPasswordColumn_DownloadPasswordColumn_object_();
 
-    @Default(lngs = { "en" }, values = { "Delete Links" })
+    @Default(lngs = { "en" }, values = { "Delete and..." })
     String ContextMenuFactory_createPopup_cleanup();
+
+    @Default(lngs = { "en" }, values = { "Other" })
+    String ContextMenuFactory_createPopup_other();
 
     @Default(lngs = { "en" }, values = { "Offline Links" })
     String RemoveOfflineAction_RemoveOfflineAction_object_();
@@ -3400,7 +3406,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "%s1/%s2 online" })
     String AvailabilityColumn_getStringValue_object_(int i, int size);
 
-    @Default(lngs = { "en" }, values = { "Priority" })
+    @Default(lngs = { "en" }, values = { "Set Priority" })
     String PriorityAction_PriorityAction_();
 
     @Default(lngs = { "en" }, values = { "Downloads will start soon. Click here to cancel countdown." })
@@ -3631,7 +3637,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Browse" })
     String DownloadFolderEditor_DownloadFolderEditor_browse_();
 
-    @Default(lngs = { "en" }, values = { "Download URLs" })
+    @Default(lngs = { "en" }, values = { "Show Download URLs" })
     String ContextMenuFactory_createPopup_url();
 
     @Default(lngs = { "en" }, values = { "Source URL for this Download Link" })
@@ -3664,7 +3670,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "%s1's Properties" })
     String ContextMenuFactory_createPopup_properties(String name);
 
-    @Default(lngs = { "en" }, values = { "Comment(s)" })
+    @Default(lngs = { "en" }, values = { "Set Comment(s)" })
     String SetCommentAction_SetCommentAction_object_();
 
     @Default(lngs = { "en" }, values = { "Edit Link/Package Comments" })
@@ -3745,13 +3751,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Failed Links" })
     String DeleteFailedAction_DeleteFailedAction_object_();
 
-    @Default(lngs = { "en" }, values = { "from List (keep downloaded files)" })
+    @Default(lngs = { "en" }, values = { "... keep downloaded files" })
     String DownloadTableContextMenuFactory_createDeleteFromList_object_();
 
-    @Default(lngs = { "en" }, values = { "from List & Disk (delete downloaded files)" })
+    @Default(lngs = { "en" }, values = { "... remove downloaded files" })
     String DownloadTableContextMenuFactory_createDeleteFromListAndDisk_object_();
 
-    @Default(lngs = { "en" }, values = { "Succesfull Links" })
+    @Default(lngs = { "en" }, values = { "Successful Links" })
     String DeleteSuccessFulAction_DeleteSuccessFulAction_object_();
 
     @Default(lngs = { "en" }, values = { "All Selected Links" })
@@ -3765,5 +3771,8 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Cannot open file because:\r\n%s1" })
     String OpenFileAction_actionPerformed_object_(String localizedMessage);
+
+    @Default(lngs = { "en" }, values = { "Delete" })
+    String DeleteQuickAction_DeleteQuickAction_object_();
 
 }
