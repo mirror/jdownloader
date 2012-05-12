@@ -41,8 +41,8 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
     }
 
     /**
-     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
-     * exist
+     * checks if the given file is valid as a downloadfolder, this means it must
+     * be an existing folder or at least its parent folder must exist
      * 
      * @param file
      * @return
@@ -61,7 +61,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
 
         try {
 
-            final File file = DownloadFolderChooserDialog.open(path, false, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(si.getContextPackage().getName()));
+            final File file = dialog(path);
             if (file == null) return;
 
             retOkay = true;
@@ -108,6 +108,10 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
             });
         } catch (DialogNoAnswerException e1) {
         }
+    }
+
+    protected File dialog(File path) throws DialogClosedException, DialogCanceledException {
+        return DownloadFolderChooserDialog.open(path, false, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(si.getContextPackage().getName()));
     }
 
     abstract protected void move(PackageType pkg, List<ChildrenType> selectedLinksByPackage);

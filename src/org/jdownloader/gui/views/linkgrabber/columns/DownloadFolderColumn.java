@@ -13,11 +13,8 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.JDGui;
 
-import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.ExtButton;
-import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -29,7 +26,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderInLinkgrabberAction;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
@@ -39,18 +35,10 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     private static final long serialVersionUID = 1L;
     private AbstractNode      editing;
     private ExtButton         open;
-    private DelayedRunnable   clickDelayer;
-    private AbstractNode      clicked;
 
     public DownloadFolderColumn() {
         super(_GUI._.LinkGrabberTableModel_initColumns_folder());
-        setClickcount(2);
-        clickDelayer = new DelayedRunnable(ToolTipController.EXECUTER, 200) {
-            @Override
-            public void delayedrun() {
-                new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(clicked)).actionPerformed(null);
-            }
-        };
+        setClickcount(0);
 
     }
 
@@ -60,13 +48,19 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     }
 
     @Override
+    protected boolean onRenameClick(MouseEvent e, AbstractNode obj) {
+        new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj)).actionPerformed(null);
+        return true;
+    }
+
+    @Override
     public boolean isEditable(AbstractNode obj) {
         return false;
     }
 
     @Override
     protected boolean onDoubleClick(MouseEvent e, AbstractNode value) {
-        if (CrossSystem.isOpenFileSupported() && value != null && clickDelayer.stop()) {
+        if (CrossSystem.isOpenFileSupported() && value != null) {
 
             File ret = LinkTreeUtils.getDownloadDirectory(value);
             if (ret != null && ret.exists() && ret.isDirectory()) CrossSystem.openFile(ret);
@@ -77,10 +71,9 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected boolean onSingleClick(MouseEvent e, AbstractNode obj) {
-        clicked = obj;
-        clickDelayer.resetAndStart();
-
-        JDGui.help(_GUI._.literall_usage_tipp(), _GUI._.DownloadFolderColumn_onSingleClick_object_(), NewTheme.I().getIcon("smart", 48));
+        // JDGui.help(_GUI._.literall_usage_tipp(),
+        // _GUI._.DownloadFolderColumn_onSingleClick_object_(),
+        // NewTheme.I().getIcon("smart", 48));
         return false;
     }
 

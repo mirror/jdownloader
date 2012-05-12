@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
+import java.io.File;
 import java.util.List;
 
 import jd.controlling.linkcollector.LinkCollector;
@@ -8,6 +9,10 @@ import jd.controlling.linkcollector.VariousCrawledPackage;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadFolderAction;
 
@@ -21,6 +26,10 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
     public SetDownloadFolderInLinkgrabberAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
         super(si);
 
+    }
+
+    protected File dialog(File path) throws DialogClosedException, DialogCanceledException {
+        return DownloadFolderChooserDialog.open(path, true, _GUI._.OpenDownloadFolderAction_actionPerformed_object_(si.getContextPackage().getName()));
     }
 
     @Override
