@@ -196,7 +196,7 @@ public class BanaShareCom extends PluginForHost {
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Ticket Time
-        String ttt = new Regex(brbefore, "countdown\">.*?(\\d+).*?</span>").getMatch(0);
+        String ttt = new Regex(brbefore, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         if (ttt != null) {
             logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
             int tt = Integer.parseInt(ttt);

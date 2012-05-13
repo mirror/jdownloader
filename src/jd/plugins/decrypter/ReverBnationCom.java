@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "http://(www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|playlist/view_playlist/\\d+\\?page_object=artist_\\d+|open_graph/song/\\d+|play_now/song_\\d+|page_object/page_object_photos/artist_\\d+|[^<>\"/]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "http://(www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|playlist/view_playlist/\\d+\\?page_object=artist_\\d+|open_graph/song/\\d+|play_now/song_\\d+|page_object/page_object_photos/artist_\\d+|artist/downloads/\\d+|[^<>\"/]+)" }, flags = { 0 })
 public class ReverBnationCom extends PluginForDecrypt {
 
     public ReverBnationCom(final PluginWrapper wrapper) {
@@ -82,13 +82,17 @@ public class ReverBnationCom extends PluginForDecrypt {
                 dlLink.setName(filename + ".mp3");
             dlLink.setProperty("orgName", dlLink.getName());
             decryptedLinks.add(dlLink);
-        } else if (parameter.matches("http://(www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|playlist/view_playlist/\\d+\\?page_object=artist_\\d+|open_graph/song/\\d+|[^<>\"/]+)")) {
+        } else if (parameter.matches("http://(www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|playlist/view_playlist/\\d+\\?page_object=artist_\\d+|open_graph/song/\\d+|artist/downloads/\\d+|[^<>\"/]+)")) {
             String fpName = null;
             String[][] allInfo = null;
             if (parameter.matches("http://(www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|playlist/view_playlist/\\d+\\?page_object=artist_\\d+|open_graph/song/\\d+)")) {
                 br.getPage(parameter);
                 fpName = getFpname();
                 allInfo = br.getRegex("data\\-url=\"/artist/artist_song/(\\d+)\\?song_id=(\\d+)\">[\t\n\r ]+<a href=\"#\" class=\" standard_play_button song\\-action play\" data\\-song\\-id=\"\\d+\" title=\"Play \\&quot;([^<>\"]*?)\\&quot;\"").getMatches();
+            } else if (parameter.matches("http://(www\\.)?reverbnation\\.com/artist/downloads/\\d+")) {
+                br.getPage(parameter);
+                fpName = getFpname();
+                allInfo = br.getRegex("production_public/Artist/(\\d+)/image/thumb/[a-z0-9_\\-]+\\.jpg\" /><a href=\"#\" class=\"size_48  standard_play_button song\\-action play\" data\\-song\\-id=\"(\\d+)\" title=\"Play &quot;([^<>\"]*?)&quot;\"").getMatches();
             } else {
                 br.getPage(parameter);
                 fpName = br.getRegex("<h1 class=\"profile_user_name\">([^<>\"]*?)</h1>").getMatch(0);
