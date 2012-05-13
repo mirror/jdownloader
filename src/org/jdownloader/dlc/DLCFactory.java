@@ -132,7 +132,7 @@ public class DLCFactory extends D {
 
     }
 
-    public void createDLCByCrawledLinks(ArrayList<CrawledLink> links) {
+    public void createDLCByCrawledLinks(List<CrawledLink> links) {
         File[] files;
         try {
             files = Dialog.getInstance().showFileChooser("_LOADSAVEDLC", _GUI._.CreateDLCAction_actionPerformed_title_(), FileChooserSelectionMode.FILES_ONLY, new FileFilter() {
@@ -176,7 +176,7 @@ public class DLCFactory extends D {
         }
     }
 
-    private String createContainerStringByCrawledLinks(ArrayList<CrawledLink> links) {
+    private String createContainerStringByCrawledLinks(List<CrawledLink> links) {
         HashMap<String, CrawledLink> map = new HashMap<String, CrawledLink>();
         ArrayList<CrawledLink> filter = new ArrayList<CrawledLink>();
         // filter

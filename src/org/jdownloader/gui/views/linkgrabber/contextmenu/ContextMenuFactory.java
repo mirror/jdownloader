@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
-import java.awt.Color;
 import java.awt.Image;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -14,12 +13,10 @@ import javax.swing.JSeparator;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.ImageProvider.ImageProvider;
-import org.appwork.utils.logging.Log;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEvent;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.translate._GUI;
@@ -45,19 +42,15 @@ public class ContextMenuFactory {
         this.table = linkGrabberTable;
     }
 
-    public JPopupMenu createPopup(AbstractNode contextObject, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent event) {
-        boolean isLinkContext = contextObject instanceof CrawledLink;
+    public JPopupMenu createPopup(AbstractNode context, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent event) {
 
-        SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(contextObject, selection, event, null, table);
-        boolean isShift = event.isShiftDown();
-        boolean isPkgContext = contextObject instanceof CrawledPackage;
-        CrawledLink link = isLinkContext ? (CrawledLink) contextObject : null;
-        CrawledPackage pkg = isPkgContext ? (CrawledPackage) contextObject : null;
+        SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(context, selection, event, null, table);
+
         JPopupMenu p = new JPopupMenu();
         JMenu m;
 
         if (selection != null && selection.size() > 0) {
-            p.add(new ConfirmAction(isShift, selection).toContextMenuAction());
+            p.add(new ConfirmAction(si.isShiftDown(), si).toContextMenuAction());
             p.add(new JSeparator());
         }
 
@@ -71,50 +64,47 @@ public class ContextMenuFactory {
         JMenu properties = new JMenu(_GUI._.ContextMenuFactory_createPopup_properties_package());
         p.add(properties);
         p.add(new JSeparator());
-        if (contextObject instanceof AbstractPackageNode) {
-            Image back = (((AbstractPackageNode<?, ?>) contextObject).isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) : NewTheme.I().getImage("tree_package_closed", 32));
+        if (si.isPackageContext()) {
+            Image back = (si.getPackage().isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) : NewTheme.I().getImage("tree_package_closed", 32));
             properties.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)));
-        } else if (contextObject instanceof CrawledLink) {
-            Image back = (((CrawledLink) contextObject).getDownloadLink().getIcon().getImage());
+        } else if (si.isLinkContext()) {
+            Image back = (si.getLink().getDownloadLink().getIcon().getImage());
             properties.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)));
-            int count = p.getComponentCount();
-            try {
-                ((CrawledLink) contextObject).getDownloadLink().getDefaultPlugin().extendLinkgrabberTablePropertiesMenu(properties, ((CrawledLink) contextObject));
-            } catch (final Throwable e) {
-                Log.exception(e);
-            }
-            if (p.getComponentCount() > count) p.add(new JSeparator());
+
         }
         for (JMenuItem mm : fillPropertiesMenu(si, column)) {
             properties.add(mm);
         }
-        p.add(new CheckStatusAction(si).toContextMenuAction());
-        p.add(new CreateDLCAction(selection).toContextMenuAction());
+        p.add(new SortAction(si, column).toContextMenuAction());
+        p.add(new EnabledAction(si).toContextMenuAction());
 
         p.add(new JSeparator());
-        p.add(new MergeToPackageAction(selection).toContextMenuAction());
-        p.add(new SplitPackagesByHost(contextObject, selection).toContextMenuAction());
-
-        p.add(new JSeparator());
-        p.add(new SortAction(contextObject, selection, column).toContextMenuAction());
-        p.add(new JSeparator());
-        if (isLinkContext) {
-            p.add(new OpenUrlAction(link).toContextMenuAction());
+        if (si.isLinkContext()) {
+            p.add(new OpenUrlAction(si.getLink()).toContextMenuAction());
             p.add(new JSeparator());
         }
-        Color.RED.hashCode();
+        // addons
         int count = p.getComponentCount();
         MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new LinkgrabberTableContext(p, si, column)));
         if (p.getComponentCount() > count) p.add(new JSeparator());
 
+        // others
+        JMenu o = new JMenu(_GUI._.ContextMenuFactory_createPopup_other());
+        o.setIcon(NewTheme.I().getIcon("batch", 18));
+        o.add(new CreateDLCAction(si).toContextMenuAction());
+        o.add(new MergeToPackageAction(si).toContextMenuAction());
+        o.add(new SplitPackagesByHost(si).toContextMenuAction());
+
+        p.add(o);
+        p.add(new JSeparator());
         /* remove menu */
-        m = new JMenu(_GUI._.ContextMenuFactory_createPopup_cleanup());
+        p.add(new RemoveSelectionAction(si).toContextMenuAction());
+        m = new JMenu(_GUI._.ContextMenuFactory_linkgrabber_createPopup_cleanup());
         m.setIcon(NewTheme.I().getIcon("clear", 18));
         m.add(new RemoveAllAction().toContextMenuAction());
-        m.add(new RemoveSelectionAction(selection).toContextMenuAction());
-        m.add(new RemoveNonSelectedAction(table, selection).toContextMenuAction());
+        m.add(new RemoveNonSelectedAction(si).toContextMenuAction());
         m.add(new RemoveOfflineAction().toContextMenuAction());
-        m.add(new RemoveIncompleteArchives(selection).toContextMenuAction());
+        m.add(new RemoveIncompleteArchives(si).toContextMenuAction());
         p.add(m);
 
         return p;
@@ -123,7 +113,8 @@ public class ContextMenuFactory {
     public static ArrayList<JMenuItem> fillPropertiesMenu(SelectionInfo<CrawledPackage, CrawledLink> si, ExtColumn<AbstractNode> column) {
 
         ArrayList<JMenuItem> ret = new ArrayList<JMenuItem>();
-        ret.add(new JMenuItem(new EnabledAction(si).toContextMenuAction()));
+        ret.add(new JMenuItem(new CheckStatusAction<CrawledPackage, CrawledLink>(si).toContextMenuAction()));
+
         ret.add(new JMenuItem(new URLEditorAction(si)));
         ret.add(new JMenuItem(new SetDownloadFolderInLinkgrabberAction(si).toContextMenuAction()));
         ret.add(new JMenuItem(new SetDownloadPassword(si).toContextMenuAction()));

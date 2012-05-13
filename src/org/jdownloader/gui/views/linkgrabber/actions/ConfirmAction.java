@@ -47,9 +47,10 @@ public class ConfirmAction extends AppAction {
     /**
      * 
      */
-    private static final long       serialVersionUID = -3937346180905569896L;
-    private ArrayList<AbstractNode> values;
-    private boolean                 autostart;
+    private static final long                          serialVersionUID = -3937346180905569896L;
+
+    private boolean                                    autostart;
+    private SelectionInfo<CrawledPackage, CrawledLink> si;
 
     public boolean isAutostart() {
         return autostart;
@@ -59,7 +60,7 @@ public class ConfirmAction extends AppAction {
         this.autostart = autostart;
     }
 
-    public ConfirmAction(boolean autostart, ArrayList<AbstractNode> arrayList) {
+    public ConfirmAction(boolean autostart, SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
         if (autostart != org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue()) {
             setName(_GUI._.ConfirmAction_ConfirmAction_context_add_and_start());
             Image add = NewTheme.I().getImage("media-playback-start", 20);
@@ -71,7 +72,7 @@ public class ConfirmAction extends AppAction {
             setSmallIcon(NewTheme.I().getIcon("go-next", 20));
             this.autostart = false;
         }
-        this.values = arrayList;
+        this.si = selectionInfo;
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -81,7 +82,7 @@ public class ConfirmAction extends AppAction {
             public void run() {
 
                 try {
-                    for (Archive a : new ValidateArchiveAction<CrawledPackage, CrawledLink>((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), new SelectionInfo<CrawledPackage, CrawledLink>(values)).getArchives()) {
+                    for (Archive a : new ValidateArchiveAction<CrawledPackage, CrawledLink>((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), si).getArchives()) {
                         final DummyArchive da = a.createDummyArchive();
                         if (!da.isComplete()) {
 
@@ -124,7 +125,7 @@ public class ConfirmAction extends AppAction {
                 boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_ADD_AT_TOP.getValue();
                 ArrayList<FilePackage> fpkgs = new ArrayList<FilePackage>();
                 ArrayList<CrawledLink> clinks = new ArrayList<CrawledLink>();
-                for (AbstractNode node : values) {
+                for (AbstractNode node : si.getRawSelection()) {
                     if (node instanceof CrawledPackage) {
                         /* first convert all CrawledPackages to FilePackages */
                         List<CrawledLink> links = new ArrayList<CrawledLink>(((CrawledPackage) node).getView().getItems());
@@ -169,7 +170,7 @@ public class ConfirmAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-        return values != null && values.size() > 0;
+        return !si.isEmpty();
     }
 
 }

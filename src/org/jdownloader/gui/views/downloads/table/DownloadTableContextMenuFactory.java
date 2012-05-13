@@ -18,7 +18,6 @@ import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.ImageProvider.ImageProvider;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEvent;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
@@ -40,6 +39,8 @@ import org.jdownloader.gui.views.downloads.context.ResetAction;
 import org.jdownloader.gui.views.downloads.context.ResumeAction;
 import org.jdownloader.gui.views.downloads.context.SetDownloadFolderInDownloadTableAction;
 import org.jdownloader.gui.views.downloads.context.StopsignAction;
+import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
+import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SortAction;
 import org.jdownloader.images.NewTheme;
 
@@ -66,7 +67,7 @@ public class DownloadTableContextMenuFactory {
     }
 
     public JPopupMenu create(DownloadsTable downloadsTable, JPopupMenu popup, AbstractNode contextObject, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent ev) {
-        if (selection == null && contextObject == null) return popup;
+        if (selection == null && contextObject == null) return emtpy(popup);
 
         SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(contextObject, selection, ev, null, downloadsTable);
 
@@ -74,19 +75,13 @@ public class DownloadTableContextMenuFactory {
         JMenu properties = new JMenu(_GUI._.ContextMenuFactory_createPopup_properties_package());
 
         if (si.isPackageContext()) {
-            Image back = (si.getPackage().isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) : NewTheme.I().getImage("tree_package_closed", 32));
+            Image back = (si.getFirstPackage().isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) : NewTheme.I().getImage("tree_package_closed", 32));
             properties.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)));
 
-        } else if (si.isChildContext()) {
-            Image back = (si.getChild().getIcon().getImage());
+        } else if (si.isLinkContext()) {
+            Image back = (si.getLink().getIcon().getImage());
             properties.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)));
-            int count = popup.getComponentCount();
-            try {
-                si.getChild().getDefaultPlugin().extendDownloadTablePropertiesMenu(properties, ((DownloadLink) contextObject));
-            } catch (final Throwable e) {
-                Log.exception(e);
-            }
-            if (popup.getComponentCount() > count) popup.add(new JSeparator());
+
         }
         for (Component mm : fillPropertiesMenu(si, column)) {
             properties.add(mm);
@@ -97,13 +92,13 @@ public class DownloadTableContextMenuFactory {
 
         /* Open file / folder */
         if (CrossSystem.isOpenFileSupported()) {
-            if (si.isChildContext() && new File(si.getContextChild().getFileOutput()).exists()) {
+            if (si.isLinkContext() && new File(si.getContextLink().getFileOutput()).exists()) {
                 popup.add(new OpenFileAction(si));
             }
-            popup.add(new OpenDirectoryAction(new File(si.getPackage().getDownloadDirectory())));
+            popup.add(new OpenDirectoryAction(new File(si.getFirstPackage().getDownloadDirectory())));
         }
 
-        popup.add(new SortAction(contextObject, selection, column).toContextMenuAction());
+        popup.add(new SortAction(si, column).toContextMenuAction());
 
         popup.add(new EnabledAction<FilePackage, DownloadLink>(si));
         popup.add(new JSeparator());
@@ -142,6 +137,14 @@ public class DownloadTableContextMenuFactory {
         popup.add(m);
 
         return popup;
+    }
+
+    private JPopupMenu emtpy(JPopupMenu p) {
+
+        p.add(new AddLinksAction().toContextMenuAction());
+        p.add(new AddContainerAction().toContextMenuAction());
+
+        return p;
     }
 
     private JMenu createDeleteFromListAndDisk(SelectionInfo<FilePackage, DownloadLink> si) {

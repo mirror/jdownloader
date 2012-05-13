@@ -20,6 +20,7 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLink.LinkState;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerEvent;
 import jd.controlling.linkcrawler.LinkCrawlerListener;
@@ -32,6 +33,7 @@ import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeListener;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_LINKFILTER;
@@ -181,7 +183,7 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
                                     }
                                 }
 
-                                new ConfirmAction(autoStart, list).actionPerformed(null);
+                                new ConfirmAction(autoStart, new SelectionInfo<CrawledPackage, CrawledLink>(list)).actionPerformed(null);
                             }
                         });
                     }

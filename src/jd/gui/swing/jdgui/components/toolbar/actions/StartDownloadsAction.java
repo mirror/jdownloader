@@ -5,6 +5,8 @@ import java.util.ArrayList;
 
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.UserIF.Panels;
 import jd.gui.swing.jdgui.JDGui;
@@ -12,6 +14,7 @@ import jd.gui.swing.jdgui.JDGui;
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
 import org.jdownloader.translate._JDT;
@@ -42,7 +45,7 @@ public class StartDownloadsAction extends AbstractToolbarAction {
             IOEQ.add(new Runnable() {
                 public void run() {
                     ArrayList<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
-                    ConfirmAction ca = new ConfirmAction(true, packages);
+                    ConfirmAction ca = new ConfirmAction(true, new SelectionInfo<CrawledPackage, CrawledLink>(packages));
                     ca.setAutostart(true);
                     ca.actionPerformed(null);
                 }

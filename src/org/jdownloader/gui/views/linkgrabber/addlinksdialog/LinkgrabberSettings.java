@@ -81,7 +81,7 @@ public interface LinkgrabberSettings extends ConfigInterface {
     void setPresetDebugLinks(String text);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @Description("Set to false to hide the 'Add Downloads' Context Menu Action in Linkgrabber")
     boolean isContextMenuAddLinksActionAlwaysVisible();
 

@@ -1,10 +1,10 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import jd.controlling.IOEQ;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.ChildComparator;
 
@@ -13,23 +13,21 @@ import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 
-public class SortAction extends AppAction {
+public class SortAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
 
     /**
      * 
      */
-    private static final long       serialVersionUID = -3883739313644803093L;
-    private ExtColumn<AbstractNode> column;
-    private ArrayList<AbstractNode> selection2;
-    private AbstractNode            contextObject;
+    private static final long                        serialVersionUID = -3883739313644803093L;
+    private ExtColumn<AbstractNode>                  column;
+    private SelectionInfo<PackageType, ChildrenType> si;
 
-    public SortAction(AbstractNode contextObject, ArrayList<AbstractNode> selection2, ExtColumn<AbstractNode> column2) {
+    public SortAction(SelectionInfo<PackageType, ChildrenType> si, ExtColumn<AbstractNode> column2) {
         this.column = column2;
-        this.selection2 = selection2;
-        this.contextObject = contextObject;
+        this.si = si;
         setIconKey("sort");
         setName(_GUI._.SortAction_SortAction_object_(column.getName()));
 
@@ -42,13 +40,12 @@ public class SortAction extends AppAction {
             @SuppressWarnings({ "rawtypes", "unchecked" })
             @Override
             protected Void run() throws RuntimeException {
-                ArrayList<AbstractPackageNode> selection = LinkTreeUtils.getPackages(contextObject, selection2, new ArrayList<AbstractPackageNode>());
 
                 if (column.getModel() instanceof PackageControllerTableModel) {
                     PackageControllerTableModel model = (PackageControllerTableModel) column.getModel();
 
                     ChildComparator<AbstractNode> comparator = null;
-                    for (AbstractNode node : selection) {
+                    for (AbstractNode node : si.getAllPackages()) {
                         if (node instanceof AbstractPackageNode) {
                             if (comparator == null) {
                                 if (((AbstractPackageNode) node).getCurrentSorter() == null || !((AbstractPackageNode) node).getCurrentSorter().getID().equals(column.getModel().getModelID() + ".Column." + column.getID()) || ((AbstractPackageNode) node).getCurrentSorter().isAsc()) {
@@ -103,6 +100,6 @@ public class SortAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-        return contextObject != null && selection2 != null && selection2.size() > 0;
+        return !si.isEmpty();
     }
 }

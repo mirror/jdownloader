@@ -34,6 +34,7 @@ import org.appwork.swing.exttable.ExtTable;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.utils.ColorUtils;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
@@ -205,11 +206,11 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         // if
         // (org.jdownloader.settings.statics.LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue())
         // {
-        ArrayList<AbstractNode> matches = getMatches(getSelectedFilters());
+        SelectionInfo<CrawledPackage, CrawledLink> matches = new SelectionInfo<CrawledPackage, CrawledLink>(getMatches(getSelectedFilters()));
         popup.add(new ConfirmAction(false, matches));
         popup.add(new MergeToPackageAction(matches));
         popup.add(new CreateDLCAction(matches));
-        popup.add(new RemoveNonSelectedAction(getLinkgrabberTable(), matches).toContextMenuAction());
+        popup.add(new RemoveNonSelectedAction(matches).toContextMenuAction());
         popup.add(new RemoveSelectionAction(matches).toContextMenuAction());
         // popup.add(new
         // RemoveIncompleteArchives(matches).toContextMenuAction());

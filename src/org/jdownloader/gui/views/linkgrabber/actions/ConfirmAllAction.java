@@ -7,11 +7,14 @@ import java.util.ArrayList;
 import javax.swing.ImageIcon;
 
 import jd.controlling.IOEQ;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.images.NewTheme;
 
@@ -49,7 +52,7 @@ public class ConfirmAllAction extends AppAction {
 
                 ArrayList<AbstractNode> packages = new ArrayList<AbstractNode>(LinkGrabberTableModel.getInstance().getAllPackageNodes());
 
-                new ConfirmAction(autostart, packages).actionPerformed(null);
+                new ConfirmAction(autostart, new SelectionInfo<CrawledPackage, CrawledLink>(packages)).actionPerformed(null);
             }
 
         }, true);

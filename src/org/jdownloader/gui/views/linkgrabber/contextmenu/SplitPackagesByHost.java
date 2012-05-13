@@ -17,7 +17,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.translate._JDT;
 
@@ -26,12 +26,11 @@ public class SplitPackagesByHost extends AppAction {
     /**
      * 
      */
-    private static final long       serialVersionUID = 2636706677433058054L;
-    private ArrayList<AbstractNode> selection;
+    private static final long                          serialVersionUID = 2636706677433058054L;
+    private SelectionInfo<CrawledPackage, CrawledLink> si;
 
-    public SplitPackagesByHost(AbstractNode contextObject, ArrayList<AbstractNode> selection) {
-        this.selection = new ArrayList<AbstractNode>(selection);
-        this.selection.add(0, contextObject);
+    public SplitPackagesByHost(SelectionInfo<CrawledPackage, CrawledLink> si) {
+        this.si = si;
         setName(_GUI._.SplitPackagesByHost_SplitPackagesByHost_object_());
         setIconKey("split_packages");
     }
@@ -42,10 +41,10 @@ public class SplitPackagesByHost extends AppAction {
             @Override
             public void run() {
                 HashMap<String, ArrayList<CrawledLink>> splitMap = new HashMap<String, ArrayList<CrawledLink>>();
-                ArrayList<AbstractNode> children = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<AbstractNode>());
+
                 CrawledPackage samePkg = null;
                 boolean samePackage = true;
-                for (AbstractNode child : children) {
+                for (AbstractNode child : si.getSelectedChildren()) {
                     if (child instanceof CrawledLink) {
                         CrawledLink cL = (CrawledLink) child;
                         if (samePkg == null) {

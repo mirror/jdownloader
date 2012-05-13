@@ -9,8 +9,6 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
 
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
@@ -18,19 +16,20 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 
 public class MergeToPackageAction extends AppAction {
 
     /**
      * 
      */
-    private static final long       serialVersionUID = -4468197802870765463L;
-    private ArrayList<AbstractNode> selection;
+    private static final long                          serialVersionUID = -4468197802870765463L;
+    private SelectionInfo<CrawledPackage, CrawledLink> selection;
 
-    public MergeToPackageAction(ArrayList<AbstractNode> selection) {
+    public MergeToPackageAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
         setName(_GUI._.MergeToPackageAction_MergeToPackageAction_());
         setIconKey("package_new");
-        this.selection = selection;
+        this.selection = si;
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -38,11 +37,7 @@ public class MergeToPackageAction extends AppAction {
         try {
             String defValue = _GUI._.MergeToPackageAction_actionPerformed_newpackage_();
             try {
-                if (selection.get(0) instanceof AbstractPackageNode) {
-                    defValue = ((AbstractPackageNode) selection.get(0)).getName();
-                } else {
-                    defValue = ((AbstractPackageNode) ((AbstractPackageChildrenNode) selection.get(0)).getParentNode()).getName();
-                }
+                defValue = selection.getFirstPackage().getName();
             } catch (Throwable e2) {
                 // too many unsafe casts. catch problems - just to be sure
                 Log.exception(e2);
@@ -58,7 +53,7 @@ public class MergeToPackageAction extends AppAction {
                     newPackage.setName(name);
                     HashSet<String> rawDownloadFolder = new HashSet<String>();
                     HashSet<CrawledLink> links = new HashSet<CrawledLink>();
-                    for (AbstractNode node : selection) {
+                    for (AbstractNode node : selection.getRawSelection()) {
                         if (node instanceof CrawledLink) {
                             CrawledLink link = (CrawledLink) node;
                             links.add(link);
@@ -90,7 +85,7 @@ public class MergeToPackageAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-        return selection != null && selection.size() > 0;
+        return !selection.isEmpty();
     }
 
 }

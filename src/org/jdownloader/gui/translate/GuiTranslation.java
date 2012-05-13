@@ -2228,7 +2228,7 @@ public interface GuiTranslation extends TranslateInterface {
     String AddOptionsAction_actionPerformed_addlinks();
 
     @Default(lngs = { "en" }, values = { "Are you sure?" })
-    String ClearAction_actionPerformed_();
+    String literally_are_you_sure();
 
     @Default(lngs = { "en" }, values = { "Do you really want to remove all links from Linkgrabber?" })
     String ClearAction_actionPerformed_msg();
@@ -3031,7 +3031,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Incomplete Split-Archives" })
     String RemoveIncompleteArchives_RemoveIncompleteArchives_object_();
 
-    @Default(lngs = { "en" }, values = { "Selected Links" })
+    @Default(lngs = { "en" }, values = { "Delete" })
     String RemoveSelectionAction_RemoveSelectionAction_object_();
 
     @Default(lngs = { "en" }, values = { "Keep only selected Links" })
@@ -3774,5 +3774,14 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Delete" })
     String DeleteQuickAction_DeleteQuickAction_object_();
+
+    @Default(lngs = { "en" }, values = { "Clean Up" })
+    String ContextMenuFactory_linkgrabber_createPopup_cleanup();
+
+    @Default(lngs = { "en" }, values = { "Do you want to remove all Links of the Archive %s1 from Linkgrabber?" })
+    String RemoveIncompleteArchives_run_(String name);
+
+    @Default(lngs = { "en" }, values = { "Delete Selection" })
+    String RemoveOptionsAction_actionPerformed_selection_();
 
 }

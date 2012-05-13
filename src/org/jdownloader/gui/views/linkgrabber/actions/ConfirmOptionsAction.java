@@ -3,7 +3,6 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -11,10 +10,12 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
-import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.images.NewTheme;
 
@@ -44,7 +45,7 @@ public class ConfirmOptionsAction extends AbstractAction {
         selected.setIcon(NewTheme.I().getIcon("confirmSelectedLinks", 16));
         all.add(new JMenuItem(new ConfirmAllAction().toButtonAction()));
         all.add(new JMenuItem(new ConfirmAllAction(true).toButtonAction()));
-        ArrayList<AbstractNode> selection = table.getExtTableModel().getSelectedObjects();
+        SelectionInfo<CrawledPackage, CrawledLink> selection = new SelectionInfo<CrawledPackage, CrawledLink>(table.getExtTableModel().getSelectedObjects());
         selected.add(new JMenuItem(new ConfirmAction(false, selection).toButtonAction()));
         selected.add(new JMenuItem(new ConfirmAction(true, selection).toButtonAction()));
         int[] insets = LookAndFeelController.getInstance().getLAFOptions().getPopupBorderInsets();

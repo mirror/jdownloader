@@ -687,11 +687,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     }
 
     private void onExtendPopupMenuLinkgrabberTable(LinkgrabberTableContext context) {
-        boolean isLinkContext = context.getSelectionInfo().isChildContext();
+        boolean isLinkContext = context.getSelectionInfo().isLinkContext();
         boolean isShift = context.getSelectionInfo().isShiftDown();
-        boolean isPkgContext = context.getSelectionInfo().getContextObject() instanceof CrawledPackage;
-        CrawledLink link = isLinkContext ? (CrawledLink) context.getSelectionInfo().getContextObject() : null;
-        CrawledPackage pkg = isPkgContext ? (CrawledPackage) context.getSelectionInfo().getContextObject() : null;
+        boolean isPkgContext = context.getSelectionInfo().getRawContext() instanceof CrawledPackage;
+        CrawledLink link = isLinkContext ? (CrawledLink) context.getSelectionInfo().getRawContext() : null;
+        CrawledPackage pkg = isPkgContext ? (CrawledPackage) context.getSelectionInfo().getRawContext() : null;
         JMenu menu = new JMenu(T._.contextmenu_main()) {
             protected JMenuItem createActionComponent(Action a) {
                 if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
@@ -774,8 +774,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             }
         };
 
-        if (context.getSelectionInfo().getContextObject() instanceof DownloadLink) {
-            final DownloadLink link = (DownloadLink) context.getSelectionInfo().getContextObject();
+        if (context.getSelectionInfo().getRawContext() instanceof DownloadLink) {
+            final DownloadLink link = (DownloadLink) context.getSelectionInfo().getRawContext();
             final ValidateArchiveAction<FilePackage, DownloadLink> validateAction = new ValidateArchiveAction<FilePackage, DownloadLink>(this, context.getSelectionInfo());
             menu.add(new AppAction() {
                 {
@@ -928,7 +928,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
             // + "2", dir.getAbsolutePath());
             // m.setProperty("LINK", link);
         } else {
-            final FilePackage fp = (FilePackage) context.getSelectionInfo().getContextObject();
+            final FilePackage fp = (FilePackage) context.getSelectionInfo().getRawContext();
             if (fp != null) {
 
                 menu.add(new AppAction() {

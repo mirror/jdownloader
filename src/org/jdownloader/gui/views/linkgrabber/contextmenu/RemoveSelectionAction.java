@@ -1,44 +1,43 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import jd.controlling.IOEQ;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.linkcrawler.CrawledPackage;
 
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.gui.views.SelectionInfo;
 
 public class RemoveSelectionAction extends AppAction {
 
     /**
      * 
      */
-    private static final long       serialVersionUID = -3008851305036758872L;
-    private ArrayList<AbstractNode> selection;
+    private static final long                          serialVersionUID = -3008851305036758872L;
+    private SelectionInfo<CrawledPackage, CrawledLink> si;
 
-    public RemoveSelectionAction(ArrayList<AbstractNode> selection) {
+    public RemoveSelectionAction(SelectionInfo<CrawledPackage, CrawledLink> si) {
         setIconKey("remove");
         setName(_GUI._.RemoveSelectionAction_RemoveSelectionAction_object_());
-        this.selection = selection;
+        this.si = si;
 
     }
 
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) return;
         try {
-            Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.ClearAction_actionPerformed_(), _GUI._.ClearAction_actionPerformed_selected_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
+            Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), _GUI._.ClearAction_actionPerformed_selected_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
 
             IOEQ.add(new Runnable() {
 
                 public void run() {
-                    ArrayList<CrawledLink> remove = LinkTreeUtils.getSelectedChildren(selection, new ArrayList<CrawledLink>());
-                    LinkCollector.getInstance().removeChildren(remove);
+
+                    LinkCollector.getInstance().removeChildren(si.getSelectedChildren());
                 }
 
             }, true);
@@ -48,7 +47,7 @@ public class RemoveSelectionAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-        return selection != null && selection.size() > 0;
+        return !si.isEmpty();
     }
 
 }

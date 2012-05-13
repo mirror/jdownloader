@@ -21,7 +21,7 @@ public class RemoveOfflineAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
         try {
-            Dialog.getInstance().showConfirmDialog(0, _GUI._.ClearAction_actionPerformed_(), _GUI._.ClearAction_actionPerformed_offline_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
+            Dialog.getInstance().showConfirmDialog(0, _GUI._.literally_are_you_sure(), _GUI._.ClearAction_actionPerformed_offline_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
             // IOEQ.add(new Runnable() {
             //
             // public void run() {
