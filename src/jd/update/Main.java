@@ -135,8 +135,6 @@ public class Main {
                 }
             }
 
-            Browser.init();
-
             guiConfig = JSonWrapper.get("WEBUPDATE");
 
             log.append("Update JDownloader  at " + JDUtilities.getResourceFile(".") + "\r\n");
@@ -369,8 +367,7 @@ public class Main {
             if (!JDUtilities.getResourceFile("/backup/").exists()) {
                 JDUtilities.getResourceFile("/backup/").mkdirs();
                 /*
-                 * Ordner wurde doch gerade angelegt, warum dann Fehlermeldung
-                 * dass er nicht angelegt werden konnte? - Greeny
+                 * Ordner wurde doch gerade angelegt, warum dann Fehlermeldung dass er nicht angelegt werden konnte? - Greeny
                  */
                 Main.log(log, "Not found: " + (JDUtilities.getResourceFile("/backup/").getAbsolutePath()) + "\r\n");
                 UserIO.getInstance().requestMessageDialog("JDownloader could not create a backup. Please make sure that\r\n " + JDUtilities.getResourceFile("/backup/").getAbsolutePath() + " exists and is writable before starting the update");
