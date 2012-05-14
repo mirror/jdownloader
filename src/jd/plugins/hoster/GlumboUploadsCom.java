@@ -66,6 +66,68 @@ public class GlumboUploadsCom extends PluginForHost {
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        this.correctDownloadLink(link);
+        br.setFollowRedirects(false);
+        br.setCookie(COOKIE_HOST, "lang", "english");
+        br.getPage(link.getDownloadURL());
+        doSomething();
+        if (new Regex(BRBEFORE, Pattern.compile("(>This file has been deleted<|Oops this file has been removed|>http://glumbouploads\\.com/ <b>\\(\\)</b>|<Title>Download </Title>|No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (BRBEFORE.contains(MAINTENANCE)) {
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
+            return AvailableStatus.TRUE;
+        }
+        String filename = new Regex(BRBEFORE, "\\.attr\\(\\'value\\'\\, \\'(.*?)\\'\\)").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(BRBEFORE, "You have requested.*?http://(www\\.)?" + COOKIE_HOST.replace("http://", "") + "/[a-z0-9]{12}/(.*?)</font>").getMatch(1);
+            if (filename == null) {
+                filename = new Regex(BRBEFORE, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                if (filename == null) {
+                    filename = new Regex(BRBEFORE, "<h2>Download File(.*?)</h2>").getMatch(0);
+                    if (filename == null) {
+                        filename = new Regex(BRBEFORE, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
+                        if (filename == null) {
+                            filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
+                            if (filename == null) {
+                                filename = new Regex(BRBEFORE, "\\.html_code\\'\\)\\.html\\(\\'<a href=\"http://glumbouploads\\.com/[a-z0-9]{12}\">([^<>\"/]+) \\- \\d+").getMatch(0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        String filesize = new Regex(BRBEFORE, "\\(([0-9]+ bytes)\\)").getMatch(0);
+        if (filesize == null) {
+            filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
+            if (filesize == null) {
+                filesize = new Regex(BRBEFORE, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+                if (filesize == null) {
+                    filesize = new Regex(BRBEFORE, "\"font\\-style:italic; color:#bbbbbb;\">http://glumbouploads\\.com/[a-z0-9]{12} <b>\\((.*?)\\)</b></font>").getMatch(0);
+                }
+            }
+        }
+        if (filename == null || filename.equals("")) {
+            if (BRBEFORE.contains("You have reached the download-limit")) {
+                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        link.setFinalFileName(filename.trim().replace("\\", ""));
+        if (filesize != null && !filesize.equals("")) {
+            logger.info("Filesize found, filesize = " + filesize);
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        return AvailableStatus.TRUE;
+    }
+
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(BRBEFORE, PASSWORDTEXT).matches() || BRBEFORE.contains("Wrong password")) {
@@ -560,68 +622,6 @@ public class GlumboUploadsCom extends PluginForHost {
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        this.correctDownloadLink(link);
-        br.setFollowRedirects(false);
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getPage(link.getDownloadURL());
-        doSomething();
-        if (new Regex(BRBEFORE, Pattern.compile("(>This file has been deleted<|Oops this file has been removed|>http://glumbouploads\\.com/ <b>\\(\\)</b>|<Title>Download </Title>|No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) {
-            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (BRBEFORE.contains(MAINTENANCE)) {
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
-            return AvailableStatus.TRUE;
-        }
-        String filename = new Regex(BRBEFORE, "\\.attr\\(\\'value\\'\\, \\'(.*?)\\'\\)").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(BRBEFORE, "You have requested.*?http://(www\\.)?" + COOKIE_HOST.replace("http://", "") + "/[a-z0-9]{12}/(.*?)</font>").getMatch(1);
-            if (filename == null) {
-                filename = new Regex(BRBEFORE, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-                if (filename == null) {
-                    filename = new Regex(BRBEFORE, "<h2>Download File(.*?)</h2>").getMatch(0);
-                    if (filename == null) {
-                        filename = new Regex(BRBEFORE, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
-                        if (filename == null) {
-                            filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
-                            if (filename == null) {
-                                filename = new Regex(BRBEFORE, "\\.html_code\\'\\)\\.html\\(\\'<a href=\"http://glumbouploads\\.com/[a-z0-9]{12}\">([^<>\"/]+) \\- \\d+").getMatch(0);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        String filesize = new Regex(BRBEFORE, "\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filesize == null) {
-            filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
-            if (filesize == null) {
-                filesize = new Regex(BRBEFORE, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
-                if (filesize == null) {
-                    filesize = new Regex(BRBEFORE, "\"font\\-style:italic; color:#bbbbbb;\">http://glumbouploads\\.com/[a-z0-9]{12} <b>\\((.*?)\\)</b></font>").getMatch(0);
-                }
-            }
-        }
-        if (filename == null || filename.equals("")) {
-            if (BRBEFORE.contains("You have reached the download-limit")) {
-                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-                return AvailableStatus.UNCHECKABLE;
-            }
-            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setFinalFileName(filename.trim());
-        if (filesize != null && !filesize.equals("")) {
-            logger.info("Filesize found, filesize = " + filesize);
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override
