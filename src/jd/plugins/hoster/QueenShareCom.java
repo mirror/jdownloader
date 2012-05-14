@@ -56,7 +56,7 @@ public class QueenShareCom extends PluginForHost {
 
     private String               correctedBR         = "";
     private static final String  PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST         = "http://queenshare.com";
+    private final String         COOKIE_HOST         = "http://" + this.getHost();
     private static final String  MAINTENANCE         = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -66,7 +66,7 @@ public class QueenShareCom extends PluginForHost {
     private static AtomicInteger maxPrem             = new AtomicInteger(1);
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.5.5.8-raz
+    // XfileSharingProBasic Version 2.5.6.0-raz
     // mods: filesize, correctbr.
     // non account: 1chunk only, maxdl 2, resumes
     // free account: same as above not tested
@@ -477,8 +477,8 @@ public class QueenShareCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>").getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim() + " Mb");
+        String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
+        if (space[0][0] != null && space[0][1] != null) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
         account.setValid(true);
         String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {

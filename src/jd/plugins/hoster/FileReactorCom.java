@@ -49,7 +49,7 @@ public class FileReactorCom extends PluginForHost {
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private static final String COOKIE_HOST         = "http://filereactor.com";
+    private final String        COOKIE_HOST         = "http://" + this.getHost();
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -58,7 +58,7 @@ public class FileReactorCom extends PluginForHost {
     public static final String  UA                  = RandomUserAgent.generate();
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.5.5.9-raz
+    // XfileSharingProBasic Version 2.5.6.0-raz
     // mods:
     // non account: 1 * 1 (allows resuming)
     // free account:

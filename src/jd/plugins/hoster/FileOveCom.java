@@ -43,12 +43,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uppit.com" }, urls = { "http://(www\\.)?uppit\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class UppItCom extends PluginForHost {
+@HostPlugin(revision = "$Revision: 16510 $", interfaceVersion = 2, names = { "fileove.com" }, urls = { "https?://(www\\.)?fileove\\.com/[a-z0-9]{12}" }, flags = { 0 })
+public class FileOveCom extends PluginForHost {
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private static final String COOKIE_HOST         = "http://ForDevsToPlayWith.com";
+    private final String        COOKIE_HOST         = "http://" + this.getHost();
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -56,13 +56,13 @@ public class UppItCom extends PluginForHost {
     private static final String PREMIUMONLY2        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.5.5.9-raz
+    // XfileSharingProBasic Version 2.5.6.0-raz
     // mods:
-    // non account: 20 * unlimited
+    // non account: 1 * 1
     // free account:
     // premium account:
     // protocol: no https
-    // captchatype: null
+    // captchatype: recaptcha
     // other: no redirects
 
     @Override
@@ -75,14 +75,14 @@ public class UppItCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public UppItCom(PluginWrapper wrapper) {
+    public FileOveCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -113,10 +113,7 @@ public class UppItCom extends PluginForHost {
             if (filename == null) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = new Regex(correctedBR, "<font size=\"20\">([^<>]+)").getMatch(0);
-                    if (filename == null) {
-                        filename = new Regex(correctedBR, "<title>Download (.+) @").getMatch(0);
-                    }
+                    filename = new Regex(correctedBR, "File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                 }
             }
         }
@@ -124,10 +121,7 @@ public class UppItCom extends PluginForHost {
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
-                filesize = new Regex(correctedBR, "fileSize\">\\(([\\d+\\.]+ (B|KB|MB|GB))\\)").getMatch(0);
-                if (filesize == null) {
-                    filesize = new Regex(correctedBR, "([\\d\\.]+ ?(B|KB|MB|GB))").getMatch(0);
-                }
+                filesize = new Regex(correctedBR, ">([\\d\\.]+ (B|KB|MB|GB))<").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
@@ -150,7 +144,7 @@ public class UppItCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "freelink");
+        doFree(downloadLink, false, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -276,7 +270,7 @@ public class UppItCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     /** Remove HTML code which could break the plugin */

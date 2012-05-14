@@ -56,7 +56,7 @@ public class RyuShareCom extends PluginForHost {
 
     private String               correctedBR         = "";
     private static final String  PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST         = "http://ryushare.com";
+    private final String         COOKIE_HOST         = "http://" + this.getHost();
     private static final String  MAINTENANCE         = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -66,7 +66,7 @@ public class RyuShareCom extends PluginForHost {
     private static AtomicInteger maxPrem             = new AtomicInteger(1);
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.5.5.9-raz
+    // XfileSharingProBasic Version 2.5.6.0-raz
     // mods: premium traffic available
     // non account: up to 4 chunks * 1 max dl
     // free account: same as above
