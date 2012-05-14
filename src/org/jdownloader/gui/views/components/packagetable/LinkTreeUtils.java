@@ -144,14 +144,22 @@ public class LinkTreeUtils {
     public static HashSet<String> getURLs(List<AbstractNode> links) {
         HashSet<String> urls = new HashSet<String>();
         if (links == null) return urls;
+        String rawURL = null;
         for (AbstractNode node : links) {
             DownloadLink link = null;
             if (node instanceof DownloadLink) {
                 link = (DownloadLink) node;
             } else if (node instanceof CrawledLink) {
                 link = ((CrawledLink) node).getDownloadLink();
+            } else if (node instanceof AbstractPackageNode) {
+                List<AbstractNode> children = null;
+                synchronized (node) {
+                    children = ((AbstractPackageNode) node).getChildren();
+                }
+                urls.addAll(getURLs(children));
             }
             if (link != null) {
+                rawURL = link.getDownloadURL();
                 if (DownloadLink.LINKTYPE_CONTAINER != link.getLinkType()) {
                     if (link.gotBrowserUrl()) {
                         urls.add(link.getBrowserUrl());
@@ -160,7 +168,10 @@ public class LinkTreeUtils {
                     }
                 }
             }
-
+        }
+        if (links.size() == 1 && rawURL != null) {
+            urls.clear();
+            urls.add(rawURL);
         }
         return urls;
     }

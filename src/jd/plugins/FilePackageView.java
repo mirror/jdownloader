@@ -7,6 +7,7 @@ import java.util.List;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.ChildrenView;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.DomainInfo;
@@ -156,8 +157,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                 }
                 if (link.isEnabled()) {
                     /*
-                     * we still have enabled links, so package must be enabled
-                     * too
+                     * we still have enabled links, so package must be enabled too
                      */
                     newEnabled = true;
                 }
@@ -177,7 +177,12 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                             sizeKnown = true;
                         }
                         long linkTodo = Math.max(0, link.getDownloadSize() - link.getDownloadCurrent());
+                        DownloadInterface dli = link.getDownloadInstance();
                         long linkSpeed = link.getDownloadSpeed();
+                        if (dli == null || (System.currentTimeMillis() - dli.getStartTimeStamp()) < 5000) {
+                            /* wait at least 5 secs when download is running, to avoid speed fluctuations in overall ETA */
+                            linkSpeed = 0;
+                        }
                         fpSPEED += linkSpeed;
                         fpTODO += linkTodo;
                         if (fpSPEED > 0) {
@@ -192,8 +197,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                             long currentETA = linkTodo / linkSpeed;
                             if (currentETA > fpETA) {
                                 /*
-                                 * ETA for single link is bigger than ETA for
-                                 * all, so we use the bigger one
+                                 * ETA for single link is bigger than ETA for all, so we use the bigger one
                                  */
                                 fpETA = currentETA;
                             }
@@ -205,8 +209,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     allFinished = false;
                 } else if (allFinished && link.getFinishedDate() > newFinishedDate) {
                     /*
-                     * we can set latest finished date because all links till
-                     * now are finished
+                     * we can set latest finished date because all links till now are finished
                      */
                     newFinishedDate = link.getFinishedDate();
                 }

@@ -16,8 +16,9 @@
 
 package jd.plugins.hoster;
 
+import java.util.HashMap;
+
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -33,9 +34,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twistys.com" }, urls = { "http://(www\\.)?(cdn\\d+\\.)?mdl\\.twistys\\.com/(content|visual)/[a-z0-9]+/.*?\\..{3}(\\?nvb=\\d+\\&nva=\\d+\\&hash=[a-z0-9]+)?" }, flags = { 2 })
 public class TwisTysCom extends PluginForHost {
 
-    private static final String MAINPAGE = "http://twistys.com";
+    private static final String                   MAINPAGE = "http://www.twistys.com";
 
-    public static final Object  LOCK     = new Object();
+    private static final HashMap<Account, String> MAP      = new HashMap<Account, String>();
 
     public TwisTysCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,7 +47,7 @@ public class TwisTysCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account);
+            login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
@@ -79,67 +80,77 @@ public class TwisTysCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
-        login(account);
+        login(account, false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         // Möglicherweise serverfehler...
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            synchronized (MAP) {
+                br.getPage("http://members.twistys.com/home/");
+                if (!br.containsHTML("Logout of Twistys")) {
+                    MAP.remove(account);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    public void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        // Save the session cookie and re-use it because logging in for each
-        // downloadlink will get the account (temporarily) blocked
-        String savedSessionCookie = this.getPluginConfig().getStringProperty("sessioncookie");
-        boolean realLogin = false;
-        if (savedSessionCookie != null) {
-            br.setCookie(MAINPAGE, "sbsession", savedSessionCookie);
-            br.getPage("http://members.twistys.com/");
-            if (!br.containsHTML("/cgi-bin/sblogin/handoff2\\.cgi\\?site=members\\.twistys\\.com\\&u=")) {
-                this.getPluginConfig().setProperty("sessioncookie", Property.NULL);
-                this.getPluginConfig().save();
-                realLogin = true;
-                br.clearCookies(MAINPAGE);
+    public void login(Account account, boolean force) throws Exception {
+        synchronized (MAP) {
+            try {
+                this.setBrowserExclusive();
+                br.setFollowRedirects(true);
+                // Save the session cookie and re-use it because logging in for each
+                // downloadlink will get the account (temporarily) blocked
+                String savedSessionCookie = MAP.get(account);
+                boolean ret = true;
+                if (savedSessionCookie != null) {
+                    br.setCookie(MAINPAGE, "PHPSESSID", savedSessionCookie);
+                    if (force) {
+                        br.getPage("http://members.twistys.com/home/");
+                        String sessionCookie = br.getCookie(MAINPAGE, "PHPSESSID");
+                        if (sessionCookie == null || !br.containsHTML("Logout of Twistys")) {
+                            ret = false;
+                        }
+                    }
+                    if (ret) return;
+                }
+                br.getPage("http://members.twistys.com/home/");
+                br.postPage("http://members.twistys.com/access/loginsubmit", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&Submit1.x=94&Submit1.y=25");
+                String sessionCookie = br.getCookie(MAINPAGE, "PHPSESSID");
+                if (sessionCookie == null || !br.containsHTML("Logout of Twistys")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                MAP.put(account, sessionCookie);
+            } catch (final PluginException e) {
+                MAP.remove(account);
             }
-        } else {
-            realLogin = true;
         }
-        if (realLogin) {
-            br.postPage("http://members.twistys.com/cgi-bin/sblogin/login.cgi", "uname=" + Encoding.urlEncode(account.getUser()) + "&pword=" + Encoding.urlEncode(account.getPass()) + "&Submit1.x=0&Submit1.y=0");
-            String sessionCookie = br.getCookie(MAINPAGE, "sbsession");
-            if (sessionCookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            this.getPluginConfig().setProperty("sessioncookie", sessionCookie);
-            this.getPluginConfig().save();
-        }
-
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         // We need to log in to get the file status
-        synchronized (LOCK) {
+        synchronized (MAP) {
             Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Links are only checkable if a premium account is entered!");
-            login(aa);
-        }
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(link.getDownloadURL());
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-                link.setFinalFileName(getFileNameFromHeader(con));
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
+            login(aa, false);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br.openGetConnection(link.getDownloadURL());
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    link.setFinalFileName(getFileNameFromHeader(con));
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
     }

@@ -778,6 +778,8 @@ abstract public class DownloadInterface {
 
     private boolean          resumable         = false;
 
+    private final long       startTimeStamp    = System.currentTimeMillis();
+
     public void setFilenameFix(boolean b) {
         this.fixWrongContentDispositionHeader = b;
     }
@@ -1502,6 +1504,13 @@ abstract public class DownloadInterface {
 
     public synchronized boolean externalDownloadStop() {
         return externalStop;
+    }
+
+    /**
+     * @return the startTimeStamp
+     */
+    public long getStartTimeStamp() {
+        return startTimeStamp;
     }
 
 }

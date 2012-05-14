@@ -33,10 +33,12 @@ public class DownloadsTransferable extends PackageControllerTableTransferable<Fi
         if (flavor.equals(ClipboardUtils.stringFlavor)) {
             StringBuilder sb = new StringBuilder();
             HashSet<String> urls = getURLs();
-            Iterator<String> it = urls.iterator();
-            while (it.hasNext()) {
-                if (sb.length() > 0) sb.append("\r\n");
-                sb.append(it.next());
+            if (urls != null) {
+                Iterator<String> it = urls.iterator();
+                while (it.hasNext()) {
+                    if (sb.length() > 0) sb.append("\r\n");
+                    sb.append(it.next());
+                }
             }
             return sb.toString();
         }
@@ -45,19 +47,15 @@ public class DownloadsTransferable extends PackageControllerTableTransferable<Fi
 
     private HashSet<String> getURLs() {
         PackageControllerTableTransferableContent<FilePackage, DownloadLink> lcontent = content;
-        HashSet<String> urls = new HashSet<String>();
-        if (lcontent == null) return urls;
+        if (lcontent == null) return null;
+        ArrayList<AbstractNode> nodes = new ArrayList<AbstractNode>();
         if (lcontent.getLinks() != null) {
-            urls.addAll(LinkTreeUtils.getURLs(new ArrayList<AbstractNode>(lcontent.getLinks())));
+            nodes.addAll(lcontent.getLinks());
         }
         if (lcontent.getPackages() != null) {
-            for (FilePackage fp : lcontent.getPackages()) {
-                synchronized (fp) {
-                    urls.addAll(LinkTreeUtils.getURLs(new ArrayList<AbstractNode>(fp.getChildren())));
-                }
-            }
+            nodes.addAll(lcontent.getPackages());
         }
-        return urls;
+        return LinkTreeUtils.getURLs(nodes);
     }
 
 }

@@ -555,13 +555,26 @@ public class LinkCrawler implements IOPermission {
                     if (directHTTP != null) {
                         url = url.replaceFirst("http://", "httpviajd://");
                         url = url.replaceFirst("https://", "httpsviajd://");
+                        /* create new CrawledLink that holds the modified CrawledLink */
+                        DownloadLink dl = possibleCryptedLink.getDownloadLink();
+                        final CrawledLink modifiedPossibleCryptedLink;
+                        if (dl != null) {
+                            modifiedPossibleCryptedLink = new CrawledLink(new DownloadLink(dl.getDefaultPlugin(), dl.getName(), dl.getHost(), url, dl.isEnabled()));
+                            /* forward downloadLink infos from source to dest */
+                            ArrayList<DownloadLink> dlLinks = new ArrayList<DownloadLink>();
+                            dlLinks.add(modifiedPossibleCryptedLink.getDownloadLink());
+                            forwardDownloadLinkInfos(dl, dlLinks);
+                        } else {
+                            modifiedPossibleCryptedLink = new CrawledLink(url);
+                        }
+                        forwardCrawledLinkInfos(possibleCryptedLink, modifiedPossibleCryptedLink);
                         if (directHTTP.canHandle(url)) {
                             if (insideDecrypterPlugin()) {
                                 if (generation != this.getCrawlerGeneration(false)) {
                                     /* LinkCrawler got aborted! */
                                     return;
                                 }
-                                processHostPlugin(directHTTP, possibleCryptedLink);
+                                processHostPlugin(directHTTP, modifiedPossibleCryptedLink);
                             } else {
                                 if (!checkStartNotify()) return;
                                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
@@ -572,7 +585,7 @@ public class LinkCrawler implements IOPermission {
 
                                     @Override
                                     void crawling() {
-                                        processHostPlugin(directHTTP, possibleCryptedLink);
+                                        processHostPlugin(directHTTP, modifiedPossibleCryptedLink);
                                     }
                                 });
                             }
@@ -837,9 +850,7 @@ public class LinkCrawler implements IOPermission {
             dl.forceFileName(source.getForcedFileName());
             dl.setFinalFileName(source.getFinalFileName());
             if (source.gotBrowserUrl()) dl.setBrowserUrl(source.getBrowserUrl());
-            if (source.isAvailabilityStatusChecked()) {
-                dl.setAvailable(source.isAvailable());
-            }
+            dl.setAvailableStatus(source.getAvailableStatus());
             HashMap<String, Object> props = source.getProperties();
             if (props != null && !props.isEmpty()) {
                 dl.setProperties(new HashMap<String, Object>(props));
