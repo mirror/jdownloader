@@ -1080,7 +1080,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Max. Speed" })
     String gui_statusbar_speed();
 
-    @Default(lngs = { "en" }, values = { "Open in browser" })
+    @Default(lngs = { "en" }, values = { "Open in Browser" })
     String gui_table_contextmenu_browselink();
 
     @Default(lngs = { "en" }, values = { "Check Online Status" })

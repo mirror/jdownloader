@@ -34,6 +34,7 @@ import org.jdownloader.gui.views.downloads.context.ForceDownloadAction;
 import org.jdownloader.gui.views.downloads.context.NewPackageAction;
 import org.jdownloader.gui.views.downloads.context.OpenDirectoryAction;
 import org.jdownloader.gui.views.downloads.context.OpenFileAction;
+import org.jdownloader.gui.views.downloads.context.OpenInBrowserAction;
 import org.jdownloader.gui.views.downloads.context.PackageNameAction;
 import org.jdownloader.gui.views.downloads.context.ResetAction;
 import org.jdownloader.gui.views.downloads.context.ResumeAction;
@@ -179,7 +180,11 @@ public class DownloadTableContextMenuFactory {
 
         ret.add(new JMenuItem(new CheckStatusAction<FilePackage, DownloadLink>(si).toContextMenuAction()));
 
-        // TODO: Handle selection of only one link
+        OpenInBrowserAction openInBrowserAction = new OpenInBrowserAction(si.getSelectedChildren());
+        if (openInBrowserAction.isEnabled()) {
+            ret.add(new JMenuItem(openInBrowserAction));
+        }
+
         ret.add(new JMenuItem(new URLEditorAction<FilePackage, DownloadLink>(si)));
 
         ret.add(new JSeparator());
@@ -191,8 +196,7 @@ public class DownloadTableContextMenuFactory {
         ret.add(new JMenuItem(new SetDownloadFolderInDownloadTableAction(si).toContextMenuAction()));
         ret.add(new JMenuItem(new SetDownloadPassword<FilePackage, DownloadLink>(si).toContextMenuAction()));
         ret.add(new JMenuItem(new SetCommentAction<FilePackage, DownloadLink>(si).toContextMenuAction()));
-        // ret.add(new JMenuItem(new SpeedLimitAction(contextObject,
-        // inteliSelect)));
+
         ret.add(new PrioritySubMenu<FilePackage, DownloadLink>(si));
         MenuFactoryEventSender.getInstance().fireEvent(new MenuFactoryEvent(MenuFactoryEvent.Type.EXTEND, new DownloadTablePropertiesContext(ret, si, column)));
         return ret;
