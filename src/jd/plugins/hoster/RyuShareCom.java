@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -53,18 +54,22 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision: 16030 $", interfaceVersion = 2, names = { "ryushare.com" }, urls = { "https?://(www\\.)?ryushare\\.com/[a-z0-9]{10,12}" }, flags = { 2 })
 public class RyuShareCom extends PluginForHost {
 
-    private String              correctedBR         = "";
-    private static final String PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private static final String COOKIE_HOST         = "http://ryushare.com";
-    private static final String MAINTENANCE         = ">This server is in maintenance mode";
-    private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
-    private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static final Object LOCK                = new Object();
+    private String               correctedBR         = "";
+    private static final String  PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
+    private static final String  COOKIE_HOST         = "http://ryushare.com";
+    private static final String  MAINTENANCE         = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private static final String  ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String  PREMIUMONLY1        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String  PREMIUMONLY2        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final Object  LOCK                = new Object();
+    private static AtomicInteger maxPrem             = new AtomicInteger(1);
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.5.3.7
+    // XfileSharingProBasic Version 2.5.5.9-raz
     // mods: premium traffic available
-    // free: up to 4 chunks * 1 max dl
+    // non account: up to 4 chunks * 1 max dl
+    // free account: same as above
     // premium: unlimited
     // protocol: no https
     // captchatype: null
@@ -96,25 +101,30 @@ public class RyuShareCom extends PluginForHost {
         return false;
     }
 
+    public void prepBrowser() {
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.setCookie(COOKIE_HOST, "lang", "english");
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getPage(link.getDownloadURL());
-        doSomething();
+        prepBrowser();
+        getPage(link.getDownloadURL());
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{10,12}/(.*?)</font>").getMatch(1);
+        String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
             if (filename == null) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = new Regex(correctedBR, "(?i)(File)?name ?:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(2);
+                    filename = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                 }
             }
         }
@@ -122,18 +132,21 @@ public class RyuShareCom extends PluginForHost {
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
-                filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(GB|MB))").getMatch(0);
+                filesize = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
-            if (correctedBR.contains("You have reached the download-limit")) {
+            if (correctedBR.contains("You have reached the download\\-limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
             logger.warning("The filename equals null, throwing \"plugin defect\" now...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        if (md5hash != null) link.setMD5Hash(md5hash.trim());
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        link.setProperty("plainfilename", filename);
         link.setFinalFileName(filename.trim());
         if (filesize != null && !filesize.equals("")) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -147,23 +160,15 @@ public class RyuShareCom extends PluginForHost {
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
-        String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-        if (md5hash != null) {
-            md5hash = md5hash.trim();
-            logger.info("Found md5hash: " + md5hash);
-            downloadLink.setMD5Hash(md5hash);
-        }
-
+        // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
-         */
+        // Second, check for streaming links on the first page
+        if (dllink == null) dllink = getDllink();
+        // Third, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
-                br.postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{10,12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Free+Download");
-                doSomething();
+                postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=Free+Download");
                 checkErrors(downloadLink, false, passCode);
             }
             dllink = getDllink();
@@ -180,7 +185,11 @@ public class RyuShareCom extends PluginForHost {
                     password = true;
                     logger.info("The downloadlink seems to be password protected.");
                 }
-
+                // md5 can be on the subquent pages
+                if (downloadLink.getMD5Hash() == null) {
+                    String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+                    if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
+                }
                 /* Captcha START */
                 if (correctedBR.contains(";background:#ccc;text-align")) {
                     logger.info("Detected captcha method \"plaintext captchas\" for this host");
@@ -226,7 +235,7 @@ public class RyuShareCom extends PluginForHost {
                     PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                     rc.setForm(dlForm);
-                    String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    String id = new Regex(correctedBR, "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
                     rc.setId(id);
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -237,20 +246,19 @@ public class RyuShareCom extends PluginForHost {
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     dlForm = rc.getForm();
                     /** wait time is often skippable for reCaptcha handling */
-                    // skipWaittime = true;
+                    skipWaittime = true;
                 }
                 /* Captcha END */
                 if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
                 if (!skipWaittime) waitTime(timeBefore, downloadLink);
-                br.submitForm(dlForm);
+                sendForm(dlForm);
                 logger.info("Submitted DLForm");
-                doSomething();
                 checkErrors(downloadLink, true, passCode);
                 dllink = getDllink();
-                if (dllink == null && br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\"")) {
+                if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
                     continue;
-                } else if (dllink == null && !br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\"")) {
+                } else if (dllink == null && !br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else
@@ -262,7 +270,7 @@ public class RyuShareCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            doSomething();
+            correctBR();
             checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -276,13 +284,13 @@ public class RyuShareCom extends PluginForHost {
         return 1;
     }
 
-    /** This removes fake messages which can kill the plugin */
-    public void doSomething() throws NumberFormatException, PluginException {
+    /** Remove HTML code which could break the plugin */
+    public void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> someStuff = new ArrayList<String>();
         ArrayList<String> regexStuff = new ArrayList<String>();
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: none;\">.*?</div>)");
+        regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
         for (String aRegex : regexStuff) {
             String lolz[] = br.getRegex(aRegex).getColumn(0);
@@ -320,6 +328,21 @@ public class RyuShareCom extends PluginForHost {
         return dllink;
     }
 
+    private void getPage(String page) throws Exception {
+        br.getPage(page);
+        correctBR();
+    }
+
+    private void postPage(String page, String postdata) throws Exception {
+        br.postPage(page, postdata);
+        correctBR();
+    }
+
+    private void sendForm(Form form) throws Exception {
+        br.submitForm(form);
+        correctBR();
+    }
+
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() || correctedBR.contains("Wrong password")) {
@@ -334,12 +357,14 @@ public class RyuShareCom extends PluginForHost {
         }
         /** Wait time reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait)").matches()) {
-            String tmphrs = new Regex(correctedBR, "\\s+(\\d+)\\s+hours?").getMatch(0);
+            // adjust this regex to catch the wait time string for COOKIE_HOST
+            String WAIT = new Regex(correctedBR, "((You have reached the download\\-limit|You have to wait)[^<>]+)").getMatch(0);
+            String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
-            String tmpmin = new Regex(correctedBR, "\\s+(\\d+)\\s+minutes?").getMatch(0);
+            String tmpmin = new Regex(WAIT, "\\s+(\\d+)\\s+minutes?").getMatch(0);
             if (tmpmin == null) tmpmin = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
-            String tmpsec = new Regex(correctedBR, "\\s+(\\d+)\\s+seconds?").getMatch(0);
-            String tmpdays = new Regex(correctedBR, "\\s+(\\d+)\\s+days?").getMatch(0);
+            String tmpsec = new Regex(WAIT, "\\s+(\\d+)\\s+seconds?").getMatch(0);
+            String tmpdays = new Regex(WAIT, "\\s+(\\d+)\\s+days?").getMatch(0);
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
                 logger.info("Waittime regexes seem to be broken");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
@@ -364,13 +389,13 @@ public class RyuShareCom extends PluginForHost {
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.warning("As free user you can download files up to " + filesizelimit + " only");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
+                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY1 + " " + filesizelimit);
             } else {
                 logger.warning("Only downloadable via premium");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium or registered");
+                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
         }
-        if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT), 2 * 60 * 60 * 1000l);
+        if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
@@ -444,14 +469,16 @@ public class RyuShareCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         try {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
         }
-        String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim() + " Mb");
+        String space[][] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
+        if (space[0][0] != null && space[0][1] != null) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
         account.setValid(true);
         String availabletraffic = new Regex(br, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
@@ -461,6 +488,12 @@ public class RyuShareCom extends PluginForHost {
         }
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
+            try {
+                maxPrem.set(1);
+                account.setMaxSimultanDownloads(1);
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+            }
         } else {
             String expire = new Regex(correctedBR, Pattern.compile(">Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})<", Pattern.CASE_INSENSITIVE)).getMatch(2);
             if (expire == null) {
@@ -470,57 +503,16 @@ public class RyuShareCom extends PluginForHost {
             } else {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                try {
+                    maxPrem.set(-1);
+                    account.setMaxSimultanDownloads(-1);
+                    account.setConcurrentUsePossible(true);
+                } catch (final Throwable e) {
+                }
             }
             ai.setStatus("Premium User");
         }
         return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        String passCode = null;
-        requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
-        String dllink = null;
-        if (account.getBooleanProperty("nopremium")) {
-            br.getPage(link.getDownloadURL());
-            doSomething();
-            doFree(link, true, 0, "freelink2");
-        } else {
-            dllink = checkDirectLink(link, "premlink");
-            if (dllink == null) {
-                br.getPage(link.getDownloadURL());
-                doSomething();
-                dllink = getDllink();
-                if (dllink == null) {
-                    checkErrors(link, true, passCode);
-                    Form DLForm = br.getFormbyProperty("name", "F1");
-                    if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    if (new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, DLForm, link);
-                    br.submitForm(DLForm);
-                    doSomething();
-                    dllink = getDllink();
-                    checkErrors(link, true, passCode);
-                }
-            }
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                doSomething();
-                checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (passCode != null) link.setProperty("pass", passCode);
-            link.setProperty("premlink", dllink);
-            dl.startDownload();
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -529,6 +521,7 @@ public class RyuShareCom extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
+                prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -543,18 +536,16 @@ public class RyuShareCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setCookie(COOKIE_HOST, "lang", "english");
-                br.getPage(COOKIE_HOST + "/login.html");
-                Form loginform = br.getForm(0);
+                getPage(COOKIE_HOST + "/login.html");
+                Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                br.getPage(COOKIE_HOST + "/?op=my_account");
-                doSomething();
-                if (!new Regex(correctedBR, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!new Regex(correctedBR, "(Premium\\-Account expire|>Renew premium<)").matches()) {
+                getPage(COOKIE_HOST + "/?op=my_account");
+                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);
@@ -576,8 +567,53 @@ public class RyuShareCom extends PluginForHost {
     }
 
     @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        String passCode = null;
+        requestFileInformation(link);
+        login(account, false);
+        br.setFollowRedirects(false);
+        String dllink = null;
+        if (account.getBooleanProperty("nopremium")) {
+            getPage(link.getDownloadURL());
+            doFree(link, true, -4, "freelink2");
+        } else {
+            dllink = checkDirectLink(link, "premlink");
+            if (dllink == null) {
+                getPage(link.getDownloadURL());
+                dllink = getDllink();
+                if (dllink == null) {
+                    checkErrors(link, true, passCode);
+                    Form dlform = br.getFormbyProperty("name", "F1");
+                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, dlform, link);
+                    sendForm(dlform);
+                    dllink = getDllink();
+                    checkErrors(link, true, passCode);
+                }
+            }
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                correctBR();
+                checkServerErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (passCode != null) link.setProperty("pass", passCode);
+            link.setProperty("premlink", dllink);
+            dl.startDownload();
+        }
+    }
+
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     @Override

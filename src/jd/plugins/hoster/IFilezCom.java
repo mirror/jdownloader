@@ -38,11 +38,11 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com" }, urls = { "http://(www\\.)?i\\-filezdecrypted\\.com/downloads/i/\\d+/f/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com", "depfile.com" }, urls = { "UNUSED_REGEX_BHAHAHHAHAHAHA", "http://(www\\.)?depfiledecrypted\\.com/downloads/i/\\d+/f/.+" }, flags = { 2, 0 })
 public class IFilezCom extends PluginForHost {
 
     private static final String CAPTCHATEXT          = "includes/vvc\\.php\\?vvcid=";
-    private static final String MAINPAGE             = "http://i-filez.com/";
+    private static final String MAINPAGE             = "http://depfile.com/";
     private static final Object LOCK                 = new Object();
     private static final String ONLY4PREMIUM         = ">Owner of the file is restricted to download this file only Premium users|>File is available only for Premium users.<";
     private static final String ONLY4PREMIUMUSERTEXT = "Only downloadable for premium users";
@@ -56,12 +56,12 @@ public class IFilezCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://i-filez.com/terms";
+        return "http://depfile.com/terms";
     }
 
     public void correctDownloadLink(DownloadLink link) {
         // Links come from a decrypter
-        link.setUrlDownload(link.getDownloadURL().replace("i-filezdecrypted.com/", "i-filez.com/"));
+        link.setUrlDownload(link.getDownloadURL().replace("depfiledecrypted.com/", "depfile.com/"));
     }
 
     @Override
@@ -71,8 +71,8 @@ public class IFilezCom extends PluginForHost {
         br.setCookie(MAINPAGE, "sdlanguageid", "2");
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Файл не найден в базе i\\-filez\\.com\\. Возможно Вы неправильно указали ссылку\\.<|>File was not found in the i\\-filez\\.com database|It is possible that you provided wrong link\\.</p>|The file was blocked by the copyright holder)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = new Regex(link.getDownloadURL(), "i-filez\\.com/downloads/i/\\d+/f/(.+)").getMatch(0);
+        handleErrors();
+        String filename = new Regex(link.getDownloadURL(), "depfile\\.com/downloads/i/\\d+/f/(.+)").getMatch(0);
         String filesize = br.getRegex("<th>Size:</th>[\r\t\n ]+<td>(.*?)</td>").getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         link.setName(Encoding.htmlDecode(filename.trim().replace(".html", "")));
@@ -108,7 +108,7 @@ public class IFilezCom extends PluginForHost {
             logger.warning("Captchatext not found or verifycode null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String code = getCaptchaCode("http://i-filez.com/includes/vvc.php?vvcid=" + verifycode, downloadLink);
+        String code = getCaptchaCode("http://depfile.com/includes/vvc.php?vvcid=" + verifycode, downloadLink);
         br.postPage(downloadLink.getDownloadURL(), "vvcid=" + verifycode + "&verifycode=" + code + "&FREE=Download+for+free");
         String additionalWaittime = br.getRegex("was recently downloaded from your IP address. No less than (\\d+) min").getMatch(0);
         if (additionalWaittime != null) {
@@ -217,7 +217,7 @@ public class IFilezCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRegex("<th>A link for 24 hours:</th>[\t\n\r ]+<td><input type=\"text\" readonly=\"readonly\" class=\"text_field width100\" onclick=\"this\\.select\\(\\);\" value=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("(\"|\\')(http://[a-z0-9]+\\.i\\-filez\\.com/premdw/\\d+/[a-z0-9]+/.*?)(\"|\\')").getMatch(1);
+        if (dllink == null) dllink = br.getRegex("(\"|\\')(http://[a-z0-9]+\\.depfile\\.com/premdw/\\d+/[a-z0-9]+/.*?)(\"|\\')").getMatch(1);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -229,6 +229,13 @@ public class IFilezCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public void handleErrors() throws PluginException {
+        if (br.containsHTML("(>File was not found in the depFile database\\.|It is possible that you provided wrong link.<|>Файл не найден в базе depfile\\.com\\. Возможно Вы неправильно указали ссылку\\.<|The file was blocked by the copyright holder)")) {
+            logger.warning("File not found OR file removed from provider");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     @Override

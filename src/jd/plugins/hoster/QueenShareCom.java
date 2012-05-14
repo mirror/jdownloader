@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -53,21 +54,26 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision: 15994 $", interfaceVersion = 2, names = { "queenshare.com" }, urls = { "https?://(www\\.)?queenshare\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class QueenShareCom extends PluginForHost {
 
-    private String              correctedBR         = "";
-    private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://queenshare.com";
-    private static final String MAINTENANCE         = ">This server is in maintenance mode";
-    private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
-    private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static final Object LOCK                = new Object();
+    private String               correctedBR         = "";
+    private static final String  PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
+    private static final String  COOKIE_HOST         = "http://queenshare.com";
+    private static final String  MAINTENANCE         = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private static final String  ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String  PREMIUMONLY1        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String  PREMIUMONLY2        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final Object  LOCK                = new Object();
+    private static AtomicInteger maxPrem             = new AtomicInteger(1);
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.5.2.4
-    // mods: filesize
-    // free: 1chunk only, maxdl 2, resumes
-    // premium: upto 5chunk, maxdl 2
+    // XfileSharingProBasic Version 2.5.5.8-raz
+    // mods: filesize, correctbr.
+    // non account: 1chunk only, maxdl 2, resumes
+    // free account: same as above not tested
+    // premium account: upto 5chunk, maxdl 2
     // protocol: no https
     // captchatype: 4dignum
+    // other: no redirects, removed obstruction
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -94,41 +100,49 @@ public class QueenShareCom extends PluginForHost {
         return true;
     }
 
+    public void prepBrowser() {
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.setCookie(COOKIE_HOST, "lang", "english");
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getPage(link.getDownloadURL());
-        doSomething();
+        prepBrowser();
+        getPage(link.getDownloadURL());
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
+        String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
             if (filename == null) {
-                filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                filename = new Regex(correctedBR, "<strong>(.*?)\\|</strong>").getMatch(0);
             }
         }
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
-                filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
+                filesize = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
-            if (correctedBR.contains("You have reached the download-limit")) {
+            if (correctedBR.contains("You have reached the download\\-limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
             logger.warning("The filename equals null, throwing \"plugin defect\" now...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        if (md5hash != null) link.setMD5Hash(md5hash.trim());
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        link.setProperty("plainfilename", filename);
         link.setFinalFileName(filename.trim());
         if (filesize != null && !filesize.equals("")) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -137,53 +151,20 @@ public class QueenShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 1, true);
+        doFree(downloadLink, true, 1, "freelink");
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean getLinkWithoutLogin) throws Exception, PluginException {
+    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
-        String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-        if (md5hash != null) {
-            md5hash = md5hash.trim();
-            logger.info("Found md5hash: " + md5hash);
-            downloadLink.setMD5Hash(md5hash);
-        }
-
-        String dllink = null;
-        if (getLinkWithoutLogin)
-            dllink = downloadLink.getStringProperty("freelink");
-        else
-            dllink = downloadLink.getStringProperty("freelink2");
-        if (dllink != null) {
-            try {
-                Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    if (getLinkWithoutLogin)
-                        downloadLink.setProperty("freelink", Property.NULL);
-                    else
-                        downloadLink.setProperty("freelink2", Property.NULL);
-                    dllink = null;
-                }
-                con.disconnect();
-            } catch (Exception e) {
-                if (getLinkWithoutLogin)
-                    downloadLink.setProperty("freelink", Property.NULL);
-                else
-                    downloadLink.setProperty("freelink2", Property.NULL);
-                dllink = null;
-            }
-        }
-
-        /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
-         */
+        // First, bring up saved final links
+        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        // Second, check for streaming links on the first page
+        if (dllink == null) dllink = getDllink();
+        // Third, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
-                br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replaceAll("https?://", "") + "/" + "([A-Za-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Free+Download");
-                doSomething();
+                postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=Free+Download");
                 checkErrors(downloadLink, false, passCode);
             }
             dllink = getDllink();
@@ -191,84 +172,93 @@ public class QueenShareCom extends PluginForHost {
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dlForm.remove(null);
-            final long timeBefore = System.currentTimeMillis();
-            boolean password = false;
-            boolean skipWaittime = false;
-            if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
-                password = true;
-                logger.info("The downloadlink seems to be password protected.");
-            }
-
-            /* Captcha START */
-            if (correctedBR.contains(";background:#ccc;text-align")) {
-                logger.info("Detected captcha method \"plaintext captchas\" for this host");
-                /** Captcha method by ManiacMansion */
-                String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(\\d)</span>").getMatches();
-                if (letters == null || letters.length == 0) {
-                    logger.warning("plaintext captchahandling broken!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (int i = 0; i <= 3; i++) {
+                dlForm.remove(null);
+                final long timeBefore = System.currentTimeMillis();
+                boolean password = false;
+                boolean skipWaittime = false;
+                if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
+                    password = true;
+                    logger.info("The downloadlink seems to be password protected.");
                 }
-                SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
-                for (String[] letter : letters) {
-                    capMap.put(Integer.parseInt(letter[0]), letter[1]);
+                // md5 can be on the subquent pages
+                if (downloadLink.getMD5Hash() == null) {
+                    String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+                    if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
                 }
-                StringBuilder code = new StringBuilder();
-                for (String value : capMap.values()) {
-                    code.append(value);
-                }
-                dlForm.put("code", code.toString());
-                logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
-            } else if (correctedBR.contains("/captchas/")) {
-                logger.info("Detected captcha method \"Standard captcha\" for this host");
-                String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-                String captchaurl = null;
-                if (sitelinks == null || sitelinks.length == 0) {
-                    logger.warning("Standard captcha captchahandling broken!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                for (String link : sitelinks) {
-                    if (link.contains("/captchas/")) {
-                        captchaurl = link;
-                        break;
+                /* Captcha START */
+                if (correctedBR.contains(";background:#ccc;text-align")) {
+                    logger.info("Detected captcha method \"plaintext captchas\" for this host");
+                    /** Captcha method by ManiacMansion */
+                    String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(\\d)</span>").getMatches();
+                    if (letters == null || letters.length == 0) {
+                        logger.warning("plaintext captchahandling broken!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                    SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+                    for (String[] letter : letters) {
+                        capMap.put(Integer.parseInt(letter[0]), letter[1]);
+                    }
+                    StringBuilder code = new StringBuilder();
+                    for (String value : capMap.values()) {
+                        code.append(value);
+                    }
+                    dlForm.put("code", code.toString());
+                    logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
+                } else if (correctedBR.contains("/captchas/")) {
+                    logger.info("Detected captcha method \"Standard captcha\" for this host");
+                    String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+                    String captchaurl = null;
+                    if (sitelinks == null || sitelinks.length == 0) {
+                        logger.warning("Standard captcha captchahandling broken!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    for (String link : sitelinks) {
+                        if (link.contains("/captchas/")) {
+                            captchaurl = link;
+                            break;
+                        }
+                    }
+                    if (captchaurl == null) {
+                        logger.warning("Standard captcha captchahandling broken!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
+                    dlForm.put("code", code);
+                    logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
+                } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
+                    logger.info("Detected captcha method \"Re Captcha\" for this host");
+                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.setForm(dlForm);
+                    String id = new Regex(correctedBR, "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    rc.setId(id);
+                    rc.load();
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    String c = getCaptchaCode(cf, downloadLink);
+                    Form rcform = rc.getForm();
+                    rcform.put("recaptcha_challenge_field", rc.getChallenge());
+                    rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
+                    logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
+                    dlForm = rc.getForm();
+                    /** wait time is often skippable for reCaptcha handling */
+                    skipWaittime = true;
                 }
-                if (captchaurl == null) {
-                    logger.warning("Standard captcha captchahandling broken!");
+                /* Captcha END */
+                if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
+                if (!skipWaittime) waitTime(timeBefore, downloadLink);
+                sendForm(dlForm);
+                logger.info("Submitted DLForm");
+                checkErrors(downloadLink, true, passCode);
+                dllink = getDllink();
+                if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
+                    dlForm = br.getFormbyProperty("name", "F1");
+                    continue;
+                } else if (dllink == null && !br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
-                dlForm.put("code", code);
-                logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-            } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
-                logger.info("Detected captcha method \"Re Captcha\" for this host");
-                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.setForm(dlForm);
-                String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-                rc.setId(id);
-                rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
-                Form rcform = rc.getForm();
-                rcform.put("recaptcha_challenge_field", rc.getChallenge());
-                rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
-                logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                dlForm = rc.getForm();
-                /** wait time is often skippable for reCaptcha handling */
-                skipWaittime = true;
-            }
-            /* Captcha END */
-            if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
-            if (!skipWaittime) waitTime(timeBefore, downloadLink);
-            br.submitForm(dlForm);
-            logger.info("Submitted DLForm");
-            doSomething();
-            checkErrors(downloadLink, true, passCode);
-            dllink = getDllink();
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else
+                    break;
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
@@ -276,14 +266,11 @@ public class QueenShareCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            doSomething();
+            correctBR();
             checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (getLinkWithoutLogin)
-            downloadLink.setProperty("freelink", dllink);
-        else
-            downloadLink.setProperty("freelink2", dllink);
+        downloadLink.setProperty(directlinkproperty, dllink);
         if (passCode != null) downloadLink.setProperty("pass", passCode);
         dl.startDownload();
     }
@@ -293,13 +280,14 @@ public class QueenShareCom extends PluginForHost {
         return 2;
     }
 
-    /** This removes fake messages which can kill the plugin */
-    public void doSomething() throws NumberFormatException, PluginException {
+    /** Remove HTML code which could break the plugin */
+    public void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
         ArrayList<String> someStuff = new ArrayList<String>();
         ArrayList<String> regexStuff = new ArrayList<String>();
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: none;\">.*?</div>)");
+        regexStuff.add("(display: ?none;\">.*?</div>)");
+        regexStuff.add("(visibility:hidden>.+</font>)");
         regexStuff.add("(visibility:hidden>.*?<)");
         for (String aRegex : regexStuff) {
             String lolz[] = br.getRegex(aRegex).getColumn(0);
@@ -323,11 +311,14 @@ public class QueenShareCom extends PluginForHost {
                 if (dllink == null) {
                     dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                        if (cryptedScripts != null && cryptedScripts.length != 0) {
-                            for (String crypted : cryptedScripts) {
-                                dllink = decodeDownloadLink(crypted);
-                                if (dllink != null) break;
+                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
+                        if (dllink == null) {
+                            String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                            if (cryptedScripts != null && cryptedScripts.length != 0) {
+                                for (String crypted : cryptedScripts) {
+                                    dllink = decodeDownloadLink(crypted);
+                                    if (dllink != null) break;
+                                }
                             }
                         }
                     }
@@ -335,6 +326,21 @@ public class QueenShareCom extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    private void getPage(String page) throws Exception {
+        br.getPage(page);
+        correctBR();
+    }
+
+    private void postPage(String page, String postdata) throws Exception {
+        br.postPage(page, postdata);
+        correctBR();
+    }
+
+    private void sendForm(Form form) throws Exception {
+        br.submitForm(form);
+        correctBR();
     }
 
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
@@ -383,13 +389,13 @@ public class QueenShareCom extends PluginForHost {
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.warning("As free user you can download files up to " + filesizelimit + " only");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
+                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY1 + " " + filesizelimit);
             } else {
                 logger.warning("Only downloadable via premium");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium or registered");
+                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
         }
-        if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT), 2 * 60 * 60 * 1000l);
+        if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
@@ -433,7 +439,7 @@ public class QueenShareCom extends PluginForHost {
         return finallink;
     }
 
-    public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
+    private String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
         passCode = thelink.getStringProperty("pass", null);
         if (passCode == null) passCode = Plugin.getUserInput("Password?", thelink);
         pwform.put("password", passCode);
@@ -441,16 +447,37 @@ public class QueenShareCom extends PluginForHost {
         return Encoding.urlEncode(passCode);
     }
 
+    private String checkDirectLink(DownloadLink downloadLink, String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         try {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
         }
-        String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String space = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>").getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
         account.setValid(true);
         String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
@@ -461,6 +488,12 @@ public class QueenShareCom extends PluginForHost {
         }
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
+            try {
+                maxPrem.set(2);
+                account.setMaxSimultanDownloads(2);
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+            }
         } else {
             String expire = new Regex(correctedBR, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
             if (expire == null) {
@@ -470,71 +503,16 @@ public class QueenShareCom extends PluginForHost {
             } else {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                try {
+                    maxPrem.set(2);
+                    account.setMaxSimultanDownloads(2);
+                    account.setConcurrentUsePossible(true);
+                } catch (final Throwable e) {
+                }
             }
             ai.setStatus("Premium User");
         }
         return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        String passCode = null;
-        requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
-        String dllink = null;
-        if (account.getBooleanProperty("nopremium")) {
-            br.getPage(link.getDownloadURL());
-            doSomething();
-            doFree(link, true, 1, true);
-        } else {
-            dllink = link.getStringProperty("premlink");
-            if (dllink != null) {
-                try {
-                    Browser br2 = br.cloneBrowser();
-                    URLConnectionAdapter con = br2.openGetConnection(dllink);
-                    if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                        link.setProperty("premlink", Property.NULL);
-                        dllink = null;
-                    }
-                    con.disconnect();
-                } catch (Exception e) {
-                    link.setProperty("premlink", Property.NULL);
-                    dllink = null;
-                }
-            }
-            if (dllink == null) {
-                br.getPage(link.getDownloadURL());
-                doSomething();
-                dllink = getDllink();
-                if (dllink == null) {
-                    checkErrors(link, true, passCode);
-                    Form DLForm = br.getFormbyProperty("name", "F1");
-                    if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    if (new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, DLForm, link);
-                    br.submitForm(DLForm);
-                    doSomething();
-                    dllink = getDllink();
-                    checkErrors(link, true, passCode);
-                }
-            }
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -5);
-            if (dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                doSomething();
-                checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (passCode != null) link.setProperty("pass", passCode);
-            link.setProperty("premlink", dllink);
-            dl.startDownload();
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -543,6 +521,7 @@ public class QueenShareCom extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
+                prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -557,20 +536,16 @@ public class QueenShareCom extends PluginForHost {
                         return;
                     }
                 }
-                // clear values each time we run.
-                account.setProperty("nopremium", false);
-                br.setCookie(COOKIE_HOST, "lang", "english");
-                br.getPage(COOKIE_HOST + "/login.html");
+                getPage(COOKIE_HOST + "/login.html");
                 Form loginform = br.getForm(0);
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                br.submitForm(loginform);
+                sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                br.getPage(COOKIE_HOST + "/?op=my_account");
-                doSomething();
-                if (!new Regex(correctedBR, "(?i)(Premium(\\-| )Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!new Regex(correctedBR, "(?i)(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
+                getPage(COOKIE_HOST + "/?op=my_account");
+                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);
@@ -592,8 +567,53 @@ public class QueenShareCom extends PluginForHost {
     }
 
     @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        String passCode = null;
+        requestFileInformation(link);
+        login(account, false);
+        br.setFollowRedirects(false);
+        String dllink = null;
+        if (account.getBooleanProperty("nopremium")) {
+            getPage(link.getDownloadURL());
+            doFree(link, true, 1, "freelink2");
+        } else {
+            dllink = checkDirectLink(link, "premlink");
+            if (dllink == null) {
+                getPage(link.getDownloadURL());
+                dllink = getDllink();
+                if (dllink == null) {
+                    checkErrors(link, true, passCode);
+                    Form dlform = br.getFormbyProperty("name", "F1");
+                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, dlform, link);
+                    sendForm(dlform);
+                    dllink = getDllink();
+                    checkErrors(link, true, passCode);
+                }
+            }
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -5);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                correctBR();
+                checkServerErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (passCode != null) link.setProperty("pass", passCode);
+            link.setProperty("premlink", dllink);
+            dl.startDownload();
+        }
+    }
+
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 2;
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     @Override

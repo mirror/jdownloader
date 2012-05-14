@@ -23,36 +23,51 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.IFilezCom;
+import jd.utils.JDUtilities;
 
 //This decrypter is there to seperate folder- and hosterlinks as hosterlinks look the same as folderlinks
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com" }, urls = { "http://(www\\.)?i\\-filez\\.com/downloads/i/\\d+/f/[^\"\\']+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com", "depfile.com" }, urls = { "UNUSED_REGEX_HAHHAHAHAHA", "http://(www\\.)?(i\\-filez|depfile)\\.com/(downloads/i/\\d+/f/[^\"\\']+|[a-zA-Z0-9]{8})" }, flags = { 0, 0 })
 public class IFilezComDecrypter extends PluginForDecrypt {
 
     public IFilezComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String IFILEZDECRYPTED = "i-filezdecrypted.com/";
+    private static final String DEPFILEDECRYPTED = "depfiledecrypted.com/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("i-filez", "depfile");
         // Set English language
-        br.setCookie("http://i-filez.com/", "sdlanguageid", "2");
+        br.setCookie("http://depfile.com/", "sdlanguageid", "2");
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        String[] links = br.getRegex("onClick=\"window\\.open\\(\\'(http://i\\-filez\\.com/downloads/i/\\d+/f/.*?)\\'\\);").getColumn(0);
+        handleErrors();
+        String[] links = br.getRegex("onClick=\"window\\.open\\(\\'(https?://depfile\\.com/downloads/i/\\d+/f/.*?|https?://(www\\.)?depfile\\.com/[a-zA-Z0-9]{8}\\?cid=[a-z0-9]{32})\\'\\);").getColumn(0);
         if (links != null && links.length != 0) {
             for (String dl : links)
-                decryptedLinks.add(createDownloadlink(dl.replace("i-filez.com/", IFILEZDECRYPTED)));
+                decryptedLinks.add(createDownloadlink(dl.replace("depfile.com/", DEPFILEDECRYPTED)));
         } else {
             if (br.containsHTML(">Description of the downloaded folder")) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            decryptedLinks.add(createDownloadlink(parameter.replace("i-filez.com/", IFILEZDECRYPTED)));
+            decryptedLinks.add(createDownloadlink(parameter.replace("depfile.com/", DEPFILEDECRYPTED)));
         }
         return decryptedLinks;
+    }
+
+    private void handleErrors() throws Exception {
+        PluginForHost DeviantArtPlugin = JDUtilities.getPluginForHost("depfile.com");
+        try {
+            ((IFilezCom) DeviantArtPlugin).handleErrors();
+        } catch (final Exception e) {
+            if (e instanceof PluginException) throw (PluginException) e;
+        }
     }
 
 }
