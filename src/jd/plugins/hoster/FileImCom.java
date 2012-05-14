@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileim.com" }, urls = { "http://(www\\.)?fileim\\.com/file/[a-z0-9]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileim.com" }, urls = { "http://(www\\.)?fileim\\.com/file/[a-z0-9]{16}" }, flags = { 0 })
 public class FileImCom extends PluginForHost {
 
     public FileImCom(PluginWrapper wrapper) {
@@ -65,7 +65,8 @@ public class FileImCom extends PluginForHost {
         if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage("http://www.fileim.com/ajax/download/getTimer.ashx");
-        final String waittime = br.getRegex("(\\d+)_1").getMatch(0);
+        String waittime = br.getRegex("(\\d+)_\\d+").getMatch(0);
+        if (waittime == null) waittime = br.getRegex("(\\d+)").getMatch(0);
         int wait = 150;
         if (waittime != null) wait = Integer.parseInt(waittime);
         // Bigger than 10 minutes? Let's reconnect!
@@ -73,7 +74,7 @@ public class FileImCom extends PluginForHost {
         // This request can be skipped but we do it anyways
         br.getPage("http://www.fileim.com/ajax/download/setTimer.ashx?fid=" + fid + "&f=0");
         sleep(wait * 1001l, downloadLink);
-        br.getPage("http://www.fileim.com/libs/downloader.aspx?a=0%2C" + new Regex(downloadLink.getDownloadURL(), "fileim\\.com/file/([^<>\"]*?)\\.html").getMatch(0) + "&f=0");
+        br.getPage("http://www.fileim.com/libs/downloader.aspx?a=0%2C" + new Regex(downloadLink.getDownloadURL(), "/file/([a-z0-9]{16})").getMatch(0) + "&f=0");
         String dllink = br.getRegex("<div class=\"downarea\">([\r\n\t ]+)?<a href=\"(https?://[^\"]+)").getMatch(1);
         if (dllink == null) dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fileim\\.com/download\\.ashx\\?a=[^\"]+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -81,6 +82,10 @@ public class FileImCom extends PluginForHost {
         if (dl.getConnection().getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("<div> Another download is started")) {
+                logger.warning("Hoster believes your IP address is already downloading");
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster believes your IP address is already downloading", 10 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
