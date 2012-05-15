@@ -27,9 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 14951 $", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "http://(www\\.)?mangapark\\.com/manga/[\\w\\-\\.]+/(v\\d+)?c([\\d\\.]+|extra(\\+\\d+)?|\\+\\(Oneshot\\))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 14951 $", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "http://(www\\.)?manga(park|tank|window)\\.com/manga/[\\w\\-\\.\\%]+/(v\\d+/?)?(c(ex(tra)?[^/]+|[\\d\\.]+(v\\d|[^/]+)?)?|extra(\\+\\d+)?|\\+\\(Oneshot\\))" }, flags = { 0 })
 public class MngPrkCm extends PluginForDecrypt {
-
     /**
      * @author raztoki
      */
@@ -37,9 +36,10 @@ public class MngPrkCm extends PluginForDecrypt {
     // DEV NOTES
     // protocol: no https
     // other: sister sites mangatank & mangawindows.
+    // other: links are not nessairly transferable
+    // other: regex is tight as possible, be very careful playing!
 
-    private static String       HOST     = "";
-    private static final String imgLinks = "https?://([\\w\\.\\-]+)?mangapark\\.com/manga/\\d+/\\d+/[^\"]+";
+    private static String HOST = "";
 
     public MngPrkCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,7 +53,8 @@ public class MngPrkCm extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("://mangapark", "://www.mangapark");
+        String parameter = param.toString().replace("://manga", "://www.manga");
+        String[][] grabThis = null;
         HOST = new Regex(parameter, "(https?://[^/]+)").getMatch(0);
         prepBrowser();
         br.setFollowRedirects(false);
@@ -62,23 +63,26 @@ public class MngPrkCm extends PluginForDecrypt {
             logger.warning("Possible Plugin error, with finding download image: " + parameter);
             return null;
         }
-        // limited the results
-        String grabThis = br.getRegex("<div class=\"t-body\">(.+)[\r\n\t ]+/>[\r\n\t ]+</a>[\r\n\t ]+</div>").getMatch(0);
-        if (grabThis == null) {
-            logger.warning("Possible Plugin error, with grabThis: " + parameter);
+        // limit the results
+        grabThis = getThis(parameter);
+        if (grabThis == null || grabThis.length == 0) {
+            logger.warning("Issue with getThis! : " + parameter);
             return null;
         }
         // We get the title
-        String[][] title = new Regex(grabThis, "title=\"(.+?) ((Vol\\.\\d+ )?Ch\\. ?([\\d\\.]+|extra|\\(Oneshot\\)).+?)(\\- )?image \\d+").getMatches();
+        String[][] title = new Regex(grabThis[0][0], "title=\"(.+?) ((Vol\\.\\d+ )?([ ]+)?Ch\\. ?([\\d\\.]+|extra|\\(Oneshot\\)).+?)(\\- | )?(image|Page) \\d+").getMatches();
         if (title == null || title.length == 0) {
-            logger.warning("Title not found! : " + parameter);
-            return null;
+            title = new Regex(grabThis[0][1], "title=\"(.+?) ((Vol\\.\\d+ )?([ ]+)?Ch\\. ?([\\d\\.]+|extra|\\(Oneshot\\)).+?)(\\- | )?(image|Page) \\d+").getMatches();
+            if (title == null || title.length == 0) {
+                logger.warning("Title not found! : " + parameter);
+                return null;
+            }
         }
         String useTitle = title[0][0].trim() + " – " + title[0][1].trim();
         // grab the total pages within viewer
-        String totalPages = br.getRegex("total_page= \\'(\\d+)\\';").getMatch(0);
+        String totalPages = br.getRegex(">\\d+ of (\\d+)</a></em>").getMatch(0);
         if (totalPages == null) {
-            totalPages = br.getRegex(">...(\\d+)</a></li>").getMatch(0);
+            totalPages = br.getRegex("selected>\\d+ / (\\d+)</option>").getMatch(0);
             if (totalPages == null) {
                 logger.warning("'TotalPages' not found! : " + parameter);
                 return null;
@@ -97,10 +101,12 @@ public class MngPrkCm extends PluginForDecrypt {
         // We load each page and retrieve the URL of the picture
         for (int i = 1; i <= numberOfPages; i++) {
             String pageNumber = String.format(format, i);
+            String img = null;
+            if (i != 1) grabThis = getThis(parameter);
             // grab the image source
-            String img = br.getRegex("<a class=\"gray\" name=\"mp_\\d+\" href=\"(" + imgLinks + ")").getMatch(0);
-            if (img == null) {
-                img = br.getRegex("src=\"(" + imgLinks + ")").getMatch(0);
+            if (grabThis != null && grabThis.length != 0) img = new Regex(grabThis[0][0], "href=\"(http[^\"]+)").getMatch(0);
+            if (img == null && (grabThis != null && grabThis.length != 0)) {
+                img = new Regex(grabThis[0][1], "src=\"(http[^\"]+)").getMatch(0);
                 if (img == null) {
                     logger.warning("No images found for page : " + pageNumber + " : " + parameter);
                     logger.warning("Continuing...");
@@ -123,6 +129,7 @@ public class MngPrkCm extends PluginForDecrypt {
             }
             decryptedLinks.add(link);
             if (i != numberOfPages) {
+                grabThis = null;
                 // load next page for the 'for' loop.
                 br.getPage(parameter + "/" + (i + 1));
             }
@@ -132,4 +139,10 @@ public class MngPrkCm extends PluginForDecrypt {
         HOST = "";
         return decryptedLinks;
     }
+
+    private String[][] getThis(String parameter) {
+        String[][] grabThis = br.getRegex("(<div class=\"tool\".+</span>[\r\n\t ]+</div>[\r\n\t ]+</div>).+(<a class=\"img\\-link\" href.+>[\r\n\t ]+</a>[\r\n\t ]+</div>)").getMatches();
+        return grabThis;
+    }
+
 }
