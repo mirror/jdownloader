@@ -188,7 +188,11 @@ public class UlozTo extends PluginForHost {
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The finallink doesn't seem to be a file..." + dllink);
+            if (dl.getConnection().getResponseCode() == 503) {
+                logger.info("503 server error found...");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+            }
+            logger.warning("The finallink doesn't seem to be a file: " + dllink);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
