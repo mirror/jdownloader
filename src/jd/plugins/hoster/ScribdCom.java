@@ -42,7 +42,7 @@ public class ScribdCom extends PluginForHost {
     /** The list of server values displayed to the user */
     private static final String[] allFormats;
 
-    private static final String   NODOWNLOAD = "This file can't be downloaded!";
+    private static final String   NODOWNLOAD = JDL.L("plugins.hoster.ScribdCom.NoDownloadAvailable", "Download is disabled for this file!");
     static {
         allFormats = new String[] { "PDF", "TXT" };
     }
@@ -102,13 +102,16 @@ public class ScribdCom extends PluginForHost {
         requestFileInformation(downloadLink);
         // Pretend we're using an iphone^^
         br.getHeaders().put("User-Agent", "Apple-iPhone3C1/801.293");
-        final String fID = new Regex(downloadLink.getDownloadURL(), "scribd\\.com/doc/(\\d+)/").getMatch(0);
-        br.getPage("http://www.scribd.com/mobile/documents/" + fID);
-        if (br.containsHTML(">\\[not available on mobile\\]<")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.scribdcom.nodownload", NODOWNLOAD));
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.scribd.com/mobile/documents/" + fID + "/download?commit=Download+Now&secret_password=", true, 0);
+        br.getPage("http://www.scribd.com/mobile/documents/" + new Regex(downloadLink.getDownloadURL(), "scribd\\.com/doc/(\\d+)/").getMatch(0));
+        final String dllink = br.getRegex("\"(/mobile/doc/\\d+/download/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML(">\\[not available on mobile\\]<")) throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.scribd.com" + dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(">Can\\'t download that document")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.scribdcom.nodownload", NODOWNLOAD));
+            System.out.println(br.toString());
+            if (br.containsHTML(">Can\\'t download that document") || br.getURL().equals(downloadLink.getDownloadURL())) throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setFinalFileName(downloadLink.getName() + ".pdf");
         dl.startDownload();
@@ -116,7 +119,7 @@ public class ScribdCom extends PluginForHost {
 
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
-        if (br.containsHTML("class=\"download_disabled_button\"")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.ScribdCom.NoDownloadAvailable", "Download is disabled for this file!"));
+        if (br.containsHTML("class=\"download_disabled_button\"")) throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
         login(account);
         br.setFollowRedirects(false);
         String fileExt = getConfiguredServer();
@@ -176,7 +179,7 @@ public class ScribdCom extends PluginForHost {
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (br.containsHTML("class=\"download_disabled_button\"")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ScribdCom.NoDownloadAvailable", "Download is disabled for this file!"));
+        if (br.containsHTML("class=\"download_disabled_button\"")) downloadLink.getLinkStatus().setStatusText(NODOWNLOAD);
         downloadLink.setName(filename);
         return AvailableStatus.TRUE;
     }

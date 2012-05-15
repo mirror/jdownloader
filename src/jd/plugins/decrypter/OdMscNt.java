@@ -30,9 +30,8 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "odimusic.net" }, urls = { "http://[\\w\\.]*?odimusic\\.net/download/(music/.*?\\.html|engine/go\\.php\\?url=[a-zA-Z0-9% ]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "odimusic.net" }, urls = { "http://(www\\.)?odimusic\\.net/download/(music/.*?\\.html|engine/go\\.php\\?url=[a-zA-Z0-9% ]+)" }, flags = { 0 })
 public class OdMscNt extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -50,12 +49,11 @@ public class OdMscNt extends PluginForDecrypt {
         br.setFollowRedirects(false);
         if (!getUserLogin(parameter)) return null;
         if (!parameter.contains("engine/go.php?")) {
-            if (br.containsHTML("(An error occurred|We're sorry for the inconvenience)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            String pagepiece = br.getRegex("news-id-(.*?)<div class=\"rating\" style=\"float: left;\">").getMatch(0);
-            if (pagepiece == null) pagepiece = br.getRegex("<\\!--TBegin-->(.*?)</a></b> </div>").getMatch(0);
-            if (pagepiece == null && br.containsHTML("Make A Small Donation To Have Acces")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            if (pagepiece == null) return null;
-            String[] links = HTMLParser.getHttpLinks(pagepiece, "");
+            if (br.containsHTML("(An error occurred|We're sorry for the inconvenience)")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            String[] links = HTMLParser.getHttpLinks(br.toString(), "");
             if (links == null || links.length == 0) return null;
             for (String link : links) {
                 // Handling for redirect-links
