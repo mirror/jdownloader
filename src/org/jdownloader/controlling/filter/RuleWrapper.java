@@ -202,6 +202,7 @@ public class RuleWrapper<T extends FilterRule> {
     }
 
     public boolean checkOnlineStatus(CrawledLink link) {
+        if (LinkState.UNKNOWN == link.getLinkState()) return false;
         if (getOnlineStatusFilter() != null) { return getOnlineStatusFilter().matches(link.getLinkState()); }
         return true;
     }

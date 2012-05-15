@@ -20,10 +20,8 @@ public class CompiledOnlineStatusFiler extends OnlineStatusFilter {
                 return linkState == LinkState.ONLINE;
             case UNCHECKABLE:
                 return linkState == LinkState.TEMP_UNKNOWN;
-
             }
         case ISNOT:
-
             switch (getOnlineStatus()) {
             case OFFLINE:
                 return linkState != LinkState.OFFLINE;
@@ -31,7 +29,6 @@ public class CompiledOnlineStatusFiler extends OnlineStatusFilter {
                 return linkState != LinkState.ONLINE;
             case UNCHECKABLE:
                 return linkState != LinkState.TEMP_UNKNOWN;
-
             }
 
         }

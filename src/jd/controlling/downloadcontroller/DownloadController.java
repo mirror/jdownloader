@@ -120,6 +120,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     retry--;
                 }
                 saveDownloadLinks();
+                setSaveAllowed(false);
             }
 
             @Override

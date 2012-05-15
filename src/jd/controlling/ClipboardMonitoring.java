@@ -37,6 +37,7 @@ public class ClipboardMonitoring {
         if (isMonitoring()) return;
         monitoringThread = new Thread() {
             private String oldStringContent = null;
+            private String oldHTMLContent   = null;
             private String oldListContent   = null;
 
             @Override
@@ -91,7 +92,29 @@ public class ClipboardMonitoring {
                                          */
                                         String htmlContent = getHTMLTransferData(currentContent);
                                         if (htmlContent != null) {
+                                            /* remember that we had HTML content this round */
+                                            oldHTMLContent = htmlContent;
                                             handleThisRound = handleThisRound + "\r\n" + htmlContent;
+                                        } else {
+                                            oldHTMLContent = null;
+                                        }
+                                    } catch (final Throwable e) {
+                                    }
+                                } else if (oldHTMLContent != null) {
+                                    /* no String Content change detected, let's verify if the HTML content hasn't changed */
+                                    try {
+                                        /*
+                                         * lets fetch fresh HTML Content if available
+                                         */
+                                        String htmlContent = getHTMLTransferData(currentContent);
+                                        if (htmlContent != null) {
+                                            /* remember that we had HTML content this round */
+                                            if (changeDetector(oldHTMLContent, htmlContent)) {
+                                                oldHTMLContent = htmlContent;
+                                                handleThisRound = newStringContent + "\r\n" + htmlContent;
+                                            }
+                                        } else {
+                                            oldHTMLContent = null;
                                         }
                                     } catch (final Throwable e) {
                                     }

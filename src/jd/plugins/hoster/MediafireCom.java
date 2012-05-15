@@ -459,16 +459,19 @@ public class MediafireCom extends PluginForHost {
                 url = dlURL;
             } else {
                 this.handlePW(downloadLink);
-                Browser brc = br.cloneBrowser();
-                this.fileID = getID(downloadLink);
-                brc.getPage("http://www.mediafire.com/dynamic/dlget.php?qk=" + fileID);
-                url = brc.getRegex("dllink\":\"(http:.*?)\"").getMatch(0);
-                if (url != null) {
-                    url = url.replaceAll("\\\\", "");
-                } else {
-                    logger.info("Try fallback: " + brc.toString());
+                url = br.getRegex("kNO = \"(http://.*?)\"").getMatch(0);
+                if (url == null) {
+                    Browser brc = br.cloneBrowser();
+                    this.fileID = getID(downloadLink);
+                    brc.getPage("http://www.mediafire.com/dynamic/dlget.php?qk=" + fileID);
+                    url = brc.getRegex("dllink\":\"(http:.*?)\"").getMatch(0);
+                    if (url != null) {
+                        url = url.replaceAll("\\\\", "");
+                    } else {
+                        logger.info("Try fallback: " + brc.toString());
+                    }
+                    if (url == null) url = this.getDownloadUrl(downloadLink);
                 }
-                if (url == null) url = this.getDownloadUrl(downloadLink);
             }
         }
         if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
@@ -708,7 +711,6 @@ public class MediafireCom extends PluginForHost {
         br.forceDebug(true);
         downloadLink.setProperty("type", "");
         final String url = downloadLink.getDownloadURL();
-        AvailableStatus status = AvailableStatus.TRUE;
         dlURL = null;
         for (int i = 0; i < MediafireCom.NUMBER_OF_RETRIES; i++) {
             try {
@@ -716,12 +718,15 @@ public class MediafireCom extends PluginForHost {
                 String redirectURL = this.br.getRedirectLocation();
                 if (redirectURL != null && redirectURL.indexOf(MediafireCom.ERROR_PAGE) > 0) {
                     /* check for offline status */
-                    status = AvailableStatus.FALSE;
                     final String errorCode = redirectURL.substring(redirectURL.indexOf("=") + 1, redirectURL.length());
-                    if (errorCode.equals("320")) {
+                    if ("320".equals(errorCode)) {
                         logger.warning("The requested file ['" + url + "'] is invalid");
+                    } else if ("328".equals(errorCode)) {
+                        logger.warning("The requested file ['" + url + "'] belongs to suspended account");
+                    } else if ("386".equals(errorCode)) {
+                        logger.warning("The requested file ['" + url + "'] blocked for violation");
                     }
-                    break;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
 
                 if (redirectURL != null && this.br.getCookie("http://www.mediafire.com", "ukey") != null) {
@@ -779,19 +784,22 @@ public class MediafireCom extends PluginForHost {
                         downloadLink.setProperty("privatefile", true);
                     } else if (redirectURL != null && redirectURL.indexOf(MediafireCom.ERROR_PAGE) > 0) {
                         /* check for offline status */
-                        status = AvailableStatus.FALSE;
                         final String errorCode = redirectURL.substring(redirectURL.indexOf("=") + 1, redirectURL.length());
-                        if (errorCode.equals("320")) {
+                        if ("320".equals(errorCode)) {
                             logger.warning("The requested file ['" + url + "'] is invalid");
+                        } else if ("328".equals(errorCode)) {
+                            logger.warning("The requested file ['" + url + "'] belongs to suspended account");
+                        } else if ("386".equals(errorCode)) {
+                            logger.warning("The requested file ['" + url + "'] blocked for violation");
                         }
-                        break;
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
                         String name = br.getRegex("<div class=\"download_file_title\"> (.*?) </div>").getMatch(0);
                         String size = br.getRegex(" <input type=\"hidden\" id=\"sharedtabsfileinfo1-fs\" value=\"(.*?)\">").getMatch(0);
                         if (size == null) size = br.getRegex("(?i)\\(([\\d\\.]+ (KB|MB|GB|TB))\\)").getMatch(0);
                         if (name != null) {
                             downloadLink.setFinalFileName(Encoding.htmlDecode(name.trim()));
-                            downloadLink.setDownloadSize(SizeFormatter.getSize(size));
+                            if (size != null) downloadLink.setDownloadSize(SizeFormatter.getSize(size));
                             return AvailableStatus.TRUE;
                         }
                         if (!downloadLink.getStringProperty("origin", "").equalsIgnoreCase("decrypter")) {
@@ -807,7 +815,7 @@ public class MediafireCom extends PluginForHost {
                                 downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(con));
                                 return AvailableStatus.TRUE;
                             } else {
-                                return AvailableStatus.FALSE;
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                             }
                         } finally {
                             try {
@@ -817,7 +825,6 @@ public class MediafireCom extends PluginForHost {
                         }
                     }
                 }
-
                 break;
             } catch (final IOException e) {
                 if (e.getMessage().contains("code: 500")) {
@@ -825,25 +832,11 @@ public class MediafireCom extends PluginForHost {
                     Thread.sleep(200);
                     continue;
                 } else {
-                    status = AvailableStatus.FALSE;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
-            if (status == AvailableStatus.FALSE) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            if (this.br.getRegex(MediafireCom.offlinelink).matches()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            String filename = this.br.getRegex("id=\"sharedtabsfileinfo1\\-fn\" value=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = this.br.getRegex("<title>(.*?)<\\/title>").getMatch(0);
-            }
-            String filesize = this.br.getRegex("<input type=\"hidden\" id=\"sharedtabsfileinfo1-fs\" value=\"(.*?)\">").getMatch(0);
-            if (filesize == null) {
-                filesize = this.br.getRegex("<input type=\"hidden\" id=\"sharedtabsfileinfo-fs\" value=\"(.*?)\">").getMatch(0);
-            }
-            if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-            status = AvailableStatus.TRUE;
         }
-        return status;
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override

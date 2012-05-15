@@ -78,29 +78,30 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         return INSTANCE;
     }
 
-    private transient LinkCollectorEventSender      eventsender      = new LinkCollectorEventSender();
-    private static LinkCollector                    INSTANCE         = new LinkCollector();
+    private transient LinkCollectorEventSender      eventsender          = new LinkCollectorEventSender();
+    private static LinkCollector                    INSTANCE             = new LinkCollector();
 
-    private LinkChecker<CrawledLink>                linkChecker      = null;
+    private LinkChecker<CrawledLink>                linkChecker          = null;
     /**
      * NOTE: only access these fields inside the IOEQ
      */
-    private HashSet<String>                         dupeCheckMap     = new HashSet<String>();
-    private HashMap<String, CrawledPackage>         packageMap       = new HashMap<String, CrawledPackage>();
+    private HashSet<String>                         dupeCheckMap         = new HashSet<String>();
+    private HashMap<String, CrawledPackage>         packageMap           = new HashMap<String, CrawledPackage>();
 
     /* sync on filteredStuff itself when accessing it */
-    private ArrayList<CrawledLink>                  filteredStuff    = new ArrayList<CrawledLink>();
+    private ArrayList<CrawledLink>                  filteredStuff        = new ArrayList<CrawledLink>();
+    private HashSet<String>                         filteredDupeCheckMap = new HashSet<String>();
 
-    private LinkCrawlerFilter                       crawlerFilter    = null;
+    private LinkCrawlerFilter                       crawlerFilter        = null;
 
     private ExtractionExtension                     archiver;
-    private DelayedRunnable                         asyncSaving      = null;
+    private DelayedRunnable                         asyncSaving          = null;
 
-    private boolean                                 allowSave        = false;
+    private boolean                                 allowSave            = false;
 
-    private boolean                                 allowLoad        = true;
+    private boolean                                 allowLoad            = true;
 
-    private PackagizerInterface                     packagizer       = null;
+    private PackagizerInterface                     packagizer           = null;
 
     protected OfflineCrawledPackage                 offlinePackage;
 
@@ -108,13 +109,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     protected PermanentOfflinePackage               permanentofflinePackage;
 
-    private HashMap<String, ArrayList<CrawledLink>> offlineMap       = new HashMap<String, ArrayList<CrawledLink>>();
+    private HashMap<String, ArrayList<CrawledLink>> offlineMap           = new HashMap<String, ArrayList<CrawledLink>>();
 
-    private HashMap<String, ArrayList<CrawledLink>> variousMap       = new HashMap<String, ArrayList<CrawledLink>>();
-    private HashMap<String, ArrayList<CrawledLink>> hosterMap        = new HashMap<String, ArrayList<CrawledLink>>();
+    private HashMap<String, ArrayList<CrawledLink>> variousMap           = new HashMap<String, ArrayList<CrawledLink>>();
+    private HashMap<String, ArrayList<CrawledLink>> hosterMap            = new HashMap<String, ArrayList<CrawledLink>>();
     private HashMap<Object, Object>                 autoRenameCache;
     private DelayedRunnable                         asyncCacheCleanup;
-    private final AtomicInteger                     shutdownRequests = new AtomicInteger(0);
+    private final AtomicInteger                     shutdownRequests     = new AtomicInteger(0);
 
     private LinkCollector() {
         autoRenameCache = new HashMap<Object, Object>();
@@ -183,22 +184,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             @Override
             public void run() {
                 LinkCollector.this.abort();
-                // int retry = 10;
-                // while (retry > 0) {
-                // if (!LinkChecker.isChecking() && !LinkCrawler.isCrawling()) {
-                // /*
-                // * we wait till the LinkCollector is finished or max 10 secs
-                // */
-                // break;
-                // }
-                // try {
-                // Thread.sleep(1000);
-                // } catch (final InterruptedException e) {
-                // break;
-                // }
-                // retry--;
-                // }
-                /* we try a last save */
                 IOEQ.getQueue().addWait(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
 
                     @Override
@@ -393,11 +378,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             @Override
             protected Void run() throws RuntimeException {
                 try {
-                    /* update dupeCheck map */
-                    if (!dupeCheckMap.add(link.getLinkID())) {
-                        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
-                        return null;
-                    }
                     PackageInfo dpi = link.getDesiredPackageInfo();
                     UniqueSessionID uID = null;
 
@@ -704,12 +684,27 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
     }
 
-    private void addFilteredStuff(CrawledLink filtered) {
-        filtered.setCollectingInfo(null);
-        synchronized (filteredStuff) {
-            filteredStuff.add(filtered);
-        }
-        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_AVAILABLE));
+    private void addFilteredStuff(final CrawledLink filtered) {
+        IOEQ.add(new Runnable() {
+
+            @Override
+            public void run() {
+                filtered.setCollectingInfo(null);
+                boolean add = false;
+                synchronized (filteredStuff) {
+                    if (filteredDupeCheckMap.add(filtered.getLinkID())) {
+                        filteredStuff.add(filtered);
+                        add = true;
+                    }
+                }
+                if (add == false) {
+                    eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, filtered, QueuePriority.NORM));
+                } else {
+                    eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_AVAILABLE));
+                }
+            }
+
+        }, true);
     }
 
     // clean up offline/various/dupeCheck maps
@@ -727,6 +722,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public void clear() {
         super.clear();
         synchronized (filteredStuff) {
+            filteredDupeCheckMap.clear();
             filteredStuff.clear();
         }
         dupeCheckMap.clear();
@@ -801,7 +797,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         ArrayList<CrawledLink> ret = null;
         synchronized (filteredStuff) {
             ret = new ArrayList<CrawledLink>(filteredStuff);
-            if (clearAfterGet) filteredStuff.clear();
+            if (clearAfterGet) {
+                filteredDupeCheckMap.clear();
+                filteredStuff.clear();
+            }
         }
         if (clearAfterGet) eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_EMPTY));
         return ret;
@@ -824,9 +823,21 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         addFilteredStuff(link);
     }
 
-    public void handleFinalLink(CrawledLink link) {
+    public void handleFinalLink(final CrawledLink link) {
         if (org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR.DO_LINK_CHECK.isEnabled()) {
-            linkChecker.check(link);
+            IOEQ.add(new Runnable() {
+
+                @Override
+                public void run() {
+                    /* avoid additional linkCheck when linkID already exists */
+                    /* update dupeCheck map */
+                    if (!dupeCheckMap.add(link.getLinkID())) {
+                        eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
+                        return;
+                    }
+                    linkChecker.check(link);
+                }
+            }, true);
         } else {
             PackagizerInterface pc;
             if ((pc = getPackagizer()) != null) {
@@ -856,7 +867,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         }
     }
 
-    public void linkCheckDone(CrawledLink link) {
+    public void linkCheckDone(final CrawledLink link) {
         if (crawlerFilter.dropByFileProperties(link)) {
             addFilteredStuff(link);
         } else {
