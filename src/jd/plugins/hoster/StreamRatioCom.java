@@ -142,7 +142,7 @@ public class StreamRatioCom extends PluginForHost {
             return ai;
         }
         String[][] space = br.getRegex(">Used Space: ([\\d\\.]+) (KB|MB|GB|TB)<").getMatches();
-        if (space[0][0] != null && space[0][1] != null) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
+        if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
         account.setValid(true);
         ai.setUnlimitedTraffic();
         if (account.getBooleanProperty("nopremium")) {

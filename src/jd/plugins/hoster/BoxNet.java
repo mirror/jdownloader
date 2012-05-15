@@ -24,20 +24,19 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(names = { "box.net" }, urls = { "(http://www\\.box\\.(net|com)/(shared/static/|rssdownload/).*)|(http://www\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+|http://www\\.boxdecrypted\\.(net|com)/s/[a-z0-9]+)" }, flags = { 0 }, revision = "$Revision$", interfaceVersion = 2)
+@HostPlugin(names = { "box.net" }, urls = { "(https?://www\\.box\\.(net|com)(/(shared/static/|rssdownload/).*|/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+)|https?://www\\.boxdecrypted\\.(net|com)/s/[a-z0-9]+)" }, flags = { 0 }, revision = "$Revision$", interfaceVersion = 2)
 public class BoxNet extends PluginForHost {
     private static final String TOS_LINK               = "https://www.box.net/static/html/terms.html";
 
     private static final String OUT_OF_BANDWITH_MSG    = "out of bandwidth";
-    private static final String REDIRECT_DOWNLOAD_LINK = "http://www\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+";
-    private static final String DLLINKREGEX            = "href=\"(http://www\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=[^<>\"\\']+)\"";
-    private static final String SLINK                  = "http://www\\.box\\.(net|com)/s/[a-z0-9]+";
+    private static final String REDIRECT_DOWNLOAD_LINK = "https?://www\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+";
+    private static final String DLLINKREGEX            = "href=\"(https?://www\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=[^<>\"\\']+)\"";
+    private static final String SLINK                  = "https?://www\\.box\\.(net|com)/s/[a-z0-9]+";
     private String              DLLINK                 = null;
 
     public BoxNet(PluginWrapper wrapper) {
@@ -130,8 +129,8 @@ public class BoxNet extends PluginForHost {
             String name = urlConnection.getHeaderField("Content-Disposition");
             if (name != null) {
                 /* workaround for old core */
-                name = name.replaceAll("filename=.*?;", "");
-                parameter.setFinalFileName(Plugin.getFileNameFromDispositionHeader(name));
+                name = new Regex(name, "filename=\"([^\"]+)").getMatch(0);
+                if (name != null) parameter.setFinalFileName(name);
             }
             parameter.setDownloadSize(urlConnection.getLongContentLength());
             urlConnection.disconnect();

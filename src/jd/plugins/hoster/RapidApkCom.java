@@ -48,7 +48,7 @@ public class RapidApkCom extends PluginForHost {
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private final String        COOKIE_HOST         = "http://" + this.getHost();
+    private final String        COOKIE_HOST         = "http://rapidapk.com";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -56,7 +56,7 @@ public class RapidApkCom extends PluginForHost {
     private static final String PREMIUMONLY2        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.5.6.0-raz
+    // XfileSharingProBasic Version 2.5.5.9-raz
     // mods:
     // non account: 20 * 1
     // free account:

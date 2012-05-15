@@ -56,7 +56,7 @@ public class RyuShareCom extends PluginForHost {
 
     private String               correctedBR         = "";
     private static final String  PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST         = "http://" + this.getHost();
+    private final String         COOKIE_HOST         = "http://ryushare.com";
     private static final String  MAINTENANCE         = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -478,7 +478,7 @@ public class RyuShareCom extends PluginForHost {
             return ai;
         }
         String space[][] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
-        if (space[0][0] != null && space[0][1] != null) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
+        if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
         account.setValid(true);
         String availabletraffic = new Regex(br, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
