@@ -18,7 +18,6 @@ import jd.controlling.accountchecker.AccountCheckerEventListener;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
-import jd.utils.JDUtilities;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
@@ -160,7 +159,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
 
             @Override
             protected Icon getIcon(Account value) {
-                return JDUtilities.getPluginForHost(value.getHoster()).getDomainInfo().getFavIcon();
+                return value.getDomainInfo().getFavIcon();
             }
 
             @Override

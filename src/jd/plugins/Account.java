@@ -132,15 +132,11 @@ public class Account extends Property {
     }
 
     public AccountInfo getAccountInfo() {
-        synchronized (this) {
-            return accinfo;
-        }
+        return accinfo;
     }
 
     public void setAccountInfo(final AccountInfo info) {
-        synchronized (this) {
-            accinfo = info;
-        }
+        accinfo = info;
     }
 
     public String getUser() {

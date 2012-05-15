@@ -37,8 +37,7 @@ public class AccountInfo extends Property {
     private String            account_status;
     private long              account_createTime       = 0;
     /**
-     * indicator that host, account has special traffic handling, do not temp
-     * disable if traffic =0
+     * indicator that host, account has special traffic handling, do not temp disable if traffic =0
      */
     private boolean           specialTraffic           = false;
 
@@ -103,17 +102,6 @@ public class AccountInfo extends Property {
     }
 
     /**
-     * Gibt zurück wieviel Trafficshareonch übrig ist (in bytes). Trafficshare
-     * ist Traffic, den man über einen PremiumAccount den Freeusern zur
-     * Verfügung stellen kann. -1: Feature ist nicht unterstützt
-     * 
-     * @return
-     */
-    public long getTrafficShareLeft() {
-        return account_trafficShareLeft;
-    }
-
-    /**
      * Gibt zurück wieviel Platz (bytes) die Oploads auf diesem Account belegen
      * 
      * @return
@@ -123,8 +111,7 @@ public class AccountInfo extends Property {
     }
 
     /**
-     * Gibt einen Timestamp zurück zu dem der Account auslaufen wird bzw.
-     * ausgelaufen ist.(-1 für Nie)
+     * Gibt einen Timestamp zurück zu dem der Account auslaufen wird bzw. ausgelaufen ist.(-1 für Nie)
      * 
      * @return
      */
@@ -190,10 +177,6 @@ public class AccountInfo extends Property {
 
     public void setTrafficMax(final long trafficMax) {
         this.account_trafficMax = Math.max(0, trafficMax);
-    }
-
-    public void setTrafficShareLeft(final long size) {
-        this.account_trafficShareLeft = Math.max(0, size);
     }
 
     public void setUsedSpace(final long size) {

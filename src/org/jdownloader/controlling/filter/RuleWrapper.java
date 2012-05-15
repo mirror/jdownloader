@@ -51,7 +51,6 @@ public class RuleWrapper<T extends FilterRule> {
         }
         if (rule.getSourceURLFilter().isEnabled()) {
             sourceRule = new CompiledRegexFilter(rule.getSourceURLFilter());
-
         }
 
         if (rule.getMatchAlwaysFilter().isEnabled()) {
@@ -59,7 +58,6 @@ public class RuleWrapper<T extends FilterRule> {
             // overwrites all others
             requiresHoster = false;
             requiresLinkcheck = false;
-
         }
     }
 

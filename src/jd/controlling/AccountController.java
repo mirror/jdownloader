@@ -225,6 +225,11 @@ public class AccountController implements AccountControllerListener {
                     if (pe.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
                         logger.clear();
                         logger.info("Account " + whoAmI + " traffic limit reached!");
+                        if (!StringUtils.isEmpty(pe.getErrorMessage())) {
+                            ai.setStatus(pe.getErrorMessage());
+                        } else {
+                            ai.setStatus("Traffic limit reached");
+                        }
                         account.setTempDisabled(true);
                         account.getAccountInfo().setTrafficLeft(0);
                         this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.UPDATE, account));
@@ -232,7 +237,11 @@ public class AccountController implements AccountControllerListener {
                     } else if (pe.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
                         account.setEnabled(false);
                         account.setValid(false);
-                        if (StringUtils.isEmpty(ai.getStatus())) ai.setStatus("Invalid Account!");
+                        if (!StringUtils.isEmpty(pe.getErrorMessage())) {
+                            ai.setStatus(pe.getErrorMessage());
+                        } else {
+                            ai.setStatus("Invalid Account!");
+                        }
                         logger.clear();
                         logger.info("Account " + whoAmI + " is invalid!");
                         this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.INVALID, account));

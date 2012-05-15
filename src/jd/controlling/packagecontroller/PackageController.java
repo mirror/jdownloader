@@ -339,10 +339,15 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     int mid = 0;
                     int comp;
                     while (min <= max) {
-                        if (min == max) return min;
+
                         mid = (max + min) / 2;
                         ChildType midValue = pkgchildren.get(mid);
                         comp = sorter.compare(elementToMove, midValue);
+                        if (min == max) {
+                            //
+                            return comp > 0 ? min + 1 : min;
+                        }
+
                         if (comp < 0) {
                             max = mid;
                         } else if (comp > 0) {
