@@ -109,7 +109,6 @@ public class ScribdCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.scribd.com" + dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            System.out.println(br.toString());
             if (br.containsHTML(">Can\\'t download that document") || br.getURL().equals(downloadLink.getDownloadURL())) throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
