@@ -43,12 +43,12 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -130,7 +130,8 @@ public class MediafireCom extends PluginForHost {
     /** The name of the error page used by MediaFire */
     private static final String                                    ERROR_PAGE         = "error.php";
     /**
-     * The number of retries to be performed in order to determine if a file is available
+     * The number of retries to be performed in order to determine if a file is
+     * available
      */
     private static final int                                       NUMBER_OF_RETRIES  = 3;
 
@@ -385,7 +386,8 @@ public class MediafireCom extends PluginForHost {
             }
             try {
                 /*
-                 * this call will stop/kill all remaining js from previous extBrowser!
+                 * this call will stop/kill all remaining js from previous
+                 * extBrowser!
                  */
                 Browser loboCleanup = new Browser();
                 eb.eval(loboCleanup);
@@ -559,12 +561,17 @@ public class MediafireCom extends PluginForHost {
                         url = url.replaceAll("\\\\", "");
                     }
                 }
-                /* pw protected urls are currently not supported, needs to be fixed */
+                /*
+                 * pw protected urls are currently not supported, needs to be
+                 * fixed
+                 */
                 // if (url == null || !url.contains("download")) {
                 // this.handlePW(downloadLink);
                 // url = this.getDownloadUrl(downloadLink);
                 // }
-                // if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Private file. No Download possible");
+                // if (url == null) throw new
+                // PluginException(LinkStatus.ERROR_FATAL,
+                // "Private file. No Download possible");
             }
             if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             this.br.setFollowRedirects(true);
@@ -681,7 +688,9 @@ public class MediafireCom extends PluginForHost {
                     String di = br.getRegex("di='(.*?)'").getMatch(0);
                     br.getPage("http://www.mediafire.com/dynamic/download_options.php?enable_me_from_me=0&nocache=" + new Random().nextInt(1000) + "&di=" + di);
                     // String configurationKey = getAPIKEY(br);
-                    // if (configurationKey == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    // if (configurationKey == null) throw new
+                    // PluginException(LinkStatus.ERROR_PREMIUM,
+                    // PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies("http://www.mediafire.com");
@@ -721,7 +730,7 @@ public class MediafireCom extends PluginForHost {
                     final String errorCode = redirectURL.substring(redirectURL.indexOf("=") + 1, redirectURL.length());
                     if ("320".equals(errorCode)) {
                         logger.warning("The requested file ['" + url + "'] is invalid");
-                    } else if ("328".equals(errorCode)) {
+                    } else if ("382".equals(errorCode)) {
                         logger.warning("The requested file ['" + url + "'] belongs to suspended account");
                     } else if ("386".equals(errorCode)) {
                         logger.warning("The requested file ['" + url + "'] blocked for violation");
@@ -787,7 +796,7 @@ public class MediafireCom extends PluginForHost {
                         final String errorCode = redirectURL.substring(redirectURL.indexOf("=") + 1, redirectURL.length());
                         if ("320".equals(errorCode)) {
                             logger.warning("The requested file ['" + url + "'] is invalid");
-                        } else if ("328".equals(errorCode)) {
+                        } else if ("382".equals(errorCode)) {
                             logger.warning("The requested file ['" + url + "'] belongs to suspended account");
                         } else if ("386".equals(errorCode)) {
                             logger.warning("The requested file ['" + url + "'] blocked for violation");
