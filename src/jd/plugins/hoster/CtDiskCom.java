@@ -60,17 +60,21 @@ public class CtDiskCom extends PluginForHost {
         if (noCaptcha != null) {
             br.getPage("http://www.ctdisk.com" + noCaptcha);
         } else {
-            if (!br.containsHTML("/randcode_guest\\.php\\?") || !br.containsHTML("/guest_login\\.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            long timeBefore = System.currentTimeMillis();
-            String code = getCaptchaCode("http://www.ctdisk.com/randcode_guest.php?" + System.currentTimeMillis(), downloadLink);
-            String waittime = br.getRegex("var maxtime_\\d+ = (\\d+);").getMatch(0);
-            int wait = 6;
-            if (waittime != null) wait = Integer.parseInt(waittime);
-            int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-            wait -= passedTime;
-            sleep(wait * 1001, downloadLink);
-            br.postPage("http://www.ctdisk.com/guest_login.php", "file_id=" + new Regex(downloadLink.getDownloadURL(), "ctdisk\\.com/file/(\\d+)").getMatch(0) + "&randcode=" + code);
-            if (br.getURL().contains("/guest_login.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (!br.containsHTML("/randcodeV2\\.php") || !br.containsHTML("guest_loginV2\\.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            String code = getCaptchaCode("http://www.ctdisk.com/randcodeV2.php?fid=" + fid + "&rand=" + System.currentTimeMillis(), downloadLink);
+            /** No waittime anymore */
+            // long timeBefore = System.currentTimeMillis();
+            // String waittime =
+            // br.getRegex("var maxtime_\\d+ = (\\d+);").getMatch(0);
+            // int wait = 6;
+            // if (waittime != null) wait = Integer.parseInt(waittime);
+            // int passedTime = (int) ((System.currentTimeMillis() - timeBefore)
+            // / 1000) - 1;
+            // wait -= passedTime;
+            // sleep(wait * 1001, downloadLink);
+            br.postPage("http://www.ctdisk.com/guest_loginV2.php", "file_id=" + fid + "&randcode=" + code + "&Comfirm.x=" + new Random().nextInt(200) + "&Comfirm.y=" + new Random().nextInt(200));
+            if (br.getURL().contains("guest_loginV2.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         String dllink = br.getRegex("\"(http://[a-z0-9]+\\.ctdisk\\.com(:\\d+)?/(cache|down)/.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex(DLLINKREGEX2).getMatch(0);

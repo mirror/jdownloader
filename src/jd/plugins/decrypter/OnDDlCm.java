@@ -25,13 +25,11 @@ import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oneddl.com" }, urls = { "http://[\\w\\.]*?oneddl\\.com(/.+/.*)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oneddl.com" }, urls = { "http://(www\\.)?oneddl\\.com(/.+/.*)" }, flags = { 0 })
 public class OnDDlCm extends PluginForDecrypt {
 
     public OnDDlCm(PluginWrapper wrapper) {
@@ -43,13 +41,13 @@ public class OnDDlCm extends PluginForDecrypt {
         ArrayList<String> passwords;
         String parameter = param.toString();
         br.getPage(parameter);
-        String content = br.getRegex(Pattern.compile("<div id=\"main\">(.*?)<!-- related posts START -->", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (content == null) content = br.getRegex(Pattern.compile("<div class=\"postarea\">(.*?)<!-- You can start editing here\\. -->", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (content == null) content = br.getRegex(Pattern.compile("<div class=\"entry-content\">(.*?)<!-- \\.entry-content -->", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String content = br.getRegex(Pattern.compile("<div id=\"main\">(.*?)<\\!\\-\\- related posts START \\-\\->", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (content == null) content = br.getRegex(Pattern.compile("<div class=\"postarea\">(.*?)<\\!\\-\\- You can start editing here\\. \\-\\->", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (content == null) content = br.getRegex(Pattern.compile("<div class=\"entry\\-content\">(.*?)<\\!\\-\\- \\.entry-content \\-\\->", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (content == null) return null;
         passwords = HTMLParser.findPasswords(content);
         String[] links = new Regex(content, "<a href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE).getColumn(0);
-        if (links == null || links.length == 0) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (links == null || links.length == 0) return null;
         for (String link : links) {
             if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
                 DownloadLink dLink = createDownloadlink(link);

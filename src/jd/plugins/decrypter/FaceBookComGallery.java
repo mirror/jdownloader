@@ -78,7 +78,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 } catch (final PluginException e) {
                     aa.setEnabled(false);
                     aa.setValid(false);
-                    throw new DecrypterException(JDL.L("plugins.decrypt.facebookcomgallery.invalidaccount", "Account is invalid!"));
+                    logger.info("Account seems to be invalid, returnung empty linklist!");
+                    return decryptedLinks;
                 }
                 // Account is valid, let's just add it
                 AccountController.getInstance().addAccount(facebookPlugin, aa);

@@ -152,7 +152,8 @@ public class Uploadedto extends PluginForHost {
                 int retry = 0;
                 while (true) {
                     /*
-                     * workaround for api issues, retry 5 times when content length is only 20 bytes
+                     * workaround for api issues, retry 5 times when content
+                     * length is only 20 bytes
                      */
                     if (retry == 5) return false;
                     br.postPage("http://uploaded.to/api/filemultiple", sb.toString());
@@ -369,7 +370,8 @@ public class Uploadedto extends PluginForHost {
             if ("No htmlCode read".equalsIgnoreCase(br.toString())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             if (br.containsHTML("Datei herunterladen")) {
                 /*
-                 * we get fresh entry page after clicking download, means we have to start from beginning
+                 * we get fresh entry page after clicking download, means we
+                 * have to start from beginning
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverproblem", 5 * 60 * 1000l);
             }
@@ -400,6 +402,10 @@ public class Uploadedto extends PluginForHost {
             if (error != null) {
                 if (error.contains("error_traffic")) throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (br.containsHTML(">Download Blocked \\(ip\\)<")) {
+                logger.info("Download blocked (IP), disabling account...");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             if (br.getRedirectLocation() == null) {
                 /* ul does not take care of set language.... */

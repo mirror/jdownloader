@@ -207,7 +207,7 @@ public class SflnkgNt extends PluginForDecrypt {
                             logger.warning("Solvemedia handling broken");
                             return null;
                         }
-                        code = getCaptchaCode(null, captchaFile, param);
+                        code = getCaptchaCode(captchaFile, param);
                     } else {
                         URLConnectionAdapter con = null;
                         try {

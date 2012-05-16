@@ -21,24 +21,28 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickrdecrypted\\.com/photos/[^<>\"/]+/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickrdecrypted\\.com/photos/[^<>\"/]+/\\d+" }, flags = { 2 })
 public class FlickrCom extends PluginForHost {
 
     public FlickrCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium();
     }
 
     private String DLLINK = null;
@@ -48,8 +52,9 @@ public class FlickrCom extends PluginForHost {
         return "http://flickr.com";
     }
 
-    private static final Object LOCK   = new Object();
-    private static boolean      loaded = false;
+    private static final Object LOCK     = new Object();
+    private static boolean      loaded   = false;
+    private static final String MAINPAGE = "http://flickr.com";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("flickrdecrypted.com/", "flickr.com/"));
@@ -59,24 +64,10 @@ public class FlickrCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        PluginForDecrypt flickrDecrypter = JDUtilities.getPluginForDecrypt("flickr.com");
-        if (loaded == false) {
-            synchronized (LOCK) {
-                if (loaded == false) {
-                    /*
-                     * we only have to load this once, to make sure its loaded
-                     */
-                    flickrDecrypter = JDUtilities.getPluginForDecrypt("flickr.com");
-                }
-                loaded = true;
-            }
-        }
-        final Object ret = flickrDecrypter.getPluginConfig().getProperty("cookies", null);
-        if (downloadLink.getBooleanProperty("cookiesneeded") && ret == null) {
-            // This should never happen
-            logger.info("A property couldn't be found!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (downloadLink.getBooleanProperty("cookiesneeded")) {
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa != null) {
+            final Object ret = aa.getProperty("cookies", null);
+            if (ret == null) { return AvailableStatus.UNCHECKABLE; }
             final HashMap<String, String> cookies = (HashMap<String, String>) ret;
             for (Map.Entry<String, String> entry : cookies.entrySet()) {
                 this.br.setCookie("http://flickr.com", entry.getKey(), entry.getValue());
@@ -86,7 +77,7 @@ public class FlickrCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         String filename = getFilename();
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (br.containsHTML("(photo\\-div video\\-div|class=\"video\\-wrapper\")")) {
+        if (br.containsHTML("(photo\\-div video\\-div|class=\"video\\-wrapper\"|<meta name=\"medium\" content=\"video\")")) {
             final String lq = createGuid();
             final String secret = br.getRegex("photo_secret=(.*?)\\&").getMatch(0);
             final String nodeID = br.getRegex("data\\-comment\\-id=\"(\\d+\\-\\d+)\\-").getMatch(0);
@@ -96,8 +87,11 @@ public class FlickrCom extends PluginForHost {
             final String part1 = parts.getMatch(0);
             final String part2 = parts.getMatch(1);
             if (part1 == null || part2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            filename += ".flv";
             DLLINK = part1 + part2.replace("&amp;", "&");
+            if (DLLINK.contains(".mp4"))
+                filename += ".mp4";
+            else
+                filename += ".flv";
         } else {
             br.getPage(downloadLink.getDownloadURL() + "/in/photostream");
             DLLINK = getFinalLink();
@@ -130,12 +124,86 @@ public class FlickrCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true, br);
+        } catch (final PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setStatus("Registered (free) User");
+        ai.setUnlimitedTraffic();
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        login(account, false, this.br);
+        requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @SuppressWarnings("unchecked")
+    public void login(final Account account, final boolean force, Browser br) throws Exception {
+        synchronized (LOCK) {
+            br.setCookie(MAINPAGE, "localization", "en-us%3Bde%3Bde");
+            // Load cookies
+            br.setCookiesExclusive(true);
+            final Object ret = account.getProperty("cookies", null);
+            boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (cookies.containsKey("c_user") && cookies.containsKey("xs") && account.isValid()) {
+                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                        final String key = cookieEntry.getKey();
+                        final String value = cookieEntry.getValue();
+                        br.setCookie(MAINPAGE, key, value);
+                    }
+                    return;
+                }
+            }
+            br.setFollowRedirects(true);
+            br.getPage("http://www.flickr.com/signin/");
+            final String u = br.getRegex("type=\"hidden\" name=\"\\.u\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
+            final String challenge = br.getRegex("type=\"hidden\" name=\"\\.challenge\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
+            final String done = br.getRegex("type=\"hidden\" name=\"\\.done\" value=\"([^<>\"\\']+)\"").getMatch(0);
+            final String pd = br.getRegex("type=\"hidden\" name=\"\\.pd\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
+            if (u == null || challenge == null || done == null || pd == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+            br.postPage("https://login.yahoo.com/config/login", ".tries=1&.src=flickrsignin&.md5=&.hash=&.js=&.last=&promo=&.intl=us&.lang=en-US&.bypass=&.partner=&.u=" + u + "&.v=0&.challenge=" + Encoding.urlEncode(challenge) + "&.yplus=&.emailCode=&pkg=&stepid=&.ev=&hasMsgr=0&.chkP=Y&.done=" + Encoding.urlEncode(done) + "&.pd=" + Encoding.urlEncode(pd) + "&.ws=1&.cp=0&pad=15&aad=15&popup=1&login=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&.persistent=y&.save=&passwd_raw=");
+            if (br.containsHTML("\"status\" : \"error\"")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+            String stepForward = br.getRegex("\"url\" : \"(https?://[^<>\"\\']+)\"").getMatch(0);
+            if (stepForward == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+            br.getPage(stepForward);
+            stepForward = br.getRegex("Please <a href=\"(http://(www\\.)?flickr\\.com/[^<>\"]+)\"").getMatch(0);
+            if (stepForward == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+            br.getPage(stepForward);
+            // Save cookies
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = br.getCookies(MAINPAGE);
+            for (final Cookie c : add.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            account.setProperty("name", Encoding.urlEncode(account.getUser()));
+            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+            account.setProperty("cookies", cookies);
+        }
     }
 
     private String createGuid() {
@@ -161,7 +229,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     private String getFilename() {
-        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\">").getMatch(0);
+        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=\"photo\\-title\">(.*?)</h1").getMatch(0);
             if (filename == null) {

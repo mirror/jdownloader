@@ -135,7 +135,7 @@ public class FShareVn extends PluginForHost {
             return ai;
         }
         br.getPage("http://www.fshare.vn/index.php");
-        String validUntil = br.getRegex(">Hạn dùng:<strong class=\"color_red\">(\\d+\\-\\d+\\-\\d+)</strong>").getMatch(0);
+        String validUntil = br.getRegex(">Hạn dùng:<strong class=\"color_red\">\\&nbsp;(\\d+\\-\\d+\\-\\d+)</strong>").getMatch(0);
         if (validUntil != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd-MM-yyyy", Locale.ENGLISH));
             try {

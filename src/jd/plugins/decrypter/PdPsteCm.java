@@ -20,16 +20,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "paidpaste.com" }, urls = { "http://[\\w\\.]*?paidpaste\\.com/paste-[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "paidpaste.com" }, urls = { "http://(www\\.)?(en\\.)?(paidpaste\\.com|ppst\\.me)/[A-Za-z0-9]+" }, flags = { 0 })
 public class PdPsteCm extends PluginForDecrypt {
 
     public PdPsteCm(PluginWrapper wrapper) {
@@ -38,20 +36,20 @@ public class PdPsteCm extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("ppst.me/", "paidpaste.com/");
         br.setFollowRedirects(false);
         br.getPage(parameter);
         /* Error handling */
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("not-available")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML(">This paste is no longer available")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         // Password handling
-        if (br.containsHTML("name=\"pass\"")) {
+        if (br.containsHTML("name=\"paste_password\"")) {
             for (int i = 0; i <= 3; i++) {
-                Form pwform = br.getForm(0);
-                if (pwform == null) return null;
                 String passCode = getUserInput(null, param);
-                pwform.put("pass", passCode);
-                br.submitForm(pwform);
-                if (br.containsHTML("name=\"pass\"")) continue;
+                br.postPage(parameter, "submit=Authenticate&paste_password=" + passCode);
+                if (br.containsHTML("name=\"paste_password\"")) continue;
                 break;
             }
             if (br.containsHTML("name=\"pass\"")) {
@@ -59,10 +57,13 @@ public class PdPsteCm extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-        String plaintxt = br.getRegex("class=\"line code\"(.*?)</table>").getMatch(0);
+        final String plaintxt = br.getRegex("<pre class=\"highlighted\\-text monospace\\-text\">(.*?)<pre class=\"line\\-numbers monospace\\-text\"><a href=\\'").getMatch(0);
         if (plaintxt == null) return null;
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
-        if (links.length == 0) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
+        if (links.length == 0) {
+            logger.info("No links found: " + parameter);
+            return decryptedLinks;
+        }
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
 

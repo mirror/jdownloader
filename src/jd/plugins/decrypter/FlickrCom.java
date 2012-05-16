@@ -17,22 +17,24 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 import jd.PluginWrapper;
-import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.FaceBookComVideos;
+import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickr\\.com/photos/([^<>\"/]+/\\d+|[^<>\"/]+(/galleries)?/(page\\d+|sets/\\d+)|[^<>\"/]+)" }, flags = { 0 })
 public class FlickrCom extends PluginForDecrypt {
@@ -41,9 +43,7 @@ public class FlickrCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final Object  LOCK         = new Object();
-    private static final String  MAINPAGE     = "http://flickr.com/";
-    private static final Integer MAXCOOKIEUSE = 500;
+    private static final String MAINPAGE = "http://flickr.com/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -57,7 +57,6 @@ public class FlickrCom extends PluginForDecrypt {
         // Check if link is for hosterplugin
         if (parameter.matches("http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("flickr.com/", "flickrdecrypted.com/"));
-            dl.setProperty("cookiesneeded", false);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -102,7 +101,6 @@ public class FlickrCom extends PluginForDecrypt {
         for (String aLink : addLinks) {
             final DownloadLink dl = createDownloadlink("http://www.flickrdecrypted.com" + aLink);
             dl.setAvailable(true);
-            dl.setProperty("cookiesneeded", true);
             decryptedLinks.add(dl);
         }
         if (fpName != null) {
@@ -113,88 +111,26 @@ public class FlickrCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @SuppressWarnings("unchecked")
     private boolean getUserLogin() throws Exception {
-        br.setFollowRedirects(true);
-        String username = null;
-        String password = null;
-        synchronized (LOCK) {
-            int loginCounter = this.getPluginConfig().getIntegerProperty("logincounter");
-            // Only login every x th time to prevent getting banned | else just
-            // set cookies (re-use them)
-            if (loginCounter > MAXCOOKIEUSE || loginCounter == -1) {
-                username = this.getPluginConfig().getStringProperty("user", null);
-                password = this.getPluginConfig().getStringProperty("pass", null);
-                for (int i = 0; i < 3; i++) {
-                    if (username == null || password == null) {
-                        username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + this.getHost() + " :");
-                        if (username == null) return false;
-                        password = UserIO.getInstance().requestInputDialog("Enter password for " + this.getHost() + " :");
-                        if (password == null) return false;
-                    }
-                    if (!loginSite(username, password)) {
-                        username = null;
-                        password = null;
-                        continue;
-                    } else {
-                        if (loginCounter > MAXCOOKIEUSE) {
-                            loginCounter = 0;
-                        } else {
-                            loginCounter++;
-                        }
-                        this.getPluginConfig().setProperty("user", username);
-                        this.getPluginConfig().setProperty("pass", password);
-                        this.getPluginConfig().setProperty("logincounter", loginCounter);
-                        final HashMap<String, String> cookies = new HashMap<String, String>();
-                        final Cookies add = this.br.getCookies(this.getHost());
-                        for (final Cookie c : add.getCookies()) {
-                            cookies.put(c.getKey(), c.getValue());
-                        }
-                        this.getPluginConfig().setProperty("cookies", cookies);
-                        this.getPluginConfig().save();
-                        return true;
-                    }
-
-                }
-            } else {
-                final Object ret = this.getPluginConfig().getProperty("cookies", null);
-                if (ret != null && ret instanceof HashMap<?, ?>) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    for (Map.Entry<String, String> entry : cookies.entrySet()) {
-                        this.br.setCookie(this.getHost(), entry.getKey(), entry.getValue());
-                    }
-                    loginCounter++;
-                    this.getPluginConfig().setProperty("logincounter", loginCounter);
-                    this.getPluginConfig().save();
-                    return true;
-                }
-            }
+        final PluginForHost flickrPlugin = JDUtilities.getPluginForHost("flickr.com");
+        Account aa = AccountController.getInstance().getValidAccount(flickrPlugin);
+        if (aa == null) {
+            String username = UserIO.getInstance().requestInputDialog("Enter Loginname for flickr.com :");
+            if (username == null) throw new DecrypterException(JDL.L("plugins.decrypt.flickrcom.nousername", "Username not entered!"));
+            String password = UserIO.getInstance().requestInputDialog("Enter password for flickr.com :");
+            if (password == null) throw new DecrypterException(JDL.L("plugins.decrypt.flickrcom.nopassword", "Password not entered!"));
+            aa = new Account(username, password);
         }
-        this.getPluginConfig().setProperty("user", Property.NULL);
-        this.getPluginConfig().setProperty("pass", Property.NULL);
-        this.getPluginConfig().setProperty("logincounter", "-1");
-        this.getPluginConfig().setProperty("cookies", Property.NULL);
-        this.getPluginConfig().save();
-        throw new DecrypterException("Login or/and password for " + this.getHost() + " is wrong!");
-    }
-
-    private boolean loginSite(String username, String password) throws Exception {
-        br.clearCookies("flickr.com");
-        br.clearCookies("yahoo.com");
-        br.getPage("http://www.flickr.com/signin/");
-        final String u = br.getRegex("type=\"hidden\" name=\"\\.u\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
-        final String challenge = br.getRegex("type=\"hidden\" name=\"\\.challenge\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
-        final String done = br.getRegex("type=\"hidden\" name=\"\\.done\" value=\"([^<>\"\\']+)\"").getMatch(0);
-        final String pd = br.getRegex("type=\"hidden\" name=\"\\.pd\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
-        if (u == null || challenge == null || done == null || pd == null) return false;
-        br.postPage("https://login.yahoo.com/config/login", ".tries=1&.src=flickrsignin&.md5=&.hash=&.js=&.last=&promo=&.intl=us&.lang=en-US&.bypass=&.partner=&.u=" + u + "&.v=0&.challenge=" + Encoding.urlEncode(challenge) + "&.yplus=&.emailCode=&pkg=&stepid=&.ev=&hasMsgr=0&.chkP=Y&.done=" + Encoding.urlEncode(done) + "&.pd=" + Encoding.urlEncode(pd) + "&.ws=1&.cp=0&pad=15&aad=15&popup=1&login=" + Encoding.urlEncode(username) + "&passwd=" + Encoding.urlEncode(password) + "&.persistent=y&.save=&passwd_raw=");
-        if (br.containsHTML("\"status\" : \"error\"")) return false;
-        String stepForward = br.getRegex("\"url\" : \"(https?://[^<>\"\\']+)\"").getMatch(0);
-        if (stepForward == null) return false;
-        br.getPage(stepForward);
-        stepForward = br.getRegex("Please <a href=\"(http://(www\\.)?flickr\\.com/[^<>\"]+)\"").getMatch(0);
-        if (stepForward == null) return false;
-        br.getPage(stepForward);
+        try {
+            ((FaceBookComVideos) flickrPlugin).login(aa, false, this.br);
+        } catch (final PluginException e) {
+            aa.setEnabled(false);
+            aa.setValid(false);
+            logger.info("Account seems to be invalid!");
+            return false;
+        }
+        // Account is valid, let's just add it
+        AccountController.getInstance().addAccount(flickrPlugin, aa);
         return true;
     }
 
