@@ -26,12 +26,25 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orgasm.com" }, urls = { "http://(www\\.)?orgasm\\.com/movies/.+" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orgasm.com" }, urls = { "http://(www\\.)?orgasm\\.com/movies(/recent/[\\w\\+\\%]+)?\\?id=/video/\\d+/" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class OrgasmCom extends PluginForHost {
+
+    private String DLLINK = null;
 
     public OrgasmCom(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void download(final DownloadLink downloadLink) throws Exception {
+        final String playpath = br.getRegex("file: \"(.*?)\",").getMatch(0);
+        final String url = br.getRegex("streamer: \"(.*?)\",").getMatch(0);
+        if (playpath == null || url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        DLLINK = url + "@" + playpath;
+        dl = new RTMPDownload(this, downloadLink, url + playpath);
+        setupRTMPConnection(dl);
+        ((RTMPDownload) dl).startDownload();
     }
 
     @Override
@@ -47,27 +60,15 @@ public class OrgasmCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String playpath = br.getRegex("file: \"(.*?)\",").getMatch(0);
-        final String url = br.getRegex("streamer: \"(.*?)\",").getMatch(0);
-        if (playpath == null || url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        playpath = playpath.replace("med", "high");
-
-        dl = new RTMPDownload(this, downloadLink, url + playpath);
-        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
-        rtmp.setResume(false); // resume not working
-        rtmp.setPlayPath(playpath);
-        rtmp.setUrl(url);
-        rtmp.setSwfUrl("http://flash.orgasm.com/playerv4.swf");
-
-        ((RTMPDownload) dl).startDownload();
+        download(downloadLink);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
-        final String dllink = downloadLink.getDownloadURL();
-        br.getPage(dllink);
+        br.setFollowRedirects(true);
+        br.setDebug(true);
+        br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Movie Not Found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("playerHeader\">(.*?)</div>").getMatch(0);
         if (filename == null) {
@@ -89,4 +90,16 @@ public class OrgasmCom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
+    private void setupRTMPConnection(final DownloadInterface dl) {
+        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+
+        rtmp.setResume(false);
+        rtmp.setPlayPath(DLLINK.split("@")[1]);
+        rtmp.setUrl(DLLINK.split("@")[0]);
+        rtmp.setSwfUrl("http://flash.orgasm.com/playerv4.swf");
+        /* Im Live-Modus erhält man ein fehlerfreies Videdo */
+        rtmp.setLive(true);
+    }
+
 }
