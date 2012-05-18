@@ -50,9 +50,13 @@ public class QqCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         String dllink = null;
         requestFileInformation(downloadLink);
-        final String[] dlValues = br.getRegex("<a id=\"btn_normaldl\" class=\"btn_normal\".+ftnlink=\"([^\"]+)\" ftncookie=\"([^\"]+)\" dllink=\"(.*?)\" (.*?)=\"(.*?)\" filename=\"(.*?)\"></a>").getRow(0);
+        String[] dlValues = br.getRegex("<a id=\"btn_normaldl\" class=\"btn_normal\".+ftnlink=\"([^\"]+)\" ftncookie=\"([^\"]+)\" dllink=\"(.*?)\" (.*?)=\"(.*?)\" filename=\"(.*?)\"></a>").getRow(0);
+        if (dlValues == null) dlValues = br.getRegex("<a id=\"btn_normaldl\" class=\"btn_normal\".+ftnlink=\"([^\"]+)\" ftncookie=\"([^\"]+)\" filename=\"(.*?)\"></a>").getRow(0);
         if (dlValues == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        if (dlValues[0] != null && dlValues[1] != null && dlValues[5] != null) {
+        if (dlValues.length == 3) {
+            br.setCookie(br.getHost(), "FTN5K", dlValues[1]);
+            dllink = dlValues[0] + "/" + Encoding.urlEncode(dlValues[2]);
+        } else if (dlValues[0] != null && dlValues[1] != null && dlValues[5] != null) {
             br.setCookie(br.getHost(), "FTN5K", dlValues[1]);
             dllink = dlValues[0] + "/" + Encoding.urlEncode(dlValues[5]);
         } else {
