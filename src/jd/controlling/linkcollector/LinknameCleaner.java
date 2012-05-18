@@ -133,7 +133,7 @@ public class LinknameCleaner {
 
         /* if enabled, replace dots and _ with spaces and do further clean ups */
 
-        if (org.jdownloader.settings.staticreferences.CFG_GENERAL.CLEAN_UP_FILENAMES.getValue()) {
+        if (org.jdownloader.settings.staticreferences.CFG_GENERAL.CLEAN_UP_FILENAMES.isEnabled()) {
 
             StringBuilder sb = new StringBuilder();
             char[] cs = name.toCharArray();

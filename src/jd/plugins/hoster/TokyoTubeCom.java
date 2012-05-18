@@ -33,6 +33,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tokyo-tube.com" }, urls = { "http://(www\\.)?tokyo\\-tube\\.com/video/\\d+" }, flags = { 0 })
 public class TokyoTubeCom extends PluginForHost {
 
+    /** DEVNOTES: this hoster has broken gzip, which breaks stable support, that's why we disable it */
     private String DLLINK = null;
 
     public TokyoTubeCom(PluginWrapper wrapper) {
@@ -52,6 +53,7 @@ public class TokyoTubeCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        br.getHeaders().put("Accept-Encoding", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -64,6 +66,7 @@ public class TokyoTubeCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("Accept-Encoding", "");
         br.postPage(downloadLink.getDownloadURL(), "language=en_US");
         if (br.getURL().contains("tokyo-tube.com/error/video_missing") || br.containsHTML("(>This video cannot be found|Are you sure you typed in the correct url\\?<|<title>無料アダルト動画 TokyoTube\\-Japanese Free Porn</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"left span\\-630\">[\t\n\r ]+<h2>(.*?)</h2>").getMatch(0);
@@ -75,9 +78,11 @@ public class TokyoTubeCom extends PluginForHost {
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
+        br.getHeaders().put("Accept-Encoding", "");
         br.getPage("http://www.tokyo-tube.com/media/player/config.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "tokyo\\-tube\\.com/video/(\\d+)").getMatch(0));
         final String[] types = { "hd", "src" };
         Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("Accept-Encoding", "");
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
@@ -86,7 +91,7 @@ public class TokyoTubeCom extends PluginForHost {
                 DLLINK = br.getRegex("<" + type + ">(http://[^<>]+)</" + type + ">").getMatch(0);
                 if (DLLINK != null) {
                     DLLINK = DLLINK.trim();
-                    DLLINK = Encoding.htmlDecode(DLLINK);
+                    // DLLINK = Encoding.htmlDecode(DLLINK);
                     DLLINK = DLLINK.replaceAll("%0D%0A", "").trim();
                     con = br2.openGetConnection(DLLINK);
                     if (!con.getContentType().contains("html")) {

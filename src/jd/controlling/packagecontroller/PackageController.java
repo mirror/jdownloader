@@ -332,7 +332,6 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                  * @return
                  */
                 protected int search(List<ChildType> pkgchildren, ChildType elementToMove, ChildComparator<ChildType> sorter) {
-
                     int min = 0;
                     int max = pkgchildren.size() - 1;
 
