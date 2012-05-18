@@ -184,7 +184,7 @@ public class CloudnatorCom extends PluginForHost {
         this.br.setFollowRedirects(true);
         this.br.getPage("http://www.cloudnator.com/");
         this.br.postPage("http://www.cloudnator.com/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&cookie=1&submit=Login");
-        String Cookie = this.br.getCookie("http://www.shragle.com", "userID");
+        String Cookie = this.br.getCookie("http://www.cloudnator.com", "userID");
         if (Cookie == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
         Cookie = this.br.getCookie("http://www.cloudnator.com", "username");
         if (Cookie == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
