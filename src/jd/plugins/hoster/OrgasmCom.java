@@ -67,7 +67,6 @@ public class OrgasmCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Movie Not Found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("playerHeader\">(.*?)</div>").getMatch(0);
