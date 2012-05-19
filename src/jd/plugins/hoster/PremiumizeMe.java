@@ -33,10 +33,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 16318 $", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 16318 $", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class PremiumizeMe extends PluginForHost {
 
-    private static final Object                                  LOCK               = new Object();
     private static final HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     public PremiumizeMe(PluginWrapper wrapper) {
@@ -155,10 +154,9 @@ public class PremiumizeMe extends PluginForHost {
         String fairUse = br.getRegex("fairuse_left\":([\\d\\.]+)").getMatch(0);
         if (fairUse != null) {
             // 7 day rolling average
-            // rolling AVERAGE = way to display percentage value. prevent controlling using figures. Just a GUI display for the user.
+            // AVERAGE = way to display percentage value. prevent controlling from using figure. Just a GUI display for the user.
             // "fairuse_left":0.99994588120502,
-            // ai.setTrafficLeft(AVERAGE(Integer.parseInt(fairUse.trim())
-            // * 100));
+            // ai.setTrafficLeft(AVERAGE(Integer.parseInt(fairUse.trim()) * 100));
         }
         String hostsSup = br.getPage("https://api.premiumize.me/pm-api/v1.php?method=hosterlist&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()));
         handleAPIErrors(br, account, null);
@@ -204,22 +202,27 @@ public class PremiumizeMe extends PluginForHost {
             case 200:
                 /* all okay */
                 return;
-            case 403:
-                /* forbidden, banned ip , temp disable account */
-                if (statusMessage == null) statusMessage = "Account payment required in order to download";
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 400:
-                /* no valid link, do not try again with this multihoster */
+                /* not a valid link, do not try again with this multihoster */
                 if (statusMessage == null) statusMessage = "Invalid DownloadLink";
                 throw new PluginException(LinkStatus.ERROR_FATAL);
+            case 401:
+                /* not logged in, disable account. */
+                if (statusMessage == null) statusMessage = "Login error";
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 402:
                 /* account with outstanding payment,disable account */
                 if (statusMessage == null) statusMessage = "Account payment required in order to download";
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            case 401:
-                /* not logged in,disable account */
-                if (statusMessage == null) statusMessage = "Login error";
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 403:
+                /* forbidden, banned ip , temp disable account */
+                // additional info provided to the user for this error message.
+                String statusMessage1 = "Login prevented by MultiHoster! Please contact them for resolution";
+                if (statusMessage == null)
+                    statusMessage = statusMessage1;
+                else
+                    statusMessage += statusMessage + " :: " + statusMessage1;
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 404:
                 /* file offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -228,14 +231,14 @@ public class PremiumizeMe extends PluginForHost {
                 if (statusMessage == null) statusMessage = "Hoster currently not possible";
                 tempUnavailableHoster(account, downloadLink, 30 * 60 * 1000);
                 break;
-            case 503:
-                /* temp multihoster issue, maintenance period,block host for 3 mins */
-                if (statusMessage == null) statusMessage = "Hoster temporarily  not possible";
-                tempUnavailableHoster(account, downloadLink, 3 * 60 * 1000);
-                break;
             case 502:
                 /* unknown technical error, block host for 3 mins */
                 if (statusMessage == null) statusMessage = "Unknown technical error";
+                tempUnavailableHoster(account, downloadLink, 3 * 60 * 1000);
+                break;
+            case 503:
+                /* temp multihoster issue, maintenance period, block host for 3 mins */
+                if (statusMessage == null) statusMessage = "Hoster temporarily not possible";
                 tempUnavailableHoster(account, downloadLink, 3 * 60 * 1000);
                 break;
             case 509:
@@ -249,7 +252,7 @@ public class PremiumizeMe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } catch (final PluginException e) {
-            logger.info("PremiumizeMe Exception: statusCode:" + statusCode + " statusMessage:" + statusMessage);
+            logger.info("PremiumizeMe Exception: statusCode: " + statusCode + " statusMessage: " + statusMessage);
             throw e;
         }
     }

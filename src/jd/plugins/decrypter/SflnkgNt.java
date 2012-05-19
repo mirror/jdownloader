@@ -32,7 +32,6 @@ import javax.imageio.ImageIO;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -47,7 +46,7 @@ import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safelinking.net" }, urls = { "http://[\\w\\.]*?safelinking\\.net/(p|d)/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safelinking.net" }, urls = { "https?://[\\w\\.]*?safelinking\\.net/(p|d)/[a-z0-9]+" }, flags = { 0 })
 public class SflnkgNt extends PluginForDecrypt {
 
     private enum CaptchaTyp {
@@ -66,7 +65,7 @@ public class SflnkgNt extends PluginForDecrypt {
     }
 
     private static final String PASSWORDPROTECTEDTEXT = "type=\"password\" name=\"link-password\"";
-    private static final String AGENT                 = RandomUserAgent.generate();
+    private static final String AGENT                 = jd.plugins.hoster.MediafireCom.stringUserAgent();
 
     public static String readInputStreamToString(final InputStream fis) throws UnsupportedEncodingException, IOException {
         BufferedReader f = null;
@@ -98,7 +97,7 @@ public class SflnkgNt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<String> cryptedLinks = new ArrayList<String>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replaceAll("http://", "https://");
         try {
             /* not available in old stable */
             br.setAllowedResponseCodes(new int[] { 500 });
@@ -110,12 +109,12 @@ public class SflnkgNt extends PluginForDecrypt {
         if (br.containsHTML("(\"This link does not exist\\.\"|ERROR \\- this link does not exist)")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
         if (br.containsHTML(">Not yet checked</span>")) { throw new DecrypterException("Not yet checked"); }
         if (br.containsHTML("To use reCAPTCHA you must get an API key from")) { throw new DecrypterException("Server error, please contact the safelinking.net support!"); }
-        if (parameter.matches("http://[\\w\\.]*?safelinking\\.net/d/[a-z0-9]+")) {
+        if (parameter.matches("https?://[\\w\\.]*?safelinking\\.net/d/[a-z0-9]+")) {
             br.getPage(parameter);
             final String finallink = br.getRedirectLocation();
             if (finallink == null) {
                 logger.warning("SafeLinking: Sever issues? continuing...");
-                logger.warning("SafeLinking: Please confirm via browser, and report any bugs to developement team. :" + parameter);
+                logger.warning("SafeLinking: Please confirm via browser, and report any bugs to JDownloader Developement Team. :" + parameter);
             }
             // prevent loop
             if (!parameter.equals(finallink)) {
@@ -125,11 +124,11 @@ public class SflnkgNt extends PluginForDecrypt {
             String cType = "notDetected";
             final HashMap<String, String> captchaRegex = new HashMap<String, String>();
             captchaRegex.put("recaptcha", "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)");
-            captchaRegex.put("basic", "(http://safelinking\\.net/includes/captcha_factory/securimage/securimage_show\\.php\\?hash=[a-z0-9]+)");
-            captchaRegex.put("threeD", "\"(http://safelinking\\.net/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"");
+            captchaRegex.put("basic", "(https?://safelinking\\.net/includes/captcha_factory/securimage/securimage_(show\\.php\\?hash=[a-z0-9]+|register\\.php\\?hash=[^\"]+sid=[a-z0-9]{32}))");
+            captchaRegex.put("threeD", "\"(https?://safelinking\\.net/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"");
             captchaRegex.put("fancy", "class=\"captcha_image ajax\\-fc\\-container\"");
             captchaRegex.put("qaptcha", "class=\"protected\\-captcha\"><div id=\"QapTcha\"");
-            captchaRegex.put("solvemedia", "api\\.solvemedia\\.com/papi");
+            captchaRegex.put("solvemedia", "api(\\-secure)?\\.solvemedia\\.com/papi");
 
             for (final Entry<String, String> next : captchaRegex.entrySet()) {
                 if (br.containsHTML(next.getValue())) {
@@ -137,7 +136,7 @@ public class SflnkgNt extends PluginForDecrypt {
                 }
             }
 
-            logger.info("notDetected".equals(cType) ? "Captcha not detected." : "Detected captcha typ \"" + cType + "\" for this host.");
+            logger.info("notDetected".equals(cType) ? "Captcha not detected." : "Detected captcha type \"" + cType + "\" for this host.");
 
             for (int i = 0; i <= 5; i++) {
                 String data = "post-protect=1";
@@ -163,12 +162,13 @@ public class SflnkgNt extends PluginForDecrypt {
                     break;
                 case fancy:
                     captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    captchaBr.getPage("http://safelinking.net/includes/captcha_factory/fancycaptcha.php?hash=" + new Regex(parameter, "safelinking\\.net/p/(.+)").getMatch(0));
+                    captchaBr.getPage("https://safelinking.net/includes/captcha_factory/fancycaptcha.php?hash=" + new Regex(parameter, "safelinking\\.net/p/(.+)").getMatch(0));
+                    // captchaBr.getPage("https://safelinking.net/includes/captcha_factory/fancycaptcha.php?hash=registered&sid=" + new Regex(br, "includes/captcha_factory/securimage/securimage_register\\.php\\?hash=[^\"]+sid=([a-z0-9]{32}))").getMatch(0));
                     data += "&fancy-captcha=" + captchaBr.toString().trim();
                     break;
                 case qaptcha:
                     captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    captchaBr.postPage("http://safelinking.net/includes/captcha_factory/Qaptcha.jquery.php?hash=" + new Regex(parameter, "safelinking\\.net/p/(.+)").getMatch(0), "action=qaptcha");
+                    captchaBr.postPage("https://safelinking.net/includes/captcha_factory/Qaptcha.jquery.php?hash=" + new Regex(parameter, "safelinking\\.net/p/(.+)").getMatch(0), "action=qaptcha");
                     if (!captchaBr.containsHTML("\"error\":false")) {
                         logger.warning("Decrypter broken for link: " + parameter + "\n");
                         logger.warning("Qaptcha handling broken");
@@ -192,11 +192,11 @@ public class SflnkgNt extends PluginForDecrypt {
 
                     final boolean skipcaptcha = getPluginConfig().getBooleanProperty("SKIP_CAPTCHA", false);
 
-                    captchaBr.getPage("http://api.solvemedia.com/papi/_challenge.js?k=" + chid);
+                    captchaBr.getPage("https://api-secure.solvemedia.com/papi/_challenge.js?k=" + chid);
                     chid = captchaBr.getRegex("\"chid\"\\s+?:\\s+?\"(.*?)\",").getMatch(0);
                     if (chid == null) { return null; }
 
-                    String code = "http://api.solvemedia.com/papi/media?c=" + chid;
+                    String code = "https://api-secure.solvemedia.com/papi/media?c=" + chid;
                     if (!skipcaptcha) {
                         final File captchaFile = this.getLocalCaptchaFile();
                         Browser.download(captchaFile, br.cloneBrowser().openGetConnection(code));
@@ -306,7 +306,7 @@ public class SflnkgNt extends PluginForDecrypt {
     private ArrayList<DownloadLink> loadcontainer(final String format, final CryptedLink param) throws IOException, PluginException {
         ArrayList<DownloadLink> decryptedLinks = null;
         final Browser brc = br.cloneBrowser();
-        final String containerLink = br.getRegex("\"(http://safelinking\\.net/c/[a-z0-9]+" + format + ")").getMatch(0);
+        final String containerLink = br.getRegex("\"(https?://safelinking\\.net/c/[a-z0-9]+" + format + ")").getMatch(0);
         if (containerLink == null) {
             logger.warning("Contailerlink for link " + param.toString() + " for format " + format + " could not be found.");
             return null;
