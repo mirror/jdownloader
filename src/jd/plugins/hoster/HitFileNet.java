@@ -264,7 +264,7 @@ public class HitFileNet extends PluginForHost {
 
         final String res = rhino(fun + "@" + rtUpdate, 666);
 
-        if (res != null && !res.matches(hf(10))) {
+        if (res != null && res.matches(hf(10))) {
             sleep(tt * 1001, downloadLink);
             for (int i = 0; i <= 4; i++) {
                 br.getPage(res);
@@ -297,7 +297,7 @@ public class HitFileNet extends PluginForHost {
             getPluginConfig().setProperty("isUpdateNeeded", true);
             getPluginConfig().save();
             logger.warning("dllink couldn't be found...");
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 1000l);
         }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
@@ -360,7 +360,7 @@ public class HitFileNet extends PluginForHost {
         s[7] = "fddefaf6fb07";
         s[8] = "fe8cfbfafa57cde31bc2b798df5146ad29c071b6080edbca1a135f6f156984d75982fc6e8800e338";
         s[9] = "ff88";
-        s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f181b5b6f143d85d05dd9f86c8b5be73c254755b5ef741d72e5262ecdc19c";
+        s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f181b5b6f143d85d05dd9f86c8b5be73c254755b5ef741d72e5262f98c19a6560af75d6b4";
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
     }

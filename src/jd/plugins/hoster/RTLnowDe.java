@@ -36,11 +36,16 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
 
 import org.w3c.dom.Document;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtl-now.rtl.de", "voxnow.de", "superrtlnow.de" }, urls = { "http://(www\\.)?rtl-now\\.rtl\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id=.+|player=.+|film_id=.+)", "http://(www\\.)?voxnow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id=.+|player=.+|film_id=.+)", "http://(www\\.)?superrtlnow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id=.+|player=.+|film_id=.+)" }, flags = { PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtlnow.rtl.de", "voxnow.de", "superrtlnow.de", "rtl2now.rtl2.de" }, urls = { "http://(www\\.)?rtl\\-now\\.rtl\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?voxnow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?superrtlnow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?rtl2now\\.rtl2\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+" }, flags = { PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY })
 public class RTLnowDe extends PluginForHost {
+
+    private Document doc;
+
+    private String   DLCONTENT;
 
     public RTLnowDe(final PluginWrapper wrapper) {
         super(wrapper);
@@ -56,33 +61,17 @@ public class RTLnowDe extends PluginForHost {
         return c.getValue();
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://rtl-now.rtl.de/nutzungsbedingungen";
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
+    private void download(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String linkurl = br.getRegex("data:\"(.*?)\"").getMatch(0);
-        final String ivw = br.getRegex("ivw:'/(.*?)',").getMatch(0);
-        final String client = br.getRegex("id:\"(.*?)\"").getMatch(0);
+        String linkurl = br.getRegex("data:\'(.*?)\'").getMatch(0);
+        final String ivw = br.getRegex("ivw:\'/(.*?)\',").getMatch(0);
+        final String client = br.getRegex("id:\'(.*?)\'").getMatch(0);
         final String swfurl = br.getRegex("swfobject.embedSWF\\(\"(.*?)\",").getMatch(0);
         if (linkurl == null || ivw == null || client == null || swfurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-        linkurl = Encoding.urlDecode("http://" + br.getHost() + linkurl, true);
-        final URL url = new URL(linkurl + "&ts=" + System.currentTimeMillis() / 1000);
+        linkurl = Encoding.urlDecode("http://" + downloadLink.getHost() + linkurl, true);
 
-        final InputStream stream = url.openStream();
-        final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        final Document doc = parser.parse(stream);
-        final XPath xPath = XPathFactory.newInstance().newXPath();
-
+        final XPath xPath = xmlParser(linkurl + "&ts=" + System.currentTimeMillis() / 1000);
         final String query = "/data/playlist/videoinfo";
 
         final String dllink = xPath.evaluate(query + "/filename", doc);
@@ -94,9 +83,8 @@ public class RTLnowDe extends PluginForHost {
 
         if (dllink.startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, dllink);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
-            String playpath = new Regex(dllink, "(rtlnow|voxnow|superrtlnow)/(.*?)$").getMatch(1);
+            String playpath = new Regex(dllink, "(rtlnow|voxnow|superrtlnow|rtl2now)/(.*?)$").getMatch(1);
             String host = new Regex(dllink, "(.*?)(rtl.de/|rtl.de:1935/)").getMatch(-1);
             final String app = dllink.replace(playpath, "").replace(host, "");
             if (playpath == null || host == null || app == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
@@ -118,16 +106,11 @@ public class RTLnowDe extends PluginForHost {
             if (season != null) {
                 playpath = playpath + "&season=" + season;
             }
+            DLCONTENT = host + "@" + app + "@" + playpath + "@" + swfurl + "@" + downloadLink.getDownloadURL();
 
-            rtmp.setPlayPath(playpath);
-            rtmp.setPageUrl(downloadLink.getDownloadURL());
-            rtmp.setSwfVfy(swfurl);
-            rtmp.setFlashVer("WIN 10,1,102,64");
-            rtmp.setApp(app);
-            rtmp.setUrl(host + app);
-            rtmp.setResume(true);
-
+            setupRTMPConnection(dl);
             ((RTMPDownload) dl).startDownload();
+
         } else {
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 0);
@@ -137,6 +120,22 @@ public class RTLnowDe extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://rtl-now.rtl.de/nutzungsbedingungen";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        download(downloadLink);
     }
 
     @Override
@@ -182,4 +181,37 @@ public class RTLnowDe extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
+    private void setupRTMPConnection(final DownloadInterface dl) {
+        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+
+        rtmp.setPlayPath(DLCONTENT.split("@")[2]);
+        rtmp.setPageUrl(DLCONTENT.split("@")[4]);
+        rtmp.setSwfVfy(DLCONTENT.split("@")[3]);
+        rtmp.setFlashVer("WIN 10,1,102,64");
+        rtmp.setApp(DLCONTENT.split("@")[1]);
+        rtmp.setUrl(DLCONTENT.split("@")[0] + DLCONTENT.split("@")[1]);
+        rtmp.setResume(true);
+    }
+
+    private XPath xmlParser(final String linkurl) throws Exception {
+        try {
+            final URL url = new URL(linkurl);
+            final InputStream stream = url.openStream();
+            final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            final XPath xPath = XPathFactory.newInstance().newXPath();
+            try {
+                doc = parser.parse(stream);
+                return xPath;
+            } finally {
+                try {
+                    stream.close();
+                } catch (final Throwable e) {
+                }
+            }
+        } catch (final Throwable e2) {
+            return null;
+        }
+    }
+
 }

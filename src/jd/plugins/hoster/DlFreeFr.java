@@ -225,4 +225,5 @@ public class DlFreeFr extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }
