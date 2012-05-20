@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -16,17 +16,19 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -36,6 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -43,18 +46,16 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/(get/)?\\w+" }, flags = { 2 })
 public class UploadingCom extends PluginForHost {
+
     private static int          simultanpremium = 1;
     private static final Object PREMLOCK        = new Object();
-    // private String otherUseragent =
-    // "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0";
-    private String              userAgent       = RandomUserAgent.generate();
+    private static final String userAgent       = jd.plugins.hoster.MediafireCom.stringUserAgent();
     private boolean             free            = false;
-    private static final String FILEIDREGEX     = "name=\"file_id\" value=\"(.*?)\"";
     private static final String CODEREGEX       = "uploading\\.com/files/get/(\\w+)";
     private static final Object LOCK            = new Object();
     private static final String MAINPAGE        = "http://uploading.com/";
-    private boolean             loginCaptcha    = false;
     private static final String PASSWORDTEXT    = "Please Enter Password:<";
+    private boolean             loginFail       = false;
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,7 +63,19 @@ public class UploadingCom extends PluginForHost {
         this.enablePremium("http://uploading.com/premium/");
     }
 
-    public void checkErrors() throws PluginException {
+    public void correctDownloadLink(DownloadLink link) {
+        if (!link.getDownloadURL().contains("/get")) link.setUrlDownload(link.getDownloadURL().replace("/files", "/files/get").replace("www.", ""));
+        fixLink(link);
+    }
+
+    public void prepBrowser() {
+        br.setCookiesExclusive(true);
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.getHeaders().put("User-Agent", userAgent);
+    }
+
+    public void checkErrors(Browser br) throws PluginException {
         logger.info("Checking errors");
         if (br.containsHTML("Sorry, but file you are trying to download is larger then allowed for free download")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via account");
         if (br.containsHTML("YOU REACHED YOUR COUNTRY DAY LIMIT")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.uploadingcom.errors.countrylimitreached", "You reached your country daily limit"), 60 * 60 * 1000l);
@@ -97,43 +110,30 @@ public class UploadingCom extends PluginForHost {
                 }
                 int c = 0;
                 for (DownloadLink dl : links) {
-                    /*
-                     * append fake filename , because api will not report
-                     * anything else
-                     */
+                    /* append fake filename , because api will not report anything else */
                     if (c > 0) sb.append("%0D%0A");
                     fixLink(dl);
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     c++;
                 }
-                /* parser works on english language */
-                br.setCookie("http://uploading.com/", "lang", "1");
-                br.setCookie("http://uploading.com/", "language", "1");
-                br.setCookie("http://uploading.com/", "setlang", "en");
-                br.setCookie("http://uploading.com/", "_lang", "en");
+                prepBrowser();
                 br.setDebug(true);
                 br.postPage("http://uploading.com/files/checker/?ajax", sb.toString());
-                String correctedHTML = br.toString().replace("\\", "");
+                String correctedHTML = br.toString().replaceAll("\\\\/", "/").replaceAll("\\\\(r|n|t)", "").replaceAll("\\\\\"", Encoding.htmlDecode("&#34;"));
                 for (DownloadLink dl : links) {
-                    String fileid = new Regex(dl.getDownloadURL(), "uploading\\.com/files/(get/)?(.+)").getMatch(1);
+                    String fileid = new Regex(dl.getDownloadURL(), "uploading\\.com/files/(get/)?([a-z0-9]+)").getMatch(1);
                     if (fileid == null) {
                         logger.warning("Uploading.com availablecheck is broken!");
                         return false;
                     }
-                    String regexForThisLink = "(\">http://uploading\\.com/files/" + fileid + ".*?/</a></td>ntttt<td>(Aktiv|active|Gelöscht|Deleted)</td>ntttt<td>.*?</td>)";
-                    String theData = new Regex(correctedHTML, regexForThisLink).getMatch(0);
-                    if (theData == null) {
-                        dl.setAvailable(false);
-                        continue;
-                    }
-                    Regex allMatches = new Regex(theData, "\">http://uploading\\.com/files/" + fileid + "/(.*?)/</a></td>ntttt<td>(Aktiv|active|Gelöscht|Deleted)</td>ntttt<td>(.*?)</td>");
-                    String status = allMatches.getMatch(1);
-                    String filename = allMatches.getMatch(0);
+                    Regex allMatches = new Regex(correctedHTML, "<div class=\"result clearfix (failed|ok)\">.+http://uploading\\.com/files/" + fileid + "/([^/]+)/</a><span class=\"size\">([\\d\\.]+ (B|KB|MB|GB))</span></div></div>");
+                    String status = allMatches.getMatch(0);
+                    String filename = allMatches.getMatch(1);
                     String filesize = allMatches.getMatch(2);
                     if (filename == null || filesize == null) {
                         logger.warning("Uploading.com availablecheck is broken!");
                         dl.setAvailable(false);
-                    } else if (!status.matches("(Aktiv|active)")) {
+                    } else if (!status.matches("ok")) {
                         dl.setAvailable(false);
                     } else {
                         dl.setAvailable(true);
@@ -151,18 +151,12 @@ public class UploadingCom extends PluginForHost {
         return true;
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        if (!link.getDownloadURL().contains("/get")) link.setUrlDownload(link.getDownloadURL().replace("/files", "/files/get").replace("www.", ""));
-        fixLink(link);
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
+        AccountInfo ai = new AccountInfo();
         synchronized (LOCK) {
             try {
-                loginCaptcha = true;
                 login(account, true);
             } catch (PluginException e) {
                 account.setValid(false);
@@ -170,8 +164,6 @@ public class UploadingCom extends PluginForHost {
                     ai = account.getAccountInfo();
                 }
                 return ai;
-            } finally {
-                loginCaptcha = false;
             }
             if (!isPremium(account, true)) {
                 account.setValid(true);
@@ -179,23 +171,21 @@ public class UploadingCom extends PluginForHost {
                 return ai;
             }
         }
+        if (br.getURL() == null || !br.getURL().contains("/account/subscription/")) br.getPage("http://uploading.com/account/subscription/");
         account.setValid(true);
         ai.setStatus("Premium Membership");
-        String validUntil = br.getRegex("<dt>Valid Until:</dt>[\t\n\r ]+<dd>(.*?) \\(<a").getMatch(0);
+        String validUntil = br.getRegex("Valid Until</label>[\n\r\t ]+<span>([^<>]+)").getMatch(0);
         if (validUntil != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil.trim(), "MMM dd, yyyy", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil.trim(), "MMM dd yyyy", null));
         } else {
-            if (br.containsHTML("<dd>Lifetime membership</")) {
+            // not sure about this (old not tested)
+            if (br.containsHTML("<span>Lifetime membership</")) {
                 /* lifetime accounts */
                 ai.setValidUntil(-1);
             } else {
-                /* fallback */
+                /* fallback - still valid */
                 ai.setValidUntil(br.getCookies(MAINPAGE).get("remembered_user").getExpireDate());
             }
-        }
-        String balance = br.getRegex("Balance: <b>\\$([0-9\\.]+)+<").getMatch(0);
-        if (balance != null) {
-            ai.setAccountBalance(balance);
         }
         return ai;
     }
@@ -206,7 +196,7 @@ public class UploadingCom extends PluginForHost {
         if (br.containsHTML("but due to abuse or through deletion by")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("file was removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        String filesize = br.getRegex("File size: <b>(.*?)</b>").getMatch(0);
+        String filesize = br.getRegex("file_size\">([\\d\\.]+ (B|KB|MB|GB|TB))</span>").getMatch(0);
         String filename = br.getRegex(">Download(.*?)for free on uploading.com").getMatch(0);
         if (filename == null) {
             filename = br.getRegex(">File download</h2><br/>.*?<h2>(.*?)</h2>").getMatch(0);
@@ -217,7 +207,6 @@ public class UploadingCom extends PluginForHost {
                 if (br.containsHTML(fname)) {
                     filename = fname;
                 }
-
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -325,43 +314,55 @@ public class UploadingCom extends PluginForHost {
     }
 
     public void handleFree0(DownloadLink link) throws Exception {
-        checkErrors();
-        String passCode = link.getStringProperty("pass", null);
-        String fileID = br.getRegex(FILEIDREGEX).getMatch(0);
-        String code = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
-        String purse = br.getRegex("type=\"hidden\" name=\"LMI_PAYEE_PURSE\" value=\"([^<>\"\\']+)\"").getMatch(0);
-        if (br.containsHTML("that only premium members are")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only for premium members"); }
-        if (fileID == null || code == null || purse == null) {
-            logger.warning("The first form equals null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            return;
-        }
-        logger.info("Submitting form");
-        try {
-            // POSTing to the wrong link causes MAJOR issues...
-            String postData = "action=second_page&file_id=" + fileID + "&code=" + code + "&LMI_PAYMENT_AMOUNT=%23amount%23&LMI_PAYMENT_DESC=Uploading.com+Premuim+Membership&LMI_PAYEE_PURSE=" + purse + "&LMI_SIM_MODE=0&user_id=%23user_id%23&proceed_without_registration=on";
-            if (br.containsHTML(PASSWORDTEXT)) {
-                if (passCode == null) passCode = Plugin.getUserInput("Password?", link);
-                passCode = Encoding.urlEncode(passCode);
-                postData += "&pass=" + passCode;
+        String dllink = null;
+        String passCode = null;
+        if (dllink == null) {
+            checkErrors(br);
+            passCode = link.getStringProperty("pass", null);
+            String fileID = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
+            String waitTimer = br.getRegex("start_time\\((\\d+)\\);").getMatch(0);
+            if (br.containsHTML("that only premium members are")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only for premium members"); }
+            int wait = 0;
+            if (waitTimer != null)
+                wait = (Integer.parseInt(waitTimer) * 1001);
+            else
+                wait = (45 * 1001);
+            try {
+                Thread.sleep(wait);
+            } catch (InterruptedException e) {
+                return;
             }
-            br.postPage(link.getDownloadURL().replace("www.", "") + "/", postData);
-        } catch (Exception e) {
-            // This is the "disconnected" error...
-            logger.warning("FATAL error happened with link: " + link.getDownloadURL());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            Browser ajax = this.br.cloneBrowser();
+            ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            logger.info("Submitting form");
+            try {
+                String postData = "action=get_link&code=" + Encoding.urlEncode(fileID);
+                // not sure about below if. (old not tested)
+                if (br.containsHTML(PASSWORDTEXT) && passCode == null) {
+                    if (passCode == null) passCode = Plugin.getUserInput("Password?", link);
+                    postData += "&pass=" + Encoding.urlEncode(passCode);
+                } else if (passCode != null) {
+                    postData += "&pass=" + Encoding.urlEncode(passCode);
+                } else
+                    postData += "&pass=false";
+                ajax.postPage("http://uploading.com/files/get/?ajax", postData);
+            } catch (Exception e) {
+                // This is the "disconnected" error...(old not tested)
+                logger.warning("FATAL error happened with link: " + link.getDownloadURL());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // First Password-Errorhandling (old not tested)
+            if (passCode != null && (br.containsHTML(PASSWORDTEXT) || "The%20entered%20password%20is%20incorrect".equals(br.getCookie(MAINPAGE, "error")))) throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password");
+            checkErrors(ajax);
+            dllink = ajax.getRegex("link\":\"(https?.+/get_file[^\"]+)").getMatch(0);
+            if (dllink == null) {
+                logger.warning("Can not find final dllink");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = dllink.replaceAll("\\\\/", "/");
         }
-        // First Password-Errorhandling
-        if (passCode != null && (br.containsHTML(PASSWORDTEXT) || "The%20entered%20password%20is%20incorrect".equals(br.getCookie(MAINPAGE, "error")))) throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password");
-        checkErrors();
-        String redirect = getDownloadUrl(link, fileID, code, passCode);
-        br.setFollowRedirects(false);
-        br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         handleDownloadErrors();
         dl.setFilenameFix(true);
         if (passCode != null) link.setProperty("pass", passCode);
@@ -433,12 +434,12 @@ public class UploadingCom extends PluginForHost {
         boolean isPremium = false;
         synchronized (LOCK) {
             boolean follow = br.isFollowingRedirects();
-            br.setFollowRedirects(true);
-            br.getPage("http://uploading.com/profile/");
+            br.getPage("/account/subscription/");
             br.setFollowRedirects(follow);
+            // this needs to be checked
             if (br.containsHTML("UPGRADE TO PREMIUM")) {
                 isPremium = false;
-            } else if (br.containsHTML("<dt>Membership:</dt>[\t\n\r ]+<dd>Premium</dd")) {
+            } else if (br.containsHTML("Subscription</label> <span>Premium</span>")) {
                 isPremium = true;
             } else {
                 isPremium = false;
@@ -454,22 +455,18 @@ public class UploadingCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public boolean isPremiumDownload() {
-        /* free user accounts are no premium accounts */
+        /* free user accounts are not premium accounts */
         boolean ret = super.isPremiumDownload();
         if (ret && free) ret = false;
         return ret;
     }
 
-    public void login(Account account, boolean forceLogin) throws IOException, PluginException {
+    public void login(Account account, boolean forceLogin) throws Exception {
         boolean valid = false;
         try {
             synchronized (LOCK) {
                 this.setBrowserExclusive();
-                br.getHeaders().put("User-Agent", userAgent);
-                br.setCookie(MAINPAGE, "lang", "1");
-                br.setCookie(MAINPAGE, "language", "1");
-                br.setCookie(MAINPAGE, "setlang", "en");
-                br.setCookie(MAINPAGE, "_lang", "en");
+                prepBrowser();
                 if (!forceLogin) {
                     Object cookiesRet = account.getProperty("cookies");
                     Map<String, String> cookies = null;
@@ -486,38 +483,82 @@ public class UploadingCom extends PluginForHost {
                         }
                     }
                 }
+                // so if you load the previously used cookie session it can help with less captcha.
+                Object cookiesRet = account.getProperty("cookies");
+                Map<String, String> meep = null;
+                if (cookiesRet != null && cookiesRet instanceof Map) {
+                    meep = (Map<String, String>) cookiesRet;
+                }
+                if (meep != null) {
+                    if (meep.containsKey("remembered_user")) {
+                        for (final String key : meep.keySet()) {
+                            this.br.setCookie("http://uploading.com/", key, meep.get(key));
+                        }
+                    }
+                }
+                // end of previously used cookies //
                 br.getPage(MAINPAGE);
-                final String damnCookie = br.getCookie(MAINPAGE, "SID");
-                if (damnCookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                br.postPage("http://uploading.com/general/login_form/?SID=" + damnCookie + "&JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on");
-                if (br.containsHTML("captcha\":\"") && loginCaptcha) {
-                    String captchaID = br.getRegex("captcha\":\"(.*?)\"").getMatch(0);
-                    String cf = "http://uploading.com/general/captcha/" + captchaID + "/?ts=" + System.currentTimeMillis();
-                    DownloadLink dummyLink = new DownloadLink(null, "Account", "uploading.com", "http://uploading.com", true);
-                    String c = getCaptchaCode(cf, dummyLink);
-                    br.postPage("http://uploading.com/general/login_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&captcha=" + Encoding.urlEncode(c));
+                if (br.containsHTML("uploading\\.com/signout/\">Logout</a>")) {
+                    // you're already logged in dopey, current cookies are fine.
+                    valid = true;
+                    return;
                 }
-                if (br.containsHTML("captcha\":\"")) {
-                    AccountInfo ai = account.getAccountInfo();
-                    if (ai == null) {
-                        ai = new AccountInfo();
-                        account.setAccountInfo(ai);
+                for (int i = 0; i < 1; i++) {
+                    Form login = br.getFormbyProperty("id", "login_form");
+                    if (login == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    login.setAction(login.getAction() + "?ajax");
+                    login.put("email", account.getUser());
+                    login.put("password", account.getPass());
+                    login.put("remember", "on");
+                    login.put("back_url", "http://uploading.com/");
+                    // not sure what triggers recaptcha events. most times you don't need it but it's always present on login page
+                    String recaptcha = br.getRegex("\\(\\'recaptcha_block\\', \\'([^\\']+)").getMatch(0);
+                    if (loginFail == true && recaptcha != null) {
+                        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        rc.setForm(login);
+                        String id = recaptcha;
+                        rc.setId(id);
+                        rc.load();
+                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        DownloadLink dummy = new DownloadLink(null, null, null, null, true);
+                        String c = getCaptchaCode(cf, dummy);
+                        Form rcform = rc.getForm();
+                        rcform.put("recaptcha_challenge_field", rc.getChallenge());
+                        rcform.put("recaptcha_response_field", c);
+                        login = rc.getForm();
                     }
-                    ai.setStatus("Logout/Login in Browser please!");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                if (br.containsHTML("Please enter correct")) {
-                    AccountInfo ai = account.getAccountInfo();
-                    if (ai == null) {
-                        ai = new AccountInfo();
-                        account.setAccountInfo(ai);
+                    Browser ajax = this.br.cloneBrowser();
+                    ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                    ajax.submitForm(login);
+                    if (ajax.containsHTML("error\":\"The code entered is incorrect\\.")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    // not sure about this
+                    if (ajax.containsHTML("captcha\":\"")) {
+                        loginFail = true;
+                        continue;
                     }
-                    ai.setStatus("Please enter correct e-mail and password!");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    // incorrect user:pass {"error":"Incorrect e-mail\/password combination.<br\/> Please enter correct e-mail and password."}
+                    if (ajax.containsHTML("Please enter correct")) {
+                        AccountInfo ai = account.getAccountInfo();
+                        if (ai == null) {
+                            ai = new AccountInfo();
+                            account.setAccountInfo(ai);
+                        }
+                        ai.setStatus("Please enter correct e-mail and password!");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    String url = ajax.getRegex("redirect\":\"(https?[^\"]+)").getMatch(0);
+                    if (url != null) br.getPage(url.replaceAll("\\\\/", "/"));
+                    if (br.containsHTML("uploading\\.com/signout/\">Logout</a>"))
+                        break;
+                    else if (br.containsHTML("<a id=\"login_link\" href=\"#\">Login</a>")) {
+                        // we might need captcha?
+                        loginFail = true;
+                        continue;
+                    }
                 }
                 if (br.getCookie(MAINPAGE, "remembered_user") != null) {
-                    /* change language to english */
-                    br.postPage("http://uploading.com/general/select_language/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "language=1");
                     final HashMap<String, String> cookies = new HashMap<String, String>();
                     final Cookies add = this.br.getCookies(MAINPAGE);
                     for (final Cookie c : add.getCookies()) {
@@ -540,12 +581,8 @@ public class UploadingCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        br.getHeaders().put("User-Agent", userAgent);
+        prepBrowser();
         br.setFollowRedirects(true);
-        br.setCookie(MAINPAGE, "lang", "1");
-        br.setCookie(MAINPAGE, "language", "1");
-        br.setCookie(MAINPAGE, "setlang", "en");
-        br.setCookie(MAINPAGE, "_lang", "en");
         return fileCheck(downloadLink);
     }
 
