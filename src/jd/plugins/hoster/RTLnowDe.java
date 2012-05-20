@@ -135,6 +135,8 @@ public class RTLnowDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        final String ageCheck = br.getRegex("(Aus Jugendschutzgründen nur zwischen \\d+ und \\d+ Uhr abrufbar\\!)").getMatch(0);
+        if (ageCheck != null) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ageCheck, 10 * 60 * 60 * 1000l); }
         download(downloadLink);
     }
 
@@ -143,6 +145,10 @@ public class RTLnowDe extends PluginForHost {
         setBrowserExclusive();
         final String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
+        if (br.containsHTML("<\\!\\-\\- Payment\\-Teaser \\-\\->")) {
+            downloadLink.setName(downloadLink.getName() + "(PAYMENT_IS_NEEDED)");
+            return AvailableStatus.UNCHECKED;
+        }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\">").getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String folge = br.getRegex("Folge: '(.*?)'").getMatch(0);
@@ -166,7 +172,7 @@ public class RTLnowDe extends PluginForHost {
             }
         } catch (final Throwable e) {
         }
-        downloadLink.setName(folge + ".flv");
+        downloadLink.setName(filename + "__" + folge + ".flv");
         return AvailableStatus.TRUE;
     }
 
