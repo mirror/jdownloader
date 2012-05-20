@@ -270,7 +270,7 @@ public class TurboBitNet extends PluginForHost {
             final String captchaUrl = br.getRegex(CAPTCHAREGEX).getMatch(0);
             if (captchaUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             for (int i = 1; i <= 3; i++) {
-                final String captchaCode = getCaptchaCode(null, captchaUrl, downloadLink);
+                final String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
                 captchaform.put("captcha_response", captchaCode);
                 br.submitForm(captchaform);
                 if (br.getRegex(CAPTCHAREGEX).getMatch(0) == null) {
@@ -299,12 +299,14 @@ public class TurboBitNet extends PluginForHost {
         // realtime update
         String rtUpdate = getPluginConfig().getStringProperty("rtupdate", null);
         final boolean isUpdateNeeded = getPluginConfig().getBooleanProperty("isUpdateNeeded", false);
+        int attemps = getPluginConfig().getIntegerProperty("attemps", 1);
 
         if (isUpdateNeeded || rtUpdate == null) {
             final Browser rt = new Browser();
             rtUpdate = rt.getPage("http://update0.jdownloader.org/pluginstuff/tbupdate.js");
             getPluginConfig().setProperty("rtupdate", rtUpdate);
             getPluginConfig().setProperty("isUpdateNeeded", false);
+            getPluginConfig().setProperty("attemps", attemps++);
             getPluginConfig().save();
         }
 
@@ -326,7 +328,14 @@ public class TurboBitNet extends PluginForHost {
             getPluginConfig().save();
             if (br.containsHTML("Error: ")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l); }
             if (br.containsHTML("The file is not avaliable now because of technical problems")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l); }
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 1000l);
+
+            if (getPluginConfig().getIntegerProperty("attemps", 1) > 1) {
+                getPluginConfig().setProperty("attemps", 1);
+                getPluginConfig().save();
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l);
+            } else {
+                downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_RETRY);
+            }
         }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
