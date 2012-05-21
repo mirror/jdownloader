@@ -86,22 +86,24 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 br.getPage(parameter);
                 String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
                 boolean doExtended = false;
-                String[] links = br.getRegex("\\&amp;src=(http\\\\u00253A.*?)\\&amp;theater\\\\\"").getColumn(0);
+                String[] links = br.getRegex("\\&amp;src=(https?\\\\u00253A.*?)\\&amp;theater\\\\\"").getColumn(0);
                 if (links == null || links.length == 0) {
-                    links = br.getRegex("ajaxify=(\"|\\\\\")http(://|:\\\\/\\\\/)www\\.facebook\\.com(/|\\\\/)photo\\.php\\?fbid=(\\d+)\\&amp;").getColumn(3);
+                    links = br.getRegex("ajaxify=(\"|\\\\\")https?(://|:\\\\/\\\\/)www\\.facebook\\.com(/|\\\\/)photo\\.php\\?fbid=(\\d+)\\&amp;").getColumn(3);
                     doExtended = true;
                 }
                 if (links == null || links.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
+                // Redirects from "http" to "https" can happen
+                br.setFollowRedirects(true);
                 if (doExtended) {
                     progress.setRange(links.length);
                     String setID = new Regex(parameter, "facebook\\.com/media/set/\\?set=(.+)").getMatch(0);
                     for (String fbid : links) {
                         br.getPage("http://www.facebook.com/photo.php?fbid=" + fbid + "&set=" + setID + "&type=1");
-                        String finallink = br.getRegex("\"Weiter\"><img src=\"(http://.*?)\"").getMatch(0);
-                        if (finallink == null) finallink = br.getRegex("\"(http://a\\d+\\.sphotos\\.ak\\.fbcdn\\.net/(\\w+)?photos\\-.*?)\"").getMatch(0);
+                        String finallink = br.getRegex("class=\"imageStage\"><img class=\"fbPhotoImage img\" id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
+                        if (finallink == null) finallink = br.getRegex("\"(https?://fbcdn\\-sphotos\\-a\\.akamaihd\\.net/[^<>\"]*?)\"").getMatch(0);
                         if (finallink == null) {
                             logger.warning("Decrypter broken for link: " + parameter);
                             return null;

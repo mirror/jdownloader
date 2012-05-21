@@ -71,8 +71,8 @@ public class FileReactorCom extends PluginForHost {
     // XfileSharingProBasic Version 2.5.5.9-raz
     // mods:
     // non account: 1 * 1 (allows resuming)
-    // free account:
-    // premium account:
+    // free account: untested (using non acc settings)
+    // premium account: 20 * 20
     // protocol: no https
     // captchatype: recaptcha
     // other: no redirects
@@ -344,7 +344,7 @@ public class FileReactorCom extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             getPage(link.getDownloadURL());
-            doFree(link, true, 0, "freelink2");
+            doFree(link, true, 1, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {

@@ -53,7 +53,10 @@ public class NmeStashInfo extends PluginForDecrypt {
         br.setCookiesExclusive(true);
         br.setFollowRedirects(false);
         synchronized (LOCK) {
-            if (!getUserLogin()) return null;
+            if (!getUserLogin()) {
+                logger.info("No login/password entered!");
+                return decryptedLinks;
+            }
             br.getHeaders().put("Referer", MAINPAGE);
             br.setFollowRedirects(false);
             br.getPage(parameter);

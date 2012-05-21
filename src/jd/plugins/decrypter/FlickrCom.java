@@ -32,7 +32,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.FaceBookComVideos;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -122,7 +121,7 @@ public class FlickrCom extends PluginForDecrypt {
             aa = new Account(username, password);
         }
         try {
-            ((FaceBookComVideos) flickrPlugin).login(aa, false, this.br);
+            ((jd.plugins.hoster.FlickrCom) flickrPlugin).login(aa, false, this.br);
         } catch (final PluginException e) {
             aa.setEnabled(false);
             aa.setValid(false);
