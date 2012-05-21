@@ -253,12 +253,14 @@ public class HitFileNet extends PluginForHost {
         // realtime update
         String rtUpdate = getPluginConfig().getStringProperty("rtupdate", null);
         final boolean isUpdateNeeded = getPluginConfig().getBooleanProperty("isUpdateNeeded", false);
+        int attemps = getPluginConfig().getIntegerProperty("attemps", 1);
 
         if (isUpdateNeeded || rtUpdate == null) {
             final Browser rt = new Browser();
             rtUpdate = rt.getPage("http://update0.jdownloader.org/pluginstuff/tbupdate.js");
             getPluginConfig().setProperty("rtupdate", rtUpdate);
             getPluginConfig().setProperty("isUpdateNeeded", false);
+            getPluginConfig().setProperty("attemps", attemps++);
             getPluginConfig().save();
         }
 
@@ -297,7 +299,15 @@ public class HitFileNet extends PluginForHost {
             getPluginConfig().setProperty("isUpdateNeeded", true);
             getPluginConfig().save();
             logger.warning("dllink couldn't be found...");
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 1000l);
+
+            if (attemps > 1) {
+                getPluginConfig().setProperty("isUpdateNeeded", false);
+                getPluginConfig().setProperty("attemps", 1);
+                getPluginConfig().save();
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
         }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);

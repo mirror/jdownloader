@@ -24,6 +24,8 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -41,6 +43,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -59,6 +62,7 @@ public class TurboBitNet extends PluginForHost {
     public TurboBitNet(final PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://turbobit.net/turbo");
+        setConfigElements();
     }
 
     @Override
@@ -270,7 +274,12 @@ public class TurboBitNet extends PluginForHost {
             final String captchaUrl = br.getRegex(CAPTCHAREGEX).getMatch(0);
             if (captchaUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             for (int i = 1; i <= 3; i++) {
-                final String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
+                String captchaCode;
+                if (!getPluginConfig().getBooleanProperty("JAC", false)) {
+                    captchaCode = getCaptchaCode(null, captchaUrl, downloadLink);
+                } else {
+                    captchaCode = getCaptchaCode(captchaUrl, downloadLink);
+                }
                 captchaform.put("captcha_response", captchaCode);
                 br.submitForm(captchaform);
                 if (br.getRegex(CAPTCHAREGEX).getMatch(0) == null) {
@@ -329,12 +338,13 @@ public class TurboBitNet extends PluginForHost {
             if (br.containsHTML("Error: ")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l); }
             if (br.containsHTML("The file is not avaliable now because of technical problems")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l); }
 
-            if (getPluginConfig().getIntegerProperty("attemps", 1) > 1) {
+            if (attemps > 1) {
+                getPluginConfig().setProperty("isUpdateNeeded", false);
                 getPluginConfig().setProperty("attemps", 1);
                 getPluginConfig().save();
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l);
             } else {
-                downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_RETRY);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
 
@@ -533,6 +543,10 @@ public class TurboBitNet extends PluginForHost {
             return null;
         }
         return result != null ? result.toString() : null;
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "JAC", JDL.L("plugins.hoster.turbobit.jac", "Activate JAC?")).setDefaultValue(false));
     }
 
     private String tb(final int i) {
