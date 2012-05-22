@@ -43,6 +43,7 @@ import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 import net.sf.sevenzipjbinding.impl.VolumedArchiveInStream;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.StringFormatter;
@@ -278,11 +279,20 @@ public class Multi extends IExtraction {
     @Override
     public boolean checkCommand() {
         try {
-            SevenZip.initSevenZipFromPlatformJAR();
+
+            String s = System.getProperty("os.arch");
+            String s1 = System.getProperty("os.name").split(" ")[0];
+            String libID = new StringBuilder().append(s1).append("-").append(s).toString();
+            File tmp = Application.getResource("tmp/7zip");
+            org.appwork.utils.Files.deleteRecursiv(tmp);
+            tmp.mkdirs();
+            SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
         } catch (SevenZipNativeInitializationException e) {
             Log.exception(e);
             logger.warning("Could not initialize Multiunpacker");
             return false;
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         return SevenZip.isInitializedSuccessfully();
     }
