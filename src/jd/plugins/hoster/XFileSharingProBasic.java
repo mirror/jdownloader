@@ -280,12 +280,16 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         if (passCode != null) downloadLink.setProperty("pass", passCode);
-        // add a download slot
-        controlFree(+1);
-        // start the dl
-        dl.startDownload();
-        // remove download slot
-        controlFree(-1);
+
+        try {
+            // add a download slot
+            controlFree(+1);
+            // start the dl
+            dl.startDownload();
+        } finally {
+            // remove download slot
+            controlFree(-1);
+        }
     }
 
     @Override
@@ -294,26 +298,22 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
-     * allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
+     * singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download
-     * sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival
-     * does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting
-     * peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots
-     * are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
+     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
+     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
+     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
+     * begins.
      * 
-     * @param controlFree(+1|-1)
+     * @param controlFree
+     *            (+1|-1)
      */
-    public void controlFree(int num) {
-        // the math
-        if ((maxFree.get() + num) != (totalMaxSimultanFreeDownload.get() + 1)) {
-            logger.info("maxFree was = " + maxFree.toString());
-            maxFree.addAndGet(num);
-            logger.info("maxFree now = " + maxFree.toString());
-        } else {
-            maxFree.set(totalMaxSimultanFreeDownload.get());
-        }
+    public synchronized void controlFree(int num) {
+        logger.info("maxFree was = " + maxFree.get());
+        maxFree.set(Math.min(maxFree.addAndGet(num), totalMaxSimultanFreeDownload.get()));
+        logger.info("maxFree now = " + maxFree.get());
     }
 
     /** Remove HTML code which could break the plugin */

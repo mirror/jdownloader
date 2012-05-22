@@ -328,8 +328,8 @@ public class UploadingCom extends PluginForHost {
             else
                 wait = (45 * 1001);
             try {
-                Thread.sleep(wait);
-            } catch (InterruptedException e) {
+                sleep(wait, link);
+            } catch (PluginException e) {
                 return;
             }
             Browser ajax = this.br.cloneBrowser();
@@ -449,8 +449,7 @@ public class UploadingCom extends PluginForHost {
     }
 
     /**
-     * TODO: remove with next major update, DownloadWatchDog/AccountController
-     * handle blocked accounts now
+     * TODO: remove with next major update, DownloadWatchDog/AccountController handle blocked accounts now
      */
     @SuppressWarnings("deprecation")
     @Override
@@ -462,7 +461,6 @@ public class UploadingCom extends PluginForHost {
     }
 
     public void login(Account account, boolean forceLogin) throws Exception {
-        boolean valid = false;
         try {
             synchronized (LOCK) {
                 this.setBrowserExclusive();
@@ -478,7 +476,6 @@ public class UploadingCom extends PluginForHost {
                             for (final String key : cookies.keySet()) {
                                 this.br.setCookie("http://uploading.com/", key, cookies.get(key));
                             }
-                            valid = true;
                             return;
                         }
                     }
@@ -500,7 +497,6 @@ public class UploadingCom extends PluginForHost {
                 br.getPage(MAINPAGE);
                 if (br.containsHTML("uploading\\.com/signout/\">Logout</a>")) {
                     // you're already logged in dopey, current cookies are fine.
-                    valid = true;
                     return;
                 }
                 for (int i = 0; i < 1; i++) {
@@ -565,16 +561,13 @@ public class UploadingCom extends PluginForHost {
                         cookies.put(c.getKey(), c.getValue());
                     }
                     account.setProperty("cookies", cookies);
-                    valid = true;
                 } else {
-                    valid = false;
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-        } finally {
-            if (valid == false) {
-                account.setProperty("cookies", null);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+        } catch (PluginException e) {
+            account.setProperty("cookies", null);
+            throw e;
         }
     }
 

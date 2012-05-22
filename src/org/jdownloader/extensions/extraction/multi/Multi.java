@@ -279,7 +279,6 @@ public class Multi extends IExtraction {
     @Override
     public boolean checkCommand() {
         try {
-
             String s = System.getProperty("os.arch");
             String s1 = System.getProperty("os.name").split(" ")[0];
             String libID = new StringBuilder().append(s1).append("-").append(s).toString();
