@@ -35,8 +35,8 @@ public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
     }
 
     private static final byte WINDOWS = 0;
-    private static final byte MAC     = 0;
-    private static final byte LINUX   = 0;
+    private static final byte MAC     = 1;
+    private static final byte LINUX   = 2;
     private static byte       OS;
     static {
         OS = getOSID(System.getProperty("os.name"));

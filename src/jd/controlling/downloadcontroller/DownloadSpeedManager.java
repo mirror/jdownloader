@@ -44,8 +44,7 @@ public class DownloadSpeedManager {
             this.connectionHandlers = newConnectionHandlers;
         }
         /*
-         * we set very low limit here because we want the real speed to get
-         * assigned on next speed-assign-loop
+         * we set very low limit here because we want the real speed to get assigned on next speed-assign-loop
          */
         startWatchDog();
     }
@@ -104,7 +103,8 @@ public class DownloadSpeedManager {
                                     helper.lastTimeStamp = System.currentTimeMillis();
                                     /* update new traffic stats */
                                     traffic += lastRound = lastTraffic - helper.lastTraffic;
-                                    lastRoundTraffic += helper.lastTraffic = lastTraffic;
+                                    helper.lastTraffic = lastTraffic;
+                                    lastRoundTraffic += lastRound;
                                     /* update new bandwidth stats */
                                     newBandwidth += helper.lastSpeed = (int) (lastRound * 1000 / sleepTimeCon);
                                 }
@@ -153,8 +153,7 @@ public class DownloadSpeedManager {
                             }
                             helper.lastLimit = lastLimit;
                             /*
-                             * this speed limit can be assigned to rest of
-                             * connections
+                             * this speed limit can be assigned to rest of connections
                              */
                             left--;
                             // System.out.println(helper.currentLimit);

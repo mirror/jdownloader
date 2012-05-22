@@ -107,8 +107,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             String urls = decrypt(crypted, jk, k);
             clickAndLoad2Add(urls, request);
             /*
-             * we need the \r\n else the website will not handle response
-             * correctly
+             * we need the \r\n else the website will not handle response correctly
              */
             writeString(response, request, "success\r\n", true);
         } catch (Throwable e) {
@@ -121,6 +120,10 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         String source = HttpRequest.getParameterbyKey(request, "source");
         String comment = HttpRequest.getParameterbyKey(request, "comment");
         LinkCollectingJob job = new LinkCollectingJob(urls);
+        String dir = HttpRequest.getParameterbyKey(request, "dir");
+        if (!StringUtils.isEmpty(dir)) {
+            job.setOutputFolder(new File(dir));
+        }
         job.setCustomSourceUrl(source);
         job.setCustomComment(comment);
         job.setPackageName(HttpRequest.getParameterbyKey(request, "package"));
@@ -214,8 +217,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         HTTPHeader jdrandomNumber = request.getRequestHeaders().get("jd.randomnumber");
         if (jdrandomNumber != null && jdrandomNumber.getValue() != null && jdrandomNumber.getValue().equalsIgnoreCase(System.getProperty("jd.randomNumber"))) {
             /*
-             * request knows secret jd.randomnumber, it is okay to handle this
-             * request
+             * request knows secret jd.randomnumber, it is okay to handle this request
              */
             return;
         }
@@ -224,8 +226,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         if (referer != null && (check = referer.getValue()) != null) {
             if (check.equalsIgnoreCase("http://localhost:9666/flashgot") || check.equalsIgnoreCase("http://127.0.0.1:9666/flashgot")) {
                 /*
-                 * security check for flashgot referer, skip asking if we find
-                 * valid flashgot referer
+                 * security check for flashgot referer, skip asking if we find valid flashgot referer
                  */
                 return;
             }
@@ -302,8 +303,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             final String post = HttpRequest.getParameterbyKey(request, "postData");
             final String referer = HttpRequest.getParameterbyKey(request, "referer");
             /*
-             * create LinkCollectingJob to forward general Information like
-             * directory, autostart...
+             * create LinkCollectingJob to forward general Information like directory, autostart...
              */
             LinkCollectingJob job = new LinkCollectingJob(null);
             job.setPackageName(HttpRequest.getParameterbyKey(request, "package"));
@@ -331,8 +331,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 link.setUnknownHandler(new UnknownCrawledLinkHandler() {
 
                     /*
-                     * this handler transforms unknown links into directhttp
-                     * links with all information given by flashgot
+                     * this handler transforms unknown links into directhttp links with all information given by flashgot
                      */
                     public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
                         String url = link.getURL();
