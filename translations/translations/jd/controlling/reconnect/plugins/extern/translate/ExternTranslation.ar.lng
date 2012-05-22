@@ -1,4 +1,2 @@
-{
-  "interaction_externreconnect_command" : "الأمر (إستخدم مسار مجلد مطلق)",
-  "interaction_externreconnect_parameter" : "Parameter (1 parameter every line)"
-}
+interaction_externreconnect_command=الأمر (إستخدم مسار مجلد مطلق)
+interaction_externreconnect_parameter=Parameter (1 parameter every line)

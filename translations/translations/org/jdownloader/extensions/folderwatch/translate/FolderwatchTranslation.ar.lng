@@ -1,4 +1,2 @@
-{
-  "jd_plugins_optional_folderwatch_tablemodel_filepath" : "المسار",
-  "jd_plugins_optional_folderwatch_tablemodel_filename" : "اسم الملف"
-}
+jd_plugins_optional_folderwatch_tablemodel_filepath=المسار
+jd_plugins_optional_folderwatch_tablemodel_filename=اسم الملف

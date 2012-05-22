@@ -1,4 +1,2 @@
-{
-  "action_customize_addsetting_ask" : "لطفاً نامي براي تنظيمات جديد وارد نماييد:",
-  "action_customize_removesetting_ask" : "حذف تنظم (هاي) انتخاب شده ؟ (اكانت(ها) %s1)"
-}
+action_customize_addsetting_ask=لطفاً نامي براي تنظيمات جديد وارد نماييد:
+action_customize_removesetting_ask=حذف تنظم (هاي) انتخاب شده ؟ (اكانت(ها) %s1)

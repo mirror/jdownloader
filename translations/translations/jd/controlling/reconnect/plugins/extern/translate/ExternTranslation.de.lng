@@ -1,5 +1,3 @@
-{
-  "interaction_externreconnect_command" : "Befehl (absolute Pfade verwenden)",
-  "interaction_externreconnect_parameter" : "Parameter (1 Parameter pro Zeile)",
-  "interaction_externreconnect_dummybat" : "Verwende alternative Prozessausführung"
-}
+interaction_externreconnect_command=Befehl (absolute Pfade verwenden)
+interaction_externreconnect_parameter=Parameter (1 Parameter pro Zeile)
+interaction_externreconnect_dummybat=Verwende alternative Prozessausführung

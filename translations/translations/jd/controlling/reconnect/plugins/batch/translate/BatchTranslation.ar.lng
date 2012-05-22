@@ -1,5 +1,3 @@
-{
-  "interaction_batchreconnect_executein" : "بدء من  (مجلد البرنامج)",
-  "interaction_batchreconnect_batch" : "Batch Script",
-  "interaction_batchreconnect_terminal" : "المترجم"
-}
+interaction_batchreconnect_executein=بدء من  (مجلد البرنامج)
+interaction_batchreconnect_batch=Batch Script
+interaction_batchreconnect_terminal=المترجم

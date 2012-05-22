@@ -1,4 +1,2 @@
-{
-  "jd_plugins_optional_scriptlauncher_jdscriptlauncher_description" : "(Addon sviluppatori)",
-  "jd_plugins_optional_scriptlauncher_jdscriptlauncher" : "JD avvio script"
-}
+jd_plugins_optional_scriptlauncher_jdscriptlauncher_description=(Addon sviluppatori)
+jd_plugins_optional_scriptlauncher_jdscriptlauncher=JD avvio script

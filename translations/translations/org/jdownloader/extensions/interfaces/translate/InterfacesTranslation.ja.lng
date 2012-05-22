@@ -1,4 +1,2 @@
-{
-  "updater_beta_rlyupdate_title" : "今すぐベータ版に更新しますか？",
-  "updater_beta_rlyupdate_message" : "JD-%s1 へ更新しますか？"
-}
+updater_beta_rlyupdate_title=今すぐベータ版に更新しますか？
+updater_beta_rlyupdate_message=JD-%s1 へ更新しますか？

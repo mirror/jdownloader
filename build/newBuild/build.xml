@@ -22,11 +22,7 @@
 		<!-- Dependencies -->
 		<fileset dir="${dep.awu}/libs" includes="**/*.jar" />
 		<fileset dir="${dep.browser}/libs" includes="**/*.jar" />
-
 		<fileset dir="${dep.updateclient}/libs" includes="**/*.jar" />
-
-
-
 		<fileset dir="${res}/libs" includes="**/*.jar" />
 		<fileset dir="${res}/libs_ext" includes="**/*.jar" />
 	</path>

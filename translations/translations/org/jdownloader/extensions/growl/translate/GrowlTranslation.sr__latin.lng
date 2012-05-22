@@ -1,4 +1,2 @@
-{
-  "jd_plugins_optional_jdgrowlnotification_description" : "Graul obaveštenja",
-  "jd_plugins_optional_jdgrowlnotification" : "Graul obaveštenja"
-}
+jd_plugins_optional_jdgrowlnotification_description=Graul obaveštenja
+jd_plugins_optional_jdgrowlnotification=Graul obaveštenja

@@ -1,4 +1,2 @@
-{
-  "jd_plugins_optional_scriptlauncher_jdscriptlauncher_description" : "(Extra para Programadores)",
-  "jd_plugins_optional_scriptlauncher_jdscriptlauncher" : "JD Executador de Scripts"
-}
+jd_plugins_optional_scriptlauncher_jdscriptlauncher_description=(Extra para Programadores)
+jd_plugins_optional_scriptlauncher_jdscriptlauncher=JD Executador de Scripts

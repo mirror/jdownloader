@@ -1,4 +1,2 @@
-{
-  "action_customize_addsetting_ask" : "אנא הכנס את השם עבור ההגדרות החדשות:",
-  "action_customize_removesetting_ask" : "הסר הגדרות נבחרות? (%s1 חשבונות)"
-}
+action_customize_addsetting_ask=אנא הכנס את השם עבור ההגדרות החדשות:
+action_customize_removesetting_ask=הסר הגדרות נבחרות? (%s1 חשבונות)

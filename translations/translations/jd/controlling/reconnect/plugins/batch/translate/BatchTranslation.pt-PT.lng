@@ -1,5 +1,3 @@
-{
-  "interaction_batchreconnect_executein" : "Iniciar em (pasta Aplicações)",
-  "interaction_batchreconnect_batch" : "Script de batch",
-  "interaction_batchreconnect_terminal" : "Interpretador"
-}
+interaction_batchreconnect_executein=Iniciar em (pasta Aplicações)
+interaction_batchreconnect_batch=Script de batch
+interaction_batchreconnect_terminal=Interpretador

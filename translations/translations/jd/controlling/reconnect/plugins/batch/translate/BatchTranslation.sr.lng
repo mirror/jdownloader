@@ -1,5 +1,3 @@
-{
-  "interaction_batchreconnect_executein" : "Покрени у (фасцикла програма)",
-  "interaction_batchreconnect_batch" : "Batch скрипта",
-  "interaction_batchreconnect_terminal" : "Тумач"
-}
+interaction_batchreconnect_executein=Покрени у (фасцикла програма)
+interaction_batchreconnect_batch=Batch скрипта
+interaction_batchreconnect_terminal=Тумач

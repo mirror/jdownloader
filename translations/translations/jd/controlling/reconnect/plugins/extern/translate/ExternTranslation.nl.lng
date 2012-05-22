@@ -1,4 +1,2 @@
-{
-  "interaction_externreconnect_command" : "Beveel (absoluut Dirmap gebruiken)",
-  "interaction_externreconnect_parameter" : "Parameter (1 Parameter per lijn)"
-}
+interaction_externreconnect_command=Beveel (absoluut Dirmap gebruiken)
+interaction_externreconnect_parameter=Parameter (1 Parameter per lijn)

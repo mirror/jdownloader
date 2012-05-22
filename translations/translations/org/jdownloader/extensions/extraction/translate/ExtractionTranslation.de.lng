@@ -1,6 +1,4 @@
-{
-  "plugins_optional_extraction_messages" : "Der Pfad %s1 existiert nicht.",
-  "plugins_optional_extraction_status_openingarchive" : "Öffne Archiv...",
-  "plugins_optional_extraction_status_passfound" : "Passwort gefunden",
-  "plugins_optional_extraction_status_notenoughspace" : "Nicht genug Platz zum Extrahieren"
-}
+plugins_optional_extraction_messages=Der Pfad %s1 existiert nicht.
+plugins_optional_extraction_status_openingarchive=Öffne Archiv...
+plugins_optional_extraction_status_passfound=Passwort gefunden
+plugins_optional_extraction_status_notenoughspace=Nicht genug Platz zum Extrahieren

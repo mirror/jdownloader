@@ -1,4 +1,2 @@
-{
-  "interaction_externreconnect_command" : "Command (use absolute directory paths)",
-  "interaction_externreconnect_parameter" : "Parameter (1 parameter every line)"
-}
+interaction_externreconnect_command=Command (use absolute directory paths)
+interaction_externreconnect_parameter=Parameter (1 parameter every line)

@@ -1,6 +1,4 @@
-{
-  "plugins_trayicon_popup_bottom_simdls" : "Simulantno downloada",
-  "plugins_trayicon_popup_bottom_speed" : "Ograničenje brzine(KiB/s)",
-  "gui_tooltip_statusbar_simultan_downloads" : "Max. broj downloada istovremeno",
-  "gui_tooltip_statusbar_speedlimiter" : "Ograničenje brzine (KiB/s) [0:infinite]"
-}
+plugins_trayicon_popup_bottom_simdls=Simulantno downloada
+plugins_trayicon_popup_bottom_speed=Ograničenje brzine(KiB/s)
+gui_tooltip_statusbar_simultan_downloads=Max. broj downloada istovremeno
+gui_tooltip_statusbar_speedlimiter=Ograničenje brzine (KiB/s) [0:infinite]

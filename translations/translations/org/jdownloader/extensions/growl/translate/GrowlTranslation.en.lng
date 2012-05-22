@@ -1,4 +1,2 @@
-{
-  "jd_plugins_optional_jdgrowlnotification_description" : "Growl Notification",
-  "jd_plugins_optional_jdgrowlnotification" : "Growl Notification"
-}
+jd_plugins_optional_jdgrowlnotification_description=Growl Notification
+jd_plugins_optional_jdgrowlnotification=Growl Notification

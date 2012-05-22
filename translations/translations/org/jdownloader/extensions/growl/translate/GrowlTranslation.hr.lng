@@ -1,4 +1,2 @@
-{
-  "jd_plugins_optional_jdgrowlnotification_description" : "Važna obavijest",
-  "jd_plugins_optional_jdgrowlnotification" : "JDGrowl obavjesti"
-}
+jd_plugins_optional_jdgrowlnotification_description=Važna obavijest
+jd_plugins_optional_jdgrowlnotification=JDGrowl obavjesti

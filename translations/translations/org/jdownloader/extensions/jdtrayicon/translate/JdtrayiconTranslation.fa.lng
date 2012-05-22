@@ -1,4 +1,2 @@
-{
-  "gui_tooltip_statusbar_simultan_downloads" : "بيشترين",
-  "gui_tooltip_statusbar_max_chunks" : "بيشترين اتصال در هر فايل [1 الي 20]"
-}
+gui_tooltip_statusbar_simultan_downloads=بيشترين
+gui_tooltip_statusbar_max_chunks=بيشترين اتصال در هر فايل [1 الي 20]

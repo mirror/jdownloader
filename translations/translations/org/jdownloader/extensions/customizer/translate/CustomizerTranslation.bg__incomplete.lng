@@ -1,4 +1,2 @@
-{
-  "action_customize_addsetting_ask" : "Моля въведете името на новата настройка:",
-  "action_customize_removesetting_ask" : "Искате ли да премахнете избраните настройки? (%s1)"
-}
+action_customize_addsetting_ask=Моля въведете името на новата настройка:
+action_customize_removesetting_ask=Искате ли да премахнете избраните настройки? (%s1)

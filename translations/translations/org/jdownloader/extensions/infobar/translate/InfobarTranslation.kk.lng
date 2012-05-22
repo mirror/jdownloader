@@ -1,5 +1,3 @@
-{
-  "jd_plugins_optional_infobar_docking" : "Жандарына бекіту мүмкіндігін қосу",
-  "jd_plugins_optional_infobar_jdinfobar" : "Мәлімет панелі",
-  "jd_plugins_optional_infobar_opacity" : "диалог мөлдірсіздігі [%]"
-}
+jd_plugins_optional_infobar_docking=Жандарына бекіту мүмкіндігін қосу
+jd_plugins_optional_infobar_jdinfobar=Мәлімет панелі
+jd_plugins_optional_infobar_opacity=диалог мөлдірсіздігі [%]

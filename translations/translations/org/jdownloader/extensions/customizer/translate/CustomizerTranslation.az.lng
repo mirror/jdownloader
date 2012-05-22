@@ -1,5 +1,3 @@
-{
-  "action_customize_addsetting_ask" : "Yeni tənzimləmələr üçün ad daxil edin:",
-  "action_customize_removesetting_ask" : "Seçilmiş Tənzimləmə(lər) təmizlənsin? (%s1 Hesab(lar))",
-  "jd_plugins_optional_customizer_jdpackagecustomizer" : "JD Dəstə Şəxsiləşdiricisi"
-}
+action_customize_addsetting_ask=Yeni tənzimləmələr üçün ad daxil edin:
+action_customize_removesetting_ask=Seçilmiş Tənzimləmə(lər) təmizlənsin? (%s1 Hesab(lar))
+jd_plugins_optional_customizer_jdpackagecustomizer=JD Dəstə Şəxsiləşdiricisi

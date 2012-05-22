@@ -1,4 +1,2 @@
-{
-  "jd_plugins_optional_infobar_jdinfobar" : "Thanh Thông tin",
-  "jd_plugins_optional_infobar_opacity" : "Opacity of the Dialog [in %]"
-}
+jd_plugins_optional_infobar_jdinfobar=Thanh Thông tin
+jd_plugins_optional_infobar_opacity=Opacity of the Dialog [in %]

@@ -1,4 +1,2 @@
-{
-  "action_customize_addsetting_ask" : "Indsæt venligst et navn for den nye indstilling:",
-  "action_customize_removesetting_ask" : "Fjern valgt(e) indstilling(er)? (%s1 Konto(er))"
-}
+action_customize_addsetting_ask=Indsæt venligst et navn for den nye indstilling:
+action_customize_removesetting_ask=Fjern valgt(e) indstilling(er)? (%s1 Konto(er))
