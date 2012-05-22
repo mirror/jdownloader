@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import org.appwork.utils.logging.Log;
+import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
 import org.jdownloader.extensions.extraction.multi.CheckException;
 
@@ -119,6 +120,8 @@ public class Archive {
 
     private String                 name;
 
+    private ContentView            contents;
+
     public ArchiveFactory getFactory() {
         return factory;
     }
@@ -128,6 +131,7 @@ public class Archive {
         archives = new ArrayList<ArchiveFile>();
         crcError = new ArrayList<ArchiveFile>();
         extractedFiles = new ArrayList<File>();
+        contents = new ContentView();
     }
 
     public boolean isProtected() {
@@ -309,6 +313,10 @@ public class Archive {
 
     public File getFolder() {
         return getFactory().getFolder();
+    }
+
+    public ContentView getContentView() {
+        return contents;
     }
 
 }

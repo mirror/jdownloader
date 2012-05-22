@@ -56,6 +56,7 @@ import org.jdownloader.extensions.extraction.DummyArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
+import org.jdownloader.extensions.extraction.content.PackedFile;
 
 /**
  * Extracts rar, zip, 7z. tar.gz, tar.bz2.
@@ -921,6 +922,7 @@ public class Multi extends IExtraction {
             int numberOfFiles = 0;
             String folder = "";
             for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
+                archive.getContentView().add(new PackedFile(item.isFolder(), item.getPath(), item.getSize()));
                 if (item.isFolder()) {
                     archive.setNoFolder(false);
                     continue;

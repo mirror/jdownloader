@@ -66,6 +66,7 @@ import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkArc
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
+import org.jdownloader.extensions.extraction.gui.config.ExtractionConfigPanel;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.Multi;
 import org.jdownloader.extensions.extraction.split.HJSplit;
@@ -316,6 +317,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      * @param controller
      */
     void assignRealDownloadDir(ExtractionController controller) {
+
         Boolean usesub = getSettings().isSubpathEnabled();
         if (usesub) {
             if (getSettings().getSubPathFilesTreshhold() > controller.getArchiv().getNumberOfFiles()) { return; }

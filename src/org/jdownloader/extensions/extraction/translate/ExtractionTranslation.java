@@ -111,8 +111,8 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extract failed (CRC error)" })
     String plugins_optional_extraction_status_extractfailedcrc();
 
-    @Default(lngs = { "en" }, values = { "... only if >1 folders/files" })
-    String settings_subpath_no_folder();
+    @Default(lngs = { "en" }, values = { "... only if there isn't a directory in the archive" })
+    String settings_subpath_no_folder2();
 
     @Default(lngs = { "en" }, values = { "Deep-Extraction" })
     String gui_config_extraction_deep_extract();

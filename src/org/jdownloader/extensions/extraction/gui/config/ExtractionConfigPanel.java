@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.extraction;
+package org.jdownloader.extensions.extraction.gui.config;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -14,6 +14,9 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionConfigPanel;
+import org.jdownloader.extensions.extraction.CPUPriority;
+import org.jdownloader.extensions.extraction.ExtractionConfig;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.images.NewTheme;
@@ -47,7 +50,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         spinner.setFormat("# " + T._.files());
         subPathMinFiles = this.addPair(T._.settings_subpath_minnum(), null, spinner);
         subPathMinFiles.setConditionPair(toggleUseSubpath);
-        toggleUseSubpathOnlyIfNotFoldered = this.addPair(T._.settings_subpath_no_folder(), null, new Checkbox());
+        toggleUseSubpathOnlyIfNotFoldered = this.addPair(T._.settings_subpath_no_folder2(), null, new Checkbox());
         toggleUseSubpathOnlyIfNotFoldered.setToolTipText(T._.settings_subpath_no_folder_tt());
         toggleUseSubpathOnlyIfNotFoldered.setConditionPair(toggleUseSubpath);
         subPath = this.addPair(T._.settings_subpath(), null, new TextInput());
