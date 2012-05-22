@@ -37,7 +37,12 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellshare.com" }, urls = { "http://[\\w\\.]*?(download\\.)?(sk|cz|en)?hellshare\\.(com|sk|hu|de|cz|pl)/((.+/[0-9]+)|(/[0-9]+/.+/.+))" }, flags = { 2 })
 public class HellShareCom extends PluginForHost {
 
-    private static final String LIMITREACHED = "(You have exceeded today´s free download limit|You exceeded your today\\'s limit for free download|<strong>Dnešní limit free downloadů jsi vyčerpal\\.</strong>)";
+    private static final String LIMITREACHED       = "(You have exceeded today´s free download limit|You exceeded your today\\'s limit for free download|<strong>Dnešní limit free downloadů jsi vyčerpal\\.</strong>)";
+
+    // edt: added 2 constants for testing, in normal work - waittime when server
+    // is 100% load should be 2-5 minutes
+    private static final long   WAITTIME100PERCENT = 60 * 1000l;
+    private static final long   WAITTIMEDAILYLIMIT = 3600 * 1000l;
 
     public HellShareCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -109,7 +114,16 @@ public class HellShareCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(LIMITREACHED)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
+        // edt: added more logging info
+        if (br.containsHTML(LIMITREACHED)) {
+            // edt: to support bug when server load = 100% and daily limit
+            // reached are simultaneously displayed
+            if (br.containsHTML("Current load 100%") || br.containsHTML("Server load: 100%")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.CurrentLoadIs100Percent", "The current serverload is 100%"), 10 * WAITTIME100PERCENT);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.HellShareCom.error.DailyLimitReached", "Daily Limit for free downloads reached"), WAITTIMEDAILYLIMIT);
+            }
+        }
         br.setFollowRedirects(false);
         final String changetocz = br.getRegex("lang=\"cz\" xml:lang=\"cz\" href=\"(http://download\\.cz\\.hellshare\\.com/.*?/\\d+)\"").getMatch(0);
         if (changetocz == null) {
@@ -123,17 +137,29 @@ public class HellShareCom extends PluginForHost {
             }
         }
         br.setDebug(true);
-        if (br.containsHTML("Current load 100%")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.CurrentLoadIs100Percent", "The current serverload is 100%"), 15 * 60 * 1000l); }
-        if (br.containsHTML(LIMITREACHED)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
+        // edt: new string for server 100% load
+        if (br.containsHTML("Current load 100%") || br.containsHTML("Server load: 100%")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.CurrentLoadIs100Percent", "The current serverload is 100%"), WAITTIME100PERCENT); }
+        // edt: added more logging info
+        if (br.containsHTML(LIMITREACHED)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.HellShareCom.error.DailyLimitReached", "Daily Limit for free downloads reached"), WAITTIMEDAILYLIMIT); }
         final String fileId = new Regex(downloadLink.getDownloadURL(), "/(\\d+)(/)?$").getMatch(0);
         if (fileId == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         boolean secondWay = true;
         String freePage = getDownloadOverview(fileId);
         if (freePage == null) {
-            freePage = br.getURL().replace("hellshare.com/serialy/", "hellshare.com/").replace("/pop/", "/").replace("filmy/", "") + "/free";
+            // edt: seems that URL for download is already final for all the
+            // links, so br.getURL doesn't need to be changed, secondWay always
+            // works good
+            freePage = br.getURL(); // .replace("hellshare.com/serialy/",
+                                    // "hellshare.com/").replace("/pop/",
+                                    // "/").replace("filmy/", "");
             secondWay = false;
         }
-        br.getPage(freePage);
+
+        // edt: if we got response then secondWay works for all the links
+        // br.getPage(freePage);
+        if (!br.containsHTML("No htmlCode read")) {// (br != null) {
+            secondWay = true;
+        }
         if (br.containsHTML("The server is under the maximum load")) {
             logger.info(JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"));
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"), 10 * 60 * 1000l);
@@ -142,7 +168,8 @@ public class HellShareCom extends PluginForHost {
             logger.info("You are exceeding the limitations on this download");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
         }
-        if (br.containsHTML(LIMITREACHED)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
+        // edt: added more logging info
+        if (br.containsHTML(LIMITREACHED)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.HellShareCom.error.DailyLimitReached", "Daily Limit for free downloads reached"), WAITTIMEDAILYLIMIT); }
         if (br.containsHTML("<h1>File not found</h1>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
 
         if (secondWay) {
@@ -185,9 +212,10 @@ public class HellShareCom extends PluginForHost {
             br.followConnection();
             if (br.getURL().contains("errno=404")) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.HellShareCom.error.404", "404 Server error. File might not be available for your country!")); }
             if (br.containsHTML("<h1>File not found</h1>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            if (br.containsHTML("The server is under the maximum load")) {
+            // edt: new string for server 100% load
+            if (br.containsHTML("The server is under the maximum load") || br.containsHTML("Server load: 100%")) {
                 logger.info(JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"));
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"), 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.HellShareCom.error.ServerUnterMaximumLoad", "Server is under maximum load"), WAITTIME100PERCENT);
             }
             if (br.containsHTML("(Incorrectly copied code from the image|Opište barevný kód z obrázku)") || br.getURL().contains("error=405")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
             if (br.containsHTML("You are exceeding the limitations on this download")) {
