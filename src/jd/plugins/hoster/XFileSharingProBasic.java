@@ -312,7 +312,7 @@ public class XFileSharingProBasic extends PluginForHost {
      */
     public synchronized void controlFree(int num) {
         logger.info("maxFree was = " + maxFree.get());
-        maxFree.set(Math.min(maxFree.addAndGet(num), totalMaxSimultanFreeDownload.get()));
+        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
         logger.info("maxFree now = " + maxFree.get());
     }
 
