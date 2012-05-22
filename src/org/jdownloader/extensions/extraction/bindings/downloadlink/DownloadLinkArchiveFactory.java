@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -32,7 +33,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
 
     public String createExtractSubPath(String path, Archive archiv) {
 
-        DownloadLink link = ((DownloadLinkArchiveFile) archiv.getFirstArchiveFile()).getDownloadLink();
+        DownloadLink link = ((DownloadLinkArchiveFile) archiv.getFirstArchiveFile()).getDownloadLinks().get(0);
         try {
             if (link.getFilePackage().getName() != null) {
                 // if (link instanceof DummyDownloadLink &&
@@ -108,10 +109,19 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 return 0;
             }
         });
-
+        HashMap<String, DownloadLinkArchiveFile> map = new HashMap<String, DownloadLinkArchiveFile>();
         ArrayList<ArchiveFile> ret = new ArrayList<ArchiveFile>();
         for (DownloadLink l : links) {
-            ret.add(new DownloadLinkArchiveFile(l));
+            DownloadLinkArchiveFile af = map.get(new File(l.getFileOutput()).getName());
+            if (af == null) {
+                af = new DownloadLinkArchiveFile(l);
+
+                map.put(new File(l.getFileOutput()).getName(), af);
+                ret.add(af);
+            } else {
+                af.addMirror(l);
+            }
+
         }
 
         return ret;
@@ -123,14 +133,14 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
 
     public void fireExtractToChange(Archive archive) {
         for (ArchiveFile link1 : archive.getArchiveFiles()) {
-            ((DownloadLinkArchiveFile) link1).getDownloadLink().setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTEDPATH, archive.getExtractTo().getAbsolutePath());
+            ((DownloadLinkArchiveFile) link1).setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTEDPATH, archive.getExtractTo().getAbsolutePath());
         }
 
     }
 
     public Collection<? extends String> getPasswordList(Archive archive) {
 
-        Set<String> ret = FilePackage.getPasswordAuto(((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getDownloadLink().getFilePackage());
+        Set<String> ret = FilePackage.getPasswordAuto(((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getDownloadLinks().get(0).getFilePackage());
         // VM crashes if password is filename
         // ret.add(new
         // File(archive.getFirstArchiveFile().getFilePath()).getName());
@@ -138,24 +148,31 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     }
 
     public void fireArchiveAddedToQueue(Archive archive) {
-        DownloadLink link = ((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getDownloadLink();
-        link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
-        link.getLinkStatus().setErrorMessage(null);
+        for (DownloadLink link : ((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getDownloadLinks()) {
+            link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
+            link.getLinkStatus().setErrorMessage(null);
+        }
     }
 
     public String getExtractPath(Archive archive) {
         try {
-            DownloadLink link = ((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getDownloadLink();
-            if (link.getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH) != null) { return ((File) link.getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH)).getAbsolutePath(); }
+            try {
+                File path = (File) ((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
+                if (path != null) { return path.getAbsolutePath(); }
+            } catch (Throwable e) {
 
+            }
             return new File(archive.getFirstArchiveFile().getFilePath()).getParent();
         } catch (Throwable e) {
-            DownloadLink link = this.getDownloadLink();
-            if (link.getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH) != null) { return ((File) link.getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH)).getAbsolutePath(); }
+            try {
+                File path = (File) ((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
+                if (path != null) { return path.getAbsolutePath(); }
+            } catch (Throwable e2) {
 
-            return new File(getFilePath()).getParent();
+            }
 
         }
+        return new File(getFilePath()).getParent();
     }
 
     public Archive createArchive() {
@@ -164,7 +181,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
 
     @Override
     public File getFolder() {
-        return new File(getDownloadLink().getFilePackage().getDownloadDirectory());
+        return new File(getFilePath()).getParentFile();
     }
 
 }

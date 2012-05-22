@@ -3,9 +3,11 @@ package org.jdownloader.extensions.extraction.bindings.downloadlink;
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginProgress;
 
@@ -15,127 +17,205 @@ import org.jdownloader.images.NewTheme;
 
 public class DownloadLinkArchiveFile implements ArchiveFile {
 
-    private DownloadLink downloadLink;
+    private List<DownloadLink> downloadLinks;
+    private String             name;
+    private String             filePath;
+    private long               size;
 
     public DownloadLinkArchiveFile(DownloadLink link) {
-        this.downloadLink = link;
+        downloadLinks = new ArrayList<DownloadLink>();
+        downloadLinks.add(link);
+        name = new File(link.getFileOutput()).getName();
+        filePath = link.getFileOutput();
+        size = link.getDownloadSize();
     }
 
     @Override
     public int hashCode() {
-        return downloadLink.hashCode();
+        return downloadLinks.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj == null || !(obj instanceof DownloadLinkArchiveFile)) return false;
-        return downloadLink.equals(((DownloadLinkArchiveFile) obj).downloadLink);
+        // this equals is used by the build method of ExtractionExtension. If we have one matching link, the archivefile matches as well
+        for (DownloadLink dl : ((DownloadLinkArchiveFile) obj).downloadLinks) {
+            if (downloadLinks.contains(dl)) return true;
+
+        }
+
+        return false;
     }
 
     public boolean isComplete() {
+        for (DownloadLink downloadLink : downloadLinks) {
+            if (isLinkComplete(downloadLink)) return true;
+        }
+        return false;
+    }
+
+    private boolean isLinkComplete(DownloadLink downloadLink) {
+        if (new File(downloadLink.getFileOutput()).exists()) { return true; }
         if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) && !downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) return false;
-        if (!new File(downloadLink.getFileOutput()).exists()) { return false; }
+
         return true;
     }
 
     public String getFilePath() {
-        return downloadLink.getFileOutput();
+        return filePath;
     }
 
     public boolean isValid() {
-        return !downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS);
+        for (DownloadLink downloadLink : downloadLinks) {
+            if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) return true;
+        }
+        return false;
     }
 
     public boolean deleteFile() {
-        return new File(downloadLink.getFileOutput()).delete();
+        boolean ret = false;
+        for (DownloadLink l : downloadLinks) {
+            ret = ret || new File(l.getFileOutput()).delete();
+
+        }
+        return ret;
     }
 
     public boolean exists() {
-        return new File(downloadLink.getFileOutput()).exists();
+        for (DownloadLink l : downloadLinks) {
+            if (new File(l.getFileOutput()).exists()) return true;
+        }
+        return false;
     }
 
-    public DownloadLink getDownloadLink() {
-        return downloadLink;
+    public List<DownloadLink> getDownloadLinks() {
+        return downloadLinks;
+
     }
 
     public String getName() {
-        return new File(downloadLink.getFileOutput()).getName();
+        return name;
     }
 
     public void setStatus(Status error) {
-        switch (error) {
-        case ERRROR_FILE_NOT_FOUND:
-            downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
-            downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_ALREADYEXISTS);
-            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
-            downloadLink.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_filenotfound());
+        for (DownloadLink downloadLink : downloadLinks) {
+            switch (error) {
+            case ERRROR_FILE_NOT_FOUND:
+                downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
+                downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_ALREADYEXISTS);
+                downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
+                downloadLink.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_filenotfound());
 
-            break;
-        case ERROR_NOT_ENOUGH_SPACE:
+                break;
+            case ERROR_NOT_ENOUGH_SPACE:
 
-            getDownloadLink().getLinkStatus().setStatus(LinkStatus.ERROR_POST_PROCESS);
-            downloadLink.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_status_notenoughspace());
-            // link.setMessage(T._.plugins_optional_extraction_status_notenoughspace());
-            break;
-        case ERROR_CRC:
-            downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
-            downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_ALREADYEXISTS);
-            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
-            downloadLink.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
-            downloadLink.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_crcerrorin(downloadLink.getName()));
-            break;
-        case ERROR:
+                downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_POST_PROCESS);
+                downloadLink.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_status_notenoughspace());
+                // link.setMessage(T._.plugins_optional_extraction_status_notenoughspace());
+                break;
+            case ERROR_CRC:
+                downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
+                downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_ALREADYEXISTS);
+                downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
+                downloadLink.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
+                downloadLink.getLinkStatus().setErrorMessage(T._.plugins_optional_extraction_crcerrorin(downloadLink.getName()));
+                break;
+            case ERROR:
 
-            getDownloadLink().getLinkStatus().addStatus(LinkStatus.ERROR_POST_PROCESS);
-            break;
-        case IDLE:
-            break;
-        case RUNNING:
-            break;
-        case SUCCESSFUL:
+                downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_POST_PROCESS);
+                break;
+            case IDLE:
+                break;
+            case RUNNING:
+                break;
+            case SUCCESSFUL:
 
-            getDownloadLink().getLinkStatus().addStatus(LinkStatus.FINISHED);
-            getDownloadLink().getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
-            getDownloadLink().getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_extractok());
-            getDownloadLink().getLinkStatus().setStatus(LinkStatus.FINISHED);
-            break;
+                downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
+                downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
+                downloadLink.getLinkStatus().setStatusText(T._.plugins_optional_extraction_status_extractok());
+                downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                break;
+            }
         }
     }
 
     public void setMessage(String text) {
-        getDownloadLink().getLinkStatus().setStatusText(text);
+        for (DownloadLink downloadLink : downloadLinks) {
+            downloadLink.getLinkStatus().setStatusText(text);
+        }
     }
 
     public void setProgress(long value, long max, Color color) {
-        if (value <= 0 && max <= 0) {
-            getDownloadLink().setPluginProgress(null);
-        } else {
-            PluginProgress progress = getDownloadLink().getPluginProgress();
-            if (progress != null) {
-                progress.setCurrent(value);
-                progress.setColor(color);
-                progress.setTotal(max);
+        for (DownloadLink downloadLink : downloadLinks) {
+            if (value <= 0 && max <= 0) {
+                downloadLink.setPluginProgress(null);
             } else {
-                progress = new PluginProgress(value, max, color);
-                progress.setIcon(NewTheme.I().getIcon("unpack", 16));
-                progress.setProgressSource(this);
-                getDownloadLink().setPluginProgress(progress);
-            }
+                PluginProgress progress = downloadLink.getPluginProgress();
+                if (progress != null) {
+                    progress.setCurrent(value);
+                    progress.setColor(color);
+                    progress.setTotal(max);
+                } else {
+                    progress = new PluginProgress(value, max, color);
+                    progress.setIcon(NewTheme.I().getIcon("unpack", 16));
+                    progress.setProgressSource(this);
+                    downloadLink.setPluginProgress(progress);
+                }
 
+            }
         }
 
     }
 
     @Override
     public long getFileSize() {
-        return downloadLink.getDownloadSize();
+        return size;
     }
 
     @Override
     public void deleteLink() {
-        ArrayList<DownloadLink> list = new ArrayList<DownloadLink>();
-        list.add(downloadLink);
+        ArrayList<DownloadLink> list = new ArrayList<DownloadLink>(downloadLinks);
         DownloadController.getInstance().removeChildren(list);
+    }
+
+    public void addMirror(DownloadLink link) {
+        downloadLinks.add(link);
+        size = Math.max(link.getDownloadSize(), size);
+    }
+
+    public void setProperty(String key, Object value) {
+        for (DownloadLink downloadLink : downloadLinks) {
+            downloadLink.setProperty(key, value);
+        }
+    }
+
+    public Object getProperty(String key) {
+        for (DownloadLink downloadLink : downloadLinks) {
+            if (downloadLink.hasProperty(key)) { return downloadLink.getProperty(key); }
+        }
+        return null;
+    }
+
+    public AvailableStatus getAvailableStatus() {
+        for (DownloadLink downloadLink : downloadLinks) {
+            switch (downloadLink.getAvailableStatus()) {
+            case TRUE:
+                return downloadLink.getAvailableStatus();
+            }
+        }
+        for (DownloadLink downloadLink : downloadLinks) {
+            switch (downloadLink.getAvailableStatus()) {
+            case UNCHECKED:
+                return downloadLink.getAvailableStatus();
+            }
+        }
+        for (DownloadLink downloadLink : downloadLinks) {
+            switch (downloadLink.getAvailableStatus()) {
+            case UNCHECKABLE:
+                return downloadLink.getAvailableStatus();
+            }
+        }
+        return downloadLinks.get(0).getAvailableStatus();
     }
 
 }

@@ -13,6 +13,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.PackagizerInterface;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
+import jd.plugins.DownloadLink;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
@@ -379,14 +380,16 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         } else if (caller instanceof ExtractionController) {
             if (((ExtractionController) caller).getArchiv() instanceof DownloadLinkArchive) {
                 DownloadLinkArchiveFile af = (DownloadLinkArchiveFile) ((ExtractionController) caller).getArchiv().getFirstArchiveFile();
-                CrawledLink cl = new CrawledLink(af.getDownloadLink());
-
-                for (File f : fileList) {
-                    if (f.exists()) {
-                        cl.setName(f.getName());
-                        runAfterExtraction(f, cl);
+                for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
+                    CrawledLink cl = new CrawledLink(link);
+                    for (File f : fileList) {
+                        if (f.exists()) {
+                            cl.setName(f.getName());
+                            runAfterExtraction(f, cl);
+                        }
                     }
                 }
+
             }
 
         }

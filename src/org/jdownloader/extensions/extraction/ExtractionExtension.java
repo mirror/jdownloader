@@ -22,6 +22,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.swing.Action;
 import javax.swing.ImageIcon;
@@ -32,7 +33,6 @@ import javax.swing.JSeparator;
 import javax.swing.filechooser.FileFilter;
 
 import jd.Launcher;
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -885,7 +885,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                                 Archive archive0 = buildArchive(new DownloadLinkArchiveFactory((DownloadLink) link));
                                 for (ArchiveFile l : archive0.getArchiveFiles()) {
 
-                                    ((DownloadLinkArchiveFile) l).getDownloadLink().setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0]);
+                                    ((DownloadLinkArchiveFile) l).setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0]);
                                 }
                             } catch (ArchiveException e1) {
                                 Log.exception(e1);
@@ -942,23 +942,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
                     public void actionPerformed(ActionEvent e) {
 
-                        ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-                        final boolean readL = DownloadController.getInstance().readLock();
-                        try {
-                            for (AbstractNode link : context.getSelectionInfo().getSelectedChildren()) {
-                                if (link instanceof FilePackage) {
-                                    synchronized (fp) {
-                                        for (DownloadLink l : fp.getChildren()) {
-                                            if (l.getLinkStatus().isFinished()) {
-                                                links.add(l);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        } finally {
-                            DownloadController.getInstance().readUnlock(readL);
-                        }
+                        List<DownloadLink> links = context.getSelectionInfo().getSelectedChildren();
                         if (links.size() == 0) return;
                         for (DownloadLink link0 : links) {
                             try {

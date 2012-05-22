@@ -63,7 +63,7 @@ public class DummyArchiveFile {
             return ((CrawledLinkArchiveFile) archiveFile).getLink().getDownloadLink().getAvailableStatus();
         } else if (archiveFile instanceof DownloadLinkArchiveFile) {
             //
-            return ((DownloadLinkArchiveFile) archiveFile).getDownloadLink().getAvailableStatus();
+            return ((DownloadLinkArchiveFile) archiveFile).getAvailableStatus();
         }
         return AvailableStatus.UNCHECKED;
     }
@@ -75,7 +75,7 @@ public class DummyArchiveFile {
             return new File(((CrawledLinkArchiveFile) archiveFile).getLink().getDownloadLink().getFileOutput()).exists();
         } else if (archiveFile instanceof DownloadLinkArchiveFile) {
             //
-            return new File(((DownloadLinkArchiveFile) archiveFile).getDownloadLink().getFileOutput()).exists();
+            return new File(((DownloadLinkArchiveFile) archiveFile).getFilePath()).exists();
         }
         return false;
     }
