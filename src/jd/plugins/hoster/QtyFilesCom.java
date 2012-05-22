@@ -51,19 +51,19 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(www\\.)?uptobox\\.com/[a-z0-9]{12}" }, flags = { 2 })
-public class UpToBoxCom extends PluginForHost {
+@HostPlugin(revision = "$Revision: 16510 $", interfaceVersion = 2, names = { "qtyfiles.com" }, urls = { "https?://(www\\.)?qtyfiles\\.com/[a-z0-9]{12}" }, flags = { 2 })
+public class QtyFilesCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://uptobox.com";
+    private final String         COOKIE_HOST                  = "http://qtyfiles.com";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
@@ -72,11 +72,11 @@ public class UpToBoxCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.1-raz
     // mods:
-    // non account: 1 * 1 (no resume)
+    // non account: 1(no resume) * ? with waits after captcha
     // free account: same as above
-    // premium account: 20 * unlimited (previous settings, not tested)
+    // premium account: **not tested**
     // protocol: no https
-    // captchatype: 4dignum
+    // captchatype: recaptcha
     // other: no redirects
 
     @Override
@@ -89,14 +89,14 @@ public class UpToBoxCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public UpToBoxCom(PluginWrapper wrapper) {
+    public QtyFilesCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -135,10 +135,7 @@ public class UpToBoxCom extends PluginForHost {
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
-                filesize = new Regex(correctedBR, "<div class=\"info\\-bar\\-grey\">[\t\n\r ]+http://uptobox\\.com/[a-z0-9]{12} \\((.*?)\\)").getMatch(0);
-                if (filesize == null) {
-                    filesize = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
-                }
+                filesize = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
@@ -575,7 +572,6 @@ public class UpToBoxCom extends PluginForHost {
                     }
                 }
                 getPage(COOKIE_HOST + "/login.html");
-                // Form loginform = br.getForm(0);
                 Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));

@@ -146,7 +146,7 @@ public class RapidGatorNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final boolean skipcaptcha = getPluginConfig().getBooleanProperty("SKIP_CAPTCHA", false);
-            String challenge = br.getRegex("http://api\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=([a-zA-Z0-9]{32})").getMatch(0);
+            String challenge = br.getRegex("http://api\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
             if (challenge == null) {
                 logger.info(br.toString());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

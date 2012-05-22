@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 /**
  * TODO: Remove after next big update of core to use the public static methods!
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|jdeatme|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}|\\d+(?=$|\"|\r|\n))" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\w\\.:\\-@]*/.*\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|jdeatme|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}|\\d+(?=$|\"|\r|\n))" }, flags = { 2, 0 })
 public class DirectHTTP extends PluginForHost {
 
     public static class Recaptcha {
@@ -81,8 +81,7 @@ public class DirectHTTP extends PluginForHost {
 
         /**
          * 
-         * DO NOT use in Plugins at the moment, cause the current nightly is not
-         * able to use this function, directHTTP is included in jar and not
+         * DO NOT use in Plugins at the moment, cause the current nightly is not able to use this function, directHTTP is included in jar and not
          * updatable at the moment
          */
         public void findID() throws PluginException {
@@ -277,7 +276,7 @@ public class DirectHTTP extends PluginForHost {
 
     private static final String JDL_PREFIX     = "jd.plugins.hoster.DirectHTTP.";
 
-    public static final String  ENDINGS        = "\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bz2|bat|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|jdeatme|load|m2ts|mws|mw|m4v|m4a|mkv|mp2|mp3|mp4|mov|movie|mpeg|mpe|mpg|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(!?tml)|ssa|smi|sub|srt|snd|sfv|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tif|tiff|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}|\\d+$)";
+    public static final String  ENDINGS        = "\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bz2|bat|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|jdeatme|load|m2ts|mws|mw|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(!?tml)|ssa|smi|sub|srt|snd|sfv|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tif|tiff|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}|\\d+$)";
     public static final String  NORESUME       = "nochunkload";
     public static final String  NOCHUNKS       = "nochunk";
     public static final String  FORCE_NORESUME = "forcenochunkload";
@@ -346,14 +345,11 @@ public class DirectHTTP extends PluginForHost {
         if (hotFixSynthethica) {
             try {
                 /*
-                 * hotfix for synthetica license issues, as some java versions
-                 * have broken aes support
+                 * hotfix for synthetica license issues, as some java versions have broken aes support
                  */
                 /*
-                 * NOTE: This Licensee Information may only be used by AppWork
-                 * UG. If you like to create derived creation based on this
-                 * sourcecode, you have to remove this license key. Instead you
-                 * may use the FREE Version of synthetica found on javasoft.de
+                 * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this sourcecode,
+                 * you have to remove this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
                  */
                 String[] li = { "Licensee=AppWork UG", "LicenseRegistrationNumber=289416475", "Product=Synthetica", "LicenseType=Small Business License", "ExpireDate=--.--.----", "MaxVersion=2.999.999" };
                 javax.swing.UIManager.put("Synthetica.license.info", li);
@@ -542,13 +538,11 @@ public class DirectHTTP extends PluginForHost {
                 this.br.followConnection();
                 /* search urls */
                 /*
-                 * TODO: Change to org.appwork.utils.parser.HTMLParser.findUrls
-                 * with next major-update
+                 * TODO: Change to org.appwork.utils.parser.HTMLParser.findUrls with next major-update
                  */
                 final ArrayList<String> follow = DirectHTTP.findUrls(this.br.toString());
                 /*
-                 * if we already tried htmlRedirect or not exactly one link
-                 * found, throw File not available
+                 * if we already tried htmlRedirect or not exactly one link found, throw File not available
                  */
                 if (follow.size() != 1 || downloadLink.getBooleanProperty("htmlRedirect", false)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 /* found one valid url */
@@ -619,9 +613,8 @@ public class DirectHTTP extends PluginForHost {
         if (custom != null && custom.size() > 0) {
             for (final Object header : custom) {
                 /*
-                 * this is needed because we no longer serialize the stuff, we
-                 * use json as storage and it does not differ between String[]
-                 * and ArrayList<String>
+                 * this is needed because we no longer serialize the stuff, we use json as storage and it does not differ between String[] and
+                 * ArrayList<String>
                  */
                 if (header instanceof ArrayList) {
                     br.getHeaders().put((String) ((ArrayList<?>) header).get(0), (String) ((ArrayList<?>) header).get(1));
@@ -631,8 +624,7 @@ public class DirectHTTP extends PluginForHost {
             }
         }
         /*
-         * seems like flashgot catches the wrong referer and some downloads do
-         * not work then, we do not set referer as a workaround
+         * seems like flashgot catches the wrong referer and some downloads do not work then, we do not set referer as a workaround
          */
         if (downloadLink.getStringProperty("refURL", null) != null) {
             /* refURL is for internal use */

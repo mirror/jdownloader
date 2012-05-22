@@ -62,13 +62,17 @@ public class NovaFileCom extends PluginForHost {
     private static final String  ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    // note: can not be negative -x or 0 .:. [1-*]
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    // don't touch
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static final Object  LOCK                = new Object();
-    private static AtomicInteger maxPrem             = new AtomicInteger(1);
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.5.5.8-raz
+    // XfileSharingProBasic Version 2.5.6.1-raz
     // mods:
-    // non account: chunk * maxdl
+    // non account: 1 * 1, no resume
     // free account:
     // premium account:
     // protocol: no https
@@ -275,12 +279,39 @@ public class NovaFileCom extends PluginForHost {
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         if (passCode != null) downloadLink.setProperty("pass", passCode);
+        try {
+            // add a download slot
+            controlFree(+1);
+            // start the dl
         dl.startDownload();
+        } finally {
+            // remove download slot
+            controlFree(-1);
+    }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return maxFree.get();
+    }
+
+    /**
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
+     * allows the next singleton download to start, or at least try.
+     * 
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download
+     * sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival
+     * does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting
+     * peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots
+     * are freed up soon as current download begins.
+     * 
+     * @param controlFree
+     *            (+1|-1)
+     */
+    public synchronized void controlFree(int num) {
+        logger.info("maxFree was = " + maxFree.get());
+        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+        logger.info("maxFree now = " + maxFree.get());
     }
 
     /** Remove HTML code which could break the plugin */
@@ -479,8 +510,8 @@ public class NovaFileCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>").getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim() + " Mb");
+        String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
+        if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
         account.setValid(true);
         String availabletraffic = new Regex(correctedBR, ">Traffic Available</td>[\r\n\t ]+<td>(\\d+ (MB|GB))</td>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
@@ -492,6 +523,8 @@ public class NovaFileCom extends PluginForHost {
             ai.setStatus("Registered (free) User");
             try {
                 maxPrem.set(1);
+                // free accounts can still have captcha.
+                totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
@@ -538,7 +571,6 @@ public class NovaFileCom extends PluginForHost {
                         return;
                     }
                 }
-                prepBrowser();
                 getPage(COOKIE_HOST + "/login");
                 Form loginform = br.getForm(0);
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

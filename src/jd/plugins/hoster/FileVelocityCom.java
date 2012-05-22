@@ -63,7 +63,7 @@ public class FileVelocityCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.2.0
-    // free: resumes though they say it doesn't.
+    // free: 1 * 1, resumes though they say it doesn't.
     // premium: allows total number of 200 connections
     // protocol: no https.
     // captchatype: recaptcha
@@ -152,7 +152,7 @@ public class FileVelocityCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, true);
+        doFree(downloadLink, true, -1, true);
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean getLinkWithoutLogin) throws Exception, PluginException {

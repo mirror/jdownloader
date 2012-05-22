@@ -106,8 +106,6 @@ public class MojoFileCom extends PluginForHost {
             if (filename == null) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    // generic regex will pick up false positives (html)
-                    // adjust to make work with COOKIE_HOST
                     filename = new Regex(correctedBR, "(?i)You have requested:[\r\n\t ]+([^<>\"\t\n\r]+)").getMatch(0);
                 }
             }
@@ -116,10 +114,7 @@ public class MojoFileCom extends PluginForHost {
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
-                // generic regex picks up false positives (premium ads above
-                // filesize)
-                // adjust accordingly to make work with COOKIE_HOST
-                filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
+                filesize = new Regex(br, "(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
@@ -153,8 +148,7 @@ public class MojoFileCom extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
