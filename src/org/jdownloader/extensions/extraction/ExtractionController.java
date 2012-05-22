@@ -82,11 +82,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private boolean checkPassword(String pw) {
         Log.L.info("Check Password: " + pw);
         if (pw == null || "".equals(pw)) return false;
-        // workaround for bug
-        // http://sourceforge.net/projects/sevenzipjbind/forums/forum/757965/topic/5152496
-        // <br>
-        // http://sourceforge.net/tracker/?func=detail&aid=3314311&group_id=111810&atid=660493
-        if (pw.length() > 28) return false;
 
         fireEvent(ExtractionEvent.Type.PASSWORT_CRACKING);
 
