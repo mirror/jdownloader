@@ -88,11 +88,11 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
     public String createExtractSubPath(String path, Archive archiv) {
 
         try {
-
+            path = path.replace(PACKAGENAME, ARCHIVENAME);
             if (archiv.getName() != null) {
-                path = path.replace("%ARCHIVENAME%", archiv.getName());
+                path = path.replace(ARCHIVENAME, archiv.getName());
             } else {
-                path = path.replace("%ARCHIVENAME%", "");
+                path = path.replace(ARCHIVENAME, "");
                 Log.L.severe("Could not set archivename for " + archiv.getFirstArchiveFile().getFilePath());
             }
 
@@ -117,7 +117,7 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
             if (new File(dif).isAbsolute()) {
                 dif = "";
             }
-            path = path.replace("%SUBFOLDER%", dif);
+            path = path.replace(SUBFOLDER, dif);
 
             path = path.replaceAll("[/]+", "\\\\");
             path = path.replaceAll("[\\\\]+", "\\\\");

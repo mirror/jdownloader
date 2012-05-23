@@ -5,6 +5,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 public interface ArchiveFactory extends ArchiveFile {
+    public static final String SUBFOLDER   = "%SUBFOLDER%";
+    public static final String ARCHIVENAME = "%ARCHIVENAME%";
+    public static final String HOSTER      = "%HOSTER%";
+    public static final String PACKAGENAME = "%PACKAGENAME%";
 
     ArrayList<ArchiveFile> createPartFileList(String pattern);
 
@@ -23,10 +27,8 @@ public interface ArchiveFactory extends ArchiveFile {
     void fireArchiveAddedToQueue(Archive archive);
 
     /*
-     * if (archive.getFactory().getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH) !=
-     * null){ return (File)
-     * archive.getFactory().getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH); } if
-     * (archive.getFactory() instanceof DummyDownloadLink) return new
+     * if (archive.getFactory().getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH) != null){ return (File)
+     * archive.getFactory().getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH); } if (archive.getFactory() instanceof DummyDownloadLink) return new
      * File(archive.getFactory().getFileOutput()).getParentFile();
      */
     String getExtractPath(Archive archive);

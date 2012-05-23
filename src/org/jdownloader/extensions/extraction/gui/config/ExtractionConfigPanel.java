@@ -1,7 +1,13 @@
 package org.jdownloader.extensions.extraction.gui.config;
 
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
+
+import javax.swing.JMenu;
+import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
+import javax.swing.text.BadLocationException;
 
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
@@ -10,10 +16,18 @@ import jd.gui.swing.jdgui.views.settings.components.Spinner;
 import jd.gui.swing.jdgui.views.settings.components.TextArea;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 
+import org.appwork.app.gui.copycutpaste.CopyAction;
+import org.appwork.app.gui.copycutpaste.CutAction;
+import org.appwork.app.gui.copycutpaste.DeleteAction;
+import org.appwork.app.gui.copycutpaste.PasteAction;
+import org.appwork.app.gui.copycutpaste.SelectAction;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.ExtensionConfigPanel;
+import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.CPUPriority;
 import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
@@ -23,20 +37,20 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 
 public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtension> {
-    private static final long      serialVersionUID = 1L;
-    private Pair<Checkbox>         toggleCustomizedPath;
-    private Pair<FolderChooser>    customPath;
-    private Pair<Checkbox>         toggleUseSubpath;
-    private Pair<Spinner>          subPathMinFiles;
-    private Pair<Checkbox>         toggleUseSubpathOnlyIfNotFoldered;
-    private Pair<TextInput>        subPath;
-    private Pair<Checkbox>         toggleDeleteArchives;
-    private Pair<Checkbox>         toggleOverwriteExisting;
-    private Pair<TextArea>         blacklist;
-    private Pair<Checkbox>         toggleUseOriginalFileDate;
-    private Pair<ComboBox<String>> cpupriority;
-    private Pair<TextArea>         passwordlist;
-    private Pair<Checkbox>         toggleDeleteArchiveDownloadLinks;
+    private static final long         serialVersionUID = 1L;
+    private Pair<Checkbox>            toggleCustomizedPath;
+    private Pair<FolderChooser>       customPath;
+    private Pair<Checkbox>            toggleUseSubpath;
+    private Pair<Spinner>             subPathMinFiles;
+    private Pair<Checkbox>            toggleUseSubpathOnlyIfNotFoldered;
+    private Pair<? extends TextInput> subPath;
+    private Pair<Checkbox>            toggleDeleteArchives;
+    private Pair<Checkbox>            toggleOverwriteExisting;
+    private Pair<TextArea>            blacklist;
+    private Pair<Checkbox>            toggleUseOriginalFileDate;
+    private Pair<ComboBox<String>>    cpupriority;
+    private Pair<TextArea>            passwordlist;
+    private Pair<Checkbox>            toggleDeleteArchiveDownloadLinks;
 
     public ExtractionConfigPanel(ExtractionExtension plg) {
         super(plg);
@@ -48,12 +62,111 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         toggleUseSubpath = this.addPair(T._.settings_use_subpath(), null, new Checkbox());
         Spinner spinner = new Spinner(0, Integer.MAX_VALUE);
         spinner.setFormat("# " + T._.files());
-        subPathMinFiles = this.addPair(T._.settings_subpath_minnum(), null, spinner);
+        subPathMinFiles = this.addPair(T._.settings_subpath_minnum2(), null, spinner);
         subPathMinFiles.setConditionPair(toggleUseSubpath);
         toggleUseSubpathOnlyIfNotFoldered = this.addPair(T._.settings_subpath_no_folder2(), null, new Checkbox());
         toggleUseSubpathOnlyIfNotFoldered.setToolTipText(T._.settings_subpath_no_folder_tt());
         toggleUseSubpathOnlyIfNotFoldered.setConditionPair(toggleUseSubpath);
-        subPath = this.addPair(T._.settings_subpath(), null, new TextInput());
+        subPath = this.addPair(T._.settings_subpath(), null, new TextInput() {
+
+            @Override
+            public JPopupMenu getPopupMenu(CutAction cutAction, CopyAction copyAction, PasteAction pasteAction, DeleteAction deleteAction, SelectAction selectAction) {
+                JPopupMenu menu = new JPopupMenu();
+                JMenu sub = new JMenu(T._.properties());
+                sub.add(new AppAction() {
+                    {
+                        setName(T._.packagename());
+                    }
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        if (StringUtils.isEmpty(getText())) {
+                            setText(ArchiveFactory.PACKAGENAME);
+                        } else {
+                            int car = getCaretPosition();
+
+                            try {
+                                getDocument().insertString(car, ArchiveFactory.PACKAGENAME, null);
+                            } catch (BadLocationException e1) {
+                                e1.printStackTrace();
+                            }
+                        }
+                    }
+                });
+
+                sub.add(new AppAction() {
+                    {
+                        setName(T._.subfolder());
+                    }
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        if (StringUtils.isEmpty(getText())) {
+                            setText(ArchiveFactory.SUBFOLDER);
+                        } else {
+                            int car = getCaretPosition();
+
+                            try {
+                                getDocument().insertString(car, ArchiveFactory.SUBFOLDER, null);
+                            } catch (BadLocationException e1) {
+                                e1.printStackTrace();
+                            }
+                        }
+                    }
+                });
+
+                sub.add(new AppAction() {
+                    {
+                        setName(T._.hoster());
+                    }
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        if (StringUtils.isEmpty(getText())) {
+                            setText(ArchiveFactory.HOSTER);
+                        } else {
+                            int car = getCaretPosition();
+
+                            try {
+                                getDocument().insertString(car, ArchiveFactory.HOSTER, null);
+                            } catch (BadLocationException e1) {
+                                e1.printStackTrace();
+                            }
+                        }
+                    }
+                });
+
+                sub.add(new AppAction() {
+                    {
+                        setName(T._.date());
+                    }
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        if (StringUtils.isEmpty(getText())) {
+                            setText("$DATE:dd.MM.yyyy$");
+                        } else {
+                            int car = getCaretPosition();
+
+                            try {
+                                getDocument().insertString(car, "$DATE:dd.MM.yyyy$", null);
+                            } catch (BadLocationException e1) {
+                                e1.printStackTrace();
+                            }
+                        }
+                    }
+                });
+                menu.add(sub);
+                menu.add(new JSeparator());
+                menu.add(cutAction);
+                menu.add(copyAction);
+                menu.add(pasteAction);
+                menu.add(deleteAction);
+                menu.add(selectAction);
+                return menu;
+            }
+
+        });
         subPath.setConditionPair(toggleUseSubpath);
 
         this.addHeader(T._.settings_various(), NewTheme.I().getIcon("settings", 32));

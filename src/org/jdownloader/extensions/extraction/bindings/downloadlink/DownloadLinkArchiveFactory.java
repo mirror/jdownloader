@@ -42,24 +42,24 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 // path = path.replace("%PACKAGENAME%",
                 // archiv.getExtractor().getArchiveName(archiv.getFirstArchiveFile()));
                 // } else {
-                path = path.replace("%PACKAGENAME%", link.getFilePackage().getName());
+                path = path.replace(PACKAGENAME, link.getFilePackage().getName());
                 // }
             } else {
-                path = path.replace("%PACKAGENAME%", "");
+                path = path.replace(PACKAGENAME, "");
                 Log.L.severe("Could not set packagename for " + archiv.getFirstArchiveFile().getFilePath());
             }
 
             if (archiv.getName() != null) {
-                path = path.replace("%ARCHIVENAME%", archiv.getName());
+                path = path.replace(ARCHIVENAME, archiv.getName());
             } else {
-                path = path.replace("%ARCHIVENAME%", "");
+                path = path.replace(ARCHIVENAME, "");
                 Log.L.severe("Could not set archivename for " + archiv.getFirstArchiveFile().getFilePath());
             }
 
             if (link.getHost() != null) {
-                path = path.replace("%HOSTER%", link.getHost());
+                path = path.replace(HOSTER, link.getHost());
             } else {
-                path = path.replace("%HOSTER%", "");
+                path = path.replace(HOSTER, "");
                 Log.L.severe("Could not set hoster for " + archiv.getFirstArchiveFile().getFilePath());
             }
 
@@ -84,7 +84,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
             if (new File(dif).isAbsolute()) {
                 dif = "";
             }
-            path = path.replace("%SUBFOLDER%", dif);
+            path = path.replace(SUBFOLDER, dif);
 
             path = path.replaceAll("[/]+", "\\\\");
             path = path.replaceAll("[\\\\]+", "\\\\");

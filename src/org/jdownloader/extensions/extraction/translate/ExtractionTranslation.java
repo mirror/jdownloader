@@ -93,8 +93,8 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Subfolder pattern" })
     String settings_subpath();
 
-    @Default(lngs = { "en" }, values = { "... only if archive contains >" })
-    String settings_subpath_minnum();
+    @Default(lngs = { "en" }, values = { "... only if archive root contains >" })
+    String settings_subpath_minnum2();
 
     @Default(lngs = { "en" }, values = { "Create Subfolder" })
     String settings_use_subpath();
@@ -111,7 +111,7 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extract failed (CRC error)" })
     String plugins_optional_extraction_status_extractfailedcrc();
 
-    @Default(lngs = { "en" }, values = { "... only if there isn't a directory in the archive" })
+    @Default(lngs = { "en" }, values = { "... only if there are no root folders" })
     String settings_subpath_no_folder2();
 
     @Default(lngs = { "en" }, values = { "Deep-Extraction" })
@@ -150,7 +150,7 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extract to" })
     String settings_extract_to_path();
 
-    @Default(lngs = { "en" }, values = { "Do not use a subfolder if all files in the archive already are  packed in one folder." })
+    @Default(lngs = { "en" }, values = { "Do not use a subfolder if all files in the archive already are  packed in folders." })
     String settings_subpath_no_folder_tt();
 
     @Default(lngs = { "en" }, values = { "Miscellaneous" })
@@ -281,4 +281,19 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Extraction of %s1 failed" })
     String extraction_failed(String name);
+
+    @Default(lngs = { "en" }, values = { "Subpath Properties" })
+    String properties();
+
+    @Default(lngs = { "en" }, values = { "Packagename" })
+    String packagename();
+
+    @Default(lngs = { "en" }, values = { "Hoster" })
+    String hoster();
+
+    @Default(lngs = { "en" }, values = { "Downloadpath Subfolder" })
+    String subfolder();
+
+    @Default(lngs = { "en" }, values = { "Date" })
+    String date();
 }

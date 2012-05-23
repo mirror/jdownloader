@@ -322,20 +322,23 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      */
     void assignRealDownloadDir(ExtractionController controller) {
 
-        // Boolean usesub = getSettings().isSubpathEnabled();
-        // if (usesub) {
-        // if (getSettings().getSubPathFilesTreshhold() > controller.getArchiv().getContentView().getTotalFileCount()) { return; }
-        // if (getSettings().isSubpathEnabledIfAllFilesAreInAFolder()) {
-        // if (controller.getArchiv().isNoFolder()) { return; }
-        // }
-        //
-        // String path = getSettings().getSubPath();
-        //
-        // path = controller.getArchiv().getFactory().createExtractSubPath(path, controller.getArchiv());
-        // if (path != null) {
-        // controller.getArchiv().setExtractTo(new File(controller.getArchiv().getExtractTo(), path));
-        // }
-        // }
+        Boolean usesub = getSettings().isSubpathEnabled();
+        if (usesub) {
+            if (getSettings().getSubPathFilesTreshhold() > controller.getArchiv().getContentView().getFileCount() + controller.getArchiv().getContentView().getDirectoryCount()) { return; }
+            if (getSettings().isSubpathEnabledIfAllFilesAreInAFolder()) {
+
+                if (controller.getArchiv().getContentView().getFileCount() == 0) { return;
+
+                }
+            }
+
+            String path = getSettings().getSubPath();
+
+            path = controller.getArchiv().getFactory().createExtractSubPath(path, controller.getArchiv());
+            if (path != null) {
+                controller.getArchiv().setExtractTo(new File(controller.getArchiv().getExtractTo(), path));
+            }
+        }
 
     }
 
