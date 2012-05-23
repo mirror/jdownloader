@@ -41,6 +41,7 @@ import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.SevenZipNativeInitializationException;
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 import net.sf.sevenzipjbinding.impl.VolumedArchiveInStream;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 import org.appwork.utils.Application;
@@ -283,14 +284,28 @@ public class Multi extends IExtraction {
             String s = System.getProperty("os.arch");
             String s1 = System.getProperty("os.name").split(" ")[0];
             String libID = new StringBuilder().append(s1).append("-").append(s).toString();
+            Log.L.finer("Lib ID: " + libID);
             File tmp = Application.getResource("tmp/7zip");
             org.appwork.utils.Files.deleteRecursiv(tmp);
+
+            Log.L.finer("Lib Path: " + tmp);
             tmp.mkdirs();
             SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
         } catch (SevenZipNativeInitializationException e) {
             Log.exception(e);
-            logger.warning("Could not initialize Multiunpacker");
-            return false;
+            logger.warning("Could not initialize Multiunpacker #1");
+            try {
+
+                String s2 = System.getProperty("java.io.tmpdir");
+                Log.L.finer("Lib Path: " + new File(s2));
+
+                SevenZip.initSevenZipFromPlatformJAR(new File(s2));
+            } catch (SevenZipNativeInitializationException e2) {
+                Log.exception(e2);
+                logger.warning("Could not initialize Multiunpacker #2");
+                return false;
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -484,7 +499,7 @@ public class Multi extends IExtraction {
     public void extract(final ExtractionController ctrl) {
         try {
             ctrl.setProgress(0.0d);
-            final double size = archive.getSize() / 100.0d;
+            final double size = archive.getContentView().getTotalSize() / 100.0d;
             progressInBytes = 0l;
             for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
                 // Skip folders
@@ -521,12 +536,14 @@ public class Multi extends IExtraction {
 
                 if (!extractTo.exists()) {
                     if ((!extractTo.getParentFile().exists() && !extractTo.getParentFile().mkdirs()) || !extractTo.createNewFile()) {
+                        setException(new Exception("Could not create File " + extractTo));
                         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
                         return;
                     }
                 } else {
                     if (archive.isOverwriteFiles()) {
                         if (!extractTo.delete()) {
+                            setException(new Exception("Could not overwrite " + extractTo));
                             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
                             return;
                         }
@@ -614,9 +631,13 @@ public class Multi extends IExtraction {
                 }
             }
         } catch (SevenZipException e) {
+            setException(e);
+            Log.exception(e);
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
             return;
         } catch (IOException e) {
+            setException(e);
+            Log.exception(e);
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
             return;
         } finally {
@@ -689,9 +710,8 @@ public class Multi extends IExtraction {
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
             }
 
-            long size = 0;
             final BooleanHelper passwordfound = new BooleanHelper();
-            String folder = "";
+
             for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
                 if (item.isFolder() || (item.getSize() == 0 && item.getPackedSize() == 0)) {
                     /*
@@ -762,29 +782,14 @@ public class Multi extends IExtraction {
                     }
                 }
 
-                if (filter(item.getPath())) continue;
+                // if (filter(item.getPath())) continue;
 
-                String[] erg = item.getPath().split("/");
-                if (archive.isNoFolder() && erg.length > 1) {
-                    if (folder.equals("")) {
-                        folder = erg[0];
-                    } else {
-                        if (!folder.equals(erg[0])) {
-                            archive.setNoFolder(false);
-                        }
-                    }
-                } else {
-                    archive.setNoFolder(false);
-                }
-
-                size += item.getSize();
             }
 
             if (!passwordfound.getBoolean()) return false;
 
-            archive.setSize(size);
-
             archive.setPassword(password);
+            updateContentView(inArchive.getSimpleInterface());
             return true;
         } catch (FileNotFoundException e) {
             return false;
@@ -918,41 +923,15 @@ public class Multi extends IExtraction {
                 return false;
             }
 
-            long size = 0;
-            int numberOfFiles = 0;
-            String folder = "";
             for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
-                archive.getContentView().add(new PackedFile(item.isFolder(), item.getPath(), item.getSize()));
-                if (item.isFolder()) {
-                    archive.setNoFolder(false);
-                    continue;
-                }
 
                 if (item.isEncrypted()) {
                     archive.setProtected(true);
                     // return true;
                 }
 
-                if (item.getPath().trim().equals("") || filter(item.getPath())) continue;
-
-                String[] erg = item.getPath().split("/");
-                if (archive.isNoFolder() && erg.length > 1) {
-                    if (folder.equals("")) {
-                        folder = erg[0];
-                    } else {
-                        if (!folder.equals(erg[0])) {
-                            archive.setNoFolder(false);
-                        }
-                    }
-                } else {
-                    archive.setNoFolder(false);
-                }
-
-                size += item.getSize();
-                numberOfFiles++;
             }
-            archive.setSize(size);
-            archive.setNumberOfFiles(numberOfFiles);
+            updateContentView(inArchive.getSimpleInterface());
         } catch (SevenZipException e) {
             // There are password protected multipart rar files
             archive.setProtected(true);
@@ -962,6 +941,21 @@ public class Multi extends IExtraction {
         }
 
         return true;
+    }
+
+    private void updateContentView(ISimpleInArchive simpleInterface) {
+        try {
+            for (ISimpleInArchiveItem item : simpleInterface.getArchiveItems()) {
+                try {
+                    if (item.getPath().trim().equals("") || filter(item.getPath())) continue;
+                    archive.getContentView().add(new PackedFile(item.isFolder(), item.getPath(), item.getSize()));
+                } catch (SevenZipException e) {
+                    Log.exception(e);
+                }
+            }
+        } catch (SevenZipException e) {
+            Log.exception(e);
+        }
     }
 
     @Override
