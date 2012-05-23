@@ -146,7 +146,7 @@ public class JumboFilesCom extends PluginForHost {
         br.setFollowRedirects(true);
         String dllink = null;
         // Form um auf "Datei herunterladen" zu klicken
-        Form dlForm = br.getFormbyProperty("name", "F1");
+        Form dlForm = br.getForm(0);
         if (dlForm == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         for (int i = 0; i <= 5; i++) {
             String passCode = null;
@@ -315,18 +315,14 @@ public class JumboFilesCom extends PluginForHost {
         String filesize = new Regex(BRBEFORE, "Filesize:.*?</TD><TD>(.*?)</TD>").getMatch(0);
         // They got different pages for stream, normal and pw-protected files so
         // we need special handling
-        if (filesize == null) {
-            filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
-            if (filesize == null) {
-                filesize = new Regex(BRBEFORE, "F<TD><center>.*?<br>(.*?)<br>").getMatch(0);
-            }
-        }
-        if (filename == null) {
-            filename = new Regex(BRBEFORE, "down_direct\" value=.*?<input type=\"image\" src=.*?</TD></TR>.*?<TR><TD>(.*?)<small").getMatch(0);
-            if (filename == null) {
-                filename = new Regex(BRBEFORE, "<TD><center>(.*?)<br>").getMatch(0);
-            }
-        }
+        if (filesize == null) filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
+        if (filesize == null) filesize = new Regex(BRBEFORE, "F<TD><center>.*?<br>(.*?)<br>").getMatch(0);
+        if (filesize == null) filesize = new Regex(BRBEFORE, "You have requested.*?>http.*?font> \\((.*?)\\)").getMatch(0);
+
+        if (filename == null) filename = new Regex(BRBEFORE, "down_direct\" value=.*?<input type=\"image\" src=.*?</TD></TR>.*?<TR><TD>(.*?)<small").getMatch(0);
+        if (filename == null) filename = new Regex(BRBEFORE, "<TD><center>(.*?)<br>").getMatch(0);
+        if (filename == null) filename = new Regex(BRBEFORE, "fname\" value=\"(.*?)\"").getMatch(0);
+
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         filename = filename.replace("&nbsp;", "");
         filename = filename.trim();

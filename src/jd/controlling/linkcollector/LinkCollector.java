@@ -679,7 +679,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
              * we don't want to keep reference on text during the whole link grabbing/checking/collecting way
              */
             job.setText(null);
-            lc.crawl(jobText, null, job.isDeepAnalyse());
+            lc.crawl(jobText, job.getCustomSourceUrl(), job.isDeepAnalyse());
             return lc;
         }
     }
