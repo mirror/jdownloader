@@ -202,13 +202,13 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public void focusLost(FocusEvent e) {
-        System.out.println(e);
+
         super.focusLost(e);
     }
 
     @Override
     public void focusGained(final FocusEvent e) {
-        System.out.println(e);
+
         String txt = editorField.getText();
         int point = txt.lastIndexOf(".");
         /* select filename only, try to keep the extension/filetype */
