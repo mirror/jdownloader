@@ -313,8 +313,7 @@ public class TriLuLiLuRo extends PluginForHost {
                         value = value + r;
                     }
                     /*
-                     * Encoded as 64-bit double precision floating point number
-                     * IEEE 754 standard
+                     * Encoded as 64-bit double precision floating point number IEEE 754 standard
                      */
                     value = value != null ? String.valueOf((int) Double.longBitsToDouble(new BigInteger(value, 16).longValue())) : value;
                 } else {
@@ -383,15 +382,11 @@ public class TriLuLiLuRo extends PluginForHost {
             if (b) {
                 if (proxy.getHost() != null || proxy.getHost() != "" && proxy.getPort() > 0) {
                     br.setProxy(proxy);
+                    return;
                 }
-            } else {
-                /*
-                 * use null, so the plugin uses global set proxy again, setting
-                 * it to none will disable global proxy if set
-                 */
-                br.setProxy(null);
             }
         }
+        br.setProxy(null);
     }
 
     private void setConfigElements() {

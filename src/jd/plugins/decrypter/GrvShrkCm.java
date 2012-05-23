@@ -40,7 +40,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.GrooveShark;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://(listen\\.)?grooveshark\\.com/(#\\!?/)?((album|artist|playlist|s|user)/.*?/([a-zA-z0-9]+|\\d+)(/music/favorites|/similar)?|popular)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://(listen\\.)?grooveshark\\.com/(#(\\!|%21)?/)?((album|artist|playlist|s|user)/.*?/([a-zA-z0-9]+|\\d+)(/music/favorites|/similar)?|popular)" }, flags = { 0 })
 public class GrvShrkCm extends PluginForDecrypt {
 
     private static final String     LISTEN  = "http://grooveshark.com/";
@@ -92,7 +92,7 @@ public class GrvShrkCm extends PluginForDecrypt {
             return null;
         }
 
-        parameter = parameter.replace("http://listen.", "http://").replace("/#!/", "/#/");
+        parameter = parameter.replace("http://listen.", "http://").replace("/#!/", "/#/").replace("/#%21/", "/#/");
         /* single */
         if (parameter.contains("/s/")) {
             parameter = parameter.replaceFirst(LISTEN, "http://grooveshark.viajd/");
@@ -194,6 +194,7 @@ public class GrvShrkCm extends PluginForDecrypt {
             t1 = decodeUnicode(t1.replace("#", "-").replace("},{", "}#{"));
             final String[] t2 = t1.split("#");
             progress.setRange(t2.length);
+            HashMap<String, FilePackage> fpMap = new HashMap<String, FilePackage>();
             for (final String t3 : t2) {
                 final String[] line = t3.replace("null", "\"null\"").replace("\",\"", "\"#\"").replaceAll("\\{|\\}", "").split("#");
                 for (final String t4 : line) {
@@ -219,8 +220,13 @@ public class GrvShrkCm extends PluginForDecrypt {
                 if (method.contains("popular")) {
                     fpName = "Grooveshark daily popular";
                 }
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName.trim());
+                fpName = fpName.trim();
+                FilePackage fp = fpMap.get(fpName);
+                if (fp == null) {
+                    fp = FilePackage.getInstance();
+                    fp.setName(fpName);
+                    fpMap.put(fpName, fp);
+                }
                 fp.add(dlLink);
                 decryptedLinks.add(dlLink);
                 progress.increase(1);
@@ -372,6 +378,7 @@ public class GrvShrkCm extends PluginForDecrypt {
                 final org.appwork.utils.net.httpconnection.HTTPProxy proxy = org.appwork.utils.net.httpconnection.HTTPProxy.parseHTTPProxy(proxyString);
                 if (b && proxy != null && proxy.getHost() != null) {
                     br.setProxy(proxy);
+                    return;
                 }
             }
         }

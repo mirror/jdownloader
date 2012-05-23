@@ -314,6 +314,7 @@ public class GrooveShark extends PluginForHost {
                 final org.appwork.utils.net.httpconnection.HTTPProxy proxy = org.appwork.utils.net.httpconnection.HTTPProxy.parseHTTPProxy(proxyString);
                 if (b && proxy != null && proxy.getHost() != null) {
                     br.setProxy(proxy);
+                    return;
                 }
             }
         }

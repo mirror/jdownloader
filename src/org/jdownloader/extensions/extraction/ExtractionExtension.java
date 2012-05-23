@@ -235,7 +235,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      */
     File getExtractToPath(ArchiveFactory archiveFactory, Archive archive) {
         // if extract folder is already set, use it.
-        if (archive.getExtractTo() != null) return archive.getExtractTo();
+        if (archive!=null && archive.getExtractTo() != null) return archive.getExtractTo();
         String path = archiveFactory.getExtractPath(archive);
 
         if (getSettings().isCustomExtractionPathEnabled()) {

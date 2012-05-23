@@ -392,6 +392,15 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             packageID = dpi.getUniqueId().toString();
                         }
                         downloadFolder = dpi.getDestinationFolder();
+                        if (downloadFolder != null) {
+                            downloadFolder = downloadFolder.replaceFirst("/$", "");
+                            String defaultFolder = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+                            if (defaultFolder != null) defaultFolder = defaultFolder.replaceFirst("/$", "");
+                            if (!downloadFolder.equals(defaultFolder)) {
+                                /* we have a custom downloadFolder, so let's not use various package */
+                                ignoreSpecialPackages = true;
+                            }
+                        }
                     }
                     CrawledLinkFactory clf = new CrawledLinkFactory(link);
                     ExtractionExtension lArchiver = archiver;
