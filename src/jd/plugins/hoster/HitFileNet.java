@@ -460,7 +460,7 @@ public class HitFileNet extends PluginForHost {
         } catch (final Throwable e) {
             return null;
         }
-        return result.toString();
+        return result != null ? result.toString() : null;
     }
 
 }
