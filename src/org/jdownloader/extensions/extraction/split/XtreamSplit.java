@@ -43,6 +43,7 @@ import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
+import org.jdownloader.extensions.extraction.content.PackedFile;
 
 /**
  * Joins XtreamSplit files.
@@ -116,7 +117,8 @@ public class XtreamSplit extends IExtraction {
 
                 size += new File(l).length() - HEADER_SIZE;
             }
-            controller.getArchiv().setSize(size);
+
+            controller.getArchiv().getContentView().add(new PackedFile(false, archive.getName(), size));
             long progressInBytes = 0l;
             controller.setProgress(0.0d);
             archive.addExtractedFiles(file);

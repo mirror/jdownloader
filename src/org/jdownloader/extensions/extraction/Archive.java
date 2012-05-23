@@ -73,11 +73,6 @@ public class Archive {
     private boolean                gotInterrupted   = false;
 
     /**
-     * Total size of the extracted ffiles.
-     */
-    private long                   size             = 0;
-
-    /**
      * Size of the corrent extracted files.
      */
     private long                   extracted        = 0;
@@ -93,11 +88,6 @@ public class Archive {
     private ArchiveType            type             = null;
 
     /**
-     * Number of files in the archive.
-     */
-    private int                    numberOfFiles    = 0;
-
-    /**
      * ArchiveFiles CRC error.
      */
     private ArrayList<ArchiveFile> crcError;
@@ -106,11 +96,6 @@ public class Archive {
      * List of the extracted files.
      */
     private ArrayList<File>        extractedFiles;
-
-    /**
-     * Indicates that the archive has no folders.
-     */
-    private boolean                noFolder         = true;
 
     /**
      * The extractor for the archive.
@@ -201,14 +186,6 @@ public class Archive {
         return gotInterrupted;
     }
 
-    public void setSize(final long size) {
-        this.size = size;
-    }
-
-    public long getSize() {
-        return size;
-    }
-
     public void setFirstArchiveFile(ArchiveFile firstArchiveFile) {
         this.firstArchiveFile = firstArchiveFile;
     }
@@ -248,14 +225,6 @@ public class Archive {
         return type;
     }
 
-    public void setNumberOfFiles(int numberOfFiles) {
-        this.numberOfFiles = numberOfFiles;
-    }
-
-    public int getNumberOfFiles() {
-        return numberOfFiles;
-    }
-
     public void addCrcError(ArchiveFile crc) {
         this.crcError.add(crc);
     }
@@ -271,14 +240,6 @@ public class Archive {
 
     public ArrayList<File> getExtractedFiles() {
         return extractedFiles;
-    }
-
-    public void setNoFolder(boolean noFolder) {
-        this.noFolder = noFolder;
-    }
-
-    public boolean isNoFolder() {
-        return noFolder;
     }
 
     public void setExtractor(IExtraction extractor) {

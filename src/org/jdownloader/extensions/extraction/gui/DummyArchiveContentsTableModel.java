@@ -9,6 +9,7 @@ import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.DummyArchiveFile;
+import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFile;
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.images.NewTheme;
 
@@ -40,9 +41,22 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
 
             @Override
             protected String getTooltipText(DummyArchiveFile value) {
-                if (value.isMissing() || value.isIncomplete()) { return T._.offline_tt(); }
-                if (value.getOnlineStatus() == AvailableStatus.TRUE) return T._.online_tt();
-                return T._.unknown_tt();
+                if (value.getArchiveFile() instanceof FileArchiveFile) {
+                    if (((FileArchiveFile) value.getArchiveFile()).getFile().exists()) {
+                        return T._.file_exists();
+                    } else {
+                        return T._.file_exists_not();
+                    }
+                } else {
+                    if (value.getArchiveFile() == null) {
+                        if (value.isMissing() || value.isIncomplete()) { return T._.file_exists_not(); }
+                        return T._.unknown_tt();
+                    } else {
+                        if (value.isMissing() || value.isIncomplete()) { return T._.offline_tt(); }
+                        if (value.getOnlineStatus() == AvailableStatus.TRUE) return T._.online_tt();
+                        return T._.unknown_tt();
+                    }
+                }
             }
 
         });

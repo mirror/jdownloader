@@ -3661,10 +3661,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Save" })
     String OpenDownloadFolderAction_actionPerformed_save_();
 
-    @Default(lngs = { "en" }, values = { "Current Download Directory: %s1" })
+    @Default(lngs = { "en" }, values = { "Current Directory: %s1" })
     String OpenDownloadFolderAction_layoutDialogContent_current_(String absolutePath);
 
-    @Default(lngs = { "en" }, values = { "Choose new Download Directory:" })
+    @Default(lngs = { "en" }, values = { "Choose new Directory:" })
     String OpenDownloadFolderAction_layoutDialogContent_object_();
 
     @Default(lngs = { "en" }, values = { "%s1's Properties" })

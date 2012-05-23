@@ -272,4 +272,13 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Extract after Download" })
     String auto_extract_enabled();
+
+    @Default(lngs = { "en" }, values = { "File exists" })
+    String file_exists();
+
+    @Default(lngs = { "en" }, values = { "File exists not" })
+    String file_exists_not();
+
+    @Default(lngs = { "en" }, values = { "Extraction of %s1 failed" })
+    String extraction_failed(String name);
 }

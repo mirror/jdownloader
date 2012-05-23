@@ -310,4 +310,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isTooltipEnabled();
 
     void setTooltipEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @Description("If disabled, The Hostercolumn will show gray disabled icons if the link is disabled")
+    boolean isColoredIconsForDisabledHosterColumnEnabled();
+
+    void setColoredIconsForDisabledHosterColumnEnabled(boolean b);
 }

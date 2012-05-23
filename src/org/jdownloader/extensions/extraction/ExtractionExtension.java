@@ -77,6 +77,7 @@ import org.jdownloader.gui.menu.MenuContext;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
 import org.jdownloader.gui.uiserio.NewUIO;
+import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.downloads.table.DownloadTableContext;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTableContext;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTablePropertiesContext;
@@ -195,17 +196,17 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
     /**
      * Adds an archive to the extraction queue.
      */
-    public synchronized void addToQueue(final Archive archive) {
+    public synchronized ExtractionController addToQueue(final Archive archive) {
         // check if we have this archive already in queue.
 
         for (ExtractionController ec : extractionQueue.getJobs()) {
 
-            if (ec.getArchiv() == archive) return;
+            if (ec.getArchiv() == archive) return ec;
         }
 
         IExtraction extractor = archive.getExtractor();
 
-        if (!archive.getFirstArchiveFile().exists()) return;
+        if (!archive.getFirstArchiveFile().exists()) return null;
         archive.getFactory().fireArchiveAddedToQueue(archive);
 
         archive.setOverwriteFiles(getSettings().isOverwriteExistingFilesEnabled());
@@ -220,6 +221,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
 
         extractionQueue.addAsynch(controller);
         fireEvent(new ExtractionEvent(controller, ExtractionEvent.Type.QUEUED));
+        return controller;
     }
 
     /**
@@ -232,6 +234,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      * @return
      */
     File getExtractToPath(ArchiveFactory archiveFactory, Archive archive) {
+        // if extract folder is already set, use it.
+        if (archive.getExtractTo() != null) return archive.getExtractTo();
         String path = archiveFactory.getExtractPath(archive);
 
         if (getSettings().isCustomExtractionPathEnabled()) {
@@ -318,20 +322,20 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
      */
     void assignRealDownloadDir(ExtractionController controller) {
 
-        Boolean usesub = getSettings().isSubpathEnabled();
-        if (usesub) {
-            if (getSettings().getSubPathFilesTreshhold() > controller.getArchiv().getNumberOfFiles()) { return; }
-            if (getSettings().isSubpathEnabledIfAllFilesAreInAFolder()) {
-                if (controller.getArchiv().isNoFolder()) { return; }
-            }
-
-            String path = getSettings().getSubPath();
-
-            path = controller.getArchiv().getFactory().createExtractSubPath(path, controller.getArchiv());
-            if (path != null) {
-                controller.getArchiv().setExtractTo(new File(controller.getArchiv().getExtractTo(), path));
-            }
-        }
+        // Boolean usesub = getSettings().isSubpathEnabled();
+        // if (usesub) {
+        // if (getSettings().getSubPathFilesTreshhold() > controller.getArchiv().getContentView().getTotalFileCount()) { return; }
+        // if (getSettings().isSubpathEnabledIfAllFilesAreInAFolder()) {
+        // if (controller.getArchiv().isNoFolder()) { return; }
+        // }
+        //
+        // String path = getSettings().getSubPath();
+        //
+        // path = controller.getArchiv().getFactory().createExtractSubPath(path, controller.getArchiv());
+        // if (path != null) {
+        // controller.getArchiv().setExtractTo(new File(controller.getArchiv().getExtractTo(), path));
+        // }
+        // }
 
     }
 
@@ -542,18 +546,63 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig> imp
                 File[] files = UserIO.getInstance().requestFileChooser("_EXTRATION_", null, UserIO.FILES_ONLY, ff, true, null, null);
                 if (files == null) return;
 
-                for (File archiveStartFile : files) {
+                for (final File archiveStartFile : files) {
 
                     try {
                         final Archive archive = buildArchive(new FileArchiveFactory(archiveStartFile));
+                        if (getSettings().isCustomExtractionPathEnabled()) {
+
+                            File path = DownloadFolderChooserDialog.open(new File(getSettings().getCustomExtractionPath()), false, "Extract To");
+                            archive.setExtractTo(path);
+                        } else {
+                            File path = DownloadFolderChooserDialog.open(archiveStartFile.getParentFile(), false, "Extract To");
+                            archive.setExtractTo(path);
+                        }
 
                         new Thread() {
                             @Override
                             public void run() {
-                                if (archive.isComplete()) addToQueue(archive);
+
+                                if (archive.isComplete()) {
+                                    final ExtractionController controller = addToQueue(archive);
+                                    if (controller != null) {
+                                        final ExtractionListener listener = new ExtractionListener() {
+
+                                            @Override
+                                            public void onExtractionEvent(ExtractionEvent event) {
+                                                if (event.getCaller() == controller) {
+                                                    switch (event.getType()) {
+                                                    case CLEANUP:
+                                                        broadcaster.removeListener(this);
+                                                        break;
+                                                    case EXTRACTION_FAILED:
+                                                    case EXTRACTION_FAILED_CRC:
+
+                                                        if (controller.getException() != null) {
+                                                            Dialog.getInstance().showExceptionDialog(T._.extraction_failed(archiveStartFile.getName()), controller.getException().getLocalizedMessage(), controller.getException());
+                                                        } else {
+                                                            Dialog.getInstance().showErrorDialog(T._.extraction_failed(archiveStartFile.getName()));
+                                                        }
+                                                        break;
+                                                    }
+
+                                                }
+                                            }
+
+                                        };
+                                        broadcaster.addListener(listener);
+                                    }
+                                } else {
+
+                                    new ValidateArchiveAction(ExtractionExtension.this, archive).actionPerformed(null);
+                                }
                             }
                         }.start();
                     } catch (ArchiveException e1) {
+                        Log.exception(e1);
+                    } catch (DialogClosedException e1) {
+                        Log.exception(e1);
+                    } catch (DialogCanceledException e1) {
                         Log.exception(e1);
                     }
                 }

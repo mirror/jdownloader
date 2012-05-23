@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import jd.controlling.IOEQ;
-import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
 
@@ -119,12 +118,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             archive.setExtractTo(dl);
 
             if (extractor.prepare()) {
-                DISKSPACECHECK check = DownloadWatchDog.getInstance().checkFreeDiskSpace(archive.getExtractTo(), archive.getSize());
-                if (DISKSPACECHECK.FAILED.equals(check) || DISKSPACECHECK.INVALIDFOLDER.equals(check)) {
-                    fireEvent(ExtractionEvent.Type.NOT_ENOUGH_SPACE);
-                    logger.info("Not enough harddisk space for unpacking archive " + archive.getFirstArchiveFile().getFilePath());
-                    return null;
-                }
 
                 if (archive.isProtected() && archive.getPassword().equals("")) {
 
@@ -180,11 +173,19 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     fireEvent(ExtractionEvent.Type.PASSWORD_FOUND);
                     logger.info("Found password for " + archive);
                 }
+
+                DISKSPACECHECK check = DownloadWatchDog.getInstance().checkFreeDiskSpace(archive.getExtractTo(), archive.getContentView().getTotalSize());
+                if (DISKSPACECHECK.FAILED.equals(check) || DISKSPACECHECK.INVALIDFOLDER.equals(check)) {
+                    fireEvent(ExtractionEvent.Type.NOT_ENOUGH_SPACE);
+                    logger.info("Not enough harddisk space for unpacking archive " + archive.getFirstArchiveFile().getFilePath());
+                    return null;
+                }
+
                 fireEvent(ExtractionEvent.Type.OPEN_ARCHIVE_SUCCESS);
 
                 if (!archive.getExtractTo().exists()) {
                     if (!archive.getExtractTo().mkdirs()) {
-                        JDLogger.getLogger().warning("Could not create subpath");
+                        Log.L.warning("Could not create subpath");
                         fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     }
                 }
@@ -204,6 +205,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     timer.cancel(false);
                 }
                 extractor.close();
+                if (extractor.getException() != null) exception = extractor.getException();
                 switch (archive.getExitCode()) {
                 case ExtractionControllerConstants.EXIT_CODE_SUCCESS:
                     logger.info("Unpacking successful for " + archive);
@@ -213,32 +215,32 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     fireEvent(ExtractionEvent.Type.FINISHED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR:
-                    JDLogger.getLogger().warning("Archive seems to be incomplete " + archive);
+                    Log.L.warning("Archive seems to be incomplete " + archive);
                     fireEvent(ExtractionEvent.Type.FILE_NOT_FOUND);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_CRC_ERROR:
-                    JDLogger.getLogger().warning("A CRC error occurred when unpacking " + archive);
+                    Log.L.warning("A CRC error occurred when unpacking " + archive);
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED_CRC);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_USER_BREAK:
-                    JDLogger.getLogger().info("User interrupted unpacking of " + archive);
+                    Log.L.info("User interrupted unpacking of " + archive);
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR:
-                    JDLogger.getLogger().warning("Could not create Outputfile for" + archive);
+                    Log.L.warning("Could not create Outputfile for" + archive);
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR:
-                    JDLogger.getLogger().warning("Unable to write unpacked data on harddisk for " + archive);
+                    Log.L.warning("Unable to write unpacked data on harddisk for " + archive);
                     this.exception = new ExtractionException("Write to disk error");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR:
-                    JDLogger.getLogger().warning("A unknown fatal error occurred while unpacking " + archive);
+                    Log.L.warning("A unknown fatal error occurred while unpacking " + archive);
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_WARNING:
-                    JDLogger.getLogger().warning("Non fatal error(s) occurred while unpacking " + archive);
+                    Log.L.warning("Non fatal error(s) occurred while unpacking " + archive);
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 default:
@@ -251,7 +253,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             }
         } catch (Exception e) {
             this.exception = e;
-            JDLogger.exception(e);
+            Log.exception(e);
             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
         } finally {
             try {
@@ -271,7 +273,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         for (ArchiveFile link : archive.getArchiveFiles()) {
             if (removeAfterExtraction) {
                 if (!link.deleteFile()) {
-                    JDLogger.getLogger().warning("Could not delete archive: " + link);
+                    Log.L.warning("Could not delete archive: " + link);
                 } else {
                     removed.add(new File(link.getFilePath()));
                 }

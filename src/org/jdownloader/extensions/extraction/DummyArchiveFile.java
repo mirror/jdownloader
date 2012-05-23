@@ -6,6 +6,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkArchiveFile;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
+import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFile;
 
 public class DummyArchiveFile {
 
@@ -64,6 +65,13 @@ public class DummyArchiveFile {
         } else if (archiveFile instanceof DownloadLinkArchiveFile) {
             //
             return ((DownloadLinkArchiveFile) archiveFile).getAvailableStatus();
+        } else if (archiveFile instanceof FileArchiveFile) {
+
+            if (((FileArchiveFile) archiveFile).getFile().exists()) {
+                return AvailableStatus.TRUE;
+            } else {
+                return AvailableStatus.FALSE;
+            }
         }
         return AvailableStatus.UNCHECKED;
     }
@@ -76,7 +84,7 @@ public class DummyArchiveFile {
         } else if (archiveFile instanceof DownloadLinkArchiveFile) {
             //
             return new File(((DownloadLinkArchiveFile) archiveFile).getFilePath()).exists();
-        }
+        } else if (archiveFile instanceof FileArchiveFile) { return ((FileArchiveFile) archiveFile).getFile().exists(); }
         return false;
     }
 

@@ -238,7 +238,7 @@ public class ExtractorProgress extends IconedProcessIndicator {
         entries = extension.getJobQueue().getJobs();
         int progress = 0;
         for (ExtractionController ec : entries) {
-            if (ec.getArchiv().getSize() > 0) {
+            if (ec.getArchiv().getContentView().getTotalSize() > 0) {
                 progress += ec.getProgress();
             }
         }

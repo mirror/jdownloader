@@ -14,6 +14,9 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.IconLabelToolTip;
 import org.appwork.swing.components.tooltips.ToolTipController;
@@ -25,9 +28,25 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.HosterToolTip;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class HosterColumn extends ExtColumn<AbstractNode> {
+    private static boolean    COLORED_ICONS;
 
+    static {
+        COLORED_ICONS = CFG_GUI.COLORED_ICONS_FOR_DISABLED_HOSTER_COLUMN_ENABLED.isEnabled();
+        CFG_GUI.COLORED_ICONS_FOR_DISABLED_HOSTER_COLUMN_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                COLORED_ICONS = CFG_GUI.COLORED_ICONS_FOR_DISABLED_HOSTER_COLUMN_ENABLED.isEnabled();
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+        });
+    }
     /**
      * 
      */
@@ -36,6 +55,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     private MigPanel          panel;
     private RenderLabel[]     labels;
     private ImageIcon         moreIcon;
+
     private static int        DEFAULT_ICON_COUNT = 4;
 
     public HosterColumn() {
@@ -100,6 +120,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public boolean isEnabled(AbstractNode obj) {
+        if (COLORED_ICONS) return true;
         if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
         return obj.isEnabled();
     }

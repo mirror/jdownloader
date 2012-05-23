@@ -40,6 +40,7 @@ import org.jdownloader.extensions.extraction.CPUPriority;
 import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
+import org.jdownloader.extensions.extraction.content.PackedFile;
 
 /**
  * Utils for the joiner.
@@ -50,8 +51,7 @@ import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 class SplitUtil {
 
     /**
-     * Abstract method to build an archive from. The ArchiveFile has to be in
-     * the DownloadList.
+     * Abstract method to build an archive from. The ArchiveFile has to be in the DownloadList.
      * 
      * @param link
      *            ArchiveFile from the event.
@@ -171,7 +171,7 @@ class SplitUtil {
             files.add(l.getFilePath());
             size += new File(l.getFilePath()).length() - start;
         }
-        controller.getArchiv().setSize(size);
+        controller.getArchiv().getContentView().add(new PackedFile(false, archive.getName(), size));
         controller.setProgress(0.0d);
         Collections.sort(files);
         long progressInBytes = 0l;
@@ -181,8 +181,7 @@ class SplitUtil {
         ReusableByteArrayOutputStream readBuffer = null;
         try {
             /*
-             * write buffer, use same as downloadbuffer, so we have a pool of
-             * same sized buffers
+             * write buffer, use same as downloadbuffer, so we have a pool of same sized buffers
              */
             int maxbuffersize = config.getBufferSize() * 1024;
             writeBuffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(Math.max(maxbuffersize, 10240), false);
