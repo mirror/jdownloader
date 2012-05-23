@@ -296,4 +296,7 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Date" })
     String date();
+
+    @Default(lngs = { "en" }, values = { "Archivename" })
+    String archivename();
 }

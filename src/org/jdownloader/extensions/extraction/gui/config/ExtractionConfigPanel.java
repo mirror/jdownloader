@@ -93,7 +93,26 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                         }
                     }
                 });
+                sub.add(new AppAction() {
+                    {
+                        setName(T._.archivename());
+                    }
 
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        if (StringUtils.isEmpty(getText())) {
+                            setText(ArchiveFactory.ARCHIVENAME);
+                        } else {
+                            int car = getCaretPosition();
+
+                            try {
+                                getDocument().insertString(car, ArchiveFactory.ARCHIVENAME, null);
+                            } catch (BadLocationException e1) {
+                                e1.printStackTrace();
+                            }
+                        }
+                    }
+                });
                 sub.add(new AppAction() {
                     {
                         setName(T._.subfolder());
