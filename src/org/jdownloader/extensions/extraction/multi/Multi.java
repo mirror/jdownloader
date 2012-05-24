@@ -286,19 +286,25 @@ public class Multi extends IExtraction {
             libID = new StringBuilder().append(s1).append("-").append(s).toString();
             Log.L.finer("Lib ID: " + libID);
             tmp = Application.getResource("tmp/7zip");
-            org.appwork.utils.Files.deleteRecursiv(tmp);
+            try {
+                org.appwork.utils.Files.deleteRecursiv(tmp);
+            } catch (final Throwable e) {
+            }
             Log.L.finer("Lib Path: " + tmp);
             tmp.mkdirs();
             SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
         } catch (Throwable e) {
             if (e instanceof UnsatisfiedLinkError && CrossSystem.isWindows()) {
                 try {
-                    System.load(new File(tmp, "mingwm10.dll").toString());
-                    System.load(new File(tmp, "libgcc_s_dw2-1.dll").toString());
-                    System.load(new File(tmp, "libstdc++-6.dll").toString());
+                    /* workaround for sevenzipjbinding, missing dll imports */
+                    String path = new Regex(e.getMessage(), "(.:.*?)lib7-Zip-JBin").getMatch(0);
+                    System.load(new File(path, "mingwm10.dll").toString());
+                    System.load(new File(path, "libgcc_s_dw2-1.dll").toString());
+                    System.load(new File(path, "libstdc++-6.dll").toString());
                     SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
                     if (SevenZip.isInitializedSuccessfully()) return true;
                 } catch (final Throwable e2) {
+                    e2.printStackTrace();
                 }
             }
             try {
