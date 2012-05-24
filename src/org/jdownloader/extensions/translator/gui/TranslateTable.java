@@ -56,20 +56,13 @@ public class TranslateTable extends BasicJDTable<TranslateEntry> {
                 return getExtTableModel().getObjectbyRow(row).isWrongLength();
             }
         });
-        addRowHighlighter(new ExtOverlayRowHighlighter(null, new Color(255, 255, 0, opacity)) {
-            @Override
-            public boolean doHighlight(ExtTable<?> extTable, int row) {
-                TranslateTableModel t = (TranslateTableModel) getExtTableModel();
-                TranslateEntry e = t.getObjectbyRow(row);
-                return (e.isDefault() && (t.isMarkDefaults()));
-            }
-        });
+
         addRowHighlighter(new ExtOverlayRowHighlighter(null, new Color(0, 255, 120, opacity)) {
             @Override
             public boolean doHighlight(ExtTable<?> extTable, int row) {
                 TranslateTableModel t = (TranslateTableModel) getExtTableModel();
                 TranslateEntry e = getExtTableModel().getObjectbyRow(row);
-                return (e.isOK(t.isMarkDefaults()));
+                return (e.isOK(false));
             }
         });
 

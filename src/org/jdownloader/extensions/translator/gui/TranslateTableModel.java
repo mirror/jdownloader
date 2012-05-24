@@ -31,9 +31,6 @@ import org.jdownloader.images.NewTheme;
  */
 public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
-    private boolean markDefaults = false;
-    private boolean markOK       = true;
-
     public TranslateTableModel() {
         // this is is used to store table states(sort,column positions,
         // properties)
@@ -131,12 +128,10 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
                     return NewTheme.I().getIcon("error", 16);
                 } else if (obj.isWrongLength()) {
                     return NewTheme.I().getIcon("warning", 16);
-                } else if (markDefaults && obj.isDefault()) {
+                } else if (obj.isDefault()) {
                     return NewTheme.I().getIcon("flags/en", 16);
-                } else if (markOK) {
-                    return NewTheme.I().getIcon("ok", 16);
                 } else {
-                    return null;
+                    return NewTheme.I().getIcon("ok", 16);
                 }
             }
 
@@ -254,10 +249,8 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
             public void configureRendererComponent(TranslateEntry value, boolean isSelected, boolean hasFocus, int row, int column) {
                 super.configureRendererComponent(value, isSelected, hasFocus, row, column);
                 /*
-                 * if (value.hasErrors()) { renderer.setForeground(errorColor);
-                 * } else if (value.hasWarnings()) {
-                 * renderer.setForeground(warningColor); } else if
-                 * (value.isDefault()) { renderer.setForeground(defaultColor); }
+                 * if (value.hasErrors()) { renderer.setForeground(errorColor); } else if (value.hasWarnings()) {
+                 * renderer.setForeground(warningColor); } else if (value.isDefault()) { renderer.setForeground(defaultColor); }
                  */
 
             }
@@ -293,19 +286,4 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
         };
     }
 
-    public boolean isMarkDefaults() {
-        return markDefaults;
-    }
-
-    public void setMarkDefaults(boolean markDefaults) {
-        this.markDefaults = markDefaults;
-    }
-
-    public boolean isMarkOK() {
-        return markOK;
-    }
-
-    public void setMarkOK(boolean markOK) {
-        this.markOK = markOK;
-    }
 }

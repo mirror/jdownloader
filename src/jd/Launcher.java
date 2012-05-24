@@ -505,15 +505,21 @@ public class Launcher {
                     @Override
                     public void run() {
                         try {
+                            Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
                             HostPluginController.getInstance().ensureLoaded();
                             /* load links */
+                            Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init DownloadLinks");
                             DownloadController.getInstance().initDownloadLinks();
+                            Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Linkgrabber");
                             LinkCollector.getInstance().initLinkCollector();
                             /* start remote api */
+                            Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init RemoteAPI");
                             RemoteAPIController.getInstance();
+                            Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Extern INterface");
                             ExternInterface.getINSTANCE();
                             // GarbageController.getInstance();
                             /* load extensions */
+                            Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Extensions");
                             ExtensionController.getInstance().init();
                             /* init clipboardMonitoring stuff */
                             if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled()) {
@@ -539,6 +545,7 @@ public class Launcher {
                                 JDUpdater.getInstance().startChecker();
                             }
                             /* start downloadwatchdog */
+                            Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init DownloadWatchdog");
                             DownloadWatchDog.getInstance();
                             AutoDownloadStartOption doRestartRunninfDownloads = JsonConfig.create(GeneralSettings.class).getAutoStartDownloadOption();
                             boolean closedRunning = JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads();
@@ -548,9 +555,7 @@ public class Launcher {
                                     @Override
                                     protected Void run() throws RuntimeException {
                                         /*
-                                         * we do this check inside IOEQ because
-                                         * initDownloadLinks also does its final
-                                         * init in IOEQ
+                                         * we do this check inside IOEQ because initDownloadLinks also does its final init in IOEQ
                                          */
                                         List<DownloadLink> dlAvailable = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
@@ -567,8 +572,7 @@ public class Launcher {
                                         });
                                         if (dlAvailable.size() == 0) {
                                             /*
-                                             * no downloadlinks available to
-                                             * autostart
+                                             * no downloadlinks available to autostart
                                              */
                                             return null;
                                         }

@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
 import javax.swing.ImageIcon;
 
@@ -18,12 +19,12 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.translator.gui.TranslatorGui;
+import org.jdownloader.gui.translate.GuiTranslation;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate.JdownloaderTranslation;
 
 /**
- * Extensionclass. NOTE: All extensions have to follow the namescheme to end
- * with "Extension" and have to extend AbstractExtension
+ * Extensionclass. NOTE: All extensions have to follow the namescheme to end with "Extension" and have to extend AbstractExtension
  * 
  * @author thomas
  * 
@@ -51,7 +52,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig> {
         // translators should be able to read english
         super("Translator");
         // get all LanguageIDs
-        ArrayList<String> ids = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class);
+        List<String> ids = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
         // create a list of TLocale instances
         translations = new ArrayList<TLocale>();
         for (String id : ids) {
@@ -77,8 +78,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig> {
     }
 
     /**
-     * Has to return the Extension MAIN Icon. This icon will be used,for
-     * example, in the settings pane
+     * Has to return the Extension MAIN Icon. This icon will be used,for example, in the settings pane
      */
     @Override
     public ImageIcon getIcon(int size) {
@@ -117,8 +117,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig> {
     }
 
     /**
-     * Returns the Settingspanel for this extension. If this extension does not
-     * have a configpanel, null can be returned
+     * Returns the Settingspanel for this extension. If this extension does not have a configpanel, null can be returned
      */
     @Override
     public ExtensionConfigPanel<?> getConfigPanel() {
