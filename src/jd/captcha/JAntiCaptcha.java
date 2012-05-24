@@ -71,9 +71,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
- * Diese Klasse stellt alle public Methoden zur captcha Erkennung zur Verfügung.
- * Sie verküpft Letter und captcha Klassen. Gleichzeitig dient sie als
- * Parameter-Dump.
+ * Diese Klasse stellt alle public Methoden zur captcha Erkennung zur Verfügung. Sie verküpft Letter und captcha Klassen. Gleichzeitig dient
+ * sie als Parameter-Dump.
  * 
  * @author JD-Team
  */
@@ -199,8 +198,7 @@ public class JAntiCaptcha {
     }
 
     /**
-     * Fenster die eigentlich nur zur Entwicklung sind um Basic GUI Elemente zu
-     * haben
+     * Fenster die eigentlich nur zur Entwicklung sind um Basic GUI Elemente zu haben
      */
     private BasicWindow              bw2;
 
@@ -209,14 +207,12 @@ public class JAntiCaptcha {
     private JDialog                  f;
 
     /**
-     * Bildtyp. Falls dieser von jpg unterschiedlich ist, muss zuerst
-     * konvertiert werden.
+     * Bildtyp. Falls dieser von jpg unterschiedlich ist, muss zuerst konvertiert werden.
      */
     private String                   imageType;
 
     /**
-     * jas Script Instanz. Sie verarbneitet das JACScript und speichert die
-     * Parameter
+     * jas Script Instanz. Sie verarbneitet das JACScript und speichert die Parameter
      */
     public JACScript                 jas;
     /**
@@ -278,19 +274,13 @@ public class JAntiCaptcha {
     }
 
     /**
-     * prüft den übergebenen Captcha und gibt den Code als String zurück. Das
-     * lettersarray des Catchas wird dabei bearbeitet. Es werden decoedvalue,
-     * avlityvalue und parent gesetzt WICHTIG: Nach dem Decoden eines Captcha
-     * herrscht Verwirrung. Es stehen unterschiedliche Methoden zur Verfügung um
-     * an bestimmte Informationen zu kommen: captcha.getDecodedLetters() gibt
-     * Die letter aus der datenbank zurück. Deren werte sind nicht fest. Auf den
-     * Wert von getvalityvalue und getValityPercent kann man sich absolut nicht
-     * verlassen. Einzig getDecodedValue() lässt sich zuverlässig auslesen
-     * captcha.getLetters() gibt die Wirklichen Letter des captchas zurück. Hier
-     * lassen sich alle wichtigen Infos abfragen. z.B. ValityValue,
-     * ValityPercent, Decodedvalue, etc. Wer immer das hier liest sollte auf
-     * keinen fall den fehler machen und sich auf Wert aus dem getdecodedLetters
-     * array verlassen
+     * prüft den übergebenen Captcha und gibt den Code als String zurück. Das lettersarray des Catchas wird dabei bearbeitet. Es werden
+     * decoedvalue, avlityvalue und parent gesetzt WICHTIG: Nach dem Decoden eines Captcha herrscht Verwirrung. Es stehen unterschiedliche
+     * Methoden zur Verfügung um an bestimmte Informationen zu kommen: captcha.getDecodedLetters() gibt Die letter aus der datenbank zurück.
+     * Deren werte sind nicht fest. Auf den Wert von getvalityvalue und getValityPercent kann man sich absolut nicht verlassen. Einzig
+     * getDecodedValue() lässt sich zuverlässig auslesen captcha.getLetters() gibt die Wirklichen Letter des captchas zurück. Hier lassen
+     * sich alle wichtigen Infos abfragen. z.B. ValityValue, ValityPercent, Decodedvalue, etc. Wer immer das hier liest sollte auf keinen
+     * fall den fehler machen und sich auf Wert aus dem getdecodedLetters array verlassen
      * 
      * @param captcha
      *            Captcha instanz
@@ -520,8 +510,7 @@ public class JAntiCaptcha {
     }
 
     /**
-     * Aus gründen der geschwindigkeit wird die MTH XMl in einen vector
-     * umgewandelt
+     * Aus gründen der geschwindigkeit wird die MTH XMl in einen vector umgewandelt
      */
     private void createLetterDBFormMTH(Document mth) {
         letterDB = new ArrayList<Letter>();
@@ -809,10 +798,9 @@ public class JAntiCaptcha {
     }
 
     /**
-     * Vergleicht a und b und gibt eine Vergleichszahl zurück. a und b werden
-     * gegeneinander verschoben und b wird über die Parameter gedreht. Praktisch
-     * heißt das, dass derjenige Treffer als gut eingestuft wird, bei dem der
-     * Datenbank Datensatz möglichst optimal überdeckt wird.
+     * Vergleicht a und b und gibt eine Vergleichszahl zurück. a und b werden gegeneinander verschoben und b wird über die Parameter
+     * gedreht. Praktisch heißt das, dass derjenige Treffer als gut eingestuft wird, bei dem der Datenbank Datensatz möglichst optimal
+     * überdeckt wird.
      * 
      * @param a
      *            Original Letter
@@ -1287,8 +1275,7 @@ public class JAntiCaptcha {
     }
 
     /**
-     * Importiert PNG einzelbilder aus einem ordner und erstellt daraus eine
-     * neue db
+     * Importiert PNG einzelbilder aus einem ordner und erstellt daraus eine neue db
      */
     public void importDB(File path) {
         String pattern = JOptionPane.showInputDialog("PATTERN", "\\d+_(.*?)\\.");
@@ -1594,9 +1581,8 @@ public class JAntiCaptcha {
     }
 
     /**
-     * Sortiert die letterDB Nach den bad Detections. Der Sortieralgo gehört
-     * dringend überarbeitet!!! Diese Sortieren hilft die GUten Letter zuerst zu
-     * prüfen.
+     * Sortiert die letterDB Nach den bad Detections. Der Sortieralgo gehört dringend überarbeitet!!! Diese Sortieren hilft die GUten Letter
+     * zuerst zu prüfen.
      * 
      * @TODO Sortoer ALGO ändern. zu langsam!!
      */
@@ -1614,8 +1600,7 @@ public class JAntiCaptcha {
     }
 
     /**
-     * Diese methode wird aufgerufen um alle captchas im Ordner
-     * methods/Methodname/captchas zu trainieren
+     * Diese methode wird aufgerufen um alle captchas im Ordner methods/Methodname/captchas zu trainieren
      * 
      * @param path
      */
@@ -1680,6 +1665,7 @@ public class JAntiCaptcha {
         Image captchaImage = Utilities.loadImage(captchafile);
 
         final Captcha captcha = createCaptcha(captchaImage);
+        BasicWindow.showImage(captcha.getImage(), "Captchas");
         int sk1Width = captcha.getWidth();
         int sk1Height = captcha.getHeight();
         if (sk1Height > 200 || sk1Width > 200) {
@@ -1703,7 +1689,7 @@ public class JAntiCaptcha {
         f.setLayout(new GridBagLayout());
         f.add(new JLabel("original captcha: " + captchafile.getName()), Utilities.getGBC(0, 0, 10, 1));
 
-        f.add(new ImageComponent(captcha.getImage().getScaledInstance(skWidth, skHeight, 1)), Utilities.getGBC(0, 1, 10, 1));
+        f.add(new ImageComponent(captcha.getImage()), Utilities.getGBC(0, 1, 10, 1));
 
         f.setSize(1400, 800);
         f.pack();

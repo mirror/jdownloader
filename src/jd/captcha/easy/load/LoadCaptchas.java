@@ -244,8 +244,7 @@ public class LoadCaptchas {
     }
 
     /**
-     * Teilt Forms mit mehreren Submitbuttons (wegen Premium und Free Button
-     * notwendig)
+     * Teilt Forms mit mehreren Submitbuttons (wegen Premium und Free Button notwendig)
      * 
      * @param browser
      * @return Form[]
@@ -490,7 +489,11 @@ public class LoadCaptchas {
      */
     private boolean loadDirect() {
 
-        final String imageType = getImageExtentionFromHeader(br);
+        String i = getImageExtentionFromHeader(br);
+        if (i.contains(";")) {
+            i = i.substring(0, i.indexOf(";"));
+        }
+        final String imageType = i;
         if (imageType != null) {
             Runnable runnable = new Runnable() {
                 public void run() {
@@ -499,7 +502,7 @@ public class LoadCaptchas {
                             try {
                                 File f2 = new File(dir + System.currentTimeMillis() + imageType);
                                 br.getDownload(f2, loadinfo.link);
-
+                                System.out.println("Download " + f2);
                             } catch (Exception ev) {
                                 ev.printStackTrace();
                             }
@@ -514,7 +517,7 @@ public class LoadCaptchas {
 
                                         File f2 = new File(dir + System.currentTimeMillis() + imageType);
                                         br.getDownload(f2, loadinfo.link);
-
+                                        System.out.println("Download " + f2);
                                     } catch (Exception ev) {
                                         ev.printStackTrace();
                                     }
@@ -615,8 +618,7 @@ public class LoadCaptchas {
     }
 
     /**
-     * Läd die Bilder eines ArrayList<LoadImage> und zeigt den Fortschritt in
-     * einem Progressdialog an
+     * Läd die Bilder eines ArrayList<LoadImage> und zeigt den Fortschritt in einem Progressdialog an
      * 
      */
     private void loadImages() {

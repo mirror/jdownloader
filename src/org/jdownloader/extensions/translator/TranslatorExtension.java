@@ -55,32 +55,38 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig> {
 
             @Override
             public boolean accept(File pathname) {
-                if (pathname.getName().contains("sr_latin")) {
-                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("_", "__")));
+                if (!pathname.getName().endsWith(".lng")) return false;
+
+                if (pathname.getName().contains("es-castillian")) {
+                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("-", "__")));
 
                 }
-                if (pathname.getName().contains("es_castillian")) {
-                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("_", "__")));
+                if (pathname.getName().contains("zh-hans")) {
+                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("-", "__")));
 
                 }
-                if (pathname.getName().contains("zh_hans")) {
-                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("_", "__")));
+                if (pathname.getName().contains("zh-hant")) {
+                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("-", "__")));
 
                 }
-                if (pathname.getName().contains("zh_hant")) {
-                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("_", "__")));
-
-                }
-                if (pathname.getName().contains("bg_incomplete")) {
-                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("_", "__")));
+                if (pathname.getName().contains("sr-latin")) {
+                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("-", "__")));
 
                 }
                 if (pathname.getName().contains("pt-BR")) {
                     renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("-", "_")));
 
                 }
+                if (pathname.getName().contains("bg-incomplete")) {
+                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("-", "_")));
+
+                }
                 if (pathname.getName().contains("pt-PT")) {
                     renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("-", "_")));
+
+                }
+                if (pathname.getName().contains("bg_incomplete")) {
+                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("_", "__")));
 
                 }
                 return false;
@@ -90,7 +96,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig> {
                 System.out.println(pathname + "->" + file);
                 pathname.renameTo(file);
             }
-        }, new File("c:\\workspace"));
+        }, new File("c:\\workspace\\JDownloader"));
 
     }
 

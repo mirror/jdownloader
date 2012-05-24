@@ -40,8 +40,7 @@ import jd.controlling.JDLogger;
 import jd.nutils.Colors;
 
 /**
- * Diese Klasse behinhaltet alle wichtigen Methoden um das Image-Pixelgrid zu
- * bearbeiten
+ * Diese Klasse behinhaltet alle wichtigen Methoden um das Image-Pixelgrid zu bearbeiten
  * 
  * @author JD-Team
  */
@@ -262,9 +261,8 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Dreht das PixelGrid um angle. Dabei wird breite und höhe angepasst. Das
-     * drehen dauert länger als über PixelObject, leidet dafür deutlich weniger
-     * unter Pixelfehlern
+     * Dreht das PixelGrid um angle. Dabei wird breite und höhe angepasst. Das drehen dauert länger als über PixelObject, leidet dafür
+     * deutlich weniger unter Pixelfehlern
      * 
      * @param angle
      * @return new letter
@@ -432,6 +430,7 @@ public class PixelGrid extends Property {
     public static int getPixelValue(int x, int y, int[][] grid) {
         if (x < 0 || x >= grid.length) return -1;
         if (y < 0 || grid.length == 0 || y >= grid[0].length) return -1;
+
         return grid[x][y];
     }
 
@@ -534,8 +533,7 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Entfernt von allen 4 Seiten die Zeilen und Reihen bis nur noch der
-     * content übrig ist
+     * Entfernt von allen 4 Seiten die Zeilen und Reihen bis nur noch der content übrig ist
      * 
      * @return true/False
      */
@@ -638,8 +636,7 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * enbtfernt eine farbe... die tolleranz gibt die farbdistanz an die njoch
-     * entfernt wird
+     * enbtfernt eine farbe... die tolleranz gibt die farbdistanz an die njoch entfernt wird
      * 
      * @param i
      *            vergleichsfarbe
@@ -659,8 +656,7 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Entfernt Alle Pixel die über getBackgroundSampleCleanContrast an avg
-     * liegen
+     * Entfernt Alle Pixel die über getBackgroundSampleCleanContrast an avg liegen
      * 
      * @param avg
      */
@@ -676,8 +672,7 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Nimmt an der angegebenen Positiond en farbwert auf und entfernt desen aus
-     * dem ganzen Bild
+     * Nimmt an der angegebenen Positiond en farbwert auf und entfernt desen aus dem ganzen Bild
      * 
      * @param px
      * @param py
@@ -761,8 +756,7 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Die Wellenlänge omega kann aus dem captcha ausgemessen werden. Formel:
-     * 2*PI/geschätzte Wellenlänge in Pixeln
+     * Die Wellenlänge omega kann aus dem captcha ausgemessen werden. Formel: 2*PI/geschätzte Wellenlänge in Pixeln
      * 
      * @param max
      * @param omega
@@ -863,8 +857,7 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Gibt den Durschnittlichen Pixelwert im angegebenen raum zurück.
-     * Allerdings wird hier im Vergleich zu getAverage(int px,int py,int
+     * Gibt den Durschnittlichen Pixelwert im angegebenen raum zurück. Allerdings wird hier im Vergleich zu getAverage(int px,int py,int
      * width,int height) der Punkt slebet nicht mitberechnet
      * 
      * @param px
@@ -1173,6 +1166,7 @@ public class PixelGrid extends Property {
 
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
+
                 graphics.setColor(new Color(getPixelValue(x, y)));
                 graphics.fillRect(x, y, 1, 1);
             }
@@ -1215,8 +1209,7 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Sollte je nach farbmodell den Höchsten pixelwert zurückgeben. RGB:
-     * 0xffffff
+     * Sollte je nach farbmodell den Höchsten pixelwert zurückgeben. RGB: 0xffffff
      * 
      * @return Pixelwert je nach Farbbereich
      */
@@ -1235,9 +1228,8 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Erstellt das Objekt, ausgehend von einem Pixel. rekursive Funktion! Diese
-     * rekusrive Funktion kann bei zu großen Objekten zu einem Stackoverflow
-     * führen. Man sollte sie mal umschreiben!
+     * Erstellt das Objekt, ausgehend von einem Pixel. rekursive Funktion! Diese rekusrive Funktion kann bei zu großen Objekten zu einem
+     * Stackoverflow führen. Man sollte sie mal umschreiben!
      * 
      * @param x
      * @param y
@@ -1521,8 +1513,7 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Normalisiert Pixel und Multipliziert deren wert mit multi. Der Kontrast
-     * wird dabei künstlich erhöht bzw erniedrigt.
+     * Normalisiert Pixel und Multipliziert deren wert mit multi. Der Kontrast wird dabei künstlich erhöht bzw erniedrigt.
      * 
      * @param multi
      */
@@ -1652,8 +1643,7 @@ public class PixelGrid extends Property {
      * @param faktor
      *            Prüfradius
      * @param contrast
-     *            Kontrasteinstellungen.je kleiner, desto mehr Pixel werden als
-     *            störung erkannt, hat bei sw bildern kaum auswirkungen
+     *            Kontrasteinstellungen.je kleiner, desto mehr Pixel werden als störung erkannt, hat bei sw bildern kaum auswirkungen
      */
     public void reduceWhiteNoise(int faktor, double contrast) {
         int avg = getAverage();
@@ -1936,8 +1926,8 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Setzt den pixel value bei x,y. Umrechnungen werden dabei gemacht. deshalb
-     * kann nicht auf grid direkt zugegriffen werden. Grid beinhaltet roh daten
+     * Setzt den pixel value bei x,y. Umrechnungen werden dabei gemacht. deshalb kann nicht auf grid direkt zugegriffen werden. Grid
+     * beinhaltet roh daten
      * 
      * @param x
      * @param y
@@ -1948,8 +1938,7 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * TestFUnktion um farbräume zu testen. Das Bild sollte keine ändeungen
-     * haben wenn alles stimmt
+     * TestFUnktion um farbräume zu testen. Das Bild sollte keine ändeungen haben wenn alles stimmt
      * 
      */
     public void testColor() {
@@ -1962,8 +1951,7 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Verwendet die SampleDown Methode um ein reines Schwarzweißbild zu
-     * erzeugen
+     * Verwendet die SampleDown Methode um ein reines Schwarzweißbild zu erzeugen
      */
     public void toBlackAndWhite() {
         toBlackAndWhite(1);

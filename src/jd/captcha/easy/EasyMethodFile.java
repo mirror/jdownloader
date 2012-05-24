@@ -96,8 +96,8 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
     }
 
     /**
-     * Ermittelt den Dateityp der Captchas im Captchaordner ist der Ordner leer
-     * wird jpg ausgegeben bzw Bilder geladen wenn showLoadDialog true ist
+     * Ermittelt den Dateityp der Captchas im Captchaordner ist der Ordner leer wird jpg ausgegeben bzw Bilder geladen wenn showLoadDialog
+     * true ist
      * 
      * @param showLoadDialog
      * @return captchatyp jpg | png | gif
@@ -120,9 +120,9 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
                             }
                             String filetype = "jpg";
                             final File[] fl = folder2.listFiles();
-                            if (fl[fl.length - 1].getName().toLowerCase().contains("png")) {
+                            if (fl.length > 0 && fl[fl.length - 1].getName().toLowerCase().contains("png")) {
                                 filetype = "png";
-                            } else if (fl[fl.length - 1].getName().toLowerCase().contains("gif")) {
+                            } else if (fl.length > 0 && fl[fl.length - 1].getName().toLowerCase().contains("gif")) {
                                 filetype = "gif";
                             }
                             return filetype;
@@ -144,8 +144,7 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
     }
 
     /**
-     * gibt falls vorhanden das File zum example.jpg/png/gif im Methodenordner
-     * aus
+     * gibt falls vorhanden das File zum example.jpg/png/gif im Methodenordner aus
      * 
      * @return
      */
@@ -167,8 +166,7 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
     }
 
     /**
-     * läd das ExamleImage fals vorhanden und gibt ein ImageIcon mit
-     * maxWidht=44px und maxHeight=24 aus
+     * läd das ExamleImage fals vorhanden und gibt ein ImageIcon mit maxWidht=44px und maxHeight=24 aus
      */
     public ImageIcon getIcon() {
         try {

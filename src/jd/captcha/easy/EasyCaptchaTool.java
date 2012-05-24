@@ -23,6 +23,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.util.logging.Level;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -40,7 +41,6 @@ import javax.swing.SpinnerNumberModel;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.easy.load.LoadCaptchas;
 import jd.captcha.translate.T;
-import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.jdgui.views.settings.JDLabelListRenderer;
 import jd.gui.swing.laf.LookAndFeelController;
@@ -48,13 +48,17 @@ import jd.gui.userio.DummyFrame;
 import jd.nutils.Screen;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storage;
+import org.appwork.storage.jackson.JacksonMapper;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
 
 public class EasyCaptchaTool {
-    public static SubConfiguration config             = SubConfiguration.getConfig("EasyCaptcha");
-    public static final String     CONFIG_LASTSESSION = "CONFIG_LASTSESSION";
-    public static final String     CONFIG_AUTHOR      = "AUTHOR";
-    public static JFrame           ownerFrame         = DummyFrame.getDialogParent();
+    public static Storage      config             = JSonStorage.getPlainStorage("EasyCaptchaTool");
+    public static final String CONFIG_LASTSESSION = "CONFIG_LASTSESSION";
+    public static final String CONFIG_AUTHOR      = "AUTHOR";
+    public static JFrame       ownerFrame         = DummyFrame.getDialogParent();
 
     public static EasyMethodFile showMethodes() {
         final EasyMethodFile ef = new EasyMethodFile();
@@ -124,7 +128,7 @@ public class EasyCaptchaTool {
                 dialog.setModal(true);
                 JPanel box = new JPanel(new GridLayout(3, 1));
                 JButton btcs = new JButton(T._.easycaptcha_tool_continuelastsession());
-                final EasyMethodFile lastEF = (EasyMethodFile) config.getProperty(CONFIG_LASTSESSION, null);
+                final EasyMethodFile lastEF = (EasyMethodFile) config.get(CONFIG_LASTSESSION, null);
                 if (lastEF == null) btcs.setEnabled(false);
                 btcs.addActionListener(new ActionListener() {
 
@@ -167,7 +171,7 @@ public class EasyCaptchaTool {
                                 final JTextField tfHoster = new JTextField();
                                 box.add(new JLabel(T._.gui_column_host() + ":"));
                                 box.add(tfHoster);
-                                final JTextField tfAuthor = new JTextField(config.getStringProperty(CONFIG_AUTHOR, "JDTeam"));
+                                final JTextField tfAuthor = new JTextField(config.get(CONFIG_AUTHOR, "JDTeam"));
                                 box.add(new JLabel(T._.gui_config_jac_column_author() + ":"));
                                 box.add(tfAuthor);
                                 final JSpinner spMaxLetters = new JSpinner(new SpinnerNumberModel(4, 1, 40, 1));
@@ -183,7 +187,7 @@ public class EasyCaptchaTool {
                                             ef.file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory(), tfHoster.getText());
                                             dialog.dispose();
                                             cHosterDialog.dispose();
-                                            if (tfAuthor.getText() != null && !tfAuthor.getText().matches("\\s*")) config.setProperty(CONFIG_AUTHOR, tfAuthor.getText());
+                                            if (tfAuthor.getText() != null && !tfAuthor.getText().matches("\\s*")) config.put(CONFIG_AUTHOR, tfAuthor.getText());
                                             CreateHoster.create(new EasyMethodFile("easycaptcha"), ef, tfAuthor.getText(), (Integer) spMaxLetters.getValue());
 
                                         } else {
@@ -215,7 +219,7 @@ public class EasyCaptchaTool {
                 dialog.setLocation(Screen.getCenterOfComponent(ownerFrame, dialog));
                 dialog.setVisible(true);
                 if (ef.file != null) {
-                    config.setProperty(CONFIG_LASTSESSION, ef);
+                    // config.put(CONFIG_LASTSESSION, ef);
                     saveConfig();
                     return ef;
                 } else
@@ -227,7 +231,7 @@ public class EasyCaptchaTool {
 
     public static void saveConfig() {
         config.save();
-        JDUtilities.getConfiguration().save();
+
     }
 
     public static void checkReadyToTrain(final EasyMethodFile meth, final JButton btnTrain) {
@@ -247,7 +251,9 @@ public class EasyCaptchaTool {
             System.exit(0);
         }
         final JAntiCaptcha jac = new JAntiCaptcha(meth.getName());
+
         final JDialog dialog = new JDialog(ownerFrame);
+        dialog.setAlwaysOnTop(true);
         dialog.addWindowListener(new WindowListener() {
             public void windowActivated(WindowEvent e) {
             }
@@ -280,6 +286,7 @@ public class EasyCaptchaTool {
             public void actionPerformed(ActionEvent e) {
                 new Thread(new Runnable() {
                     public void run() {
+
                         jac.trainAllCaptchas(meth.getCaptchaFolder().getAbsolutePath());
                     }
                 }).start();
@@ -360,6 +367,8 @@ public class EasyCaptchaTool {
     }
 
     public static void main(String[] args) {
+        Log.L.setLevel(Level.ALL);
+        JSonStorage.setMapper(new JacksonMapper());
         LookAndFeelController.getInstance().setUIManager();
         EDTEventQueue.initEventQueue();
 

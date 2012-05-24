@@ -104,6 +104,11 @@ public class JACController {
         jac = new JAntiCaptcha(methode);
     }
 
+    public static void main(String[] args) {
+        File file = new File("C:\\Users\\Thomas\\.appwork\\captchas\\pybckd\\1337856728166.png");
+        new JACController(file, "payback.de").showCaptcha();
+    }
+
     public void showCaptcha() {
         jac.showPreparedCaptcha(path);
     }

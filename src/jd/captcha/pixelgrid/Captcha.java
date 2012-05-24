@@ -47,8 +47,7 @@ import com.jhlabs.image.PosterizeFilter;
 import com.jhlabs.image.QuantizeFilter;
 
 /**
- * Diese Klasse behinhaltet Methoden zum verarbeiten von Captchas. Also Grafiken
- * die Mehr als ein Element enthalten
+ * Diese Klasse behinhaltet Methoden zum verarbeiten von Captchas. Also Grafiken die Mehr als ein Element enthalten
  * 
  * @author JD-Team
  */
@@ -120,8 +119,7 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Captcha.getCaptcha(Letter a, Letter b) Gibt einen captcha zurück der aus
-     * a +6pxTrennlinie +b besteht. (Addiert 2 Letter)
+     * Captcha.getCaptcha(Letter a, Letter b) Gibt einen captcha zurück der aus a +6pxTrennlinie +b besteht. (Addiert 2 Letter)
      * 
      * @param a
      * @param b
@@ -174,8 +172,7 @@ public class Captcha extends PixelGrid {
     private String             correctCaptchaCode;
 
     /**
-     * Array der länge getWidth()+1. hier werden gefundene Gaps abgelegt.
-     * Einträge mit true bedeuten eine Lücke
+     * Array der länge getWidth()+1. hier werden gefundene Gaps abgelegt. Einträge mit true bedeuten eine Lücke
      */
     private boolean[]          gaps;
 
@@ -206,9 +203,8 @@ public class Captcha extends PixelGrid {
     private double             valityPercent;
 
     /**
-     * Diese Klasse beinhaltet ein 2D-Pixel-Grid. Sie stellt mehrere Methoden
-     * zur verfügung dieses Grid zu bearbeiten Um Grunde sind hier alle Methoden
-     * zu finden um ein captcha als ganzes zu bearbeiten
+     * Diese Klasse beinhaltet ein 2D-Pixel-Grid. Sie stellt mehrere Methoden zur verfügung dieses Grid zu bearbeiten Um Grunde sind hier
+     * alle Methoden zu finden um ein captcha als ganzes zu bearbeiten
      * 
      * @author JD-Team
      * @param width
@@ -284,6 +280,7 @@ public class Captcha extends PixelGrid {
 
         int[][] newgrid = new int[getWidth()][getHeight()];
         // int[][] test = new int[getWidth()][getHeight()];
+
         if (mask.getWidth() != getWidth() || mask.getHeight() != getHeight()) {
             if (Utilities.isLoggerActive()) {
                 logger.info("ERROR Maske und Bild passen nicht zusammmen");
@@ -314,8 +311,7 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Entfernt Störungen über eine Maske und ersetzt diese mit den umliegenden
-     * pixeln
+     * Entfernt Störungen über eine Maske und ersetzt diese mit den umliegenden pixeln
      * 
      * @param mask
      *            Maske
@@ -376,8 +372,7 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * KOnvertiert den Captcha gemäß dem neuen newColorFormat (Mix aus RGB oder
-     * hsb) Als Ausgangsgrid dienen die originalFarben
+     * KOnvertiert den Captcha gemäß dem neuen newColorFormat (Mix aus RGB oder hsb) Als Ausgangsgrid dienen die originalFarben
      * 
      * @param newColorFormat
      */
@@ -446,8 +441,7 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Errechnet einen Durchschnissfarbwert im angegebenen Bereich. Elemente der
-     * übergebenene Maske werden dabei vernachlässigt
+     * Errechnet einen Durchschnissfarbwert im angegebenen Bereich. Elemente der übergebenene Maske werden dabei vernachlässigt
      * 
      * @param px
      * @param py
@@ -624,20 +618,13 @@ public class Captcha extends PixelGrid {
         boolean perfectObjectDetection = true;
         // Kleine Objekte ausfiltern
         /*
-         * String removeObjectsContainingImage = "dog.png"; if
-         * (removeObjectsContainingImage != null && objects.size() > letterNum)
-         * { Captcha remImage =
-         * owner.createCaptcha(Utilities.loadImage(owner.getResourceFile
-         * (removeObjectsContainingImage))); ArrayList<Integer[]> blackPoints =
-         * new ArrayList<Integer[]>(); int avg = getAverage(); for (int y = 0; y
-         * < remImage.getHeight(); y++) { for (int x = 0; x <
-         * remImage.getWidth(); x++) { if (isElement(remImage.getPixelValue(x,
-         * y), avg)) { blackPoints.add(new Integer[] { x, y }); } } }
-         * ListIterator<PixelObject> iter =
-         * objects.listIterator(objects.size()); while (iter.hasPrevious() &&
-         * objects.size() > letterNum) { PixelObject pixelObject = (PixelObject)
-         * iter.previous(); if (objectContainCaptcha(pixelObject, remImage,
-         * blackPoints)) {
+         * String removeObjectsContainingImage = "dog.png"; if (removeObjectsContainingImage != null && objects.size() > letterNum) {
+         * Captcha remImage = owner.createCaptcha(Utilities.loadImage(owner.getResourceFile (removeObjectsContainingImage)));
+         * ArrayList<Integer[]> blackPoints = new ArrayList<Integer[]>(); int avg = getAverage(); for (int y = 0; y < remImage.getHeight();
+         * y++) { for (int x = 0; x < remImage.getWidth(); x++) { if (isElement(remImage.getPixelValue(x, y), avg)) { blackPoints.add(new
+         * Integer[] { x, y }); } } } ListIterator<PixelObject> iter = objects.listIterator(objects.size()); while (iter.hasPrevious() &&
+         * objects.size() > letterNum) { PixelObject pixelObject = (PixelObject) iter.previous(); if (objectContainCaptcha(pixelObject,
+         * remImage, blackPoints)) {
          * 
          * iter.remove(); } } }
          */
@@ -871,8 +858,7 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Versucht die Buchstaben aus dem captcha zu extrahieren und gibt ein
-     * letter-array zuück
+     * Versucht die Buchstaben aus dem captcha zu extrahieren und gibt ein letter-array zuück
      * 
      * @param letterNum
      *            Anzahl der vermuteten Buchstaben
@@ -971,8 +957,7 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Gibt die Buchstaben zurück. Trennkriterium ist das Array gaps in dem die
-     * Trenn-X-Wert abgelegt sind
+     * Gibt die Buchstaben zurück. Trennkriterium ist das Array gaps in dem die Trenn-X-Wert abgelegt sind
      * 
      * @param letterNum
      * @param gaps
@@ -1215,8 +1200,7 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Sucht angefangen bei der aktullen Positiond en ncähsten letter und gibt
-     * ihn zurück
+     * Sucht angefangen bei der aktullen Positiond en ncähsten letter und gibt ihn zurück
      * 
      * @param letterId
      *            Id des Letters (0-letterNum-1)
@@ -1306,8 +1290,8 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Alternativ Methode über das gaps array. TODO: Nicht optimal. Das trim()
-     * kann man sich sparen indem man gleich die rihtige Arraygröße wählt
+     * Alternativ Methode über das gaps array. TODO: Nicht optimal. Das trim() kann man sich sparen indem man gleich die rihtige Arraygröße
+     * wählt
      * 
      * @param letterId
      * @param gaps
@@ -1383,8 +1367,7 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Gibt ein pixelarray zurück. In das Pixelarray sind Trennstriche für die
-     * Gaps eingerechnet
+     * Gibt ein pixelarray zurück. In das Pixelarray sind Trennstriche für die Gaps eingerechnet
      * 
      * @return Pixelarray
      */
@@ -1470,8 +1453,7 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Gibt in prozent zurück wie sicher die erkennung war (0. top sicher 100
-     * schlecht)
+     * Gibt in prozent zurück wie sicher die erkennung war (0. top sicher 100 schlecht)
      * 
      * @return int validprozent
      */
@@ -1538,8 +1520,7 @@ public class Captcha extends PixelGrid {
      * @param contrast
      *            Kontrast zur erkennung der farbunterschiede (z.B. 0.3)
      * @param objectContrast
-     *            Kontrast zur erkennung einens objektstartpunkte (z.B. 0.5 bei
-     *            weißem Hintergrund)
+     *            Kontrast zur erkennung einens objektstartpunkte (z.B. 0.5 bei weißem Hintergrund)
      * @return Vector mit den gefundenen Objekten
      */
     public boolean objectContainCaptcha(PixelObject pixelObject, Captcha captcha, ArrayList<Integer[]> blackPoints) {
@@ -1585,8 +1566,8 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Setztd as interne Grid auf den ausgangszustand zurück. Funktioniert nur
-     * wenn dieser gespeichert ist. Im fehlerfall wird fals zurückgegegen
+     * Setztd as interne Grid auf den ausgangszustand zurück. Funktioniert nur wenn dieser gespeichert ist. Im fehlerfall wird fals
+     * zurückgegegen
      * 
      * @return
      */
@@ -1763,8 +1744,7 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Entfernt bildbereiche deren Sättigung größe bzw kleiner der tollerance
-     * ist
+     * Entfernt bildbereiche deren Sättigung größe bzw kleiner der tollerance ist
      * 
      * @param mode
      * @param tollerance
@@ -1807,8 +1787,7 @@ public class Captcha extends PixelGrid {
     }
 
     /**
-     * Entfernt bildbereiche deren RGB distance größe bzw kleiner der tollerance
-     * ist
+     * Entfernt bildbereiche deren RGB distance größe bzw kleiner der tollerance ist
      * 
      * @param mode
      * @param tollerance

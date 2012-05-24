@@ -20,6 +20,8 @@ import java.io.File;
 
 import jd.nutils.io.JDIO;
 
+import org.appwork.exceptions.WTFException;
+
 public class CreateHoster {
     public static void createJacinfoXml(EasyMethodFile destination, String user, int lettersize, boolean showLoadDialog) {
         String jacInfoXml = getjacInfoXmlString(destination, user, lettersize, showLoadDialog);
@@ -50,6 +52,7 @@ public class CreateHoster {
         File in = new File(ParentHost.file, "script.jas");
         File out = new File(destination.file, "script.jas");
         if (out.exists()) out.renameTo(new File(destination.file, "script_bak_" + System.currentTimeMillis() + ".jas"));
+        if (!in.exists()) { throw new WTFException(in + " must exist"); }
         JDIO.copyFile(in, out);
 
     }
