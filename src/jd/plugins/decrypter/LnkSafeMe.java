@@ -162,7 +162,13 @@ public class LnkSafeMe extends PluginForDecrypt {
                 finallink = br.getRegex("window\\.location=\"(http.*?)\"").getMatch(0);
             }
             if (finallink == null) { return null; }
-            decryptedLinks.add(createDownloadlink(finallink));
+            final DownloadLink dllink = createDownloadlink(finallink);
+            try {
+                distribute(dllink);
+            } catch (final Throwable e) {
+                /* does not exist in 09581 */
+            }
+            decryptedLinks.add(dllink);
             progress.increase(1);
         }
         return decryptedLinks;

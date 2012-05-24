@@ -123,7 +123,7 @@ public class WeTransferCom extends PluginForHost {
 
         final String filename = new Regex(result, "#filename[#]+\\$?([^<>#]+)").getMatch(0);
         final String filesize = new Regex(result, "#size[#]+(\\d+)[#]+").getMatch(0);
-        DLLINK = new Regex(result, "#awslink[#]+([^<>#]+)").getMatch(0);
+        DLLINK = new Regex(result, "#awslink[#]+\\??([^<>#]+)").getMatch(0);
 
         if (filename == null || filesize == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
