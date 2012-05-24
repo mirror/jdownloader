@@ -50,12 +50,12 @@ public class WeTransferCom extends PluginForHost {
     }
 
     private String getAMFRequest() {
-        final String data = "0A0000000202000" + getHexLength(CODE) + JDHexUtils.getHexString(CODE) + "0200" + getHexLength(HASH) + JDHexUtils.getHexString(HASH);
+        final String data = "0A000000020200" + getHexLength(CODE) + JDHexUtils.getHexString(CODE) + "0200" + getHexLength(HASH) + JDHexUtils.getHexString(HASH);
         return JDHexUtils.toString("000000000001002177657472616E736665722E446F776E6C6F61642E636865636B446F776E6C6F616400022F31000000" + getHexLength(JDHexUtils.toString(data)) + data);
     }
 
     private String getHexLength(final String s) {
-        String result = Integer.toHexString(s.length());
+        final String result = Integer.toHexString(s.length());
         return result.length() % 2 > 0 ? "0" + result : result;
     }
 

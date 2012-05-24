@@ -231,7 +231,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
             if (!isStableEnviroment()) {
 
-                final KeyCaptchaDialog vC = new KeyCaptchaDialog(0, "KeyCaptcha", new String[] { stImgs[1], sscStc[1] }, fmsImg, null);
+                final KeyCaptchaDialog vC = new KeyCaptchaDialog(0, "KeyCaptcha - " + br.getHost(), new String[] { stImgs[1], sscStc[1] }, fmsImg, null);
                 vC.displayDialog();
                 out = vC.getReturnValue();
                 if (vC.getReturnmask() == 4) {
@@ -239,7 +239,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 }
 
             } else {
-                final KeyCaptchaShowDialog vC = new KeyCaptchaShowDialog(new String[] { stImgs[1], sscStc[1] }, fmsImg);
+                final KeyCaptchaShowDialog vC = new KeyCaptchaShowDialog("KeyCaptcha - " + br.getHost(), new String[] { stImgs[1], sscStc[1] }, fmsImg);
                 // Warten bis der KeyCaptcha-Dialog geschlossen ist
                 synchronized (LOCK) {
                     try {
@@ -252,7 +252,10 @@ public class LnkCrptWs extends PluginForDecrypt {
                 out = vC.POSITION;
             }
             if (out == null) { return null; }
-            if (out.equals("CANCEL")) { return out; }
+            if (out.equals("CANCEL")) {
+                JDLogger.getLogger().finest("KeyCaptcha: User aborted captcha dialog.");
+                return out;
+            }
 
             final String pS = sscFsmCheckTwo(PARAMS.get("s_s_c_web_server_sign"), PARAMS.get("s_s_c_web_server_sign") + "02njhd8322");
             String mmUrlReq = SERVERSTRING.replaceAll("cjs\\?pS=\\d+&cOut", "mm\\?pS=" + pS + "&cP");
@@ -507,6 +510,8 @@ public class LnkCrptWs extends PluginForDecrypt {
             int cik = 0;
             kcImages[0] = new BufferedImage(450, 160, BufferedImage.TYPE_INT_RGB);
             go = kcImages[0].getGraphics();
+            go.setColor(Color.WHITE);
+            go.fillRect(0, 0, 450, 160);
             final int[] bgCoord = coordinates.get("backGroundImage");
             while (cik < bgCoord.length) {
                 go.drawImage(IMAGE[1], bgCoord[cik], bgCoord[cik + 1], bgCoord[cik] + bgCoord[cik + 2], bgCoord[cik + 1] + bgCoord[cik + 3], curx, 0, curx + bgCoord[cik + 2], bgCoord[cik + 3], dialog);
@@ -675,8 +680,8 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         private final JPanel                       p;
 
-        public KeyCaptchaShowDialog(final String[] arg0, final LinkedHashMap<String, int[]> arg1) throws Exception {
-            super("KeyCaptcha");
+        public KeyCaptchaShowDialog(final String title, final String[] arg0, final LinkedHashMap<String, int[]> arg1) throws Exception {
+            super(title);
             coordinates = arg1;
             loadImage(arg0);
             handleCoordinates();
@@ -807,6 +812,8 @@ public class LnkCrptWs extends PluginForDecrypt {
             int cik = 0;
             kcImages[0] = new BufferedImage(450, 160, BufferedImage.TYPE_INT_RGB);
             go = kcImages[0].getGraphics();
+            go.setColor(Color.WHITE);
+            go.fillRect(0, 0, 450, 160);
             final int[] bgCoord = coordinates.get("backGroundImage");
             while (cik < bgCoord.length) {
                 go.drawImage(IMAGE[1], bgCoord[cik], bgCoord[cik + 1], bgCoord[cik] + bgCoord[cik + 2], bgCoord[cik + 1] + bgCoord[cik + 3], curx, 0, curx + bgCoord[cik + 2], bgCoord[cik + 3], this);
@@ -1180,6 +1187,13 @@ public class LnkCrptWs extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
+    }
+
+    /**
+     * TODO: can be removed with next major update cause of recaptcha change
+     */
+    public KeyCaptcha getKeyCaptcha(final Browser br) {
+        return new KeyCaptcha(br);
     }
 
     private void prepareBrowser(final String userAgent) {
