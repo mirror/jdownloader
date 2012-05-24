@@ -94,6 +94,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig> {
 
             private void renameTo(File pathname, File file) {
                 System.out.println(pathname + "->" + file);
+                if (file.exists()) file.delete();
                 pathname.renameTo(file);
             }
         }, new File("c:\\workspace\\JDownloader"));
