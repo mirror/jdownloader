@@ -297,10 +297,12 @@ public class Multi extends IExtraction {
             if (e instanceof UnsatisfiedLinkError && CrossSystem.isWindows()) {
                 try {
                     /* workaround for sevenzipjbinding, missing dll imports */
-                    String path = new Regex(e.getMessage(), "(.:.*?)lib7-Zip-JBin").getMatch(0);
-                    System.load(new File(path, "mingwm10.dll").toString());
-                    System.load(new File(path, "libgcc_s_dw2-1.dll").toString());
-                    System.load(new File(path, "libstdc++-6.dll").toString());
+                    String path = new Regex(e.getMessage(), "(.:.*?\\.dll)").getMatch(0);
+                    Log.L.severe("Unsatisfied path " + path);
+                    File root = new File(path).getParentFile();
+                    System.load(new File(root, "mingwm10.dll").toString());
+                    System.load(new File(root, "libgcc_s_dw2-1.dll").toString());
+                    System.load(new File(root, "libstdc++-6.dll").toString());
                     SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
                     if (SevenZip.isInitializedSuccessfully()) return true;
                 } catch (final Throwable e2) {
