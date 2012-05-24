@@ -43,6 +43,7 @@ public class ShareFlareNet extends PluginForHost {
     private static final String LINKFRAMEPART        = "tmpl/tmpl_frame_top\\.php\\?link=";
     private static final String FREEDOWNLOADPOSSIBLE = "download4";
     private static final Object LOCK                 = new Object();
+    private static final String FREELIMIT            = ">Your limit for free downloads is over for today<";
 
     public ShareFlareNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -80,7 +81,7 @@ public class ShareFlareNet extends PluginForHost {
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (!br.containsHTML(FREEDOWNLOADPOSSIBLE)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.shareflarenet.nofreedownloadlink", "No free download link for this file"));
+        if (!br.containsHTML(FREEDOWNLOADPOSSIBLE) && !br.containsHTML(FREELIMIT)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.shareflarenet.nofreedownloadlink", "No free download link for this file"));
         return AvailableStatus.TRUE;
     }
 
@@ -128,6 +129,7 @@ public class ShareFlareNet extends PluginForHost {
         String waittime = br.getRegex("You can wait download for ([\t\n\r0-9]+) minutes or upgrade to premium").getMatch(0);
         if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime.trim()) * 60 * 1001l);
         if (br.containsHTML("You reached your hourly traffic limit\\.")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+        if (br.containsHTML(FREELIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 60 * 1000l);
         if (br.containsHTML("(В бесплатном режиме вы можете скачивать только один файл|You are currently downloading|Free users are allowed to only one parallel download\\.\\.)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         br.setFollowRedirects(false);
         String debug = br.toString();

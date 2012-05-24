@@ -81,7 +81,7 @@ public class SuperUploadCom extends PluginForHost {
         }
         if (br.containsHTML(">Incorrect captcha<")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.getPage(downloadLink.getDownloadURL() + "&act=t&rnd=" + System.currentTimeMillis());
-        final String waittime = br.getRegex("var iEnd = new Date\\(\\)\\.setTime\\(new Date\\(\\)\\.getTime\\(\\) \\+ (\\d+) * 1000\\);").getMatch(0);
+        final String waittime = br.getRegex("var iEnd = new Date\\(\\)\\.setTime\\(new Date\\(\\)\\.getTime\\(\\) \\+ (\\d+) \\* 1000\\)").getMatch(0);
         int wait = 30;
         if (waittime != null) wait = Integer.parseInt(waittime);
         sleep(wait * 1001l, downloadLink);

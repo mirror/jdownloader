@@ -42,7 +42,6 @@ public class SendspaceCom extends PluginForHost {
     public SendspaceCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://www.sendspace.com/joinpro_pay.html");
-
         setStartIntervall(5000l);
     }
 
@@ -159,7 +158,7 @@ public class SendspaceCom extends PluginForHost {
                 if (br.containsHTML("(name=\"filepassword\"|Incorrect Password)")) throw new PluginException(LinkStatus.ERROR_FATAL, "Wrong Password");
             }
             /* bypass captcha with retry ;) */
-            if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
+            if (br.containsHTML(">Please prove that you are a human being")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
             handleErrors(false);
             /* Link holen */
             String linkurl = br.getRegex("<a id=\"download_button\" href=\"(http://.*?)\"").getMatch(0);
@@ -248,12 +247,11 @@ public class SendspaceCom extends PluginForHost {
         String url = downloadLink.getDownloadURL();
         if (!url.contains("/pro/dl/")) {
             br.getPage(url);
-            if (br.containsHTML("The page you are looking for is  not available. It has either been moved") && url.contains("X")) {
+            if (br.containsHTML("The page you are looking for is  not available\\. It has either been moved") && url.contains("X")) {
                 url = url.replaceAll("X", "x");
                 downloadLink.setUrlDownload(url);
                 return requestFileInformation(downloadLink);
             }
-            if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) { return AvailableStatus.UNCHECKABLE; }
             if (!br.containsHTML("the file you requested is not available")) {
                 String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);/* old */
                 if (infos == null) infos = br.getRegex("Download: <strong>(.*?)<.*?strong> \\((.*?)\\)<").getRow(0);/* new1 */
@@ -270,9 +268,9 @@ public class SendspaceCom extends PluginForHost {
                         if (filename == null) filename = br.getRegex("title=\"download (.*?)\">Click here to start").getMatch(0);
                     }
                     String filesize = br.getRegex("<b>File Size:</b> (.*?)</div>").getMatch(0);
-                    if (filename != null && filesize != null) {
+                    if (filename != null) {
                         downloadLink.setName(Encoding.htmlDecode(filename).trim());
-                        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",", "\\.")));
+                        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",", "\\.")));
                         return AvailableStatus.TRUE;
                     }
                 }

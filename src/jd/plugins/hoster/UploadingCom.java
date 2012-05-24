@@ -65,7 +65,6 @@ public class UploadingCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         if (!link.getDownloadURL().contains("/get")) link.setUrlDownload(link.getDownloadURL().replace("/files", "/files/get").replace("www.", ""));
-        fixLink(link);
     }
 
     public void prepBrowser() {
@@ -110,9 +109,11 @@ public class UploadingCom extends PluginForHost {
                 }
                 int c = 0;
                 for (DownloadLink dl : links) {
-                    /* append fake filename , because api will not report anything else */
+                    /*
+                     * append fake filename , because api will not report
+                     * anything else
+                     */
                     if (c > 0) sb.append("%0D%0A");
-                    fixLink(dl);
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     c++;
                 }
@@ -191,15 +192,13 @@ public class UploadingCom extends PluginForHost {
     }
 
     public AvailableStatus fileCheck(DownloadLink downloadLink) throws PluginException, IOException {
-        fixLink(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("but due to abuse or through deletion by")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("file was removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         String filesize = br.getRegex("file_size\">([\\d\\.]+ (B|KB|MB|GB|TB))</span>").getMatch(0);
-        String filename = br.getRegex(">Download(.*?)for free on uploading.com").getMatch(0);
+        String filename = br.getRegex(">File link</label>[\t\n\r ]+<input type=\"text\" class=\"copy_field\" value=\"http://(www\\.)?uploading\\.com/files/\\w+/([^<>\"]*?)/\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex(">File download</h2><br/>.*?<h2>(.*?)</h2>").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?) kostenlos von Uploading\\.com herunterladen</title>").getMatch(0);
             if (filename == null) {
                 // Last try to get the filename, if this
                 String fname = new Regex(downloadLink.getDownloadURL(), "uploading\\.com/files/\\w+/([a-zA-Z0-9 ._]+)").getMatch(0);
@@ -215,10 +214,6 @@ public class UploadingCom extends PluginForHost {
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         }
         return AvailableStatus.TRUE;
-    }
-
-    private void fixLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("http://www\\.", "http://"));
     }
 
     @Override
@@ -449,7 +444,8 @@ public class UploadingCom extends PluginForHost {
     }
 
     /**
-     * TODO: remove with next major update, DownloadWatchDog/AccountController handle blocked accounts now
+     * TODO: remove with next major update, DownloadWatchDog/AccountController
+     * handle blocked accounts now
      */
     @SuppressWarnings("deprecation")
     @Override
@@ -480,7 +476,8 @@ public class UploadingCom extends PluginForHost {
                         }
                     }
                 }
-                // so if you load the previously used cookie session it can help with less captcha.
+                // so if you load the previously used cookie session it can help
+                // with less captcha.
                 Object cookiesRet = account.getProperty("cookies");
                 Map<String, String> meep = null;
                 if (cookiesRet != null && cookiesRet instanceof Map) {
@@ -507,7 +504,8 @@ public class UploadingCom extends PluginForHost {
                     login.put("password", account.getPass());
                     login.put("remember", "on");
                     login.put("back_url", "http://uploading.com/");
-                    // not sure what triggers recaptcha events. most times you don't need it but it's always present on login page
+                    // not sure what triggers recaptcha events. most times you
+                    // don't need it but it's always present on login page
                     String recaptcha = br.getRegex("\\(\\'recaptcha_block\\', \\'([^\\']+)").getMatch(0);
                     if (loginFail == true && recaptcha != null) {
                         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -534,7 +532,9 @@ public class UploadingCom extends PluginForHost {
                         loginFail = true;
                         continue;
                     }
-                    // incorrect user:pass {"error":"Incorrect e-mail\/password combination.<br\/> Please enter correct e-mail and password."}
+                    // incorrect user:pass {"error":"Incorrect e-mail\/password
+                    // combination.<br\/> Please enter correct e-mail and
+                    // password."}
                     if (ajax.containsHTML("Please enter correct")) {
                         AccountInfo ai = account.getAccountInfo();
                         if (ai == null) {

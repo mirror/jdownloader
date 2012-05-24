@@ -105,7 +105,7 @@ public class FileVelocityCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        final Regex fileInfo = new Regex(correctedBR, "><h2>Download File ([^<>\"]*?)</h2></div>[\t\n\r ]+<font color=\"red\">\\(([^<>\"]*?)\\)</font>");
+        final Regex fileInfo = new Regex(correctedBR, "<h2>Download File: ([^<>\"]*?)</h2></a></div>[\t\n\r ]+<font color=\"red\">\\(([^<>\"]*?)\\)</font>");
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + "/[a-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
@@ -125,16 +125,7 @@ public class FileVelocityCom extends PluginForHost {
                 }
             }
         }
-        String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filesize == null) {
-            filesize = new Regex(correctedBR, "<small>\\((.*?)\\)</small>").getMatch(0);
-            if (filesize == null) {
-                filesize = new Regex(correctedBR, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
-                if (filesize == null) {
-                    filesize = fileInfo.getMatch(1);
-                }
-            }
-        }
+        final String filesize = fileInfo.getMatch(1);
         if (filename == null || filename.equals("")) {
             if (correctedBR.contains("You have reached the download-limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -191,7 +182,8 @@ public class FileVelocityCom extends PluginForHost {
         }
 
         /**
-         * Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
+         * Videolinks can already be found here, if a link is found here we can
+         * skip waittimes and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -465,7 +457,8 @@ public class FileVelocityCom extends PluginForHost {
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             /**
-             * Who needs half points ? If we have a dot in the points, just remove it
+             * Who needs half points ? If we have a dot in the points, just
+             * remove it
              */
             if (points.contains(".")) {
                 String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
