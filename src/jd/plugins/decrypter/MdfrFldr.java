@@ -29,6 +29,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -36,7 +37,7 @@ import jd.plugins.hoster.MediafireCom;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?(?!download)[\\w\\.]*?(mediafire\\.com|mfi\\.re)/(imageview.+|i/\\?.+|\\\\?sharekey=.+|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php).+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://(?!download)(\\w+\\.)?(mediafire\\.com|mfi\\.re)/(imageview.+|i/\\?.+|\\\\?sharekey=.+|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php).+)" }, flags = { 0 })
 public class MdfrFldr extends PluginForDecrypt {
 
     private static boolean pluginloaded = false;
@@ -49,6 +50,7 @@ public class MdfrFldr extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("mfi.re/", "mediafire.com/");
         parameter = parameter.replaceAll("(&.+)", "").replaceAll("(#.+)", "");
+        String fpName = null;
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.75 Safari/535.7");
         if (parameter.matches("http://download\\d+\\.mediafire.+")) {
@@ -143,6 +145,7 @@ public class MdfrFldr extends PluginForDecrypt {
         }
         if (ID != null) {
             br.getPage("http://www.mediafire.com/api/folder/get_info.php?r=nuul&recursive=yes&folder_key=" + ID + "&response_format=json&version=1");
+            fpName = br.getRegex("name\":\"([^\"]+)").getMatch(0);
             String links[][] = br.getRegex("quickkey\":\"(.*?)\",\"filename\":\"(.*?)\".*?\"size\":\"(\\d+)").getMatches();
             progress.setRange(links.length);
 
@@ -157,6 +160,11 @@ public class MdfrFldr extends PluginForDecrypt {
                 }
                 progress.increase(1);
             }
+        }
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }

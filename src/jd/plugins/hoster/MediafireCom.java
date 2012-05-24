@@ -160,7 +160,6 @@ public class MediafireCom extends PluginForHost {
         stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:2.0.1) Gecko/20100101 Firefox/4.0.1");
         stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:7.0.1) Gecko/20100101 Firefox/7.0.1");
         stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_0) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.151 Safari/535.19");
-        stringAgent.add("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.0.7) Gecko/2009021906 Firefox/3.0.7");
         stringAgent.add("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_3; en-us) AppleWebKit/531.21.11 (KHTML, like Gecko) Version/4.0.4 Safari/531.21.10");
         stringAgent.add("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_3; en-us) AppleWebKit/533.16 (KHTML, like Gecko) Version/5.0 Safari/533.16");
         stringAgent.add("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_4; en-us) AppleWebKit/533.18.1 (KHTML, like Gecko) Version/5.0.2 Safari/533.18.5");
@@ -168,7 +167,6 @@ public class MediafireCom extends PluginForHost {
         stringAgent.add("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.6; en-US; rv:1.9.2.10) Gecko/20100914 Firefox/3.6.10");
         stringAgent.add("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.6; en-US; rv:1.9.2.4) Gecko/20100503 Firefox/3.6.4");
         stringAgent.add("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.8; en-GB; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28");
-        stringAgent.add("Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10.5; en-US; rv:1.9.0.1) Gecko/2008070206 Firefox/3.0.1");
         stringAgent.add("Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10.5; en-US; rv:1.9.2.27) Gecko/20120216 Firefox/3.6.27");
         stringAgent.add("Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10.5; en-US; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28");
         stringAgent.add("Mozilla/5.0 (Windows NT 5.0; rv:11.0) Gecko/20100101 Firefox/11.0");
@@ -290,7 +288,6 @@ public class MediafireCom extends PluginForHost {
         stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5");
         stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64; rv:11.0) Gecko/20100101 Firefox/11.0");
         stringAgent.add("Mozilla/5.0 (Windows NT 6.2; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.20) Gecko/20081217 Firefox/2.0.0.20");
         stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.2.23) Gecko/20110920 Firefox/3.6.23");
         stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.2.25) Gecko/20111212 Firefox/3.6.25 ( .NET CLR 3.5.30729)");
         stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.2.26) Gecko/20120128 Firefox/3.6.26 (.NET CLR 3.5.30729)");
@@ -301,13 +298,11 @@ public class MediafireCom extends PluginForHost {
         stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/535.12 (KHTML, like Gecko) Maxthon/3.0 Chrome/18.0.966.0 Safari/535.12");
         stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/535.3 (KHTML, like Gecko) Maxthon/3.0 Safari/535.3");
         stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.19) Gecko/2010031422 Firefox/3.0.19 (.NET CLR 3.5.30729)");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.2) Gecko/20090729 Firefox/3.5.2");
         stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.10) Gecko/20100914 Firefox/3.6.10 ( .NET CLR 3.5.30729)");
         stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.12) Gecko/20101026 Firefox/3.6.12 ( .NET4.0E)");
         stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.26) Gecko/20120128 Firefox/3.6.26");
         stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28");
         stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.1; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28");
-        stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.2; en-GB; rv:1.8.0.12) Gecko/20070508 Firefox/1.5.0.12");
         stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.2; en-US; rv:1.8.1.24pre) Gecko/20100228 K-Meleon/1.5.4");
         stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.2; en-US; rv:1.9.0.19) Gecko/2010031422 Firefox/3.0.19");
         stringAgent.add("Mozilla/5.0 (Windows; U; Windows NT 5.2; en-US; rv:1.9.1.18) Gecko/20110319 Firefox/3.5.18 ( .NET CLR 3.5.30729)");
