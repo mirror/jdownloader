@@ -233,7 +233,7 @@ public class FaceBookComVideos extends PluginForHost {
         // wurde Filename extrahiert, setze entgültiger Dateiname &
         // Dateiendung
         if (filename != null) {
-            filename = filename.trim();
+            filename = Encoding.htmlDecode(filename.trim());
             link.setFinalFileName(filename + ".mp4");
             return AvailableStatus.TRUE;
         } else {

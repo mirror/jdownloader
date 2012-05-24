@@ -150,7 +150,7 @@ public class VeohCom extends PluginForHost {
         final String fHash = br.getRegex("fileHash=\"(.*?)\"").getMatch(0);
         final String videoId = br.getRegex("videoId=\"(\\d+)\"").getMatch(0);
         final String fileSize = br.getRegex("size=\"(\\d+)\"").getMatch(0);
-        final String ext = br.getRegex("extension=\"(.*?)\"").getMatch(0);
+        final String ext = br.getRegex("extension=\"(\\.[a-z0-9]+)\"").getMatch(0);
         String sTime = br.getRegex("timestamp=\"(\\d+)\"").getMatch(0);
         if (fHash == null || fHash == null || sTime == null || videoId == null || fileSize == null || ext == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
@@ -364,9 +364,8 @@ public class VeohCom extends PluginForHost {
             br.getPage("http://www.veoh.com/rest/v2/execute.xml?apiKey=" + Encoding.Base64Decode("NTY5Nzc4MUUtMUM2MC02NjNCLUZGRDgtOUI0OUQyQjU2RDM2") + "&method=veoh.video.findByPermalink&permalink=" + videoID + "&");
             if (br.containsHTML("(<rsp stat=\"fail\"|\"The video does not exist\"|name=\"YouTube\\.com\" type=\"\")")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             /* fileextension */
-            if (!downloadLink.getName().matches(".+\\.[\\w]{1,3}$")) {
-                final String extension = br.getRegex("extension=\"(.*?)\"").getMatch(0);
-                downloadLink.setFinalFileName(downloadLink.getName() + extension);
+            if (!downloadLink.getName().matches(".+\\.[\\w]{1,3}$") || !downloadLink.getName().endsWith(ext)) {
+                downloadLink.setFinalFileName(downloadLink.getName() + ext);
             }
             /* finallinkparameter */
             final String fHashPath = br.getRegex("fullHashPath=\"(.*?)\"").getMatch(0);
@@ -414,6 +413,8 @@ public class VeohCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
+        // Allow +18 videos
+        br.setCookie("http://veoh.com/", "confirmedAdult", "true");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(Dieses Video ist nicht mehr verf&uuml;gbar|AnyClip)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final String filename = br.getRegex("\"title\":\"(.*?)(\\s+RAW)?\"").getMatch(0);
