@@ -72,7 +72,7 @@ public class AddonsMenu extends JMenu implements ExtensionControllerListener {
         for (final LazyExtension wrapper : pluginsOptional) {
 
             if (wrapper._isEnabled()) {
-                final AbstractExtension<?> plg = wrapper._getExtension();
+                final AbstractExtension<?, ?> plg = wrapper._getExtension();
 
                 ArrayList<JMenuItem> mis = plg.getMenuAction();
                 if (mis != null) {

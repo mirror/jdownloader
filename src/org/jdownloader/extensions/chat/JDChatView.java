@@ -21,7 +21,6 @@ import javax.swing.Icon;
 import jd.plugins.AddonPanel;
 
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.chat.translate.T;
 import org.jdownloader.images.NewTheme;
 
 public class JDChatView extends AddonPanel<ChatExtension> {
@@ -40,12 +39,12 @@ public class JDChatView extends AddonPanel<ChatExtension> {
 
     @Override
     public String getTitle() {
-        return T._.jd_plugins_optional_jdchat_JDChatView_title();
+        return getExtension()._.jd_plugins_optional_jdchat_JDChatView_title();
     }
 
     @Override
     public String getTooltip() {
-        return T._.jd_plugins_optional_jdchat_JDChatView_tooltip();
+        return getExtension()._.jd_plugins_optional_jdchat_JDChatView_tooltip();
 
     }
 

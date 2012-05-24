@@ -57,11 +57,12 @@ import org.jdownloader.extensions.folderwatch.core.FileMonitoring;
 import org.jdownloader.extensions.folderwatch.core.FileMonitoringListener;
 import org.jdownloader.extensions.folderwatch.data.History;
 import org.jdownloader.extensions.folderwatch.data.HistoryEntry;
+import org.jdownloader.extensions.folderwatch.translate.FolderwatchTranslation;
 import org.jdownloader.extensions.folderwatch.translate.T;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
 
-public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> implements FileMonitoringListener, ActionListener {
+public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, FolderwatchTranslation> implements FileMonitoringListener, ActionListener {
 
     private JSonWrapper                                subConfig;
 
@@ -93,8 +94,8 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig> i
     }
 
     public FolderWatchExtension() throws StartException {
-        super("FolderWatch");
-
+        super();
+        setTitle("FolderWatch");
     }
 
     @SuppressWarnings("unchecked")

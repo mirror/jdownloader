@@ -72,10 +72,10 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.chat.settings.ChatConfigPanel;
-import org.jdownloader.extensions.chat.translate.T;
+import org.jdownloader.extensions.chat.translate.ChatTranslation;
 import org.schwering.irc.lib.IRCConnection;
 
-public class ChatExtension extends AbstractExtension<ChatConfig> implements ReconnecterListener {
+public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation> implements ReconnecterListener {
     private static final long                AWAY_TIMEOUT         = 15 * 60 * 1000;
     private static final Pattern             CMD_ACTION           = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
     private static final Pattern             CMD_CONNECT          = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);
@@ -161,7 +161,8 @@ public class ChatExtension extends AbstractExtension<ChatConfig> implements Reco
     }
 
     public ChatExtension() throws StartException {
-        super(T._.jd_plugins_optional_jdchat_jdchat());
+        super();
+        setTitle(_.jd_plugins_optional_jdchat_jdchat());
 
     }
 
@@ -338,7 +339,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> implements Reco
         final String def = "JD-[" + loc + "]_" + ("" + System.currentTimeMillis()).substring(6);
         String nick = getSettings().getNick();
         if (nick == null || nick.equalsIgnoreCase("")) {
-            nick = UserIO.getInstance().requestInputDialog(T._.plugins_optional_jdchat_enternick());
+            nick = UserIO.getInstance().requestInputDialog(_.plugins_optional_jdchat_enternick());
             if (nick != null && !nick.equalsIgnoreCase("")) {
                 nick += "[" + loc + "]";
             }
@@ -393,7 +394,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> implements Reco
 
                 @Override
                 protected void runInEDT() {
-                    tabbedPane.setTitleAt(0, T._.gui_tab_title(getCurrentChannel()));
+                    tabbedPane.setTitleAt(0, _.gui_tab_title(getCurrentChannel()));
                 }
             };
             getSettings().setChannelLanguage(newChannel);
@@ -559,7 +560,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> implements Reco
             }
         };
         frame.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill][]"));
-        JButton closeTab = new JButton(T._.jd_plugins_optional_jdchat_closeTab());
+        JButton closeTab = new JButton(_.jd_plugins_optional_jdchat_closeTab());
         closeTab.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
                 if (ChatExtension.this.tabbedPane.getSelectedIndex() > 0) {
@@ -610,8 +611,8 @@ public class ChatExtension extends AbstractExtension<ChatConfig> implements Reco
 
             @Override
             protected void initMenu(final JMenuBar menubar) {
-                menubar.add(ChatExtension.this.top = new JLabel(T._.jd_plugins_optional_jdchat_JDChat_topic_default()));
-                ChatExtension.this.top.setToolTipText(T._.jd_plugins_optional_jdchat_JDChat_topic_tooltip());
+                menubar.add(ChatExtension.this.top = new JLabel(_.jd_plugins_optional_jdchat_JDChat_topic_default()));
+                ChatExtension.this.top.setToolTipText(_.jd_plugins_optional_jdchat_JDChat_topic_tooltip());
             }
 
         };
@@ -1037,7 +1038,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig> implements Reco
 
     @Override
     public String getDescription() {
-        return T._.description();
+        return _.description();
     }
 
     @Override

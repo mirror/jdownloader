@@ -23,7 +23,6 @@ import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.utils.Upload;
 
-import org.jdownloader.extensions.chat.translate.T;
 import org.schwering.irc.lib.IRCConstants;
 import org.schwering.irc.lib.IRCEventListener;
 import org.schwering.irc.lib.IRCModeParser;
@@ -148,11 +147,11 @@ class IRCListener implements IRCEventListener {
             new Thread(new Runnable() {
 
                 public void run() {
-                    if (UserIO.RETURN_OK == UserIO.getInstance().requestConfirmDialog(0, T._.plugin_optional_jdchat_getlog(user.name))) {
+                    if (UserIO.RETURN_OK == UserIO.getInstance().requestConfirmDialog(0, owner._.plugin_optional_jdchat_getlog(user.name))) {
 
                         final String url = Upload.toJDownloader(JDLogger.getLog(), "JDChatuser:\r\n\r\n" + IRCListener.this.owner.getNick());
                         if (url == null) {
-                            UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, T._.sys_warning_loguploadfailed());
+                            UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, owner._.sys_warning_loguploadfailed());
                         } else {
                             IRCListener.this.owner.sendMessage(user.name, url);
                         }

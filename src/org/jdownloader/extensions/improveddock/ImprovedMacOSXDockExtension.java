@@ -23,12 +23,13 @@ import jd.plugins.AddonPanel;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
+import org.appwork.txtresource.TranslateInterface;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOSXDockConfig> implements StateEventListener {
+public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOSXDockConfig, TranslateInterface> implements StateEventListener {
 
     @Override
     public boolean isLinuxRunnable() {
@@ -56,7 +57,9 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOS
     }
 
     public ImprovedMacOSXDockExtension() throws StartException {
-        super(null);
+        super();
+        setTitle("ImprovedDock");
+
     }
 
     @Override

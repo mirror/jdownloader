@@ -51,9 +51,9 @@ import org.jdownloader.extensions.schedule.modules.StartDownloads;
 import org.jdownloader.extensions.schedule.modules.StopDownloads;
 import org.jdownloader.extensions.schedule.modules.UnPauseDownloads;
 import org.jdownloader.extensions.schedule.modules.UnSetStopMark;
-import org.jdownloader.extensions.schedule.translate.T;
+import org.jdownloader.extensions.schedule.translate.ScheduleTranslation;
 
-public class ScheduleExtension extends AbstractExtension<ScheduleConfig> {
+public class ScheduleExtension extends AbstractExtension<ScheduleConfig, ScheduleTranslation> {
 
     private ArrayList<Actions>                  actions;
 
@@ -78,7 +78,7 @@ public class ScheduleExtension extends AbstractExtension<ScheduleConfig> {
     }
 
     public ScheduleExtension() throws StartException {
-        super(T._.jd_plugins_optional_schedule_schedule());
+        setTitle(_.jd_plugins_optional_schedule_schedule());
     }
 
     private void initModules() {
@@ -325,7 +325,7 @@ public class ScheduleExtension extends AbstractExtension<ScheduleConfig> {
 
     @Override
     public String getDescription() {
-        return T._.jd_plugins_optional_schedule_schedule_description();
+        return _.jd_plugins_optional_schedule_schedule_description();
     }
 
     @Override

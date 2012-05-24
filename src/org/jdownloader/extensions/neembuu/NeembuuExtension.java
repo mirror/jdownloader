@@ -38,6 +38,7 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.neembuu.gui.NeembuuGui;
+import org.jdownloader.extensions.neembuu.translate.NeembuuTranslation;
 import org.jdownloader.extensions.neembuu.translate._NT;
 import org.jdownloader.gui.menu.MenuContext;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
@@ -46,7 +47,7 @@ import org.jdownloader.gui.views.downloads.table.DownloadTableContext;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
 
-public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implements MenuFactoryListener {
+public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTranslation> implements MenuFactoryListener {
 
     private NeembuuGui                                   tab;
     private int                                          number_of_retries          = 0;                                               // 0=not
@@ -58,7 +59,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig> implement
     private final Map<DownloadLink, DownloadSession>     downloadSessions           = new HashMap<DownloadLink, DownloadSession>();
 
     public NeembuuExtension() {
-        super(_NT._.title());
+        setTitle(_.title());
         System.setProperty("neembuu.vfs.test.MoniorFrame.resumepolicy", "resumeFromPreviousState");
     }
 

@@ -26,9 +26,9 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.antistandby.translate.T;
+import org.jdownloader.extensions.antistandby.translate.AntistandbyTranslation;
 
-public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig> {
+public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, AntistandbyTranslation> {
 
     private static final String                        CONFIG_MODE = "CONFIG_MODE2";
     private String[]                                   modes;
@@ -54,8 +54,9 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig> {
     }
 
     public AntiStandbyExtension() throws StartException {
-        super(T._.jd_plugins_optional_antistandby_jdantistandby());
-        modes = new String[] { T._.gui_config_antistandby_whiledl(), T._.gui_config_antistandby_whilejd() };
+        super();
+        setTitle(_.jd_plugins_optional_antistandby_jdantistandby());
+        modes = new String[] { _.gui_config_antistandby_whiledl(), _.gui_config_antistandby_whilejd() };
 
     }
 
@@ -92,7 +93,7 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig> {
 
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), "settings"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), CONFIG_MODE, modes, T._.gui_config_antistandby_mode()).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), CONFIG_MODE, modes, _.gui_config_antistandby_mode()).setDefaultValue(0));
 
     }
 
@@ -108,7 +109,7 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig> {
 
     @Override
     public String getDescription() {
-        return T._.jd_plugins_optional_antistandby_jdantistandby_description();
+        return _.jd_plugins_optional_antistandby_jdantistandby_description();
     }
 
     @Override

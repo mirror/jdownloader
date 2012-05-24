@@ -605,8 +605,8 @@ public class JDGui extends SwingGui {
     @Override
     public void windowClosing(final WindowEvent e) {
         if (e.getComponent() == this.getMainFrame()) {
-            ArrayList<AbstractExtension<?>> allExt = ExtensionController.getInstance().getEnabledExtensions();
-            for (AbstractExtension<?> ext : allExt) {
+            ArrayList<AbstractExtension<?, ?>> allExt = ExtensionController.getInstance().getEnabledExtensions();
+            for (AbstractExtension<?, ?> ext : allExt) {
                 if ("trayicon".equals(ext.getConfigID())) {
                     try {
                         if (SystemTray.isSupported() && ((org.jdownloader.extensions.jdtrayicon.TrayConfig) ext.getSettings()).isCloseToTrayEnabled()) {

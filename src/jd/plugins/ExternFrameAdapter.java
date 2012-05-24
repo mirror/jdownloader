@@ -2,10 +2,10 @@ package jd.plugins;
 
 import javax.swing.Icon;
 
-
+import org.appwork.txtresource.TranslateInterface;
 import org.jdownloader.extensions.AbstractExtension;
 
-public class ExternFrameAdapter<T extends AbstractExtension<? extends ExtensionConfigInterface>> extends AddonPanel<T> {
+public class ExternFrameAdapter<T extends AbstractExtension<? extends ExtensionConfigInterface, ? extends TranslateInterface>> extends AddonPanel<T> {
 
     public ExternFrameAdapter(T plg) {
         super(plg);

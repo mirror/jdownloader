@@ -6,12 +6,13 @@ import jd.controlling.captcha.CaptchaEventSender;
 import jd.plugins.AddonPanel;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.txtresource.TranslateInterface;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig> {
+public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig, TranslateInterface> {
 
     private CaptchaPushConfig      config;
     private CaptchaPushConfigPanel configPanel;
@@ -21,7 +22,8 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig> {
     private int                    oldValue;
 
     public CaptchaPushExtension() {
-        super("Captcha Push");
+        super();
+        setTitle("Captcha Push");
     }
 
     @Override

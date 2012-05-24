@@ -29,9 +29,10 @@ import jd.controlling.JSonWrapper;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.plugins.AddonPanel;
 import jd.plugins.ExtensionConfigInterface;
-import jd.utils.locale.JDL;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.txtresource.TranslateInterface;
+import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.jdownloader.images.NewTheme;
@@ -46,7 +47,7 @@ import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
  * @author thomas
  * 
  */
-public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
+public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterface, TranslationType extends TranslateInterface> {
 
     public static final int ADDON_INTERFACE_VERSION = 8;
 
@@ -94,7 +95,7 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
     protected ExtensionConfigPanel createPanelFromContainer(ConfigContainer initSettings) {
 
         final AddonConfig cp = AddonConfig.getInstance(initSettings, "", false);
-        ExtensionConfigPanel<AbstractExtension<T>> ret = new ExtensionConfigPanel<AbstractExtension<T>>(this, false) {
+        ExtensionConfigPanel<AbstractExtension<ConfigType, TranslationType>> ret = new ExtensionConfigPanel<AbstractExtension<ConfigType, TranslationType>>(this, false) {
 
             private static final long serialVersionUID = 1L;
 
@@ -122,13 +123,12 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
     }
 
     /**
-     * Returns the internal storage. Most of the configvalues are for internal
-     * use only. This config only contains values which are valid for all
-     * extensions
+     * Returns the internal storage. Most of the configvalues are for internal use only. This config only contains values which are valid
+     * for all extensions
      * 
      * @return
      */
-    public T getSettings() {
+    public ConfigType getSettings() {
         return store;
     }
 
@@ -141,15 +141,23 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
 
     protected abstract void start() throws StartException;
 
-    protected Logger    logger;
+    protected Logger       logger;
 
-    private String      name;
+    private String         name;
 
-    private int         version = -1;
+    private int            version = -1;
     @Deprecated
-    private JSonWrapper classicConfig;
+    private JSonWrapper    classicConfig;
 
-    private T           store;
+    private ConfigType     store;
+    /**
+     * The Translationobject. Extent me if you need further Entries
+     */
+    public TranslationType _;
+
+    public TranslationType getTranslation() {
+        return _;
+    }
 
     public String getName() {
         return name;
@@ -160,8 +168,7 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
     }
 
     /**
-     * converts old dynamic getConfigName entries to static getID entries, WE
-     * MUST USE STATIC getID to access db
+     * converts old dynamic getConfigName entries to static getID entries, WE MUST USE STATIC getID to access db
      * 
      * @deprecated Use {@link #getSettings()}
      */
@@ -185,20 +192,38 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
 
     /**
      * 
+     * @param translationInterface
      * @param name
-     *            name of this plugin. Until JD 2.* we should use null here to
-     *            use the old defaultname. we used to sue this localized name as
-     *            config key.
+     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name
+     *            as config key.
      * @throws
      * @throws StartException
      */
-    public AbstractExtension(String name) {
-        this.name = name == null ? JDL.L(getClass().getName(), getClass().getSimpleName()) : name;
+    public AbstractExtension() {
+        this.name = getClass().getSimpleName();
         logger = createLogger(getClass());
         version = readVersion(getClass());
         store = buildStore();
         AdvancedConfigManager.getInstance().register(store);
         logger.info("Loaded");
+
+        initTranslation();
+
+    }
+
+    private void initTranslation() {
+        Type type = getClass().getGenericSuperclass();
+        if (type instanceof ParameterizedTypeImpl) {
+            Class<TranslationType> cl = (Class<TranslationType>) ((ParameterizedTypeImpl) type).getActualTypeArguments()[1];
+            if (cl == TranslateInterface.class) return;
+            _ = TranslationFactory.create(cl);
+
+        }
+    }
+
+    protected void setTitle(String title) {
+        this.name = title == null ? getClass().getSimpleName() : title;
+
     }
 
     /**
@@ -207,7 +232,7 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
      * @param class1
      * @return
      */
-    private T buildStore() {
+    private ConfigType buildStore() {
         return JsonConfig.create(Application.getResource("cfg/" + getClass().getName()), getConfigClass());
     }
 
@@ -217,10 +242,10 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public Class<T> getConfigClass() {
+    public Class<ConfigType> getConfigClass() {
         Type type = getClass().getGenericSuperclass();
         if (type instanceof ParameterizedTypeImpl) {
-            return (Class<T>) ((ParameterizedTypeImpl) type).getActualTypeArguments()[0];
+            return (Class<ConfigType>) ((ParameterizedTypeImpl) type).getActualTypeArguments()[0];
         } else {
             throw new RuntimeException("Bad Extension Definition. Please add Generic ConfigClass: class " + getClass().getSimpleName() + " extends AbstractExtension<" + getClass().getSimpleName() + "Config>{... with 'public interface " + getClass().getSimpleName() + "Config extends ExtensionConfigInterface{...");
         }
@@ -231,8 +256,7 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
     }
 
     /**
-     * Gets called once per session as soon as the extension gets loaded the
-     * first time
+     * Gets called once per session as soon as the extension gets loaded the first time
      * 
      * @throws StartException
      */
@@ -293,7 +317,7 @@ public abstract class AbstractExtension<T extends ExtensionConfigInterface> {
         return true;
     }
 
-    public abstract AddonPanel<? extends AbstractExtension<T>> getGUI();
+    public abstract AddonPanel<? extends AbstractExtension<ConfigType, TranslationType>> getGUI();
 
     public boolean isDefaultEnabled() {
         return false;

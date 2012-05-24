@@ -63,11 +63,12 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
+import org.jdownloader.extensions.jdtrayicon.translate.TrayiconTranslation;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class TrayExtension extends AbstractExtension<TrayConfig> implements MouseListener, MouseMotionListener, WindowListener, WindowStateListener, ActionListener, ShutdownVetoListener {
+public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowListener, WindowStateListener, ActionListener, ShutdownVetoListener {
 
     private LinkCollectorHighlightListener highListener = new LinkCollectorHighlightListener() {
 
@@ -220,7 +221,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig> implements Mous
     }
 
     public TrayExtension() throws StartException {
-        super(T._.jd_plugins_optional_jdtrayicon_jdlighttray());
+        setTitle(T._.jd_plugins_optional_jdtrayicon_jdlighttray());
 
         disableAlwaysonTop = new Timer(2000, this);
         disableAlwaysonTop.setInitialDelay(2000);

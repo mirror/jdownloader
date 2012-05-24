@@ -40,7 +40,6 @@ import jd.utils.JDUtilities;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
-import org.appwork.update.inapp.RestartController;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
@@ -49,9 +48,9 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.shutdown.translate.T;
+import org.jdownloader.extensions.shutdown.translate.ShutdownTranslation;
 
-public class ShutdownExtension extends AbstractExtension<ShutdownConfig> implements StateEventListener {
+public class ShutdownExtension extends AbstractExtension<ShutdownConfig, ShutdownTranslation> implements StateEventListener {
 
     private final int                               count                 = 60;
     private static final String                     CONFIG_ENABLEDONSTART = "ENABLEDONSTART";
@@ -72,8 +71,8 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
     }
 
     public ShutdownExtension() throws StartException {
-        super(T._.jd_plugins_optional_jdshutdown());
-        MODES_AVAIL = new String[] { T._.gui_config_jdshutdown_shutdown(), T._.gui_config_jdshutdown_standby(), T._.gui_config_jdshutdown_hibernate(), T._.gui_config_jdshutdown_close() };
+        setTitle(_.jd_plugins_optional_jdshutdown());
+        MODES_AVAIL = new String[] { _.gui_config_jdshutdown_shutdown(), _.gui_config_jdshutdown_standby(), _.gui_config_jdshutdown_hibernate(), _.gui_config_jdshutdown_close() };
         shutdownEnabled = getPluginConfig().getBooleanProperty(CONFIG_ENABLEDONSTART, false);
     }
 
@@ -335,9 +334,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
             case 0:
                 /* try to shutdown */
                 logger.info("ask user about shutdown");
-                message = T._.interaction_shutdown_dialog_msg_shutdown();
+                message = _.interaction_shutdown_dialog_msg_shutdown();
                 UserIO.setCountdownTime(count);
-                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, T._.interaction_shutdown_dialog_title_shutdown(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, _.interaction_shutdown_dialog_title_shutdown(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                 UserIO.setCountdownTime(-1);
                 logger.info("Return code: " + ret2);
                 if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
@@ -347,9 +346,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
             case 1:
                 /* try to standby */
                 logger.info("ask user about standby");
-                message = T._.interaction_shutdown_dialog_msg_standby();
+                message = _.interaction_shutdown_dialog_msg_standby();
                 UserIO.setCountdownTime(count);
-                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, T._.interaction_shutdown_dialog_title_standby(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, _.interaction_shutdown_dialog_title_standby(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                 UserIO.setCountdownTime(-1);
                 logger.info("Return code: " + ret2);
                 if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
@@ -359,9 +358,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
             case 2:
                 /* try to hibernate */
                 logger.info("ask user about hibernate");
-                message = T._.interaction_shutdown_dialog_msg_hibernate();
+                message = _.interaction_shutdown_dialog_msg_hibernate();
                 UserIO.setCountdownTime(count);
-                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, T._.interaction_shutdown_dialog_title_hibernate(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, _.interaction_shutdown_dialog_title_hibernate(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                 UserIO.setCountdownTime(-1);
                 logger.info("Return code: " + ret2);
                 if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
@@ -371,9 +370,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
             case 3:
                 /* try to close */
                 logger.info("ask user about closing");
-                message = T._.interaction_shutdown_dialog_msg_closejd();
+                message = _.interaction_shutdown_dialog_msg_closejd();
                 UserIO.setCountdownTime(count);
-                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, T._.interaction_shutdown_dialog_title_closejd(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, _.interaction_shutdown_dialog_title_closejd(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                 UserIO.setCountdownTime(-1);
                 logger.info("Return code: " + ret2);
                 if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
@@ -430,9 +429,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
 
             public void actionPerformed(ActionEvent e) {
                 if (shutdownEnabled) {
-                    UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, T._.addons_jdshutdown_statusmessage_enabled());
+                    UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, _.addons_jdshutdown_statusmessage_enabled());
                 } else {
-                    UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, T._.addons_jdshutdown_statusmessage_disabled());
+                    UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, _.addons_jdshutdown_statusmessage_disabled());
                 }
             }
 
@@ -446,9 +445,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
         JSonWrapper subConfig = getPluginConfig();
 
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_ENABLEDONSTART, T._.gui_config_jdshutdown_enabledOnStart()).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, CONFIG_MODE, MODES_AVAIL, T._.gui_config_jdshutdown_mode()).setDefaultValue(0));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, T._.gui_config_jdshutdown_forceshutdown()).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_ENABLEDONSTART, _.gui_config_jdshutdown_enabledOnStart()).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, CONFIG_MODE, MODES_AVAIL, _.gui_config_jdshutdown_mode()).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, _.gui_config_jdshutdown_forceshutdown()).setDefaultValue(false));
 
         /* enable force shutdown for Mac OSX */
         if (CrossSystem.isMac()) {
@@ -472,7 +471,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
                     }
                 }
 
-            }, T._.gui_config_jdshutdown_osx_force_short(), T._.gui_config_jdshutdown_osx_force_long(), null));
+            }, _.gui_config_jdshutdown_osx_force_short(), _.gui_config_jdshutdown_osx_force_long(), null));
         }
     }
 
@@ -488,7 +487,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig> impleme
 
     @Override
     public String getDescription() {
-        return T._.jd_plugins_optional_jdshutdown_description();
+        return _.jd_plugins_optional_jdshutdown_description();
     }
 
     @Override

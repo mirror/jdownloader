@@ -10,11 +10,11 @@ import org.jdownloader.images.NewTheme;
 
 public class ExtensionGuiEnableAction extends AppAction {
 
-    protected AbstractExtension<?> plg;
-    private ImageIcon              icon16Enabled;
-    private ImageIcon              icon16Disabled;
+    protected AbstractExtension<?, ?> plg;
+    private ImageIcon                 icon16Enabled;
+    private ImageIcon                 icon16Disabled;
 
-    public ExtensionGuiEnableAction(AbstractExtension<?> plg) {
+    public ExtensionGuiEnableAction(AbstractExtension<?, ?> plg) {
 
         super();
         setName(plg.getName());

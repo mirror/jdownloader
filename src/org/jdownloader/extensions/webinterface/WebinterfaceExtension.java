@@ -5,6 +5,7 @@ import java.io.IOException;
 import jd.plugins.AddonPanel;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.txtresource.TranslateInterface;
 import org.appwork.utils.net.httpserver.HttpHandlerInfo;
 import org.jdownloader.api.HttpServer;
 import org.jdownloader.api.RemoteAPIConfig;
@@ -13,7 +14,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 
-public class WebinterfaceExtension extends AbstractExtension<WebinterfaceConfig> {
+public class WebinterfaceExtension extends AbstractExtension<WebinterfaceConfig, TranslateInterface> {
 
     private HttpHandlerInfo handlerInfo = null;
 
@@ -26,7 +27,7 @@ public class WebinterfaceExtension extends AbstractExtension<WebinterfaceConfig>
     }
 
     public WebinterfaceExtension() throws StartException {
-        super("Webinterface");
+        setTitle("Webinterface");
     }
 
     @Override
@@ -65,7 +66,7 @@ public class WebinterfaceExtension extends AbstractExtension<WebinterfaceConfig>
     }
 
     @Override
-    public AddonPanel<? extends AbstractExtension<WebinterfaceConfig>> getGUI() {
+    public AddonPanel<? extends AbstractExtension<WebinterfaceConfig, TranslateInterface>> getGUI() {
         return null;
     }
 

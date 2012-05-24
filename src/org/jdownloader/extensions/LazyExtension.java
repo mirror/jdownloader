@@ -22,23 +22,22 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
 
 /**
- * Wraps around an extension to avoid extension init if the extension is not
- * enabled
+ * Wraps around an extension to avoid extension init if the extension is not enabled
  * 
  * @author thomas
  * 
  */
 public class LazyExtension implements Storable, CheckBoxedEntry {
 
-    private Class<AbstractExtension<?>> clazz;
+    private Class<AbstractExtension<?, ?>> clazz;
 
-    private boolean                     settings;
+    private boolean                        settings;
 
-    private String                      configInterface;
+    private String                         configInterface;
 
-    public static LazyExtension create(String id, Class<AbstractExtension<?>> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
+    public static LazyExtension create(String id, Class<AbstractExtension<?, ?>> cls) throws StartException, InstantiationException, IllegalAccessException, IOException {
         LazyExtension ret = new LazyExtension();
-        AbstractExtension<?> plg = (AbstractExtension<?>) cls.newInstance();
+        AbstractExtension<?, ?> plg = (AbstractExtension<?, ?>) cls.newInstance();
 
         String path = "tmp/extensioncache/" + id + ".png";
         File iconCache = Application.getResource(path);
@@ -91,11 +90,11 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         this.settings = settings;
     }
 
-    private String               author;
+    private String                  author;
 
-    private String               description;
-    private AbstractExtension<?> extension = null;
-    private String               lng;
+    private String                  description;
+    private AbstractExtension<?, ?> extension = null;
+    private String                  lng;
 
     public String getLng() {
         return lng;
@@ -131,20 +130,18 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
 
     /**
      * get the internal Extension Object. <br>
-     * <b>do not remove the "_" in methodname. it is important to ignore this
-     * getter during Storable serialisation<b><br>
+     * <b>do not remove the "_" in methodname. it is important to ignore this getter during Storable serialisation<b><br>
      * 
      * @return
      */
-    public AbstractExtension<?> _getExtension() {
+    public AbstractExtension<?, ?> _getExtension() {
 
         return extension;
     }
 
     /**
      * creates an icon in the given size. <br>
-     * <b>do not remove the "_" in methodname. it is important to ignore this
-     * getter during Storable serialisation<b><br>
+     * <b>do not remove the "_" in methodname. it is important to ignore this getter during Storable serialisation<b><br>
      * 
      * @param size
      * @return
@@ -225,8 +222,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     }
 
     /**
-     * inits the extensions. afterwards, you can access the extensionby calling
-     * {@link #_getExtension()}
+     * inits the extensions. afterwards, you can access the extensionby calling {@link #_getExtension()}
      * 
      * @throws InstantiationException
      * @throws IllegalAccessException
@@ -235,7 +231,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
      */
     public void init() throws InstantiationException, IllegalAccessException, ClassNotFoundException, StartException {
         if (extension != null) return;
-        AbstractExtension<?> plg = newInstance();
+        AbstractExtension<?, ?> plg = newInstance();
 
         plg.init();
         extension = plg;
@@ -243,8 +239,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
 
     /**
      * Checks whether this extension is enabled or not.<br>
-     * <b>do not remove the "_" in methodname. it is important to ignore this
-     * getter during Storable serialisation<b><br>
+     * <b>do not remove the "_" in methodname. it is important to ignore this getter during Storable serialisation<b><br>
      * 
      * @return
      */
@@ -260,8 +255,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     }
 
     /**
-     * Starts or stops the extension. If the extension has not been initialized
-     * yet, we do this
+     * Starts or stops the extension. If the extension has not been initialized yet, we do this
      * 
      * @param b
      * @throws StopException
@@ -325,17 +319,17 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         return extension == null ? quickToggleEnabled : extension.isQuickToggleEnabled();
     }
 
-    private String                        classname;
+    private String                           classname;
 
-    protected Class<AbstractExtension<?>> pluginClass;
+    protected Class<AbstractExtension<?, ?>> pluginClass;
 
-    public void _setPluginClass(Class<AbstractExtension<?>> pluginClass) {
+    public void _setPluginClass(Class<AbstractExtension<?, ?>> pluginClass) {
         this.pluginClass = pluginClass;
     }
 
-    private Constructor<AbstractExtension<?>> constructor;
+    private Constructor<AbstractExtension<?, ?>> constructor;
 
-    private String                            jarPath;
+    private String                               jarPath;
 
     public String getClassname() {
         return classname;
@@ -345,7 +339,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         this.classname = classname;
     }
 
-    private AbstractExtension<?> newInstance() {
+    private AbstractExtension<?, ?> newInstance() {
         try {
             _getConstructor();
             return constructor.newInstance();
@@ -355,7 +349,7 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
 
     }
 
-    private Constructor<AbstractExtension<?>> _getConstructor() {
+    private Constructor<AbstractExtension<?, ?>> _getConstructor() {
         if (constructor != null) return constructor;
         synchronized (this) {
             if (constructor != null) return constructor;
@@ -372,12 +366,12 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     }
 
     @SuppressWarnings("unchecked")
-    protected Class<AbstractExtension<?>> _getPluginClass() {
+    protected Class<AbstractExtension<?, ?>> _getPluginClass() {
         if (pluginClass != null) return pluginClass;
         synchronized (this) {
             if (pluginClass != null) return pluginClass;
             try {
-                pluginClass = (Class<AbstractExtension<?>>) Class.forName(classname, true, getClassLoader());
+                pluginClass = (Class<AbstractExtension<?, ?>>) Class.forName(classname, true, getClassLoader());
             } catch (Throwable e) {
                 throw new WTFException(e);
             }

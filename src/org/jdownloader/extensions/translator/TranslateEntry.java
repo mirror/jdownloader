@@ -67,10 +67,9 @@ public class TranslateEntry {
     }
 
     /**
-     * writes a warning of length differs too much from default String length
-     * TODO: Probably it would be better, to do a real String width check
-     * instead of letter counter. A b etter algorithm would be fine, too.
-     * no<->nein has 100% difference but does not really matter in most cases
+     * writes a warning of length differs too much from default String length TODO: Probably it would be better, to do a real String width
+     * check instead of letter counter. A b etter algorithm would be fine, too. no<->nein has 100% difference but does not really matter in
+     * most cases
      */
     private void validateStringLength() {
         String def = this.getDefault();
@@ -85,8 +84,7 @@ public class TranslateEntry {
     }
 
     /**
-     * Checks if the translated string has all wildcards defined by the
-     * translation interface
+     * Checks if the translated string has all wildcards defined by the translation interface
      */
     private void validateParameterCount() {
 
@@ -123,7 +121,11 @@ public class TranslateEntry {
      * @return the category of this entry
      */
     public String getCategory() {
-        return tinterface.getClass().getInterfaces()[0].getSimpleName().replaceAll("Translation", "");
+        if (tinterface.getClass().getInterfaces()[0].getName().startsWith("org.jdownloader.extensions")) {
+            return "Extension: " + tinterface.getClass().getInterfaces()[0].getSimpleName().replaceAll("Translation", "");
+        } else {
+            return tinterface.getClass().getInterfaces()[0].getSimpleName().replaceAll("Translation", "");
+        }
     }
 
     /**
@@ -136,8 +138,7 @@ public class TranslateEntry {
 
     /**
      * 
-     * @return a long key which might help the translater to identify the origin
-     *         of the translation entry.
+     * @return a long key which might help the translater to identify the origin of the translation entry.
      */
     public String getFullKey() {
         return tinterface.getClass().getInterfaces()[0].getName() + "." + method.getName();
@@ -161,8 +162,7 @@ public class TranslateEntry {
 
     /**
      * 
-     * @return Description assigned in the TranslationInterface for this entry
-     *         or null
+     * @return Description assigned in the TranslationInterface for this entry or null
      */
     public String getDescription() {
         Description ann = method.getAnnotation(Description.class);
@@ -179,9 +179,8 @@ public class TranslateEntry {
     }
 
     /**
-     * Sets a new TRanslation, and validates it. call {@link #getErrors()}
-     * afterwards to check for warnings or errors. This does NOT throw an
-     * Exception
+     * Sets a new TRanslation, and validates it. call {@link #getErrors()} afterwards to check for warnings or errors. This does NOT throw
+     * an Exception
      * 
      * @param value
      */

@@ -5,6 +5,7 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.views.ClosableView;
 
+import org.appwork.txtresource.TranslateInterface;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionGuiTabToggleAction;
@@ -15,14 +16,14 @@ import org.jdownloader.extensions.ExtensionGuiTabToggleAction;
  * @author thomas
  * 
  */
-public abstract class AddonPanel<T extends AbstractExtension<? extends ExtensionConfigInterface>> extends ClosableView {
+public abstract class AddonPanel<T extends AbstractExtension<? extends ExtensionConfigInterface, ? extends TranslateInterface>> extends ClosableView {
 
     /**
      * 
      */
-    private static final long        serialVersionUID = 1L;
-    private boolean                  active           = false;
-    private T                        extension;
+    private static final long           serialVersionUID = 1L;
+    private boolean                     active           = false;
+    private T                           extension;
     private ExtensionGuiTabToggleAction action;
 
     public AddonPanel(T plg) {
@@ -56,8 +57,7 @@ public abstract class AddonPanel<T extends AbstractExtension<? extends Extension
     }
 
     /**
-     * Enables the gui and adds it top the main tabbed pane. use
-     * {@link #toFront()} to make the gui the currently selected Tab afterwards
+     * Enables the gui and adds it top the main tabbed pane. use {@link #toFront()} to make the gui the currently selected Tab afterwards
      * 
      * @param b
      */
@@ -96,8 +96,7 @@ public abstract class AddonPanel<T extends AbstractExtension<? extends Extension
     abstract protected void onDeactivated();
 
     /**
-     * is called as soon as the gui gets activated and visible in the main
-     * tabbed pane
+     * is called as soon as the gui gets activated and visible in the main tabbed pane
      */
     abstract protected void onActivated();
 
@@ -114,8 +113,8 @@ public abstract class AddonPanel<T extends AbstractExtension<? extends Extension
     }
 
     /**
-     * if this returns true, the guis visibility is stored across sessions. This
-     * means that the pannel will be reactivated after JDownloader restart
+     * if this returns true, the guis visibility is stored across sessions. This means that the pannel will be reactivated after JDownloader
+     * restart
      * 
      * @return
      */
@@ -135,8 +134,7 @@ public abstract class AddonPanel<T extends AbstractExtension<? extends Extension
     }
 
     /**
-     * Sets the gui active. The panel will become the active tab in the main
-     * tabbed pane
+     * Sets the gui active. The panel will become the active tab in the main tabbed pane
      */
     public void toFront() {
         new EDTRunner() {

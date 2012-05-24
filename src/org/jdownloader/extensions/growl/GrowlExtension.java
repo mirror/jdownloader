@@ -39,9 +39,10 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.growl.translate.GrowlTranslation;
 import org.jdownloader.extensions.growl.translate.T;
 
-public class GrowlExtension extends AbstractExtension<GrowlConfig> implements StateEventListener {
+public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslation> implements StateEventListener {
 
     private static final String TMP_GROWL_NOTIFICATION_SCPT = "tmp/growlNotification.scpt";
 
@@ -116,7 +117,8 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig> implements St
     }
 
     public GrowlExtension() throws StartException {
-        super(T._.jd_plugins_optional_jdgrowlnotification());
+        super();
+        setTitle(T._.jd_plugins_optional_jdgrowlnotification());
     }
 
     private void growlNotification(String headline, String message, String title) {

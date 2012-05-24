@@ -54,8 +54,7 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
     }
 
     /**
-     * Invoked when a window is in the process of being closed. The close
-     * operation can be overridden at this point.
+     * Invoked when a window is in the process of being closed. The close operation can be overridden at this point.
      */
     public void windowClosing(final WindowEvent e) {
     }
@@ -97,17 +96,16 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
     }
 
     /**
-     * Invoked when the Window is set to be the focused Window, which means that
-     * the Window, or one of its subcomponents, will receive keyboard events.
+     * Invoked when the Window is set to be the focused Window, which means that the Window, or one of its subcomponents, will receive
+     * keyboard events.
      * 
      */
     public void windowGainedFocus(final WindowEvent e) {
     }
 
     /**
-     * Invoked when the Window is no longer the focused Window, which means that
-     * keyboard events will no longer be delivered to the Window or any of its
-     * subcomponents.
+     * Invoked when the Window is no longer the focused Window, which means that keyboard events will no longer be delivered to the Window
+     * or any of its subcomponents.
      * 
      */
     public void windowLostFocus(final WindowEvent e) {
@@ -117,6 +115,10 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
 
     public SwingGui(final String string) {
         mainFrame = new JFrame(string) {
+            public void dispose() {
+
+                super.dispose();
+            }
 
             /**
 			 * 
@@ -124,6 +126,7 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
             private static final long serialVersionUID = -4218493713632551975L;
 
             public void toFront() {
+
                 if (!isVisible()) return;
                 super.toFront();
                 setAlwaysOnTop(true);
@@ -200,8 +203,7 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
     }
 
     /**
-     * Sets the currently used GUI. IS not! thouight to be used to change gui at
-     * runtime
+     * Sets the currently used GUI. IS not! thouight to be used to change gui at runtime
      * 
      * @param ins
      */

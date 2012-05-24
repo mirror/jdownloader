@@ -292,8 +292,7 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
                         }
                     }
                     /*
-                     * we save enabled/disabled status here, plugin must be
-                     * running when enabled
+                     * we save enabled/disabled status here, plugin must be running when enabled
                      */
 
                     AddonsMenu.getInstance().onUpdated();
@@ -322,7 +321,7 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
 
     public synchronized SwitchPanel getSelectedPanel() {
         if (list.getSelectedValue() instanceof LazyExtension) {
-            AbstractExtension<?> ext = ((LazyExtension) list.getSelectedValue())._getExtension();
+            AbstractExtension<?, ?> ext = ((LazyExtension) list.getSelectedValue())._getExtension();
             if (ext == null) {
                 try {
                     ((LazyExtension) list.getSelectedValue()).init();

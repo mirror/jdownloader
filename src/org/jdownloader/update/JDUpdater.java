@@ -84,7 +84,7 @@ public class JDUpdater extends AppUpdater {
         try {
             jarHash = new Parameters("jarhash", Hash.getMD5(Application.getResource(getJarName())));
         } catch (Throwable e) {
-            Log.exception(e);
+
         }
         if (Launcher.PARAMETERS.hasCommandSwitch("lasttry")) {
             return get(Actions.LAST_CHANCE, Parameters.APP_ID, Parameters.BRANCH_ID, jar, jarHash, new Parameters("test", "test"));

@@ -33,8 +33,7 @@ public class ExtensionController {
     private static final ExtensionController INSTANCE = new ExtensionController();
 
     /**
-     * get the only existing instance of ExtensionController. This is a
-     * singleton
+     * get the only existing instance of ExtensionController. This is a singleton
      * 
      * @return
      */
@@ -47,12 +46,13 @@ public class ExtensionController {
     private ExtensionControllerEventSender eventSender;
 
     /**
-     * Create a new instance of ExtensionController. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of ExtensionController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private ExtensionController() {
         eventSender = new ExtensionControllerEventSender();
         list = Collections.unmodifiableList(new ArrayList<LazyExtension>());
+
     }
 
     private File getCache() {
@@ -208,7 +208,7 @@ public class ExtensionController {
 
                                                     if (AbstractExtension.class.isAssignableFrom(clazz)) {
 
-                                                        initModule((Class<AbstractExtension<?>>) clazz, ret, jarFile);
+                                                        initModule((Class<AbstractExtension<?, ?>>) clazz, ret, jarFile);
                                                         continue main;
                                                     }
                                                 }
@@ -278,7 +278,7 @@ public class ExtensionController {
                         try {
                             cls = cl.loadClass(AbstractExtension.class.getPackage().getName() + "." + module.getParentFile().getName() + "." + module.getName().substring(0, module.getName().length() - 6));
                             if (AbstractExtension.class.isAssignableFrom(cls)) {
-                                initModule((Class<AbstractExtension<?>>) cls, retl, f);
+                                initModule((Class<AbstractExtension<?, ?>>) cls, retl, f);
                                 loaded = true;
                                 continue main;
                             }
@@ -298,7 +298,7 @@ public class ExtensionController {
         return retl;
     }
 
-    private ArrayList<LazyExtension> initModule(Class<AbstractExtension<?>> cls, ArrayList<LazyExtension> list, File jarFile) throws InstantiationException, IllegalAccessException, StartException, IOException, ClassNotFoundException {
+    private ArrayList<LazyExtension> initModule(Class<AbstractExtension<?, ?>> cls, ArrayList<LazyExtension> list, File jarFile) throws InstantiationException, IllegalAccessException, StartException, IOException, ClassNotFoundException {
         if (list == null) list = new ArrayList<LazyExtension>();
         String id = cls.getName().substring(27);
 
@@ -313,7 +313,7 @@ public class ExtensionController {
         return list;
     }
 
-    public boolean isExtensionActive(Class<? extends AbstractExtension<?>> class1) {
+    public boolean isExtensionActive(Class<? extends AbstractExtension<?, ?>> class1) {
         List<LazyExtension> llist = list;
         for (LazyExtension l : llist) {
             if (class1.getName().equals(l.getClassname())) {
@@ -332,8 +332,8 @@ public class ExtensionController {
      * 
      * @return
      */
-    public ArrayList<AbstractExtension<?>> getEnabledExtensions() {
-        ArrayList<AbstractExtension<?>> ret = new ArrayList<AbstractExtension<?>>();
+    public ArrayList<AbstractExtension<?, ?>> getEnabledExtensions() {
+        ArrayList<AbstractExtension<?, ?>> ret = new ArrayList<AbstractExtension<?, ?>>();
         List<LazyExtension> llist = list;
         for (LazyExtension aew : llist) {
             if (aew._getExtension() != null && aew._getExtension().isEnabled()) ret.add(aew._getExtension());
@@ -341,7 +341,7 @@ public class ExtensionController {
         return ret;
     }
 
-    public <T extends AbstractExtension<?>> LazyExtension getExtension(Class<T> class1) {
+    public <T extends AbstractExtension<?, ?>> LazyExtension getExtension(Class<T> class1) {
         List<LazyExtension> llist = list;
         for (LazyExtension l : llist) {
             if (class1.getName().equals(l.getClassname())) { return l; }

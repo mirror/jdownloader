@@ -5,7 +5,7 @@ import org.appwork.txtresource.Defaults;
 import org.appwork.txtresource.TranslateInterface;
 
 @Defaults(lngs = { "en" })
-public interface JdtrayiconTranslation extends TranslateInterface {
+public interface TrayiconTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Show info in TaskBar when minimized" })
     String plugins_optional_JDLightTray_titleinfo();

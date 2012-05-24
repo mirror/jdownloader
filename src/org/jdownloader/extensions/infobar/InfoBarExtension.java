@@ -16,9 +16,10 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.ExtensionGuiEnableAction;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.infobar.translate.InfobarTranslation;
 import org.jdownloader.extensions.infobar.translate.T;
 
-public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
+public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTranslation> {
 
     @Override
     public boolean isDefaultEnabled() {
@@ -46,7 +47,8 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig> {
     }
 
     public InfoBarExtension() throws StartException {
-        super(T._.jd_plugins_optional_infobar_jdinfobar());
+
+        setTitle(T._.jd_plugins_optional_infobar_jdinfobar());
         guiAction = new ExtensionGuiEnableAction(this) {
             public void actionPerformed(ActionEvent e) {
                 super.actionPerformed(e);
