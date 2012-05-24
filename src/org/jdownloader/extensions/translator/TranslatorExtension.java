@@ -1,5 +1,7 @@
 package org.jdownloader.extensions.translator;
 
+import java.io.File;
+import java.io.FileFilter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,6 +14,7 @@ import jd.plugins.AddonPanel;
 
 import org.appwork.txtresource.TranslateInterface;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.Files;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.extensions.AbstractExtension;
@@ -47,6 +50,50 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig> {
      */
     private TLocale                   loaded;
 
+    public static void main(String[] args) {
+        ArrayList<File> files = Files.getFiles(new FileFilter() {
+
+            @Override
+            public boolean accept(File pathname) {
+                if (pathname.getName().contains("sr_latin")) {
+                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("_", "__")));
+
+                }
+                if (pathname.getName().contains("es_castillian")) {
+                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("_", "__")));
+
+                }
+                if (pathname.getName().contains("zh_hans")) {
+                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("_", "__")));
+
+                }
+                if (pathname.getName().contains("zh_hant")) {
+                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("_", "__")));
+
+                }
+                if (pathname.getName().contains("bg_incomplete")) {
+                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("_", "__")));
+
+                }
+                if (pathname.getName().contains("pt-BR")) {
+                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("-", "_")));
+
+                }
+                if (pathname.getName().contains("pt-PT")) {
+                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("-", "_")));
+
+                }
+                return false;
+            }
+
+            private void renameTo(File pathname, File file) {
+                System.out.println(pathname + "->" + file);
+                pathname.renameTo(file);
+            }
+        }, new File("c:\\workspace"));
+
+    }
+
     public TranslatorExtension() {
         // Name. The translation Extension itself does not need translation. All
         // translators should be able to read english
@@ -55,6 +102,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig> {
         List<String> ids = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
         // create a list of TLocale instances
         translations = new ArrayList<TLocale>();
+        Collections.sort(ids);
         for (String id : ids) {
             translations.add(new TLocale(id));
         }
