@@ -38,7 +38,6 @@ import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.ISevenZipInArchive;
 import net.sf.sevenzipjbinding.SevenZip;
 import net.sf.sevenzipjbinding.SevenZipException;
-import net.sf.sevenzipjbinding.SevenZipNativeInitializationException;
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 import net.sf.sevenzipjbinding.impl.VolumedArchiveInStream;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
@@ -289,20 +288,22 @@ public class Multi extends IExtraction {
             Log.L.finer("Lib Path: " + tmp);
             tmp.mkdirs();
             SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
-        } catch (SevenZipNativeInitializationException e) {
+        } catch (Throwable e) {
+            try {
+                org.appwork.utils.Files.deleteRecursiv(tmp);
+            } catch (final Throwable e1) {
+            }
             Log.exception(e);
             logger.warning("Could not initialize Multiunpacker #1");
             try {
                 String s2 = System.getProperty("java.io.tmpdir");
                 Log.L.finer("Lib Path: " + (tmp = new File(s2)));
                 SevenZip.initSevenZipFromPlatformJAR(tmp);
-            } catch (SevenZipNativeInitializationException e2) {
+            } catch (Throwable e2) {
                 Log.exception(e2);
                 logger.warning("Could not initialize Multiunpacker #2");
                 return false;
             }
-        } catch (Throwable e) {
-            Log.exception(e);
         }
         return SevenZip.isInitializedSuccessfully();
     }
