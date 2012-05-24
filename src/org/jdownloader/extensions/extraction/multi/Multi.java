@@ -48,6 +48,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.StringFormatter;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -278,10 +279,11 @@ public class Multi extends IExtraction {
     @Override
     public boolean checkCommand() {
         File tmp = null;
+        String libID = null;
         try {
             String s = System.getProperty("os.arch");
             String s1 = System.getProperty("os.name").split(" ")[0];
-            String libID = new StringBuilder().append(s1).append("-").append(s).toString();
+            libID = new StringBuilder().append(s1).append("-").append(s).toString();
             Log.L.finer("Lib ID: " + libID);
             tmp = Application.getResource("tmp/7zip");
             org.appwork.utils.Files.deleteRecursiv(tmp);
@@ -289,6 +291,16 @@ public class Multi extends IExtraction {
             tmp.mkdirs();
             SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
         } catch (Throwable e) {
+            if (e instanceof UnsatisfiedLinkError && CrossSystem.isWindows()) {
+                try {
+                    System.load(new File(tmp, "mingwm10.dll").toString());
+                    System.load(new File(tmp, "libgcc_s_dw2-1.dll").toString());
+                    System.load(new File(tmp, "libstdc++-6.dll").toString());
+                    SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
+                    if (SevenZip.isInitializedSuccessfully()) return true;
+                } catch (final Throwable e2) {
+                }
+            }
             try {
                 org.appwork.utils.Files.deleteRecursiv(tmp);
             } catch (final Throwable e1) {
