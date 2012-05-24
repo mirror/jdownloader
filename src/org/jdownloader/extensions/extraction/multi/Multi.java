@@ -136,8 +136,6 @@ public class Multi extends IExtraction {
     private ISevenZipInArchive       inArchive;
     /** For 7z */
     private MultiOpener              multiopener;
-    // Indicates that the passwordcheck works with extracting the archive.
-    private boolean                  passwordExtracting                                          = false;
 
     /** For rar */
     private RarOpener                raropener;
@@ -280,14 +278,14 @@ public class Multi extends IExtraction {
 
     @Override
     public boolean checkCommand() {
+        File tmp = null;
         try {
             String s = System.getProperty("os.arch");
             String s1 = System.getProperty("os.name").split(" ")[0];
             String libID = new StringBuilder().append(s1).append("-").append(s).toString();
             Log.L.finer("Lib ID: " + libID);
-            File tmp = Application.getResource("tmp/7zip");
+            tmp = Application.getResource("tmp/7zip");
             org.appwork.utils.Files.deleteRecursiv(tmp);
-
             Log.L.finer("Lib Path: " + tmp);
             tmp.mkdirs();
             SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
@@ -295,19 +293,16 @@ public class Multi extends IExtraction {
             Log.exception(e);
             logger.warning("Could not initialize Multiunpacker #1");
             try {
-
                 String s2 = System.getProperty("java.io.tmpdir");
-                Log.L.finer("Lib Path: " + new File(s2));
-
-                SevenZip.initSevenZipFromPlatformJAR(new File(s2));
+                Log.L.finer("Lib Path: " + (tmp = new File(s2)));
+                SevenZip.initSevenZipFromPlatformJAR(tmp);
             } catch (SevenZipNativeInitializationException e2) {
                 Log.exception(e2);
                 logger.warning("Could not initialize Multiunpacker #2");
                 return false;
             }
-
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
+            Log.exception(e);
         }
         return SevenZip.isInitializedSuccessfully();
     }
@@ -682,29 +677,27 @@ public class Multi extends IExtraction {
         crack++;
         System.out.println("Check Password: " + password);
         try {
-            if (inArchive != null) {
-                try {
-                    inArchive.close();
-                } catch (SevenZipException e) {
-                    // logger.warning("Unable to close archive");
-                }
+            try {
+                inArchive.close();
+            } catch (Throwable e) {
+            }
+            try {
+                multiopener.close();
+            } catch (Throwable e) {
+            }
+            try {
+                raropener.close();
+            } catch (Throwable e) {
             }
 
             if (archive.getType() == ArchiveType.SINGLE_FILE) {
                 inArchive = SevenZip.openInArchive(format, stream, password);
             } else if (archive.getType() == ArchiveType.MULTI) {
-                if (multiopener != null) {
-                    multiopener.close();
-                }
 
                 multiopener = new MultiOpener(password);
                 IInStream inStream = new VolumedArchiveInStream(archive.getFirstArchiveFile().getFilePath(), multiopener);
                 inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
             } else if (archive.getType() == ArchiveType.MULTI_RAR) {
-                if (raropener != null) {
-                    raropener.close();
-                }
-
                 raropener = new RarOpener(password);
                 IInStream inStream = raropener.getStream(archive.getFirstArchiveFile().getFilePath());
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
@@ -712,7 +705,7 @@ public class Multi extends IExtraction {
 
             final BooleanHelper passwordfound = new BooleanHelper();
 
-            for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
+            for (final ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
                 if (item.isFolder() || (item.getSize() == 0 && item.getPackedSize() == 0)) {
                     /*
                      * we also check for items with size ==0, they should have a packedsize>0
@@ -723,13 +716,15 @@ public class Multi extends IExtraction {
                 if (!passwordfound.getBoolean()) {
                     try {
                         final String path = item.getPath();
+                        /* this variable defines if we accept the pw in case we write some data, asuming that 7zip only writes data when pw is correct */
+                        final boolean passwordExtracting = true;
                         ExtractOperationResult result = item.extractSlow(new ISequentialOutStream() {
                             public int write(byte[] data) throws SevenZipException {
                                 if (passwordExtracting) {
                                     passwordfound.found();
+                                    /* this will throw SevenZipException */
                                     return 0;
                                 }
-
                                 int length = 0;
                                 if (new Regex(path, ".+\\.iso").matches()) {
                                     length = 37000;
@@ -758,10 +753,14 @@ public class Multi extends IExtraction {
                                         passwordfound.found();
                                     }
                                 }
-                                return 0;
+                                if (item.getSize() < 1 * 1024 * 1024 && Boolean.FALSE.equals(passwordfound.getBoolean())) {
+                                    return data.length;
+                                } else {
+                                    /* this will throw SevenZipException */
+                                    return 0;
+                                }
                             }
                         }, password);
-                        passwordExtracting = true;
                         if (!ExtractOperationResult.OK.equals(result)) {
                             /* we get no okay result, so pw might be wrong */
                             return false;
@@ -780,6 +779,9 @@ public class Multi extends IExtraction {
                             return false;
                         }
                     }
+                } else {
+                    /* pw already found, we can stop now */
+                    break;
                 }
 
                 // if (filter(item.getPath())) continue;
@@ -791,11 +793,9 @@ public class Multi extends IExtraction {
             archive.setPassword(password);
             updateContentView(inArchive.getSimpleInterface());
             return true;
-        } catch (FileNotFoundException e) {
-            return false;
         } catch (SevenZipException e) {
             return false;
-        } catch (IOException e) {
+        } catch (Throwable e) {
             e.printStackTrace();
             return false;
         }

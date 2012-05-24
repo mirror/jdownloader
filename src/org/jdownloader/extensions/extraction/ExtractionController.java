@@ -122,10 +122,10 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 if (archive.isProtected() && archive.getPassword().equals("")) {
 
                     passwordList.addAll(archive.getFactory().getPasswordList(archive));
+                    passwordList.add(archive.getName());
                     ArrayList<String> pwList = extractor.config.getPasswordList();
                     if (pwList == null) pwList = new ArrayList<String>();
                     passwordList.addAll(pwList);
-                    passwordList.add(archive.getName());
 
                     passwordListSize = passwordList.size() + 2;
 
@@ -137,21 +137,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         if (checkPassword(password)) {
                             correctPW = password;
                             break;
-                        }
-                    }
-
-                    if (correctPW == null) {
-                        /* no correctPW found */
-
-                        passwordList.clear();
-                        //
-                        passwordList.add(archive.getName());
-                        passwordList.addAll(archive.getFactory().getPasswordList(archive));
-                        for (String password : passwordList) {
-                            if (checkPassword(password)) {
-                                correctPW = password;
-                                break;
-                            }
                         }
                     }
 

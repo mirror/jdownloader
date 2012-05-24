@@ -10,6 +10,7 @@ import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.RequiresRestart;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 
 public interface LinkgrabberSettings extends ConfigInterface {
 
@@ -104,6 +105,7 @@ public interface LinkgrabberSettings extends ConfigInterface {
     @AboutConfig
     @DefaultIntValue(1)
     @Description("If >0, there will be no packages with * or less links")
+    @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
     int getVariousPackageLimit();
 
     void setVariousPackageLimit(int b);
