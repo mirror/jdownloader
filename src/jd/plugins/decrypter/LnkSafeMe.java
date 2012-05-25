@@ -64,112 +64,113 @@ public class LnkSafeMe extends PluginForDecrypt {
             }
             if (finallink == null) { return null; }
             decryptedLinks.add(createDownloadlink(finallink));
-        }
-        for (int i = 0; i <= 5; i++) {
-            String postData = "";
-            if (br.containsHTML("//api\\.solvemedia\\.com/papi")) {
-                final boolean skipcaptcha = getPluginConfig().getBooleanProperty("SKIP_CAPTCHA", false);
-                final String challenge = br.getRegex("http://api\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
-                if (challenge == null) {
-                    logger.info(br.toString());
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final Browser capt = br.cloneBrowser();
-                capt.getPage("http://api.solvemedia.com/papi/_challenge.js?k=" + challenge);
-                final String chid = capt.getRegex("chid\"[\r\n\t ]+?:[\r\n\t ]+?\"([^\"]+)").getMatch(0);
-                if (chid == null) { return null; }
-                String code = "http://api.solvemedia.com/papi/media?c=" + chid;
-                if (!skipcaptcha) {
-                    final File captchaFile = this.getLocalCaptchaFile();
-                    Browser.download(captchaFile, br.cloneBrowser().openGetConnection(code));
-                    try {
-                        ImageIO.write(ImageIO.read(captchaFile), "jpg", captchaFile);
-                    } catch (final Throwable e) {
-                        logger.warning("Solvemedia handling broken");
+        } else {
+            for (int i = 0; i <= 5; i++) {
+                String postData = "";
+                if (br.containsHTML("//api\\.solvemedia\\.com/papi")) {
+                    final boolean skipcaptcha = getPluginConfig().getBooleanProperty("SKIP_CAPTCHA", false);
+                    final String challenge = br.getRegex("http://api\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
+                    if (challenge == null) {
+                        logger.info(br.toString());
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final Browser capt = br.cloneBrowser();
+                    capt.getPage("http://api.solvemedia.com/papi/_challenge.js?k=" + challenge);
+                    final String chid = capt.getRegex("chid\"[\r\n\t ]+?:[\r\n\t ]+?\"([^\"]+)").getMatch(0);
+                    if (chid == null) { return null; }
+                    String code = "http://api.solvemedia.com/papi/media?c=" + chid;
+                    if (!skipcaptcha) {
+                        final File captchaFile = this.getLocalCaptchaFile();
+                        Browser.download(captchaFile, br.cloneBrowser().openGetConnection(code));
+                        try {
+                            ImageIO.write(ImageIO.read(captchaFile), "jpg", captchaFile);
+                        } catch (final Throwable e) {
+                            logger.warning("Solvemedia handling broken");
+                            return null;
+                        }
+                        code = getCaptchaCode(null, captchaFile, param);
+                    } else {
+                        URLConnectionAdapter con2 = null;
+                        try {
+                            con2 = br.openGetConnection(code);
+                        } finally {
+                            try {
+                                con2.disconnect();
+                            } catch (final Throwable e) {
+                            }
+                        }
+                        code = "";
+                    }
+                    postData = "DownloadCaptchaForm[captcha]=&adcopy_challenge=" + chid + "&adcopy_response=" + code;
+                } else if (br.containsHTML(KEYCAPTCHA)) {
+                    final PluginForDecrypt keyplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((LnkCrptWs) keyplug).getKeyCaptcha(br);
+                    final String result = kc.showDialog(parameter);
+                    if (result != null) {
+                        if ("CANCEL".equals(result)) { return decryptedLinks; }
+                        postData = "capcode=" + result;
+                    }
+                } else if (br.containsHTML("api\\.recaptcha\\.net") || br.containsHTML("google\\.com/recaptcha/api/")) {
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.parse();
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode(cf, param);
+                    postData = "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c;
+                } else if (br.containsHTML("ajax-fc-container")) {
+                    final Browser br2 = br.cloneBrowser();
+                    br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br2.getPage("http://linksafe.me/captcha/4/captcha.php");
+                    final String response = br2.toString();
+                    if (response.length() > 500) {
+                        logger.warning("Response string is too big...");
                         return null;
                     }
-                    code = getCaptchaCode(null, captchaFile, param);
-                } else {
-                    URLConnectionAdapter con2 = null;
-                    try {
-                        con2 = br.openGetConnection(code);
-                    } finally {
-                        try {
-                            con2.disconnect();
-                        } catch (final Throwable e) {
-                        }
-                    }
-                    code = "";
+                    postData = "captcha=" + response.trim();
                 }
-                postData = "DownloadCaptchaForm[captcha]=&adcopy_challenge=" + chid + "&adcopy_response=" + code;
-            } else if (br.containsHTML(KEYCAPTCHA)) {
-                final PluginForDecrypt keyplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((LnkCrptWs) keyplug).getKeyCaptcha(br);
-                final String result = kc.showDialog(parameter);
-                if (result != null) {
-                    if ("CANCEL".equals(result)) { return decryptedLinks; }
-                    postData = "capcode=" + result;
+                if (br.containsHTML("valign=\"top\">Password:")) {
+                    final String passCode = getUserInput(null, param);
+                    postData = postData + "&password=" + passCode;
                 }
-            } else if (br.containsHTML("api\\.recaptcha\\.net") || br.containsHTML("google\\.com/recaptcha/api/")) {
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.parse();
-                rc.load();
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, param);
-                postData = "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c;
-            } else if (br.containsHTML("ajax-fc-container")) {
-                final Browser br2 = br.cloneBrowser();
-                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br2.getPage("http://linksafe.me/captcha/4/captcha.php");
-                final String response = br2.toString();
-                if (response.length() > 500) {
-                    logger.warning("Response string is too big...");
-                    return null;
+                if (!postData.equals("")) {
+                    br.postPage(parameter, postData + "&postcheck=1");
                 }
-                postData = "captcha=" + response.trim();
+                if (!(br.containsHTML(RECAPTCHAFAILED) || br.containsHTML(PASSWORDFAILED) || br.containsHTML(KEYCAPTCHA) || br.containsHTML(SOLVEMEDIA))) {
+                    break;
+                }
             }
-            if (br.containsHTML("valign=\"top\">Password:")) {
-                final String passCode = getUserInput(null, param);
-                postData = postData + "&password=" + passCode;
+            if (br.containsHTML(RECAPTCHAFAILED) || br.containsHTML(PASSWORDFAILED) || br.containsHTML(KEYCAPTCHA) || br.containsHTML(SOLVEMEDIA)) {
+                logger.info("Wrong password and wrong captcha!");
+                throw new DecrypterException(DecrypterException.CAPTCHA);
             }
-            if (!postData.equals("")) {
-                br.postPage(parameter, postData + "&postcheck=1");
+            if (br.containsHTML(RECAPTCHAFAILED) || br.containsHTML(KEYCAPTCHA) || br.containsHTML(SOLVEMEDIA)) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+            if (br.containsHTML(PASSWORDFAILED)) { throw new DecrypterException(DecrypterException.PASSWORD); }
+            final String[] links = br.getRegex(LINKREGEX).getColumn(0);
+            if (links == null || links.length == 0) { return null; }
+            /** Remove duplicates */
+            for (final String cryptedLink : links) {
+                if (!cryptedLinks.contains(cryptedLink)) {
+                    cryptedLinks.add(cryptedLink);
+                }
             }
-            if (!(br.containsHTML(RECAPTCHAFAILED) || br.containsHTML(PASSWORDFAILED) || br.containsHTML(KEYCAPTCHA) || br.containsHTML(SOLVEMEDIA))) {
-                break;
+            progress.setRange(links.length);
+            for (final String dl : cryptedLinks) {
+                br.getPage(MAINPAGE + dl);
+                String finallink = br.getRedirectLocation();
+                if (finallink == null) {
+                    finallink = br.getRegex("window\\.location=\"(http.*?)\"").getMatch(0);
+                }
+                if (finallink == null) { return null; }
+                final DownloadLink dllink = createDownloadlink(finallink);
+                try {
+                    distribute(dllink);
+                } catch (final Throwable e) {
+                    /* does not exist in 09581 */
+                }
+                decryptedLinks.add(dllink);
+                progress.increase(1);
             }
-        }
-        if (br.containsHTML(RECAPTCHAFAILED) || br.containsHTML(PASSWORDFAILED) || br.containsHTML(KEYCAPTCHA) || br.containsHTML(SOLVEMEDIA)) {
-            logger.info("Wrong password and wrong captcha!");
-            throw new DecrypterException(DecrypterException.CAPTCHA);
-        }
-        if (br.containsHTML(RECAPTCHAFAILED) || br.containsHTML(KEYCAPTCHA) || br.containsHTML(SOLVEMEDIA)) { throw new DecrypterException(DecrypterException.CAPTCHA); }
-        if (br.containsHTML(PASSWORDFAILED)) { throw new DecrypterException(DecrypterException.PASSWORD); }
-        final String[] links = br.getRegex(LINKREGEX).getColumn(0);
-        if (links == null || links.length == 0) { return null; }
-        /** Remove duplicates */
-        for (final String cryptedLink : links) {
-            if (!cryptedLinks.contains(cryptedLink)) {
-                cryptedLinks.add(cryptedLink);
-            }
-        }
-        progress.setRange(links.length);
-        for (final String dl : cryptedLinks) {
-            br.getPage(MAINPAGE + dl);
-            String finallink = br.getRedirectLocation();
-            if (finallink == null) {
-                finallink = br.getRegex("window\\.location=\"(http.*?)\"").getMatch(0);
-            }
-            if (finallink == null) { return null; }
-            final DownloadLink dllink = createDownloadlink(finallink);
-            try {
-                distribute(dllink);
-            } catch (final Throwable e) {
-                /* does not exist in 09581 */
-            }
-            decryptedLinks.add(dllink);
-            progress.increase(1);
         }
         return decryptedLinks;
     }
