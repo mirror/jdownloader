@@ -59,20 +59,15 @@ public class MxCloudCom extends PluginForDecrypt {
         final KeyParameter keyParam = new KeyParameter(key);
         final CipherParameters cipherParams = new ParametersWithIV(keyParam, iv);
 
-        // Prepare the cipher
+        // Prepare the cipher (AES, CBC, no padding)
         final BufferedBlockCipher cipher = new BufferedBlockCipher(new CBCBlockCipher(new AESEngine()));
         cipher.reset();
         cipher.init(false, cipherParams);
 
-        // Create a temporary buffer to decode into (it'll include padding)
-        final byte[] decBuffer = new byte[cipher.getOutputSize(plain.length)];
-        int decLength = cipher.processBytes(plain, 0, plain.length, decBuffer, 0);
-        decLength += cipher.doFinal(decBuffer, decLength);
-
-        // TODO Check this code (I don't think it will always be needed)
-        // Remove padding
-        final byte[] decrypted = new byte[decLength];
-        System.arraycopy(decBuffer, 0, decrypted, 0, decLength);
+        // Perform the decryption
+        final byte[] decrypted = new byte[cipher.getOutputSize(plain.length)];
+        int decLength = cipher.processBytes(plain, 0, plain.length, decrypted, 0);
+        cipher.doFinal(decrypted, decLength);
 
         return decrypted;
     }

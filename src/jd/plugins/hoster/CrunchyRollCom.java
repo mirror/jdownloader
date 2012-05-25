@@ -123,7 +123,7 @@ public class CrunchyRollCom extends PluginForHost {
                 final KeyParameter keyParam = new KeyParameter(key);
                 final CipherParameters cipherParams = new ParametersWithIV(keyParam, ivData);
 
-                // Prepare the cipher
+                // Prepare the cipher (AES, CBC, no padding)
                 final BufferedBlockCipher cipher = new BufferedBlockCipher(new CBCBlockCipher(new AESEngine()));
                 cipher.reset();
                 cipher.init(false, cipherParams);
