@@ -171,7 +171,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             br.getPage(parameter);
             finallink = br.getRegex("<a href=\"/random\">[\r\n\t]+<img src=\"(.*?)\"").getMatch(0);
         } else if (parameter.contains("imgur.com/a/")) {
-            br.getPage(parameter);
+            br.getPage(parameter.replace("/all$", ""));
             String fpName = br.getRegex("<title>(.*?) - Imgur").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("data-title=\"([^\"]+)").getMatch(0);
@@ -180,6 +180,9 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                 }
             }
             String[] links = br.getRegex("title=\"[^\"]+\" alt=\"[^\"]+\" data\\-src=\"(https?://[^\"]+)\" data-index=\"\\d+").getColumn(0);
+            if (links == null || links.length == 0) {
+                links = br.getRegex("class=\"unloaded\".*?data\\-src=\"(https?://[^\"]+)\" alt=\"[^\"]*\"").getColumn(0);
+            }
             if (links == null || links.length == 0) {
                 logger.warning("Possible Error, please make sure link is valid within browser.");
                 logger.warning("If plugin is out of date please report issue to JDownloader Developement : " + parameter);
@@ -190,6 +193,16 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                         decryptedLinks.add(createDownloadlink("directhttp://" + link.replaceAll("s.jpg", ".jpg")));
                     else
                         decryptedLinks.add(createDownloadlink("directhttp://" + link));
+            }
+            String[] downloadLinks = br.getRegex("Download full resolution.*?href=\"(/download/.*?)\"").getColumn(0);
+            if (downloadLinks != null) {
+                if (downloadLinks.length == decryptedLinks.size()) {
+                    /* we have a full resolution image for each picture, so lets only download them */
+                    decryptedLinks.clear();
+                }
+                for (String link : downloadLinks) {
+                    decryptedLinks.add(createDownloadlink("directhttp://http://imgur.com" + link));
+                }
             }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();

@@ -110,8 +110,7 @@ public class UploadingCom extends PluginForHost {
                 int c = 0;
                 for (DownloadLink dl : links) {
                     /*
-                     * append fake filename , because api will not report
-                     * anything else
+                     * append fake filename , because api will not report anything else
                      */
                     if (c > 0) sb.append("%0D%0A");
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
@@ -192,6 +191,7 @@ public class UploadingCom extends PluginForHost {
     }
 
     public AvailableStatus fileCheck(DownloadLink downloadLink) throws PluginException, IOException {
+        correctDownloadLink(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("but due to abuse or through deletion by")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("file was removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -444,8 +444,7 @@ public class UploadingCom extends PluginForHost {
     }
 
     /**
-     * TODO: remove with next major update, DownloadWatchDog/AccountController
-     * handle blocked accounts now
+     * TODO: remove with next major update, DownloadWatchDog/AccountController handle blocked accounts now
      */
     @SuppressWarnings("deprecation")
     @Override

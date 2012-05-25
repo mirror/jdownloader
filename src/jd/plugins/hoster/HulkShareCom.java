@@ -75,8 +75,10 @@ public class HulkShareCom extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
+    public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("hu.lk/", "hulkshare.com/"));
+        /* www is needed now! */
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("http://hulkshare.com/", "http://www.hulkshare.com/"));
     }
 
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
@@ -555,6 +557,7 @@ public class HulkShareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        correctDownloadLink(link);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         String argh = br.getRedirectLocation();

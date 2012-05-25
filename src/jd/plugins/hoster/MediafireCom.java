@@ -791,7 +791,13 @@ public class MediafireCom extends PluginForHost {
                     } else {
                         logger.info("Try fallback: " + brc.toString());
                     }
-                    if (url == null) url = this.getDownloadUrl(downloadLink);
+                    if (url == null) {
+                        /* pw protected files can directly redirect to download */
+                        url = br.getRedirectLocation();
+                    }
+                    if (url == null) {
+                        url = this.getDownloadUrl(downloadLink);
+                    }
                 }
             }
         }
@@ -804,6 +810,7 @@ public class MediafireCom extends PluginForHost {
             logger.info("Error (3)");
             logger.info(dl.getConnection() + "");
             this.br.followConnection();
+            if (br.containsHTML("We apologize, but we are having difficulties processing your download request")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Please be patient while we try to repair your download request", 2 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();
@@ -879,17 +886,11 @@ public class MediafireCom extends PluginForHost {
                     if (url != null) {
                         url = url.replaceAll("\\\\", "");
                     }
+                    if (url == null && brc.containsHTML("Unable to access")) {
+                        this.handlePremiumPassword(downloadLink, account);
+                        return;
+                    }
                 }
-                /*
-                 * pw protected urls are currently not supported, needs to be fixed
-                 */
-                // if (url == null || !url.contains("download")) {
-                // this.handlePW(downloadLink);
-                // url = this.getDownloadUrl(downloadLink);
-                // }
-                // if (url == null) throw new
-                // PluginException(LinkStatus.ERROR_FATAL,
-                // "Private file. No Download possible");
             }
             if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             this.br.setFollowRedirects(true);
@@ -916,8 +917,11 @@ public class MediafireCom extends PluginForHost {
         // API currently does not work
         // http://support.mediafire.com/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=68
         this.br.getPage(downloadLink.getDownloadURL());
+        String url = br.getRedirectLocation();
+        if (url != null) br.getPage(url);
         this.handlePW(downloadLink);
-        final String url = this.getDownloadUrl(downloadLink);
+        url = br.getRedirectLocation();
+        if (url == null) url = this.getDownloadUrl(downloadLink);
         if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         this.br.setFollowRedirects(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
