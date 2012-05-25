@@ -2,10 +2,10 @@ package org.jdownloader.extensions.translator;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 
 import org.appwork.txtresource.Description;
 import org.appwork.txtresource.TranslateInterface;
+import org.appwork.txtresource.TranslationSource;
 import org.tmatesoft.svn.core.SVNDirEntry;
 
 /**
@@ -16,15 +16,16 @@ import org.tmatesoft.svn.core.SVNDirEntry;
  */
 public class TranslateEntry {
 
-    private TranslateInterface            tinterface;
-    private Method                        method;
-    private String                        translation;
-    private ArrayList<TranslationProblem> errors;
-    private int                           cntErrors     = 0;
-    private Boolean                       isMissing     = false;
-    private Boolean                       isDefault     = false;
-    private Boolean                       isWrongLength = false;
-    private SVNDirEntry                   svnEntry;
+    private TranslateInterface tinterface;
+    private Method             method;
+    private String             translation;
+
+    private int                cntErrors = 0;
+    private Boolean            isMissing = false;
+    private Boolean            isDefault = false;
+
+    private SVNDirEntry        svnEntry;
+    private TranslationSource  source;
 
     /**
      * 
@@ -39,7 +40,8 @@ public class TranslateEntry {
         method = m;
         // Get Translation String without replacing the %s*wildcard
         translation = tinterface._getHandler().getTranslation(method);
-        errors = new ArrayList<TranslationProblem>();
+        source = tinterface._getHandler().getSource(method);
+
         svnEntry = svn;
         // validates the entry
         validate();
@@ -49,12 +51,10 @@ public class TranslateEntry {
      * validates the translation, and scans for usual errors
      */
     private void validate() {
-        errors.clear();
+
         // missing check
         validateExists();
         if (!isMissing) {
-            // length check
-            validateStringLength();
             // default check
             isDefault = translation.equals(getDefault());
         }
@@ -63,28 +63,12 @@ public class TranslateEntry {
     }
 
     private void validateExists() {
-        if (getTranslation().length() == 0) {
-            errors.add(new TranslationProblem(TranslationProblem.Type.MISSING, "Translation is missing."));
+
+        if (source == null || !source.isFromLngFile() || !source.getID().equals(tinterface._getHandler().getID())) {
+
             isMissing = true;
         } else
             isMissing = false;
-    }
-
-    /**
-     * writes a warning of length differs too much from default String length TODO: Probably it would be better, to do a real String width
-     * check instead of letter counter. A b etter algorithm would be fine, too. no<->nein has 100% difference but does not really matter in
-     * most cases
-     */
-    private void validateStringLength() {
-        String def = this.getDefault();
-
-        if (def != null && def.length() > 0) {
-            if ((100 * Math.abs(def.length() - getTranslation().length())) / Math.min(def.length(), getTranslation().length()) > 80) {
-                errors.add(new TranslationProblem(TranslationProblem.Type.LENGTH, "Translation length differs a lot from default. Translation should have roughly the same length!"));
-                isWrongLength = true;
-            } else
-                isWrongLength = false;
-        }
     }
 
     /**
@@ -95,20 +79,11 @@ public class TranslateEntry {
         cntErrors = 0;
         for (int i = 0; i < getParameters().length; i++) {
             if (!getTranslation().contains("%s" + (i + 1))) {
-                errors.add(new TranslationProblem(TranslationProblem.Type.ERROR, "Parameter %s" + (i + 1) + " is missing."));
+
                 cntErrors++;
                 return;
             }
         }
-    }
-
-    /**
-     * Returns all errors and warnings for this entry
-     * 
-     * @return
-     */
-    public ArrayList<TranslationProblem> getErrors() {
-        return errors;
     }
 
     /**
@@ -137,7 +112,7 @@ public class TranslateEntry {
      * @return translation(value) for this entry. It contains all wildcards.
      */
     public String getTranslation() {
-        return tinterface._getHandler().getTranslation(method);
+        return translation;
     }
 
     /**
@@ -193,16 +168,8 @@ public class TranslateEntry {
         validate();
     }
 
-    public boolean hasErrors() {
-        return (cntErrors > 0) ? true : false;
-    }
-
     public boolean isMissing() {
         return isMissing;
-    }
-
-    public boolean isWrongLength() {
-        return isWrongLength;
     }
 
     public boolean isDefault() {
@@ -213,7 +180,15 @@ public class TranslateEntry {
         // !this.getKey().endsWith("_mnemonics"));
     }
 
-    public boolean isOK(boolean checkDefault) {
-        return (!isMissing && cntErrors <= 0 && !isWrongLength && !(isDefault && checkDefault));
+    public boolean isOK() {
+        return (!isMissing && cntErrors <= 0);
+    }
+
+    public TranslationSource getSource() {
+        return source;
+    }
+
+    public boolean isParameterInvalid() {
+        return cntErrors > 0;
     }
 }

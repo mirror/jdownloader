@@ -1,12 +1,14 @@
 package org.jdownloader.extensions.translator.gui;
 
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 
 import javax.swing.Icon;
+import javax.swing.JComboBox;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
+import javax.swing.ListCellRenderer;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -16,6 +18,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -26,6 +29,7 @@ import org.jdownloader.extensions.translator.TLocale;
 import org.jdownloader.extensions.translator.TranslatorExtension;
 import org.jdownloader.extensions.translator.gui.actions.LoadTranslationAction;
 import org.jdownloader.extensions.translator.gui.actions.NewTranslationAction;
+import org.jdownloader.images.NewTheme;
 
 /**
  * Extension gui
@@ -42,9 +46,6 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     private SwitchPanel         panel;
 
     private JMenu               mnuFile;
-    private JMenu               mnuFileLoad;
-
-    private JMenu               mnuView;
 
     public TranslatorGui(TranslatorExtension plg) {
         super(plg);
@@ -83,14 +84,44 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         // Load Menu
         mnuFile = new JMenu("File");
 
-        this.mnuFileLoad = new JMenu("Load");
-        for (TLocale t : getExtension().getTranslations()) {
-            mnuFileLoad.add(new LoadTranslationAction(this, t));
-        }
-        if (getExtension().getTranslations().size() > 0) mnuFileLoad.add(new JSeparator());
-        mnuFileLoad.add(new NewTranslationAction(this));
+        // this.mnuFileLoad = new JMenu("Load");
+        // for (TLocale t : getExtension().getTranslations()) {
+        // mnuFileLoad.add(new LoadTranslationAction(this, t));
+        // }
+        // if (getExtension().getTranslations().size() > 0) mnuFileLoad.add(new JSeparator());
+        // mnuFileLoad.add();
 
-        this.mnuFile.add(this.mnuFileLoad);
+        this.mnuFile.add(new AppAction() {
+            {
+                setName("Load Translation");
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final ListCellRenderer org = new JComboBox().getRenderer();
+                try {
+
+                    final ComboBoxDialog d = new ComboBoxDialog(0, "Choose Translation", "Please choose the Translation you want to modify, or create a new one", getExtension().getTranslations().toArray(new TLocale[] {}), 0, NewTheme.I().getIcon("language", 32), null, null, null);
+                    d.setLeftActions(new NewTranslationAction(TranslatorGui.this) {
+
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            super.actionPerformed(e);
+                            d.dispose();
+                        }
+
+                    });
+                    int sel = Dialog.getInstance().showDialog(d);
+                    if (sel >= 0) {
+                        new LoadTranslationAction(TranslatorGui.this, getExtension().getTranslations().get(sel)).actionPerformed(null);
+                    }
+                } catch (DialogClosedException e1) {
+                    e1.printStackTrace();
+                } catch (DialogCanceledException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        });
 
         this.mnuFile.add(new AppAction() {
             {
@@ -103,13 +134,10 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                 save();
             }
         });
-        this.mnuFile.addSeparator();
-
-        mnuView = new JMenu("View");
 
         // Menu-Bar zusammensetzen
         menubar.add(this.mnuFile);
-        menubar.add(this.mnuView);
+        // menubar.add(this.mnuView);
 
         // tableModel.setMarkDefaults(mnuViewMarkDef.getState());
         // tableModel.setMarkOK(mnuViewMarkOK.getState());
@@ -164,8 +192,40 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     @Override
     protected void onShow() {
         Log.L.finer("Shown " + getClass().getSimpleName());
+        if (getExtension().isLoggedIn()) return;
+        ProgressGetter pg = new ProgressDialog.ProgressGetter() {
 
-        getExtension().doLogin();
+            @Override
+            public void run() throws Exception {
+                getExtension().doLogin();
+
+            }
+
+            @Override
+            public String getString() {
+                return null;
+            }
+
+            @Override
+            public int getProgress() {
+                return -1;
+            }
+        };
+
+        try {
+            Dialog.getInstance().showDialog(new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL, "Login", "Please wait.", null, null, null) {
+
+                @Override
+                public Dimension getPreferredSize() {
+                    return new Dimension(200, 40);
+                }
+
+            });
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -210,7 +270,14 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         };
 
         try {
-            Dialog.getInstance().showDialog(new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL, "Load Language", "Please wait. Loading " + locale, null, null, null));
+            Dialog.getInstance().showDialog(new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL, "Load Language", "Please wait. Loading " + locale, null, null, null) {
+
+                @Override
+                public Dimension getPreferredSize() {
+                    return new Dimension(200, 40);
+                }
+
+            });
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {

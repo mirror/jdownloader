@@ -257,16 +257,19 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
      * Loads the given language
      * 
      * @param locale
+     * @throws InterruptedException
      */
-    public void load(TLocale locale) {
+    public void load(TLocale locale) throws InterruptedException {
         loaded = locale;
 
         try {
-            List<SVNDirEntry> svnEntries = listSvnLngFileEntries();
+            List<SVNDirEntry> svnEntries = null;
+            // List<SVNDirEntry> svnEntries = listSvnLngFileEntries();
 
             ArrayList<TranslateEntry> tmp = new ArrayList<TranslateEntry>();
             Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
             s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+            s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
             s.dispose();
             for (LazyExtension le : ExtensionController.getInstance().getExtensions()) {
                 if (le._getExtension().getTranslation() == null) continue;
@@ -288,8 +291,10 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             load(tmp, svnEntries, locale, UpdateTranslation.class);
             load(tmp, svnEntries, locale, UpnpTranslation.class);
             // there should be no more entries. all of them should have been mapped to an INterface
-            for (SVNDirEntry e : svnEntries) {
-                Log.L.warning("No Interface for " + e.getRelativePath());
+            if (svnEntries != null) {
+                for (SVNDirEntry e : svnEntries) {
+                    Log.L.warning("No Interface for " + e.getRelativePath());
+                }
             }
 
             this.translationEntries = tmp;
@@ -300,13 +305,14 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         }
     }
 
-    private List<SVNDirEntry> listSvnLngFileEntries() throws SVNException {
+    private List<SVNDirEntry> listSvnLngFileEntries() throws SVNException, InterruptedException {
 
         final String extension = loaded.getId() + ".lng";
         Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/", getSettings().getSVNUser(), getSettings().getSVNPassword());
         List<SVNDirEntry> files = s.listFiles(new FilePathFilter() {
             @Override
             public boolean accept(SVNDirEntry path) {
+
                 return path.getName().endsWith(extension);
             }
 
@@ -320,16 +326,17 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         Log.L.info("Load Translation " + locale + " " + class1);
         String lookupPath = class1.getName().replace(".", "/") + "." + locale.getId() + ".lng";
         SVNDirEntry svn = null;
-        for (SVNDirEntry d : svnEntries) {
-            // System.out.println(d.getRelativePath());
-            // System.out.println(lookupPath);
-            if (d.getRelativePath().endsWith(lookupPath)) {
+        if (svnEntries != null) {
+            for (SVNDirEntry d : svnEntries) {
+                // System.out.println(d.getRelativePath());
+                // System.out.println(lookupPath);
+                if (d.getRelativePath().endsWith(lookupPath)) {
 
-                svn = d;
-                svnEntries.remove(svn);
-                break;
+                    svn = d;
+                    svnEntries.remove(svn);
+                    break;
+                }
             }
-
         }
         TranslateInterface t = (TranslateInterface) Proxy.newProxyInstance(class1.getClassLoader(), new Class[] { class1 }, new TranslationHandler(class1, locale.getId()));
 
@@ -367,7 +374,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     public void doLogin() {
         if (isLoggedIn()) return;
-
+        if (getSettings().isRememberLoginsEnabled()) {
+            if (validateSvnLogin(getSettings().getSVNUser(), getSettings().getSVNPassword())) { return; }
+        }
         requestSvnLogin();
     }
 
