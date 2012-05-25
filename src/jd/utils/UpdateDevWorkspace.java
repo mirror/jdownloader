@@ -19,14 +19,14 @@ package jd.utils;
 import java.io.File;
 
 import jd.nutils.io.JDIO;
-import jd.nutils.svn.Subversion;
+import jd.nutils.svn.DeprecatedSubversion;
 
 import org.appwork.utils.Application;
 
 public class UpdateDevWorkspace {
 
     private static void updateSVN(final String svnUrl, final String path) throws Exception {
-        final Subversion svn = new Subversion(svnUrl);
+        final DeprecatedSubversion svn = new DeprecatedSubversion(svnUrl);
 
         final File dir = Application.getResource(path);
         if (!dir.exists()) dir.mkdirs();

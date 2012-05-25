@@ -15,6 +15,12 @@ import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.ProgressDialog;
+import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.translator.TLocale;
 import org.jdownloader.extensions.translator.TranslatorExtension;
@@ -176,9 +182,41 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         return getExtension().getLoadedLocale();
     }
 
-    public void load(TLocale locale) {
+    public void load(final TLocale locale) {
 
-        getExtension().load(locale);
+        ProgressGetter pg = new ProgressDialog.ProgressGetter() {
+
+            @Override
+            public void run() throws Exception {
+                getExtension().load(locale);
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        refresh();
+                    }
+                };
+            }
+
+            @Override
+            public String getString() {
+                return null;
+            }
+
+            @Override
+            public int getProgress() {
+                return -1;
+            }
+        };
+
+        try {
+            Dialog.getInstance().showDialog(new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL, "Load Language", "Please wait. Loading " + locale, null, null, null));
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void refresh() {

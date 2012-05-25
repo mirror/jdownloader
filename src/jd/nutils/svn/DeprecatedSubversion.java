@@ -56,7 +56,7 @@ import org.tmatesoft.svn.core.wc.SVNUpdateClient;
 import org.tmatesoft.svn.core.wc.SVNWCClient;
 import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
-public class Subversion implements ISVNEventHandler {
+public class DeprecatedSubversion implements ISVNEventHandler {
 
     private SVNRepository             repository;
     private SVNURL                    svnurl;
@@ -66,12 +66,12 @@ public class Subversion implements ISVNEventHandler {
     private SVNCommitClient           commitClient;
     private SVNWCClient               wcClient;
 
-    public Subversion(String url) throws SVNException {
+    public DeprecatedSubversion(String url) throws SVNException {
         setupType(url);
         checkRoot();
     }
 
-    public Subversion(String url, String user, String pass) throws SVNException {
+    public DeprecatedSubversion(String url, String user, String pass) throws SVNException {
         setupType(url);
         authManager = SVNWCUtil.createDefaultAuthenticationManager(user, pass);
         ((DefaultSVNAuthenticationManager) authManager).setAuthenticationForced(true);
@@ -579,7 +579,7 @@ public class Subversion implements ISVNEventHandler {
      */
     public static boolean checkLogin(String url, String user, String pass) {
         try {
-            new Subversion(url, user, pass);
+            new DeprecatedSubversion(url, user, pass);
             return true;
         } catch (SVNException e) {
         }

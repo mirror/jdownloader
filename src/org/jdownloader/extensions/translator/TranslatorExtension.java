@@ -15,7 +15,6 @@ import jd.controlling.reconnect.pluginsinc.batch.translate.BatchTranslation;
 import jd.controlling.reconnect.pluginsinc.extern.translate.ExternTranslation;
 import jd.controlling.reconnect.pluginsinc.liveheader.translate.LiveheaderTranslation;
 import jd.controlling.reconnect.pluginsinc.upnp.translate.UpnpTranslation;
-import jd.nutils.svn.Subversion;
 import jd.plugins.AddonPanel;
 
 import org.appwork.shutdown.ShutdownController;
@@ -28,6 +27,8 @@ import org.appwork.update.updateclient.translation.UpdateTranslation;
 import org.appwork.utils.Files;
 import org.appwork.utils.locale.AWUTranslation;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.svn.FilePathFilter;
+import org.appwork.utils.svn.Subversion;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -45,6 +46,7 @@ import org.jdownloader.extensions.translator.gui.TranslatorGui;
 import org.jdownloader.gui.translate.GuiTranslation;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate.JdownloaderTranslation;
+import org.tmatesoft.svn.core.SVNDirEntry;
 import org.tmatesoft.svn.core.SVNException;
 
 /**
@@ -254,36 +256,77 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
      */
     public void load(TLocale locale) {
         loaded = locale;
-        ArrayList<TranslateEntry> tmp = new ArrayList<TranslateEntry>();
 
-        for (LazyExtension le : ExtensionController.getInstance().getExtensions()) {
-            if (le._getExtension().getTranslation() == null) continue;
-            load(tmp, locale, (Class<? extends TranslateInterface>) le._getExtension().getTranslation().getClass().getInterfaces()[0]);
+        try {
+            List<SVNDirEntry> svnEntries = listSvnLngFileEntries();
 
+            ArrayList<TranslateEntry> tmp = new ArrayList<TranslateEntry>();
+
+            for (LazyExtension le : ExtensionController.getInstance().getExtensions()) {
+                if (le._getExtension().getTranslation() == null) continue;
+                load(tmp, svnEntries, locale, (Class<? extends TranslateInterface>) le._getExtension().getTranslation().getClass().getInterfaces()[0]);
+
+            }
+            // use Type Hierarchy in IDE to get all interfaces
+            // Extension Translations should not be referenced here
+            load(tmp, svnEntries, locale, AWUTranslation.class);
+            load(tmp, svnEntries, locale, BatchTranslation.class);
+            load(tmp, svnEntries, locale, CaptchaTranslation.class);
+            load(tmp, svnEntries, locale, ExternInterfaceTranslation.class);
+            load(tmp, svnEntries, locale, ExternTranslation.class);
+            load(tmp, svnEntries, locale, ExtTableTranslation.class);
+            load(tmp, svnEntries, locale, GuiTranslation.class);
+            load(tmp, svnEntries, locale, JdownloaderTranslation.class);
+            load(tmp, svnEntries, locale, LiveheaderTranslation.class);
+            load(tmp, svnEntries, locale, StandaloneUpdaterTranslation.class);
+            load(tmp, svnEntries, locale, UpdateTranslation.class);
+            load(tmp, svnEntries, locale, UpnpTranslation.class);
+            // there should be no more entries. all of them should have been mapped to an INterface
+            for (SVNDirEntry e : svnEntries) {
+                Log.L.warning("No Interface for " + e.getRelativePath());
+            }
+            this.translationEntries = tmp;
+            // System.out.println(1);
+
+        } catch (SVNException e) {
+            e.printStackTrace();
         }
-        // use Type Hierarchy in IDE to get all interfaces
-        // Extension Translations should not be referenced here
-        load(tmp, locale, AWUTranslation.class);
-        load(tmp, locale, BatchTranslation.class);
-        load(tmp, locale, CaptchaTranslation.class);
-        load(tmp, locale, ExternInterfaceTranslation.class);
-        load(tmp, locale, ExternTranslation.class);
-        load(tmp, locale, ExtTableTranslation.class);
-        load(tmp, locale, GuiTranslation.class);
-        load(tmp, locale, JdownloaderTranslation.class);
-        load(tmp, locale, LiveheaderTranslation.class);
-        load(tmp, locale, StandaloneUpdaterTranslation.class);
-        load(tmp, locale, UpdateTranslation.class);
-        load(tmp, locale, UpnpTranslation.class);
-
-        this.translationEntries = tmp;
     }
 
-    private void load(ArrayList<TranslateEntry> tmp, TLocale locale, Class<? extends TranslateInterface> class1) {
+    private List<SVNDirEntry> listSvnLngFileEntries() throws SVNException {
+
+        final String extension = loaded.getId() + ".lng";
+        Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/", getSettings().getSVNUser(), getSettings().getSVNPassword());
+        List<SVNDirEntry> files = s.listFiles(new FilePathFilter() {
+            @Override
+            public boolean accept(SVNDirEntry path) {
+                return path.getName().endsWith(extension);
+            }
+
+        }, "");
+
+        return files;
+
+    }
+
+    private void load(ArrayList<TranslateEntry> tmp, List<SVNDirEntry> svnEntries, TLocale locale, Class<? extends TranslateInterface> class1) {
         Log.L.info("Load Translation " + locale + " " + class1);
+        String lookupPath = class1.getName().replace(".", "/") + "." + locale.getId() + ".lng";
+        SVNDirEntry svn = null;
+        for (SVNDirEntry d : svnEntries) {
+            // System.out.println(d.getRelativePath());
+            // System.out.println(lookupPath);
+            if (d.getRelativePath().endsWith(lookupPath)) {
+
+                svn = d;
+                svnEntries.remove(svn);
+                break;
+            }
+
+        }
         TranslateInterface t = TranslationFactory.create(class1, locale.getId());
         for (Method m : t._getHandler().getMethods()) {
-            tmp.add(new TranslateEntry(t, m));
+            tmp.add(new TranslateEntry(t, m, svn));
         }
 
     }

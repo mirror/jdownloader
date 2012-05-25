@@ -16,6 +16,7 @@ public class LoadTranslationAction extends AbstractAction {
         super(t.toString());
         locale = t;
         master = translatorGui;
+
     }
 
     @Override
@@ -25,7 +26,7 @@ public class LoadTranslationAction extends AbstractAction {
 
     public void actionPerformed(ActionEvent e) {
         master.load(locale);
-        master.refresh();
+
     }
 
 }

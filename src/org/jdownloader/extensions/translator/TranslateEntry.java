@@ -6,6 +6,7 @@ import java.util.ArrayList;
 
 import org.appwork.txtresource.Description;
 import org.appwork.txtresource.TranslateInterface;
+import org.tmatesoft.svn.core.SVNDirEntry;
 
 /**
  * Basic Data class for each Key-value pair
@@ -23,6 +24,7 @@ public class TranslateEntry {
     private Boolean                       isMissing     = false;
     private Boolean                       isDefault     = false;
     private Boolean                       isWrongLength = false;
+    private SVNDirEntry                   svnEntry;
 
     /**
      * 
@@ -30,13 +32,15 @@ public class TranslateEntry {
      *            Translationinterface that handles the given method
      * @param m
      *            translation method
+     * @param svn
      */
-    public TranslateEntry(TranslateInterface t, Method m) {
+    public TranslateEntry(TranslateInterface t, Method m, SVNDirEntry svn) {
         tinterface = t;
         method = m;
         // Get Translation String without replacing the %s*wildcard
         translation = tinterface._getHandler().getTranslation(method);
         errors = new ArrayList<TranslationProblem>();
+        svnEntry = svn;
         // validates the entry
         validate();
     }
