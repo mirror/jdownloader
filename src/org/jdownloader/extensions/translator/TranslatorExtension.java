@@ -3,6 +3,7 @@ package org.jdownloader.extensions.translator;
 import java.io.File;
 import java.io.FileFilter;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -22,8 +23,10 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.swing.exttable.ExtTableTranslation;
 import org.appwork.txtresource.TranslateInterface;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.txtresource.TranslationHandler;
 import org.appwork.update.standalone.translate.StandaloneUpdaterTranslation;
 import org.appwork.update.updateclient.translation.UpdateTranslation;
+import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.locale.AWUTranslation;
 import org.appwork.utils.logging.Log;
@@ -48,6 +51,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate.JdownloaderTranslation;
 import org.tmatesoft.svn.core.SVNDirEntry;
 import org.tmatesoft.svn.core.SVNException;
+import org.tmatesoft.svn.core.wc.SVNRevision;
 
 /**
  * Extensionclass. NOTE: All extensions have to follow the namescheme to end with "Extension" and have to extend AbstractExtension
@@ -261,7 +265,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             List<SVNDirEntry> svnEntries = listSvnLngFileEntries();
 
             ArrayList<TranslateEntry> tmp = new ArrayList<TranslateEntry>();
-
+            Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
+            s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+            s.dispose();
             for (LazyExtension le : ExtensionController.getInstance().getExtensions()) {
                 if (le._getExtension().getTranslation() == null) continue;
                 load(tmp, svnEntries, locale, (Class<? extends TranslateInterface>) le._getExtension().getTranslation().getClass().getInterfaces()[0]);
@@ -285,6 +291,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             for (SVNDirEntry e : svnEntries) {
                 Log.L.warning("No Interface for " + e.getRelativePath());
             }
+
             this.translationEntries = tmp;
             // System.out.println(1);
 
@@ -304,7 +311,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             }
 
         }, "");
-
+        s.dispose();
         return files;
 
     }
@@ -324,7 +331,8 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             }
 
         }
-        TranslateInterface t = TranslationFactory.create(class1, locale.getId());
+        TranslateInterface t = (TranslateInterface) Proxy.newProxyInstance(class1.getClassLoader(), new Class[] { class1 }, new TranslationHandler(class1, locale.getId()));
+
         for (Method m : t._getHandler().getMethods()) {
             tmp.add(new TranslateEntry(t, m, svn));
         }

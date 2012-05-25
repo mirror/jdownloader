@@ -137,7 +137,7 @@ public class TranslateEntry {
      * @return translation(value) for this entry. It contains all wildcards.
      */
     public String getTranslation() {
-        return translation;
+        return tinterface._getHandler().getTranslation(method);
     }
 
     /**
