@@ -246,7 +246,7 @@ public class UloadTo extends PluginForHost {
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     dlForm = rc.getForm();
                     /** wait time is often skippable for reCaptcha handling */
-                    skipWaittime = true;
+                    skipWaittime = false;
                 }
                 /* Captcha END */
                 if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
@@ -307,6 +307,9 @@ public class UloadTo extends PluginForHost {
 
     public String getDllink() {
         String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            dllink = new Regex(correctedBR, "<a href=\"(http://[a-zA-Z0-9\\.\\-]*?uload\\.to(:\\d+)?/d/.*?)\"").getMatch(0);
+        }
         if (dllink == null) {
             dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
             if (dllink == null) {
@@ -456,17 +459,22 @@ public class UloadTo extends PluginForHost {
     private String checkDirectLink(DownloadLink downloadLink, String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return dllink;
@@ -550,7 +558,9 @@ public class UloadTo extends PluginForHost {
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/?op=my_account");
-                if (!new Regex(correctedBR, "(Premium(\\-| )expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!new Regex(correctedBR, "(Premium(\\-| )expire|Upgrade to premium|>Renew premium<)").matches()) {
+                    if (!new Regex(correctedBR, "Traffic available today").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 if (!new Regex(correctedBR, "(Premium(\\-| )expire|>Renew premium<)").matches()) {
                     account.setProperty("nopremium", true);
                 } else {

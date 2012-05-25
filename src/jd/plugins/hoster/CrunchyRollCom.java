@@ -497,20 +497,26 @@ public class CrunchyRollCom extends PluginForHost {
 
             // Get the HTTP response headers of the XML file to check for
             // validity
-            final URLConnectionAdapter conn = this.br.openGetConnection(downloadLink.getDownloadURL());
-            final long respCode = conn.getResponseCode();
-            final long length = conn.getLongContentLength();
-            final String contType = conn.getContentType();
+            URLConnectionAdapter conn = null;
+            try {
+                conn = this.br.openGetConnection(downloadLink.getDownloadURL());
+                final long respCode = conn.getResponseCode();
+                final long length = conn.getLongContentLength();
+                final String contType = conn.getContentType();
+                if (respCode == 200 && contType.endsWith("xml")) {
+                    // Check if the file is too small to be subtitles
+                    if (length < 200) { return AvailableStatus.FALSE; }
 
-            conn.disconnect();
-            if (respCode == 200 && contType.endsWith("xml")) {
-                // Check if the file is too small to be subtitles
-                if (length < 200) { return AvailableStatus.FALSE; }
-
-                // File valid, set details
-                downloadLink.setDownloadSize(length);
-                downloadLink.setProperty("valid", true);
-                return AvailableStatus.TRUE;
+                    // File valid, set details
+                    downloadLink.setDownloadSize(length);
+                    downloadLink.setProperty("valid", true);
+                    return AvailableStatus.TRUE;
+                }
+            } finally {
+                try {
+                    conn.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.FALSE;

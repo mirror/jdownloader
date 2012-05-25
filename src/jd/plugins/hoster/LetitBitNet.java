@@ -215,9 +215,8 @@ public class LetitBitNet extends PluginForHost {
         br.submitForm(freeForm);
         if ("RU".equals(br.getCookie("http://letitbit.net", "country"))) {
             /*
-             * special handling for RU,seems they get an extra *do you want to
-             * buy or download for free* page...man i hate fixing this ;) find
-             * ru proxies here http://spys.ru/free-proxy-list/RU/
+             * special handling for RU,seems they get an extra *do you want to buy or download for free* page...man i hate fixing this ;) find ru proxies here
+             * http://spys.ru/free-proxy-list/RU/
              */
             Form[] allforms = br.getForms();
             if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -251,8 +250,7 @@ public class LetitBitNet extends PluginForHost {
         sleep((wait + 5) * 1001l, downloadLink);
         prepareBrowser(br);
         /*
-         * this causes issues in 09580 stable, no workaround known, please
-         * update to latest jd version
+         * this causes issues in 09580 stable, no workaround known, please update to latest jd version
          */
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage(serverPart + "/ajax/download3.php", "");
@@ -349,6 +347,12 @@ public class LetitBitNet extends PluginForHost {
             }
             logger.severe(br.toString());
             if (br.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+            if (br.containsHTML("callback_tied_to_another")) {
+                /* premium code is bound to a registered account,must login with username/password */
+                AccountInfo ai = account.getAccountInfo();
+                if (ai != null) ai.setStatus("You must login with username/password!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "You must login with username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         /* we have to wait little because server too buggy */
@@ -392,8 +396,7 @@ public class LetitBitNet extends PluginForHost {
                     }
                 }
                 /*
-                 * we must save the cookies, because letitbit only allows 100
-                 * logins per 24hours
+                 * we must save the cookies, because letitbit only allows 100 logins per 24hours
                  */
                 br.postPage("http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
                 String check = br.getCookie("http://letitbit.net/", "log");
@@ -416,8 +419,7 @@ public class LetitBitNet extends PluginForHost {
 
     private void prepareBrowser(final Browser br) {
         /*
-         * last time they did not block the useragent, we just need this stuff
-         * below ;)
+         * last time they did not block the useragent, we just need this stuff below ;)
          */
         if (br == null) { return; }
         br.getHeaders().put("Pragma", "no-cache");
