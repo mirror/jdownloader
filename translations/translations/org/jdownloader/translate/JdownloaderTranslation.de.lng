@@ -1,4 +1,4 @@
-gui_addurls_progress=Analysiere %s1 Adresse(n)
+gui_addurls_progress=Analysiere fd_j%s1 Adresse(n)
 gui_downloadlink_aborted=[abgebrochen]
 gui_warning_reconnect_hasbeendisabled=Reconnect deaktiviert!
 plugins_errors_nointernetconn=Keine Internetverbindung?
