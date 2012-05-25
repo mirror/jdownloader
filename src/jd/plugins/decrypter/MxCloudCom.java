@@ -24,10 +24,6 @@ import java.net.URL;
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
@@ -43,7 +39,14 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixcloud.com" }, urls = { "http://(www\\.)?mixcloud\\.com/(?:(?!(?>\\btrack\\b|\\btag\\b|\\bartist\\b))[\\w\\-])+/[\\w\\-]+/" }, flags = { 0 })
+import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "http://(www\\.)?mixcloud\\.com/(?:(?!(?>\\btrack\\b|\\btag\\b|\\bartist\\b))[\\w\\-])+/[\\w\\-]+/" }, flags = { 0 })
 public class MxCloudCom extends PluginForDecrypt {
 
     private static String MAINPAGE = "http://www.mixcloud.com";
@@ -53,11 +56,25 @@ public class MxCloudCom extends PluginForDecrypt {
     }
 
     private byte[] AESdecrypt(final byte[] plain, final byte[] key, final byte[] iv) throws Exception {
-        final Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
-        final IvParameterSpec ivSpec = new IvParameterSpec(iv);
-        final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-        cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-        return cipher.doFinal(plain);
+        final KeyParameter keyParam = new KeyParameter(key);
+        final CipherParameters cipherParams = new ParametersWithIV(keyParam, iv);
+
+        // Prepare the cipher
+        final BufferedBlockCipher cipher = new BufferedBlockCipher(new CBCBlockCipher(new AESEngine()));
+        cipher.reset();
+        cipher.init(false, cipherParams);
+
+        // Create a temporary buffer to decode into (it'll include padding)
+        final byte[] decBuffer = new byte[cipher.getOutputSize(plain.length)];
+        int decLength = cipher.processBytes(plain, 0, plain.length, decBuffer, 0);
+        decLength += cipher.doFinal(decBuffer, decLength);
+
+        // TODO Check this code (I don't think it will always be needed)
+        // Remove padding
+        final byte[] decrypted = new byte[decLength];
+        System.arraycopy(decBuffer, 0, decrypted, 0, decLength);
+
+        return decrypted;
     }
 
     @Override
