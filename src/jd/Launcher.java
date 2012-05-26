@@ -63,6 +63,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.jackson.JacksonMapper;
+import org.appwork.txtresource.TranslationFactory;
 import org.appwork.update.inapp.RlyExitListener;
 import org.appwork.update.inapp.WebupdateSettings;
 import org.appwork.update.updateclient.InstallLogList;
@@ -200,6 +201,7 @@ public class Launcher {
      */
 
     public static void mainStart(final String args[]) {
+        checkLanguageSwitch(args);
 
         try {
             Dynamic.runMain(args);
@@ -377,6 +379,19 @@ public class Launcher {
             System.exit(0);
         }
 
+    }
+
+    public static void checkLanguageSwitch(final String[] args) {
+        try {
+            for (int i = 0; i < args.length; i++) {
+                if (args[i].equalsIgnoreCase("-translatortest")) {
+                    TranslationFactory.setDesiredLanguage(args[i + 1]);
+                }
+
+            }
+        } catch (Throwable e) {
+
+        }
     }
 
     private static void checkSessionInstallLog() {

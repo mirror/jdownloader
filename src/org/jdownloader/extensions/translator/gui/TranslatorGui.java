@@ -38,6 +38,7 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.update.inapp.RestartController;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
@@ -49,6 +50,7 @@ import org.appwork.utils.swing.dialog.InputDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.controlling.JDRestartController;
 import org.jdownloader.extensions.translator.TLocale;
 import org.jdownloader.extensions.translator.TranslateEntry;
 import org.jdownloader.extensions.translator.TranslatorExtension;
@@ -123,7 +125,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         // JSeparator());
         // mnuFileLoad.add();
 
-        menuPanel = new MigPanel("ins 0", "[]3[]3[][grow,fill][]5[]", "[grow,fill]");
+        menuPanel = new MigPanel("ins 0", "[]3[]3[][grow,fill][][]5[]", "[grow,fill]");
 
         menuPanel.add(new ExtButton(new AppAction() {
             {
@@ -378,6 +380,79 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             }
         }));
         menuPanel.add(Box.createHorizontalGlue());
+        ExtButton bt;
+        menuPanel.add(bt = new ExtButton(new AppAction() {
+            {
+                setSmallIcon(NewTheme.I().getIcon("undo", 18));
+                setTooltipText("Revert all your changes");
+
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                try {
+
+                    Dialog.I().showConfirmDialog(0, "Revert all Changes?", "All myour changes will be lost. Continue anyway?");
+                    ProgressGetter pg = new ProgressDialog.ProgressGetter() {
+
+                        @Override
+                        public void run() throws Exception {
+                            getExtension().revert();
+
+                        }
+
+                        @Override
+                        public String getString() {
+                            return null;
+                        }
+
+                        @Override
+                        public int getProgress() {
+                            return -1;
+                        }
+                    };
+
+                    try {
+                        Dialog.getInstance().showDialog(new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL, "Reverting", "Please wait. Reverting all Changes", null, null, null) {
+
+                            @Override
+                            public Dimension getPreferredSize() {
+                                return new Dimension(200, 40);
+                            }
+
+                        });
+                    } catch (DialogClosedException e2) {
+                        e2.printStackTrace();
+                    } catch (DialogCanceledException e2) {
+                        e2.printStackTrace();
+                    }
+
+                } catch (DialogClosedException e1) {
+                    e1.printStackTrace();
+                } catch (DialogCanceledException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }), "width 22!");
+        bt.setRolloverEffectEnabled(true);
+
+        menuPanel.add(bt = new ExtButton(new AppAction() {
+            {
+                setSmallIcon(NewTheme.I().getIcon("restart", 18));
+                setTooltipText("Restart JDownloader to test the translation.");
+
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                RestartController.getInstance().getAdditionalParameters().add("-translatortest");
+                RestartController.getInstance().getAdditionalParameters().add(getExtension().getLoadedLocale().getId());
+                JDRestartController.getInstance().directRestart(true);
+
+            }
+        }), "width 22!");
+        bt.setRolloverEffectEnabled(true);
         menuPanel.add(new JSeparator(JSeparator.VERTICAL));
         menuPanel.add(lbl = new JLabel(), "aligny center");
 
@@ -562,6 +637,8 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
             @Override
             public void run() throws Exception {
+
+                getExtension().write();
                 getExtension().load(locale);
 
             }

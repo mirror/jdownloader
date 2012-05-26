@@ -140,15 +140,6 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
             }
 
             @Override
-            public boolean matchSearch(TranslateEntry obj, Pattern pattern) {
-
-                if (pattern.pattern().equals(".*?\\Q>e\\E.*?") && obj.isParameterInvalid()) return true;
-                if (pattern.pattern().equals(".*?\\Q>m\\E.*?") && obj.isMissing()) return true;
-                if (pattern.pattern().equals(".*?\\Q>d\\E.*?") && obj.isDefault()) return true;
-                return false;
-            }
-
-            @Override
             protected Icon getIcon(TranslateEntry obj) {
                 if (obj.isMissing()) {
                     return NewTheme.I().getIcon("stop", 16);
@@ -185,7 +176,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
             @Override
             protected String getTooltipText(TranslateEntry value) {
-                return createInfoHtml(value);
+                return null;
             }
 
             @Override
@@ -212,7 +203,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
             @Override
             protected String getTooltipText(TranslateEntry value) {
-                return createInfoHtml(value);
+                return null;
             }
 
             @Override
@@ -238,7 +229,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
             @Override
             protected String getTooltipText(TranslateEntry value) {
-                return createInfoHtml(value);
+                return null;
             }
 
             @Override
@@ -259,7 +250,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
             @Override
             protected String getTooltipText(TranslateEntry value) {
-                return createInfoHtml(value);
+                return null;
             }
 
             @Override
@@ -325,6 +316,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
             public boolean matchSearch(TranslateEntry object, Pattern pattern) {
                 boolean ret = super.matchSearch(object, pattern);
                 if (!ret) ret |= pattern.matcher(object.getCategory()).matches();
+                if (!ret) ret |= pattern.matcher(object.getDirect()).matches();
                 if (!ret) ret |= pattern.matcher(object.getFullKey()).matches();
                 if (!ret) if (object.getDescription() != null) ret |= pattern.matcher(object.getDescription()).matches();
                 return ret;
@@ -357,7 +349,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
             @Override
             protected String getTooltipText(TranslateEntry value) {
 
-                return createInfoHtml(value);
+                return null;
             }
 
             @Override

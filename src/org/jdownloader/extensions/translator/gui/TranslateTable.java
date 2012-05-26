@@ -19,6 +19,7 @@ import org.jdownloader.extensions.translator.TranslateEntry;
 import org.jdownloader.extensions.translator.TranslatorExtension;
 import org.jdownloader.extensions.translator.gui.actions.CopyFromOtherAction;
 import org.jdownloader.extensions.translator.gui.actions.ResetTranslationAction;
+import org.jdownloader.extensions.translator.gui.actions.UseDefaultAction;
 
 /**
  * Table for all entries
@@ -35,6 +36,7 @@ public class TranslateTable extends BasicJDTable<TranslateEntry> {
     protected JPopupMenu onContextMenu(JPopupMenu popup, TranslateEntry contextObject, ArrayList<TranslateEntry> selection, ExtColumn<TranslateEntry> column, MouseEvent ev) {
 
         popup.add(new CopyFromOtherAction(owner, selection));
+        popup.add(new UseDefaultAction(owner, selection));
         popup.add(new ResetTranslationAction(owner, selection));
         return popup;
     }

@@ -171,7 +171,16 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
             @Override
             public void run() {
-                if (!getSettings().isRememberLoginsEnabled()) doLogout();
+
+                if (!getSettings().isRememberLoginsEnabled()) {
+                    doLogout();
+                } else {
+                    try {
+                        write();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         });
         // init extension GUI
@@ -409,6 +418,11 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     public void doLogout() {
+        try {
+            write();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         getSettings().setSVNUser(null);
         getSettings().setSVNPassword(null);
         getSettings().setRememberLoginsEnabled(false);
@@ -486,6 +500,16 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     }
 
+    public void setDefault(ArrayList<TranslateEntry> selection) {
+
+        for (TranslateEntry te : selection) {
+            te.setTranslation(te.getDirect());
+        }
+
+        getEventSender().fireEvent(new TranslatorExtensionEvent(this, org.jdownloader.extensions.translator.TranslatorExtensionEvent.Type.REFRESH_DATA));
+
+    }
+
     public void setTranslation(ArrayList<TranslateEntry> selection, TLocale sel) {
         int failed = 0;
         for (TranslateEntry te : selection) {
@@ -531,13 +555,20 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     public SVNCommitPacket save() throws IOException, SVNException {
 
+        write();
+
+        return upload();
+    }
+
+    public void write() throws IOException {
+        if (loaded == null) return;
         HashSet<TranslationHandler> set = new HashSet<TranslationHandler>();
         HashMap<Method, TranslateEntry> map = new HashMap<Method, TranslateEntry>();
         for (TranslateEntry te : getTranslationEntries()) {
             set.add(te.getInterface()._getHandler());
             map.put(te.getMethod(), te);
         }
-        System.out.println(1);
+
         for (TranslationHandler h : set) {
             TranslateResource res = h.getResource(loaded.getId());
 
@@ -570,7 +601,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             Log.L.info("Updated " + file);
 
         }
+    }
 
+    public SVNCommitPacket upload() throws SVNException {
         Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
         s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
         s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
@@ -583,4 +616,14 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         s.dispose();
         return packet;
     }
+
+    public void revert() throws SVNException, InterruptedException {
+        Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
+        s.revert(Application.getResource("translations/custom"));
+        s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+        s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
+        s.dispose();
+        load(loaded);
+    }
+
 }
