@@ -1,4 +1,3 @@
 gui_config_antistandby_mode=Modus:
 gui_config_antistandby_whiledl=StandBy beim Downloaden verhindern
 jd_plugins_optional_antistandby_jdantistandby_description=Verhindert den automatischen Standby-Modus während laufenden Downloads.
-gui_config_antistandby_whilejd=StandBy generell verhindern
