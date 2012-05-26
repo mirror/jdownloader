@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -39,12 +40,11 @@ public class FilesMailRu extends PluginForHost {
     private boolean             keepCookies  = false;
 
     private static final String DLLINKREGEX  = "\"(http://[a-z0-9-]+\\.files\\.mail\\.ru/.*?/.*?)\"";
-
     private static final String UNAVAILABLE1 = ">В обработке<";
-
     private static final String UNAVAILABLE2 = ">In process<";
-
     private static final String INFOREGEX    = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
+    public static final String  LINKOFFLINE  = "(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>)";
+    public static final String  NEWLINK      = "class=\"download_type_choose_l\"";
 
     public FilesMailRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -96,13 +96,6 @@ public class FilesMailRu extends PluginForHost {
         }
         ai.setStatus("Premium User");
         return ai;
-    }
-
-    private String fixLink(String dllink) {
-        logger.info("Correcting link...");
-        String replaceThis = new Regex(dllink, "http://(content\\d+-n)\\.files\\.mail\\.ru.*?").getMatch(0);
-        if (replaceThis != null) dllink = dllink.replace(replaceThis, replaceThis.replace("-n", ""));
-        return dllink;
     }
 
     @Override
@@ -162,67 +155,83 @@ public class FilesMailRu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         if (!keepCookies) this.setBrowserExclusive();
-
         br.getHeaders().put("User-Agent", UA);
         br.setFollowRedirects(true);
         if (downloadLink.getName() == null && downloadLink.getStringProperty("folderID", null) == null) {
             logger.warning("final filename and folderID are bot null for unknown reasons!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (downloadLink.getName() != null) downloadLink.setProperty("finalFilename", downloadLink.getName());
         String folderIDregexed = new Regex(downloadLink.getDownloadURL(), "mail\\.ru/([A-Z0-9]+)").getMatch(0);
         downloadLink.setProperty("folderID", "http://files.mail.ru/" + folderIDregexed);
-        br.getPage(downloadLink.getStringProperty("folderID", null));
-        // At the moment jd gets the russian version of the site. Errorhandling
-        // also works for English but filesize handling doesn't so if this
-        // plugin get's broken that's on of the first things to check
-        if (br.containsHTML("(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>)")) {
-            logger.info("Link is 100% offline, found errormessage on the page!");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        // This part is to find the filename in case the downloadurl
-        // redirects to the folder it comes from
-        String finalfilename = downloadLink.getStringProperty("finalFilename", null);
-        if (finalfilename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String[] linkinformation = br.getRegex(INFOREGEX).getColumn(0);
-        if (linkinformation == null || linkinformation.length == 0) {
-            logger.warning("Critical error : Couldn't get the linkinformation");
+        br.getPage(downloadLink.getStringProperty("folderID"));
+        if (br.containsHTML(NEWLINK)) {
+            if (br.containsHTML(LINKOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String filesize = br.getRegex("</div>[\t\n\r ]+</div>[\t\n\r ]+</td>[\t\n\r ]+<td title=\"(\\d+(\\.\\d+)? [^<>\"]*?)\">").getMatch(0);
+            final String filename = br.getRegex("<title>([^<>\"]*?)  скачать [^<>\"]*?@Mail\\.Ru</title>").getMatch(0);
+            if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            return AvailableStatus.TRUE;
+        } else {
+            // At the moment jd gets the russian version of the site.
+            // Errorhandling
+            // also works for English but filesize handling doesn't so if this
+            // plugin get's broken that's on of the first things to check
+            if (br.containsHTML(LINKOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // This part is to find the filename in case the downloadurl
+            // redirects to the folder it comes from
+            String finalfilename = downloadLink.getStringProperty("realfilename");
+            if (finalfilename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String[] linkinformation = br.getRegex(INFOREGEX).getColumn(0);
+            if (linkinformation == null || linkinformation.length == 0) {
+                logger.warning("Critical error : Couldn't get the linkinformation");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            for (String info : linkinformation) {
+                if (info.contains(finalfilename)) {
+                    // regex the new downloadlink and save it!
+                    String directlink = new Regex(info, DLLINKREGEX).getMatch(0);
+                    if ((info.contains(UNAVAILABLE1) || info.contains(UNAVAILABLE2)) && directlink == null) {
+                        logger.info("File " + downloadLink.getStringProperty("folderID", null) + " is still uploading (temporary unavailable)!");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FilesMailRu.InProcess", "Datei steht noch im Upload"));
+                    }
+                    if (directlink == null) {
+                        logger.warning("Critical error occured: The final downloadlink couldn't be found in the available check!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    directlink = fixLink(directlink, br);
+                    downloadLink.setUrlDownload(directlink);
+                    logger.info("Set new UrlDownload, link = " + downloadLink.getDownloadURL());
+                    String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);
+                    String filename = new Regex(info, "href=\".*?onclick=\"return.*?\">(.*?)<").getMatch(0);
+                    if (filename == null) filename = new Regex(info, "class=\"str\">(.*?)</div>").getMatch(0);
+                    if (filesize == null || filename == null) {
+                        logger.warning("filename and filesize regex of linkinformation seem to be broken!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    filesize = fixFilesize(filesize, br);
+                    downloadLink.setFinalFileName(filename);
+                    downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+                    return AvailableStatus.TRUE;
+                }
+            }
+            logger.warning("File couldn't be found on the page...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        for (String info : linkinformation) {
-            if (info.contains(finalfilename)) {
-                // regex the new downloadlink and save it!
-                String directlink = new Regex(info, DLLINKREGEX).getMatch(0);
-                if ((info.contains(UNAVAILABLE1) || info.contains(UNAVAILABLE2)) && directlink == null) {
-                    logger.info("File " + downloadLink.getStringProperty("folderID", null) + " is still uploading (temporary unavailable)!");
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FilesMailRu.InProcess", "Datei steht noch im Upload"));
-                }
-                if (directlink == null) {
-                    logger.warning("Critical error occured: The final downloadlink couldn't be found in the available check!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                directlink = fixLink(directlink);
-                downloadLink.setUrlDownload(directlink);
-                logger.info("Set new UrlDownload, link = " + downloadLink.getDownloadURL());
-                String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);
-                String filename = new Regex(info, "href=\".*?onclick=\"return.*?\">(.*?)<").getMatch(0);
-                if (filename == null) filename = new Regex(info, "class=\"str\">(.*?)</div>").getMatch(0);
-                if (filesize == null || filename == null) {
-                    logger.warning("filename and filesize regex of linkinformation seem to be broken!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                filesize = filesize.replace("Г", "G");
-                filesize = filesize.replace("М", "M");
-                filesize = filesize.replaceAll("(к|К)", "k");
-                filesize = filesize.replaceAll("(Б|б)", "");
-                filesize = filesize + "b";
-                downloadLink.setFinalFileName(filename);
-                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-                return AvailableStatus.TRUE;
-            }
-        }
-        logger.warning("File couldn't be found on the page...");
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    public String fixFilesize(String filesize, final Browser br) {
+        filesize = filesize.replace("Г", "G");
+        filesize = filesize.replace("М", "M");
+        filesize = filesize.replaceAll("(к|К)", "k");
+        filesize = filesize.replaceAll("(Б|б)", "");
+        filesize = filesize + "b";
+        return filesize;
+    }
+
+    public String fixLink(String dllink, final Browser br) {
+        logger.info("Correcting link...");
+        String replaceThis = new Regex(dllink, "http://(content\\d+-n)\\.files\\.mail\\.ru.*?").getMatch(0);
+        if (replaceThis != null) dllink = dllink.replace(replaceThis, replaceThis.replace("-n", ""));
+        return dllink;
     }
 
     @Override

@@ -21,15 +21,15 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rappers.in" }, urls = { "http://(www\\.)?rappers\\.in/.*?\\-beat\\-\\d+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rappers.in" }, urls = { "http://(www\\.)?rappers\\.in/(.*?\\-beat\\-\\d+\\.html|[A-Za-z0-9_\\-]+\\-tracks\\.html|[A-Za-z0-9_\\-]+)" }, flags = { 0 })
 public class RpprsIn extends PluginForDecrypt {
 
     public RpprsIn(PluginWrapper wrapper) {
@@ -39,13 +39,45 @@ public class RpprsIn extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        String id = new Regex(parameter, "beat\\-(\\d+)\\.html").getMatch(0);
-        br.getPage("http://www.rappers.in/playbeat-" + id + "-1808.xml?" + new Random().nextInt(10) + "s=undefined");
-        String finallink = br.getRegex("<filename>(http.*?)</filename>").getMatch(0);
-        if (finallink == null) return null;
-        // Errorhandling for invalid links
-        if (finallink.contains("beats//")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+        if (parameter.matches("http://(www\\.)?rappers\\.in/.*?\\-beat\\-\\d+\\.html")) {
+            final String id = new Regex(parameter, "beat\\-(\\d+)\\.html").getMatch(0);
+            br.getPage("http://www.rappers.in/playbeat-" + id + "-1808.xml?" + new Random().nextInt(10) + "s=undefined");
+            String finallink = br.getRegex("<filename>(http.*?)</filename>").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            // Errorhandling for invalid links
+            if (finallink.contains("beats//")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+        } else {
+            String onlyDifference = "main";
+            if (parameter.matches("http://(www\\.)?rappers\\.in/[A-Za-z0-9_\\-]+\\-tracks\\.html")) onlyDifference = "tracks";
+            br.getPage(parameter);
+            final String artistID = br.getRegex("makeRIP\\(\"artistplaylist_" + onlyDifference + "\\-(\\d+)\"\\)").getMatch(0);
+            if (artistID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            br.getPage("http://www.rappers.in/artistplaylist_" + onlyDifference + "-" + artistID + "-1808.xml?" + new Random().nextInt(100) + "&s=undefined");
+            final String[][] allSongs = br.getRegex("<filename>(http://[^<>\"]*?)</filename>[\t\n\r ]+<title>([^<>\"]*?)</title>").getMatches();
+            if (allSongs == null || allSongs.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String[] songInfo : allSongs) {
+                final DownloadLink dl = createDownloadlink("directhttp://" + songInfo[0]);
+                dl.setFinalFileName(Encoding.htmlDecode(songInfo[1].trim()) + ".mp3");
+                decryptedLinks.add(dl);
+            }
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName("All songs of: " + new Regex(parameter, "rappers\\.in/([A-Za-z0-9_\\-]+)(\\-tracks\\.html)?").getMatch(0));
+            fp.addLinks(decryptedLinks);
+
+        }
         return decryptedLinks;
     }
 }

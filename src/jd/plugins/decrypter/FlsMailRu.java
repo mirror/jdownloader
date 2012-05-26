@@ -23,10 +23,11 @@ import jd.controlling.ProgressController;
 import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -46,6 +47,7 @@ public class FlsMailRu extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final PluginForHost filesMailRuPlugin = JDUtilities.getPluginForHost("files.mail.ru");
         String parameter = param.toString().replace("www.", "");
         // At the moment jd gets the russian version of the site. Errorhandling
         // also works for English but filesize handling doesn't so if this
@@ -53,40 +55,54 @@ public class FlsMailRu extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter);
         // Errorhandling for offline folders
-        if (br.containsHTML("(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String[] linkinformation = br.getRegex(INFOREGEX).getColumn(0);
-        if (linkinformation == null || linkinformation.length == 0) return null;
-        for (String info : linkinformation) {
-            String statusText = null;
-            String directlink = new Regex(info, DLLINKREGEX).getMatch(0);
-            if ((info.contains(UNAVAILABLE1) || info.contains(UNAVAILABLE2)) && directlink == null) {
-                directlink = parameter;
-                statusText = JDL.L("plugins.hoster.FilesMailRu.InProcess", "Datei steht noch im Upload");
+        if (br.containsHTML(jd.plugins.hoster.FilesMailRu.LINKOFFLINE)) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        // New kind of links
+        if (br.containsHTML(jd.plugins.hoster.FilesMailRu.NEWLINK)) {
+            String filelink = br.getRegex(DLLINKREGEX).getMatch(0);
+            String filesize = br.getRegex("</div>[\t\n\r ]+</div>[\t\n\r ]+</td>[\t\n\r ]+<td title=\"(\\d+(\\.\\d+)? [^<>\"]*?)\">").getMatch(0);
+            final String filename = br.getRegex("<title>([^<>\"]*?)  скачать [^<>\"]*?@Mail\\.Ru</title>").getMatch(0);
+            if (filename == null || filesize == null || filelink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
             }
-            String filename = new Regex(info, "href=\".*?onclick=\"return.*?\">(.*?)<").getMatch(0);
-            if (filename == null) filename = new Regex(info, "class=\"str\">(.*?)</div>").getMatch(0);
-            if (directlink == null || filename == null) return null;
-            String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);
-            String replaceThis = new Regex(directlink, "http://(content\\d+-n)\\.files\\.mail\\.ru.*?").getMatch(0);
-            if (replaceThis != null) directlink = directlink.replace(replaceThis, replaceThis.replace("-n", ""));
-            DownloadLink finallink = createDownloadlink(directlink.replace("files.mail.ru", LINKREPLACE));
-            if (statusText != null) finallink.getLinkStatus().setStatusText(statusText);
-            // Maybe that helps id jd gets the english version of the site!
-            if (filesize != null) {
-                if (!filesize.contains("MB")) {
-                    filesize = filesize.replace("Г", "G");
-                    filesize = filesize.replace("М", "M");
-                    filesize = filesize.replaceAll("(к|К)", "k");
-                    filesize = filesize.replaceAll("(Б|б)", "");
-                    filesize = filesize + "b";
-                }
-                finallink.setDownloadSize(SizeFormatter.getSize(filesize));
-            }
+            filesize = ((jd.plugins.hoster.FilesMailRu) filesMailRuPlugin).fixFilesize(filesize, br);
+            filelink = ((jd.plugins.hoster.FilesMailRu) filesMailRuPlugin).fixLink(filelink, br);
+            final DownloadLink finallink = createDownloadlink(filelink.replace("files.mail.ru", LINKREPLACE));
             finallink.setFinalFileName(filename);
             finallink.setAvailable(true);
-            // Property is still unused...
-            finallink.setProperty("name2search", filename);
+            finallink.setDownloadSize(SizeFormatter.getSize(filesize));
+            finallink.setProperty("folderID", parameter);
+            finallink.setProperty("realfilename", filename);
             decryptedLinks.add(finallink);
+        } else {
+            String[] linkinformation = br.getRegex(INFOREGEX).getColumn(0);
+            if (linkinformation == null || linkinformation.length == 0) return null;
+            for (String info : linkinformation) {
+                String statusText = null;
+                String directlink = new Regex(info, DLLINKREGEX).getMatch(0);
+                if ((info.contains(UNAVAILABLE1) || info.contains(UNAVAILABLE2)) && directlink == null) {
+                    directlink = parameter;
+                    statusText = JDL.L("plugins.hoster.FilesMailRu.InProcess", "Datei steht noch im Upload");
+                }
+                String filename = new Regex(info, "href=\".*?onclick=\"return.*?\">(.*?)<").getMatch(0);
+                if (filename == null) filename = new Regex(info, "class=\"str\">(.*?)</div>").getMatch(0);
+                if (directlink == null || filename == null) return null;
+                String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);
+                directlink = ((jd.plugins.hoster.FilesMailRu) filesMailRuPlugin).fixLink(directlink, br);
+                DownloadLink finallink = createDownloadlink(directlink.replace("files.mail.ru", LINKREPLACE));
+                if (statusText != null) finallink.getLinkStatus().setStatusText(statusText);
+                // Maybe that helps id jd gets the english version of the site!
+                if (filesize != null) {
+                    filesize = ((jd.plugins.hoster.FilesMailRu) filesMailRuPlugin).fixFilesize(filesize, br);
+                    finallink.setDownloadSize(SizeFormatter.getSize(filesize));
+                }
+                finallink.setFinalFileName(filename);
+                finallink.setProperty("realfilename", filename);
+                finallink.setAvailable(true);
+                decryptedLinks.add(finallink);
+            }
         }
 
         return decryptedLinks;
