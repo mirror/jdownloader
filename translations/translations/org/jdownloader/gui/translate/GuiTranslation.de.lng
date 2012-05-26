@@ -1,487 +1,240 @@
-
-sys_warning_loguploadfailed=Log Upload fehlgeschlagen.
-
-gui_linkgrabber_packagetab_lbl_name=Paketname
-
-gui_btn_yes=Ja
-
-linkgrabber_onlinestatus_uncheckable=im Moment nicht prüfbar
-gui_taskpanes_download_linkgrabber_config_startofter=Sofort starten
-
-plugins_config_premium_chartapi_caption_error2=Diagramm lädt oder ist nicht verfügbar
-
-gui_config_download_simultan_downloads_per_host=Max. Anzahl gleichzeitiger Downloads pro Host (0 = keine Begrenzung)
-
-gui_dialog_addurl_okoption_parse=Adresse(n) analysieren
-
-gui_downloadlist_delete=Ausgewählte Links wirklich entfernen?
-
-dialogs_premiumstatus_global_title=Premium deaktivieren?
-
-gui_config_gui_resetdialogs_message=Dialog Informationen wurden zurückgesetzt
-
-gui_textcomponent_context_delete=Löschen
-
-gui_treetable_progress=Fortschritt
-
-gui_table_contextmenu_browselink=Im Browser öffnen
-
-ballon_download_finished_started=Download gestartet
-
-gui_tooltip_statusbar_simultan_downloads=Max. gleichzeitige Downloads
-
-gui_reconnect_confirm=Wollen Sie sicher eine neue Verbindung aufbauen?
-
-gui_config_linkgrabber_cnl2=Click'n'Load Unterstützung einschalten
-
-gui_logupload_message=Bitte sende den Link zu diesem Log einem Supporter
-
-gui_config_download_ipcheck_balance=Interne IP Überprüfung verwenden
-
-gui_table_contextmenu_downloaddir=Zielordner öffnen
-
-sys_ask_rlyrestore=JDownloader wird neu gestartet um ein Komplettupdate zu machen. Weiter?
-
-gui_fileinfopanel_linktab_eta2=Fertig in: %s1
-
-gui_textcomponent_context_paste=Einfügen
-
-gui_table_draganddrop_movepackagebefore=Vor Paket '%s1' einfügen
-
-gui_treetable_hoster=Anbieter
-
-gui_config_download_ipcheck_website=IP prüfen über (Webseite)
-
-gui_linkgrabberv2_splithoster=Nach Anbietern trennen
-
-gui_linkgrabber_packagetab_lbl_password=Archivpasswort
-
-gui_table_contextmenu_setdlpw=Downloadpasswort setzen
-
-gui_linkgrabber_packagetab_lbl_saveto=Speichern unter
-
-gui_statusbar_sim_ownloads=Max.Dls.
-
-gui_config_download_preferreconnect=Downloads warten auf Reconnect
-
-gui_config_captcha_train_show_timeout=Anzeigedauer des Eingabefensters
-
-gui_menu_addlinks=Links hinzufügen
-
-system_download_triggerfileexists_skip=Link überspringen
-
-gui_linkgrabber_packageofflinepercent=%s1 offline
-
-gui_fileinfopanel_packagetab_lbl_password=Archivpasswort
-
-gui_table_draganddrop_before=Vor '%s1' ablegen
-
-gui_config_linkgrabber_onlincheck=Linkstatus überprüfen
-
-gui_fileinfopanel_packagetab_lbl_password2=Archivpasswort (automatisch)
-
-gui_table_contextmenu_editdownloaddir=Zielordner ändern
-
-gui_linklist_editpackagename_message=Neuer Paketname
-
-gui_treetable_size=Größe
-
-gui_btn_no=Nein
-
-gui_table_contextmenu_remove=Entfernen
-
-gui_linkgrabberv2_onlyselectedhoster=Nur ausgewählte Hoster behalten
-
-gui_config_download_crc=SFV/CRC Check wenn möglich durchführen
-
-gui_config_general_todowithdownloads=Entferne fertig gestellte Downloads...
-
-jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=IP Prüfung abgeschaltet!
-
-gui_table_draganddrop_after=Nach '%s1' ablegen
-
-gui_table_contextmenu_sort=Sortieren
-
-gui_menu_action_break2_desc=Downloads pausieren und Geschwindigkeit auf %s1 KiB/s beschränken
-
-gui_config_download_pausespeed=Pausen Geschwindigkeitslimit in KiB/s
-
-gui_fileinfopanel_link=Downloadlink
-
-gui_tooltips_linkgrabber_startlinksafteradd=Falls ausgewählt starten die Downloads direkt nach dem Hinzufügen.
-
-gui_column_settings=Einstellungen
-
-jd_gui_userio_defaulttitle_input=Bitte eingeben!
-
-gui_fileinfopanel_packagetab_lbl_files=%s1 Datei(en)
-
-linkgrabber_onlinestatus_unchecked=nicht überprüft
-
-gui_btn_settings=Einstellungen
-
-linkgrabber_onlinestatus_online=Online
-
-gui_config_gui_font_size=Schriftgröße [%]
-
-system_download_triggerfileexists_overwrite=Datei überschreiben
-
-system_download_triggerfileexists_rename=Automatisch umbenennen
-
-gui_textcomponent_context_paste_acc=ctrl V
-
-jd_gui_swing_jdgui_settings_panels_gui_advanced_gui_advanced_title=Erweitert
-
-gui_fileinfopanel_linktab_saveto=Speichern unter
-
-gui_textcomponent_context_copy=Kopieren
-
-gui_config_linkgrabber_controlposition=Linksammler Buttons über Tabelle anzeigen
-
-gui_fileinfopanel_linktab_speed=Geschwindigkeit: %s1/s
-
-jd_gui_swing_jdgui_views_linkgrabberview_tab_tooltip=Sammele Links, füge welche hinzu oder triff eine Auswahl
-
-gui_table_draganddrop_insertinpackageend=In Paket '%s1' am Ende einfügen
-
-gui_config_gui_resetdialogs_short=Zurücksetzen
-
-gui_linkgrabber_packageonlineall=Alle online
-
-jd_gui_userio_defaulttitle_confirm=Bitte bestätigen
-
-gui_premiumstatus_traffic_tooltip=%s1 - %s2 Account(s) -- Sie können heute bis zu %s3 laden.
-
-system_download_triggerfileexists_ask=Bei jeder Datei fragen
-
-gui_table_contextmenu_more=Mehr
-
-gui_table_contextmenu_filetype=Filter
-
-gui_premiumstatus_expired_traffic_tooltip=%s1 - %s2 Account(s) -- Im Moment ist kein Premiumtraffic verfügbar
-
-gui_treetable_tooltip_priority_1=Niedrige Priorität
-
-gui_table_contextmenu_stopmark_set=Nach diesem Download stoppen
-
 action_premiumview_removeacc_accs=%s1 Account(s)
-
-gui_config_captcha_settings=Captcha Einstellungen
-
-gui_linkgrabber_pc_linkgrabber=Linkgrabber Operationen stehen an...
-
-gui_textcomponent_context_cut=Ausschneiden
-
-jd_gui_swing_jdgui_views_downloadview_tab_title=Download
-
-gui_table_contextmenu_newpackage=In neues Paket verschieben
-
-gui_dialog_addurl_message=Adresse(n) hinzufügen. JDownloader wird diese laden und analysieren.
-
 action_premiumview_removeacc_ask=Auswahl entfernen?
-
-gui_downloadlist_delete2=Entferne Links von der Downloadliste und Festplatte?
-
-gui_fileinfopanel_linktab_chunks=Teilverbindungen
-
-system_download_triggerfileexists=Wenn eine Datei schon vorhanden ist:
-
-gui_menu_action_premium_buy_name=Premium kaufen
-
-gui_table_draganddrop_movepackageend=Nach Paket '%s1' einfügen
-
-jd_gui_swing_jdgui_views_log_tab_title=Log
-
-gui_config_gui_barrierfree=Barrierefreiheit
-
-gui_config_download_autoresume=Reconnect darf laufende Downloads unterbrechen
-
-gui_linkgrabber_packagetab_lbl_password2=Archivpasswort (automatisch)
-
-plugins_optional_jdunrar_config_passwordlist=Passwortliste. Pro Zeile ein Passwort.
-
-gui_textcomponent_context_cut_acc=ctrl X
-
-gui_statusbar_speed=Geschw.
-
-gui_backup_finished_success=Linkliste erfolgreich gesichert in %s1
-
-gui_table_draganddrop_insertinpackagestart=In Paket '%s1' am Anfang einfügen
-
-gui_config_download_ipcheck=Reconnect IP-Check
-
-gui_linkgrabberv2_lg_continueselected=Mit ausgewählten Paketen fortfahren
-
-gui_balloon_backup_title=Backup
-
-gui_tooltip_statusbar_speedlimiter=Geschwindigkeitsbegrenzung festlegen (KiB/s) [0:unendlich]
-
-gui_config_captcha_train_level=Anzeigeschwelle
-
-gui_table_contextmenu_enable=Aktivieren
-
-jd_gui_swing_jdgui_views_configurationview_tab_title=Einstellungen
-
-gui_linkgrabber_aborted=Abgebrochen
-
-gui_config_reloadcontainer=Heruntergeladene Container einlesen
-
-gui_config_download_ipcheck_regex_default=Bitte hier RegEx für IP-Prüfung eingeben
-
-gui_config_gui_language=Sprache
-
-jd_gui_skins_simple_simplegui_menubar_linksmenu=Links
-
-gui_premiumstatus_unlimited_traffic_tooltip=%s1 -- Unendlicher Traffic! Sie können so viel downloaden, wie sie wollen.
-
-gui_config_general_downloaddirectory=Downloadverzeichnis
-
-installer_gui_message=Nach der Installation wird JDownloader auf die aktuelle Version aktualisieren.
-
-gui_column_version=Version
-
-sys_ask_rlyclose=Wollen Sie den JDownloader wirklich schließen?
-
-gui_downloadlist_delete_files=%s1 Dateien
-
-gui_btn_cancel=Abbrechen
-
-gui_backup_finished_failed=Linkliste konnte nicht gesichert werden! Überprüfe die Rechte in %s1 !
-
-gui_table_contextmenu_openfile=Datei öffnen
-
-gui_fileinfopanel_linktab_status=Status
-
-gui_table_contextmenu_reset=Zurücksetzen
-
-jd_gui_swing_jdgui_views_log_tab_tooltip=Log einsehen, speichern oder hochladen
-
-gui_treetable_loaded=Geladen
-
-gui_treetable_error_plugin=Plugin Fehler
-
-gui_fileinfopanel_packagetab_lbl_comment=Kommentar
-
-gui_config_gui_container=Container (RSDF,DLC,CCF,..)
-
-gui_config_download_ipcheck_regex=RegEx zum Filtern der IP
-
-gui_config_download_buffersize2=Max. Puffergröße[KB]
-
-gui_linkgrabber_alreadyindl=Bereits in der Downloadliste
-
-controller_downloadautostart=Downloads in wenigen Sekunden automatisch starten...
-
-gui_fileinfopanel_packagetab_lbl_name=Paketname
-
-linkgrabber_onlinestatus_offline=Offline
-
-gui_config_captcha_jac_disable=Automatische Bilderkennung abschalten
-
-jd_gui_swing_jdgui_settings_panels_downloadandnetwork_general_download_title=Download & Verbindungen
-
-gui_column_host=Host
-
-gui_downloadlist_reset=Ausgewählten Download zurücksetzen? (Achtung: Datei(en) werden gelöscht!)
-
-gui_dialogs_message_title=Nachricht
-
-gui_config_linkgrabber_infopanel_onlinkgrab=Infoanzeige im Linksammler anzeigen
-
-gui_config_download_ipcheck_website_default=Bitte hier Webseite für IP-Prüfung eingeben
-
-gui_fileinfopanel_linktab_name=Name
-
-gui_menu_premium=Premium
-
-gui_taskpanes_download_linkgrabber_config_addattop=Oben einfügen
-
-gui_treetable_finished=Fertiggestellt
-
-gui_config_download_ipcheck_mask=Erlaubte IP
-
-gui_menu_remove=Aufräumen
-
-gui_config_linkgrabber_iognorelist=Der Linkfilter kann verwendet werden, um Hoster oder Dateinamen über "Regular Expressions" auszuschließen.
-
-gui_linkgrabberv2_lg_continueselectedlinks=Mit ausgewählten Links fortfahren
-
-gui_config_gui_linggrabber_ignorelist=Linkfilter
-
-system_download_triggerfileexists_askpackage=Bei jedem Paket fragen
-
-gui_table_contextmenu_resume=Fortsetzen
-
-gui_table_contextmenu_deletelist2=Löschen von Liste
-
-gui_table_contextmenu_stopmark_unset=Haltemarke entfernen
-
-gui_treetable_added=Hinzugefügt
-
-sys_ask_rlyrestart=Wollen Sie JDownloader wirklich neustarten?
-
-jd_gui_swing_jdgui_views_downloadview_tab_tooltip=Downloadliste und Fortschritt
-
-gui_textcomponent_context_copy_acc=ctrl C
-
-gui_fileinfopanel_linktab_password=Passwort
-
-gui_table_contextmenu_packagesort=Paket sortieren
-
-gui_fileinfopanel_packagetab_lbl_saveto=Speichern unter
-
-gui_table_contextmenu_disable=Deaktivieren
-
-gui_textcomponent_context_selectall_acc=ctrl A
-
-gui_table_contextmenu_prop=Eigenschaften
-
-gui_fileinfopanel_linktab_url=Adresse
-
-gui_table_contextmenu_priority=Priorität
-
-gui_config_gui_view=Look
-
-userio_input_title=Bitte eingeben!
-
-gui_tooltips_linkgrabber_autostart=Falls ausgewählt werden Links hinzugefügt und automatisch gestartet
-
-gui_treetable_name=Pakete und Dateien
-
-gui_config_reconnect_shared=Allgemeine Reconnect Einstellungen
-
+ballon_download_finished_started=Download gestartet
 ballon_download_finished_stopped=Download gestoppt
-
-dialogs_premiumstatus_global_message=Wollen Sie wirklich alle Premiumaccounts deaktivieren?
-
-jd_gui_swing_jdgui_views_linkgrabberview_tab_title=Linksammler
-
-gui_table_contextmenu_dlc=DLC erstellen
-
-gui_menu_action_reconnect_notconfigured_tooltip=Reconnect erlauben/verbieten
-
-gui_menu_action_reconnectman_desc=Manueller Reconnect. Neue Verbindung erzwingen
-
-gui_menu_save=Speichern
-
-gui_config_general_createsubfoldersbefore=Erstelle Unterordner nach dem Hinzufügen von Links
-
-jd_gui_swing_jdgui_views_configurationview_tab_tooltip=Alle Optionen und Einstellungen
-
-gui_config_linkgrabber_replacechars=Ersetze Punkte und Unterstriche mit Leerzeichen?
-
-gui_column_tos=AGB
-
-gui_treetable_status=Status
-
-gui_treetable_header_size=Größe
-
 ballon_download_title=Herunterladen
-
-gui_textcomponent_context_selectall=Alles auswählen
-
-gui_tooltip_statusbar_max_chunks=Maximale Verbindungen pro Datei
-
-gui_table_contextmenu_tryforce=Download starten
-
-installer_gui_title=JDownloader Installation
-
-gui_filechooser_loaddlc=Lade DLC Datei
-
-gui_downloadlist_delete_size_packagev2=%s1 Links
-
-jd_gui_skins_simple_simplegui_menubar_filemenu=Datei
-
-gui_treetable_remaining=Verbleibend
-
-gui_linkgrabber_finished=%s1 Link(s) in %s2 Paket(en)
-
-gui_linkgrabber_header_packagesfiles=Pakete und Dateien
-
-gui_fileinfopanel_linktab_comment=Kommentar
-
-gui_textcomponent_context_delete_acc=DELETE
-
-plugins_http_htaccess=HTAccess Passwörter. Pro Zeile ein Passwort!
-
-gui_linkgrabber_packagetab_lbl_comment=Kommentar
-
-userio_errorregex=.*(error|failed|fehl).*
-
-gui_premiumstatus_expired_maybetraffic_tooltip=%s1 - %s2 Account(s) -- Im Moment ist möglicherweise kein Premiumtraffic verfügbar
-
-gui_config_gui_performance=Leistung
-
-jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Du hast den IP Check abgeschaltet. Das wird die Reconnectzeit stark verlängern!\r\n\r\n Weitere Module wie der Reconnect Recorder werden ebenfalls nicht funktionieren.
-
-gui_config_download_download_tab=Downloadsteuerung
-
-reconnect_retries=Max. Wiederholungen (-1 = unendlich)
-
-gui_treetable_tooltip_priority0=Normale Priorität
-
-gui_fileinfopanel_packagetab=Paket
-
-gui_treetable_tooltip_priority3=Höchste Priorität
-
-gui_column_status=Aktivieren
-
-gui_treetable_tooltip_priority1=Hohe Priorität
-
-gui_treetable_tooltip_priority2=Höhere Priorität
-
-gui_downloadstop=Halte laufende Downloads an
-
-gui_downloadlink_plugindisabled=[Plugin deaktiviert]
-
-gui_config_gui_decoration=Fensterdekoration anzeigen
-
-gui_linkgrabber_adding=%s1 Link(s) gesammelt
-
-gui_config_download_ipcheck_externalinterval2=Zeitabstand der externen IP Überprüfung [sec]
-
-gui_config_gui_resetdialogs2=Dialoginformationen zurücksetzen
-
-gui_linkgrabberv2_lg_clear_ask=Linksammler Liste löschen
-
-gui_taskpanes_download_linkgrabber_config_autostart=Automatisch starten
-
-gui_config_gui_feel=Feel
-
-gui_column_plugin=Plugin
-
-gui_linkgrabber_packageonlinepercent=%s1 online
-
-gui_linklist_newpackage_message=Name des neuen Pakets
-
-gui_dialog_addurl_title=Adresse(n) hinzufügen
-
-reconnect_waitforip=Auf neue IP warten [sek]
-
-reconnect_waittimetofirstipcheck=Wartezeit bis zur ersten IP-Überprüfung [sek]
-
-gui_config_gui_linkgrabber=Linksammler
-
+controller_downloadautostart=Downloads in wenigen Sekunden automatisch starten...
+dialogs_premiumstatus_global_message=Wollen Sie wirklich alle Premiumaccounts deaktivieren?
+dialogs_premiumstatus_global_title=Premium deaktivieren?
+gui_backup_finished_failed=Linkliste konnte nicht gesichert werden! Überprüfe die Rechte in %s1 !
+gui_backup_finished_success=Linkliste erfolgreich gesichert in %s1
+gui_balloon_backup_title=Backup
+gui_btn_cancel=Abbrechen
+gui_btn_no=Nein
 gui_btn_select=Auswählen
-
-gui_table_contextmenu_deletelistdisk2=Löschen von Liste und Festplatte
-
-gui_menu_action_reconnectauto_desc=Automatischer Reconnect. Internet Verbindung kurz trennen um eine neue IP zu bekommen.
-
-gui_downloadlist_delete_links=%s1 Links
-
-gui_config_gui_plaf=Style (Neustart nötig)
-
-gui_config_general_createsubfolders=Wenn möglich Unterordner mit Paketname erstellen
-
-gui_table_contextmenu_check=Onlinestatus überprüfen
-
-gui_config_download_write=Schreiben von Dateien
-
-gui_linklist_setpw_message=Downloadpasswort setzen
-
-gui_menu_about=?
-
+gui_btn_settings=Einstellungen
+gui_btn_yes=Ja
+gui_column_host=Host
+gui_column_plugin=Plugin
+gui_column_settings=Einstellungen
+gui_column_status=Aktivieren
+gui_column_tos=AGB
+gui_column_version=Version
+gui_config_captcha_jac_disable=Automatische Bilderkennung abschalten
+gui_config_captcha_settings=Captcha Einstellungen
+gui_config_captcha_train_level=Anzeigeschwelle
+gui_config_captcha_train_show_timeout=Anzeigedauer des Eingabefensters
+gui_config_download_autoresume=Reconnect darf laufende Downloads unterbrechen
+gui_config_download_buffersize2=Max. Puffergröße[KB]
+gui_config_download_crc=SFV/CRC Check wenn möglich durchführen
+gui_config_download_download_tab=Downloadsteuerung
+gui_config_download_ipcheck=Reconnect IP-Check
+gui_config_download_ipcheck_balance=Interne IP Überprüfung verwenden
 gui_config_download_ipcheck_disable=IP-Check deaktivieren
-
-gui_table_contextmenu_editpackagename=Paketname ändern
+gui_config_download_ipcheck_externalinterval2=Zeitabstand der externen IP Überprüfung [sec]
+gui_config_download_ipcheck_mask=Erlaubte IP
+gui_config_download_ipcheck_regex=RegEx zum Filtern der IP
+gui_config_download_ipcheck_regex_default=Bitte hier RegEx für IP-Prüfung eingeben
+gui_config_download_ipcheck_website=IP prüfen über (Webseite)
+gui_config_download_ipcheck_website_default=Bitte hier Webseite für IP-Prüfung eingeben
+gui_config_download_pausespeed=Pausen Geschwindigkeitslimit in KiB/s
+gui_config_download_preferreconnect=Downloads warten auf Reconnect
+gui_config_download_write=Schreiben von Dateien
+gui_config_general_createsubfolders=Wenn möglich Unterordner mit Paketname erstellen
+gui_config_general_createsubfoldersbefore=Erstelle Unterordner nach dem Hinzufügen von Links
+gui_config_general_downloaddirectory=Downloadverzeichnis
+gui_config_general_todowithdownloads=Entferne fertig gestellte Downloads...
+gui_config_gui_barrierfree=Barrierefreiheit
+gui_config_gui_container=Container (RSDF,DLC,CCF,..)
+gui_config_gui_decoration=Fensterdekoration anzeigen
+gui_config_gui_feel=Feel
+gui_config_gui_font_size=Schriftgröße [%]
+gui_config_gui_language=Sprache
+gui_config_gui_linggrabber_ignorelist=Linkfilter
+gui_config_gui_linkgrabber=Linksammler
+gui_config_gui_performance=Leistung
+gui_config_gui_plaf=Style (Neustart nötig)
+gui_config_gui_resetdialogs2=Dialoginformationen zurücksetzen
+gui_config_gui_resetdialogs_message=Dialog Informationen wurden zurückgesetzt
+gui_config_gui_resetdialogs_short=Zurücksetzen
+gui_config_gui_view=Look
+gui_config_linkgrabber_cnl2=Click'n'Load Unterstützung einschalten
+gui_config_linkgrabber_controlposition=Linksammler Buttons über Tabelle anzeigen
+gui_config_linkgrabber_infopanel_onlinkgrab=Infoanzeige im Linksammler anzeigen
+gui_config_linkgrabber_onlincheck=Linkstatus überprüfen
+gui_config_linkgrabber_replacechars=Ersetze Punkte und Unterstriche mit Leerzeichen?
+gui_config_reconnect_shared=Allgemeine Reconnect Einstellungen
+gui_config_reloadcontainer=Heruntergeladene Container einlesen
+gui_dialog_addurl_message=Adresse(n) hinzufügen. JDownloader wird diese laden und analysieren.
+gui_dialog_addurl_okoption_parse=Adresse(n) analysieren
+gui_dialog_addurl_title=Adresse(n) hinzufügen
+gui_dialogs_message_title=Nachricht
+gui_downloadlink_plugindisabled=[Plugin deaktiviert]
+gui_downloadlist_delete=Ausgewählte Links wirklich entfernen?
+gui_downloadlist_delete2=Entferne Links von der Downloadliste und Festplatte?
+gui_downloadlist_delete_files=%s1 Dateien
+gui_downloadlist_delete_links=%s1 Links
+gui_downloadlist_delete_size_packagev2=%s1 Links
+gui_downloadlist_reset=Ausgewählten Download zurücksetzen? (Achtung: Datei(en) werden gelöscht!)
+gui_downloadstop=Halte laufende Downloads an
+gui_filechooser_loaddlc=Lade DLC Datei
+gui_fileinfopanel_link=Downloadlink
+gui_fileinfopanel_linktab_chunks=Teilverbindungen
+gui_fileinfopanel_linktab_comment=Kommentar
+gui_fileinfopanel_linktab_eta2=Fertig in: %s1
+gui_fileinfopanel_linktab_name=Name
+gui_fileinfopanel_linktab_password=Passwort
+gui_fileinfopanel_linktab_saveto=Speichern unter
+gui_fileinfopanel_linktab_speed=Geschwindigkeit: %s1/s
+gui_fileinfopanel_linktab_status=Status
+gui_fileinfopanel_linktab_url=Adresse
+gui_fileinfopanel_packagetab=Paket
+gui_fileinfopanel_packagetab_lbl_comment=Kommentar
+gui_fileinfopanel_packagetab_lbl_files=%s1 Datei(en)
+gui_fileinfopanel_packagetab_lbl_name=Paketname
+gui_fileinfopanel_packagetab_lbl_password=Archivpasswort
+gui_fileinfopanel_packagetab_lbl_password2=Archivpasswort (automatisch)
+gui_fileinfopanel_packagetab_lbl_saveto=Speichern unter
+gui_linkgrabber_aborted=Abgebrochen
+gui_linkgrabber_adding=%s1 Link(s) gesammelt
+gui_linkgrabber_alreadyindl=Bereits in der Downloadliste
+gui_linkgrabber_finished=%s1 Link(s) in %s2 Paket(en)
+gui_linkgrabber_header_packagesfiles=Pakete und Dateien
+gui_linkgrabber_packageofflinepercent=%s1 offline
+gui_linkgrabber_packageonlineall=Alle online
+gui_linkgrabber_packageonlinepercent=%s1 online
+gui_linkgrabber_packagetab_lbl_comment=Kommentar
+gui_linkgrabber_packagetab_lbl_name=Paketname
+gui_linkgrabber_packagetab_lbl_password=Archivpasswort
+gui_linkgrabber_packagetab_lbl_password2=Archivpasswort (automatisch)
+gui_linkgrabber_packagetab_lbl_saveto=Speichern unter
+gui_linkgrabber_pc_linkgrabber=Linkgrabber Operationen stehen an...
+gui_linkgrabberv2_lg_clear_ask=Linksammler Liste löschen
+gui_linkgrabberv2_lg_continueselected=Mit ausgewählten Paketen fortfahren
+gui_linkgrabberv2_lg_continueselectedlinks=Mit ausgewählten Links fortfahren
+gui_linkgrabberv2_onlyselectedhoster=Nur ausgewählte Hoster behalten
+gui_linkgrabberv2_splithoster=Nach Anbietern trennen
+gui_linklist_editpackagename_message=Neuer Paketname
+gui_linklist_newpackage_message=Name des neuen Pakets
+gui_linklist_setpw_message=Downloadpasswort setzen
+gui_logupload_message=Bitte sende den Link zu diesem Log einem Supporter
+gui_menu_about=?
+gui_menu_action_break2_desc=Downloads pausieren und Geschwindigkeit auf %s1 KiB/s beschränken
+gui_menu_action_premium_buy_name=Premium kaufen
+gui_menu_action_reconnect_notconfigured_tooltip=Reconnect erlauben/verbieten
+gui_menu_action_reconnectauto_desc=Automatischer Reconnect. Internet Verbindung kurz trennen um eine neue IP zu bekommen.
+gui_menu_action_reconnectman_desc=Manueller Reconnect. Neue Verbindung erzwingen
+gui_menu_addlinks=Links hinzufügen
+gui_menu_premium=Premium
+gui_menu_remove=Aufräumen
+gui_menu_save=Speichern
+gui_premiumstatus_expired_maybetraffic_tooltip=%s1 - %s2 Account(s) -- Im Moment ist möglicherweise kein Premiumtraffic verfügbar
+gui_premiumstatus_expired_traffic_tooltip=%s1 - %s2 Account(s) -- Im Moment ist kein Premiumtraffic verfügbar
+gui_premiumstatus_traffic_tooltip=%s1 - %s2 Account(s) -- Sie können heute bis zu %s3 laden.
+gui_premiumstatus_unlimited_traffic_tooltip=%s1 -- Unendlicher Traffic! Sie können so viel downloaden, wie sie wollen.
+gui_reconnect_confirm=Wollen Sie sicher eine neue Verbindung aufbauen?
+gui_statusbar_sim_ownloads=Max.Dls.
+gui_statusbar_speed=Geschw.
+gui_table_contextmenu_browselink=Im Browser öffnen
+gui_table_contextmenu_check=Onlinestatus überprüfen
+gui_table_contextmenu_deletelist2=Löschen von Liste
+gui_table_contextmenu_deletelistdisk2=Löschen von Liste und Festplatte
+gui_table_contextmenu_disable=Deaktivieren
+gui_table_contextmenu_dlc=DLC erstellen
+gui_table_contextmenu_downloaddir=Zielordner öffnen
+gui_table_contextmenu_editdownloaddir=Zielordner ändern
+gui_table_contextmenu_enable=Aktivieren
+gui_table_contextmenu_filetype=Filter
+gui_table_contextmenu_more=Mehr
+gui_table_contextmenu_newpackage=In neues Paket verschieben
+gui_table_contextmenu_openfile=Datei öffnen
+gui_table_contextmenu_packagesort=Paket sortieren
+gui_table_contextmenu_priority=Priorität
+gui_table_contextmenu_prop=Eigenschaften
+gui_table_contextmenu_remove=Entfernen
+gui_table_contextmenu_reset=Zurücksetzen
+gui_table_contextmenu_resume=Fortsetzen
+gui_table_contextmenu_setdlpw=Downloadpasswort setzen
+gui_table_contextmenu_sort=Sortieren
+gui_table_contextmenu_stopmark_set=Nach diesem Download stoppen
+gui_table_contextmenu_stopmark_unset=Haltemarke entfernen
+gui_table_draganddrop_after=Nach '%s1' ablegen
+gui_table_draganddrop_before=Vor '%s1' ablegen
+gui_table_draganddrop_insertinpackageend=In Paket '%s1' am Ende einfügen
+gui_table_draganddrop_insertinpackagestart=In Paket '%s1' am Anfang einfügen
+gui_table_draganddrop_movepackagebefore=Vor Paket '%s1' einfügen
+gui_table_draganddrop_movepackageend=Nach Paket '%s1' einfügen
+gui_taskpanes_download_linkgrabber_config_addattop=Oben einfügen
+gui_taskpanes_download_linkgrabber_config_autostart=Automatisch starten
+gui_taskpanes_download_linkgrabber_config_startofter=Sofort starten
+gui_textcomponent_context_copy=Kopieren
+gui_textcomponent_context_copy_acc=ctrl C
+gui_textcomponent_context_cut=Ausschneiden
+gui_textcomponent_context_cut_acc=ctrl X
+gui_textcomponent_context_delete=Löschen
+gui_textcomponent_context_delete_acc=DELETE
+gui_textcomponent_context_paste=Einfügen
+gui_textcomponent_context_paste_acc=ctrl V
+gui_textcomponent_context_selectall=Alles auswählen
+gui_textcomponent_context_selectall_acc=ctrl A
+gui_tooltip_statusbar_max_chunks=Maximale Verbindungen pro Datei
+gui_tooltip_statusbar_simultan_downloads=Max. gleichzeitige Downloads
+gui_tooltip_statusbar_speedlimiter=Geschwindigkeitsbegrenzung festlegen (KiB/s) [0:unendlich]
+gui_tooltips_linkgrabber_autostart=Falls ausgewählt werden Links hinzugefügt und automatisch gestartet
+gui_tooltips_linkgrabber_startlinksafteradd=Falls ausgewählt starten die Downloads direkt nach dem Hinzufügen.
+gui_treetable_added=Hinzugefügt
+gui_treetable_error_plugin=Plugin Fehler
+gui_treetable_finished=Fertiggestellt
+gui_treetable_header_size=Größe
+gui_treetable_hoster=Anbieter
+gui_treetable_loaded=Geladen
+gui_treetable_name=Pakete und Dateien
+gui_treetable_progress=Fortschritt
+gui_treetable_remaining=Verbleibend
+gui_treetable_size=Größe
+gui_treetable_status=Status
+gui_treetable_tooltip_priority0=Normale Priorität
+gui_treetable_tooltip_priority1=Hohe Priorität
+gui_treetable_tooltip_priority2=Höhere Priorität
+gui_treetable_tooltip_priority3=Höchste Priorität
+gui_treetable_tooltip_priority_1=Niedrige Priorität
+installer_gui_message=Nach der Installation wird JDownloader auf die aktuelle Version aktualisieren.
+installer_gui_title=JDownloader Installation
+jd_gui_skins_simple_simplegui_menubar_filemenu=Datei
+jd_gui_skins_simple_simplegui_menubar_linksmenu=Links
+jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Du hast den IP Check abgeschaltet. Das wird die Reconnectzeit stark verlängern!\r\n\r\n Weitere Module wie der Reconnect Recorder werden ebenfalls nicht funktionieren.
+jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=IP Prüfung abgeschaltet!
+jd_gui_swing_jdgui_settings_panels_downloadandnetwork_general_download_title=Download & Verbindungen
+jd_gui_swing_jdgui_settings_panels_gui_advanced_gui_advanced_title=Erweitert
+jd_gui_swing_jdgui_views_configurationview_tab_title=Einstellungen
+jd_gui_swing_jdgui_views_configurationview_tab_tooltip=Alle Optionen und Einstellungen
+jd_gui_swing_jdgui_views_downloadview_tab_title=Download
+jd_gui_swing_jdgui_views_downloadview_tab_tooltip=Downloadliste und Fortschritt
+jd_gui_swing_jdgui_views_linkgrabberview_tab_title=Linksammler
+jd_gui_swing_jdgui_views_linkgrabberview_tab_tooltip=Sammele Links, füge welche hinzu oder triff eine Auswahl
+jd_gui_swing_jdgui_views_log_tab_title=Log
+jd_gui_swing_jdgui_views_log_tab_tooltip=Log einsehen, speichern oder hochladen
+jd_gui_userio_defaulttitle_confirm=Bitte bestätigen
+jd_gui_userio_defaulttitle_input=Bitte eingeben!
+linkgrabber_onlinestatus_offline=Offline
+linkgrabber_onlinestatus_online=Online
+linkgrabber_onlinestatus_uncheckable=im Moment nicht prüfbar
+linkgrabber_onlinestatus_unchecked=nicht überprüft
+plugins_config_premium_chartapi_caption_error2=Diagramm lädt oder ist nicht verfügbar
+plugins_http_htaccess=HTAccess Passwörter. Pro Zeile ein Passwort!
+plugins_optional_jdunrar_config_passwordlist=Passwortliste. Pro Zeile ein Passwort.
+reconnect_retries=Max. Wiederholungen (-1 = unendlich)
+reconnect_waitforip=Auf neue IP warten [sek]
+reconnect_waittimetofirstipcheck=Wartezeit bis zur ersten IP-Überprüfung [sek]
+sys_ask_rlyclose=Wollen Sie den JDownloader wirklich schließen?
+sys_ask_rlyrestart=Wollen Sie JDownloader wirklich neustarten?
+sys_ask_rlyrestore=JDownloader wird neu gestartet um ein Komplettupdate zu machen. Weiter?
+sys_warning_loguploadfailed=Log Upload fehlgeschlagen.
+system_download_triggerfileexists=Wenn eine Datei schon vorhanden ist:
+system_download_triggerfileexists_ask=Bei jeder Datei fragen
+system_download_triggerfileexists_askpackage=Bei jedem Paket fragen
+system_download_triggerfileexists_overwrite=Datei überschreiben
+system_download_triggerfileexists_rename=Automatisch umbenennen
+system_download_triggerfileexists_skip=Link überspringen
+userio_errorregex=.*(error|failed|fehl).*
+userio_input_title=Bitte eingeben!
