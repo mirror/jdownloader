@@ -115,14 +115,8 @@ public interface ScheduleTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enable Reconnect" })
     String jd_plugins_optional_schedule_modules_enableReconnect();
 
-    @Default(lngs = { "en" }, values = { "Do Backup" })
-    String jd_plugins_optional_schedule_modules_doBackup();
-
     @Default(lngs = { "en" }, values = { "wait a moment" })
     String jd_plugins_optional_schedule_wait();
-
-    @Default(lngs = { "en" }, values = { "Disable a specific Host" })
-    String jd_plugins_optional_schedule_modules_disableHost();
 
     @Default(lngs = { "en" }, values = { "Disable Premium" })
     String jd_plugins_optional_schedule_modules_disablePremium();
@@ -195,9 +189,6 @@ public interface ScheduleTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Day:" })
     String plugin_optional_scheduler_add_day();
-
-    @Default(lngs = { "en" }, values = { "Enable a specific Host" })
-    String jd_plugins_optional_schedule_modules_enableHost();
 
     @Default(lngs = { "en" }, values = { "Action" })
     String jd_plugins_optional_schedule_SchedulerTableModel_action();
