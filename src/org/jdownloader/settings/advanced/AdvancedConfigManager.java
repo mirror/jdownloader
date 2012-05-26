@@ -20,6 +20,7 @@ import org.jdownloader.api.RemoteAPIConfig;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.packagizer.PackagizerSettings;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
+import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -51,6 +52,7 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(RemoteAPIConfig.class));
         register(JsonConfig.create(PackagizerSettings.class));
         register(JsonConfig.create(WebupdateSettings.class));
+        register(JsonConfig.create(StatsManagerConfig.class));
 
     }
 

@@ -7,8 +7,9 @@ import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.Description;
 
 /**
- * This interface defines all settings of the translation Extension. Extend it if you need additional entries. Make sure that you have a
- * valid getter AND setter
+ * This interface defines all settings of the translation Extension. Extend it
+ * if you need additional entries. Make sure that you have a valid getter AND
+ * setter
  * 
  * @author thomas
  * 
@@ -30,4 +31,8 @@ public interface TranslatorConfig extends ExtensionConfigInterface {
     public boolean isRememberLoginsEnabled();
 
     public void setRememberLoginsEnabled(boolean b);
+
+    public void setLastLoaded(String id);
+
+    public String getLastLoaded();
 }

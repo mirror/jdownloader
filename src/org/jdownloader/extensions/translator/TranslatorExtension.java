@@ -2,11 +2,16 @@ package org.jdownloader.extensions.translator;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.ImageIcon;
@@ -21,13 +26,18 @@ import jd.plugins.AddonPanel;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.swing.exttable.ExtTableTranslation;
+import org.appwork.txtresource.TranslateData;
 import org.appwork.txtresource.TranslateInterface;
+import org.appwork.txtresource.TranslateResource;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.txtresource.TranslationHandler;
+import org.appwork.txtresource.TranslationSource;
+import org.appwork.txtresource.TranslationUtils;
 import org.appwork.update.standalone.translate.StandaloneUpdaterTranslation;
 import org.appwork.update.updateclient.translation.UpdateTranslation;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
+import org.appwork.utils.IO;
 import org.appwork.utils.locale.AWUTranslation;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.svn.FilePathFilter;
@@ -49,12 +59,15 @@ import org.jdownloader.extensions.translator.gui.TranslatorGui;
 import org.jdownloader.gui.translate.GuiTranslation;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate.JdownloaderTranslation;
+import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNDirEntry;
 import org.tmatesoft.svn.core.SVNException;
+import org.tmatesoft.svn.core.wc.SVNCommitPacket;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 
 /**
- * Extensionclass. NOTE: All extensions have to follow the namescheme to end with "Extension" and have to extend AbstractExtension
+ * Extensionclass. NOTE: All extensions have to follow the namescheme to end
+ * with "Extension" and have to extend AbstractExtension
  * 
  * @author thomas
  * 
@@ -63,19 +76,20 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     /**
      * Extension GUI
      */
-    private TranslatorGui             gui;
+    private TranslatorGui                  gui;
     /**
      * List of all available languages
      */
-    private ArrayList<TLocale>        translations;
+    private ArrayList<TLocale>             translations;
     /**
      * If a translation is loaded, this list contains all it's entries
      */
-    private ArrayList<TranslateEntry> translationEntries;
+    private ArrayList<TranslateEntry>      translationEntries;
     /**
      * currently loaded Language
      */
-    private TLocale                   loaded;
+    private TLocale                        loaded;
+    private TranslatorExtensionEventSender eventSender;
 
     public static void main(String[] args) {
         ArrayList<File> files = Files.getFiles(new FileFilter() {
@@ -132,6 +146,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         // Name. The translation Extension itself does not need translation. All
         // translators should be able to read english
         setTitle("Translator");
+        eventSender = new TranslatorExtensionEventSender();
         // get all LanguageIDs
         List<String> ids = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
         // create a list of TLocale instances
@@ -171,8 +186,13 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     }
 
+    public TranslatorExtensionEventSender getEventSender() {
+        return eventSender;
+    }
+
     /**
-     * Has to return the Extension MAIN Icon. This icon will be used,for example, in the settings pane
+     * Has to return the Extension MAIN Icon. This icon will be used,for
+     * example, in the settings pane
      */
     @Override
     public ImageIcon getIcon(int size) {
@@ -211,7 +231,8 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     /**
-     * Returns the Settingspanel for this extension. If this extension does not have a configpanel, null can be returned
+     * Returns the Settingspanel for this extension. If this extension does not
+     * have a configpanel, null can be returned
      */
     @Override
     public ExtensionConfigPanel<?> getConfigPanel() {
@@ -260,8 +281,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
      * @throws InterruptedException
      */
     public void load(TLocale locale) throws InterruptedException {
+        if (locale == null) return;
         loaded = locale;
-
+        getSettings().setLastLoaded(locale.getId());
         try {
             List<SVNDirEntry> svnEntries = null;
             // List<SVNDirEntry> svnEntries = listSvnLngFileEntries();
@@ -290,7 +312,8 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             load(tmp, svnEntries, locale, StandaloneUpdaterTranslation.class);
             load(tmp, svnEntries, locale, UpdateTranslation.class);
             load(tmp, svnEntries, locale, UpnpTranslation.class);
-            // there should be no more entries. all of them should have been mapped to an INterface
+            // there should be no more entries. all of them should have been
+            // mapped to an INterface
             if (svnEntries != null) {
                 for (SVNDirEntry e : svnEntries) {
                     Log.L.warning("No Interface for " + e.getRelativePath());
@@ -299,7 +322,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
             this.translationEntries = tmp;
             // System.out.println(1);
-
+            getEventSender().fireEvent(new TranslatorExtensionEvent(this, org.jdownloader.extensions.translator.TranslatorExtensionEvent.Type.LOADED_TRANSLATION));
         } catch (SVNException e) {
             e.printStackTrace();
         }
@@ -372,7 +395,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         this.loggedIn = loggedIn;
     }
 
-    public void doLogin() {
+    public void doLogin() throws InterruptedException {
         if (isLoggedIn()) return;
         if (getSettings().isRememberLoginsEnabled()) {
             if (validateSvnLogin(getSettings().getSVNUser(), getSettings().getSVNPassword())) { return; }
@@ -387,7 +410,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     }
 
-    public boolean validateSvnLogin(String svnUser, String svnPass) {
+    public boolean validateSvnLogin(String svnUser, String svnPass) throws InterruptedException {
         setLoggedIn(false);
         if (svnUser.length() > 3 && svnPass.length() > 3) {
             String url = "svn://svn.jdownloader.org/jdownloader";
@@ -396,6 +419,14 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             try {
                 s = new Subversion(url, svnUser, svnPass);
                 setLoggedIn(true);
+                // if (getSettings().getLastLoaded() != null) {
+
+                TLocale pre = getTLocaleByID(getSettings().getLastLoaded());
+                if (pre == null) {
+                    pre = new TLocale(TranslationFactory.getDesiredLocale().toString());
+                }
+                load(pre);
+                // }
                 return true;
             } catch (SVNException e) {
                 Dialog.getInstance().showMessageDialog("SVN Test Error", "Login failed. Username and/or password are not correct!\r\n\r\nServer: " + url);
@@ -412,7 +443,15 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     }
 
-    public void requestSvnLogin() {
+    public TLocale getTLocaleByID(String lastLoaded) {
+        if (lastLoaded == null) return null;
+        for (TLocale t : getTranslations()) {
+            if (t.getId().equals(lastLoaded)) { return t; }
+        }
+        return null;
+    }
+
+    public void requestSvnLogin() throws InterruptedException {
 
         while (true) {
 
@@ -442,4 +481,101 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     }
 
+    public void setTranslation(ArrayList<TranslateEntry> selection, TLocale sel) {
+        int failed = 0;
+        for (TranslateEntry te : selection) {
+            Class<? extends TranslateInterface> class1 = (Class<? extends TranslateInterface>) te.getInterface().getClass().getInterfaces()[0];
+            TranslateInterface t = (TranslateInterface) Proxy.newProxyInstance(class1.getClassLoader(), new Class[] { class1 }, new TranslationHandler(class1, sel.getId()));
+            String translation = t._getHandler().getTranslation(te.getMethod());
+            TranslationSource source = t._getHandler().getSource(te.getMethod());
+            if (source == null || !source.getID().equals(sel.getId())) {
+                failed++;
+                continue;
+            }
+
+            te.setTranslation(translation);
+        }
+        if (failed > 0) {
+            Dialog.getInstance().showErrorDialog("The " + sel + " Translation is not complete. Not all requested entries could be cloned");
+        }
+        getEventSender().fireEvent(new TranslatorExtensionEvent(this, org.jdownloader.extensions.translator.TranslatorExtensionEvent.Type.REFRESH_DATA));
+
+    }
+
+    public void reset(TranslateEntry te) {
+        te.reset();
+    }
+
+    public double getPercent() {
+
+        return (getOK() * 10000 / getTranslationEntries().size()) / 100.0;
+    }
+
+    public int getOK() {
+
+        int ok = 0;
+        for (TranslateEntry te : getTranslationEntries()) {
+            if (te.isMissing() || te.isParameterInvalid()) {
+
+            } else {
+                ok++;
+            }
+        }
+        return ok;
+    }
+
+    public SVNCommitPacket save() throws IOException, SVNException {
+
+        HashSet<TranslationHandler> set = new HashSet<TranslationHandler>();
+        HashMap<Method, TranslateEntry> map = new HashMap<Method, TranslateEntry>();
+        for (TranslateEntry te : getTranslationEntries()) {
+            set.add(te.getInterface()._getHandler());
+            map.put(te.getMethod(), te);
+        }
+
+        for (TranslationHandler h : set) {
+            TranslateResource res = h.getResource(loaded.getId());
+
+            final TranslateData data = new TranslateData();
+
+            for (Method m : h.getMethods()) {
+                TranslateEntry te = map.get(m);
+                if (te.isOK() || te.isDefault()) {
+                    data.put(te.getKey(), te.getTranslation());
+                }
+            }
+            if (data.size() == 0) continue;
+            String file = TranslationUtils.serialize(data);
+            URL url = res.getUrl();
+            File newFile = null;
+            if (url != null) {
+                try {
+                    newFile = new File(url.toURI());
+                } catch (URISyntaxException e) {
+                    newFile = new File(url.getPath());
+                }
+            } else {
+                System.out.println("NO URL");
+                newFile = Application.getResource("translations/custom/" + h.getInterfaceClass().getName().replace(".", "/") + "." + loaded.getId() + ".lng");
+            }
+
+            newFile.delete();
+            IO.writeStringToFile(newFile, file);
+
+            Log.L.info("Updated " + file);
+
+        }
+
+        Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
+        s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+        s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
+        s.getWCClient().doAdd(Application.getResource("translations/custom"), true, false, true, SVNDepth.INFINITY, false, false);
+        Log.L.finer("Create CommitPacket");
+        final SVNCommitPacket packet = s.getCommitClient().doCollectCommitItems(new File[] { Application.getResource("translations/custom") }, false, false, SVNDepth.INFINITY, null);
+
+        Log.L.finer("Transfer Package");
+        s.getCommitClient().doCommit(packet, true, false, "Updated " + loaded.getLocale().getDisplayName() + " Translation", null);
+        s.dispose();
+        return packet;
+    }
 }

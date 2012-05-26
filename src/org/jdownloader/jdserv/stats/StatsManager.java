@@ -93,6 +93,24 @@ public class StatsManager {
         });
     }
 
+    public void logAction(String key) {
+        if (!isEnabled()) return;
+        queue.add(new AsynchLogger() {
+            private long time;
+            {
+                time = System.currentTimeMillis();
+            }
+
+            @Override
+            public void doRemoteCall() {
+                if (!isEnabled()) return;
+                remote.onFreshInstall(id, time);
+            }
+
+        });
+
+    }
+
     private void logStart() {
         if (!isEnabled()) return;
         queue.add(new AsynchLogger() {

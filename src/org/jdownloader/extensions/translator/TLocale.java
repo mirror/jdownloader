@@ -24,6 +24,18 @@ public class TLocale {
 
     private String id;
 
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof TLocale) { return ((TLocale) obj).id.equals(id); }
+        return false;
+
+    }
+
     public String toString() {
         boolean hasVariant = locale.getVariant().length() > 0;
         boolean hasCountry = locale.getCountry().length() > 0;

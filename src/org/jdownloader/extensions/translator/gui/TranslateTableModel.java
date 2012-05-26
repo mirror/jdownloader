@@ -2,13 +2,23 @@ package org.jdownloader.extensions.translator.gui;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.lang.reflect.Type;
 import java.util.regex.Pattern;
 
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
 import javax.swing.Icon;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
 import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.table.JTableHeader;
+import javax.swing.text.BadLocationException;
 
 import jd.nutils.encoding.Encoding;
 
@@ -17,11 +27,14 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
+import org.appwork.swing.exttable.ToolTip;
 import org.appwork.swing.exttable.columns.ExtIconColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.translator.TranslateEntry;
 import org.jdownloader.extensions.translator.TranslatorExtension;
+import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.images.NewTheme;
 
 /**
@@ -31,6 +44,8 @@ import org.jdownloader.images.NewTheme;
  * 
  */
 public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
+
+    private ExtTextColumn<TranslateEntry> editColum;
 
     public TranslateTableModel() {
         // this is is used to store table states(sort,column positions,
@@ -113,8 +128,14 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
             @Override
             protected boolean onSingleClick(MouseEvent e, TranslateEntry obj) {
+                ToolTip tt = new ToolTip() {
+                    public boolean isLastHiddenEnabled() {
+                        return false;
+                    }
+                };
+                tt.setTipText(createInfoHtml(obj));
+                ToolTipController.getInstance().show(tt);
 
-                ToolTipController.getInstance().show(createToolTip(e.getPoint(), obj));
                 return true;
             }
 
@@ -149,7 +170,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
         addColumn(new ExtTextColumn<TranslateEntry>("Category") {
             @Override
             public int getDefaultWidth() {
-                return 100;
+                return 150;
             }
 
             @Override
@@ -199,9 +220,93 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
                 return value.getKey() + "";
             }
         });
+        addColumn(new ExtTextColumn<TranslateEntry>("Parameters") {
+            @Override
+            public int getDefaultWidth() {
+                return 100;
+            }
 
-        addColumn(new ExtTextColumn<TranslateEntry>("Translation") {
+            @Override
+            protected boolean isDefaultResizable() {
+                return false;
+            }
 
+            @Override
+            public boolean matchSearch(TranslateEntry object, Pattern pattern) {
+                return false;
+            }
+
+            @Override
+            protected String getTooltipText(TranslateEntry value) {
+                return createInfoHtml(value);
+            }
+
+            @Override
+            public String getStringValue(TranslateEntry value) {
+                return value.getParameterString();
+            }
+        });
+        addColumn(new ExtTextColumn<TranslateEntry>("Original & Defaults") {
+            @Override
+            public int getDefaultWidth() {
+                return 200;
+            }
+
+            @Override
+            public boolean matchSearch(TranslateEntry object, Pattern pattern) {
+                return false;
+            }
+
+            @Override
+            protected String getTooltipText(TranslateEntry value) {
+                return createInfoHtml(value);
+            }
+
+            @Override
+            public String getStringValue(TranslateEntry value) {
+                return value.getDirect();
+            }
+        });
+
+        addColumn(editColum = new ExtTextColumn<TranslateEntry>("Translation") {
+            {
+                final JTextField ttx = editorField;
+                editorField.setBorder(new JTextField().getBorder());
+                InputMap input = ttx.getInputMap();
+                KeyStroke enter = KeyStroke.getKeyStroke("ENTER");
+
+                input.put(enter, "TEXT_SUBMIT");
+                ttx.setFocusTraversalKeysEnabled(false);
+
+                input.put(KeyStroke.getKeyStroke("shift ENTER"), "STOP_EDIT");
+                input.put(KeyStroke.getKeyStroke("ctrl ENTER"), "STOP_EDIT");
+                ActionMap actions = ttx.getActionMap();
+                actions.put("STOP_EDIT", new AbstractAction() {
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        getTable().getCellEditor().stopCellEditing();
+                    }
+                });
+
+                actions.put("TEXT_SUBMIT", new AbstractAction() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        System.out.println("INSRT");
+                        try {
+                            Point point = ttx.getCaret().getMagicCaretPosition();
+                            SwingUtilities.convertPointToScreen(point, ttx);
+
+                            ttx.getDocument().insertString(ttx.getCaretPosition(), "\\r\\n", null);
+                            HelpDialog.show(point, "TRANSLETOR_USE_NEWLINE2", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "NewLine", "Press <Enter> to insert a Newline (\\r\\n). Press <CTRL ENTER> to Confirm  translation. Press <TAB> to confirm and move to next line.", NewTheme.I().getIcon("help", 32));
+
+                        } catch (BadLocationException e1) {
+                            e1.printStackTrace();
+                        }
+                    }
+                });
+
+            }
             private Color errorColor   = Color.RED;
             private Color warningColor = Color.BLUE;
             private Color defaultColor = Color.GRAY;
@@ -212,11 +317,23 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
             }
 
             @Override
+            public int getDefaultWidth() {
+                return 600;
+            }
+
+            @Override
             public boolean matchSearch(TranslateEntry object, Pattern pattern) {
                 boolean ret = super.matchSearch(object, pattern);
                 if (!ret) ret |= pattern.matcher(object.getCategory()).matches();
                 if (!ret) ret |= pattern.matcher(object.getFullKey()).matches();
                 if (!ret) if (object.getDescription() != null) ret |= pattern.matcher(object.getDescription()).matches();
+                return ret;
+            }
+
+            @Override
+            public JComponent getEditorComponent(TranslateEntry value, boolean isSelected, int row, int column) {
+                JComponent ret = super.getEditorComponent(value, isSelected, row, column);
+
                 return ret;
             }
 
@@ -252,6 +369,10 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
     }
 
+    public ExtTextColumn<TranslateEntry> getEditColum() {
+        return editColum;
+    }
+
     protected String createInfoHtml(TranslateEntry value) {
         String ret = "<html><style>td.a{font-style:italic;}</style><table valign=top>";
         ret += "<tr><td class=a>Key:</td><td>" + value.getKey() + "</td></tr>";
@@ -284,8 +405,9 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
                 i++;
             }
             ret += "</td>";
+            ret += "</tr>";
         }
-        ret += "</tr>";
+
         return ret + "</table></html>";
     }
 
