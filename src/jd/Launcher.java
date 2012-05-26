@@ -385,6 +385,7 @@ public class Launcher {
             InstallLogList tmpInstallLog = new InstallLogList();
             logFile = Application.getResource(org.appwork.update.standalone.Main.SESSION_INSTALL_LOG_LOG);
             if (logFile.exists()) {
+                Log.L.info("Check SessionInstallLog");
                 tmpInstallLog = JSonStorage.restoreFrom(logFile, tmpInstallLog);
 
                 for (InstalledFile iFile : tmpInstallLog) {
@@ -407,7 +408,10 @@ public class Launcher {
             // JUst to be sure
             Log.exception(e);
         } finally {
-            if (logFile != null) logFile.delete();
+            if (logFile != null) {
+                logFile.renameTo(new File(logFile.getAbsolutePath() + "." + System.currentTimeMillis()));
+
+            }
         }
     }
 
@@ -555,7 +559,9 @@ public class Launcher {
                                     @Override
                                     protected Void run() throws RuntimeException {
                                         /*
-                                         * we do this check inside IOEQ because initDownloadLinks also does its final init in IOEQ
+                                         * we do this check inside IOEQ because
+                                         * initDownloadLinks also does its final
+                                         * init in IOEQ
                                          */
                                         List<DownloadLink> dlAvailable = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
@@ -572,7 +578,8 @@ public class Launcher {
                                         });
                                         if (dlAvailable.size() == 0) {
                                             /*
-                                             * no downloadlinks available to autostart
+                                             * no downloadlinks available to
+                                             * autostart
                                              */
                                             return null;
                                         }
