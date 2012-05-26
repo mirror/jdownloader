@@ -532,7 +532,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             set.add(te.getInterface()._getHandler());
             map.put(te.getMethod(), te);
         }
-
+        System.out.println(1);
         for (TranslationHandler h : set) {
             TranslateResource res = h.getResource(loaded.getId());
 
