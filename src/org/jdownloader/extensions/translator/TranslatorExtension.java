@@ -294,9 +294,14 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
             s.dispose();
             for (LazyExtension le : ExtensionController.getInstance().getExtensions()) {
-                if (le._getExtension().getTranslation() == null) continue;
-                load(tmp, svnEntries, locale, (Class<? extends TranslateInterface>) le._getExtension().getTranslation().getClass().getInterfaces()[0]);
+                try {
+                    le.init();
 
+                    if (le._getExtension().getTranslation() == null) continue;
+                    load(tmp, svnEntries, locale, (Class<? extends TranslateInterface>) le._getExtension().getTranslation().getClass().getInterfaces()[0]);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
             }
             // use Type Hierarchy in IDE to get all interfaces
             // Extension Translations should not be referenced here
