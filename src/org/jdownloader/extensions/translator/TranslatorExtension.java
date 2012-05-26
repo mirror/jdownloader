@@ -596,6 +596,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             }
 
             newFile.delete();
+            newFile.getParentFile().mkdirs();
             IO.writeStringToFile(newFile, file);
 
             Log.L.info("Updated " + file);
