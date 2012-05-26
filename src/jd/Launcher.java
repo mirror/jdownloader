@@ -401,6 +401,18 @@ public class Launcher {
                         Log.L.info("RefreshCache=true");
                         break;
                     }
+                    if (iFile.getRelPath().endsWith(".class.backup")) {
+                        // Updated plugins
+                        JDInitFlags.REFRESH_CACHE = true;
+                        Log.L.info("RefreshCache=true");
+                        break;
+                    }
+                    if (iFile.getRelPath().startsWith("extensions") && iFile.getRelPath().endsWith(".jar.backup")) {
+                        // Updated extensions
+                        JDInitFlags.REFRESH_CACHE = true;
+                        Log.L.info("RefreshCache=true");
+                        break;
+                    }
                 }
             }
 
