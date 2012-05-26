@@ -68,7 +68,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 /** Login process */
                 if (!getUserLogin(false)) {
                     logger.info("Logindata invalid, stopping...");
-                    return null;
+                    return decryptedLinks;
                 }
                 br.getPage(parameter);
                 /**

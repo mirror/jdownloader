@@ -16,9 +16,12 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -121,55 +125,75 @@ public class SendspaceCom extends PluginForHost {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         if (!downloadLink.getDownloadURL().contains("/pro/dl/")) {
-            // Do we have to submit a form to enter the "free download area" for
-            // the
-            // file ?
-            br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML("You have reached your daily download limit")) {
-                int minutes = 0, hours = 0;
-                String tmphrs = br.getRegex("again in.*?(\\d+)h:.*?m or").getMatch(0);
-                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                String tmpmin = br.getRegex("again in.*?h:(\\d+)m or").getMatch(0);
-                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                int waittime = ((3600 * hours) + (60 * minutes) + 1) * 1000;
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-            }
-            // Password protected links handling
-            String passCode = null;
-            if (br.containsHTML("name=\"filepassword\"")) {
-                logger.info("This link seems to be püassword protected...");
-                for (int i = 0; i < 2; i++) {
-                    Form pwform = br.getFormbyKey("filepassword");
-                    if (pwform == null) pwform = br.getForm(0);
-                    if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    if (downloadLink.getStringProperty("pass", null) == null) {
-                        passCode = Plugin.getUserInput("Password?", downloadLink);
-                    } else {
-                        /* gespeicherten PassCode holen */
-                        passCode = downloadLink.getStringProperty("pass", null);
-                    }
-                    pwform.put("filepassword", passCode);
-                    br.submitForm(pwform);
-                    if (br.containsHTML("(name=\"filepassword\"|Incorrect Password)")) {
-                        continue;
-                    }
-                    break;
-                }
-                if (br.containsHTML("(name=\"filepassword\"|Incorrect Password)")) throw new PluginException(LinkStatus.ERROR_FATAL, "Wrong Password");
-            }
-            /* bypass captcha with retry ;) */
-            if (br.containsHTML(">Please prove that you are a human being")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
-            handleErrors(false);
-            /* Link holen */
-            String linkurl = br.getRegex("<a id=\"download_button\" href=\"(http://.*?)\"").getMatch(0);
-            if (linkurl == null) linkurl = br.getRegex("\"(http://fs\\d+n\\d+\\.sendspace\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
+            // Re-use old directlinks to avoid captchas, especially good after
+            // reconnects
+            String linkurl = checkDirectLink(downloadLink, "savedlink");
             if (linkurl == null) {
-                if (br.containsHTML("has reached the 300MB hourly download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
-                logger.warning("linkurl equals null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (passCode != null) {
-                downloadLink.setProperty("pass", passCode);
+                br.getPage(downloadLink.getDownloadURL());
+                if (br.containsHTML("You have reached your daily download limit")) {
+                    int minutes = 0, hours = 0;
+                    String tmphrs = br.getRegex("again in.*?(\\d+)h:.*?m or").getMatch(0);
+                    if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+                    String tmpmin = br.getRegex("again in.*?h:(\\d+)m or").getMatch(0);
+                    if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+                    int waittime = ((3600 * hours) + (60 * minutes) + 1) * 1000;
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+                }
+                // Password protected links handling
+                String passCode = null;
+                if (br.containsHTML("name=\"filepassword\"")) {
+                    logger.info("This link seems to be püassword protected...");
+                    for (int i = 0; i < 2; i++) {
+                        Form pwform = br.getFormbyKey("filepassword");
+                        if (pwform == null) pwform = br.getForm(0);
+                        if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        if (downloadLink.getStringProperty("pass", null) == null) {
+                            passCode = Plugin.getUserInput("Password?", downloadLink);
+                        } else {
+                            /* gespeicherten PassCode holen */
+                            passCode = downloadLink.getStringProperty("pass", null);
+                        }
+                        pwform.put("filepassword", passCode);
+                        br.submitForm(pwform);
+                        if (br.containsHTML("(name=\"filepassword\"|Incorrect Password)")) {
+                            continue;
+                        }
+                        break;
+                    }
+                    if (br.containsHTML("(name=\"filepassword\"|Incorrect Password)")) throw new PluginException(LinkStatus.ERROR_FATAL, "Wrong Password");
+                }
+                /* handle captcha */
+                if (br.containsHTML(">Please prove that you are a human being")) {
+                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.parse();
+                    rc.load();
+                    String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    rc.setId(id);
+                    for (int i = 0; i <= 5; i++) {
+                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        String c = getCaptchaCode(cf, downloadLink);
+                        rc.setCode(c);
+                        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                            rc.reload();
+                            continue;
+                        }
+                        break;
+                    }
+                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                handleErrors(false);
+                /* Link holen */
+                linkurl = br.getRegex("<a id=\"download_button\" href=\"(http://.*?)\"").getMatch(0);
+                if (linkurl == null) linkurl = br.getRegex("\"(http://fs\\d+n\\d+\\.sendspace\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
+                if (linkurl == null) {
+                    if (br.containsHTML("has reached the 300MB hourly download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
+                    logger.warning("linkurl equals null");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (passCode != null) {
+                    downloadLink.setProperty("pass", passCode);
+                }
             }
             /* Datei herunterladen */
             br.setFollowRedirects(true);
@@ -189,6 +213,7 @@ public class SendspaceCom extends PluginForHost {
                 con.disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
+            downloadLink.setProperty("savedlink", linkurl);
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
             URLConnectionAdapter con = dl.getConnection();
@@ -199,6 +224,25 @@ public class SendspaceCom extends PluginForHost {
             }
         }
         dl.startDownload();
+    }
+
+    private String checkDirectLink(DownloadLink downloadLink, String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
     }
 
     @Override
