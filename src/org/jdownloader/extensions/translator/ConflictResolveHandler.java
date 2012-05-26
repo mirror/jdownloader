@@ -43,18 +43,25 @@ public class ConflictResolveHandler implements ResolveHandler {
         // both contain the key, but different values
         for (Entry<String, String> e : mine.entrySet()) {
             if (theirs.containsKey(e.getKey())) {
-                String html = "<h1>Key: " + e.getKey() + "</h1><h2>Translation A</h2>" + e.getValue() + "<h2>Translation B</h2>" + theirs.get(e.getKey()) + "<br><br>Select the better translation. A or B:";
-                try {
-                    Dialog.getInstance().showConfirmDialog(Dialog.STYLE_HTML, "Conflicts occured!", html, NewTheme.I().getIcon("question", 32), "A", "B");
+                if (e.getValue().equals(theirs.get(e.getKey()))) {
                     if (sb.length() > 0) sb.append("\r\n");
                     sb.append(e.getKey());
                     sb.append("=");
                     sb.append(e.getValue());
-                } catch (DialogNoAnswerException e1) {
-                    if (sb.length() > 0) sb.append("\r\n");
-                    sb.append(e.getKey());
-                    sb.append("=");
-                    sb.append(theirs.get(e.getKey()));
+                } else {
+                    String html = "<h1>Key: " + e.getKey() + "</h1><h2>Translation A</h2>" + e.getValue() + "<h2>Translation B</h2>" + theirs.get(e.getKey()) + "<br><br>Select the better translation. A or B:";
+                    try {
+                        Dialog.getInstance().showConfirmDialog(Dialog.STYLE_HTML, "Conflicts occured!", html, NewTheme.I().getIcon("question", 32), "A", "B");
+                        if (sb.length() > 0) sb.append("\r\n");
+                        sb.append(e.getKey());
+                        sb.append("=");
+                        sb.append(e.getValue());
+                    } catch (DialogNoAnswerException e1) {
+                        if (sb.length() > 0) sb.append("\r\n");
+                        sb.append(e.getKey());
+                        sb.append("=");
+                        sb.append(theirs.get(e.getKey()));
+                    }
                 }
 
             }
