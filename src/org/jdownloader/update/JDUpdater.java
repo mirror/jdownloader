@@ -40,6 +40,7 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.JDRestartController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
@@ -61,6 +62,13 @@ public class JDUpdater extends AppUpdater {
     private boolean        jars;
 
     public void run() {
+
+        if (readVersion() < 919) {
+
+            // bypass updaterloop when removing files
+            JDRestartController.getInstance().restartViaUpdater(true);
+
+        }
         try {
             if (this.tryLastChance()) {
                 Log.L.info("Last Chance Restorer - Exit NOw");
@@ -150,7 +158,8 @@ public class JDUpdater extends AppUpdater {
     }
 
     /**
-     * Create a new instance of JDUpdater. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of JDUpdater. This is a singleton class. Access the
+     * only existing instance by using {@link #getInstance()}.
      */
     private JDUpdater() {
         super();
@@ -302,6 +311,7 @@ public class JDUpdater extends AppUpdater {
                         }
                     }
                 };
+
             }
 
             public void onDirectInstalls(ArrayList<File> parameter) {
