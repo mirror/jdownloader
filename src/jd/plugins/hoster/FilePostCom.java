@@ -53,6 +53,7 @@ public class FilePostCom extends PluginForHost {
     private static final String FILEIDREGEX        = "filepost\\.com/files/(.+)";
     private static final String MAINPAGE           = "https://filepost.com/";
     private static final Object LOCK               = new Object();
+    private static final String FREEBLOCKED        = "(>The file owner has limited free downloads of this file|premium membership is required to download this file\\.<)";
 
     public FilePostCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -185,7 +186,7 @@ public class FilePostCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         String premiumlimit = br.getRegex("Files over (.*?) can be downloaded by premium").getMatch(0);
         if (premiumlimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium", "Files over " + premiumlimit + " are only downloadable for premium users"));
-        if (br.containsHTML("(members only\\. Please upgrade to premium to|>download this file at the highest speed|premium membership is required to download this file\\.<)")) if (br.containsHTML("The file owner has limited free downloads of this file")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium2", "Only downloadable for premium users"));
+        if (br.containsHTML(FREEBLOCKED)) if (br.containsHTML("The file owner has limited free downloads of this file")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium2", "Only downloadable for premium users"));
         if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
         if (br.containsHTML("(>Your IP address is already downloading a file at the moment|>Please wait till the download completion and try again)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already Loading", 20 * 60 * 1000l);
         String passCode = downloadLink.getStringProperty("pass", null);
@@ -307,6 +308,11 @@ public class FilePostCom extends PluginForHost {
         if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
         if (br.containsHTML("(>Sorry, you have reached the daily download limit|>Please contact our support team if you have questions about this limit)")) {
             logger.info("Premium downloadlimit reached, disabling account...");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
+        // Cookies lost/not logged in anymore? Serverside issue! Disable account
+        if (br.containsHTML(FREEBLOCKED)) {
+            logger.info("Not logged in anymore, this is a filepost.com issue, NOT a JDownloader issue (same in browser)!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         String dllink = null;

@@ -21,8 +21,10 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -45,6 +47,8 @@ public class U115ComFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String PASSCODETEXT = ">文件发布者设置了访问权限，您需要输入访问密码才可进入下载页";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -57,9 +61,17 @@ public class U115ComFolder extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML("(>文件夹提取码不存在<|>文件拥有者未分享该文件夹。<)")) {
             logger.warning("Invalid URL: " + parameter);
-            return null;
+            return decryptedLinks;
         }
-
+        if (br.containsHTML(PASSCODETEXT)) {
+            for (int i = 0; i <= 3; i++) {
+                final String passCode = getUserInput("Enter password for: " + parameter, param);
+                br.postPage(parameter, "pass=" + Encoding.urlEncode(passCode));
+                if (br.containsHTML(PASSCODETEXT)) continue;
+                break;
+            }
+            if (br.containsHTML(PASSCODETEXT)) throw new Exception(DecrypterException.PASSWORD);
+        }
         // Set package name and prevent null field from creating plugin errors
         String fpName = br.getRegex("<i class=\"file\\-type tp\\-folder\"></i><span class=\"file\\-name\">(.*?)</span>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("desc:\\'分享好资源\\|   (.*?) http://").getMatch(0);

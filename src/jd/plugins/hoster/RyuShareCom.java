@@ -31,6 +31,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -104,6 +105,7 @@ public class RyuShareCom extends PluginForHost {
     public void prepBrowser() {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
@@ -155,7 +157,9 @@ public class RyuShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -4, "freelink");
+        // More chunks sometimes possible but server error chance is very high
+        // then
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -168,7 +172,9 @@ public class RyuShareCom extends PluginForHost {
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
-                postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=Free+Download");
+                String methodfree = br.getRegex("name=\"method_free\" value=\"([^<>\"]*?)\"").getMatch(0);
+                if (methodfree == null) methodfree = "Low Speed Download";
+                postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{10,12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&method_free=" + Encoding.urlEncode(methodfree));
                 checkErrors(downloadLink, false, passCode);
             }
             dllink = getDllink();
@@ -264,6 +270,8 @@ public class RyuShareCom extends PluginForHost {
                 } else
                     break;
             }
+        } else {
+            sleep(2 * 1000l, downloadLink);
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
@@ -281,7 +289,7 @@ public class RyuShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 2;
     }
 
     /** Remove HTML code which could break the plugin */
@@ -404,6 +412,7 @@ public class RyuShareCom extends PluginForHost {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (new Regex(correctedBR, ">403 - Forbidden<").matches()) throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
     private String decodeDownloadLink(String s) {
