@@ -53,12 +53,12 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
         final String postvar = new Regex(parameter, "protected\\.socadvnet\\.com/\\?(.+)").getMatch(0);
         if (postvar == null) { return null; }
         br.getPage(parameter);
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().equals(MAINPAGE + "index.php")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
+        if ((MAINPAGE + "index.php").equals(br.getRedirectLocation())) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
         if (br.getRedirectLocation() != null) {
             br.getPage(br.getRedirectLocation());
         }
         final String cpPage = br.getRegex("\"(plugin/.*?)\"").getMatch(0);
-        final String sendCaptcha = "kpv.php";
+        final String sendCaptcha = "kpr.php";
         final String getList = "llinks.php";
         br.postPage(MAINPAGE + getList, "LinkName=" + postvar);
         final String[] linksCount = br.getRegex("(moc\\.tenvdacos\\.detcetorp//:ptth)").getColumn(0);
