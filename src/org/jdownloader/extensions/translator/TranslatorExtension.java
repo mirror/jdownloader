@@ -5,7 +5,6 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -585,29 +584,29 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             String file = TranslationUtils.serialize(data);
             URL url = res.getUrl();
             File newFile = null;
-            if (url != null) {
-                try {
-                    newFile = new File(url.toURI());
-                } catch (URISyntaxException e) {
-                    newFile = new File(url.getPath());
-                }
-            } else {
-                System.out.println("NO URL");
-                DynamicResourcePath rPath = h.getInterfaceClass().getAnnotation(DynamicResourcePath.class);
-                if (rPath != null) {
+            // if (url != null) {
+            // try {
+            // newFile = new File(url.toURI());
+            // } catch (URISyntaxException e) {
+            // newFile = new File(url.getPath());
+            // }
+            // } else {
+            System.out.println("NO URL");
+            DynamicResourcePath rPath = h.getInterfaceClass().getAnnotation(DynamicResourcePath.class);
+            if (rPath != null) {
 
-                    try {
-                        newFile = Application.getResource("translations/custom/" + rPath.value().newInstance().getPath() + "." + loaded.getId() + ".lng");
-                    } catch (InstantiationException e) {
-                        e.printStackTrace();
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    }
-                }
-                if (newFile == null) {
-                    newFile = Application.getResource("translations/custom/" + h.getInterfaceClass().getName().replace(".", "/") + "." + loaded.getId() + ".lng");
+                try {
+                    newFile = Application.getResource("translations/custom/" + rPath.value().newInstance().getPath() + "." + loaded.getId() + ".lng");
+                } catch (InstantiationException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
                 }
             }
+            if (newFile == null) {
+                newFile = Application.getResource("translations/custom/" + h.getInterfaceClass().getName().replace(".", "/") + "." + loaded.getId() + ".lng");
+            }
+            // }
             newFile.delete();
             newFile.getParentFile().mkdirs();
             IO.writeStringToFile(newFile, file);
