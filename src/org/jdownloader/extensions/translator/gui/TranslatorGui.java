@@ -34,6 +34,9 @@ import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.app.gui.MigPanel;
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
@@ -98,8 +101,31 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         // layout all contents in panel
         this.setContent(panel);
         initComponents();
-
         layoutPanel();
+
+        ShutdownController.getInstance().addShutdownVetoListener(new ShutdownVetoListener() {
+
+            @Override
+            public void onSilentShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
+                if (isShown()) {
+
+                    // disable autorestart if translator tab is the active one
+                    throw new ShutdownVetoException("User is translating", this);
+                }
+            }
+
+            @Override
+            public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
+            }
+
+            @Override
+            public void onShutdownVeto(ShutdownVetoException[] shutdownVetoExceptions) {
+            }
+
+            @Override
+            public void onShutdown(boolean silent) {
+            }
+        });
     }
 
     private void layoutPanel() {
@@ -393,7 +419,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
                 try {
 
-                    Dialog.I().showConfirmDialog(0, "Revert all Changes?", "All myour changes will be lost. Continue anyway?");
+                    Dialog.I().showConfirmDialog(0, "Revert all Changes?", "All your changes will be lost. Continue anyway?");
                     ProgressGetter pg = new ProgressDialog.ProgressGetter() {
 
                         @Override
