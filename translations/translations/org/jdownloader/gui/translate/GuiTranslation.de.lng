@@ -1,3 +1,6 @@
+JDGui_windowClosing_try_answer_tray=Ins Tray minimieren
+JDGui_windowClosing_try_asnwer_close=JDownloader beenden
+JDGui_windowClosing_try_title_=Ins Tray minimieren
 SettingsMenu_SettingsMenu_=Einstellungen
 gui_btn_select=Auswählen
 gui_column_host=Host
