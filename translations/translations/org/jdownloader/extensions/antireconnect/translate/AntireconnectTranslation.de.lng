@@ -1,3 +1,4 @@
+description=Deaktiviert die Reconnect Funktion automatisch falls eine oder mehrere Netzwerkbedingungen zutreffen
 gui_config_antireconnect_each=Prüfintervall (ms):
 gui_config_antireconnect_ips=Prüfe IPs (192.168.1.20-80)
 gui_config_antireconnect_mode=Modus:
@@ -11,3 +12,8 @@ gui_config_antireconnect_oldreconnect=Reconnect:
 gui_config_antireconnect_oldspeed=Downloadgeschwindigkeit in kb/s
 gui_config_antireconnect_timeout=Zeitlimit für Pings
 jd_plugins_optional_antireconnect_jdantireconnect=AntiReconnect
+mode_arp=Ping & ARP (empfohlen)
+mode_disabled=Deaktiviert
+mode_ping=Nur über Ping erkennen (Schneller)
+name=Anti Reconnect
+start_failed=Anti Reconnect konnte nicht gestartet werden. Fehler: %s1
