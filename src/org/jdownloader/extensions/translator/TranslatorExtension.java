@@ -26,6 +26,7 @@ import jd.plugins.AddonPanel;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.swing.exttable.ExtTableTranslation;
+import org.appwork.txtresource.DynamicResourcePath;
 import org.appwork.txtresource.TranslateData;
 import org.appwork.txtresource.TranslateInterface;
 import org.appwork.txtresource.TranslateResource;
@@ -592,9 +593,21 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 }
             } else {
                 System.out.println("NO URL");
-                newFile = Application.getResource("translations/custom/" + h.getInterfaceClass().getName().replace(".", "/") + "." + loaded.getId() + ".lng");
-            }
+                DynamicResourcePath rPath = h.getInterfaceClass().getAnnotation(DynamicResourcePath.class);
+                if (rPath != null) {
 
+                    try {
+                        newFile = Application.getResource("translations/custom/" + rPath.value().newInstance().getPath() + "." + loaded.getId() + ".lng");
+                    } catch (InstantiationException e) {
+                        e.printStackTrace();
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (newFile == null) {
+                    newFile = Application.getResource("translations/custom/" + h.getInterfaceClass().getName().replace(".", "/") + "." + loaded.getId() + ".lng");
+                }
+            }
             newFile.delete();
             newFile.getParentFile().mkdirs();
             IO.writeStringToFile(newFile, file);

@@ -317,9 +317,9 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             protected String getString(Account ac) {
                 AccountInfo ai = ac.getAccountInfo();
                 if (!ac.isValid()) {
-                    return _GUI._.premiumaccounttablemodel_column_trafficleft_invalid();
+                    return "";
                 } else if (ai == null) {
-                    return _GUI._.premiumaccounttablemodel_column_trafficleft_unchecked();
+                    return "";
                 } else {
                     // COL_PROGRESS = COL_PROGRESS_NORMAL;
                     if (ai.isUnlimitedTraffic()) {

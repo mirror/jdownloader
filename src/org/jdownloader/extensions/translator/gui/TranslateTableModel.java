@@ -191,9 +191,18 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
         });
 
         addColumn(new ExtTextColumn<TranslateEntry>("Key") {
+            {
+                editorField.setEditable(false);
+            }
+
             @Override
             public int getDefaultWidth() {
                 return 200;
+            }
+
+            @Override
+            public boolean isEditable(TranslateEntry obj) {
+                return true;
             }
 
             @Override

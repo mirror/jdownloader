@@ -636,12 +636,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download Traffic left" })
     String premiumaccounttablemodel_column_trafficleft();
 
-    @Default(lngs = { "en" }, values = { "" })
-    String premiumaccounttablemodel_column_trafficleft_invalid();
-
-    @Default(lngs = { "en" }, values = { "" })
-    String premiumaccounttablemodel_column_trafficleft_unchecked();
-
     @Default(lngs = { "en" }, values = { "Unlimited" })
     String premiumaccounttablemodel_column_trafficleft_unlimited();
 

@@ -51,6 +51,7 @@ public class TranslateEntry {
         source = tinterface._getHandler().getSource(method);
 
         svnEntry = svn;
+
         // validates the entry
         translation = tinterface._getHandler().getTranslation(method);
         directTranslation = tinterface._getHandler().getTranslation(method);
@@ -85,7 +86,7 @@ public class TranslateEntry {
         cntErrors = 0;
         if (!isMissing) {
             // default check
-            isDefault = translation.equals(getDefault());
+            isDefault = !tinterface._getHandler().getID().equals("en") && translation.equals(getDefault());
             // parameter check.
             validateParameterCount();
         }

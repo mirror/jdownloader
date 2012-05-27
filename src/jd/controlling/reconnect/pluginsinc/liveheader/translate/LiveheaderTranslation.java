@@ -112,7 +112,7 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Search RouterIP" })
     String GetIPAction_actionPerformed_d_title();
 
-    @Default(lngs = { "en" }, values = { "" })
+    @Default(lngs = { "en" }, values = { "Searching Router IP" })
     String GetIPAction_actionPerformed_d_msg();
 
     @Default(lngs = { "en" }, values = { "Compare Router Information" })
