@@ -19,18 +19,15 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dbank.com" }, urls = { "http://(www\\.)?dbank\\.com/download/.*?\\?f=[a-z0-9]+\\&i=\\d+\\&h=\\d+\\&v=[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dbank.com" }, urls = { "http://(www\\.)?dbankdecrypted\\.com/\\d+/.+" }, flags = { 0 })
 public class DBankCom extends PluginForHost {
 
     public DBankCom(PluginWrapper wrapper) {
@@ -47,35 +44,14 @@ public class DBankCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
-        downloadLink.setFinalFileName(Encoding.htmlDecode(new Regex(downloadLink.getDownloadURL(), "dbank\\.com/download/(.*?)\\?f=[a-z0-9]+").getMatch(0)));
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(downloadLink.getDownloadURL());
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+        final String mainlink = downloadLink.getStringProperty("mainlink");
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+        throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("hoster.dbankcom.registeredonly", "Only registered users can download"));
     }
 
     @Override
