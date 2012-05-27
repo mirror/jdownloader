@@ -28,15 +28,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 15695 $", interfaceVersion = 2, names = { "XFileShareProFolder" }, urls = { "http://(www\\.)?(uload\\.to|cosmobox\\.org|filereactor\\.com|uploadjet\\.net|fileove\\.com|rapidapk\\.com|filehost\\.ws|hyshare\\.com|(squillion\\.com|uppit\\.com)|vidhuge\\.com|nosupload\\.com|idup\\.in|potload\\.com|coraldrive\\.net|uploadbaz\\.com|simpleshare\\.org|ryushare\\.com|lafiles\\.com|clicktoview\\.org|lumfiles\\.com|bloonga\\.com|gigfiles\\.net|shareonline\\.org|downloadani\\.me|allmyvideos\\.net|dragonuploadz\\.com|movdivx\\.com|filenuke\\.com|(flashstream\\.in|xvidstage\\.com|xvidstream\\.net)|ginbig\\.com|vidbux\\.com|divxbase\\.com|batshare\\.com|queenshare\\.com|filesabc\\.com|((fiberupload|bulletupload)\\.com)|edoc\\.com|easybytez\\.com|filesabc\\.com|mojofile\\.com|fileduct\\.com)/(users/[a-z0-9_]+/.+|folder/\\d+/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 15695 $", interfaceVersion = 2, names = { "XFileShareProFolder" }, urls = { "http://(www\\.)?(orangefiles\\.com|filecosy\\.com|squillion\\.com|ufile\\.eu|fileor\\.com|filesega\\.com|qtyfiles\\.com|pizzaupload\\.com|filesbb\\.com|free\\-uploading\\.com|megaul\\.com|megaup1oad\\.net|fireuploads\\.net|filestay\\.com|(elitedisk\\.com|igetfile\\.com|pandamemo\\.com)|free\\-uploading\\.com|uload\\.to|cosmobox\\.org|filereactor\\.com|uploadjet\\.net|fileove\\.com|rapidapk\\.com|filehost\\.ws|hyshare\\.com|(squillion\\.com|uppit\\.com)|vidhuge\\.com|nosupload\\.com|idup\\.in|potload\\.com|coraldrive\\.net|uploadbaz\\.com|simpleshare\\.org|ryushare\\.com|lafiles\\.com|clicktoview\\.org|lumfiles\\.com|bloonga\\.com|gigfiles\\.net|shareonline\\.org|downloadani\\.me|allmyvideos\\.net|dragonuploadz\\.com|movdivx\\.com|filenuke\\.com|(flashstream\\.in|xvidstage\\.com|xvidstream\\.net)|ginbig\\.com|vidbux\\.com|divxbase\\.com|batshare\\.com|queenshare\\.com|filesabc\\.com|((fiberupload|bulletupload)\\.com)|edoc\\.com|easybytez\\.com|filesabc\\.com|mojofile\\.com|fileduct\\.com)/(users/[a-z0-9_]+/.+|folder/\\d+/.+)" }, flags = { 0 })
 public class XFileShareProFolder extends PluginForDecrypt {
 
     // DEV NOTES
     // other: keep last /.+ for fpName. Not needed otherwise.
-    // other: group sister sites or aliased domains together for easy of
-    // maintance.
-    // TODO: add spanning folders + page support, at this stage it's not
-    // important.
+    // other: group sister sites or aliased domains together for easy of maintance.
+    // TODO: add spanning folders + page support, at this stage it's not important.
     // TODO: remove old xfileshare folder plugins after next major update.
 
     private String HOST = "";

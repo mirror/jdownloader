@@ -51,19 +51,19 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 16510 $", interfaceVersion = 2, names = { "squillion.com" }, urls = { "https?://(www\\.)?squillion\\.com/[a-z0-9]{12}" }, flags = { 2 })
-public class SquillionCom extends PluginForHost {
+@HostPlugin(revision = "$Revision: 16510 $", interfaceVersion = 2, names = { "filecosy.com" }, urls = { "https?://(www\\.)?filecosy\\.com/[a-z0-9]{12}" }, flags = { 2 })
+public class FileCosyCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST                  = "http://squillion.com";
+    private final String         COOKIE_HOST                  = "http://filecosy.com";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
@@ -71,13 +71,13 @@ public class SquillionCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.3-raz
-    // mods: available status,
-    // non account: 2 * 1
-    // free account: same as above not tested
-    // premium account: 10 * 1
-    // protocol: no https
-    // captchatype: recaptcha
-    // other: no redirects. available status info in html comments
+    // mods:
+    // non account: unknown, admin has lame limitations to get ppl to buy premium
+    // free account:
+    // premium account: 20 * unlimited
+    // protocol: has https, not setup correctly
+    // captchatype: null 4dignum recaptcha, unknown...
+    // other: no redirects
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -89,14 +89,14 @@ public class SquillionCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public SquillionCom(PluginWrapper wrapper) {
+    public FileCosyCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return false;
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -121,27 +121,21 @@ public class SquillionCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(br, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
+        String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
-            filename = new Regex(br, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+            filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
             if (filename == null) {
-                filename = new Regex(br, "<h2>Download File(.*?)</h2>").getMatch(0);
+                filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = new Regex(br, "File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                    filename = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                 }
             }
         }
-        String filesize = new Regex(br, "\\(([0-9]+ bytes)\\)").getMatch(0);
+        String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
-            filesize = new Regex(br, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+            filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
-                filesize = new Regex(br, "([\\d\\.]+ ?(KB|MB|GB))(<[^>]+> ?)+?\\]</h3>").getMatch(0);
-                if (filesize == null) {
-                    filesize = new Regex(br, "<p>([\\d\\.]+ ?(KB|MB|GB))</p>").getMatch(0);
-                    if (filesize == null) {
-                        filesize = new Regex(br, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
-                    }
-                }
+                filesize = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
@@ -164,7 +158,7 @@ public class SquillionCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, true, 0, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -304,14 +298,14 @@ public class SquillionCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
-     * allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download
-     * sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival
-     * does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting
-     * peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots
-     * are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -425,7 +419,7 @@ public class SquillionCom extends PluginForHost {
         if (correctedBR.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         if (correctedBR.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file You requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>Sorry this file is available for Premium Users)").matches()) {
+        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
@@ -548,8 +542,8 @@ public class SquillionCom extends PluginForHost {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
                 try {
-                    maxPrem.set(1);
-                    account.setMaxSimultanDownloads(1);
+                    maxPrem.set(-1);
+                    account.setMaxSimultanDownloads(-1);
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
                 }
@@ -581,7 +575,6 @@ public class SquillionCom extends PluginForHost {
                     }
                 }
                 getPage(COOKIE_HOST + "/login.html");
-                // Form loginform = br.getForm(0);
                 Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
@@ -620,7 +613,7 @@ public class SquillionCom extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             getPage(link.getDownloadURL());
-            doFree(link, true, -2, "freelink2");
+            doFree(link, true, 0, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
