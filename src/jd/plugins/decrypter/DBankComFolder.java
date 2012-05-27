@@ -42,35 +42,26 @@ public class DBankComFolder extends PluginForDecrypt {
         br.setCustomCharset("utf-8");
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.getURL().contains("dbank.com/linknotexist.html") || br.containsHTML("(>抱歉，此外链不存在。|1、你输入的地址错误；<br/>|2、外链中含非法内容；<br />|3、创建外链的文件还没有上传到服务器，请稍后再试。<br /><br />)")) return decryptedLinks;
-        String fpName = br.getRegex("<title>(.*?)\\–华为网盘\\|资源共享-文件备份\\-免费网络硬盘</title>").getMatch(0);
+        if (br.getURL().contains("dbank.com/linknotexist.html") || br.containsHTML("(>抱歉，此外链不存在。|1、你输入的地址错误；<br/>|2、外链中含非法内容；<br />|3、创建外链的文件还没有上传到服务器，请稍后再试。<br /><br />)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        String fpName = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("name=\"title\" id=\"titleV\" value=\"(.*?)\"").getMatch(0);
-            if (fpName == null) {
-                fpName = br.getRegex("<h2 id=\"title\" class=\"tit\">(.*?)</h2>").getMatch(0);
-            }
+            fpName = br.getRegex("<h1  id=\"link_title\">([^<>\"]*?)</h1>").getMatch(0);
         }
-        boolean details = true;
-        String[][] links = br.getRegex("\"(http://(www\\.)?dbank\\.com/download/([^/<>]+)\\?f=[a-z0-9]+\\&i=\\d+\\&h=\\d+\\&v=[a-z0-9]+)(\\&ip=[0-9\\.]+)?\" class=\"gbtn btn\\-xz\">下载</a>[\t\n\r ]+<em title=\"[^<>\"/]+\" name=\"delete_Icon\" onclick=\"deleteLinkFile\\(this\\);\" class=\"gbtn btn\\-sc\">删除</em>[\t\n\r ]+</span>[\t\n\r ]+<strong>([^<>\"]*?)</strong>").getMatches();
-        if (links == null || links.length == 0) {
-            details = false;
-            links = br.getRegex("\"(http://(www\\.)?dbank\\.com/download/[^/<>]+\\?f=[a-z0-9]+\\&i=\\d+\\&h=\\d+\\&v=[a-z0-9]+)(\\&ip=[0-9\\.]+)?\"").getMatches();
-        }
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        if (details) {
-            for (String singleLink[] : links) {
-                DownloadLink dl = createDownloadlink(singleLink[0]);
-                dl.setDownloadSize(SizeFormatter.getSize(singleLink[4] + "b"));
-                dl.setFinalFileName(Encoding.htmlDecode(singleLink[2].trim()));
+        final String[][] linkInformation = br.getRegex("\"name\":\"([^<>\"]*?)\".*?\"size\":(\\d+).*?\"downloadurl\":\"([^<>\"]*?)\"").getMatches();
+        if (linkInformation != null && linkInformation.length != 0) {
+            for (final String[] linkInfo : linkInformation) {
+                final String finalfilename = Encoding.htmlDecode(linkInfo[0].trim());
+                DownloadLink dl = createDownloadlink("http://dbankdecrypted.com/" + System.currentTimeMillis() + "/" + finalfilename);
+                dl.setDownloadSize(SizeFormatter.getSize(linkInfo[1] + "b"));
+                dl.setFinalFileName(finalfilename);
                 dl.setAvailable(true);
+                dl.setProperty("premiumonly", true);
+                dl.setProperty("plainfilename", linkInfo[0]);
+                dl.setProperty("mainlink", parameter);
                 decryptedLinks.add(dl);
-            }
-        } else {
-            for (String singleLink[] : links) {
-                decryptedLinks.add(createDownloadlink(singleLink[0]));
             }
         }
         if (fpName != null) {

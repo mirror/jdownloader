@@ -45,7 +45,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class Freaksharenet extends PluginForHost {
 
     private boolean             NOPREMIUM          = false;
-
     private static final String WAIT1              = "WAIT1";
     private static int          MAXPREMDLS         = -1;
     private static final String MAXDLSLIMITMESSAGE = "Sorry, you cant download more then";

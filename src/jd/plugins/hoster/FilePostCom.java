@@ -301,7 +301,8 @@ public class FilePostCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        // Force login because of cookie bug
+        login(account, true);
         br.setFollowRedirects(true);
         br.setCookie("http://filepost.com", "lang", "1");
         br.getPage(link.getDownloadURL());

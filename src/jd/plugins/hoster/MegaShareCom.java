@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.JDHash;
@@ -38,6 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -46,11 +49,13 @@ public class MegaShareCom extends PluginForHost {
 
     private static final String UA     = RandomUserAgent.generate();
     private Form                DLFORM = null;
+    private static final String WAIT1  = "WAIT1";
 
     public MegaShareCom(final PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(2000l);
         this.enablePremium("http://www.megashare.com/premium.php");
+        setConfigElements();
     }
 
     @Override
@@ -133,10 +138,13 @@ public class MegaShareCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.forceDebug(true);
+        final boolean waitReconnecttime = getPluginConfig().getBooleanProperty(WAIT1);
         final String reconnectWaittime = br.getRegex("var cTmr = (\\d+);").getMatch(0);
+        int rWait = 10;
         final String cDelay = br.getRegex("(var )?cDly ?= ?(\\d+);").getMatch(1);
         if (reconnectWaittime != null) {
-            if (Integer.parseInt(reconnectWaittime) >= 299) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 1001l); }
+            rWait = Integer.parseInt(reconnectWaittime);
+            if ((rWait > 120 && !waitReconnecttime) || rWait > 1800) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, rWait * 1001l); }
         }
         /* FORM_POST_1 */
         final List<String> remove = new ArrayList<String>();
@@ -145,16 +153,12 @@ public class MegaShareCom extends PluginForHost {
         if (DLFORM == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         DLFORM.put("wComp", "1");
         /* waittime */
-        int wait = 10;
         long cDly = 1001;
-        if (reconnectWaittime != null) {
-            wait = Integer.parseInt(reconnectWaittime);
-        }
         if (cDelay != null) {
             cDly = Long.parseLong(cDelay);
             cDly = cDly + cDly / 1000;
         }
-        sleep(wait * cDly, downloadLink);
+        sleep(rWait * cDly, downloadLink);
         br.submitForm(DLFORM);
         /** Filesize can't be set in linkgrabber, we set it here */
         final String filesize = br.getRegex("\\'>File Size: </span>([^<>\"/\\']*?)</div>").getMatch(0);
@@ -289,6 +293,11 @@ public class MegaShareCom extends PluginForHost {
         br.postPage("http://www.megashare.com/login.php", post);
         br.setFollowRedirects(false);
         if (br.getCookie("http://www.megashare.com", "username") == null || br.getCookie("http://www.megashare.com", "password") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+    }
+
+    private void setConfigElements() {
+        final ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.megasharecom.waitInsteadOfReconnect", "Wait and download instead of reconnecting if wait time is under 10 minutes")).setDefaultValue(true);
+        getConfig().addEntry(cond);
     }
 
     @Override
