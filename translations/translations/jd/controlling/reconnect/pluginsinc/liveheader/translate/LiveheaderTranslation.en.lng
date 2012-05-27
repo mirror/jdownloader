@@ -23,6 +23,7 @@ EditScriptAction_EditScriptAction_=Edit Script
 EditScriptAction_EditScriptAction_tt=Enter an own Reconnect Script, or modify the existing one.
 GetIPAction_GetIPAction_=Get RouterIP
 GetIPAction_GetIPAction_tt=Scans your Network and tries to find your Router's IP
+GetIPAction_actionPerformed_d_msg=Searching Router IP
 GetIPAction_actionPerformed_d_title=Search RouterIP
 GetIPAction_getString_progress=Scanning Network...
 GetIPAction_getTooltipText_tt_2=Current Router Ip Settings: %s1.Click here to scan your Network and validate this IP.
