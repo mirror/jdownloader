@@ -16,4 +16,4 @@ gui_config_reconnect_selectrouter_example=Beispiel: 3Com ADSL
 gui_config_routeripfinder_notfound=Konnte den Router Hostnamen nicht finden
 gui_config_routeripfinder_ready=IP gefunden: %s1
 gui_fengshuiconfig_routerip=Router-IP
-jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Du hast den IP Check abgeschaltet. Das wird die Reconnectzeit stark verlängern!\r\n\r\n Weitere Module wie der Reconnect Recorder werden ebenfalls nicht funktionieren.
+jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Du hast den IP Check abgeschaltet. Das wird die Reconnectzeit stark verlängern!\n\n\n\n Weitere Module wie der Reconnect Recorder werden ebenfalls nicht funktionieren.
