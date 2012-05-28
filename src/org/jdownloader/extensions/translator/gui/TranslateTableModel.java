@@ -423,7 +423,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
             @Override
             protected void runInEDT() {
                 clear();
-                addAllElements(extension.getTranslationEntries().toArray(new TranslateEntry[] {}));
+                if (extension.getTranslationEntries() != null) addAllElements(extension.getTranslationEntries().toArray(new TranslateEntry[] {}));
             }
         };
     }

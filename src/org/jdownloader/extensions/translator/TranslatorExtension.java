@@ -66,8 +66,7 @@ import org.tmatesoft.svn.core.wc.SVNCommitPacket;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 
 /**
- * Extensionclass. NOTE: All extensions have to follow the namescheme to end
- * with "Extension" and have to extend AbstractExtension
+ * Extensionclass. NOTE: All extensions have to follow the namescheme to end with "Extension" and have to extend AbstractExtension
  * 
  * @author thomas
  * 
@@ -90,6 +89,12 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
      */
     private TLocale                        loaded;
     private TranslatorExtensionEventSender eventSender;
+    private Thread                         timer;
+    private String                         fontname;
+
+    public String getFontname() {
+        return fontname;
+    }
 
     public static void main(String[] args) {
         ArrayList<File> files = Files.getFiles(new FileFilter() {
@@ -200,8 +205,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     /**
-     * Has to return the Extension MAIN Icon. This icon will be used,for
-     * example, in the settings pane
+     * Has to return the Extension MAIN Icon. This icon will be used,for example, in the settings pane
      */
     @Override
     public ImageIcon getIcon(int size) {
@@ -214,6 +218,10 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     @Override
     protected void stop() throws StopException {
         Log.L.finer("Stopped " + getClass().getSimpleName());
+        if (timer != null) {
+            timer.interrupt();
+            timer = null;
+        }
     }
 
     /**
@@ -222,6 +230,39 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     @Override
     protected void start() throws StartException {
         Log.L.finer("Started " + getClass().getSimpleName());
+        timer = new Thread("TranslatorSyncher") {
+            public void run() {
+                try {
+                    while (true) {
+                        Thread.sleep(1 * 60 * 1000);
+
+                        if (getGUI().isShown()) {
+                            if (loggedIn) {
+
+                                refresh();
+                            }
+
+                        }
+
+                    }
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        timer.start();
+    }
+
+    protected void refresh() throws InterruptedException {
+        if (loaded != null) {
+            try {
+                write();
+                load(loaded);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     /**
@@ -240,8 +281,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     /**
-     * Returns the Settingspanel for this extension. If this extension does not
-     * have a configpanel, null can be returned
+     * Returns the Settingspanel for this extension. If this extension does not have a configpanel, null can be returned
      */
     @Override
     public ExtensionConfigPanel<?> getConfigPanel() {
@@ -292,6 +332,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     public void load(TLocale locale) throws InterruptedException {
         if (locale == null) return;
         loaded = locale;
+
         getSettings().setLastLoaded(locale.getId());
         try {
             List<SVNDirEntry> svnEntries = null;
@@ -320,7 +361,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             load(tmp, svnEntries, locale, ExternInterfaceTranslation.class);
             load(tmp, svnEntries, locale, ExternTranslation.class);
             load(tmp, svnEntries, locale, ExtTableTranslation.class);
-            load(tmp, svnEntries, locale, GuiTranslation.class);
+            GuiTranslation guiInterface = load(tmp, svnEntries, locale, GuiTranslation.class);
+            fontname = guiInterface.fontname();
+            if (fontname.equalsIgnoreCase("default")) fontname = "Tahoma";
             load(tmp, svnEntries, locale, JdownloaderTranslation.class);
             load(tmp, svnEntries, locale, LiveheaderTranslation.class);
             load(tmp, svnEntries, locale, StandaloneUpdaterTranslation.class);
@@ -359,7 +402,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     }
 
-    private void load(ArrayList<TranslateEntry> tmp, List<SVNDirEntry> svnEntries, TLocale locale, Class<? extends TranslateInterface> class1) {
+    private <T extends TranslateInterface> T load(ArrayList<TranslateEntry> tmp, List<SVNDirEntry> svnEntries, TLocale locale, Class<T> class1) {
         Log.L.info("Load Translation " + locale + " " + class1);
         String lookupPath = class1.getName().replace(".", "/") + "." + locale.getId() + ".lng";
         SVNDirEntry svn = null;
@@ -380,6 +423,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         for (Method m : t._getHandler().getMethods()) {
             tmp.add(new TranslateEntry(t, m, svn));
         }
+        return (T) t;
 
     }
 
@@ -407,6 +451,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     private void setLoggedIn(boolean loggedIn) {
         this.loggedIn = loggedIn;
+        getEventSender().fireEvent(new TranslatorExtensionEvent(this, TranslatorExtensionEvent.Type.LOGIN_STATUS_CHANGED));
     }
 
     public void doLogin() throws InterruptedException {
@@ -426,6 +471,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         getSettings().setSVNUser(null);
         getSettings().setSVNPassword(null);
         getSettings().setRememberLoginsEnabled(false);
+        loaded = null;
+        translationEntries = null;
+        setLoggedIn(false);
 
     }
 

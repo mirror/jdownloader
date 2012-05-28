@@ -128,6 +128,7 @@ public class JDUpdater extends AppUpdater {
 
         // try to install plugins without restart
         if (next.getName().equals("build.json")) return true;
+        if (next.getName().endsWith(".lng")) return true;
         if (!jars) {
             // only direct update class files if all jars are up2date
             String p = next.getAbsolutePath();
@@ -158,8 +159,7 @@ public class JDUpdater extends AppUpdater {
     }
 
     /**
-     * Create a new instance of JDUpdater. This is a singleton class. Access the
-     * only existing instance by using {@link #getInstance()}.
+     * Create a new instance of JDUpdater. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private JDUpdater() {
         super();

@@ -13,7 +13,9 @@ public class TranslatorExtensionEventSender extends Eventsender<TranslatorExtens
         case REFRESH_DATA:
             listener.refresh();
             break;
-
+        case LOGIN_STATUS_CHANGED:
+            listener.onLogInOrOut();
+            break;
         // fill
         default:
             System.out.println("Unhandled Event: " + event);

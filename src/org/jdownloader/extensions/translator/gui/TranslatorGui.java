@@ -34,9 +34,6 @@ import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.app.gui.MigPanel;
-import org.appwork.shutdown.ShutdownController;
-import org.appwork.shutdown.ShutdownVetoException;
-import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
@@ -65,6 +62,8 @@ import org.jdownloader.images.NewTheme;
 import org.tmatesoft.svn.core.wc.SVNCommitItem;
 import org.tmatesoft.svn.core.wc.SVNCommitPacket;
 
+import de.javasoft.plaf.synthetica.SyntheticaLookAndFeel;
+
 /**
  * Extension gui
  * 
@@ -82,6 +81,13 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     private MigPanel            menuPanel;
     private JLabel              lbl;
     private Timer               ti;
+    private ExtButton           logout;
+    private ExtButton           load;
+    private ExtButton           save;
+    private ExtButton           wizard;
+    private ExtButton           revert;
+    private ExtButton           restart;
+    private JScrollPane         sp;
 
     public TranslatorGui(TranslatorExtension plg) {
         super(plg);
@@ -103,33 +109,10 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         initComponents();
         layoutPanel();
 
-        ShutdownController.getInstance().addShutdownVetoListener(new ShutdownVetoListener() {
-
-            @Override
-            public void onSilentShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
-                if (isShown()) {
-
-                    // disable autorestart if translator tab is the active one
-                    throw new ShutdownVetoException("User is translating", this);
-                }
-            }
-
-            @Override
-            public void onShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
-            }
-
-            @Override
-            public void onShutdownVeto(ShutdownVetoException[] shutdownVetoExceptions) {
-            }
-
-            @Override
-            public void onShutdown(boolean silent) {
-            }
-        });
     }
 
     private void layoutPanel() {
-        panel.add(new JScrollPane(table), "spanx 2");
+        panel.add(sp = new JScrollPane(table), "spanx 2");
 
     }
 
@@ -153,7 +136,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
         menuPanel = new MigPanel("ins 0", "[]3[]3[][grow,fill][][]5[]", "[grow,fill]");
 
-        menuPanel.add(new ExtButton(new AppAction() {
+        menuPanel.add(load = new ExtButton(new AppAction() {
             {
                 setName("Load Translation");
             }
@@ -251,7 +234,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             }
         }));
 
-        menuPanel.add(new ExtButton(new AppAction() {
+        menuPanel.add(save = new ExtButton(new AppAction() {
             {
                 setName("Save");
                 setAccelerator("CTRL+S");
@@ -262,7 +245,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                 save();
             }
         }));
-        menuPanel.add(new ExtButton(new AppAction() {
+        menuPanel.add(wizard = new ExtButton(new AppAction() {
             {
                 setName("Wizard");
 
@@ -406,9 +389,10 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             }
         }));
         menuPanel.add(Box.createHorizontalGlue());
-        ExtButton bt;
-        menuPanel.add(bt = new ExtButton(new AppAction() {
+
+        menuPanel.add(revert = new ExtButton(new AppAction() {
             {
+                setName("Revert");
                 setSmallIcon(NewTheme.I().getIcon("undo", 18));
                 setTooltipText("Revert all your changes");
 
@@ -460,11 +444,12 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                     e1.printStackTrace();
                 }
             }
-        }), "width 22!");
-        bt.setRolloverEffectEnabled(true);
+        }));
+        // bt.setRolloverEffectEnabled(true);
 
-        menuPanel.add(bt = new ExtButton(new AppAction() {
+        menuPanel.add(restart = new ExtButton(new AppAction() {
             {
+                setName("Restart");
                 setSmallIcon(NewTheme.I().getIcon("restart", 18));
                 setTooltipText("Restart JDownloader to test the translation.");
 
@@ -477,8 +462,30 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                 JDRestartController.getInstance().directRestart(true);
 
             }
-        }), "width 22!");
-        bt.setRolloverEffectEnabled(true);
+        }));
+        menuPanel.add(logout = new ExtButton(new AppAction() {
+            {
+                setName("Logout");
+                setSmallIcon(NewTheme.I().getIcon("logout", 18));
+
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (getExtension().isLoggedIn()) {
+                    getExtension().doLogout();
+
+                } else {
+                    try {
+                        getExtension().doLogin();
+                    } catch (InterruptedException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+
+            }
+        }));
+
         menuPanel.add(new JSeparator(JSeparator.VERTICAL));
         menuPanel.add(lbl = new JLabel(), "aligny center");
 
@@ -598,13 +605,13 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     /**
-     * Is called if gui is visible now, and has not been visible before. For
-     * example, user starte the extension, opened the view, or switched form a
-     * different tab to this one
+     * Is called if gui is visible now, and has not been visible before. For example, user starte the extension, opened the view, or
+     * switched form a different tab to this one
      */
     @Override
     protected void onShow() {
         ti.start();
+        JDRestartController.getInstance().setSilentRestartAllowed(false);
         Log.L.finer("Shown " + getClass().getSimpleName());
         if (getExtension().isLoggedIn()) return;
         ProgressGetter pg = new ProgressDialog.ProgressGetter() {
@@ -644,13 +651,14 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     /**
-     * gets called of the extensiongui is not visible any more. for example
-     * because it has been closed or user switched to a different tab/view
+     * gets called of the extensiongui is not visible any more. for example because it has been closed or user switched to a different
+     * tab/view
      */
     @Override
     protected void onHide() {
         Log.L.finer("hidden " + getClass().getSimpleName());
         ti.stop();
+        JDRestartController.getInstance().setSilentRestartAllowed(true);
     }
 
     public TLocale getLoaded() {
@@ -698,7 +706,26 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     public void refresh() {
-        tableModel.refresh(getExtension());
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                String desiredFont = getExtension().getFontname();
+                if (!desiredFont.equals(SyntheticaLookAndFeel.getFontName())) {
+                    // switch fontname. create ne table to use the new font
+                    SyntheticaLookAndFeel.setFont(desiredFont, SyntheticaLookAndFeel.getFontSize());
+                    tableModel = new TranslateTableModel();
+                    table.getSelectionModel().removeListSelectionListener(TranslatorGui.this);
+                    table = new TranslateTable(getExtension(), tableModel);
+                    table.getSelectionModel().addListSelectionListener(TranslatorGui.this);
+                    sp.getViewport().setView(table);
+
+                }
+
+                tableModel.refresh(getExtension());
+            }
+        };
+
     }
 
     public void valueChanged(ListSelectionEvent e) {
@@ -712,6 +739,33 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             @Override
             protected void runInEDT() {
                 refresh();
+
+            }
+        };
+    }
+
+    @Override
+    public void onLogInOrOut() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (!getExtension().isLoggedIn()) {
+                    refresh();
+                    logout.setText("Login");
+                    load.setEnabled(false);
+                    save.setEnabled(false);
+                    revert.setEnabled(false);
+                    restart.setEnabled(false);
+
+                } else {
+                    logout.setText("Logout");
+
+                    load.setEnabled(true);
+                    save.setEnabled(true);
+                    revert.setEnabled(true);
+                    restart.setEnabled(true);
+                }
 
             }
         };

@@ -7,6 +7,7 @@ public class TranslatorExtensionEvent extends SimpleEvent<Object, Object, Transl
     public static enum Type {
         LOADED_TRANSLATION,
         REFRESH_DATA,
+        LOGIN_STATUS_CHANGED,
     }
 
     public TranslatorExtensionEvent(Object caller, Type type, Object... parameters) {

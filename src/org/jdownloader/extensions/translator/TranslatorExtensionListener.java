@@ -8,4 +8,6 @@ public interface TranslatorExtensionListener extends EventListener {
 
     void refresh();
 
+    void onLogInOrOut();
+
 }

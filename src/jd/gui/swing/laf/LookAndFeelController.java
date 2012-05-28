@@ -34,6 +34,7 @@ import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
@@ -42,8 +43,7 @@ public class LookAndFeelController {
     private static final LookAndFeelController INSTANCE                                                      = new LookAndFeelController();
 
     /**
-     * get the only existing instance of LookAndFeelController. This is a
-     * singleton
+     * get the only existing instance of LookAndFeelController. This is a singleton
      * 
      * @return
      */
@@ -57,8 +57,8 @@ public class LookAndFeelController {
     private String                         laf = null;
 
     /**
-     * Create a new instance of LookAndFeelController. This is a singleton
-     * class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of LookAndFeelController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private LookAndFeelController() {
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
@@ -227,8 +227,7 @@ public class LookAndFeelController {
     }
 
     /**
-     * Returns if currently a substance look and feel is selected. Not very
-     * fast.. do not use this in often used methods
+     * Returns if currently a substance look and feel is selected. Not very fast.. do not use this in often used methods
      * 
      * @return
      */
@@ -251,14 +250,22 @@ public class LookAndFeelController {
         // config.setFontScaleFactor(100);
         int fontSize = config.getFontScaleFactor();
         String fontName = config.getFontName();
-
+        String fontFromTranslation = _GUI._.fontname();
         ExtTooltip.createConfig(ExtTooltip.DEFAULT).setForegroundColor(getLAFOptions().getTooltipForegroundColor());
         if (isSynthetica()) {
             ExtPasswordField.MASK = "******";
+
             try {
-                if ("default".equalsIgnoreCase(fontName)) fontName = de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontName();
+                if ("default".equalsIgnoreCase(fontName)) {
+                    if ("default".equalsIgnoreCase(fontFromTranslation)) {
+                        fontName = de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontName();
+                    } else {
+                        fontName = fontFromTranslation;
+                    }
+                }
                 int newSize = (de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontSize() * fontSize) / 100;
                 de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setFont(fontName, newSize);
+
                 UIManager.put("ExtTable.SuggestedFontHeight", newSize);
             } catch (final Throwable e) {
                 Log.exception(e);
@@ -319,10 +326,8 @@ public class LookAndFeelController {
             UIManager.put("Synthetica.window.opaque", true);
         }
         /*
-         * NOTE: This Licensee Information may only be used by AppWork UG. If
-         * you like to create derived creation based on this sourcecode, you
-         * have to remove this license key. Instead you may use the FREE Version
-         * of synthetica found on javasoft.de
+         * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this sourcecode,
+         * you have to remove this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
          */
         try {
             /* we save around x-400 ms here by not using AES */

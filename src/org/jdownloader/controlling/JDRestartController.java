@@ -14,14 +14,15 @@ public class JDRestartController extends RestartController {
     private static final JDRestartController INSTANCE = new JDRestartController();
 
     /**
-     * get the only existing instance of JDRestartController. This is a
-     * singleton
+     * get the only existing instance of JDRestartController. This is a singleton
      * 
      * @return
      */
     public static JDRestartController getInstance() {
         return JDRestartController.INSTANCE;
     }
+
+    private boolean silentRestartAllowed;
 
     public void onShutdown(boolean silent) {
 
@@ -43,8 +44,8 @@ public class JDRestartController extends RestartController {
     }
 
     /**
-     * Create a new instance of JDRestartController. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of JDRestartController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private JDRestartController() {
         super();
@@ -56,7 +57,7 @@ public class JDRestartController extends RestartController {
         new Thread("Wait For Restart") {
             public void run() {
                 while (true) {
-                    if (System.currentTimeMillis() - CopyCutPasteHandler.getInstance().getLastMouseEvent() > 20000) {
+                    if (System.currentTimeMillis() - CopyCutPasteHandler.getInstance().getLastMouseEvent() > 20000 && silentRestartAllowed) {
                         // wait until there is no mousevent
                         if (JDUpdater.getInstance().getBranch() != null && !JDUpdater.getInstance().isSelfUpdateRequested()) {
                             RestartViaUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());
@@ -64,6 +65,7 @@ public class JDRestartController extends RestartController {
                         JsonConfig.create(GeneralSettings.class).setSilentRestart(true);
                         setSilentShutDownEnabled(true);
                         restartViaUpdater(false);
+                        return;
                         // setSilentShutDownEnabled(false);
                         // RestartViaUpdaterEvent.getInstance().setBootstrappath(null);
                     }
@@ -76,6 +78,10 @@ public class JDRestartController extends RestartController {
             }
         }.start();
 
+    }
+
+    public void setSilentRestartAllowed(boolean b) {
+        silentRestartAllowed = b;
     }
 
 }

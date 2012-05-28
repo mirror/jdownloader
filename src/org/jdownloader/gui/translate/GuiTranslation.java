@@ -2136,4 +2136,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Delete Selection" })
     String RemoveOptionsAction_actionPerformed_selection_();
 
+    @Default(lngs = { "en" }, values = { "default" })
+    String fontname();
+
 }
