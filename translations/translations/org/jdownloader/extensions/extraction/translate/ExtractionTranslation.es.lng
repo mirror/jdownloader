@@ -21,4 +21,5 @@ plugins_optional_extraction_status_queued=En lista de extracción
 settings_extract_to_archive_folder=Extraer en la siguiente carpeta
 settings_extract_to_path=Extraer en
 settings_extractto=Carpeta de extracción
+settings_subpath_minnum2=... solo si el achivo raiz contiene >
 settings_use_subpath=Crear subcarpeta
