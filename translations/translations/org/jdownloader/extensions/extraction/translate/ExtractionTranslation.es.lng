@@ -1,3 +1,6 @@
+contextmenu_main=Archivo(s)
+online_tt=Enlace disponible
+password=Contraseña de extracción para %s1
 plugins_optional_extraction_crcerrorin=Extracción fallida (CRC en %s1)
 plugins_optional_extraction_error_extrfailedcrc=Extracción fallida (Error de CRC en archivo desconocido)
 plugins_optional_extraction_filefilter=Todos los formatos soportados

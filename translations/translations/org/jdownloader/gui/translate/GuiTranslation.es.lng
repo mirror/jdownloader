@@ -1,3 +1,9 @@
+action_addcontainer=Añadir contenedor
+action_log_tooltip=Mostrar Log
+action_restart=Reiniciar
+authtablemodel_column_username=Usuario
+downloadview_all=Todas las descargas
+extensiontablemodel_column_enabled=Activado/Desactivado
 gui_btn_select=Seleccionar
 gui_column_defaultproxy=Proxy por defecto
 gui_column_host=Servidor
