@@ -326,9 +326,15 @@ public class TurboBitNet extends PluginForHost {
         if (res != null && res.matches(tb(10))) {
             sleep(tt * 1001, downloadLink);
             br.getPage(res);
-            downloadUrl = br.getRegex("<a href=\\'(.*?)\\'>").getMatch(0);
+            downloadUrl = br.getRegex("<a alt=\'link\' href=\'([^\']+)").getMatch(0);
+            if (downloadUrl != null) {
+                downloadUrl = downloadUrl.replaceAll("http://(www\\.)?turbobit\\.net", "");
+                if (downloadUrl.equals("/download/free/" + id)) {
+                    downloadUrl = null;
+                }
+            }
             if (downloadUrl == null) {
-                downloadUrl = br.getRegex("\\(\"href\"\\)==\"(.*?)\"\\)").getMatch(0);
+                downloadUrl = br.getRegex("\\(\"href\"\\)==\"[^\"]+").getMatch(0);
                 if (downloadUrl == null) {
                     downloadUrl = rhino(escape(br.toString()) + "@" + rtUpdate, 999);
                 }
