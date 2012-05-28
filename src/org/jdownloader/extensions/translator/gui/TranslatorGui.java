@@ -408,8 +408,11 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
                         @Override
                         public void run() throws Exception {
-                            getExtension().revert();
-
+                            try {
+                                getExtension().revert();
+                            } catch (Throwable e) {
+                                Dialog.getInstance().showExceptionDialog("Error", e.getLocalizedMessage(), e);
+                            }
                         }
 
                         @Override
@@ -618,8 +621,11 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
             @Override
             public void run() throws Exception {
-                getExtension().doLogin();
-
+                try {
+                    getExtension().doLogin();
+                } catch (Throwable e) {
+                    Dialog.getInstance().showExceptionDialog("Error", e.getLocalizedMessage(), e);
+                }
             }
 
             @Override
@@ -671,10 +677,12 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
             @Override
             public void run() throws Exception {
-
-                getExtension().write();
-                getExtension().load(locale);
-
+                try {
+                    getExtension().write();
+                    getExtension().load(locale);
+                } catch (Throwable e) {
+                    Dialog.getInstance().showExceptionDialog("Error", e.getLocalizedMessage(), e);
+                }
             }
 
             @Override
@@ -711,7 +719,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             @Override
             protected void runInEDT() {
                 String desiredFont = getExtension().getFontname();
-                if (!desiredFont.equals(SyntheticaLookAndFeel.getFontName())) {
+                if (desiredFont != null && !desiredFont.equals(SyntheticaLookAndFeel.getFontName())) {
                     // switch fontname. create ne table to use the new font
                     SyntheticaLookAndFeel.setFont(desiredFont, SyntheticaLookAndFeel.getFontSize());
                     tableModel = new TranslateTableModel();
@@ -723,6 +731,13 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                 }
 
                 tableModel.refresh(getExtension());
+                if (getExtension().getLoadedLocale() != null) {
+                    restart.setEnabled(true);
+                    restart.setText("Restart in " + getExtension().getLoadedLocale().getLocale().getDisplayName(getExtension().getLoadedLocale().getLocale()));
+                } else {
+                    restart.setEnabled(false);
+                }
+
             }
         };
 
@@ -757,6 +772,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                     save.setEnabled(false);
                     revert.setEnabled(false);
                     restart.setEnabled(false);
+                    wizard.setEnabled(false);
 
                 } else {
                     logout.setText("Logout");
@@ -764,6 +780,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                     load.setEnabled(true);
                     save.setEnabled(true);
                     revert.setEnabled(true);
+                    wizard.setEnabled(true);
                     restart.setEnabled(true);
                 }
 

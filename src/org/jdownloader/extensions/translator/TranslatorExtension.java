@@ -339,8 +339,15 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             // List<SVNDirEntry> svnEntries = listSvnLngFileEntries();
 
             ArrayList<TranslateEntry> tmp = new ArrayList<TranslateEntry>();
+
             Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
-            s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+            try {
+                s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+            } catch (SVNException e) {
+                Log.exception(e);
+                s.cleanUp(Application.getResource("translations/custom"), true);
+                s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+            }
             s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
             s.dispose();
             for (LazyExtension le : ExtensionController.getInstance().getExtensions()) {
@@ -666,7 +673,13 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     public SVNCommitPacket upload() throws SVNException {
         Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
-        s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+        try {
+            s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+        } catch (SVNException e) {
+            Log.exception(e);
+            s.cleanUp(Application.getResource("translations/custom"), true);
+            s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+        }
         s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
         s.getWCClient().doAdd(Application.getResource("translations/custom"), true, false, true, SVNDepth.INFINITY, false, false);
         Log.L.finer("Create CommitPacket");
@@ -680,8 +693,15 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     public void revert() throws SVNException, InterruptedException {
         Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
-        s.revert(Application.getResource("translations/custom"));
-        s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+        try {
+            s.revert(Application.getResource("translations/custom"));
+
+            s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+        } catch (SVNException e) {
+            Log.exception(e);
+            s.cleanUp(Application.getResource("translations/custom"), true);
+            s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+        }
         s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
         s.dispose();
         load(loaded);
