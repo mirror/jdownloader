@@ -63,6 +63,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
             } else {
+                ArrayList<String> picPages = new ArrayList<String>();
+                picPages.add(parameter);
                 br.setCookie(FACEBOOKMAINPAGE, "locale", "en_GB");
                 final PluginForHost facebookPlugin = JDUtilities.getPluginForHost("facebook.com");
                 Account aa = AccountController.getInstance().getValidAccount(facebookPlugin);
@@ -85,36 +87,44 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 AccountController.getInstance().addAccount(facebookPlugin, aa);
                 br.getPage(parameter);
                 String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
-                boolean doExtended = false;
-                String[] links = br.getRegex("\\&amp;src=(https?\\\\u00253A.*?)\\&amp;theater\\\\\"").getColumn(0);
-                if (links == null || links.length == 0) {
-                    links = br.getRegex("ajaxify=(\"|\\\\\")https?(://|:\\\\/\\\\/)www\\.facebook\\.com(/|\\\\/)photo\\.php\\?fbid=(\\d+)\\&amp;").getColumn(3);
-                    doExtended = true;
-                }
-                if (links == null || links.length == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
+                final String setID = new Regex(parameter, "facebook\\.com/media/set/\\?set=(.+)").getMatch(0);
+                // "http://www.facebook.com/media/set/?set=a.221139484624651.53016.100001858034552&amp;type=1&amp;aft=239466452791954"
+                final String secondPage = br.getRegex("\"(http://(www\\.)?facebook\\.com/media/set/\\?set=" + setID + "\\&amp;type=\\d+\\&amp;aft=\\d+)\"").getMatch(0);
+                if (secondPage != null) picPages.add(secondPage);
                 // Redirects from "http" to "https" can happen
                 br.setFollowRedirects(true);
-                if (doExtended) {
-                    progress.setRange(links.length);
-                    String setID = new Regex(parameter, "facebook\\.com/media/set/\\?set=(.+)").getMatch(0);
-                    for (String fbid : links) {
-                        br.getPage("http://www.facebook.com/photo.php?fbid=" + fbid + "&set=" + setID + "&type=1");
-                        String finallink = br.getRegex("class=\"imageStage\"><img class=\"fbPhotoImage img\" id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
-                        if (finallink == null) finallink = br.getRegex("\"(https?://fbcdn\\-sphotos\\-a\\.akamaihd\\.net/[^<>\"]*?)\"").getMatch(0);
-                        if (finallink == null) {
-                            logger.warning("Decrypter broken for link: " + parameter);
-                            return null;
-                        }
-                        decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-                        progress.increase(1);
+                for (final String picPage : picPages) {
+                    br.getPage(Encoding.htmlDecode(picPage.trim()));
+                    boolean doExtended = false;
+                    // Try to grab direct links
+                    String[] links = br.getRegex("src=(http[^<>\"]*?_n\\.jpg)\\&amp;size=\\d+%2C\\d+\\&amp;theater\" rel=\"theater\"").getColumn(0);
+                    if (links == null || links.length == 0) {
+                        // Can't grab direct links? Try extended mode
+                        links = br.getRegex("ajaxify=(\"|\\\\\")https?(://|:\\\\/\\\\/)www\\.facebook\\.com(/|\\\\/)photo\\.php\\?fbid=(\\d+)\\&amp;").getColumn(3);
+                        doExtended = true;
                     }
-                } else {
-                    for (String directlink : links) {
-                        directlink = Encoding.htmlDecode(((FaceBookComVideos) facebookPlugin).decodeUnicode(directlink));
-                        decryptedLinks.add(createDownloadlink("directhttp://" + directlink));
+                    if (links == null || links.length == 0) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    if (doExtended) {
+                        // Old way
+                        for (String fbid : links) {
+                            br.getPage("http://www.facebook.com/photo.php?fbid=" + fbid + "&set=" + setID + "&type=1");
+                            String finallink = br.getRegex("class=\"imageStage\"><img class=\"fbPhotoImage img\" id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
+                            if (finallink == null) finallink = br.getRegex("\"(https?://fbcdn\\-sphotos\\-a\\.akamaihd\\.net/[^<>\"]*?)\"").getMatch(0);
+                            if (finallink == null) {
+                                logger.warning("Decrypter broken for link: " + parameter);
+                                return null;
+                            }
+                            decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+                        }
+                    } else {
+                        for (String directlink : links) {
+                            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(directlink.trim()));
+                            dl.setAvailable(true);
+                            decryptedLinks.add(dl);
+                        }
                     }
                 }
                 if (fpName != null) {
