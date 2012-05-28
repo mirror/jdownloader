@@ -1,3 +1,5 @@
+contextmenu_main=Arhiva(e)
+online=Link je dostupan
 plugins_optional_extraction_crcerrorin=Raspakiranje nije uspjelo (CRC u %s1)
 plugins_optional_extraction_error_extrfailedcrc=Raspakiranje nije uspjelo (CRC u nepoznatoj datoteci)
 plugins_optional_extraction_filefilter=Svi podržani formati
