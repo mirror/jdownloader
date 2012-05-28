@@ -277,6 +277,8 @@ public class TurboBitNet extends PluginForHost {
                 String captchaCode;
                 if (!getPluginConfig().getBooleanProperty("JAC", false)) {
                     captchaCode = getCaptchaCode(null, captchaUrl, downloadLink);
+                } else if (captchaUrl.contains("/basic/")) {
+                    captchaCode = getCaptchaCode("turbobit.net.basic", captchaUrl, downloadLink);
                 } else {
                     captchaCode = getCaptchaCode(captchaUrl, downloadLink);
                 }
@@ -546,7 +548,7 @@ public class TurboBitNet extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "JAC", JDL.L("plugins.hoster.turbobit.jac", "Activate JAC?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "JAC", JDL.L("plugins.hoster.turbobit.jac", "Activate JAC?")).setDefaultValue(true));
     }
 
     private String tb(final int i) {
