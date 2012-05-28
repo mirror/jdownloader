@@ -8,4 +8,6 @@ install_updates_now=Установить сейчас!
 interrupted=Отменено пользователем
 restart_title=Перезапуск!
 update_dialog_cancel=Отмена
+update_dialog_later=Спросить позже
+update_dialog_title_updates_available=Доступны обновления
 update_dialog_yes=Да (рекомендуется)
