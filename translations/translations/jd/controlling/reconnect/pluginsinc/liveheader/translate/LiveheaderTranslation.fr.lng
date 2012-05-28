@@ -17,5 +17,5 @@ gui_config_reconnect_selectrouter_example=Exemple : 3Com ADSL
 gui_config_routeripfinder_notfound=Nom du routeur introuvable
 gui_config_routeripfinder_ready=IP trouvée : %s1
 gui_fengshuiconfig_routerip=IP-Routeur
-jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Vous avez désactivé l'IPCheck. Cela va 'accroître considérablement les temps de reconnexion !\n\n\n\nPlusieurs autres modules comme Reconnecter l'Enregistrement sont désactivés.
+jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Vous avez désactivé l'IPCheck. Cela va accroître considérablement les temps de reconnexion !    Plusieurs autres modules comme Reconnecter l'Enregistrement sont désactivés.
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=IP-Check désactivé !
