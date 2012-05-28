@@ -1,4 +1,4 @@
-jd_plugins_optional_infobar_docking=Kenarlara kenetlenmeyi etkinleştir
+jd_plugins_optional_infobar_docking=Kenarlara Kenetleme etkin
 jd_plugins_optional_infobar_jdinfobar=Bilgi Çubuğu
-jd_plugins_optional_infobar_jdinfobar_description=Bilgi Çubuğu
-jd_plugins_optional_infobar_opacity=Bilgi çubuğunun matlığı yüzde değeri [%]
+jd_plugins_optional_infobar_jdinfobar_description=İndirmelerde gerçek zamanlı bilgi ile gezinen küçük bölme, ve bağlantıları, URL'leri veya DLC dosyalarını ekleyebileceğiniz Sürükle ve Bırak Bölgesi.
+jd_plugins_optional_infobar_opacity=İletinin saydamlığı [% olarak]
