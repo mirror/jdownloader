@@ -1,3 +1,6 @@
+JDGui_windowClosing_try_asnwer_close=Quitter JDownloader
+action_aboutaction_tooltip=À propos de JDownloader
+downloadview_successful=Téléchargements réussis
 gui_btn_select=Sélectionner
 gui_column_host=Hébergeur
 gui_column_plugin=Plugin
@@ -61,6 +64,9 @@ linkgrabber_onlinestatus_online=En ligne
 linkgrabber_onlinestatus_uncheckable=Temporairement dans l'incapacité de vérifier
 linkgrabber_onlinestatus_unchecked=Non testé
 plugins_config_premium_chartapi_caption_error2=A la fin du chargement, choisissez une traduction.
+searchcategory_filename=Nom de fichier
+searchcategory_filename_help=Veuillez entrer le nom du fichier que vous recherchez...
+searchcategory_hoster=Hébergeur
 sys_warning_loguploadfailed=L'envoi du fichier journal a échoué !
 system_download_triggerfileexists=Si le fichier existe déjà :
 system_download_triggerfileexists_ask=Demander pour chaque fichier
