@@ -1,3 +1,4 @@
+DataCompareDialog_layoutDialogContent_password=Пароль
 gui_btn_abort=Прервать
 gui_btn_cancel=Отмена
 gui_btn_help=Помощь
@@ -17,5 +18,7 @@ gui_config_reconnect_selectrouter_example=Пример: 3Com ADSL
 gui_config_routeripfinder_notfound=Не могу найти имя маршрутизатора
 gui_config_routeripfinder_ready=Имя хоста найдено: %s1
 gui_fengshuiconfig_routerip=IP маршрутизатора
+jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save=Сохранить
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Вы отключили проверку ip. Это позволить резко увеличить кол-во переподключений. Некоторые другие модули типа Записи переподключений отключены.
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=Проверка IP отключена!
+literally_password=Пароль

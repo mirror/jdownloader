@@ -1,3 +1,4 @@
+basics_no=Нет
 controller_packages_defaultname=Разные
 controller_status_connectionproblems=Соединение потеряно
 controller_status_containererror=Ошибка контейнера
@@ -49,6 +50,7 @@ gui_downloadview_statustext_jac=Распознавание капчи
 gui_javacheck_newerjavaavailable_msg=Хотя JDownloader и работает на вашей java, мы рекомендуем установить последние обновления java. \n\nJDownloader будет работать стабильнее, быстрее, выглядеть лучше. \n\n\n\nПосетите http://jdownloader.org/download.
 gui_javacheck_newerjavaavailable_title=У вас устаревшая версия Java: %s1!
 gui_mainframe_title_updatemessage2=%s1 обновлений доступно
+gui_menu_extensions=Инструменты
 gui_warning_reconnect_running=запуск...
 gui_warning_reconnectunknown=Неизвестное переподключение
 plugins_error_downloadfailed=Не удалось скачать

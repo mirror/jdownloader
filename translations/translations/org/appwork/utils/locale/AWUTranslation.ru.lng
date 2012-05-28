@@ -1,3 +1,5 @@
+ABSTRACTDIALOG_BUTTON_OK=ОК
+AccountNew_layoutDialogContent_password=Пароль
 AccountNew_layoutDialogContent_save=Запомнить
 COPYCUTPASTE_COPY=Копировать
 COPYCUTPASTE_CUT=Вырезать
@@ -10,6 +12,7 @@ LOGINDIALOG_CHECKBOX_REMEMBER=Запомнить
 LOGINDIALOG_LABEL_PASSWORD=Пароль
 LOGINDIALOG_LABEL_PASSWORD_REPEAT=Повторить пароль
 LOGINDIALOG_LABEL_USERNAME=Логин
+PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD=Новый пароль:
 SEARCHDIALOG_BUTTON_FIND=Найти
 ShortCuts_key_ctrl=ctrl
 connecting=Соединение...

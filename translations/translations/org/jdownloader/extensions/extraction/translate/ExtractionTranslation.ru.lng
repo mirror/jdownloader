@@ -3,6 +3,7 @@ contextmenu_extract=Извлечь сейчас
 contextmenu_main=Архив(ы)
 local=Статус файла
 offline=Файл офлайн или отсутствует
+online=Please translate: Ссылка доступна
 plugins_optional_extraction_crcerrorin=Не удалось распоковать (CRC в %s1)
 plugins_optional_extraction_error_extrfailedcrc=Не удалось распаковать (CRC в неизвестном файле)
 plugins_optional_extraction_filefilter=Все поддерживаемые форматы
