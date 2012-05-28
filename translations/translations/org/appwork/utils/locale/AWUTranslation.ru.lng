@@ -16,3 +16,4 @@ PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD=Новый пароль:
 SEARCHDIALOG_BUTTON_FIND=Найти
 ShortCuts_key_ctrl=ctrl
 connecting=Соединение...
+extpasswordeditorcolumn_tooltip=Ваш пароль

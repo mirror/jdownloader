@@ -1,4 +1,5 @@
 basics_no=Нет
+basics_yes=Да
 controller_packages_defaultname=Разные
 controller_status_connectionproblems=Соединение потеряно
 controller_status_containererror=Ошибка контейнера
@@ -53,6 +54,7 @@ gui_mainframe_title_updatemessage2=%s1 обновлений доступно
 gui_menu_extensions=Инструменты
 gui_warning_reconnect_running=запуск...
 gui_warning_reconnectunknown=Неизвестное переподключение
+literally_yes=Да
 plugins_error_downloadfailed=Не удалось скачать
 plugins_errors_disconnect=Разрыв связи?
 plugins_errors_error=Ошибка:
