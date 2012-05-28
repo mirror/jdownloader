@@ -1,5 +1,7 @@
 AbstractConfigPanel_addPair_enabled=Ενεργοποίηση/Απενεργοποίηση αυτής της επιλογής
 accountdialog_check=Έλεγχος λογαριασμού
+accountdialog_check_expired_title=Ανανέωση λογαριασμού;
+accountdialog_check_failed=Ο έλεγχος λογαριασμού απέτυχε
 action_aboutaction=Σχετικά με το JDownloader
 action_aboutaction_accelerator=-
 action_aboutaction_mnemonics=-
@@ -30,6 +32,7 @@ gui_config_download_crc=SFV/CRC έλεγχος όταν είναι δυνατό
 gui_config_download_write=Εγγραφή Αρχείων
 gui_config_general_downloaddirectory=Φάκελος Λήψεων
 gui_config_general_todowithdownloads=Αφαίρεση των ολοκληρωμένων λήψεων:
+gui_config_various=Διάφορα
 gui_dialogs_message_title=Μήνυμα
 gui_downloadlist_delete=Διαγραφή επιλεγμένων συνδέσμων;
 gui_downloadlist_delete2=Διαγραφή των επιλεγμένων συνδέσμων από τον κατάλογο λήψεων και το δίσκο;

@@ -1,3 +1,4 @@
+basics_browser_folder=Επιλογή
 captchacontroller_cancel_dialog_allorhost=Διάλογος Ακυρωμένων Captcha
 captchacontroller_cancel_dialog_allorhost_all=Ακύρωση όλων των Captcha που εκκρεμούν
 captchacontroller_cancel_dialog_allorhost_cancelhost=Να μην εμφανίζονται captcha που εκκρεμούν για το %s1
@@ -43,6 +44,7 @@ downloadlink_status_waitinguserio=Αναμονή για εισαγωγή από 
 gui_config_reconnect_showcase_currentip=Τρέχουσα IP:
 gui_config_reconnect_showcase_lastip=IP πριν από την Επανασύνδεση:
 gui_config_reconnect_showcase_message_none=(Δεν δοκιμάστηκε ακόμη)
+gui_config_reconnect_showcase_reconnect2=Έναρξη Δοκιμής
 gui_config_reconnect_showcase_time=Διάρκεια επανασύνδεσης:
 gui_download_create_connection=Σύνδεση...
 gui_download_filesize_unknown=Άγνωστο μέγεθος αρχείου
