@@ -16,3 +16,6 @@ plugins_optional_extraction_status_notenoughspace=Δεν υπάρχει αρκε
 plugins_optional_extraction_status_openingarchive=Άνοιγμα συμπιεσμένου αρχείου...
 plugins_optional_extraction_status_passfound=Ο κωδικός βρέθηκε
 plugins_optional_extraction_status_queued=Έπεται αποσυμπίεση
+settings_extract_to_archive_folder=Αποσυμπίεση στον παρακάτω φάκελο
+settings_extract_to_path=Αποσυμπίεση σε
+settings_extractto=Φάκελος αποσυμπίεσης
