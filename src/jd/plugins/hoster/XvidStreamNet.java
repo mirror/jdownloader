@@ -44,12 +44,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 16216 $", interfaceVersion = 2, names = { "flashstream.in" }, urls = { "https?://(www\\.)?(flashstream\\.in|sharefiles4u\\.com)/[a-z0-9]{12}" }, flags = { 0 })
-public class FlashStreamIn extends PluginForHost {
+@HostPlugin(revision = "$Revision: 16216 $", interfaceVersion = 2, names = { "xvidstream.net" }, urls = { "https?://(www\\.)?xvidstream\\.net/[a-z0-9]{12}" }, flags = { 0 })
+public class XvidStreamNet extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST                  = "http://flashstream.in";
+    private static final String  COOKIE_HOST                  = "http://xvidstream.net";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -69,12 +69,11 @@ public class FlashStreamIn extends PluginForHost {
     // protocol: no https
     // captchatype: 4dignum
     // other: no redirects
-    // other: xvidstage.com xvidstream.net and flashstream are sister sites, links are not transferable, other than sharefiles4u &&
-    // flashstream.
+    // other: xvidstage.com xvidstream.net and flashstream are sister sites, links are not transferable
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("sharefiles4u.com", "flashstream.in"));
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
     }
 
     @Override
@@ -82,7 +81,7 @@ public class FlashStreamIn extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public FlashStreamIn(PluginWrapper wrapper) {
+    public XvidStreamNet(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }

@@ -29,9 +29,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "go4up.com", "uploadonall.com", "up4vn.com", "directmirror.com", "nextdown.net", "bitsor.com", "flameupload.com", "mirrorafile.com", "lougyl.com", "neo-share.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "megaupper.com", "shrta.com", "1filesharing.com", "7ups.net", "mirrorfusion.com", "digzip.com", "needmirror.com" }, urls = { "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "https?://(www\\.)?up4vn\\.com/\\?go=[A-Z0-9]{8}", "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?bitsor\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?flameupload\\.(com|co)/(download|files)/[0-9A-Z]{8}",
-        "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?neo\\-share\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?7ups\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?digzip\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "exoshare.com", "3ll3.in", "go4up.com", "uploadonall.com", "up4vn.com", "directmirror.com", "nextdown.net", "bitsor.com", "flameupload.com", "mirrorafile.com", "lougyl.com", "neo-share.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "megaupper.com", "shrta.com", "1filesharing.com", "7ups.net", "mirrorfusion.com", "digzip.com", "needmirror.com" }, urls = { "http://(www\\.)?exoshare\\.com/download\\.php\\?uid=[A-Z0-9]{8}", "http://(www\\.)?3ll3\\.in/(files|dl)/\\w{14,18}", "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "https?://(www\\.)?up4vn\\.com/\\?go=[A-Z0-9]{8}", "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}",
+        "http://(www\\.)?bitsor\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?flameupload\\.(com|co)/(download|files)/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?neo\\-share\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?7ups\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?digzip\\.com/files/[0-9A-Z]{8}",
+        "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
@@ -43,37 +43,44 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String parameter = param.toString();
-        // Only uploadmirrors.com has those "/download/" links so we need to
-        // correct them
+        // Only uploadmirrors.com has those "/download/" links so we need to correct them
         if (parameter.contains("go4up.com")) {
             parameter = parameter.replace("link.php?id=", "dl/");
         } else {
             parameter = parameter.replaceAll("(/dl/|/mirror/|/download/)", "/files/").replace("flameupload.co/", "flameupload.com/");
         }
         // Links need a "/" at the end to be valid
-        if (!param.getCryptedUrl().contains("up4vn.com") && !param.getCryptedUrl().endsWith("/")) param.setCryptedUrl(param.getCryptedUrl().toString() + "/");
+        if (!param.getCryptedUrl().matches(".+(up4vn\\.com/|exoshare\\.com/).+") && !param.getCryptedUrl().endsWith("/")) param.setCryptedUrl(param.getCryptedUrl().toString() + "/");
         String protocol = new Regex(parameter, "(https?://)").getMatch(0);
         String host = new Regex(parameter, "://([^/]+)/").getMatch(0);
-        String id = new Regex(parameter, "https?://.+/(\\?go=)?([0-9A-Z]{8,15})").getMatch(1);
-        // This should never happen but in case a dev changes the plugin without
-        // much testing he'll see the error later!
+        String id = new Regex(parameter, "https?://.+/(\\?go=|download\\.php\\?uid=)?([0-9A-Za-z]{8,18})").getMatch(1);
+        // This should never happen but in case a dev changes the plugin without much testing he'll see the error later!
         if (host == null || id == null) {
             logger.warning("A critical error happened! Please inform the support. : " + param.toString());
             return null;
         }
-        if (parameter.matches(".+(up4vn\\.com|go4up\\.com)/.+")) {
+        if (parameter.contains("3ll3.in/")) {
+            // do some more processing as status always claims its been removed.
+            br.getPage(parameter);
+            String url = br.getRegex("url=(http[^\"]+)").getMatch(0);
+            if (url == null) {
+                logger.warning("Couldn't find url=!! Please inform the support. : " + param.toString());
+            } else
+                br.getPage(url);
+        } else if (parameter.matches(".+(up4vn\\.com|go4up\\.com)/.+")) {
             // use standard page, status.php doesn't exist
             br.getPage(parameter);
         } else {
             br.getPage(protocol + host + "/status.php?uid=" + id);
         }
         /* Error handling */
-        if (!br.containsHTML("<img src=") && !br.containsHTML("<td class=\"host\">")) {
+        if (!br.containsHTML("<img src=") && !br.containsHTML("<td class=\"host\">") || ((parameter.contains("3ll3.in/")) && br.containsHTML("<h1>FILE NOT FOUND</h1>"))) {
             logger.info("The following link should be offline: " + param.toString());
             throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         }
         br.setFollowRedirects(false);
         String[] redirectLinks = br.getRegex("(/(r|redirect|rd)/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
+        if ((redirectLinks == null || redirectLinks.length == 0) && host.contains("3ll3.in")) redirectLinks = br.getRegex("(/dl/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("><a href=(.*?)target=").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) return null;
         progress.setRange(redirectLinks.length);
@@ -81,9 +88,8 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         for (String singlelink : redirectLinks) {
             Browser brc = br.cloneBrowser();
             String dllink = null;
-            // Handling for links that need to be regexed or that need to be get
-            // by redirect
-            if (singlelink.contains("/redirect/") || singlelink.contains("/rd/") || singlelink.matches("/r/.+")) {
+            // Handling for links that need to be regexed or that need to be get by redirect
+            if (singlelink.contains("/redirect/") || singlelink.contains("/rd/") || singlelink.matches("/r/.+") || singlelink.matches("/dl/.+")) {
                 brc.getPage(protocol + host + singlelink);
                 if (parameter.contains("flameupload.com")) {
                     dllink = brc.getRegex(">Download Link:<br><a href=\"([^\"]+)").getMatch(0);
@@ -121,7 +127,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(dllink));
         }
-        logger.warning("Task Complete! : " + param.toString());
+        logger.info("Task Complete! : " + param.toString());
         return decryptedLinks;
     }
 }

@@ -44,37 +44,35 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 16216 $", interfaceVersion = 2, names = { "flashstream.in" }, urls = { "https?://(www\\.)?(flashstream\\.in|sharefiles4u\\.com)/[a-z0-9]{12}" }, flags = { 0 })
-public class FlashStreamIn extends PluginForHost {
+@HostPlugin(revision = "$Revision: 16650 $", interfaceVersion = 2, names = { "saryshare.com" }, urls = { "https?://(www\\.)?saryshare\\.com/[a-z0-9]{12}" }, flags = { 0 })
+public class SaryShareCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST                  = "http://flashstream.in";
+    private final String         COOKIE_HOST                  = "http://saryshare.com";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(2);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.3-raz
     // mods:
-    // non account: 2 * 2
+    // non account: chunk * maxdl
     // free account:
     // premium account:
     // protocol: no https
-    // captchatype: 4dignum
+    // captchatype: null 4dignum recaptcha
     // other: no redirects
-    // other: xvidstage.com xvidstream.net and flashstream are sister sites, links are not transferable, other than sharefiles4u &&
-    // flashstream.
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("sharefiles4u.com", "flashstream.in"));
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
     }
 
     @Override
@@ -82,7 +80,7 @@ public class FlashStreamIn extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public FlashStreamIn(PluginWrapper wrapper) {
+    public SaryShareCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -98,15 +96,16 @@ public class FlashStreamIn extends PluginForHost {
     }
 
     public void prepBrowser() {
+        // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
-        br.setCookie(COOKIE_HOST + "/", "lang", "english");
+        br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        prepBrowser();
         br.setFollowRedirects(false);
+        prepBrowser();
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
@@ -119,7 +118,7 @@ public class FlashStreamIn extends PluginForHost {
             if (filename == null) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    filename = new Regex(correctedBR, "Filename:?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                    filename = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                 }
             }
         }
@@ -150,7 +149,7 @@ public class FlashStreamIn extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, false, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
