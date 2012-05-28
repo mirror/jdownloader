@@ -64,6 +64,7 @@ action_help=Aide
 action_restart=Redémarrer
 action_settings_menu=Paramètres
 buyaction_title_buy_account=Continuer
+downloadview_all=Tous les téléchargements
 downloadview_successful=Téléchargements réussis
 filecolumn_title=Nom
 gui_btn_select=Sélectionner

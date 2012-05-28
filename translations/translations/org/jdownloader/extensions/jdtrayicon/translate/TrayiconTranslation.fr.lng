@@ -6,6 +6,7 @@ plugins_optional_JDLightTray_tooltip=Montrer bulle d'aide
 plugins_optional_trayIcon_dl_running=En cours :
 plugins_optional_trayIcon_dl_total=Total :
 plugins_optional_trayIcon_downloads=Téléchargements :
+plugins_optional_trayIcon_eta=Temps d'attente
 plugins_optional_trayIcon_progress=Progession :
 plugins_optional_trayIcon_speed=Vitesse :
 popup_clipboardtoggle=Surveillance du presse-papiers activé
