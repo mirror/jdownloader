@@ -1,4 +1,3 @@
-controller_packages_defaultname=various
 controller_status_connectionproblems=Verbindung verloren
 controller_status_containererror=Container Fehler
 controller_status_fileexists_overwritefailed=Überschreiben fehlgeschlagen
@@ -11,6 +10,7 @@ decrypter_wrongcaptcha=Falscher Captcha Code
 decrypter_wrongpassword=Falsches Passwort
 download_connection_normal=Download
 download_error_message_connectioncopyerror=Verbindung konnte nicht aufgebaut werden
+download_error_message_incomplete=Download unvollständig=======
 download_error_message_iopermissions=Keine Schreibrechte auf der Festplatte
 download_error_message_localio=Konnte nicht in Datei schreiben: %s1
 download_error_message_networkreset=Netzwerkprobleme
