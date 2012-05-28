@@ -1,8 +1,14 @@
 exit=Fechar
 guiless_files_ready_for_install=%s1 ficheiro(s) aguarda(m) para ser instalado(s)!
+guiless_files_wait_for_removal=%s1 ficheiro(s) estão desactualizados e vão ser removidos
+guiless_installFinished=Instalação concluída
 guiless_locked_closed_app=%s1 foi fechado. Continuar agora.
+guiless_updates_waiting_for_download=%s1 ficheiro(s) devem ser descarregados
 install_updates_later=Perguntar mais tarde
+install_updates_now=Instalar agora!
+restart_title=Reiniciar!
 update_dialog_cancel=Cancelar
 update_dialog_later=Perguntar mais tarde
+update_dialog_news_button_url=http://www.jdownloader.org/changelog
 updates_are_ready_for_install_now=%s1 actualizações disponíveis
 updates_ready_for_install=%s1 actualizações disponíveis

@@ -1,5 +1,7 @@
 LinkCollector_archiv=%s1
+SetDownloadFolderAction_no=Selecção
 basics_browser_folder=Escolher
+basics_no=Não
 captchacontroller_cancel_dialog_allorhost=Janela de Cancelamento de CAPTCHA
 captchacontroller_cancel_dialog_allorhost_all=Cancelar todas as CAPTCHA's pendentes
 captchacontroller_cancel_dialog_allorhost_cancelhost=Não mostrar CAPTCHA's pendentes para %s1
@@ -58,6 +60,7 @@ gui_javacheck_newerjavaavailable_msg=Apesar do JDownloader poder funcionar com a
 gui_javacheck_newerjavaavailable_title=Detectada uma versão desactualizada do Java: %s1!
 gui_mainframe_title_updatemessage2=%s1 actualizações disponíveis
 gui_settings_plugins_title=Opções dos Extras
+gui_settings_reconnect_title=Reconectar
 gui_warning_reconnect_running=em curso...
 gui_warning_reconnectunknown=Nova ligação desconhecida
 plugins_error_downloadfailed=Transferência falhou
