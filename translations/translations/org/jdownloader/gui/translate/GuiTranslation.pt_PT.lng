@@ -1,3 +1,4 @@
+action_aboutaction=Sobre o JDownloader
 gui_btn_select=Seleccionar
 gui_column_host=Servidor
 gui_column_plugin=Extra
@@ -20,7 +21,7 @@ gui_downloadlist_reset=Repor as transferências seleccionadas? (Atenção: Os fi
 gui_filechooser_loaddlc=Carregar ficheiro DLC
 gui_linklist_editpackagename_message=Nome do novo pacote
 gui_logupload_message=Envie este registo de ligações ao suporte
-gui_menu_about=Sobre JDownloader
+gui_menu_about=Sobre o JDownloader
 gui_menu_action_break2_desc=Pausar as transferências limita a velocidade global para %s1 KiB/s
 gui_menu_action_premium_buy_name=Comprar Premium
 gui_reconnect_confirm=Deseja reiniciar a sua ligação à Internet?
