@@ -2,6 +2,7 @@ ABSTRACTDIALOG_BUTTON_CANCEL=Prekid
 ABSTRACTDIALOG_BUTTON_OK=U redu
 ABSTRACTDIALOG_STYLE_SHOW_DO_NOT_DISPLAY_AGAIN=Ne prikazuj više
 DIALOG_CONFIRMDIALOG_TITLE=Molimo potvrdite!
+DIALOG_MESSAGE_TITLE=Poruka
 ExceptionDialog_layoutDialogContent_logLabel=Ova greška je uzrokovana:
 ExceptionDialog_layoutDialogContent_more_button=Detalji greške
 PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD=Nova lozinka:
