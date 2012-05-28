@@ -2,3 +2,5 @@ UpdateServer_UpdaterGui_onStateChange_filter=Проверить обновлен
 close=Закрыть
 exit=Выход
 guiless_extract=Извлечение файла(ов)
+guiless_installFinished=Установка закончена
+install_updates_now=Установить сейчас!
