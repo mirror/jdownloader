@@ -1,5 +1,6 @@
 AbstractConfigPanel_addPair_enabled=Ενεργοποίηση/Απενεργοποίηση αυτής της επιλογής
 AvailabilityColumn_AvailabilityColumn=Διαθεσιμότητα
+AvailabilityColumn_getStringValue_object_=%s1/%s2 διαθέσιμα
 ConditionDialog_getPopupMenu_hosterurl_=Url παρόχου
 ConnectionColumn_getStringValue_pluginonly=%s1
 FiletypeFilter_toString_custom='%s1'-File
@@ -23,6 +24,7 @@ SpeedlimitEditor_format=%s1/s
 StatusBarImpl_initGUI_linkgrabber_desc_inactive=-αδράνεια-
 TestAction_actionPerformed_match_=%s1: %s2
 TestWaitDialog_layoutDialogContent_filtered=Αποτέλεσμα:
+TestWaitDialog_runInEDT_=%s1/%s2 Links filtered  (%s3 %)
 account_remove_action_msg=Αφαίρεση %s1
 accountdialog_check=Έλεγχος λογαριασμού
 accountdialog_check_expired_title=Ανανέωση λογαριασμού;
