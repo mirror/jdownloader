@@ -1,6 +1,11 @@
+archivename=Имя архива
+auto_extract_enabled=Извлечь после скачивания
+close=Закрыть
 contextmenu_autoextract=Авто извлечение включено
 contextmenu_extract=Извлечь сейчас
 contextmenu_main=Архив(ы)
+filename=Имя файла
+files=файл
 local=Статус файла
 offline=Файл офлайн или отсутствует
 online=Please translate: Ссылка доступна
@@ -18,3 +23,5 @@ plugins_optional_extraction_status_openingarchive=Открываем архив.
 plugins_optional_extraction_status_passfound=Найден пароль
 settings_extract_to_path=Извлечь в...
 settings_passwordlist=Пароль архива (один в строке)
+settings_passwords=Список паролей
+unknown=Неизвестно
