@@ -21,6 +21,7 @@ DIALOG_INPUT_TITLE=Veuillez entrer !
 DIALOG_MESSAGE_TITLE=Message
 DIALOG_PASSWORD_TITLE=Veuillez entrer !
 DIALOG_SLIDER_TITLE=Veuillez entrer !
+ExceptionDialog_layoutDialogContent_more_button=detail des erreurs:
 LOGINDIALOG_BUTTON_LOGIN=Identifiant
 LOGINDIALOG_BUTTON_REGISTER=Créer nouvel utilisateur
 LOGINDIALOG_CHECKBOX_REMEMBER=Se souvenir
