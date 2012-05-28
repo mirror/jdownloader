@@ -1,4 +1,17 @@
+AbstractConfigPanel_addPair_enabled=Ενεργοποίηση/Απενεργοποίηση αυτής της επιλογής
+accountdialog_check=Έλεγχος λογαριασμού
 action_aboutaction=Σχετικά με το JDownloader
+action_aboutaction_accelerator=-
+action_aboutaction_mnemonics=-
+action_aboutaction_tooltip=Σχετικά με το JDownloader
+action_add_premium_account_tooltip=Προσθήκη νέου Premium Λογαριασμού
+action_addcontainer=Προσθήκη Container
+action_addcontainer_accelerator=-
+action_addcontainer_mnemonic=-
+action_changelog=Αρχείο Αλλαγών
+action_clipboard_observer_accelerator=ctrl+c
+action_clipboard_observer_mnemonics=c
+action_exit=Έξοδος
 gui_btn_select=Αναζήτηση...
 gui_column_defaultproxy=Προεπιλεγμένος Proxy
 gui_column_host=Πάροχος
