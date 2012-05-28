@@ -1,5 +1,5 @@
-ABSTRACTDIALOG_BUTTON_CANCEL=Abbrechen (test)
-ABSTRACTDIALOG_BUTTON_OK=Ok(ok)
+ABSTRACTDIALOG_BUTTON_OK=Ok(test)
+ABSTRACTDIALOG_BUTTON_CANCEL=Abbrechen
 ABSTRACTDIALOG_STYLE_SHOW_DO_NOT_DISPLAY_AGAIN=Nicht mehr anzeigen
 AccountNew_AccountNew_message=Bitte geben Sie hier Ihre Zugangsdaten ein
 AccountNew_AccountNew_title=Zugangsdaten eingeben
