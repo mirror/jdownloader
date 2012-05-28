@@ -19,3 +19,6 @@ plugins_optional_extraction_status_queued=Έπεται αποσυμπίεση
 settings_extract_to_archive_folder=Αποσυμπίεση στον παρακάτω φάκελο
 settings_extract_to_path=Αποσυμπίεση σε
 settings_extractto=Φάκελος αποσυμπίεσης
+settings_subpath_minnum2=... μόνο εάν η διαδρομή του συμπιεσμένου αρχείου περιέχει >
+settings_subpath_no_folder2=... μόνο εάν δεν υπάρχει αρχικός φάκελος
+settings_use_subpath=Δημιουργία υποφακέλου
