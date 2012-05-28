@@ -14,7 +14,8 @@ public class JDRestartController extends RestartController {
     private static final JDRestartController INSTANCE = new JDRestartController();
 
     /**
-     * get the only existing instance of JDRestartController. This is a singleton
+     * get the only existing instance of JDRestartController. This is a
+     * singleton
      * 
      * @return
      */
@@ -22,7 +23,7 @@ public class JDRestartController extends RestartController {
         return JDRestartController.INSTANCE;
     }
 
-    private boolean silentRestartAllowed;
+    private boolean silentRestartAllowed = true;
 
     public void onShutdown(boolean silent) {
 
@@ -44,8 +45,8 @@ public class JDRestartController extends RestartController {
     }
 
     /**
-     * Create a new instance of JDRestartController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of JDRestartController. This is a singleton class.
+     * Access the only existing instance by using {@link #getInstance()}.
      */
     private JDRestartController() {
         super();
