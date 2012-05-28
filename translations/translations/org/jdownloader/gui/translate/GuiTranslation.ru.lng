@@ -1,3 +1,4 @@
+AddOptionsAction_actionPerformed_addlinks=Анализировать ссылку
 AutoSetupAction_actionPerformed_dont_know=Я не уверен
 CommentColumn_CommentColumn_=Комментарий
 FilterRuleDialog_layoutDialogContent_lbl_filename=Имя файла
@@ -16,7 +17,7 @@ SettingsMenu_SettingsMenu_=Настройки
 SizeColumn_SizeColumn=Размер
 SpeedColumn_SpeedColumn=Скорость
 action_exit=Выход
-action_restart=Перезагрузка
+action_restart=Перезагрузить
 action_settings_menu=Настройки
 authtablemodel_column_password=Пароль
 filecolumn_title=Имя

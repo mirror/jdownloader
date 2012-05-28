@@ -3,3 +3,4 @@ plugins_optional_JDLightTray_startMinimized=Запускать свернуты�
 plugins_optional_trayIcon_dl_finished=Законченные:
 plugins_optional_trayIcon_downloads=Закачиваются:
 popup_exit=Выход с JDownloader
+popup_update=Проверить обновление
