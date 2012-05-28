@@ -1,4 +1,5 @@
 contextmenu_main=Archivo(s)
+online=Enlace disponible
 online_tt=Enlace disponible
 password=Contraseña de extracción para %s1
 plugins_optional_extraction_crcerrorin=Extracción fallida (CRC en %s1)

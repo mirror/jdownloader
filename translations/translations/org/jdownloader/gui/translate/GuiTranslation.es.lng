@@ -1,5 +1,7 @@
 action_addcontainer=Añadir contenedor
 action_log_tooltip=Mostrar Log
+action_premium_toggle_tooltip=Activar o desactivar todas las cuentas Premium
+action_reconnect_toggle_tooltip=Activar o desactivar la Auto-reconexión
 action_restart=Reiniciar
 authtablemodel_column_username=Usuario
 downloadview_all=Todas las descargas
