@@ -3,6 +3,7 @@ ConnectionColumn_getStringValue_pluginonly=%s1
 FiletypeFilter_toString_custom='%s1'-File
 FilterRule_toString_comma=, %s1
 FilterRule_toString_name2=\n\n%s1 %s2
+FilterTableModel_getStringValue_name_invalid=%s1 (Μη έγκυρη συνθήκη)
 PackagizerFilterRuleDialog_updateGUI_enabled_=Ενεργοποιημένο
 SpeedlimitEditor_format=%s1/s
 StatusBarImpl_initGUI_linkgrabber_desc_inactive=-αδράνεια-
