@@ -54,6 +54,7 @@ gui_downloadview_statustext_jac=Reconocimento de Captcha
 gui_javacheck_newerjavaavailable_msg=Aunque JDownloader podria funcionar en tu version de Java, recomendamos instalar la ultima disponible para asegurar la estabilidad, velocidad y el funcionamiento correcto en general. \n\n\n\nVisita http://jdownloader.org/download
 gui_javacheck_newerjavaavailable_title=Tiene una version antigua de Java: %s1
 gui_mainframe_title_updatemessage2=%s1 actualizacion/es disponibles!
+gui_menu_extensions=Herramientas
 gui_warning_reconnect_running=Ejecutando...
 gui_warning_reconnectunknown=Error de reconexion
 plugins_error_downloadfailed=Descarga fallada
