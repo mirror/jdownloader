@@ -1,3 +1,7 @@
+hoster=Πάροχος
+offline=Αρχείο μη διαθέσιμο ή λείπει
+online=Σύνδεσμος διαθέσιμος
+packagename=Όνομα πακέτου
 plugins_optional_extraction_crcerrorin=Η αποσυμπίεση απέτυχε (CRC στο %s1)
 plugins_optional_extraction_error_extrfailedcrc=Η αποσυμπίεση απέτυχε (CRC σε άγνωστο αρχείο)
 plugins_optional_extraction_filefilter=Όλοι οι υποστηριζόμενοι τύποι
