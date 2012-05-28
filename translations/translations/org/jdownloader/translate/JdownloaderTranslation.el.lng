@@ -1,9 +1,13 @@
+Extraction_onShutdownRequest_msg=Ματαίωση αποσυμπίεσης;
+LinkCollector_archiv=%s1
+LinkgrabberFilterRule_duplicate=%s1 (copy)
 basics_browser_folder=Επιλογή
 captchacontroller_cancel_dialog_allorhost=Διάλογος Ακυρωμένων Captcha
 captchacontroller_cancel_dialog_allorhost_all=Ακύρωση όλων των Captcha που εκκρεμούν
 captchacontroller_cancel_dialog_allorhost_cancelhost=Να μην εμφανίζονται captcha που εκκρεμούν για το %s1
 captchacontroller_cancel_dialog_allorhost_msg=Ακυρώσατε ένα διάλογο captcha!\n\nΠώς θέλετε να συνεχίσετε;
 captchacontroller_cancel_dialog_allorhost_next=Εμφάνιση όλων των captcha που εκκρεμούν
+configheader_enabled=Ενεργοποιημένο
 controller_packages_defaultname=Διάφορα
 controller_status_connectionproblems=Η σύνδεση χάθηκε
 controller_status_containererror=Σφάλμα στο Container

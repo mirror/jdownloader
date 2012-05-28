@@ -16,6 +16,6 @@ gui_config_reconnect_selectrouter=Αναζήτηση μοντέλου router
 gui_config_reconnect_selectrouter_example=Παράδειγμα: 3Com ADSL
 gui_config_routeripfinder_notfound=Δεν είναι δυνατόν να βρεθεί το όνομα παρόχου του router
 gui_config_routeripfinder_ready=Η IP βρέθηκε: %s1
-gui_fengshuiconfig_routerip=IP του router
+gui_fengshuiconfig_routerip=IP του δρομολογητή
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Απενεργοποιήσατε τον έλεγχο IP. Αυτό θα αυξήσει δραματικά το χρόνο επανασύνδεσης!\n\n\n\nΑρκετές περαιτέρω λειτουργίες, όπως ο Εγγραφέας Επανασύνδεσης, έχουν απενεργοποιηθεί.
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=Ο έλεγχος IP απενεργοποιήθηκε!

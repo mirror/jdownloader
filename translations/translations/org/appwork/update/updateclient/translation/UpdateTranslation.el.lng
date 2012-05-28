@@ -1,0 +1,6 @@
+UpdateServer_UpdaterGui_onStateChange_failed2=%s1
+error_unknown=%s1
+exception_msg=%s1
+guiless_progress=...Πρόοδος: %s1%
+list_optionals=- %s1
+update_dialog_news_button_url=http://www.jdownloader.org/changelog
