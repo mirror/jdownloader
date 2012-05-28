@@ -1,4 +1,10 @@
+DataCompareDialog_DataCompareDialog_=Comparar Informação do Router
+DataCompareDialog_layoutDialogContent_firmware=Firmware/Versão
 DataCompareDialog_layoutDialogContent_manufactorName=Fabricante
+DataCompareDialog_layoutDialogContent_password=Palavra-passe
+DataCompareDialog_layoutDialogContent_router=Seu Router
+DataCompareDialog_layoutDialogContent_user=Nome Utilizador
+EditScriptAction_EditScriptAction_=Editar Script
 gui_btn_abort=Abortar
 gui_btn_cancel=Cancelar
 gui_btn_help=Ajuda
@@ -21,3 +27,5 @@ gui_fengshuiconfig_routerip=IP do router
 jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save=Guardar
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Desligou o verificador de IP. Isto irá aumentar o tempo de reconexão drasticamente.\n\n\n\nVários outros módulos foram desligados também.
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=Verificador de IP desligado!
+literally_password=Palavra-passe
+literally_username=Nome Utilizador

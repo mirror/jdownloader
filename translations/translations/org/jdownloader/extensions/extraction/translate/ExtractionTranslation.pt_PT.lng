@@ -17,6 +17,7 @@ date=Data
 dummyarchivedialog_title=Arquivo %s1
 exists=Estado do endereço
 extraction_failed=A extracção de %s1 falhou
+files=ficheiros
 hoster=Servidor
 offline=Ficheiro offline ou ausente
 online=Disponível
