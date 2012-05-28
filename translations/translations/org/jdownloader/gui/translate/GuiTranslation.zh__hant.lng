@@ -1,4 +1,6 @@
 AutoSetupAction_actionPerformed_router=路由器
+LinkGrabberSidebar_LinkGrabberSidebar_extensionfilter=檔案類型
+LinkGrabberSidebar_LinkGrabberSidebar_hosterfilter=主機端
 fontname=Dialog
 gui_btn_select=選擇
 gui_column_host=主機
