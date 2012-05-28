@@ -1,3 +1,4 @@
+FilterRule_toString_name2=%s1 %s2
 gui_btn_select=Odaberi
 gui_column_host=Host
 gui_column_plugin=Dodatak
