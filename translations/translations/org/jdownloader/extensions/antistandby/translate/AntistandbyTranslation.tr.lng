@@ -1,5 +1,5 @@
-gui_config_antistandby_mode=Mod:
-gui_config_antistandby_whiledl=Dosya indirirken beklemede/uyku moduna geçirme engellensin
-jd_plugins_optional_antistandby_jdantistandby_description=Anti Bekleme
-gui_config_antistandby_whilejd=JD çalışırken beklemede/uyku moduna geçirme engellensin
-jd_plugins_optional_antistandby_jdantistandby=Anti Beklemede/Uyku Modu
+gui_config_antistandby_mode=Kip:
+gui_config_antistandby_whiledl=İndiriyorken beklemeye geçmeyi önle
+gui_config_antistandby_whilejd=JD çalışırken beklemeye geçmeyi önle
+jd_plugins_optional_antistandby_jdantistandby=Bekleme Önleyici
+jd_plugins_optional_antistandby_jdantistandby_description=İndirmelerinizi aktif tutmak için basitçe bilgisayarınızın Bekleme veya Uyku Kipine geçmesini önler.
