@@ -1,4 +1,4 @@
-AbstractConfigPanel_addPair_enabled=Diese Option aktivieren oder deaktivieren(test2)
+AbstractConfigPanel_addPair_enabled=Diese Option aktivieren oder deaktivieren
 AddContainerAction_actionPerformed_=Link Container Datei laden
 AddContainerAction_actionPerformed_extensions=Link Container (%s1)
 AddLinksDialog_AddLinksDialog_=Links hinzufügen und analysieren
