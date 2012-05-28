@@ -1,4 +1,7 @@
+guiless_extract=Αποσυμπίεση αρχείων...
 guiless_locked_closed_app=Το %s1 έχει κλείσει. Συνέχιση τώρα.
 restart_required_title=Απιατείται Επανεκκίνηση
 restart_title=Επανεκκίνση!
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
+updates_are_ready_for_install_now=%s1 ενημερώσεις είναι έτοιμες για λήψη.
+updates_ready_for_install=%s1 ενημερώσεις είναι έτοιμες για λήψη.

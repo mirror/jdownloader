@@ -1,10 +1,17 @@
 UpdateServer_UpdaterGui_onStateChange_failed2=%s1
+UpdateServer_UpdaterGui_onUpdaterModuleEnd_end_filtering=Βρέθηκαν %s1 ενημερώσεις!
 error_unknown=%s1
 exception_msg=%s1
 guiless_locked_closed_app=Το %s1 έχει κλείσει. Συνέχιση τώρα.
 guiless_progress=...Πρόοδος: %s1%
 list_optionals=- %s1
+readyToDownloadUpdates=%s1 Ενημερώσεις διαθέσιμες!
 restart_required_title=Απιατείται Επανεκκίνηση
 restart_title=Επανεκκίνση!
 timer=%s1 δευτ.
+title=%s1 Ενημέρωση
+title_timeout=%s1 Ενημέρωση (Κλείνει σε %s2 δευτερόλεπτα)
+title_timeout_restart=%s1 Ενημέρωση (Το %s1 ξεκινά σε %s2 δευτερόλεπτα)
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
+updates_are_ready_for_install_now=%s1 ενημερώσεις είναι έτοιμες για λήψη.
+updates_ready_for_install=%s1 ενημερώσεις είναι έτοιμες για λήψη.
