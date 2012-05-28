@@ -1,3 +1,5 @@
+ABSTRACTDIALOG_BUTTON_CANCEL=Cancelar
+ABSTRACTDIALOG_BUTTON_OK=Ok
 AccountNew_layoutDialogContent_accountname=Usuario
 AccountNew_layoutDialogContent_password=Contraseña
 SEARCHDIALOG_BUTTON_FIND=Buscar
