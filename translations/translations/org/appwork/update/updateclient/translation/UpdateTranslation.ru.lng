@@ -1,2 +1,4 @@
+UpdateServer_UpdaterGui_onStateChange_filter=Проверить обновление
 close=Закрыть
 exit=Выход
+guiless_extract=Извлечение файла(ов)
