@@ -20,6 +20,7 @@ import jd.controlling.reconnect.pluginsinc.batch.translate.BatchTranslation;
 import jd.controlling.reconnect.pluginsinc.extern.translate.ExternTranslation;
 import jd.controlling.reconnect.pluginsinc.liveheader.translate.LiveheaderTranslation;
 import jd.controlling.reconnect.pluginsinc.upnp.translate.UpnpTranslation;
+import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.AddonPanel;
 
 import org.appwork.shutdown.ShutdownController;
@@ -40,12 +41,12 @@ import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.locale.AWUTranslation;
 import org.appwork.utils.logging.Log;
-import org.appwork.utils.svn.FilePathFilter;
 import org.appwork.utils.svn.Subversion;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.LoginDialog;
 import org.appwork.utils.swing.dialog.LoginDialog.LoginData;
 import org.jdownloader.api.cnl2.translate.ExternInterfaceTranslation;
@@ -62,6 +63,7 @@ import org.jdownloader.translate.JdownloaderTranslation;
 import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNDirEntry;
 import org.tmatesoft.svn.core.SVNException;
+import org.tmatesoft.svn.core.wc.SVNCommitItem;
 import org.tmatesoft.svn.core.wc.SVNCommitPacket;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 
@@ -342,14 +344,17 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
             Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
             try {
-                s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
-            } catch (SVNException e) {
-                Log.exception(e);
-                s.cleanUp(Application.getResource("translations/custom"), true);
-                s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+                try {
+                    s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+                } catch (SVNException e) {
+                    Log.exception(e);
+                    s.cleanUp(Application.getResource("translations/custom"), true);
+                    s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+                }
+                s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
+            } finally {
+                s.dispose();
             }
-            s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
-            s.dispose();
             for (LazyExtension le : ExtensionController.getInstance().getExtensions()) {
                 try {
                     le.init();
@@ -390,23 +395,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         } catch (SVNException e) {
             e.printStackTrace();
         }
-    }
-
-    private List<SVNDirEntry> listSvnLngFileEntries() throws SVNException, InterruptedException {
-
-        final String extension = loaded.getId() + ".lng";
-        Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/", getSettings().getSVNUser(), getSettings().getSVNPassword());
-        List<SVNDirEntry> files = s.listFiles(new FilePathFilter() {
-            @Override
-            public boolean accept(SVNDirEntry path) {
-
-                return path.getName().endsWith(extension);
-            }
-
-        }, "");
-        s.dispose();
-        return files;
-
     }
 
     private <T extends TranslateInterface> T load(ArrayList<TranslateEntry> tmp, List<SVNDirEntry> svnEntries, TLocale locale, Class<T> class1) {
@@ -450,7 +438,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         return loaded;
     }
 
-    private boolean loggedIn = false;
+    private boolean loggedIn  = false;
+    private long    lastSave  = System.currentTimeMillis();
+    private int     saveCount = 0;
 
     public boolean isLoggedIn() {
         return loggedIn;
@@ -610,8 +600,18 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     public SVNCommitPacket save() throws IOException, SVNException {
 
-        write();
+        if (saveCount > 0 && System.currentTimeMillis() - lastSave < 20 * 60 * 1000) {
 
+            JDGui.help("Upload Changes", "Please do not upload your changes too often.\r\nSave your changes locally first, and upload them when you stop translating or maybe once per hour.", NewTheme.I().getIcon("warning", 32));
+            try {
+                Dialog.I().showConfirmDialog(0, "Sure?", "Are you sure that you want to upload the changes?\r\n Your latest commit has been " + ((System.currentTimeMillis() - lastSave) / 1000) + " seconds ago!");
+            } catch (DialogNoAnswerException e) {
+                return null;
+            }
+        }
+        lastSave = System.currentTimeMillis();
+        saveCount++;
+        write();
         return upload();
     }
 
@@ -674,36 +674,50 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     public SVNCommitPacket upload() throws SVNException {
         Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
         try {
-            s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
-        } catch (SVNException e) {
-            Log.exception(e);
-            s.cleanUp(Application.getResource("translations/custom"), true);
-            s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
-        }
-        s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
-        s.getWCClient().doAdd(Application.getResource("translations/custom"), true, false, true, SVNDepth.INFINITY, false, false);
-        Log.L.finer("Create CommitPacket");
-        final SVNCommitPacket packet = s.getCommitClient().doCollectCommitItems(new File[] { Application.getResource("translations/custom") }, false, false, SVNDepth.INFINITY, null);
+            try {
+                s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+            } catch (SVNException e) {
+                Log.exception(e);
+                s.cleanUp(Application.getResource("translations/custom"), true);
+                s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+            }
+            s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
+            s.getWCClient().doAdd(Application.getResource("translations/custom"), true, false, true, SVNDepth.INFINITY, false, false);
+            Log.L.finer("Create CommitPacket");
+            final SVNCommitPacket packet = s.getCommitClient().doCollectCommitItems(new File[] { Application.getResource("translations/custom") }, false, false, SVNDepth.INFINITY, null);
+            for (SVNCommitItem ci : packet.getCommitItems()) {
+                if (!ci.getPath().endsWith("." + getLoadedLocale().getId() + ".lng")) {
+                    packet.setCommitItemSkipped(ci, true);
+                    continue;
+                }
 
-        Log.L.finer("Transfer Package");
-        s.getCommitClient().doCommit(packet, true, false, "Updated " + loaded.getLocale().getDisplayName() + " Translation", null);
-        s.dispose();
-        return packet;
+            }
+            Log.L.finer("Transfer Package");
+            s.getCommitClient().doCommit(packet, true, false, "Updated " + loaded.getLocale().getDisplayName() + " Translation", null);
+
+            return packet;
+        } finally {
+            s.dispose();
+        }
+
     }
 
     public void revert() throws SVNException, InterruptedException {
         Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
         try {
-            s.revert(Application.getResource("translations/custom"));
+            try {
+                s.revert(Application.getResource("translations/custom"));
 
-            s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
-        } catch (SVNException e) {
-            Log.exception(e);
-            s.cleanUp(Application.getResource("translations/custom"), true);
-            s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+                s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+            } catch (SVNException e) {
+                Log.exception(e);
+                s.cleanUp(Application.getResource("translations/custom"), true);
+                s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+            }
+            s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
+        } finally {
+            s.dispose();
         }
-        s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
-        s.dispose();
         load(loaded);
     }
 

@@ -16,7 +16,6 @@ import javax.swing.InputMap;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
-import javax.swing.JMenuBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.KeyStroke;
@@ -88,11 +87,12 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     private ExtButton           revert;
     private ExtButton           restart;
     private JScrollPane         sp;
+    private ExtButton           upload;
 
     public TranslatorGui(TranslatorExtension plg) {
         super(plg);
 
-        this.panel = new SwitchPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill]")) {
+        this.panel = new SwitchPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]2[grow,fill]")) {
 
             @Override
             protected void onShow() {
@@ -112,18 +112,21 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     private void layoutPanel() {
-        panel.add(sp = new JScrollPane(table), "spanx 2");
+
+        panel.add(menuPanel);
+        panel.add(sp = new JScrollPane(table));
 
     }
 
     private void initComponents() {
+        layoutMenu();
         tableModel = new TranslateTableModel();
         table = new TranslateTable(getExtension(), tableModel);
         table.getSelectionModel().addListSelectionListener(this);
 
     }
 
-    protected void initMenu(JMenuBar menubar) {
+    protected void layoutMenu() {
         // Load Menu
 
         // this.mnuFileLoad = new JMenu("Load");
@@ -134,11 +137,11 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         // JSeparator());
         // mnuFileLoad.add();
 
-        menuPanel = new MigPanel("ins 0", "[]3[]3[][grow,fill][][]5[]", "[grow,fill]");
+        menuPanel = new MigPanel("ins 0", "[]3[]3[]3[][grow,fill][][]5[]", "[grow,fill]");
 
         menuPanel.add(load = new ExtButton(new AppAction() {
             {
-                setName("Load Translation");
+                setName("1. Load Translation");
             }
 
             @Override
@@ -236,13 +239,115 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
         menuPanel.add(save = new ExtButton(new AppAction() {
             {
-                setName("Save");
+                setName("2. Save locally");
                 setAccelerator("CTRL+S");
             }
 
             @Override
+            public void actionPerformed(ActionEvent e2) {
+                ProgressGetter pg = new ProgressDialog.ProgressGetter() {
+
+                    @Override
+                    public void run() throws Exception {
+
+                        try {
+                            getExtension().write();
+                            Dialog.getInstance().showMessageDialog("Save Succesful.\r\nDo not forget to click [Upload] when you stop translating.");
+                            return;
+                        } catch (Throwable e) {
+                            Dialog.getInstance().showExceptionDialog("An error occured", "Could not save the changes", e);
+                        }
+
+                    }
+
+                    @Override
+                    public String getString() {
+                        return null;
+                    }
+
+                    @Override
+                    public int getProgress() {
+                        return -1;
+                    }
+                };
+
+                try {
+                    Dialog.getInstance().showDialog(new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL, "Saving", "Please wait.", null, null, null) {
+
+                        @Override
+                        public Dimension getPreferredSize() {
+                            return new Dimension(200, 40);
+                        }
+
+                    });
+                } catch (DialogClosedException e) {
+                    e.printStackTrace();
+                } catch (DialogCanceledException e) {
+                    e.printStackTrace();
+                }
+            }
+        }));
+        menuPanel.add(upload = new ExtButton(new AppAction() {
+            {
+                setName("3. Upload Changes");
+                setAccelerator("CTRL+u");
+            }
+
+            @Override
             public void actionPerformed(ActionEvent e) {
-                save();
+
+                ProgressGetter pg = new ProgressDialog.ProgressGetter() {
+
+                    @Override
+                    public void run() throws Exception {
+
+                        try {
+
+                            SVNCommitPacket commit = getExtension().save();
+                            if (commit == null) return;
+                            if (commit.getCommitItems().length == 0) {
+                                Dialog.getInstance().showMessageDialog("Nothing has Changed");
+                                return;
+                            }
+                            StringBuilder sb = new StringBuilder();
+                            for (SVNCommitItem ci : commit.getCommitItems()) {
+                                if (commit.isCommitItemSkipped(ci)) continue;
+                                if (sb.length() > 0) sb.append("\r\n");
+                                sb.append(ci.getFile());
+                            }
+                            Dialog.getInstance().showMessageDialog("Save Succesful\r\n" + sb.toString());
+                            return;
+                        } catch (Throwable e) {
+                            Dialog.getInstance().showExceptionDialog("An error occured", "Could not save and upload the changes", e);
+                        }
+
+                    }
+
+                    @Override
+                    public String getString() {
+                        return null;
+                    }
+
+                    @Override
+                    public int getProgress() {
+                        return -1;
+                    }
+                };
+
+                try {
+                    Dialog.getInstance().showDialog(new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL, "Saving", "Please wait.", null, null, null) {
+
+                        @Override
+                        public Dimension getPreferredSize() {
+                            return new Dimension(200, 40);
+                        }
+
+                    });
+                } catch (DialogClosedException e1) {
+                    e1.printStackTrace();
+                } catch (DialogCanceledException e1) {
+                    e1.printStackTrace();
+                }
             }
         }));
         menuPanel.add(wizard = new ExtButton(new AppAction() {
@@ -492,7 +597,6 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         menuPanel.add(new JSeparator(JSeparator.VERTICAL));
         menuPanel.add(lbl = new JLabel(), "aligny center");
 
-        menubar.add(menuPanel);
         ti = new Timer(300, new ActionListener() {
 
             @Override
@@ -515,58 +619,6 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         // tableModel.setMarkDefaults(mnuViewMarkDef.getState());
         // tableModel.setMarkOK(mnuViewMarkOK.getState());
 
-    }
-
-    protected void save() {
-        ProgressGetter pg = new ProgressDialog.ProgressGetter() {
-
-            @Override
-            public void run() throws Exception {
-
-                try {
-                    SVNCommitPacket commit = getExtension().save();
-                    if (commit.getCommitItems().length == 0) {
-                        Dialog.getInstance().showMessageDialog("Nothing has Changed");
-                        return;
-                    }
-                    StringBuilder sb = new StringBuilder();
-                    for (SVNCommitItem ci : commit.getCommitItems()) {
-                        if (sb.length() > 0) sb.append("\r\n");
-                        sb.append(ci.getFile());
-                    }
-                    Dialog.getInstance().showMessageDialog("Save Succesful\r\n" + sb.toString());
-                    return;
-                } catch (Throwable e) {
-                    Dialog.getInstance().showExceptionDialog("An error occured", "Could not save and upload the changes", e);
-                }
-
-            }
-
-            @Override
-            public String getString() {
-                return null;
-            }
-
-            @Override
-            public int getProgress() {
-                return -1;
-            }
-        };
-
-        try {
-            Dialog.getInstance().showDialog(new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL, "Saving", "Please wait.", null, null, null) {
-
-                @Override
-                public Dimension getPreferredSize() {
-                    return new Dimension(200, 40);
-                }
-
-            });
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
-        }
     }
 
     /**
@@ -678,7 +730,15 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             @Override
             public void run() throws Exception {
                 try {
-                    getExtension().write();
+                    if (getExtension().getLoadedLocale() != null) {
+                        try {
+                            Dialog.I().showConfirmDialog(0, "Save " + getExtension().getLoadedLocale().getLocale().getDisplayName(), "Do you want to save your Changes on the " + getExtension().getLoadedLocale().getLocale().getDisplayName() + " Translation?");
+                            getExtension().write();
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
+                    }
+
                     getExtension().load(locale);
                 } catch (Throwable e) {
                     Dialog.getInstance().showExceptionDialog("Error", e.getLocalizedMessage(), e);
@@ -773,6 +833,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                     revert.setEnabled(false);
                     restart.setEnabled(false);
                     wizard.setEnabled(false);
+                    upload.setEnabled(false);
 
                 } else {
                     logout.setText("Logout");
@@ -782,6 +843,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                     revert.setEnabled(true);
                     wizard.setEnabled(true);
                     restart.setEnabled(true);
+                    upload.setEnabled(true);
                 }
 
             }
