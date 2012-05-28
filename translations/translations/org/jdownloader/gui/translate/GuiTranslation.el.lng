@@ -1,4 +1,5 @@
 AbstractConfigPanel_addPair_enabled=Ενεργοποίηση/Απενεργοποίηση αυτής της επιλογής
+account_remove_action_msg=Αφαίρεση %s1
 accountdialog_check=Έλεγχος λογαριασμού
 accountdialog_check_expired_title=Ανανέωση λογαριασμού;
 accountdialog_check_failed=Ο έλεγχος λογαριασμού απέτυχε
