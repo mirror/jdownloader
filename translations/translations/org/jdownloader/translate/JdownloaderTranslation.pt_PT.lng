@@ -1,8 +1,11 @@
+LinkCollector_archiv=%s1
+basics_browser_folder=Escolher
 captchacontroller_cancel_dialog_allorhost=Janela de Cancelamento de CAPTCHA
 captchacontroller_cancel_dialog_allorhost_all=Cancelar todas as CAPTCHA's pendentes
 captchacontroller_cancel_dialog_allorhost_cancelhost=Não mostrar CAPTCHA's pendentes para %s1
 captchacontroller_cancel_dialog_allorhost_msg=Cancelou uma janela de introdução de CAPTCHA!\n\nComo quer continuar?
 captchacontroller_cancel_dialog_allorhost_next=Mostrar todas as CAPTCHAS pendentes
+configheader_enabled=Activo
 controller_packages_defaultname=vários
 controller_status_connectionproblems=Ligação perdida.
 controller_status_containererror=Erro na lista
