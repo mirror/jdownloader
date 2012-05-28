@@ -110,7 +110,8 @@ public class UploadingCom extends PluginForHost {
                 int c = 0;
                 for (DownloadLink dl : links) {
                     /*
-                     * append fake filename , because api will not report anything else
+                     * append fake filename , because api will not report
+                     * anything else
                      */
                     if (c > 0) sb.append("%0D%0A");
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
@@ -309,54 +310,48 @@ public class UploadingCom extends PluginForHost {
     }
 
     public void handleFree0(DownloadLink link) throws Exception {
-        String dllink = null;
+        if (br.containsHTML("that only premium members are")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only for premium members");
         String passCode = null;
-        if (dllink == null) {
-            checkErrors(br);
-            passCode = link.getStringProperty("pass", null);
-            String fileID = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
-            String waitTimer = br.getRegex("start_time\\((\\d+)\\);").getMatch(0);
-            if (br.containsHTML("that only premium members are")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only for premium members"); }
-            int wait = 0;
-            if (waitTimer != null)
-                wait = (Integer.parseInt(waitTimer) * 1001);
-            else
-                wait = (45 * 1001);
-            try {
-                sleep(wait, link);
-            } catch (PluginException e) {
-                return;
-            }
-            Browser ajax = this.br.cloneBrowser();
-            ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            logger.info("Submitting form");
-            try {
-                String postData = "action=get_link&code=" + Encoding.urlEncode(fileID);
-                // not sure about below if. (old not tested)
-                if (br.containsHTML(PASSWORDTEXT) && passCode == null) {
-                    if (passCode == null) passCode = Plugin.getUserInput("Password?", link);
-                    postData += "&pass=" + Encoding.urlEncode(passCode);
-                } else if (passCode != null) {
-                    postData += "&pass=" + Encoding.urlEncode(passCode);
-                } else
-                    postData += "&pass=false";
-                ajax.postPage("http://uploading.com/files/get/?ajax", postData);
-            } catch (Exception e) {
-                // This is the "disconnected" error...(old not tested)
-                logger.warning("FATAL error happened with link: " + link.getDownloadURL());
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            // First Password-Errorhandling (old not tested)
-            if (passCode != null && (br.containsHTML(PASSWORDTEXT) || "The%20entered%20password%20is%20incorrect".equals(br.getCookie(MAINPAGE, "error")))) throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password");
-            checkErrors(ajax);
-            dllink = ajax.getRegex("link\":\"(https?.+/get_file[^\"]+)").getMatch(0);
-            if (dllink == null) {
-                logger.warning("Can not find final dllink");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = dllink.replaceAll("\\\\/", "/");
+        checkErrors(br);
+        passCode = link.getStringProperty("pass", null);
+        String fileID = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
+        int wait = 60;
+        String waitTimer = br.getRegex("<span id=\"timer_count\">(\\d+)</span>").getMatch(0);
+        if (waitTimer != null) wait = Integer.parseInt(waitTimer);
+        try {
+            sleep(wait * 1001l, link);
+        } catch (PluginException e) {
+            return;
         }
+        Browser ajax = this.br.cloneBrowser();
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        logger.info("Submitting form");
+        try {
+            String postData = "action=get_link&code=" + Encoding.urlEncode(fileID);
+            // not sure about below if. (old not tested)
+            if (br.containsHTML(PASSWORDTEXT) && passCode == null) {
+                if (passCode == null) passCode = Plugin.getUserInput("Password?", link);
+                postData += "&pass=" + Encoding.urlEncode(passCode);
+            } else if (passCode != null) {
+                postData += "&pass=" + Encoding.urlEncode(passCode);
+            } else
+                postData += "&pass=false";
+            ajax.postPage("http://uploading.com/files/get/?ajax", postData);
+        } catch (Exception e) {
+            // This is the "disconnected" error...(old not tested)
+            logger.warning("FATAL error happened with link: " + link.getDownloadURL());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // First Password-Errorhandling (old not tested)
+        if (passCode != null && (br.containsHTML(PASSWORDTEXT) || "The%20entered%20password%20is%20incorrect".equals(br.getCookie(MAINPAGE, "error")))) throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password");
+        checkErrors(ajax);
+        String dllink = ajax.getRegex("link\":\"(https?.+/get_file[^\"]+)").getMatch(0);
+        if (dllink == null) {
+            logger.warning("Can not find final dllink");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = dllink.replaceAll("\\\\/", "/");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         handleDownloadErrors();
         dl.setFilenameFix(true);
@@ -444,7 +439,8 @@ public class UploadingCom extends PluginForHost {
     }
 
     /**
-     * TODO: remove with next major update, DownloadWatchDog/AccountController handle blocked accounts now
+     * TODO: remove with next major update, DownloadWatchDog/AccountController
+     * handle blocked accounts now
      */
     @SuppressWarnings("deprecation")
     @Override

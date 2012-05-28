@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -54,7 +55,7 @@ public class DBankComFolder extends PluginForDecrypt {
         if (linkInformation != null && linkInformation.length != 0) {
             for (final String[] linkInfo : linkInformation) {
                 final String finalfilename = Encoding.htmlDecode(linkInfo[0].trim());
-                DownloadLink dl = createDownloadlink("http://dbankdecrypted.com/" + System.currentTimeMillis() + "/" + finalfilename);
+                DownloadLink dl = createDownloadlink("http://dbankdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
                 dl.setDownloadSize(SizeFormatter.getSize(linkInfo[1] + "b"));
                 dl.setFinalFileName(finalfilename);
                 dl.setAvailable(true);

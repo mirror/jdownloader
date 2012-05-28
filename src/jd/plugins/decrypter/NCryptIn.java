@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -24,6 +25,7 @@ import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.nativeintegration.LocalBrowser;
@@ -46,10 +48,11 @@ import org.appwork.utils.Regex;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?(ncrypt\\.in/(folder|link)\\-.+|urlcrypt\\.com/open\\-[A-Za-z0-9]+)" }, flags = { 0 })
 public class NCryptIn extends PluginForDecrypt {
 
-    private final String                   RECAPTCHA      = "recaptcha/api/challenge";
-    private final String                   OTHERCAPTCHA   = "/temp/anicaptcha/\\d+\\.gif";
-    private final String                   PASSWORDTEXT   = "password";
-    private final String                   PASSWORDFAILED = "<h2><span class=\"arrow\">Gesch\\&uuml;tzter Ordner</span></h2>";
+    private static final String            RECAPTCHA      = "recaptcha/api/challenge";
+    private static final String            ANICAPTCHA     = "/temp/anicaptcha/\\d+\\.gif";
+    private static final String            CIRCLECAPTCHA  = "\"/classes/captcha/circlecaptcha\\.php\"";
+    private static final String            PASSWORDTEXT   = "password";
+    private static final String            PASSWORDFAILED = "<h2><span class=\"arrow\">Gesch\\&uuml;tzter Ordner</span></h2>";
     private final HashMap<String, Boolean> CNL_URL_MAP    = new HashMap<String, Boolean>();
     private String                         aBrowser       = "";
 
@@ -107,10 +110,10 @@ public class NCryptIn extends PluginForDecrypt {
                     }
                     if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
                     if (captcha && new Regex(aBrowser, RECAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
-                } else if (allForm.containsHTML(OTHERCAPTCHA) && !allForm.containsHTML("recaptcha_challenge")) {
+                } else if (allForm.containsHTML(ANICAPTCHA) && !allForm.containsHTML("recaptcha_challenge")) {
                     captcha = true;
                     for (int i = 0; i <= 3; i++) {
-                        final String captchaLink = new Regex(aBrowser, OTHERCAPTCHA).getMatch(-1);
+                        final String captchaLink = new Regex(aBrowser, ANICAPTCHA).getMatch(-1);
                         if (captchaLink == null) { return null; }
 
                         final File captchaFile = this.getLocalCaptchaFile(".gif");
@@ -130,13 +133,35 @@ public class NCryptIn extends PluginForDecrypt {
                         }
                         br.submitForm(allForm);
                         haveFun();
-                        if (new Regex(aBrowser, OTHERCAPTCHA).matches()) {
+                        if (new Regex(aBrowser, ANICAPTCHA).matches()) {
                             continue;
                         }
                         break;
                     }
                     if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
-                    if (captcha && new Regex(aBrowser, OTHERCAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                    if (captcha && new Regex(aBrowser, ANICAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                } else if (allForm.containsHTML(CIRCLECAPTCHA) && !allForm.containsHTML("recaptcha_challenge")) {
+                    captcha = true;
+                    for (int i = 0; i <= 3; i++) {
+                        final File captchaFile = this.getLocalCaptchaFile(".png");
+                        Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://ncrypt.in/classes/captcha/circlecaptcha.php"));
+                        final Point p = UserIO.getInstance().requestClickPositionDialog(captchaFile, "Click on the open circle", null);
+                        allForm.put("circle.x", String.valueOf(p.x));
+                        allForm.put("circle.y", String.valueOf(p.y));
+                        if (allForm.containsHTML(PASSWORDTEXT)) {
+                            final String passCode = getPassword(param);
+                            allForm.put(PASSWORDTEXT, passCode);
+                        }
+                        br.submitForm(allForm);
+                        haveFun();
+                        if (new Regex(aBrowser, CIRCLECAPTCHA).matches()) {
+                            continue;
+                        }
+                        break;
+                    }
+                    if (password && new Regex(aBrowser, PASSWORDFAILED).matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
+                    if (captcha && new Regex(aBrowser, ANICAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                    if (captcha && new Regex(aBrowser, CIRCLECAPTCHA).matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
                 } else if (allForm.containsHTML(PASSWORDTEXT)) {
                     password = true;
                     for (int i = 0; i <= 3; i++) {

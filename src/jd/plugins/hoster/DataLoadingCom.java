@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data-loading.com" }, urls = { "http://[\\w\\.]*?data-loading\\.com/.{2}/file/\\d+/\\w+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data-loading.com" }, urls = { "http://(www\\.)?data-loading\\.com/.{2}/file/\\d+/\\w+" }, flags = { 2 })
 public class DataLoadingCom extends PluginForHost {
 
     public String freeOrPremium = null;
@@ -53,11 +53,11 @@ public class DataLoadingCom extends PluginForHost {
     public void doFree2(DownloadLink downloadLink) throws Exception {
         String passCode = null;
         // Captcha required or not ?
-        if (br.containsHTML("captcha.php")) {
+        if (br.containsHTML("captcha\\.php")) {
             for (int i = 0; i <= 3; i++) {
                 Form captchaform = br.getFormbyProperty("name", "myform");
                 String captchaurl = "http://data-loading.com/captcha.php";
-                if (captchaform == null || !br.containsHTML("captcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (captchaform == null || !br.containsHTML("captcha\\.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (br.containsHTML("downloadpw")) {
                     if (downloadLink.getStringProperty("pass", null) == null) {
                         passCode = getUserInput(null, downloadLink);
@@ -75,7 +75,7 @@ public class DataLoadingCom extends PluginForHost {
                     downloadLink.setProperty("pass", null);
                     continue;
                 }
-                if (br.containsHTML("Captcha number error") || br.containsHTML("captcha.php") && !br.containsHTML("You have got max allowed bandwidth size per hour")) {
+                if (br.containsHTML("Captcha number error") || br.containsHTML("captcha\\.php") && !br.containsHTML("You have got max allowed bandwidth size per hour")) {
                     logger.warning("Wrong captcha or wrong password!");
                     downloadLink.setProperty("pass", null);
                     continue;
