@@ -54,6 +54,7 @@ gui_downloadview_statustext_jac=Reconhecimento de imagem
 gui_javacheck_newerjavaavailable_msg=Apesar do JDownloader poder funcionar com a versão actual do Java, recomendamos que instale as mais recentes actualizações.\n\nO JDownloader irá ser mais estável, mais rápido e terá melhor aparência\n\n\n\nVisite http://jdownloader.org/download.
 gui_javacheck_newerjavaavailable_title=Detectada uma versão desactualizada do Java: %s1!
 gui_mainframe_title_updatemessage2=%s1 actualizações disponíveis
+gui_settings_plugins_title=Opções dos Extras
 gui_warning_reconnect_running=em curso...
 gui_warning_reconnectunknown=Nova ligação desconhecida
 plugins_error_downloadfailed=Transferência falhou

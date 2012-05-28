@@ -1,0 +1,6 @@
+plugins_optional_JDLightTray_always=Sempre
+plugins_optional_JDLightTray_closetotray=Fechar para área de notificação
+plugins_optional_JDLightTray_never=Nunca
+plugins_optional_JDLightTray_startMinimized=Iniciar minimizado
+plugins_optional_trayIcon_dl_total=Total:
+plugins_optional_trayIcon_speed=Velocidade:

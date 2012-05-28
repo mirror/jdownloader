@@ -17,5 +17,6 @@ gui_config_reconnect_selectrouter_example=Exemplo: 3Com ADSL
 gui_config_routeripfinder_notfound=Não é possível encontrar o hostname do seu router
 gui_config_routeripfinder_ready=Hostname encontrado: %s1
 gui_fengshuiconfig_routerip=IP do router
+jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save=Guardar
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Desligou o verificador de IP. Isto irá aumentar o tempo de reconexão drasticamente.\n\n\n\nVários outros módulos foram desligados também.
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=Verificador de IP desligado!
