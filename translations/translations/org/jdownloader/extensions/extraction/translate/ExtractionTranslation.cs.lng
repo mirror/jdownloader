@@ -1,3 +1,4 @@
+offline=Soubor je offline nebo chybí
 plugins_optional_extraction_crcerrorin=Rozbalení selhalo (CRC u %s1)
 plugins_optional_extraction_error_extrfailedcrc=Rozbalení selhalo (CRC neznámého souboru)
 plugins_optional_extraction_filefilter=Všechny podporované formáty
@@ -9,3 +10,5 @@ plugins_optional_extraction_status_notenoughspace=Není kam rozbalovat - málo m
 plugins_optional_extraction_status_openingarchive=Otevírám archiv...
 plugins_optional_extraction_status_passfound=Heslo nalezeno
 plugins_optional_extraction_status_queued=Přidáno na frontu k rozbalení
+settings_overwrite=Přepsat existující soubory?
+settings_various=Různé
