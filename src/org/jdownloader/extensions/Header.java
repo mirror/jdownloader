@@ -22,7 +22,7 @@ public class Header extends JPanel {
     private JLabel            label;
     private JCheckBox         enabled;
     private JLabel            iconLabel;
-    private int               version          = -1;
+    private int               version;
 
     public Header(String name, ImageIcon icon) {
         super(new MigLayout("ins 0", "[35!]5[]10[grow,fill]"));
@@ -47,7 +47,7 @@ public class Header extends JPanel {
         iconLabel = new JLabel(icon);
         add(iconLabel, "alignx right");
         if (version > 0) {
-            label = new JLabel("<html><u><b>" + name + "</b> Version " + version + "</u></html>");
+            label = new JLabel("<html><u><b>" + name + "</b></u> Version " + version + "</html>");
         } else {
             label = new JLabel("<html><u><b>" + name + "</b></u></html>");
         }
@@ -86,7 +86,12 @@ public class Header extends JPanel {
     }
 
     public void setText(String name) {
-        label.setText("<html><u><b>" + name + "</b></u></html>");
+
+        if (version > 0) {
+            label.setText("<html><u><b>" + name + "</b></u> Version " + version + "</html>");
+        } else {
+            label.setText("<html><u><b>" + name + "</b></u></html>");
+        }
     }
 
 }
