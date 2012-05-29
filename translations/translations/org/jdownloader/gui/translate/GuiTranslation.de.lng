@@ -360,6 +360,7 @@ downloadview_running=Laufende Downloads
 downloadview_successful=Erfolgreiche Downloads
 extensionManager_title=Erweiterungen
 extensiontablemodel_column_enabled=an/ausschalten
+fontname=default
 gui_btn_select=Auswählen
 gui_captchaWindow_askForInput=Captcha für%s1 eingeben!
 gui_column_defaultproxy=Standard Proxy
