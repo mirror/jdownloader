@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.script.ScriptEngine;
@@ -30,6 +31,7 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -304,7 +306,10 @@ public class TurboBitNet extends PluginForHost {
             if (tt > 250) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l); }
         }
 
-        final String fun = escape(br.toString());
+        final Browser tOut = br.cloneBrowser();
+        final String to = br.getRegex("(?i)(/js/timeout\\.js\\?ver=[0-9A-Z]+)").getMatch(0);
+        tOut.getPage(to == null ? "/js/timeout.js?ver=" + JDHash.getMD5(String.valueOf(Math.random())).toUpperCase(Locale.ENGLISH) : to);
+        final String fun = escape(tOut.toString());
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
 
         // realtime update
@@ -321,7 +326,13 @@ public class TurboBitNet extends PluginForHost {
             getPluginConfig().save();
         }
 
-        final String res = rhino(fun + "@" + rtUpdate, 666);
+        String res = rhino("var id = \'" + id + "\';@" + fun + "@" + rtUpdate, 666);
+        if (res == null || res != null && !res.matches(tb(10))) {
+            res = rhino(fun + "@" + rtUpdate, 100);
+            if (new Regex(res, "/~ID~/").matches()) {
+                res = res.replaceAll("/~ID~/", id);
+            }
+        }
 
         if (res != null && res.matches(tb(10))) {
             sleep(tt * 1001, downloadLink);
@@ -536,14 +547,19 @@ public class TurboBitNet extends PluginForHost {
                 engine.eval("var out=\"" + s + "\";");
                 result = engine.get("out");
                 break;
-            case 666:
+            case 100:
                 String[] code = s.split("@");
-                engine.eval("var b = new Boolean(true);var inn = \'" + code[0] + "\';" + code[1]);
+                engine.eval("var b = 3;var inn = \'" + code[0] + "\';" + code[1]);
+                result = engine.get("out");
+                break;
+            case 666:
+                code = s.split("@");
+                engine.eval(code[0] + "var b = 1;var inn = \'" + code[1] + "\';" + code[2]);
                 result = engine.get("out");
                 break;
             case 999:
                 code = s.split("@");
-                engine.eval("var b = new Boolean(false);var inn = \'" + code[0] + "\';" + code[1]);
+                engine.eval("var b = 2;var inn = \'" + code[0] + "\';" + code[1]);
                 result = engine.get("out");
                 break;
             }
