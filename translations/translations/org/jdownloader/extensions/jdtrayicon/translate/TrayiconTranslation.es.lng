@@ -1,3 +1,4 @@
+jd_plugins_optional_jdtrayicon_jdlighttray=Light Tray
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Permite minimizar o cerrar JDownloader al Área de Notificación, además e otras funciones como protegerlo con contraseña y más.
 plugins_optional_JDLightTray_always=Archivos fuera de línea
 plugins_optional_JDLightTray_closetotray=Cerrar a la bandeja
@@ -11,5 +12,8 @@ plugins_optional_trayIcon_progress=Progreso:
 plugins_optional_trayIcon_speed=Velocidad:
 popup_downloadfolder=Abrir carpeta de descargas
 popup_exit=Salir de JDonwloader
+popup_pause=Pausar descargas
+popup_premiumtoggle=Premium habilitado
+popup_reconnect=Reconectar ahora
 popup_reconnecttoggle=Autoreconectar activado
 popup_update=Buscar actualizaciones
