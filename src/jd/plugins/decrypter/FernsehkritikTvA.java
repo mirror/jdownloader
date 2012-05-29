@@ -35,8 +35,6 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // Refactored on the 02.07.2011, Rev. 14521,
-    // http://svn.jdownloader.org/projects/jd/repository/revisions/14521
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -68,14 +66,9 @@ public class FernsehkritikTvA extends PluginForDecrypt {
             }
 
         } else {
+            br.getPage(parameter + "/Start/");
             final String fpName = br.getRegex("var flattr_tle = \\'(.*?)\\'").getMatch(0);
-            final String fpStart = br.getRegex("<a onclick=\"jump\\(\\'(.*?)\\'\\);\" href=\"#\" id=\"start_flash_player_link\">Flash-Player starten</a>").getMatch(0);
-            if (fpStart != null && !parameter.equals(fpStart)) {
-                br.getPage(parameter + "/" + fpStart);
-            } else {
-                return null;
-            }
-            final String[] jumps = br.getRegex("onclick=\"partJump\\((\\d), \\d+\\)\"").getColumn(0);
+            final String[] jumps = br.getRegex("onclick=\"partJump\\((\\d+), \\d+\\)\"").getColumn(0);
             if (jumps == null || jumps.length == 0) {
                 logger.warning("FATAL error, no parts found for link: " + parameter);
                 return null;
@@ -83,7 +76,6 @@ public class FernsehkritikTvA extends PluginForDecrypt {
             ArrayList<String> parts = new ArrayList<String>();
             for (String jump : jumps)
                 if (!parts.contains(jump)) parts.add(jump);
-            progress.setRange(parts.size());
             fp = FilePackage.getInstance();
             fp.setName(fpName);
             for (final String part : parts) {
@@ -97,7 +89,6 @@ public class FernsehkritikTvA extends PluginForDecrypt {
                 fp.add(dlLink);
                 dlLink.setAvailable(true);
                 decryptedLinks.add(dlLink);
-                progress.increase(1);
             }
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) { return null; }

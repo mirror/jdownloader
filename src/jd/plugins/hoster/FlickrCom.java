@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -53,30 +52,40 @@ public class FlickrCom extends PluginForHost {
     }
 
     private static final Object LOCK     = new Object();
-    private static boolean      loaded   = false;
     private static final String MAINPAGE = "http://flickr.com";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("flickrdecrypted.com/", "flickr.com/"));
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        br.clearCookies(MAINPAGE);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
-            final Object ret = aa.getProperty("cookies", null);
-            if (ret == null) { return AvailableStatus.UNCHECKABLE; }
-            final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-            for (Map.Entry<String, String> entry : cookies.entrySet()) {
-                this.br.setCookie("http://flickr.com", entry.getKey(), entry.getValue());
-            }
+            login(aa, false, br);
+        } else {
+            logger.info("File not checkable without logindata!");
+            return AvailableStatus.UNCHECKABLE;
         }
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        System.out.println(br.toString());
+        if (!br.containsHTML("Signed in as <a data\\-track=")) {
+            logger.info("Cookies seem to be invalid/old, trying to force login and re-checking...");
+            br.clearCookies(MAINPAGE);
+            login(aa, true, br);
+            br.getPage(downloadLink.getDownloadURL());
+            if (!br.containsHTML("Signed in as <a data\\-track=")) {
+                logger.warning("Cookies are still bad, plugin must be broken");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         String filename = getFilename();
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            logger.warning("Filename not found, plugin must be broken...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (br.containsHTML("(photo\\-div video\\-div|class=\"video\\-wrapper\"|<meta name=\"medium\" content=\"video\")")) {
             final String lq = createGuid();
             final String secret = br.getRegex("photo_secret=(.*?)\\&").getMatch(0);
@@ -131,7 +140,7 @@ public class FlickrCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(account, true, br);
+            login(account, false, br);
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
@@ -176,33 +185,33 @@ public class FlickrCom extends PluginForHost {
                         final String value = cookieEntry.getValue();
                         br.setCookie(MAINPAGE, key, value);
                     }
-                    return;
                 }
+            } else {
+                br.setFollowRedirects(true);
+                br.getPage("http://www.flickr.com/signin/");
+                final String u = br.getRegex("type=\"hidden\" name=\"\\.u\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
+                final String challenge = br.getRegex("type=\"hidden\" name=\"\\.challenge\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
+                final String done = br.getRegex("type=\"hidden\" name=\"\\.done\" value=\"([^<>\"\\']+)\"").getMatch(0);
+                final String pd = br.getRegex("type=\"hidden\" name=\"\\.pd\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
+                if (u == null || challenge == null || done == null || pd == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                br.postPage("https://login.yahoo.com/config/login", ".tries=1&.src=flickrsignin&.md5=&.hash=&.js=&.last=&promo=&.intl=us&.lang=en-US&.bypass=&.partner=&.u=" + u + "&.v=0&.challenge=" + Encoding.urlEncode(challenge) + "&.yplus=&.emailCode=&pkg=&stepid=&.ev=&hasMsgr=0&.chkP=Y&.done=" + Encoding.urlEncode(done) + "&.pd=" + Encoding.urlEncode(pd) + "&.ws=1&.cp=0&pad=15&aad=15&popup=1&login=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&.persistent=y&.save=&passwd_raw=");
+                if (br.containsHTML("\"status\" : \"error\"")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                String stepForward = br.getRegex("\"url\" : \"(https?://[^<>\"\\']+)\"").getMatch(0);
+                if (stepForward == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                br.getPage(stepForward);
+                stepForward = br.getRegex("Please <a href=\"(http://(www\\.)?flickr\\.com/[^<>\"]+)\"").getMatch(0);
+                if (stepForward == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                br.getPage(stepForward);
+                // Save cookies
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = br.getCookies(MAINPAGE);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
             }
-            br.setFollowRedirects(true);
-            br.getPage("http://www.flickr.com/signin/");
-            final String u = br.getRegex("type=\"hidden\" name=\"\\.u\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
-            final String challenge = br.getRegex("type=\"hidden\" name=\"\\.challenge\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
-            final String done = br.getRegex("type=\"hidden\" name=\"\\.done\" value=\"([^<>\"\\']+)\"").getMatch(0);
-            final String pd = br.getRegex("type=\"hidden\" name=\"\\.pd\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
-            if (u == null || challenge == null || done == null || pd == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-            br.postPage("https://login.yahoo.com/config/login", ".tries=1&.src=flickrsignin&.md5=&.hash=&.js=&.last=&promo=&.intl=us&.lang=en-US&.bypass=&.partner=&.u=" + u + "&.v=0&.challenge=" + Encoding.urlEncode(challenge) + "&.yplus=&.emailCode=&pkg=&stepid=&.ev=&hasMsgr=0&.chkP=Y&.done=" + Encoding.urlEncode(done) + "&.pd=" + Encoding.urlEncode(pd) + "&.ws=1&.cp=0&pad=15&aad=15&popup=1&login=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&.persistent=y&.save=&passwd_raw=");
-            if (br.containsHTML("\"status\" : \"error\"")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-            String stepForward = br.getRegex("\"url\" : \"(https?://[^<>\"\\']+)\"").getMatch(0);
-            if (stepForward == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-            br.getPage(stepForward);
-            stepForward = br.getRegex("Please <a href=\"(http://(www\\.)?flickr\\.com/[^<>\"]+)\"").getMatch(0);
-            if (stepForward == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-            br.getPage(stepForward);
-            // Save cookies
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = br.getCookies(MAINPAGE);
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            account.setProperty("name", Encoding.urlEncode(account.getUser()));
-            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-            account.setProperty("cookies", cookies);
         }
     }
 

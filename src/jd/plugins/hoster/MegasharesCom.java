@@ -52,6 +52,7 @@ public class MegasharesCom extends PluginForHost {
     private final String                   UserAgent   = "JD_" + "$Revision$";
     private static HashMap<String, String> premCookies = null;
     private static final Object            LOCK        = new Object();
+    private static final String            NOCHUNKS    = null;
 
     public MegasharesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -292,7 +293,11 @@ public class MegasharesCom extends PluginForHost {
         String url = findDownloadUrl();
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -10);
+        int chunks = -10;
+        if (downloadLink.getBooleanProperty(MegasharesCom.NOCHUNKS, false)) {
+            chunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, chunks);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.getHttpConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
@@ -305,7 +310,20 @@ public class MegasharesCom extends PluginForHost {
             correctDownloadLink(downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+            } else {
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(MegasharesCom.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(MegasharesCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        }
     }
 
     // do not add @Override here to keep 0.* compatibility

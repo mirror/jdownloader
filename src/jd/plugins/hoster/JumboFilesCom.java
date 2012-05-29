@@ -58,7 +58,7 @@ public class JumboFilesCom extends PluginForHost {
         BRBEFORE = br.toString();
         final ArrayList<String> someStuff = new ArrayList<String>();
         final ArrayList<String> regexStuff = new ArrayList<String>();
-        regexStuff.add("<!(--.*?--)>");
+        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
         for (final String aRegex : regexStuff) {
