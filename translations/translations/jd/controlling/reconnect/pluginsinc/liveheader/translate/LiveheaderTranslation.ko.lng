@@ -1,3 +1,10 @@
+AutoDetectAction_AutoDetectAction_=자동 설정
+DataCompareDialog_layoutDialogContent_firmware=펨웨어/버젼
+DataCompareDialog_layoutDialogContent_name=모델 이름
+DataCompareDialog_layoutDialogContent_password=패스워드
+DataCompareDialog_layoutDialogContent_user=사용자 아이디
+EditScriptAction_EditScriptAction_=스크립트 수정
+ReconnectRecorderAction_ReconnectRecorderAction_=새로운 스크립트 만들기
 RouterSendAction_RouterSendAction_=설정 공유
 RouterSendAction_actionPerformed_title=재접속 설정 공유
 gui_btn_abort=종료시키다
