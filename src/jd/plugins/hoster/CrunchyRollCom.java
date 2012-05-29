@@ -91,9 +91,8 @@ public class CrunchyRollCom extends PluginForHost {
      * @param downloadLink
      *            The DownloadLink to convert to .ass
      */
-    private void convertSubs(final DownloadLink downloadLink) throws Exception {
-        boolean success = false;
-        downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptingsubtitles", "Decrypting subtitles..."));
+    private void convertSubs(final DownloadLink downloadLink) throws PluginException {
+        downloadLink.getLinkStatus().setStatusText("Decrypting subtitles...");
         try {
             // Create the XML Parser
             final DocumentBuilderFactory xmlDocBuilderFactory = DocumentBuilderFactory.newInstance();
@@ -132,10 +131,9 @@ public class CrunchyRollCom extends PluginForHost {
                 cipher.doFinal(decrypted, decLength);
             } catch (final Throwable e) {
                 JDLogger.exception(e);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error decrypting subtitles!");
             }
-            // Create the XML Parser (and zlib decompress using
-            // InflaterInputStream)
+            // Create the XML Parser (and zlib decompress using InflaterInputStream)
             final DocumentBuilderFactory subsDocBuilderFactory = DocumentBuilderFactory.newInstance();
             final DocumentBuilder subsDocBuilder = subsDocBuilderFactory.newDocumentBuilder();
             final Document subs = subsDocBuilder.parse(new InflaterInputStream(new ByteArrayInputStream(decrypted)));
@@ -221,23 +219,22 @@ public class CrunchyRollCom extends PluginForHost {
             } catch (final Throwable e) {
                 subOut.close();
                 subOutFile.close();
-                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.subtitlessavefail", "Error writing decrypted subtitles"));
-                throw new IOException("Error writing decrypted subtitles '" + downloadLink.getFileOutput() + "'");
+                throw new PluginException(LinkStatus.ERROR_LOCAL_IO, "Error writing decrypted subtitles!");
             }
 
             subOut.close();
             subOutFile.close();
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptedsubtitles", "Decrypted subtitles"));
-            success = true;
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptedsubtitles", "Subtitles decrypted"));
         } catch (final SAXException e) {
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptingsubtitlessaxerror", "Failed to decrypt: Invalid XML file"));
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error decrypting subtitles: Invalid XML file!");
         } catch (final DOMException e) {
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptingsubtitlesdomerror", "Failed to decrypt: XML file changed"));
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error decrypting subtitles: XML file changed!");
+        } catch (final PluginException e) {
+            throw e;
         } catch (final Throwable e) {
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.crunchyrollcom.decryptingsubtitleserror", "Failed to decrypt"));
             e.printStackTrace();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error decrypting subtitles!");
         }
-        if (!success) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
     }
 
     /**
@@ -276,11 +273,8 @@ public class CrunchyRollCom extends PluginForHost {
             // Make sure we have a new enough version
             final String rtmpVer = this.normaliseRtmpVersion(rtmpTest.getRtmpDumpVersion(), ".", 5);
             final String minVer = this.normaliseRtmpVersion(CrunchyRollCom.RTMPDUMP_MIN_VER, ".", 5);
-            if (rtmpVer.compareTo(minVer) < 0) {
-                final String versionError = "RTMPDump v" + CrunchyRollCom.RTMPDUMP_MIN_VER + " or newer required";
-                downloadLink.setComment(versionError);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, versionError);
-            }
+
+            if (rtmpVer.compareTo(minVer) < 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "RTMPDump v" + CrunchyRollCom.RTMPDUMP_MIN_VER + " or newer required"); }
 
             // Create the download
             this.dl = new RTMPDownload(this, downloadLink, url);
@@ -432,7 +426,7 @@ public class CrunchyRollCom extends PluginForHost {
 
                 // Check if we successfully logged in
                 if (!br.containsHTML("Welcome back, .+?!") && !br.containsHTML("<title>Redirecting\\.\\.\\.</title>")) {
-                    // Not successfuly, display dialog if we were asked to
+                    // Not successful, display dialog if we were asked to
                     if (showDialog) {
                         UserIO.getInstance().requestMessageDialog(0, "Crunchyroll Login Error", "Account check needed for crunchyroll.com!");
                     }

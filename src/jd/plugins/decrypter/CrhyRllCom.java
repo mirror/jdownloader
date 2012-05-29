@@ -235,7 +235,7 @@ public class CrhyRllCom extends PluginForDecrypt {
 
         String name = null;
         try {
-            // Use a feature where you are redirected to the full-url if you don't go there
+            // Use a feature where you are redirected to the full-url if you go to a shortened version
             br.setFollowRedirects(false);
             br.getPage("http://www.crunchyroll.com/a/a-" + videoId);
             name = this.nameFromVideoUrl(br.getRedirectLocation());
@@ -299,9 +299,9 @@ public class CrhyRllCom extends PluginForDecrypt {
         androidBr.getPage(downloadLink.getDownloadURL());
 
         // Check if we can actually get the video
-        if (androidBr.containsHTML("Video not found")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Android HTTP Headers failed"); }
-        if (androidBr.containsHTML("Media not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File does not exist"); }
-        if (!androidBr.containsHTML("\"exception_error_code\":null")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown XML error"); }
+        if (androidBr.containsHTML("Video not found")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Permission denied!"); }
+        if (androidBr.containsHTML("Media not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File does not exist!"); }
+        if (!androidBr.containsHTML("\"exception_error_code\":null")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown XML error!"); }
 
         // Get the filetype from the JSON
         String filetype = androidBr.getRegex("video(\\.\\w+)").getMatch(0);
