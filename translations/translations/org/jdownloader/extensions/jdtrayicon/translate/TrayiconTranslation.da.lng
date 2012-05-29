@@ -1,4 +1,5 @@
 plugins_optional_JDLightTray_always=Altid
+plugins_optional_JDLightTray_closetotray=Luk til værktøjslinje
 plugins_optional_JDLightTray_never=Aldrig
 plugins_optional_JDLightTray_startMinimized=Start minimeret
 plugins_optional_trayIcon_dl_total=Total:

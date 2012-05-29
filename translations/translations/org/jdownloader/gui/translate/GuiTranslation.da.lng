@@ -1,6 +1,9 @@
 AutoDetectAction_skip_optimization=Spring over
 AutoSetupAction_actionPerformed_router=Router
 BuyAndAddPremiumAccount_layoutDialogContent_pass=Indtast adgangskode...
+ClearAction_actionPerformed_msg=Vil du virkelig fjerne alle links fra Linkgrabberen?
+ClearAction_actionPerformed_offline_msg=Vil du virkelig fjerne alle offline links fra Linkgrabberen?
+ClearAction_actionPerformed_selected_msg=Vil du virkelig fjerne alle valgte links fra Linkgrabberen?
 ConditionDialog_getPopupMenu_filename_=Filnavn
 ConditionDialog_layoutDialogContent_online_has_=har
 ConfirmAction_ConfirmAction_context_add_and_start=Start Downloads

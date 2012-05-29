@@ -21,6 +21,7 @@ easycaptcha_loadcaptchas_link=Link
 easycaptcha_loadcaptchas_loaddirect=Load direkte hvis det er muligt (meget hurtigere)
 easycaptcha_loadcaptchas_title=Load Captchas
 easycaptcha_mask=Maske:
+easycaptcha_openCaptchaFolder=Åben Captcha Mappe
 easycaptcha_orginal=Original:
 easycaptcha_remove=fjern
 easycaptcha_settings=Indstillinger:
