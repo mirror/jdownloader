@@ -18,12 +18,13 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
-import jd.parser.html.HTMLParser;
-import jd.plugins.BrowserAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -37,9 +38,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.com" }, urls = { "http://[\\w\\.]*?shareplace\\.(com|org)/\\?[\\w]+(/.*?)?" }, flags = { 0 })
 public class Shareplacecom extends PluginForHost {
 
-    private String url;
-
-    public Shareplacecom(PluginWrapper wrapper) {
+    public Shareplacecom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -55,78 +54,58 @@ public class Shareplacecom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String filename = downloadLink.getFinalFileName();
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = Encoding.htmlDecode(filename.trim());
-        filename = Encoding.deepHtmlDecode(filename);
-        String page = Encoding.urlDecode(br.toString(), true);
-        String[] links = HTMLParser.getHttpLinks(page, null);
-        boolean found = false;
-        // // waittime deactivated till shareplace blocks it ;)
-        // String time = br.getRegex("var zzipitime =.*?(\\d+);").getMatch(0);
-        // int tt = 15;
-        // if (time != null && Integer.parseInt(time) < 30) tt =
-        // Integer.parseInt(time);
-        // sleep(tt * 1001l, downloadLink);
-        for (String link : links) {
-            String fakelink = Encoding.deepHtmlDecode(link);
-            if (!fakelink.contains(filename)) continue;
-            if (br.containsHTML("replace")) {
-                fakelink = fakelink.replace("vvvvvvvvv", "");
-                fakelink = fakelink.replace("teletubbies", "");
-                fakelink = fakelink.substring(13);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = null;
+        for (final String[] s : br.getRegex("<script language=\"Javascript\">(.*?)</script>").getMatches()) {
+            if (!new Regex(s[0], "(vvvvvvvvv|teletubbies|zzipitime)").matches()) {
+                continue;
             }
-
-            Browser brc = br.cloneBrowser();
-            dl = BrowserAdapter.openDownload(brc, downloadLink, fakelink);
-            if (dl.getConnection().isContentDisposition()) {
-                String fakename = Plugin.getFileNameFromHeader(dl.getConnection());
-                if (fakename.contains("README.TXT")) {
-                    dl.getConnection().disconnect();
-                    continue;
-                }
-                found = true;
-                break;
-            } else {
-                dl.getConnection().disconnect();
-            }
+            dllink = rhino(new Regex(s[0], "(var.*?)var zzipitime").getMatch(0));
         }
-        if (!found) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            if (br.containsHTML("<span>You have got max allowed download sessions from the same IP\\!</span>")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", 60 * 60 * 1001l); }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("dllink doesn't seem to be a file...");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+        }
         /* Workaround für fehlerhaften Filename Header */
-        String name = Plugin.getFileNameFromHeader(dl.getConnection());
-        if (name != null) downloadLink.setFinalFileName(Encoding.deepHtmlDecode(name));
+        final String name = Plugin.getFileNameFromHeader(dl.getConnection());
+        if (name != null) {
+            downloadLink.setFinalFileName(Encoding.deepHtmlDecode(name));
+        }
         dl.startDownload();
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        url = downloadLink.getDownloadURL();
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        String url = downloadLink.getDownloadURL();
         setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
         br.getPage(url);
         if (br.getRedirectLocation() == null) {
-
-            String iframe = url = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
+            final String iframe = url = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
             br.getPage(iframe);
-            if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String filename = br.getRegex("Filename:</font></b>(.*?)<b><br>").getMatch(0).trim();
+            if (br.containsHTML("Your requested file is not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            final String filename = br.getRegex("Filename:</font></b>(.*?)<b><br>").getMatch(0);
             String filesize = br.getRegex("Filesize.*?b>(.*?)<b>").getMatch(0);
-            if (filesize == null) filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            downloadLink.setFinalFileName(filename.trim());
-            if (filesize != null) {
-                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+            if (filesize == null) {
+                filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
             }
+            if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            downloadLink.setFinalFileName(filename.trim());
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
             return AvailableStatus.TRUE;
         } else {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -138,10 +117,24 @@ public class Shareplacecom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     @Override
     public void resetPluginGlobals() {
     }
+
+    private String rhino(final String s) {
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            engine.eval(s);
+            result = engine.get("coffee");
+        } catch (final Throwable e) {
+            return null;
+        }
+        return result != null ? result.toString() : null;
+    }
+
 }
