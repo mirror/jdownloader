@@ -250,7 +250,7 @@ public class LookAndFeelController {
         // config.setFontScaleFactor(100);
         int fontSize = config.getFontScaleFactor();
         String fontName = config.getFontName();
-        String fontFromTranslation = _GUI._.fontname();
+        String fontFromTranslation = _GUI._.config_fontname();
         ExtTooltip.createConfig(ExtTooltip.DEFAULT).setForegroundColor(getLAFOptions().getTooltipForegroundColor());
         if (isSynthetica()) {
             ExtPasswordField.MASK = "******";

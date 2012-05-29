@@ -7,7 +7,6 @@ import org.appwork.txtresource.Description;
 import org.appwork.txtresource.TranslateInterface;
 import org.appwork.txtresource.TranslationSource;
 import org.appwork.utils.StringUtils;
-import org.tmatesoft.svn.core.SVNDirEntry;
 
 /**
  * Basic Data class for each Key-value pair
@@ -25,14 +24,25 @@ public class TranslateEntry {
     private Boolean            isMissing      = false;
     private Boolean            isDefault      = false;
 
-    private SVNDirEntry        svnEntry;
     private TranslationSource  source;
     private boolean            translationSet = false;
     private String             directTranslation;
     private String             parameterString;
+    private String             description;
 
     public boolean isTranslationSet() {
         return translationSet;
+    }
+
+    @Override
+    public int hashCode() {
+        return (getMethod().getName() + tinterface._getHandler().getID()).hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof TranslateEntry) { return ((TranslateEntry) obj).getMethod().equals(getMethod()) && tinterface._getHandler().getID() == ((TranslateEntry) obj).tinterface._getHandler().getID(); }
+        return false;
     }
 
     /**
@@ -43,15 +53,16 @@ public class TranslateEntry {
      *            translation method
      * @param svn
      */
-    public TranslateEntry(TranslateInterface t, Method m, SVNDirEntry svn) {
+    public TranslateEntry(TranslateInterface t, Method m) {
         tinterface = t;
         method = m;
         // Get Translation String without replacing the %s*wildcard
 
         source = tinterface._getHandler().getSource(method);
-
-        svnEntry = svn;
-
+        Description da = m.getAnnotation(Description.class);
+        if (da != null) {
+            description = da.value();
+        }
         // validates the entry
         translation = tinterface._getHandler().getTranslation(method);
         directTranslation = tinterface._getHandler().getTranslation(method);
@@ -106,8 +117,7 @@ public class TranslateEntry {
     }
 
     /**
-     * Checks if the translated string has all wildcards defined by the
-     * translation interface
+     * Checks if the translated string has all wildcards defined by the translation interface
      */
     private void validateParameterCount() {
 
@@ -152,8 +162,7 @@ public class TranslateEntry {
 
     /**
      * 
-     * @return a long key which might help the translater to identify the origin
-     *         of the translation entry.
+     * @return a long key which might help the translater to identify the origin of the translation entry.
      */
     public String getFullKey() {
         return tinterface.getClass().getInterfaces()[0].getName() + "." + method.getName();
@@ -177,13 +186,11 @@ public class TranslateEntry {
 
     /**
      * 
-     * @return Description assigned in the TranslationInterface for this entry
-     *         or null
+     * @return Description assigned in the TranslationInterface for this entry or null
      */
     public String getDescription() {
-        Description ann = method.getAnnotation(Description.class);
-        if (ann != null) return ann.value();
-        return null;
+
+        return description;
     }
 
     /**
@@ -195,9 +202,8 @@ public class TranslateEntry {
     }
 
     /**
-     * Sets a new TRanslation, and validates it. call {@link #getErrors()}
-     * afterwards to check for warnings or errors. This does NOT throw an
-     * Exception
+     * Sets a new TRanslation, and validates it. call {@link #getErrors()} afterwards to check for warnings or errors. This does NOT throw
+     * an Exception
      * 
      * @param value
      */

@@ -30,7 +30,6 @@ import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.ToolTip;
 import org.appwork.swing.exttable.columns.ExtIconColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.translator.TranslateEntry;
 import org.jdownloader.extensions.translator.TranslatorExtension;
@@ -418,14 +417,11 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
      * @param extension
      */
     public void refresh(final TranslatorExtension extension) {
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                clear();
-                if (extension.getTranslationEntries() != null) addAllElements(extension.getTranslationEntries().toArray(new TranslateEntry[] {}));
-            }
-        };
+        if (extension.getTranslationEntries() != null) {
+            _fireTableStructureChanged(extension.getTranslationEntries(), true);
+        } else {
+            clear();
+        }
     }
 
 }
