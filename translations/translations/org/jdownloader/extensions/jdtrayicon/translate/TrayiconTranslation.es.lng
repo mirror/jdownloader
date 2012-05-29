@@ -1,0 +1,10 @@
+jd_plugins_optional_jdtrayicon_jdlighttray_description=Permite minimizar o cerrar JDownloader al Área de Notificación, además e otras funciones como protegerlo con contraseña y más.
+plugins_optional_JDLightTray_linkgrabberresults=Traer al frente la ventana principar al agregar nuevos links
+plugins_optional_trayIcon_dl_finished=Terminado:
+plugins_optional_trayIcon_downloads=Descargas:
+plugins_optional_trayIcon_eta=ETA:
+plugins_optional_trayIcon_progress=Progreso:
+plugins_optional_trayIcon_speed=Velocidad:
+popup_exit=Salir de JDonwloader
+popup_reconnecttoggle=Autoreconectar activado
+popup_update=Buscar actualizaciones

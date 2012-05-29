@@ -1,1 +1,7 @@
+UPNPReconnectInvoker_getName_=Reconexion del router UPNP
+UPNPRouterPlugin_run_wizard_title=UPNP router Wizard
+auto=Autoajuste de UPNP
 literally_choose_router=Elige dispositivo
+literally_control_url=URL de control
+literally_router=Router UPNP
+malformedurl=URL de control inválida. Prueba con el ajuste auto. de UPNP.
