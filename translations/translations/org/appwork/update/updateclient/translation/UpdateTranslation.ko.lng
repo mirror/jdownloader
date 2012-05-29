@@ -1,0 +1,7 @@
+UpdateServer_UpdaterGui_onStateChange_download=다운로드
+UpdateServer_UpdaterGui_onStateChange_failed=업데이트 실패
+UpdateServer_UpdaterGui_onStateChange_install=설치중
+UpdateServer_UpdaterGui_onStateChange_successful=성공
+UpdateServer_UpdaterGui_runInEDT_successful=성공!
+guiless_done=업데이트 완료.
+guiless_downloadfinished=다운로드 완료.

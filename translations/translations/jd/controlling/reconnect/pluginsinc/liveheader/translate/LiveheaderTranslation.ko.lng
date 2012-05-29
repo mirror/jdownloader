@@ -1,3 +1,5 @@
+RouterSendAction_RouterSendAction_=설정 공유
+RouterSendAction_actionPerformed_title=재접속 설정 공유
 gui_btn_abort=종료시키다
 gui_btn_cancel=취소
 gui_btn_help=도움말
@@ -17,4 +19,7 @@ gui_config_reconnect_selectrouter_example=예시: 3Com ADSL
 gui_config_routeripfinder_notfound=라우터의 호스트 이름을 찾지 못함
 gui_config_routeripfinder_ready=IP 찾아냄: %s1
 gui_fengshuiconfig_routerip=라우터 IP
+jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save=저장
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=IP 검사 비활성화!
+literally_password=비밀번호
+literally_username=사용자명
