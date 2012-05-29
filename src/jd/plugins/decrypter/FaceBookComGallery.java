@@ -83,12 +83,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     logger.info("Account seems to be invalid, returnung empty linklist!");
                     return decryptedLinks;
                 }
-                // Account is valid, let's just add it
+                // Account is valid, let's add it to the premium overview
                 AccountController.getInstance().addAccount(facebookPlugin, aa);
                 br.getPage(parameter);
                 String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
                 final String setID = new Regex(parameter, "facebook\\.com/media/set/\\?set=(.+)").getMatch(0);
-                // "http://www.facebook.com/media/set/?set=a.221139484624651.53016.100001858034552&amp;type=1&amp;aft=239466452791954"
                 final String secondPage = br.getRegex("\"(http://(www\\.)?facebook\\.com/media/set/\\?set=" + setID + "\\&amp;type=\\d+\\&amp;aft=\\d+)\"").getMatch(0);
                 if (secondPage != null) picPages.add(secondPage);
                 // Redirects from "http" to "https" can happen
