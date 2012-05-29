@@ -69,15 +69,14 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-@HostPlugin(revision = "$Revision: 16456 $", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://www\\.crunchyroll\\.com/xml/\\?req=(RpcApiVideoPlayer_GetStandardConfig&media_id=[0-9]+.*|RpcApiSubtitle_GetXml&subtitle_script_id=[0-9]+.*)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 16456 $", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://www\\.crunchyroll\\.com/(xml/\\?req=RpcApiVideoPlayer_GetStandardConfig&media_id=[0-9]+.*|xml/\\?req=RpcApiSubtitle_GetXml&subtitle_script_id=[0-9]+.*|android_rpc/\\?req=RpcApiAndroid_GetVideoWithAcl&media_id=[0-9]+.*)" }, flags = { 2 })
 public class CrunchyRollCom extends PluginForHost {
-
-    static private final Pattern                             CONFIG_URL           = Pattern.compile("(http://www\\.crunchyroll\\.com/xml/\\?req=RpcApiVideoPlayer_GetStandardConfig.*video_quality=)([0-9]*)(.*)", Pattern.CASE_INSENSITIVE);
 
     static private Object                                    lock                 = new Object();
     static private HashMap<Account, HashMap<String, String>> loginCookies         = new HashMap<Account, HashMap<String, String>>();
-    static private final String                              RCP_API_SUBTITLE     = "RpcApiSubtitle_GetXml";
     static private final String                              RCP_API_VIDEO_PLAYER = "RpcApiVideoPlayer_GetStandardConfig";
+    static private final String                              RCP_API_SUBTITLE     = "RpcApiSubtitle_GetXml";
+    static private final String                              RCP_API_ANDROID      = "RpcApiAndroid_GetVideoWithAcl";
     static private final String                              RTMPDUMP_MIN_VER     = "2.4";
 
     @SuppressWarnings("deprecation")
@@ -87,8 +86,7 @@ public class CrunchyRollCom extends PluginForHost {
     }
 
     /**
-     * Decrypt and convert the downloaded file from CrunchyRoll's own encrypted
-     * xml format into its .ass equivalent.
+     * Decrypt and convert the downloaded file from CrunchyRoll's own encrypted xml format into its .ass equivalent.
      * 
      * @param downloadLink
      *            The DownloadLink to convert to .ass
@@ -243,10 +241,28 @@ public class CrunchyRollCom extends PluginForHost {
     }
 
     /**
-     * Attempt to download the given file using RTMP (rtmpdump). Needs to use
-     * the properties "valid", "rtmphost", "rtmpfile", "rtmpswf", "swfdir".
-     * These are set by jd.plugins.decrypter.CrchyRollCom.setRMP() through
-     * requestFileInformation()
+     * Download the given file using the HTTP Android method. The file will be mp4 and have subtitles hardcoded.
+     * 
+     * @param downloadLink
+     *            The DownloadLink to try and download using RTMP
+     */
+    private void downloadAndroid(final DownloadLink downloadLink) throws Exception {
+        // Check if the link appears to be valid
+        final String videoUrl = downloadLink.getStringProperty("videourl");
+        if ((Boolean) downloadLink.getProperty("valid", false) && videoUrl != null) {
+            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, videoUrl, true, 0);
+            if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video")) {
+                downloadLink.setProperty("valid", false);
+                this.dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            this.dl.startDownload();
+        }
+    }
+
+    /**
+     * Attempt to download the given file using RTMP (rtmpdump). Needs to use the properties "valid", "rtmphost", "rtmpfile", "rtmpswf",
+     * "swfdir". These are set by jd.plugins.decrypter.CrchyRollCom.setRMP() through requestFileInformation()
      * 
      * @param downloadLink
      *            The DownloadLink to try and download using RTMP
@@ -347,6 +363,8 @@ public class CrunchyRollCom extends PluginForHost {
             this.downloadRTMP(downloadLink);
         } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
             this.downloadSubs(downloadLink);
+        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_ANDROID)) {
+            this.downloadAndroid(downloadLink);
         }
     }
 
@@ -359,21 +377,20 @@ public class CrunchyRollCom extends PluginForHost {
             this.downloadRTMP(downloadLink);
         } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
             this.downloadSubs(downloadLink);
+        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_ANDROID)) {
+            this.downloadAndroid(downloadLink);
         }
     }
 
     /**
-     * Attempt to log into crunchyroll.com using the given account. Cookies are
-     * cached to 'loginCookies'.
+     * Attempt to log into crunchyroll.com using the given account. Cookies are cached to 'loginCookies'.
      * 
      * @param account
      *            The account to use to log in.
      * @param br
-     *            The browser to use to log in. This is the browser where the
-     *            cookies will be saved.
+     *            The browser to use to log in. This is the browser where the cookies will be saved.
      * @param refresh
-     *            Should new cookies be retrieved (fresh login) even if cookies
-     *            have previously been cached.
+     *            Should new cookies be retrieved (fresh login) even if cookies have previously been cached.
      * @param showDialog
      *            Display warning dialog if login fails.
      */
@@ -441,17 +458,16 @@ public class CrunchyRollCom extends PluginForHost {
     }
 
     /**
-     * Pad and format version numbers so that the String.compare() method can be
-     * used simply. ("9.10.2", ".", 4) would result in "000900100002".
+     * Pad and format version numbers so that the String.compare() method can be used simply. ("9.10.2", ".", 4) would result in
+     * "000900100002".
      * 
      * @param version
      *            The version number string to format (e.g. '9.10.2')
      * @param sep
      *            The character(s) to split the numbers by (e.g. '.')
      * @param maxWidth
-     *            The number of digits to pad the numbers to (e.g. 5 would make
-     *            '12' become '00012'). Note that numbers which exceed this are
-     *            not truncated.
+     *            The number of digits to pad the numbers to (e.g. 5 would make '12' become '00012'). Note that numbers which exceed this
+     *            are not truncated.
      * @return The formatted version number ready to be compared
      */
     private String normaliseRtmpVersion(final String version, final String sep, final int maxWidth) {
@@ -487,9 +503,6 @@ public class CrunchyRollCom extends PluginForHost {
 
             // Set the RTMP details (exception on error)
             ((jd.plugins.decrypter.CrhyRllCom) plugin).setRTMP(downloadLink, this.br);
-
-            downloadLink.setProperty("valid", true);
-            return AvailableStatus.TRUE;
         } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
             // Validate the URL and set filename
             final String subId = new Regex(downloadLink.getDownloadURL(), "subtitle_script_id=([0-9]+)").getMatch(0);
@@ -518,7 +531,6 @@ public class CrunchyRollCom extends PluginForHost {
                     // File valid, set details
                     downloadLink.setDownloadSize(length);
                     downloadLink.setProperty("valid", true);
-                    return AvailableStatus.TRUE;
                 }
             } finally {
                 try {
@@ -526,7 +538,15 @@ public class CrunchyRollCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
+        } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_ANDROID)) {
+            // Find matching decrypter
+            final PluginForDecrypt plugin = JDUtilities.getPluginForDecrypt("crunchyroll.com");
+            if (plugin == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Cannot decrypt video link"); }
+
+            // Set the Android video details (exception on error)
+            ((jd.plugins.decrypter.CrhyRllCom) plugin).setAndroid(downloadLink, this.br);
         }
+        if ((Boolean) downloadLink.getProperty("valid", false)) { return AvailableStatus.TRUE; }
         return AvailableStatus.FALSE;
     }
 
@@ -543,14 +563,12 @@ public class CrunchyRollCom extends PluginForHost {
     }
 
     /**
-     * Generate the AES decryption key based on the subtitle's id using some
-     * obfuscation and SHA-1 hashing.
+     * Generate the AES decryption key based on the subtitle's id using some obfuscation and SHA-1 hashing.
      * 
      * @param id
      *            The id of the subtitles to generate the key for
      * @param size
-     *            The number of bytes to make the key (e.g. 32 bytes for 256-bit
-     *            key)
+     *            The number of bytes to make the key (e.g. 32 bytes for 256-bit key)
      * @return The byte formatted key to be used in AES decryption
      */
     private byte[] subsGenerateKey(final int id, final int size) throws NoSuchAlgorithmException {
