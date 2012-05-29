@@ -2,6 +2,7 @@ jd_plugins_optional_jdtrayicon_jdlighttray=Barra leggera
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Consente di minimizzare o chiudere JDownloader nell'area di notifica, e altre caratteristiche simili, quali protezione con password e altro ancora.
 plugins_optional_JDLightTray_always=Sempre
 plugins_optional_JDLightTray_closetotray=Riduci in tray
+plugins_optional_JDLightTray_linkgrabberresults=Manda il mainframe in cima se vengono catturati nuovi collegamenti
 plugins_optional_JDLightTray_minimized=Solo quando il Mainframe è minimizzato
 plugins_optional_JDLightTray_never=Mai
 plugins_optional_JDLightTray_passwordRequired=Immettere la password per aprire dalla Tray

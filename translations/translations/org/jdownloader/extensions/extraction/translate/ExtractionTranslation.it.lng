@@ -65,6 +65,7 @@ settings_overwrite=Sovrascrivree i file esistenti?
 settings_passwordlist=Passwords Archivio (una per riga)
 settings_passwords=Lista Password
 settings_remove_after_extract=Eliminare l'archivio dopo l'estrazione?
+settings_remove_after_extract_downloadlink=Eliminare collegamento download archivio alla fine dell'estrazione?
 settings_subpath=Schema Sottocartella
 settings_subpath_minnum2=... solo se il percorso dell'archivio contiene >
 settings_subpath_no_folder2=... solo se non ci sono cartelle principali
