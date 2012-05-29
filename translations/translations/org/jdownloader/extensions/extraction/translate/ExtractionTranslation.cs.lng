@@ -1,4 +1,6 @@
 offline=Soubor je offline nebo chybí
+online=Odkaz je dostupný
+packagename=Název balíčku
 plugins_optional_extraction_crcerrorin=Rozbalení selhalo (CRC u %s1)
 plugins_optional_extraction_error_extrfailedcrc=Rozbalení selhalo (CRC neznámého souboru)
 plugins_optional_extraction_filefilter=Všechny podporované formáty
