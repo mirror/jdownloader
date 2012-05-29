@@ -1,6 +1,8 @@
 guiless_extract=Извлечение файла(ов)
 guiless_installFinished=Установка закончена
+install_updates_later=Спросить позже!
 install_updates_now=Установить сейчас!
 restart_title=Перезапуск!
 update_dialog_cancel=Отмена
+update_dialog_later=Спросить позже
 update_dialog_yes=Да (рекомендуется)

@@ -1,6 +1,7 @@
 archivename=Имя архива
 auto_extract_enabled=Извлечь после скачивания
 close=Закрыть
+contextmenu_auto_extract_package=Авто распаковка включена
 contextmenu_autoextract=Авто извлечение включено
 contextmenu_extract=Извлечь сейчас
 contextmenu_main=Архив(ы)

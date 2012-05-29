@@ -1,12 +1,16 @@
 UpdateServer_UpdaterGui_onStateChange_filter=Проверка обновлений
+UpdateServer_UpdaterGui_onStateChange_hashlist=Соединение с сервером обновлений
 cancel_update=Отменить обновление
 close=Закрыть
 exit=Выход
 guiless_extract=Извлечение файла(ов)
 guiless_installFinished=Установка закончена
+install_updates_later=Спросить позже!
 install_updates_now=Установить сейчас!
 interrupted=Отменено пользователем
+please_wait=Пожалуйста, подождите!
 restart_title=Перезапуск!
+rlyexit=Вы уверены, что хотите выйти?
 update_dialog_cancel=Отмена
 update_dialog_later=Спросить позже
 update_dialog_title_updates_available=Доступны обновления
