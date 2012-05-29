@@ -1,4 +1,4 @@
-AbstractConfigPanel_addPair_enabled=Enable/Disable this option4
+AbstractConfigPanel_addPair_enabled=Enable/Disable this option
 AddContainerAction=Load Linkcontainer
 AddContainerAction_actionPerformed_=Load a Link Container
 AddContainerAction_actionPerformed_extensions=Link Container (%s1)
