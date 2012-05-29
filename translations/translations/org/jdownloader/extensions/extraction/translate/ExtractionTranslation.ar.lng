@@ -1,6 +1,8 @@
 auto_extract_enabled=فك الضغط بعد إنتهاء التحميل
 contextmenu_extract=فك الضغط الأن
 contextmenu_set_password=كلمة مرور فك الضغط
+hoster=Please translate: المضيف
+offline=Please translate: الملف غير موجود
 online=الرابط متاح
 packagename=إسم الحزمة
 plugins_optional_extraction_status_extractfailedpass=فشل فك الضغط (كلمة المرور)
