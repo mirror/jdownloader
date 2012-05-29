@@ -1,2 +1,14 @@
+ABSTRACTDIALOG_BUTTON_CANCEL=Annulla
 ABSTRACTDIALOG_BUTTON_OK=OK
+ABSTRACTDIALOG_STYLE_SHOW_DO_NOT_DISPLAY_AGAIN=Non visualizzare nuovamente
+DIALOG_CONFIRMDIALOG_TITLE=Per favore conferma!
+DIALOG_ERROR_TITLE=Si è verificato un errore
+DIALOG_INPUT_TITLE=Per favroe inserisci!
+DIALOG_MESSAGE_TITLE=Messaggio
+ExceptionDialog_layoutDialogContent_logLabel=Questo errore è stato causata da:
+ExceptionDialog_layoutDialogContent_more_button=Dettagli errore
+PASSWORDDIALOG_PASSWORDCHANGE_OLDPASSWORD=Vecchia password:
+TIMERDIALOG_TOOLTIP_TIMERLABEL=Questa finestra ha un contatore e si chiuderà dopo pochi secondi. fare clic per annullare
 download_msg=Download file
+literally_gibibyte=%s1 GB
+literally_tebibyte=%s1 TB
