@@ -370,7 +370,6 @@ authtablemodel_column_username=Usuario
 buyaction_message=La mayoria de los hosts ofrecen un servicio Premium. Utilizar este servicio suele ser mucho más rápido.
 buyaction_title=Comprar cuenta Premium
 buyaction_title_buy_account=Continuar
-config_fontname=default
 downloadview_all=Todas las descargas
 downloadview_successful=Descargas realizadas con exito
 extensionManager_title=Módulos de las extensiones
