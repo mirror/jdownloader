@@ -24,6 +24,7 @@ import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.storage.JSonStorage;
 import org.appwork.swing.exttable.ExtTableTranslation;
 import org.appwork.txtresource.DynamicResourcePath;
 import org.appwork.txtresource.TranslateData;
@@ -645,14 +646,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             }
 
             for (TranslationHandler h : set) {
-                TranslateResource res = h.getResource(localLoaded.getId());
-
                 for (Method m : h.getMethods()) {
                     TranslateEntry te = map.get(m);
-                    if (te.isOK() || te.isDefault()) {
-                        if (te.isTranslationSet()) return true;
-
-                    }
+                    if (te.isTranslationSet()) return true;
                 }
 
             }
@@ -665,6 +661,16 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             getGUI().stopEditing();
             if (loaded == null || getTranslationEntries() == null || getTranslationEntries().size() == 0) return;
             TLocale localLoaded = loaded;
+            TranslationInfo info = JSonStorage.restoreFrom(Application.getResource("translations/custom/" + localLoaded.getId() + ".json"), new TranslationInfo());
+            if (info.getComplete() > getPercent()) {
+
+                try {
+                    Dialog.getInstance().showConfirmDialog(0, "Are you sure? The Old Version was " + info.getComplete() + "% completed. Your Version has only " + getPercent() + "%. Continue anyway?");
+
+                } catch (DialogNoAnswerException e) {
+                    return;
+                }
+            }
             HashSet<TranslationHandler> set = new HashSet<TranslationHandler>();
             HashMap<Method, TranslateEntry> map = new HashMap<Method, TranslateEntry>();
             for (TranslateEntry te : getTranslationEntries()) {
@@ -717,6 +723,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 Log.L.info("Updated " + file);
 
             }
+            JSonStorage.saveTo(Application.getResource("translations/custom/" + localLoaded.getId() + ".json"), getInfo());
 
         }
         try {
@@ -724,6 +731,13 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         } catch (SVNException e) {
             e.printStackTrace();
         }
+    }
+
+    private TranslationInfo getInfo() {
+        TranslationInfo ti = new TranslationInfo();
+        ti.setComplete(getPercent());
+        ti.setId(loaded.getId());
+        return ti;
     }
 
     public SVNCommitPacket upload() throws SVNException {

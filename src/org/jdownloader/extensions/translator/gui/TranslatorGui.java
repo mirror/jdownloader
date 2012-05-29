@@ -18,7 +18,6 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.KeyStroke;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingUtilities;
@@ -92,11 +91,12 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     private ExtButton           upload;
     private boolean             stopEditing;
     private boolean             isWizard;
+    private MigPanel            menuPanel2;
 
     public TranslatorGui(TranslatorExtension plg) {
         super(plg);
 
-        this.panel = new SwitchPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]2[grow,fill]")) {
+        this.panel = new SwitchPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]2[]2[grow,fill]")) {
 
             @Override
             protected void onShow() {
@@ -118,6 +118,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     private void layoutPanel() {
 
         panel.add(menuPanel);
+        panel.add(menuPanel2);
         panel.add(sp = new JScrollPane(table));
 
     }
@@ -183,7 +184,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         // JSeparator());
         // mnuFileLoad.add();
 
-        menuPanel = new MigPanel("ins 0", "[]3[]3[]3[][grow,fill][][]5[]", "[grow,fill]");
+        menuPanel = new MigPanel("ins 0", "[]3[]3[]3[]3[]3[]", "[grow,fill]");
 
         menuPanel.add(load = new ExtButton(new AppAction() {
             {
@@ -400,6 +401,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                 }
             }
         }));
+
         isWizard = false;
         menuPanel.add(wizard = new ExtButton(new AppAction() {
             {
@@ -562,9 +564,11 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                 }
             }
         }));
-        menuPanel.add(Box.createHorizontalGlue());
+        menuPanel.add(Box.createHorizontalGlue(), "growx,pushx");
+        menuPanel2 = new MigPanel("ins 0", "[grow,fill]3[]3[]3[]", "[grow,fill]");
+        menuPanel2.add(lbl = new JLabel(), "aligny center,pushx,growx");
 
-        menuPanel.add(revert = new ExtButton(new AppAction() {
+        menuPanel2.add(revert = new ExtButton(new AppAction() {
             {
                 setName("Revert");
                 setSmallIcon(NewTheme.I().getIcon("undo", 18));
@@ -627,7 +631,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         }));
         // bt.setRolloverEffectEnabled(true);
 
-        menuPanel.add(restart = new ExtButton(new AppAction() {
+        menuPanel2.add(restart = new ExtButton(new AppAction() {
             {
                 setName("Restart");
                 setSmallIcon(NewTheme.I().getIcon("restart", 18));
@@ -643,7 +647,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
             }
         }));
-        menuPanel.add(logout = new ExtButton(new AppAction() {
+        menuPanel2.add(logout = new ExtButton(new AppAction() {
             {
                 setName("Logout");
                 setSmallIcon(NewTheme.I().getIcon("logout", 18));
@@ -669,9 +673,6 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
             }
         }));
-
-        menuPanel.add(new JSeparator(JSeparator.VERTICAL));
-        menuPanel.add(lbl = new JLabel(), "aligny center");
 
         ti = new Timer(300, new ActionListener() {
 
