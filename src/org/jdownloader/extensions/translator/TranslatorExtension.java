@@ -662,7 +662,14 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             if (loaded == null || getTranslationEntries() == null || getTranslationEntries().size() == 0) return;
             TLocale localLoaded = loaded;
             TranslationInfo info = JSonStorage.restoreFrom(Application.getResource("translations/custom/" + localLoaded.getId() + ".json"), new TranslationInfo());
-            if (info.getComplete() > getPercent()) {
+
+            int more = getTranslationEntries().size() - info.getTotal();
+
+            double p = getPercent();
+            if (more > 0) {
+                p = ((getOK() + more) * 10000 / getTranslationEntries().size()) / 100.0;
+            }
+            if (p < info.getComplete()) {
 
                 try {
                     Dialog.getInstance().showConfirmDialog(0, "Are you sure? The Old Version was " + info.getComplete() + "% completed. Your Version has only " + getPercent() + "%. Continue anyway?");
@@ -737,6 +744,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         TranslationInfo ti = new TranslationInfo();
         ti.setComplete(getPercent());
         ti.setId(loaded.getId());
+        ti.setTotal(getTranslationEntries().size());
         return ti;
     }
 
