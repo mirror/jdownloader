@@ -9,6 +9,7 @@ GetIPAction_GetIPAction_=Conseguir IP del router
 GetIPAction_getString_progress=Analizando red...
 LiveHeaderDetectionWizard_runOnlineScan_warning_logins=Usuario y contraseña sin establecer. En la mayoria de los casos, son necesarios para la reconexión. ¿Continuar de todas formas?
 LiveHeaderDetectionWizard_uploadData_sent_failed=Al parecer tu script ya existe en nuestra base de datos. Gracias de todas formas.
+LiveHeaderReconnect_onConfigValueModified_ask_msg=Has configurado tus ajustes de reconexión correctamente. Por favor, comparte con nosotros tus ajustes para mejorar nuestro asistente.
 gui_btn_abort=Abortar
 gui_btn_cancel=Cancelar
 gui_btn_help=Ayuda
