@@ -1,3 +1,6 @@
+JDGui_windowClosing_try_answer_tray=Nascondi nella barra sistema
+JDGui_windowClosing_try_asnwer_close=Esci da JDownloader
+JDGui_windowClosing_try_title_=Chiudi nella barra sistema
 gui_btn_select=Seleziona
 gui_column_defaultproxy=Proxy predifinito
 gui_column_host=Server
