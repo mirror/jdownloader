@@ -177,11 +177,22 @@ public class RealDebridCom extends PluginForHost {
             br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(link.getDownloadURL()));
         }
         // handleErrors();
-        String dllink = br.getRegex("\"generated_links\":\\[\\[\"[^\"]+\",\"[^\\,]+,\"(http[^\"]+)\"\\]\\]").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = dllink.replaceAll("\\\\/", "/");
+        String generatedLinks = br.getRegex("\"generated_links\":\\[\\[(.*?)\\]\\]").getMatch(0);
+        String dlLinks[] = new Regex(generatedLinks, "\"([^\"]*?)\"").getColumn(0);
+        if (dlLinks == null || dlLinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         showMessage(link, "Task 2: Download begins!");
-        handleDL(link, dllink);
+        PluginException e = null;
+        for (String dllink : dlLinks) {
+            if (dllink == null || !dllink.startsWith("http")) continue;
+            dllink = dllink.replaceAll("\\\\/", "/");
+            try {
+                handleDL(link, dllink);
+                return;
+            } catch (PluginException e1) {
+                e = e1;
+            }
+        }
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override

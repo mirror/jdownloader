@@ -162,9 +162,10 @@ public class OneHostClickCom extends PluginForHost {
         else
             dllink = downloadLink.getStringProperty("freelink2");
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     if (getLinkWithoutLogin)
                         downloadLink.setProperty("freelink", Property.NULL);
@@ -172,19 +173,22 @@ public class OneHostClickCom extends PluginForHost {
                         downloadLink.setProperty("freelink2", Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (Exception e) {
+                dllink = null;
                 if (getLinkWithoutLogin)
                     downloadLink.setProperty("freelink", Property.NULL);
                 else
                     downloadLink.setProperty("freelink2", Property.NULL);
-                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
 
         /**
-         * Videolinks can already be found here, if a link is found here we can
-         * skip waittimes and captchas
+         * Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);

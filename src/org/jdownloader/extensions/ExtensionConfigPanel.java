@@ -9,6 +9,7 @@ import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 
@@ -17,8 +18,6 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
     private static final long serialVersionUID = 1L;
 
     protected T               extension;
-
-    private Header            header;
 
     private BooleanKeyHandler keyHandlerEnabled;
 
@@ -32,7 +31,7 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
 
         plg.getSettings().getStorageHandler().getEventSender().addListener(this);
         if (!clean) {
-            header = new Header(plg.getName(), plg.getIcon(32), keyHandlerEnabled, extension.getVersion());
+            final Header header = new Header(plg.getName(), plg.getIcon(32), keyHandlerEnabled, extension.getVersion());
 
             add(header, "spanx,growx,pushx");
 
@@ -40,25 +39,22 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
             if (plg.getDescription() != null) {
                 addDescription(plg.getDescription());
             }
-        }
+            keyHandlerEnabled.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
-        keyHandlerEnabled.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
-            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                if (header != null) {
+                public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                     try {
                         extension.setEnabled(header.isHeaderEnabled());
                         updateHeaders(header.isHeaderEnabled());
                     } catch (Exception e1) {
-                        e1.printStackTrace();
+                        Log.exception(e1);
                         Dialog.getInstance().showExceptionDialog("Error", e1.getMessage(), e1);
                     }
                 }
-            }
 
-            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-            }
-        });
+                public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                }
+            });
+        }
 
     }
 

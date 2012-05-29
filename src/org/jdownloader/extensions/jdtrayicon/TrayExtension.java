@@ -145,9 +145,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                     protected void runInEDT() {
                         try {
                             if (SwingGui.getInstance() != null) {
-                                initGUI(true);
                                 LinkCollector.getInstance().getEventsender().addListener(highListener);
                                 ShutdownController.getInstance().addShutdownVetoListener(TrayExtension.this);
+                                initGUI(true);
                                 logger.info("Systemtray OK");
                             }
                         } catch (Exception e) {
