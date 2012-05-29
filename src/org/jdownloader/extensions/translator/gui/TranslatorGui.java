@@ -679,12 +679,15 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             public void actionPerformed(ActionEvent e) {
                 if (getExtension().getLoadedLocale() != null && getExtension().getTranslationEntries() != null) {
                     int[] sel = table.getSelectedRows();
+
                     if (sel.length > 0) {
                         lbl.setText("Translation: " + getExtension().getLoadedLocale() + " - " + getExtension().getPercent() + "% translated (" + getExtension().getOK() + "/" + getExtension().getTranslationEntries().size() + ") " + "Selected: " + sel.length);
 
                     } else {
                         lbl.setText("Translation: " + getExtension().getLoadedLocale() + " - " + getExtension().getPercent() + "% translated (" + getExtension().getOK() + "/" + getExtension().getTranslationEntries().size() + ")");
                     }
+                } else {
+                    lbl.setText("Please Log In & Load a Language");
                 }
             }
         });

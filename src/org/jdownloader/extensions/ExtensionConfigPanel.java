@@ -32,7 +32,7 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
 
         plg.getSettings().getStorageHandler().getEventSender().addListener(this);
         if (!clean) {
-            header = new Header(plg.getName(), plg.getIcon(32), keyHandlerEnabled);
+            header = new Header(plg.getName(), plg.getIcon(32), keyHandlerEnabled, extension.getVersion());
 
             add(header, "spanx,growx,pushx");
 

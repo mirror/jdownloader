@@ -255,10 +255,10 @@
 				<exclude name="tests/**" />
 				<exclude name="**/test/**" />
 			</fileset>
-			
-			<fileset dir="${cls}">						
-							<include name="jd/plugins/hoster/RTMPDownload.class" />						
-				</fileset>
+
+			<fileset dir="${cls}">
+				<include name="jd/plugins/hoster/RTMPDownload.class" />
+			</fileset>
 			<fileset dir="${dep.updateclient}/src">
 				<include name="**/*.lng" />
 				<include name="**/*.png" />
@@ -282,7 +282,7 @@
 		<copy todir="${dist}/jd/plugins/hoster/">
 			<fileset dir="${cls}/jd/plugins/hoster/">
 				<include name="**/*" />
-				<exclude name="RTMPDownload*"/>
+				<exclude name="RTMPDownload*" />
 			</fileset>
 		</copy>
 		<mkdir dir="${dist}/jd/plugins/decrypter/" />
@@ -303,14 +303,20 @@
 			<echo message="Creating @{package}" />
 			<mkdir dir="${dist}/extensions" />
 
-
-
+			<loadfile property="@{include}.revision" srcFile="src/org/jdownloader/extensions/@{include}/.svn/entries">
+				<filterchain>
+					<headfilter lines="1" skip="10" />
+					<striplinebreaks />
+				</filterchain>
+			</loadfile>
+			<echo message="src/org/jdownloader/extensions/@{include}/.svn/entries Revision ${@{include}.revision}" />
+			<echo file="${cls}/org/jdownloader/extensions/@{include}/version.dat">${extension.revision}</echo>
 			<jar jarfile="${dist}/extensions/@{package}.jar" manifest="${dist}/Manifest.MF">
 				<fileset dir="${cls}">
-					<include name="org/jdownloader/extensions/@{include}" />
+					<include name="org/jdownloader/extensions/@{include}/**/*" />
 				</fileset>
 				<fileset dir="src">
-					<include name="org/jdownloader/extensions/@{include}" />
+					<include name="org/jdownloader/extensions/@{include}/**/*" />
 					<exclude name="**/*.java" />
 				</fileset>
 			</jar>
@@ -322,24 +328,24 @@
 		<manifest file="${dist}/Manifest.MF">
 			<attribute name="Created-By" value="JD-Team and Friends" />
 		</manifest>
-		<buildAddon package="JDChat" include="chat/**/*" />
-		<buildAddon package="infobar" include="infobar/**/*" />
-		<buildAddon package="JDScheduler" include="schedule/**/*" />
-		<buildAddon package="JDShutdown" include="shutdown/**/*" />
-		<buildAddon package="improveddock" include="improveddock/**/*" />
-		<buildAddon package="JDInfoFileWriter" include="infofilewriter/**/*" />
-		<buildAddon package="JDTray" include="jdtrayicon/**/*" />
-		<buildAddon package="JDPremium" include="jdpremclient/**/*" />
-		<buildAddon package="JDGrowl" include="growl/**/*" />
-		<buildAddon package="AntiShutdown" include="antistandby/**/*" />
-		<buildAddon package="scriptlauncher" include="scriptlauncher/**/*" />
-		<buildAddon package="JDFeedMe" include="jdfeedme/**/*" />
-		<buildAddon package="AntiReconnect" include="antireconnect/**/*" />
-		<buildAddon package="Extraction" include="extraction/**/*" />
-		<buildAddon package="folderwatch" include="folderwatch/**/*" />
-		<buildAddon package="webinterface" include="webinterface/**/*" />
-		<buildAddon package="neembuu" include="neembuu/**/*" />
-		<buildAddon package="translator" include="translator/**/*" />
+		<buildAddon package="JDChat" include="chat" />
+		<buildAddon package="infobar" include="infobar" />
+		<buildAddon package="JDScheduler" include="schedule" />
+		<buildAddon package="JDShutdown" include="shutdown" />
+		<buildAddon package="improveddock" include="improveddock" />
+	
+		<buildAddon package="JDTray" include="jdtrayicon" />
+		
+		<buildAddon package="JDGrowl" include="growl" />
+		<buildAddon package="AntiShutdown" include="antistandby" />
+	
+	
+		<buildAddon package="AntiReconnect" include="antireconnect" />
+		<buildAddon package="Extraction" include="extraction" />
+		<buildAddon package="folderwatch" include="folderwatch" />
+		<buildAddon package="webinterface" include="webinterface" />
+		<buildAddon package="neembuu" include="neembuu" />
+		<buildAddon package="translator" include="translator" />
 		<delete file="${dist}/Manifest.MF" failonerror="false" />
 	</target>
 
