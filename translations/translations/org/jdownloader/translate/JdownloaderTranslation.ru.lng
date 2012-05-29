@@ -55,6 +55,7 @@ gui_javacheck_newerjavaavailable_msg=Хотя JDownloader и работает н
 gui_javacheck_newerjavaavailable_title=У вас устаревшая версия Java: %s1!
 gui_mainframe_title_updatemessage2=%s1 обновлений доступно
 gui_menu_extensions=Инструменты
+gui_settings_plugins_title=Настройки плагинов
 gui_warning_reconnect_running=запуск...
 gui_warning_reconnectunknown=Неизвестное переподключение
 literally_yes=Да
