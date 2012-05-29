@@ -262,6 +262,7 @@ StopSignColumn_StopSignColumn=Control de descargas
 SwingGui_setVisible_password_=Contraseña requerida
 TaskColumn_getDescription_object_=%s1 ha bloqueado tu IP actual. En la mayoría de los casos, JDownloader puede tratar de reconectar y conseguir una nueva IP. Si no es así, recomendamos que compres una cuenta Premium.
 TaskColumn_getStringValue_finished_=Terminado
+TaskColumn_getStringValue_running_=Ejecutandose
 TaskColumn_onSingleClick_object_=Tu IP actual está bloqueada por %s1
 TestAction_actionPerformed_match_=%s1: %s2
 TestWaitDialog_layoutDialogContent_filtered=Resultado:
