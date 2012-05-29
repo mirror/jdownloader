@@ -6,6 +6,7 @@ exception_msg=Ha ocurrido un error inesperado. Contacta con el soporte técnico.
 guiless_done=Actualización finalizada.
 guiless_downloaded_hashlist=El proyecto contiene %s1 archivo(s)
 guiless_downloadfinished=Descarga finalizada.
+guiless_extract=Extraer archivo(s)...
 guiless_locked_close_app=%s2 inaccesible.  Por favor cierra %s1 para continuar.
 guiless_noupdates=Saltar actualizaciones. El comando "-noupdates" está activo
 guiless_progress=Progreso: %s1 | %s2/%s3
