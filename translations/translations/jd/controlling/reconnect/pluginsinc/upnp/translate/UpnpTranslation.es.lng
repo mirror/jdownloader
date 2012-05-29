@@ -1,9 +1,13 @@
 UPNPReconnectInvoker_getName_=Reconexion del router UPNP
+UPNPRouterPlugin_run_mesg=Escaneando todas las interfaces de red
 UPNPRouterPlugin_run_wizard_title=Asistente de router UPNP
 auto=Autoajuste de UPNP
+interaction_UpnpReconnect_wanservice_ip=Protocolo de Internet
 jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title=Realizado con exito
 literally_choose_router=Elige dispositivo
 literally_control_url=URL de control
 literally_router=Router UPNP
+literally_service_type=Tipo de servicio
+malformedservicetype=Tipo de servicio inválido, prueba con el autoajuste de UPNP.
 malformedurl=URL de control inválida. Prueba con el ajuste auto. de UPNP.
 try_reconnect=Prueba reconectando mediante UPNP: %s1
