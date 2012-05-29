@@ -10,5 +10,7 @@ DIALOG_SLIDER_TITLE=Molimo unesite!
 ExceptionDialog_layoutDialogContent_logLabel=Ova greška je uzrokovana:
 ExceptionDialog_layoutDialogContent_more_button=Detalji greške
 PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD=Nova lozinka:
+PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD_REPEAT=Potvrda lozinke:
 PASSWORDDIALOG_PASSWORDCHANGE_OLDPASSWORD=Stara lozinka:
+TIMERDIALOG_TOOLTIP_TIMERLABEL=Ovaj dijalog će biti prekinut nakon par sekundi. Kliknite za poništenje odbrojavanja
 literally_byte=%s1 B
