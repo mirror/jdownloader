@@ -731,13 +731,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * {@link #setName(String)} verwenden um den Speichernamen anzugeben.
      */
     public void setFinalFileName(String newfinalFileName) {
-        setName(newfinalFileName);
         if (!StringUtils.isEmpty(newfinalFileName)) {
             if (new Regex(newfinalFileName, Pattern.compile("r..\\.htm.?$", Pattern.CASE_INSENSITIVE)).matches()) {
                 logger.info("Use Workaround for stupid >>rar.html<< uploaders!");
                 newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - new Regex(newfinalFileName, Pattern.compile("r..(\\.htm.?)$", Pattern.CASE_INSENSITIVE)).getMatch(0).length());
             }
-            this.setProperty(PROPERTY_FINALFILENAME, CrossSystem.alleviatePathParts(newfinalFileName));
+            this.setProperty(PROPERTY_FINALFILENAME, newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName));
+            setName(newfinalFileName);
         } else {
             this.setProperty(PROPERTY_FINALFILENAME, Property.NULL);
         }
