@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -51,9 +52,8 @@ public class FlickrCom extends PluginForHost {
         return "http://flickr.com";
     }
 
-    private static final Object LOCK          = new Object();
-    private static final String MAINPAGE      = "http://flickr.com";
-    private static final String YAHOOMAINPAGE = "https://login.yahoo.com/";
+    private static final Object LOCK     = new Object();
+    private static final String MAINPAGE = "http://flickr.com";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("flickrdecrypted.com/", "flickr.com/"));
@@ -132,7 +132,6 @@ public class FlickrCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
         throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
     }
 
@@ -170,31 +169,28 @@ public class FlickrCom extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     public void login(final Account account, final boolean force, Browser br) throws Exception {
-        final String[][] hosts = { { MAINPAGE, "cookies" }, { YAHOOMAINPAGE, "cookies2" } };
         synchronized (LOCK) {
-            br.setCookie(MAINPAGE, "localization", "en-us%3Bde%3Bde");
-            // Load cookies
-            boolean failed = false;
-            br.setCookiesExclusive(true);
-            for (final String[] currentHost : hosts) {
-                final Object ret = account.getProperty(currentHost[1], null);
+            try {
+                // Load cookies
+                br.setCookiesExclusive(true);
+                br.setCookie(MAINPAGE, "localization", "en-us%3Bde%3Bde");
+                final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                        final String key = cookieEntry.getKey();
-                        final String value = cookieEntry.getValue();
-                        br.setCookie(currentHost[0], key, value);
+                    if (cookies.containsKey("cookie_epass") && cookies.containsKey("cookie_accid") && account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            br.setCookie(MAINPAGE, key, value);
+                        }
+                        Browser brc = br.cloneBrowser();
+                        brc.getPage("http://www.flickr.com");
+                        String global_dbid = brc.getRegex("global_dbid = '(\\d+)'").getMatch(0);
+                        if (global_dbid != null && global_dbid.equals(cookies.get("cookie_accid"))) { return; }
                     }
-                } else {
-                    br.clearCookies(MAINPAGE);
-                    br.clearCookies(YAHOOMAINPAGE);
-                    failed = true;
-                    break;
                 }
-            }
-            if (failed) {
                 br.setFollowRedirects(true);
                 br.getPage("http://www.flickr.com/signin/");
                 final String u = br.getRegex("type=\"hidden\" name=\"\\.u\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
@@ -211,16 +207,18 @@ public class FlickrCom extends PluginForHost {
                 if (stepForward == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 br.getPage(stepForward);
                 // Save cookies
-                for (final String[] currentHost : hosts) {
-                    final HashMap<String, String> cookies = new HashMap<String, String>();
-                    final Cookies add = br.getCookies(currentHost[0]);
-                    for (final Cookie c : add.getCookies()) {
-                        cookies.put(c.getKey(), c.getValue());
-                    }
-                    account.setProperty(currentHost[1], cookies);
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = br.getCookies(MAINPAGE);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
             }
         }
     }

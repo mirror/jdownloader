@@ -80,8 +80,7 @@ public class FilePostCom extends PluginForHost {
                 int c = 0;
                 for (DownloadLink dl : links) {
                     /*
-                     * append fake filename, because api will not report
-                     * anything else
+                     * append fake filename, because api will not report anything else
                      */
                     if (c > 0) sb.append("%0D%0A");
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
@@ -119,8 +118,7 @@ public class FilePostCom extends PluginForHost {
     /*
      * (non-Javadoc)
      * 
-     * @see
-     * jd.plugins.PluginForHost#correctDownloadLink(jd.plugins.DownloadLink)
+     * @see jd.plugins.PluginForHost#correctDownloadLink(jd.plugins.DownloadLink)
      */
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
@@ -295,8 +293,7 @@ public class FilePostCom extends PluginForHost {
     }
 
     /**
-     * Important: Handling for password protected links is not included yet
-     * (only in handleFree)!
+     * Important: Handling for password protected links is not included yet (only in handleFree)!
      */
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
@@ -368,7 +365,7 @@ public class FilePostCom extends PluginForHost {
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals((account.getStringProperty("name", Encoding.urlEncode(account.getUser()))));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (cookies.containsKey("remembered_user") && account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
@@ -376,7 +373,9 @@ public class FilePostCom extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(MAINPAGE, key, value);
                         }
-                        return;
+                        Browser brc = br.cloneBrowser();
+                        brc.postPage("http://filepost.com/general/login_form/?SID=" + brc.getCookie(MAINPAGE, "SID"), "action=check");
+                        if (brc.containsHTML("premium")) return;
                     }
                 }
                 br.postPage("https://filepost.com/general/login_form/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&recaptcha_response_field=");

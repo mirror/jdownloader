@@ -70,8 +70,7 @@ public class FlickrCom extends PluginForDecrypt {
         String fpName = br.getRegex("<title>Flickr: ([^<>\"/]+)</title>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("\"search_default\":\"Search ([^<>\"/]+)\"").getMatch(0);
         /**
-         * Handling for albums/sets Only decrypt all pages if user did NOT add a
-         * direct page link
+         * Handling for albums/sets Only decrypt all pages if user did NOT add a direct page link
          * */
         if (!parameter.contains("/page")) {
             final String[] picpages = br.getRegex("data\\-track=\"page\\-(\\d+)\"").getColumn(0);
@@ -113,12 +112,14 @@ public class FlickrCom extends PluginForDecrypt {
     private boolean getUserLogin() throws Exception {
         final PluginForHost flickrPlugin = JDUtilities.getPluginForHost("flickr.com");
         Account aa = AccountController.getInstance().getValidAccount(flickrPlugin);
+        boolean addAcc = false;
         if (aa == null) {
             String username = UserIO.getInstance().requestInputDialog("Enter Loginname for flickr.com :");
             if (username == null) throw new DecrypterException(JDL.L("plugins.decrypt.flickrcom.nousername", "Username not entered!"));
             String password = UserIO.getInstance().requestInputDialog("Enter password for flickr.com :");
             if (password == null) throw new DecrypterException(JDL.L("plugins.decrypt.flickrcom.nopassword", "Password not entered!"));
             aa = new Account(username, password);
+            addAcc = true;
         }
         try {
             ((jd.plugins.hoster.FlickrCom) flickrPlugin).login(aa, false, this.br);
@@ -129,7 +130,7 @@ public class FlickrCom extends PluginForDecrypt {
             return false;
         }
         // Account is valid, let's just add it
-        AccountController.getInstance().addAccount(flickrPlugin, aa);
+        if (addAcc) AccountController.getInstance().addAccount(flickrPlugin, aa);
         return true;
     }
 
