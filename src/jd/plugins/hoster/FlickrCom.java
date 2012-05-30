@@ -51,8 +51,9 @@ public class FlickrCom extends PluginForHost {
         return "http://flickr.com";
     }
 
-    private static final Object LOCK     = new Object();
-    private static final String MAINPAGE = "http://flickr.com";
+    private static final Object LOCK          = new Object();
+    private static final String MAINPAGE      = "http://flickr.com";
+    private static final String YAHOOMAINPAGE = "https://login.yahoo.com/";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("flickrdecrypted.com/", "flickr.com/"));
@@ -70,7 +71,6 @@ public class FlickrCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        System.out.println(br.toString());
         if (!br.containsHTML("Signed in as <a data\\-track=")) {
             logger.info("Cookies seem to be invalid/old, trying to force login and re-checking...");
             br.clearCookies(MAINPAGE);
@@ -170,23 +170,31 @@ public class FlickrCom extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     public void login(final Account account, final boolean force, Browser br) throws Exception {
+        final String[][] hosts = { { MAINPAGE, "cookies" }, { YAHOOMAINPAGE, "cookies2" } };
         synchronized (LOCK) {
             br.setCookie(MAINPAGE, "localization", "en-us%3Bde%3Bde");
             // Load cookies
+            boolean failed = false;
             br.setCookiesExclusive(true);
-            final Object ret = account.getProperty("cookies", null);
-            boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (cookies.containsKey("c_user") && cookies.containsKey("xs") && account.isValid()) {
+            for (final String[] currentHost : hosts) {
+                final Object ret = account.getProperty(currentHost[1], null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                         final String key = cookieEntry.getKey();
                         final String value = cookieEntry.getValue();
-                        br.setCookie(MAINPAGE, key, value);
+                        br.setCookie(currentHost[0], key, value);
                     }
+                } else {
+                    br.clearCookies(MAINPAGE);
+                    br.clearCookies(YAHOOMAINPAGE);
+                    failed = true;
+                    break;
                 }
-            } else {
+            }
+            if (failed) {
                 br.setFollowRedirects(true);
                 br.getPage("http://www.flickr.com/signin/");
                 final String u = br.getRegex("type=\"hidden\" name=\"\\.u\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
@@ -204,13 +212,15 @@ public class FlickrCom extends PluginForHost {
                 br.getPage(stepForward);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
+                for (final String[] currentHost : hosts) {
+                    final Cookies add = br.getCookies(currentHost[0]);
+                    for (final Cookie c : add.getCookies()) {
+                        cookies.put(c.getKey(), c.getValue());
+                    }
+                    account.setProperty(currentHost[1], cookies);
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
             }
         }
     }
