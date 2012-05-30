@@ -211,8 +211,8 @@ public class FlickrCom extends PluginForHost {
                 if (stepForward == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 br.getPage(stepForward);
                 // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
                 for (final String[] currentHost : hosts) {
+                    final HashMap<String, String> cookies = new HashMap<String, String>();
                     final Cookies add = br.getCookies(currentHost[0]);
                     for (final Cookie c : add.getCookies()) {
                         cookies.put(c.getKey(), c.getValue());
