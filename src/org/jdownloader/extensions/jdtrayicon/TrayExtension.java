@@ -18,7 +18,6 @@ package org.jdownloader.extensions.jdtrayicon;
 
 import java.awt.Dimension;
 import java.awt.Frame;
-import java.awt.Image;
 import java.awt.Point;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
@@ -31,6 +30,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.event.WindowStateListener;
+import java.awt.image.BufferedImage;
 
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
@@ -51,6 +51,7 @@ import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
@@ -74,7 +75,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
                                                             @Override
                                                             public void onHighLight(CrawledLink parameter) {
-                                                                if (!guiFrame.isVisible()) {
+                                                                if (guiFrame != null && !guiFrame.isVisible()) {
                                                                     /*
                                                                      * dont try to restore jd if password required
                                                                      */
@@ -106,7 +107,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                                             @Override
                                                             public boolean isThisListenerEnabled() {
                                                                 LinkgrabberResultsOption option = getSettings().getShowLinkgrabbingResultsOption();
-                                                                if ((!guiFrame.isVisible() && option == LinkgrabberResultsOption.ONLY_IF_MINIMIZED) || option == LinkgrabberResultsOption.ALWAYS) { return true; }
+                                                                if ((guiFrame != null && !guiFrame.isVisible() && option == LinkgrabberResultsOption.ONLY_IF_MINIMIZED) || option == LinkgrabberResultsOption.ALWAYS) { return true; }
                                                                 return false;
                                                             }
                                                         };
@@ -238,7 +239,10 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     private void initGUI(final boolean startup) {
         try {
             SystemTray systemTray = SystemTray.getSystemTray();
-            Image img = IconIO.getScaledInstance(NewTheme.I().getImage("logo/jd_logo_64_64", -1), (int) systemTray.getTrayIconSize().getWidth(), (int) systemTray.getTrayIconSize().getHeight());
+            BufferedImage img = IconIO.getScaledInstance(NewTheme.I().getImage("logo/jd_logo_64_64", -1), (int) systemTray.getTrayIconSize().getWidth(), (int) systemTray.getTrayIconSize().getHeight());
+            if (CrossSystem.isMac()) {
+                img = ImageProvider.convertToGrayScale(img);
+            }
             /*
              * trayicon message must be set, else windows cannot handle icon right (eg autohide feature)
              */
@@ -338,19 +342,22 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     private boolean checkPassword() {
-        if (!JDGui.getInstance().getMainFrame().isVisible() && CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled() && !StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue())) {
-            String password;
-            try {
-                password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI._.SwingGui_setVisible_password_(), _GUI._.SwingGui_setVisible_password_msg(), null, NewTheme.I().getIcon("lock", 32), null, null);
+        boolean visible = JDGui.getInstance().getMainFrame().isVisible();
+        if (visible) return true;
+        boolean pwEnabled = CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled();
+        if (!pwEnabled) return true;
+        boolean pwEmpty = StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue());
+        if (pwEmpty) return true;
 
-                if (!CFG_GUI.PASSWORD.getValue().equals(password)) {
-                    Dialog.getInstance().showMessageDialog(_GUI._.SwingGui_setVisible_password_wrong());
-
-                    return false;
-                }
-            } catch (DialogNoAnswerException e) {
+        String password;
+        try {
+            password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI._.SwingGui_setVisible_password_(), _GUI._.SwingGui_setVisible_password_msg(), null, NewTheme.I().getIcon("lock", 32), null, null);
+            if (!CFG_GUI.PASSWORD.getValue().equals(password)) {
+                Dialog.getInstance().showMessageDialog(_GUI._.SwingGui_setVisible_password_wrong());
                 return false;
             }
+        } catch (DialogNoAnswerException e) {
+            return false;
         }
         return true;
     }
@@ -408,70 +415,72 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             public Object edtRun() {
                 /* set visible state */
                 guiFrame.setVisible(!minimize);
+                if (minimize == false) {
+                    if (guiFrame.isVisible()) {
+                        /* workaround for : toFront() */
+                        new EDTHelper<Object>() {
+                            @Override
+                            public Object edtRun() {
+                                if (trayIconChecker != null) {
+                                    trayIconChecker.interrupt();
+                                    trayIconChecker = null;
+                                }
+                                guiFrame.setAlwaysOnTop(true);
+                                disableAlwaysonTop.restart();
+                                guiFrame.toFront();
+                                return null;
+                            }
+                        }.start();
+                    }
+                } else {
+                    new EDTHelper<Object>() {
+                        @Override
+                        public Object edtRun() {
+                            trayIconChecker = new Thread() {
+
+                                @Override
+                                public void run() {
+                                    boolean reInitNeeded = false;
+                                    while (Thread.currentThread() == trayIconChecker) {
+                                        boolean reInitTrayIcon = false;
+                                        try {
+                                            reInitTrayIcon = 0 == SystemTray.getSystemTray().getTrayIcons().length;
+                                        } catch (UnsupportedOperationException e) {
+                                            if (reInitNeeded == false) {
+                                                reInitNeeded = true;
+                                                Log.L.severe("TrayIcon gone?! WTF? We will try to restore as soon as possible");
+                                            }
+                                        }
+                                        if (reInitTrayIcon) {
+                                            removeTrayIcon();
+                                            initGUI(false);
+                                            try {
+                                                if (SystemTray.getSystemTray().getTrayIcons().length > 0) {
+                                                    reInitNeeded = false;
+                                                    Log.L.severe("TrayIcon restored!");
+                                                }
+                                            } catch (UnsupportedOperationException e) {
+                                            }
+                                        }
+                                        try {
+                                            Thread.sleep(15000);
+                                        } catch (InterruptedException e) {
+                                            break;
+                                        }
+                                    }
+                                }
+
+                            };
+                            trayIconChecker.setDaemon(true);
+                            trayIconChecker.setName("TrayIconRestore");
+                            trayIconChecker.start();
+                            return null;
+                        }
+                    }.start();
+                }
                 return null;
             }
         }.start();
-        if (minimize == false) {
-            /* workaround for : toFront() */
-            new EDTHelper<Object>() {
-                @Override
-                public Object edtRun() {
-                    if (trayIconChecker != null) {
-                        trayIconChecker.interrupt();
-                        trayIconChecker = null;
-                    }
-                    guiFrame.setAlwaysOnTop(true);
-                    disableAlwaysonTop.restart();
-                    guiFrame.toFront();
-                    return null;
-                }
-            }.start();
-        } else {
-            new EDTHelper<Object>() {
-                @Override
-                public Object edtRun() {
-                    trayIconChecker = new Thread() {
-
-                        @Override
-                        public void run() {
-                            boolean reInitNeeded = false;
-                            while (Thread.currentThread() == trayIconChecker) {
-                                boolean reInitTrayIcon = false;
-                                try {
-                                    reInitTrayIcon = 0 == SystemTray.getSystemTray().getTrayIcons().length;
-                                } catch (UnsupportedOperationException e) {
-                                    if (reInitNeeded == false) {
-                                        reInitNeeded = true;
-                                        Log.L.severe("TrayIcon gone?! WTF? We will try to restore as soon as possible");
-                                    }
-                                }
-                                if (reInitTrayIcon) {
-                                    removeTrayIcon();
-                                    initGUI(false);
-                                    try {
-                                        if (SystemTray.getSystemTray().getTrayIcons().length > 0) {
-                                            reInitNeeded = false;
-                                            Log.L.severe("TrayIcon restored!");
-                                        }
-                                    } catch (UnsupportedOperationException e) {
-                                    }
-                                }
-                                try {
-                                    Thread.sleep(15000);
-                                } catch (InterruptedException e) {
-                                    break;
-                                }
-                            }
-                        }
-
-                    };
-                    trayIconChecker.setDaemon(true);
-                    trayIconChecker.setName("TrayIconRestore");
-                    trayIconChecker.start();
-                    return null;
-                }
-            }.start();
-        }
     }
 
     /**

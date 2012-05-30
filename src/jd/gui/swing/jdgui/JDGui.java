@@ -124,13 +124,13 @@ public class JDGui extends SwingGui {
     private JPanel          waitingPane;
 
     private JDGui() {
-        super("");
+        super("JDownloader");
         // Important for unittests
         this.mainFrame.setName("MAINFRAME");
+        this.setWindowTitle("JDownloader");
         this.initDefaults();
         this.initComponents();
         this.setWindowIcon();
-        this.setWindowTitle("JDownloader");
         this.layoutComponents();
         this.mainFrame.pack();
         Dialog.getInstance().setParentOwner(this.mainFrame);
@@ -527,6 +527,16 @@ public class JDGui extends SwingGui {
      * {@link JFrame#setIconImage(Image)}
      */
     private void setWindowIcon() {
+        /* NOTE: on linux setIconImage only works when the frame is set invisible and visible again */
+        /* we only load a single resolution icon here to show a jd icon instead of java icon and not having a great impact on startup time */
+        new EDTHelper<Object>() {
+            @Override
+            public Object edtRun() {
+                mainFrame.setIconImage(NewTheme.I().getImage("logo/jd_logo_64_64", -1));
+                mainFrame.revalidate();
+                return null;
+            }
+        }.start();
         Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
@@ -557,7 +567,6 @@ public class JDGui extends SwingGui {
                     }.start();
                 }
             }
-
         });
     }
 

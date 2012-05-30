@@ -57,6 +57,7 @@ import org.appwork.app.launcher.parameterparser.CommandSwitch;
 import org.appwork.app.launcher.parameterparser.CommandSwitchListener;
 import org.appwork.app.launcher.parameterparser.ParameterParser;
 import org.appwork.controlling.SingleReachableState;
+import org.appwork.shutdown.ShutdownController;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
@@ -683,10 +684,14 @@ public class Launcher {
             thread.join(10000);
         } catch (InterruptedException e) {
         }
-        Launcher.GUI_COMPLETE.setReached();
-        Launcher.LOG.info("Initialisation finished");
         Launcher.LOG.info("Revision: " + JDUtilities.getRevision());
         Launcher.LOG.info("Jared: " + Application.isJared(Launcher.class));
+        if (!JDGui.getInstance().getMainFrame().isVisible()) {
+            ShutdownController.getInstance().requestShutdown(true);
+            return;
+        }
+        Launcher.GUI_COMPLETE.setReached();
+        Launcher.LOG.info("Initialisation finished");
         Launcher.INIT_COMPLETE.setReached();
 
         // init statsmanager
