@@ -1,6 +1,7 @@
 ValidateArchiveAction_ValidateArchiveAction_object_=Validerer Arkiv(er)
 archivename=Arkivnavn
 close=Luk
+contextmenu_auto_extract_package=Auto Udpakning Aktiveret
 contextmenu_autoextract=Autoudpakning Aktiveret
 contextmenu_extract=Udpak Nu
 contextmenu_main=Arkiv(er)
@@ -31,6 +32,8 @@ settings_multi_use_original_file_date=Brug original fildato hvis mulig
 settings_overwrite=Overskriv eksisterende filer?
 settings_passwordlist=Arkiv adgangskode (en pr. linje)
 settings_passwords=Password liste
+settings_subpath_minnum2=... kun hvis roden af arkivet indeholder >
+settings_subpath_no_folder2=... kun hvis der ikke er nogen rod mapper
 settings_use_subpath=Lav Undermappe
 tooltip_NameColumn=Arkivs Navn
 unknown=Ukendt
