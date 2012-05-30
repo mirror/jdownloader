@@ -1,5 +1,6 @@
 ABSTRACTDIALOG_BUTTON_CANCEL=Отмена
 ABSTRACTDIALOG_BUTTON_OK=ОК
+ABSTRACTDIALOG_STYLE_SHOW_DO_NOT_DISPLAY_AGAIN=Не показывать больше
 AccountNew_layoutDialogContent_password=Пароль
 AccountNew_layoutDialogContent_save=Запомнить
 COPYCUTPASTE_COPY=Копировать
