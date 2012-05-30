@@ -8,6 +8,7 @@ exception_title=Ocorreu um erro
 exit=Fechar
 guiless_done=Actualização terminada.
 guiless_downloaded_hashlist=Projecto contém %s1 ficheiro(s)
+guiless_error_occured_start_reverting=Ocorreu um erro. A reverter alterações...
 guiless_extract=Extrair ficheiro(s)
 guiless_files_ready_for_install=%s1 ficheiro(s) aguarda(m) para ser instalado(s)!
 guiless_files_wait_for_removal=%s1 ficheiro(s) estão desactualizados e vão ser removidos
