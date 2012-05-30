@@ -345,7 +345,7 @@ public class TurboBitNet extends PluginForHost {
                 }
             }
             if (downloadUrl == null) {
-                downloadUrl = br.getRegex("\\(\"href\"\\)==\"[^\"]+").getMatch(0);
+                downloadUrl = br.getRegex("\\(\"href\"\\)==\"([^\"]+)").getMatch(0);
                 if (downloadUrl == null) {
                     downloadUrl = rhino(escape(br.toString()) + "@" + rtUpdate, 999);
                 }
