@@ -629,8 +629,8 @@ public class Multi extends IExtraction {
                 }
                 switch (res) {
                 case OK:
-                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
-                    return;
+                    /* extraction successfully ,continue with next file */
+                    break;
                 case CRCERROR:
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
                     return;
