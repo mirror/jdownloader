@@ -1,6 +1,7 @@
 JDUpdater_start_restart_update_now_=Actualizar e Reiniciar agora!
 JDUpdater_start_updater_update_msg=Reiniciar agora para actualizar.
 JDUpdater_start_updater_update_title=Nova versão encontrada!
+UpdateException_socket=Sem ligação à Internet para o servidor de actualizações: %s1
 dialog_rly_cancel=Cancelar actualização?
 error_service_not_available_right_now=Serviço indisponível. Tente mais tarde.
 exception_msg=Erro inesperado. Contacte suporte.
@@ -29,6 +30,7 @@ start=Actualizador Iniciado
 udpates_found=Actualizações encontradas!
 update_dialog_cancel=Cancelar
 update_dialog_later=Perguntar mais tarde
+update_dialog_news_button=Abrir Registo alterações
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=Actualizações disponíveis
 update_dialog_yes=Sim (recomendado)

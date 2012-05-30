@@ -72,4 +72,5 @@ settings_subpath_no_folder_tt=Não usar uma sub-pasta se todos os ficheiros do a
 settings_use_subpath=Criar sub-pasta
 settings_various=Vários
 tooltip_NameColumn=Nome do arquivo
+tooltip_empty=Sem trabalhos de extracção
 unknown=Desconhecido
