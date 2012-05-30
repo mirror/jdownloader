@@ -1,3 +1,12 @@
+could_not_update_updater=Το πρόγραμμα ενημέρωσης έχει λήξει. Δεν ήταν δυνατή η ενημέρωσή του!
+dialog_rly_cancel=Ακύρωση της ενημέρωσης;
+error_invalid_branch=Η έκδοση '%s1' δεν μπορεί να ενημερωθεί αυτή τη στιγμή. Ξαναπροσπαθήστε αργότερα!
+error_service_not_available_right_now=Η υπηρεσία δεν είναι διαθέσιμη. Νέα προσπάθεια σε 60 δευτ.
+error_unknown_app=Δεν είναι δυνατή η ενημέρωση του %s1.\r\nΞαναπροσπαθήστε αργότερα!
+error_unknown_branch=Άγνωστη έκδοση: %s1
+error_unknown_server=Άγνωστο πρόβλημα του εξυπηρετητή ενημέρωσης.  Ξαναπροσπαθήστε αργότερα!
+exception_msg=Συνέβη ένα απρόσμενο σφάλμα. Επικοινωνήστε με την Υποστήριξη.
+exception_title=Συνέβη κάποιο σφάλμα
 guiless_extract=Αποσυμπίεση αρχείων...
 guiless_locked_closed_app=Το %s1 έχει κλείσει. Συνέχιση τώρα.
 guiless_updates_waiting_for_download=%s1 αρχεία πρέπει να ληφθούν
