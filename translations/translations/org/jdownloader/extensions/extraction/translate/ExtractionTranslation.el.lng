@@ -1,8 +1,14 @@
 ValidateArchiveAction_ValidateArchiveAction_object_=Επικύρωση συμπιεσμένων αρχείων
 archivename=Όνομα συμπιεσμένου αρχείου
+auto_extract_enabled=Αποσυμπίεση μετά τη Λήψη
+cannot_extract_incopmplete=Δεν είναι δυνατή η αποσυμπίεση του %s1. Το συμπιεσμένο αρχείο δεν είναι ολοκληρωμένο!
+close=Κλείσιμο
+contextmenu_auto_extract_package=Αυτόματη Αποσυμπίεση Ενεργοποιημένη
+contextmenu_autoextract=Αυτόματη Αποσυμπίεση Ενεργοποιημένη
 contextmenu_extract=Αποσυμπίεση τώρα
 contextmenu_extract_to=Ορισμός διαδρομής αποσυμπίεσης
 contextmenu_main=Συμπιεσμένα αρχεία
+contextmenu_openextract_folder=Εμφάνιση Διαδρομής Αποσυμπίεσης
 contextmenu_set_password=Κωδικός αποσυμπίεσης
 contextmenu_validate_parent=Επικύρωση συμπιεσμένου αρχείου
 file_exists=Το αρχείο υπάρχει

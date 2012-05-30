@@ -1,4 +1,7 @@
 AutoDetectAction_AutoDetectAction_=Αυτόματη εγκατάσταση
+AutoDetectAction_run_failed=Ο JDownloader δεν βρήκε κάποιο LiveHeader Script επανασύνδεσης που να λειτουργεί. Παρακαλούμε ελέγξτε ότι έχετε εισαγάγει σωστές πληροφορίες και ότι έχετε σύνδεση με δυναμική IP.
+autodetection_failed=Ο JDownloader δεν μπόρεσε  να βρει κατάλληλες Ρυθμίσεις Επανασύνδεσης. Παρακαλούμε βεβαιωθείτε ότι έχετε δυναμική IP και προσπαθήστε ξανά με διαφορετικές ρυθμίσεις.
+autodetection_success=Ο JDownloader ρύθμισε επιτυχώς την Επανασύνδεση. Η λήψη νέας IP απαιτεί %s1.
 gui_btn_abort=Ματαίωση
 gui_btn_cancel=Ακύρωση
 gui_btn_help=Βοήθεια
