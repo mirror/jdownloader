@@ -49,6 +49,10 @@ public class MvWrldNt extends PluginForDecrypt {
         }
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML("<h1>Dieses Release ist nur noch bei <a")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String password = br.getRegex("class=\"password\">Password: (.*?)</p>").getMatch(0);
         ArrayList<String> pwList = null;
         String captchaUrl = br.getRegex("\"(/captcha/\\w+\\.gif)\"").getMatch(0);
