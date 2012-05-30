@@ -71,6 +71,7 @@ public class FlickrCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(">This is not the page you\\'re looking for")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (!br.containsHTML("Signed in as <a data\\-track=")) {
             logger.info("Cookies seem to be invalid/old, trying to force login and re-checking...");
             br.clearCookies(MAINPAGE);

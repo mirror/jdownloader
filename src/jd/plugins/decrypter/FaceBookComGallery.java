@@ -68,12 +68,14 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 br.setCookie(FACEBOOKMAINPAGE, "locale", "en_GB");
                 final PluginForHost facebookPlugin = JDUtilities.getPluginForHost("facebook.com");
                 Account aa = AccountController.getInstance().getValidAccount(facebookPlugin);
+                boolean addAcc = false;
                 if (aa == null) {
                     String username = UserIO.getInstance().requestInputDialog("Enter Loginname for facebook.com :");
                     if (username == null) throw new DecrypterException(JDL.L("plugins.decrypt.facebookcomgallery.nousername", "Username not entered!"));
                     String password = UserIO.getInstance().requestInputDialog("Enter password for facebook.com :");
                     if (password == null) throw new DecrypterException(JDL.L("plugins.decrypt.facebookcomgallery.nopassword", "Password not entered!"));
                     aa = new Account(username, password);
+                    addAcc = true;
                 }
                 try {
                     ((FaceBookComVideos) facebookPlugin).login(aa, false, this.br);
@@ -84,7 +86,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 // Account is valid, let's add it to the premium overview
-                AccountController.getInstance().addAccount(facebookPlugin, aa);
+                if (addAcc) AccountController.getInstance().addAccount(facebookPlugin, aa);
                 br.getPage(parameter);
                 String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
                 final String setID = new Regex(parameter, "facebook\\.com/media/set/\\?set=(.+)").getMatch(0);

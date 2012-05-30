@@ -42,6 +42,7 @@ public class AdfLy extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("www.", "");
         br.setFollowRedirects(false);
+        br.setReadTimeout(3 * 60 * 1000);
         br.getHeaders().put("User-Agent", ua);
         synchronized (LOCK) {
             br.getPage(parameter);
@@ -70,9 +71,8 @@ public class AdfLy extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(aLink));
             }
         }
-        br.setReadTimeout(3 * 60 * 1000);
         for (int i = 0; i <= 2; i++) {
-            final String extendedProtectionPage = br.getRegex("\\'(https?://adf\\.ly/go/[A-Za-z0-9/]+)\\'").getMatch(0);
+            final String extendedProtectionPage = br.getRegex("\\'(https?://adf\\.ly/go/[^<>\"\\']*?)\\'").getMatch(0);
             if (extendedProtectionPage != null) {
                 int wait = 7;
                 String waittime = br.getRegex("var countdown = (\\d+);").getMatch(0);
