@@ -7,6 +7,7 @@ error_unknown_branch=Άγνωστη έκδοση: %s1
 error_unknown_server=Άγνωστο πρόβλημα του εξυπηρετητή ενημέρωσης.  Ξαναπροσπαθήστε αργότερα!
 exception_msg=Συνέβη ένα απρόσμενο σφάλμα. Επικοινωνήστε με την Υποστήριξη.
 exception_title=Συνέβη κάποιο σφάλμα
+exit=Κλείσιμο
 guiless_extract=Αποσυμπίεση αρχείων...
 guiless_locked_closed_app=Το %s1 έχει κλείσει. Συνέχιση τώρα.
 guiless_updates_waiting_for_download=%s1 αρχεία πρέπει να ληφθούν
