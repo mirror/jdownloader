@@ -5,6 +5,7 @@ contextmenu_auto_extract_package=Авто распаковка включена
 contextmenu_autoextract=Авто извлечение включено
 contextmenu_extract=Извлечь сейчас
 contextmenu_main=Архив(ы)
+contextmenu_set_password=Пароль для распаковки
 filename=Имя файла
 files=файл
 local=Статус файла

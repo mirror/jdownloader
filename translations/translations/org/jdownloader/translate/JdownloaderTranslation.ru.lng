@@ -1,4 +1,5 @@
 LinkCollector_addCrawledLink_offlinepackage=Офлайн файлы
+LinkCollector_addCrawledLink_variouspackage=Разные файлы
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=Офлайн файлы
 StartDownloadsAction_createTooltip_=Начать скачивать
 basics_no=Нет
