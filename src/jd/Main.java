@@ -18,6 +18,7 @@
 package jd;
 
 import org.appwork.shutdown.ShutdownController;
+import org.appwork.txtresource.TranslationFactory;
 
 public class Main {
 
@@ -27,8 +28,22 @@ public class Main {
 
     }
 
+    public static void checkLanguageSwitch(final String[] args) {
+        try {
+            for (int i = 0; i < args.length; i++) {
+                if (args[i].equalsIgnoreCase("-translatortest")) {
+                    TranslationFactory.setDesiredLanguage(args[i + 1]);
+                }
+
+            }
+        } catch (Throwable e) {
+
+        }
+    }
+
     public static void main(String[] args) {
         try {
+            checkLanguageSwitch(args);
             ShutdownController.getInstance().addShutdownEvent(RunUpdaterOnEndAtLeastOnceDaily.getInstance());
             jd.Launcher.mainStart(args);
         } catch (Throwable e) {

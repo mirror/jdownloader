@@ -696,7 +696,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                         data.put(te.getKey(), te.getTranslation());
                     }
                 }
-                if (data.size() == 0) continue;
+
                 String file = TranslationUtils.serialize(data);
                 URL url = res.getUrl();
                 File newFile = null;
