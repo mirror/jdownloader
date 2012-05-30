@@ -9,6 +9,7 @@ contextmenu_auto_extract_package=Autoextraer activado
 contextmenu_autoextract=Autoextraer activado
 contextmenu_extract_to=Estable el directorio de extracción
 contextmenu_main=Archivo(s)
+contextmenu_set_password=Extraer contraseña
 contextmenu_validate_parent=Validar archivo
 date=Fecha
 description=Extraer todos los tipos de archivos comunes (zip, rar, 7zip,...)
