@@ -255,7 +255,6 @@ TestWaitDialog_layoutDialogContent_testlink_=Testlink:
 TestWaitDialog_runInEDTnothing_found=Keine verfügbaren Downloads gefunden! Mit anderem Testlink neu versuchen.
 WatchAsYouDownloadColumn_WatchAsYouDownloadColumn=Video während dem Download schauen
 WatchAsYouDownload_WatchAsYouDownloadAction_=Während des Downloads Video schauen
-account_remove_action_msg=%s1 wirklich entfernen
 accountdialog_check=Account prüfen
 accountdialog_check_expired_renew=Account jetzt verlängern!
 accountdialog_check_expired_title=Account verlängern?
