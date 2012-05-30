@@ -50,6 +50,7 @@ ShortCuts_key_button3=butón3
 ShortCuts_key_ctrl=Ctrl
 ShortCuts_key_meta=Meta
 ShortCuts_key_shift=Mayus.
+Statusbar_Statusbar_visiturl_tooltip=Visite nuestro sitio Web
 TIMERDIALOG_TOOLTIP_TIMERLABEL=Este mensaje tiene una cuenta regresiva y se cerrará en unos segundos.
 active=Habilitado
 connecting=Conectando...
