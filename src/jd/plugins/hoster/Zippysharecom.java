@@ -132,7 +132,7 @@ public class Zippysharecom extends PluginForHost {
                     DLLINK = DLLINK.replace("'+" + var + "+'", data);
                 }
             } else {
-                DLLINK = br.getRegex("document\\.getElementById\\('dlbutton'\\).href = \"/(.*?)\";").getMatch(0);
+                DLLINK = br.getRegex("document\\.getElementById\\(\'dlbutton\'\\).href = \"/(.*?)\";").getMatch(0);
                 String math = br.getRegex("\r?\n<script type=\"text/javascript\">(.*?)</script>\r?\n").getMatch(0);
                 math = math.replaceAll("document\\.getElementById\\('dlbutton'\\)\\.|\r?\n", "");
                 if (DLLINK != null && math != null) {
@@ -176,7 +176,7 @@ public class Zippysharecom extends PluginForHost {
         }
         if (filename == null) {
             final String var = br.getRegex("var fulllink.*?'\\+(.*?)\\+'").getMatch(0);
-            filename = Encoding.htmlDecode(br.getRegex("'\\+" + var + "\\+'/(.*?)';").getMatch(0));
+            filename = br.getRegex("'\\+" + var + "\\+'/(.*?)';").getMatch(0);
         }
         if (filename.contains("/fileName?key=")) {
             final String url = br.getRegex("var fulllink = '(.*?)';").getMatch(-1);
@@ -185,8 +185,14 @@ public class Zippysharecom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("\\+\"/(.*?)\";").getMatch(0);
         }
+        if (filename == null) {
+            filename = br.getRegex("getElementById\\(\'dlbutton\'\\)\\.href = \"([^\\;]+)\"").getMatch(0);
+            if (filename != null) {
+                filename = filename.substring(filename.lastIndexOf("/") + 1);
+            }
+        }
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        downloadLink.setName(filename.trim());
+        downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         if (!br.containsHTML(">Share movie:")) {
             final String filesize = br.getRegex(Pattern.compile("Size:(\\s+)?</font>(\\s+)?<font style=.*?>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(2);
             if (filesize != null) {
@@ -208,4 +214,5 @@ public class Zippysharecom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }

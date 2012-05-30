@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class CMS extends PluginForDecrypt {
-    public static final String[] ANNOTATION_NAMES = new String[] { "top-hitz.com", "pdfs.us", "romhood.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "hardcoremetal.bz", "saugking.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "sceneload.to", "serienfreaks.to", "warez-load.com", "ddl-scene.com", "ddl.byte.to", "dream-team.bz/cms", "ebook-hell.to", "pirate-loads.to", "oxygen-scene.com", "filefarm.biz" };
+    public static final String[] ANNOTATION_NAMES = new String[] { "top-hitz.com", "pdfs.us", "romhood.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "hardcoremetal.bz", "saugking.net", "porn-traffic.net", "game-freaks.net", "sceneload.to", "serienfreaks.to", "warez-load.com", "ddl-scene.com", "ddl.byte.to", "dream-team.bz/cms", "ebook-hell.to", "pirate-loads.to", "oxygen-scene.com", "filefarm.biz" };
 
     /**
      * Returns the annotations flags array
@@ -189,7 +189,9 @@ public class CMS extends PluginForDecrypt {
                         }
                         for (final String element2 : links) {
                             final DownloadLink link = createDownloadlink(Encoding.htmlDecode(element2));
-                            if (pwList != null) link.setSourcePluginPasswordList(pwList);
+                            if (pwList != null) {
+                                link.setSourcePluginPasswordList(pwList);
+                            }
                             decryptedLinks.add(link);
                         }
                     }
@@ -243,7 +245,9 @@ public class CMS extends PluginForDecrypt {
                                 }
                             }
                             final DownloadLink link = createDownloadlink(dl);
-                            if (pwList != null) link.setSourcePluginPasswordList(pwList);
+                            if (pwList != null) {
+                                link.setSourcePluginPasswordList(pwList);
+                            }
                             decryptedLinks.add(link);
                         }
                     }
@@ -254,7 +258,9 @@ public class CMS extends PluginForDecrypt {
                 final String[] links2 = br.getRegex("onclick=\"window.open\\(\\'([^']*)\\'\\)\\;\" value=\"Download\"").getColumn(0);
                 for (final String dl : links2) {
                     final DownloadLink link = createDownloadlink(dl);
-                    if (pwList != null) link.setSourcePluginPasswordList(pwList);
+                    if (pwList != null) {
+                        link.setSourcePluginPasswordList(pwList);
+                    }
                     decryptedLinks.add(link);
                 }
             }

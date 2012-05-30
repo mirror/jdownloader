@@ -32,7 +32,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net" }, urls = { "http://(www\\.)?mov-world\\.net/(?!news/)(\\?id=\\d+|.*?/.*?.html)", "http://(www\\.)?xxx-4-free\\.net/.*?/.*?.html" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net", "chili-warez.net" }, urls = { "http://(www\\.)?mov-world\\.net/(?!news/)(\\?id=\\d+|.*?/.*?.html)", "http://(www\\.)?xxx\\-4\\-free\\.net/.*?/.*?.html", "http://(www\\.)?chili\\-warez\\.net/.*?/(\\-/)?.*?.html" }, flags = { 0, 0, 0 })
 public class MvWrldNt extends PluginForDecrypt {
 
     public MvWrldNt(final PluginWrapper wrapper) {
@@ -49,10 +49,6 @@ public class MvWrldNt extends PluginForDecrypt {
         }
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("<h1>Dieses Release ist nur noch bei <a")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
         final String password = br.getRegex("class=\"password\">Password: (.*?)</p>").getMatch(0);
         ArrayList<String> pwList = null;
         String captchaUrl = br.getRegex("\"(/captcha/\\w+\\.gif)\"").getMatch(0);
@@ -122,7 +118,7 @@ public class MvWrldNt extends PluginForDecrypt {
                 downLink.setAvailable(true);
             }
             pwList = new ArrayList<String>();
-            String host = Browser.getHost(parameter);
+            final String host = Browser.getHost(parameter);
             if (password != null && !password.equals("")) {
                 pwList.add(password.trim());
             }
