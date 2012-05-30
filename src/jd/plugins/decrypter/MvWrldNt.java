@@ -43,16 +43,13 @@ public class MvWrldNt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        String MAINPAGE = "http://mov-world.net";
-        if (!parameter.contains(MAINPAGE)) {
-            MAINPAGE = "http://xxx-4-free.net";
-        }
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("<h1>Dieses Release ist nur noch bei <a")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        final String MAINPAGE = "http://" + br.getHost();
         final String password = br.getRegex("class=\"password\">Password: (.*?)</p>").getMatch(0);
         ArrayList<String> pwList = null;
         String captchaUrl = br.getRegex("\"(/captcha/\\w+\\.gif)\"").getMatch(0);
@@ -69,7 +66,7 @@ public class MvWrldNt extends PluginForDecrypt {
                 // Recognition failed, ask the user!
                 code = getCaptchaCode(null, captchaFile, param);
             } else {
-                code = getCaptchaCode(Browser.getHost(parameter), captchaFile, param);
+                code = getCaptchaCode("mov-world.net", captchaFile, param);
             }
             captchaForm.put("code", code);
             br.submitForm(captchaForm);
