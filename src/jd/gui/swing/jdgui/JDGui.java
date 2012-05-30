@@ -533,7 +533,6 @@ public class JDGui extends SwingGui {
             @Override
             public Object edtRun() {
                 mainFrame.setIconImage(NewTheme.I().getImage("logo/jd_logo_64_64", -1));
-                mainFrame.revalidate();
                 return null;
             }
         }.start();

@@ -879,6 +879,9 @@ public class MediafireCom extends PluginForHost {
                 /* url should be downloadlink when directDownload is enabled */
                 url = br.getRedirectLocation();
                 if (url == null) {
+                    url = br.getRegex("kNO = \"(http://.*?)\"").getMatch(0);
+                }
+                if (url == null) {
                     /* try the same */
                     Browser brc = br.cloneBrowser();
                     brc.getPage("http://www.mediafire.com/dynamic/dlget.php?qk=" + fileID);
@@ -889,6 +892,8 @@ public class MediafireCom extends PluginForHost {
                     if (url == null && brc.containsHTML("Unable to access")) {
                         this.handlePremiumPassword(downloadLink, account);
                         return;
+                    } else {
+
                     }
                 }
             }
@@ -1022,6 +1027,7 @@ public class MediafireCom extends PluginForHost {
                 MediafireCom.CONFIGURATION_KEYS.put(account, cookies);
             } catch (final PluginException e) {
                 MediafireCom.CONFIGURATION_KEYS.remove(account);
+                throw e;
             } finally {
                 br.setFollowRedirects(red);
             }
