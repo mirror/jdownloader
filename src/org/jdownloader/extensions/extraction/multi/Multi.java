@@ -45,6 +45,8 @@ import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
+import org.appwork.utils.ReusableByteArrayOutputStreamPool;
+import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.StringFormatter;
 import org.appwork.utils.logging.Log;
@@ -57,6 +59,7 @@ import org.jdownloader.extensions.extraction.DummyArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.IExtraction;
+import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 
 /**
@@ -612,22 +615,6 @@ public class Multi extends IExtraction {
                     extractTo.setLastModified(System.currentTimeMillis());
                 }
 
-                // TODO: Write an proper CRC check
-                // System.out.println(item.getCRC() + " : " +
-                // Integer.toHexString(item.getCRC()) + " : " +
-                // call.getComputedCRC());
-                // if(item.getCRC() > 0 && !call.getComputedCRC().equals("0")) {
-                // if(!call.getComputedCRC().equals(Integer.toHexString(item.getCRC())))
-                // {
-                // for(ArchiveFile link :
-                // getAffectedArchiveFileFromArchvieFiles(item.getPath())) {
-                // archive.addCrcError(link);
-                // }
-                // archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
-                // return;
-                // }
-                // }
-
                 if (item.getSize() != extractTo.length()) {
                     if (ExtractOperationResult.OK == res) {
                         logger.info("Size missmatch, but Extraction returned OK?! Archive seems incomplete");
@@ -640,8 +627,14 @@ public class Multi extends IExtraction {
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
                     return;
                 }
-
-                if (ExtractOperationResult.OK != res) {
+                switch (res) {
+                case OK:
+                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
+                    return;
+                case CRCERROR:
+                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CRC_ERROR);
+                    return;
+                default:
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
                     return;
                 }
@@ -694,10 +687,11 @@ public class Multi extends IExtraction {
     //
 
     @Override
-    public boolean findPassword(String password) {
+    public boolean findPassword(ExtractionController ctl, String password) {
         crack++;
-        System.out.println("Check Password: " + password);
+        ReusableByteArrayOutputStream buffer = null;
         try {
+            buffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(64 * 1024, false);
             try {
                 inArchive.close();
             } catch (Throwable e) {
@@ -736,45 +730,45 @@ public class Multi extends IExtraction {
 
                 if (!passwordfound.getBoolean()) {
                     try {
+                        buffer.reset();
+                        final ReusableByteArrayOutputStream signatureBuffer = buffer;
+                        final long maxPWCheckSize = config.getMaxPasswordCheckSize() * 1024;
                         final String path = item.getPath();
-                        /* this variable defines if we accept the pw in case we write some data, asuming that 7zip only writes data when pw is correct */
-                        final boolean passwordExtracting = true;
+                        final int signatureMinLength;
+                        if (new Regex(path, ".+\\.iso").matches()) {
+                            signatureMinLength = 37000;
+                        } else if (new Regex(path, ".+\\.mp3").matches()) {
+                            signatureMinLength = 512;
+                        } else {
+                            signatureMinLength = 32;
+                        }
                         ExtractOperationResult result = item.extractSlow(new ISequentialOutStream() {
                             public int write(byte[] data) throws SevenZipException {
-                                if (passwordExtracting) {
-                                    passwordfound.found();
-                                    /* this will throw SevenZipException */
-                                    return 0;
+                                int toWrite = Math.min(signatureBuffer.free(), data.length);
+                                if (toWrite > 0) {
+                                    /* we still have enough buffer left to write the data */
+                                    signatureBuffer.write(data, 0, toWrite);
                                 }
-                                int length = 0;
-                                if (new Regex(path, ".+\\.iso").matches()) {
-                                    length = 37000;
-                                } else if (new Regex(path, ".+\\.mp3").matches()) {
-                                    length = 512;
-                                } else {
-                                    length = 32;
-                                }
-
-                                if (length > data.length) {
-                                    length = data.length;
-                                }
-
-                                StringBuilder sigger = new StringBuilder();
-                                for (int i = 0; i < length - 1; i++) {
-                                    String s = Integer.toHexString(data[i]);
-                                    s = (s.length() < 2 ? "0" + s : s);
-                                    s = s.substring(s.length() - 2);
-                                    sigger.append(s);
-                                }
-
-                                Signature signature = FileSignatures.getSignature(sigger.toString());
-
-                                if (signature != null) {
-                                    if (signature.getExtensionSure() != null && signature.getExtensionSure().matcher(path).matches()) {
-                                        passwordfound.found();
+                                if (signatureBuffer.size() >= signatureMinLength) {
+                                    /* we have enough data available for a signature check */
+                                    StringBuilder sigger = new StringBuilder();
+                                    for (int i = 0; i < signatureBuffer.size() - 1; i++) {
+                                        String s = Integer.toHexString(signatureBuffer.getInternalBuffer()[i]);
+                                        s = (s.length() < 2 ? "0" + s : s);
+                                        s = s.substring(s.length() - 2);
+                                        sigger.append(s);
+                                    }
+                                    Signature signature = FileSignatures.getSignature(sigger.toString());
+                                    if (signature != null) {
+                                        if (signature.getExtensionSure() != null && signature.getExtensionSure().matcher(path).matches()) {
+                                            /* signature matches, lets abort PWFinding now */
+                                            passwordfound.found();
+                                            return 0;
+                                        }
                                     }
                                 }
-                                if (item.getSize() < 1 * 1024 * 1024 && Boolean.FALSE.equals(passwordfound.getBoolean())) {
+                                if (item.getSize() <= maxPWCheckSize) {
+                                    /* we still allow further extraction as the itemSize <= maxPWCheckSize */
                                     return data.length;
                                 } else {
                                     /* this will throw SevenZipException */
@@ -782,35 +776,21 @@ public class Multi extends IExtraction {
                                 }
                             }
                         }, password);
-                        if (!ExtractOperationResult.OK.equals(result)) {
-                            /* we get no okay result, so pw might be wrong */
-                            return false;
+                        if (ExtractOperationResult.OK.equals(result)) {
+                            passwordfound.found();
                         }
-                        passwordfound.found();
                     } catch (SevenZipException e) {
                         // An error will be thrown if the write method
                         // returns
                         // 0.
-                        // It's not a problem, because it only signals the a
-                        // password was accepted.
-                        if (!passwordfound.getBoolean()) {
-                            /*
-                             * passwordfound is still false, so no valid password found
-                             */
-                            return false;
-                        }
                     }
                 } else {
-                    /* pw already found, we can stop now */
+                    /* pw found */
                     break;
                 }
-
                 // if (filter(item.getPath())) continue;
-
             }
-
             if (!passwordfound.getBoolean()) return false;
-
             archive.setPassword(password);
             updateContentView(inArchive.getSimpleInterface());
             return true;
@@ -819,6 +799,13 @@ public class Multi extends IExtraction {
         } catch (Throwable e) {
             e.printStackTrace();
             return false;
+        } finally {
+            try {
+                ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(buffer);
+            } catch (Throwable e) {
+            } finally {
+                buffer = null;
+            }
         }
     }
 
@@ -839,13 +826,29 @@ public class Multi extends IExtraction {
             return result;
         }
 
-        ISevenZipInArchive in;
+        ISevenZipInArchive in = null;
+        RandomAccessFile raf = null;
+        RandomAccessFileInStream rafi = null;
         for (ArchiveFile link : archive.getArchiveFiles()) {
-            in = SevenZip.openInArchive(null, new RandomAccessFileInStream(new RandomAccessFile(link.getFilePath(), "r")));
-
-            for (ISimpleInArchiveItem item : in.getSimpleInterface().getArchiveItems()) {
-                if (item.getPath().equals(path)) {
-                    result.add(link);
+            try {
+                in = SevenZip.openInArchive(null, rafi = new RandomAccessFileInStream(raf = new RandomAccessFile(link.getFilePath(), "r")));
+                for (ISimpleInArchiveItem item : in.getSimpleInterface().getArchiveItems()) {
+                    if (item.getPath().equals(path)) {
+                        result.add(link);
+                    }
+                }
+            } finally {
+                try {
+                    in.close();
+                } catch (final Throwable e) {
+                }
+                try {
+                    rafi.close();
+                } catch (final Throwable e) {
+                }
+                try {
+                    raf.close();
+                } catch (final Throwable e) {
                 }
             }
         }
@@ -966,14 +969,16 @@ public class Multi extends IExtraction {
 
     private void updateContentView(ISimpleInArchive simpleInterface) {
         try {
+            ContentView newView = new ContentView();
             for (ISimpleInArchiveItem item : simpleInterface.getArchiveItems()) {
                 try {
                     if (item.getPath().trim().equals("") || filter(item.getPath())) continue;
-                    archive.getContentView().add(new PackedFile(item.isFolder(), item.getPath(), item.getSize()));
+                    newView.add(new PackedFile(item.isFolder(), item.getPath(), item.getSize()));
                 } catch (SevenZipException e) {
                     Log.exception(e);
                 }
             }
+            archive.setContentView(newView);
         } catch (SevenZipException e) {
             Log.exception(e);
         }

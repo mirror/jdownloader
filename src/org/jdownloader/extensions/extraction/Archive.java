@@ -195,8 +195,8 @@ public class Archive {
     }
 
     /**
-     * Returns how much bytes got extracted. this is NOT getSize() after extracting in some cases. Because files may be filtered, or not
-     * extracted due to overwrite rules. user {@link ExtractionController#getProgress()} to get the extraction progress
+     * Returns how much bytes got extracted. this is NOT getSize() after extracting in some cases. Because files may be filtered, or not extracted due to
+     * overwrite rules. user {@link ExtractionController#getProgress()} to get the extraction progress
      * 
      * @return
      */
@@ -278,6 +278,10 @@ public class Archive {
 
     public ContentView getContentView() {
         return contents;
+    }
+
+    public void setContentView(ContentView view) {
+        this.contents = view;
     }
 
 }

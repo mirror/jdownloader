@@ -84,7 +84,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
         fireEvent(ExtractionEvent.Type.PASSWORT_CRACKING);
 
-        return extractor.findPassword(pw);
+        return extractor.findPassword(this, pw);
     }
 
     private void fireEvent(ExtractionEvent.Type event) {
@@ -149,14 +149,14 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                             logger.info("No password found for " + archive);
                             return null;
                         }
-                        /* avoid duplicates */
-                        pwList.remove(archive.getPassword());
-                        pwList.add(0, archive.getPassword());
-                        extractor.config.setPasswordList(pwList);
                     }
 
                     fireEvent(ExtractionEvent.Type.PASSWORD_FOUND);
-                    logger.info("Found password for " + archive);
+                    logger.info("Found password for " + archive + "->" + archive.getPassword());
+                    /* avoid duplicates */
+                    pwList.remove(archive.getPassword());
+                    pwList.add(0, archive.getPassword());
+                    extractor.config.setPasswordList(pwList);
                 }
 
                 DISKSPACECHECK check = DownloadWatchDog.getInstance().checkFreeDiskSpace(archive.getExtractTo(), archive.getContentView().getTotalSize());
@@ -188,8 +188,8 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 } finally {
                     fireEvent(ExtractionEvent.Type.EXTRACTING);
                     timer.cancel(false);
+                    extractor.close();
                 }
-                extractor.close();
                 if (extractor.getException() != null) exception = extractor.getException();
                 switch (archive.getExitCode()) {
                 case ExtractionControllerConstants.EXIT_CODE_SUCCESS:

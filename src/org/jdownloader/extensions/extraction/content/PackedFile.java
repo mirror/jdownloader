@@ -60,7 +60,6 @@ public class PackedFile implements ContentNode {
     }
 
     public void add(PackedFile packedFile) {
-
         children.put(packedFile.getName(), packedFile);
         if (!packedFile.isDirectory()) {
             directorySize += packedFile.getSize();

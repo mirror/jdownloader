@@ -85,8 +85,8 @@ public abstract class IExtraction {
     }
 
     /**
-     * Builds an {@link Archive} with an finished {@link DownloadLink}. If the {@link DownloadLink} contains only a part of an multipart
-     * archive, it has not to be to first one (eg. test.part1.rar).
+     * Builds an {@link Archive} with an finished {@link DownloadLink}. If the {@link DownloadLink} contains only a part of an multipart archive, it has not to
+     * be to first one (eg. test.part1.rar).
      * 
      * @param link
      *            An complete downloaded file.
@@ -102,7 +102,7 @@ public abstract class IExtraction {
      *            The password.
      * @return True if the password is correct.
      */
-    public abstract boolean findPassword(String password);
+    public abstract boolean findPassword(ExtractionController controller, String password);
 
     /**
      * Starts the extraction of an {@link Archive}.
@@ -110,8 +110,8 @@ public abstract class IExtraction {
     public abstract void extract(ExtractionController controller);
 
     /**
-     * Checks if the extraction method can be used on the system. If it's not possible the method should try to fix that. If that fails it
-     * should return false. The extraction method will not be used anymore in this session for extraction.
+     * Checks if the extraction method can be used on the system. If it's not possible the method should try to fix that. If that fails it should return false.
+     * The extraction method will not be used anymore in this session for extraction.
      * 
      * @return True if all works.
      */
@@ -125,8 +125,8 @@ public abstract class IExtraction {
     public abstract int getCrackProgress();
 
     /**
-     * Is used to let the extraction method prepare for the extraction. Will be called after the system started an extraction, but before
-     * the {@link crackPassword} and {@link extract}.
+     * Is used to let the extraction method prepare for the extraction. Will be called after the system started an extraction, but before the
+     * {@link crackPassword} and {@link extract}.
      * 
      * @return False if it's not possible to extract that archive.
      */

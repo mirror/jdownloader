@@ -230,7 +230,7 @@ public class Launcher {
         try {
             // log source revision infos
             Log.L.info(IO.readFileToString(Application.getResource("build.json")));
-        } catch (IOException e1) {
+        } catch (Throwable e1) {
             Log.exception(e1);
         }
         final Properties pr = System.getProperties();
@@ -241,7 +241,6 @@ public class Launcher {
         }
         Launcher.LOG.info("Start JDownloader");
         PARAMETERS = new ParameterParser(args);
-
         PARAMETERS.getEventSender().addListener(new CommandSwitchListener() {
 
             @Override
@@ -586,9 +585,7 @@ public class Launcher {
                                     @Override
                                     protected Void run() throws RuntimeException {
                                         /*
-                                         * we do this check inside IOEQ because
-                                         * initDownloadLinks also does its final
-                                         * init in IOEQ
+                                         * we do this check inside IOEQ because initDownloadLinks also does its final init in IOEQ
                                          */
                                         List<DownloadLink> dlAvailable = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
@@ -605,8 +602,7 @@ public class Launcher {
                                         });
                                         if (dlAvailable.size() == 0) {
                                             /*
-                                             * no downloadlinks available to
-                                             * autostart
+                                             * no downloadlinks available to autostart
                                              */
                                             return null;
                                         }

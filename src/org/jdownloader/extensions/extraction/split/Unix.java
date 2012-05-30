@@ -58,7 +58,7 @@ public class Unix extends IExtraction {
     // }
 
     @Override
-    public boolean findPassword(String password) {
+    public boolean findPassword(ExtractionController controller, String password) {
         return true;
     }
 

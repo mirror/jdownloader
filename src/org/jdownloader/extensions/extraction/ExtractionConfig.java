@@ -128,6 +128,14 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     void setSubPathFilesTreshhold(int treshold);
 
     @AboutConfig
+    @Description("max kbytes the extractor may test for finding correct password when no signature is found")
+    @SpinnerValidator(min = 10, max = Integer.MAX_VALUE)
+    @DefaultIntValue(1000)
+    int getMaxPasswordCheckSize();
+
+    void setMaxPasswordCheckSize(int size);
+
+    @AboutConfig
     @Description("max buffer size for write operations in kb")
     @SpinnerValidator(min = 100, max = 102400)
     @DefaultIntValue(2000)
