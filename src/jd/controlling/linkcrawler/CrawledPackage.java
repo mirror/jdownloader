@@ -156,8 +156,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     /**
-     * Returns the raw Downloadfolder String. This link may contain wildcards like <jd:packagename>. Use {@link #getDownloadFolder()} to
-     * return the actuall downloadloadfolder
+     * Returns the raw Downloadfolder String. This link may contain wildcards like <jd:packagename>. Use {@link #getDownloadFolder()} to return the actuall
+     * downloadloadfolder
      * 
      * @return
      */

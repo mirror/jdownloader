@@ -43,7 +43,7 @@ public class IlxN extends PluginForDecrypt {
         br.getPage(parameter);
         for (int i = 0; i <= 5; i++) {
             if (br.containsHTML("captcha.php")) {
-                String captchalink = "http://ilix.in/captcha/captcha.php";
+                String captchalink = "http://ilix.in/captcha2/captcha.php";
                 String code = getCaptchaCode(captchalink, param);
                 br.postPage(parameter, "n=0&captcha=" + code);
                 if (br.containsHTML("captcha.php")) continue;

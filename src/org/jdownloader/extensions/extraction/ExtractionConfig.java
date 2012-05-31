@@ -30,7 +30,6 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
 
     @AboutConfig
     @DefaultStringValue("%PACKAGENAME%")
-    @Description("A Blacklist is a list of regular expressions. Use a blacklist to avoid extracting certain filetypes.")
     String getSubPath();
 
     @DefaultJsonObject("[]")

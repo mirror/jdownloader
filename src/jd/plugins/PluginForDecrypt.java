@@ -69,6 +69,10 @@ public abstract class PluginForDecrypt extends Plugin {
         this.distributer = distributer;
     }
 
+    public JDPluginLogger getLogger() {
+        return (JDPluginLogger) logger;
+    }
+
     /**
      * @return the ioPermission
      */

@@ -16,7 +16,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -35,29 +37,23 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
 
         DownloadLink link = ((DownloadLinkArchiveFile) archiv.getFirstArchiveFile()).getDownloadLinks().get(0);
         try {
-            if (link.getFilePackage().getName() != null) {
-                // if (link instanceof DummyDownloadLink &&
-                // archiv.getExtractor().getArchiveName(archiv.getFirstArchiveFile())
-                // != null) {
-                // path = path.replace("%PACKAGENAME%",
-                // archiv.getExtractor().getArchiveName(archiv.getFirstArchiveFile()));
-                // } else {
-                path = path.replace(PACKAGENAME, link.getFilePackage().getName());
-                // }
+            String packageName = CrossSystem.alleviatePathParts(link.getFilePackage().getName());
+            if (!StringUtils.isEmpty(packageName)) {
+                path = path.replace(PACKAGENAME, packageName);
             } else {
                 path = path.replace(PACKAGENAME, "");
                 Log.L.severe("Could not set packagename for " + archiv.getFirstArchiveFile().getFilePath());
             }
-
-            if (archiv.getName() != null) {
-                path = path.replace(ARCHIVENAME, archiv.getName());
+            String archiveName = CrossSystem.alleviatePathParts(archiv.getName());
+            if (!StringUtils.isEmpty(archiveName)) {
+                path = path.replace(ARCHIVENAME, archiveName);
             } else {
                 path = path.replace(ARCHIVENAME, "");
                 Log.L.severe("Could not set archivename for " + archiv.getFirstArchiveFile().getFilePath());
             }
-
-            if (link.getHost() != null) {
-                path = path.replace(HOSTER, link.getHost());
+            String hostName = CrossSystem.alleviatePathParts(link.getHost());
+            if (!StringUtils.isEmpty(hostName)) {
+                path = path.replace(HOSTER, hostName);
             } else {
                 path = path.replace(HOSTER, "");
                 Log.L.severe("Could not set hoster for " + archiv.getFirstArchiveFile().getFilePath());
@@ -66,15 +62,13 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
             if (path.contains("$DATE:")) {
                 int start = path.indexOf("$DATE:");
                 int end = start + 6;
-
                 while (end < path.length() && path.charAt(end) != '$') {
                     end++;
                 }
-
                 try {
                     SimpleDateFormat format = new SimpleDateFormat(path.substring(start + 6, end));
                     path = path.replace(path.substring(start, end + 1), format.format(new Date()));
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     path = path.replace(path.substring(start, end + 1), "");
                     Log.L.severe("Could not set extraction date. Maybe pattern is wrong. For " + archiv.getFirstArchiveFile().getFilePath());
                 }
@@ -84,7 +78,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
             if (new File(dif).isAbsolute()) {
                 dif = "";
             }
-            path = path.replace(SUBFOLDER, dif);
+            path = path.replace(SUBFOLDER, CrossSystem.alleviatePathParts(dif));
 
             path = path.replaceAll("[/]+", "\\\\");
             path = path.replaceAll("[\\\\]+", "\\\\");

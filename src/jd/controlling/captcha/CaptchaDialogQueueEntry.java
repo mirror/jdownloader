@@ -1,13 +1,16 @@
 package jd.controlling.captcha;
 
+import java.awt.Image;
 import java.io.File;
 import java.net.MalformedURLException;
 
 import jd.controlling.IOPermission;
 import jd.controlling.IOPermission.CAPTCHA;
+import jd.controlling.JDPluginLogger;
 import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.CaptchaDialogInterface;
 import jd.gui.swing.dialog.CaptchaDialogInterface.DialogType;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 import org.appwork.storage.StorageException;
@@ -96,23 +99,32 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
         if (ioPermission != null && !ioPermission.isCaptchaAllowed(getHost().getTld())) { return null; }
 
         try {
-
+            DialogType dialogType = null;
+            JDPluginLogger logger = null;
+            if (captchaController.getPlugin() instanceof PluginForHost) {
+                logger = ((PluginForHost) captchaController.getPlugin()).getLogger();
+                dialogType = DialogType.HOSTER;
+            } else if (captchaController.getPlugin() instanceof PluginForDecrypt) {
+                logger = ((PluginForDecrypt) captchaController.getPlugin()).getLogger();
+                dialogType = DialogType.CRAWLER;
+            }
             int f = flag;
             if (CaptchaSettings.CFG.isCountdownEnabled() && CaptchaSettings.CFG.getCountdown() > 0) {
                 f = f | Dialog.LOGIC_COUNTDOWN;
             }
-
+            Image[] images = null;
             if (captchaController.getCaptchafile().getName().toLowerCase().endsWith("gif")) {
-                this.dialog = new CaptchaDialog(f, captchaController.getPlugin() instanceof PluginForHost ? DialogType.HOSTER : DialogType.CRAWLER, getHost(), CaptchaDialog.getGifImages(captchaController.getCaptchafile().toURI().toURL()), def, captchaController.getExplain());
-
+                images = CaptchaDialog.getGifImages(captchaController.getCaptchafile().toURI().toURL());
             } else {
-                this.dialog = new CaptchaDialog(f, captchaController.getPlugin() instanceof PluginForHost ? DialogType.HOSTER : DialogType.CRAWLER, getHost(), IconIO.getImage(captchaController.getCaptchafile().toURI().toURL()), def, captchaController.getExplain());
-
+                images = new Image[] { IconIO.getImage(captchaController.getCaptchafile().toURI().toURL()) };
             }
+            if (images == null || images.length == 0 || images[0] == null) {
+                logger.severe("Could not load CaptchaImage! " + captchaController.getCaptchafile().getAbsolutePath());
+                return null;
+            }
+            this.dialog = new CaptchaDialog(f, dialogType, getHost(), images, def, captchaController.getExplain());
             dialog.setPlugin(captchaController.getPlugin());
-
             dialog.setMethodName(captchaController.getMethodname());
-
             dialog.setCountdownTime(CaptchaSettings.CFG.getCountdown());
             CaptchaDialogInterface answer = NewUIO.I().show(CaptchaDialogInterface.class, dialog);
             return answer.getCaptchaCode();
