@@ -63,8 +63,8 @@ public class TurboBitNet extends PluginForHost {
 
     public TurboBitNet(final PluginWrapper wrapper) {
         super(wrapper);
-        enablePremium("http://turbobit.net/turbo");
         setConfigElements();
+        enablePremium("http://turbobit.net/turbo");
     }
 
     @Override
@@ -197,8 +197,7 @@ public class TurboBitNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         /*
-         * we have to load the plugin first! we must not reference a plugin
-         * class without loading it before
+         * we have to load the plugin first! we must not reference a plugin class without loading it before
          */
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
@@ -226,19 +225,6 @@ public class TurboBitNet extends PluginForHost {
         }
         if (id == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.getPage("/download/free/" + id);
-        if (br.containsHTML(tb(0))) {
-            waittime = br.getRegex(tb(1)).getMatch(0);
-            final int wait = waittime != null ? Integer.parseInt(waittime) : -1;
-
-            if (wait > 31) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
-            } else if (wait < 0) {
-            } else {
-                sleep(wait * 1000l, downloadLink);
-            }
-        }
-        waittime = br.getRegex(tb(1)).getMatch(0);
-        if (waittime != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l); }
 
         Form captchaform = null;
         final Form[] allForms = br.getForms();
@@ -250,6 +236,23 @@ public class TurboBitNet extends PluginForHost {
                 }
             }
         }
+
+        if (captchaform == null) {
+            if (br.containsHTML(tb(0))) {
+                waittime = br.getRegex(tb(1)).getMatch(0);
+                final int wait = waittime != null ? Integer.parseInt(waittime) : -1;
+
+                if (wait > 31) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+                } else if (wait < 0) {
+                } else {
+                    sleep(wait * 1000l, downloadLink);
+                }
+            }
+            waittime = br.getRegex(tb(1)).getMatch(0);
+            if (waittime != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l); }
+        }
+
         if (captchaform == null) {
             logger.warning("captchaform equals null!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -280,6 +283,7 @@ public class TurboBitNet extends PluginForHost {
                 if (!getPluginConfig().getBooleanProperty("JAC", false)) {
                     captchaCode = getCaptchaCode(null, captchaUrl, downloadLink);
                 } else if (captchaUrl.contains("/basic/")) {
+                    logger.info("Handling basic captchas");
                     captchaCode = getCaptchaCode("turbobit.net.basic", captchaUrl, downloadLink);
                 } else {
                     captchaCode = getCaptchaCode(captchaUrl, downloadLink);
@@ -420,7 +424,7 @@ public class TurboBitNet extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return false;
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -436,8 +440,7 @@ public class TurboBitNet extends PluginForHost {
                 String ua = null;
                 if (force == false) {
                     /*
-                     * we have to reuse old UA, else the cookie will become
-                     * invalid
+                     * we have to reuse old UA, else the cookie will become invalid
                      */
                     ua = account.getStringProperty("UA", null);
                 }
@@ -570,7 +573,7 @@ public class TurboBitNet extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "JAC", JDL.L("plugins.hoster.turbobit.jac", "Activate JAC?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "JAC", JDL.L("plugins.hoster.turbobit.jac", "Enable JAC?")).setDefaultValue(true));
     }
 
     private String tb(final int i) {
@@ -587,8 +590,7 @@ public class TurboBitNet extends PluginForHost {
         s[9] = "ff88";
         s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f181b5b6f143d85d05dd9f86c8b5be73c254755b5ef741d72e5262ecdc19c";
         /*
-         * we have to load the plugin first! we must not reference a plugin
-         * class without loading it before
+         * we have to load the plugin first! we must not reference a plugin class without loading it before
          */
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));

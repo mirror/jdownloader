@@ -24,6 +24,8 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.JDHash;
@@ -62,6 +64,7 @@ public class HitFileNet extends PluginForHost {
 
     public HitFileNet(final PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
         this.enablePremium("http://hitfile.net/premium/emoney/5");
     }
 
@@ -199,19 +202,21 @@ public class HitFileNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        if (br.containsHTML(hf(0))) {
-            waittime = br.getRegex(hf(1)).getMatch(0);
-            final int wait = waittime != null ? Integer.parseInt(waittime) : -1;
+        if (!(br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CAPTCHATEXT))) {
+            if (br.containsHTML(hf(0))) {
+                waittime = br.getRegex(hf(1)).getMatch(0);
+                final int wait = waittime != null ? Integer.parseInt(waittime) : -1;
 
-            if (wait > 31) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
-            } else if (wait < 0) {
-            } else {
-                sleep(wait * 1000l, downloadLink);
+                if (wait > 31) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+                } else if (wait < 0) {
+                } else {
+                    sleep(wait * 1000l, downloadLink);
+                }
             }
+            waittime = br.getRegex(hf(1)).getMatch(0);
+            if (waittime != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l); }
         }
-        waittime = br.getRegex(hf(1)).getMatch(0);
-        if (waittime != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l); }
 
         if (br.containsHTML(RECAPTCHATEXT)) {
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -224,12 +229,26 @@ public class HitFileNet extends PluginForHost {
             if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CAPTCHATEXT)) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         } else {
             if (!br.containsHTML(CAPTCHATEXT)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            logger.info("Handling normal captchas");
             final String captchaUrl = br.getRegex("<div><img alt=\"Captcha\" src=\"(http://hitfile\\.net/captcha/.*?)\"").getMatch(0);
             final Form captchaForm = br.getForm(2);
             if (captchaForm == null || captchaUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            final String code = getCaptchaCode(captchaUrl, downloadLink);
-            captchaForm.put("captcha_response", code);
-            br.submitForm(captchaForm);
+            for (int i = 1; i <= 3; i++) {
+                String captchaCode;
+                if (!getPluginConfig().getBooleanProperty("JAC", false)) {
+                    captchaCode = getCaptchaCode(null, captchaUrl, downloadLink);
+                } else if (captchaUrl.contains("/basic/")) {
+                    logger.info("Handling basic captchas");
+                    captchaCode = getCaptchaCode("turbobit.net.basic", captchaUrl, downloadLink);
+                } else {
+                    captchaCode = getCaptchaCode("turbobit.net", captchaUrl, downloadLink);
+                }
+                captchaForm.put("captcha_response", captchaCode);
+                br.submitForm(captchaForm);
+                if (!br.containsHTML(CAPTCHATEXT)) {
+                    break;
+                }
+            }
             if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CAPTCHATEXT)) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         }
 
@@ -272,7 +291,7 @@ public class HitFileNet extends PluginForHost {
         String res = rhino("var id = \'" + fileID + "\';@" + fun + "@" + rtUpdate, 666);
         if (res == null || res != null && !res.matches(hf(10))) {
             res = rhino(fun + "@" + rtUpdate, 100);
-            if (res.endsWith("/~ID~/")) {
+            if (new Regex(res, "/~ID~/").matches()) {
                 res = res.replaceAll("/~ID~/", fileID);
             }
         }
@@ -367,6 +386,10 @@ public class HitFileNet extends PluginForHost {
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "JAC", JDL.L("plugins.hoster.hitfile.jac", "Enable JAC?")).setDefaultValue(true));
     }
 
     private String hf(final int i) {
