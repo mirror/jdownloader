@@ -13,4 +13,5 @@ plugins_optional_extraction_status_openingarchive=Otevírám archiv...
 plugins_optional_extraction_status_passfound=Heslo nalezeno
 plugins_optional_extraction_status_queued=Přidáno na frontu k rozbalení
 settings_overwrite=Přepsat existující soubory?
+settings_passwords=Seznam hesel
 settings_various=Různé

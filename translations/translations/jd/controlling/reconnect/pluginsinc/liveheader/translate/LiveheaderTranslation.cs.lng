@@ -1,3 +1,4 @@
+DataCompareDialog_layoutDialogContent_password=Heslo
 DataCompareDialog_layoutDialogContent_router=Váš router
 gui_btn_abort=Přerušit
 gui_btn_cancel=Storno
@@ -20,3 +21,4 @@ gui_config_routeripfinder_ready=Nalezena IP: %s1
 gui_fengshuiconfig_routerip=Router-IP
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Vypnuli jste IP-Check. Toto nastavení výrazně zvýší počet Reconnectu!\n\n\n\nNěkolik dalších modulů (např. Reconnect Recorder) bylo deaktivováno.
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=IP-Check deaktivován!
+literally_password=Heslo

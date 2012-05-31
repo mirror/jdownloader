@@ -1,4 +1,5 @@
 Extraction_onShutdownRequest_msg=Přerušit extrahování?
+LinkCollector_archiv=%s1
 controller_packages_defaultname=Ostatní
 controller_status_connectionproblems=Spojení ztraceno
 controller_status_containererror=Chyba kontejneru
@@ -50,6 +51,7 @@ gui_downloadview_statustext_jac=Rozpoznávání Captcha
 gui_javacheck_newerjavaavailable_msg=Přestože JDownloader běží na Vaší verzi Java, doporučujeme instalaci nejnovějších updatů Java. \n\nJDownloader poběží stabilněji, rychleji a bude vypadat lépe. \n\n\n\nNavštivte  http://jdownloader.org/download.
 gui_javacheck_newerjavaavailable_title=Nalezena zastaralá verze Java: %s1!
 gui_mainframe_title_updatemessage2=%s1 dostupných atualizací
+gui_settings_reconnect_title=Reconnect
 gui_warning_reconnect_running=Probíhá...
 gui_warning_reconnectunknown=Reconnect - status není znám
 plugins_error_downloadfailed=Stahování selhalo

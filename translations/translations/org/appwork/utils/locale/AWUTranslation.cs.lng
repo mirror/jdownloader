@@ -1,4 +1,12 @@
 ABSTRACTDIALOG_BUTTON_CANCEL=Storno
 ABSTRACTDIALOG_BUTTON_OK=OK
+AccountNew_layoutDialogContent_password=Heslo
 AppWorkUtils_Graph_getAverageSpeedString=Ø %s1/s |
+COPYCUTPASTE_PASTE=Vložit
+LOGINDIALOG_LABEL_PASSWORD=Heslo
 extpasswordeditorcolumn_tooltip=Vaše heslo
+literally_byte=%s1 B
+literally_gibibyte=%s1 GB
+literally_kibibyte=%s1 KB
+literally_mebibyte=%s1 MB
+literally_tebibyte=%s1 TB
