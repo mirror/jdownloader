@@ -27,6 +27,7 @@ please_wait=Lütfen bekleyin!
 restart_title=Yeniden başlat!
 resume_failed=Sürdürme başarısız. Tekrar dene...
 stop_countdown=Geri sayımı durdur
+udpates_found=Güncelleme(ler) mevcut!
 update_dialog_cancel=İptal
 update_dialog_later=Daha sonra hatırlat (sor)
 update_dialog_news_button=Olay Günlüğünü Görüntüle
