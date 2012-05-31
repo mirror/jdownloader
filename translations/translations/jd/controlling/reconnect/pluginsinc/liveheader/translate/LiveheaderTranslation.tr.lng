@@ -35,6 +35,6 @@ gui_config_reconnect_selectrouter_example=Örnek: AirTies Air-5452
 gui_config_routeripfinder_notfound=Can't find your routers hostname
 gui_config_routeripfinder_ready=IP Adresi Bulundu: %s1
 gui_fengshuiconfig_routerip=Yönlendirici IP
-jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=IP Denetimini etkisizleştirdiniz. Bu yeniden bağlanma sürelerini oldukça uzatacaktır! Yeniden Bağlanma Kaydedicisi gibi birkaç ileriki modül etkisiz.
+jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=IP Denetimini etkisizleştirdiniz. Bu yeniden bağlanma sürelerini oldukça uzatacaktır!\n\n\n\nYeniden Bağlanma Kaydedicisi gibi birkaç ileriki modül etkisiz.
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=IP Denetimi etkisizleştirildi!
 jd_router_reconnectrecorder_Gui_icon_progress=Tekrar bağlanma kaydediliyor...
