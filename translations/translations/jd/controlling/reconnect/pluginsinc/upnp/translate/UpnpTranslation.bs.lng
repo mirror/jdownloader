@@ -1,0 +1,7 @@
+AutoDetectAction_run_optimize=Optimiziraj: %s1
+UPNPReconnectInvoker_getName_=Ponovno konektovanje UPNP Rutera
+UPNPRouterPlugin_run_wizard_title=UPNP Ruter Čarobnjak
+auto=UPNP Automatsko Podešavanje
+jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_title=Nije uspjelo
+jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title=Uspješno
+literally_router=UPNP Ruter
