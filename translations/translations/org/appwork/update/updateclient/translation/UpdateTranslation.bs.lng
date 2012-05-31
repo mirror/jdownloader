@@ -46,6 +46,7 @@ guiless_files_ready_for_install=%s1 dokumenata čeka da bude instalirano!
 guiless_files_wait_for_removal=%s1 dokumenata je zastarilo i biće uklonjeni.
 guiless_installFinished=Instalacija je završena
 guiless_locked_closed_app=%s1 je zatvoren. Nastavi sada.
+guiless_noupdates=Obiđi  Nadgradnje. - postavljena je zastavica bez nadgradnje
 guiless_progress=...Napredak: %s1%
 guiless_progress2=Napredak: %s1% | %s2/%s3
 guiless_started_download=Pokreni Download %s1
