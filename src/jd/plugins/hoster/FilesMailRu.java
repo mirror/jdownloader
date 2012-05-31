@@ -60,16 +60,30 @@ public class FilesMailRu extends PluginForHost {
         String finallink = null;
         keepCookies = premium;
         requestFileInformation(downloadLink);
+        // Downloadmanager
+        boolean dlManagerReady = false;
+        if (downloadLink.getBooleanProperty("MRDWNLD", false)) {
+            String id = br.getRegex("\"http://dlm\\.mail\\.ru/downloader_fmr_([0-9a-f]+)\\.exe\"").getMatch(0);
+            Browser MRDWNLD = br.cloneBrowser();
+            prepareBrowserForDlManager(MRDWNLD);
+            MRDWNLD.getPage("/cgi-bin/files/fdownload?dlink=" + id);
+            id = MRDWNLD.getRegex("<url>(http://.*?)</url>").getMatch(0);
+            if (id != null) {
+                downloadLink.setUrlDownload(id);
+                dlManagerReady = true;
+            }
+        }
         finallink = br.getRegex(DLLINKREGEX).getMatch(0);
-        if (finallink == null) {
+        if (finallink == null && !dlManagerReady) {
             logger.warning("Critical error occured: The final downloadlink couldn't be found in handleFree!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!premium) goToSleep(downloadLink);
+        if (!(premium || dlManagerReady)) goToSleep(downloadLink);
         // Errorhandling, sometimes the link which is usually renewed by the
         // linkgrabber doesn't work and needs to be refreshed again!
         int chunks = 1;
         if (premium) chunks = 0;
+        if (dlManagerReady) prepareBrowserForDlManager(br);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, chunks);
         if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads!"); }
         dl.startDownload();
@@ -152,17 +166,28 @@ public class FilesMailRu extends PluginForHost {
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
     }
 
+    private void prepareBrowserForDlManager(Browser browser) {
+        browser.getHeaders().put("Pragma", null);
+        browser.getHeaders().put("Cache-Control", null);
+        browser.getHeaders().put("Accept-Charset", null);
+        browser.getHeaders().put("Accept-Encoding", null);
+        browser.getHeaders().put("Accept", "*/*");
+        browser.getHeaders().put("Accept-Language", null);
+        browser.getHeaders().put("User-Agent", "MRDWNLD");
+        browser.getHeaders().put("Referer", null);
+        browser.getHeaders().put("Content-Type", null);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         if (!keepCookies) this.setBrowserExclusive();
+        br.setDebug(true);
         br.getHeaders().put("User-Agent", UA);
         br.setFollowRedirects(true);
         if (downloadLink.getName() == null && downloadLink.getStringProperty("folderID", null) == null) {
             logger.warning("final filename and folderID are bot null for unknown reasons!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String folderIDregexed = new Regex(downloadLink.getDownloadURL(), "mail\\.ru/([A-Z0-9]+)").getMatch(0);
-        downloadLink.setProperty("folderID", "http://files.mail.ru/" + folderIDregexed);
         br.getPage(downloadLink.getStringProperty("folderID"));
         if (br.containsHTML(NEWLINK)) {
             if (br.containsHTML(LINKOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.RandomUserAgent;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -75,6 +76,7 @@ public class FlsMailRu extends PluginForDecrypt {
             finallink.setDownloadSize(SizeFormatter.getSize(filesize));
             finallink.setProperty("folderID", parameter);
             finallink.setProperty("realfilename", filename);
+            finallink.setProperty("MRDWNLD", br.getRegex("\"http://dlm\\.mail\\.ru/downloader_fmr_[0-9a-f]+\\.exe\"").matches());
             decryptedLinks.add(finallink);
         } else {
             String[] linkinformation = br.getRegex(INFOREGEX).getColumn(0);
@@ -98,7 +100,9 @@ public class FlsMailRu extends PluginForDecrypt {
                     filesize = ((jd.plugins.hoster.FilesMailRu) filesMailRuPlugin).fixFilesize(filesize, br);
                     finallink.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
+                filename = Encoding.htmlDecode(filename.trim());
                 finallink.setFinalFileName(filename);
+                finallink.setProperty("folderID", parameter);
                 finallink.setProperty("realfilename", filename);
                 finallink.setAvailable(true);
                 decryptedLinks.add(finallink);
