@@ -23,6 +23,7 @@ file_exists_not=Le fichier n'existe pas
 filename=nom du fichier
 files=fichiers
 hoster=Hébergeur
+menu_tools_extract_files=Extraire les fichiers
 offline=Fichier hors ligne ou manquant
 online=Lien disponible
 online_tt=Lien disponible
