@@ -1,4 +1,5 @@
 AutoDetectAction_run_failed=Se encontraron dispositivos UPNP pero no pudo hacerse una reconexión. Pruebe la reconexión LiveHeader!
+AutoDetectAction_run_optimize=Optimizar: %s1
 UPNPReconnectInvoker_getName_=Reconexion del router UPNP
 UPNPRouterPlugin_run_mesg=Escaneando todas las interfaces de red
 UPNPRouterPlugin_run_wizard_title=Asistente de router UPNP

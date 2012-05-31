@@ -28,6 +28,7 @@ guiless_locked_closed_app=%s1 se ha cerrado. Continuar ahora.
 guiless_noupdates=Saltar actualizaciones. El comando "-noupdates" está activo
 guiless_progress=Progreso: %s1 | %s2/%s3
 guiless_selfupdate=El actualizador se actualizará ahora
+guiless_start_install=Iniciando instalación de %s1 archivo(s)
 guiless_started_download=Iniciar a descargar: %s1
 guiless_update_failed=La actualización ha fallado. Causa: %s1
 guiless_update_failed_unknown=La actualización ha fallado. Causa desconocida.
