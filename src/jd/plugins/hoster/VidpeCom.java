@@ -63,7 +63,7 @@ public class VidpeCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.3-raz
     // mods:
-    // non account: 2 * unlimited
+    // non account: 2 * 1
     // free account:
     // premium account:
     // protocol: no https

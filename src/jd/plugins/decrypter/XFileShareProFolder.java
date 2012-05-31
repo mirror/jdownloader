@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 15695 $", interfaceVersion = 2, names = { "XFileShareProFolder" }, urls = { "http://(www\\.)?(vidpe\\.com|filetechnology\\.com|saryshare\\.com|orangefiles\\.com|filecosy\\.com|squillion\\.com|ufile\\.eu|fileor\\.com|filesega\\.com|qtyfiles\\.com|pizzaupload\\.com|filesbb\\.com|free\\-uploading\\.com|megaul\\.com|megaup1oad\\.net|fireuploads\\.net|filestay\\.com|(elitedisk\\.com|igetfile\\.com|pandamemo\\.com)|free\\-uploading\\.com|uload\\.to|cosmobox\\.org|filereactor\\.com|uploadjet\\.net|fileove\\.com|rapidapk\\.com|filehost\\.ws|hyshare\\.com|(squillion\\.com|uppit\\.com)|vidhuge\\.com|nosupload\\.com|idup\\.in|potload\\.com|coraldrive\\.net|uploadbaz\\.com|simpleshare\\.org|ryushare\\.com|lafiles\\.com|clicktoview\\.org|lumfiles\\.com|bloonga\\.com|gigfiles\\.net|shareonline\\.org|downloadani\\.me|allmyvideos\\.net|dragonuploadz\\.com|movdivx\\.com|filenuke\\.com|((flashstream\\.in|sharefiles4u\\.com)|xvidstage\\.com|xvidstream\\.net)|ginbig\\.com|vidbux\\.com|divxbase\\.com|batshare\\.com|queenshare\\.com|filesabc\\.com|((fiberupload|bulletupload)\\.com)|edoc\\.com|easybytez\\.com|filesabc\\.com|mojofile\\.com|fileduct\\.com)/(users/[a-z0-9_]+/.+|folder/\\d+/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 15695 $", interfaceVersion = 2, names = { "XFileShareProFolder" }, urls = { "http://(www\\.)?(mixshared\\.com|longfiles\\.com|helluploads\\.com|novafile\\.com|vidpe\\.com|filetechnology\\.com|saryshare\\.com|orangefiles\\.com|filecosy\\.com|squillion\\.com|ufile\\.eu|fileor\\.com|filesega\\.com|qtyfiles\\.com|pizzaupload\\.com|filesbb\\.com|free\\-uploading\\.com|megaul\\.com|megaup1oad\\.net|fireuploads\\.net|filestay\\.com|(elitedisk\\.com|igetfile\\.com|pandamemo\\.com)|free\\-uploading\\.com|uload\\.to|cosmobox\\.org|filereactor\\.com|uploadjet\\.net|fileove\\.com|rapidapk\\.com|filehost\\.ws|hyshare\\.com|(squillion\\.com|uppit\\.com)|vidhuge\\.com|nosupload\\.com|idup\\.in|potload\\.com|coraldrive\\.net|uploadbaz\\.com|simpleshare\\.org|ryushare\\.com|lafiles\\.com|clicktoview\\.org|lumfiles\\.com|bloonga\\.com|gigfiles\\.net|shareonline\\.org|downloadani\\.me|allmyvideos\\.net|dragonuploadz\\.com|movdivx\\.com|filenuke\\.com|((flashstream\\.in|sharefiles4u\\.com)|xvidstage\\.com|xvidstream\\.net)|ginbig\\.com|vidbux\\.com|divxbase\\.com|batshare\\.com|queenshare\\.com|filesabc\\.com|((fiberupload|bulletupload)\\.com)|edoc\\.com|easybytez\\.com|filesabc\\.com|mojofile\\.com|fileduct\\.com)/(users/[a-z0-9_]+/.+|folder/\\d+/.+)" }, flags = { 0 })
 public class XFileShareProFolder extends PluginForDecrypt {
 
     // DEV NOTES
@@ -37,27 +37,21 @@ public class XFileShareProFolder extends PluginForDecrypt {
     // TODO: add spanning folders + page support, at this stage it's not important.
     // TODO: remove old xfileshare folder plugins after next major update.
 
-    private String HOST = "";
-
     public XFileShareProFolder(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    public void prepBrowser() {
-        // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
-        br.setCookie("http://" + HOST, "lang", "english");
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        HOST = new Regex(parameter, "https?://([^/]+)").getMatch(0);
+        String HOST = new Regex(parameter, "https?://([^:/]+)").getMatch(0);
         if (HOST == null) {
             logger.warning("Failure finding HOST : " + parameter);
             return null;
         }
-        prepBrowser();
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.setCookie("http://" + HOST, "lang", "english");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("No such user exist")) {
@@ -86,7 +80,6 @@ public class XFileShareProFolder extends PluginForDecrypt {
             fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
         }
-        HOST = "";
         return decryptedLinks;
     }
 }

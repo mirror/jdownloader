@@ -27,9 +27,10 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minus.com" }, urls = { "http://(www\\.)?(minus\\.com|min\\.us)/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minus.com" }, urls = { "http://((www|dev)\\.)?(minus\\.com|min\\.us)/[A-Za-z0-9]+" }, flags = { 0 })
 public class MinUsComDecrypter extends PluginForDecrypt {
 
     public MinUsComDecrypter(PluginWrapper wrapper) {
@@ -38,7 +39,7 @@ public class MinUsComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("min.us/", "minus.com/");
+        String parameter = param.toString().replace("dev.min", "min").replace("min.us/", "minus.com/");
         br.getPage(parameter);
         final String mainid = new Regex(parameter, "minus\\.com/(.+)").getMatch(0);
         if (br.containsHTML("(<h2>Not found\\.</h2>|<p>Our records indicate that the gallery/image you are referencing has been deleted or does not exist|The page you requested does not exist)")) {
@@ -47,16 +48,19 @@ public class MinUsComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        String[] linkinfo = br.getRegex("\\{(\"name\":[^\\}]+)\\}").getColumn(0);
-        if (linkinfo == null || linkinfo.length == 0) {
+        // Get album name for package name
+        String fpName = br.getRegex("var gallerydata = \\{.+ \"name\": \"([^\"]+)").getMatch(0);
+        // do not catch first "name", only items within array
+        String[] items = br.getRegex("\\{[\r\n\t]+(\"name\":[^\\}]+)\\} ").getColumn(0);
+        if (items == null || items.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singlelinkinfo : linkinfo) {
-            String filename = new Regex(singlelinkinfo, "\"name\": \"([^<>\"/]+\\.[A-Za-z0-9]{1,5})\"").getMatch(0);
-            final String filesize = new Regex(singlelinkinfo, "\"filesize_bytes\": (\\d+)").getMatch(0);
-            final String secureprefix = new Regex(singlelinkinfo, "\"secure_prefix\":\"(/\\d+/[A-Za-z0-9\\-_]+)\"").getMatch(0);
-            final String linkid = new Regex(singlelinkinfo, "\"id\": \"([A-Za-z0-9\\-_]+)\"").getMatch(0);
+        for (String singleitems : items) {
+            String filename = new Regex(singleitems, "\"name\": \"([^<>\"/]+\\.[A-Za-z0-9]{1,5})\"").getMatch(0);
+            final String filesize = new Regex(singleitems, "\"filesize_bytes\": (\\d+)").getMatch(0);
+            final String secureprefix = new Regex(singleitems, "\"secure_prefix\":\"(/\\d+/[A-Za-z0-9\\-_]+)\"").getMatch(0);
+            final String linkid = new Regex(singleitems, "\"id\": \"([A-Za-z0-9\\-_]+)\"").getMatch(0);
             if (filename == null || filesize == null || secureprefix == null || linkid == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -70,7 +74,11 @@ public class MinUsComDecrypter extends PluginForDecrypt {
             dl.setProperty("mainid", mainid);
             decryptedLinks.add(dl);
         }
-
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(decodeUnicode(Encoding.htmlDecode(fpName.trim())));
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
 
