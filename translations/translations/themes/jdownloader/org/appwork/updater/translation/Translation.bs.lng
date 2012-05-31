@@ -17,6 +17,7 @@ guiless_progress=Napredak: %s1% | %s2/%s3
 guiless_started_download=Pokreni Download: %s1
 guiless_update_failed=Nadgradnja nije uspjela. Razlog: %s1
 guiless_updates_waiting_for_download=%s1 dokumenata mora biti download-ovano
+guiless_userinterrupted=Korisnik je prekinuo nadgradnju
 guiless_you_are_up2date=Već imate posljednju verziju
 install_updates_later=Pitaj me kasnije!
 install_updates_now=Instaliraj sada!

@@ -1,8 +1,11 @@
+ValidateArchiveAction_ValidateArchiveAction=Potvrdi %s1
+ValidateArchiveAction_ValidateArchiveAction_object_=Potvrdi Arhive
 archivename=Ime arhive
 close=Zatvori
 contextmenu_extract=Ekstraktuj Sada
 contextmenu_main=Arhiva(e)
 contextmenu_set_password=Šifra za Ekstrakciju
+contextmenu_validate_parent=Potvrdi Arhivu
 date=Datum
 dummyarchivedialog_title=Arhiva %s1
 exists=Status Linka

@@ -2,6 +2,7 @@ easycaptcha_add=dodaj
 easycaptcha_addbackgroundimagedialog_deletecolor=Izbriši boju
 easycaptcha_addbackgroundimagedialog_imagepreview=Pregled prije završetka
 easycaptcha_addbackgroundimagedialog_loadimage=Učitaj Pozadinsku Sliku
+easycaptcha_addbackgroundimagedialog_title=Dodaj Pozadinsku Sliku
 easycaptcha_back=Nazad
 easycaptcha_background=Pozadina
 easycaptcha_backgroundimagetrainer_saveandexit=Sačuvaj i Izađi
