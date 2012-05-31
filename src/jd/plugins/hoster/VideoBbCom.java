@@ -32,6 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -258,7 +259,7 @@ public class VideoBbCom extends PluginForHost {
         br.getHeaders().put("Referer", referer);
         br.getHeaders().put("x-flash-version", "10,3,183,7");
         br.getPage(setting);
-
+        if (br.containsHTML("\"text\":\"This video can be viewed by owner only\\.\"")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.videobbcom", "Only the owner of this file can download it"));
         try {
             String dllink = new getFinallinkValue(internalKeys, token, br).DLLINK;
             if (isPremium()) {
