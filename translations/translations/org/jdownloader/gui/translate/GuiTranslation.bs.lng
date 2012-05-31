@@ -226,6 +226,7 @@ action_log_mnemonic=-
 action_log_tooltip=Prikaži Log
 action_open_dlfolder_accelerator=-
 action_open_dlfolder_mnemonic=-
+action_open_dlfolder_tooltip=Otvori podrazumijevanu download destinaciju
 action_pause_accelerator=ctrl+b
 action_pause_mnemonic=b
 action_premium_toggle_accelerator=-
