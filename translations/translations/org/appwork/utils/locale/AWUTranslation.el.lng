@@ -44,6 +44,7 @@ extttable_disable_all=Απενεργοποίηση όλων
 extttable_enabled_all=Ενεργοποίηση όλων
 fileditcontroller_geteditor_for=Επιλέξτε επεξεργαστή για τον τύπο αρχείοτ '%s1'
 fileeditcontroller_exechooser_description=%s1-Επεξεργαστής (Εφαρμογή)
+inactive=Απενεργοποιημένο
 literally_byte=%s1 B
 literally_gibibyte=%s1 GB
 literally_kibibyte=%s1 KB
