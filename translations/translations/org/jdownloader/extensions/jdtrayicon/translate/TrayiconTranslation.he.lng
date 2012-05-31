@@ -1,0 +1,10 @@
+plugins_optional_JDLightTray_always=תמיד
+plugins_optional_JDLightTray_never=לעולם
+plugins_optional_trayIcon_dl_running=פעיל:
+plugins_optional_trayIcon_dl_total=סה"כ:
+plugins_optional_trayIcon_downloads=הורדות:
+plugins_optional_trayIcon_eta=זמן משוערך:
+plugins_optional_trayIcon_progress=התקדמות:
+plugins_optional_trayIcon_speed=מהירות:
+popup_pause=השהה הורדות
+popup_update=בדוק עידכונים
