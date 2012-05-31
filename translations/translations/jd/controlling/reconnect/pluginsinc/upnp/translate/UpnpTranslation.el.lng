@@ -15,7 +15,7 @@ jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_tit
 jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_message=Ο JD όρισε επιτυχώς τις ρυθμίσεις επανασύνδεσης! Ο Δρομολογητής είναι '%s1'
 jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title=Επιτυχής
 literally_choose_router=Επιλογή συσκευής
-literally_control_url=Έλεγχος διεύθυνσης
+literally_control_url=Διεύθυνση Ελέγχου
 literally_router=Δρομολογητής UPNP
 literally_service_type=Τύπος Υπηρεσίας
 malformedservicetype=Ο τύπος υπηρεσίας δεν είναι έγκυρος. Δοκιμάστε την αυτόματη ρύθμιση μέσω UPNP.

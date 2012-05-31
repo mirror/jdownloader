@@ -1,5 +1,5 @@
 AutoDetectAction_AutoDetectAction_=Αυτόματη εγκατάσταση
-AutoDetectAction_run_failed=Ο JDownloader δεν βρήκε κάποιο LiveHeader Script επανασύνδεσης που να λειτουργεί. Παρακαλούμε ελέγξτε ότι έχετε εισαγάγει σωστές πληροφορίες και ότι έχετε σύνδεση με δυναμική IP.
+AutoDetectAction_run_failed=Ο JDownloader δεν βρήκε κάποιο LiveHeader Script επανασύνδεσης που να λειτουργεί.\r\nΠαρακαλούμε ελέγξτε ότι έχετε εισαγάγει σωστές πληροφορίες και ότι έχετε σύνδεση με δυναμική IP.
 DataCompareDialog_DataCompareDialog_=Σύγκριση πληροφοριών Δρομολογητή
 DataCompareDialog_layoutDialogContent__desc=Παρακαλούμε ελέγξτε τις ακόλουθες πληροφορίες και προσπαθήστε να συμπληρώσετε τα κενά πεδία με τη μεγαλύτερη ακρίβεια που γίνεται.
 DataCompareDialog_layoutDialogContent_firmware=Firmware/Έκδοση
@@ -13,7 +13,7 @@ DataCompareDialog_layoutDialogContent_name_help=Εισάγετε το όνομα
 DataCompareDialog_layoutDialogContent_password=Κωδικός
 DataCompareDialog_layoutDialogContent_password_help=Εισάγετε τον κωδικό της σελίδας ρυθμίσεων...
 DataCompareDialog_layoutDialogContent_router=Ο Δρομολογητής σας
-DataCompareDialog_layoutDialogContent_router_desc=Αυτές οι πληροφορίες είναι πολύ σημαντικές. Στις περισσότερες συσκευές, μπορείτε να βρείτε το όνομα του Δρομολογητή, το μοντέλο και τον Κατασκευαστή στο κάτω μέρος της συσκευής.\r\nΆλλο μέρος για να κοιτάξετε είναι η Σελίφα Ρυθμίσεων του Δρομολογητή.
+DataCompareDialog_layoutDialogContent_router_desc=Αυτές οι πληροφορίες είναι πολύ σημαντικές. Στις περισσότερες συσκευές, μπορείτε να βρείτε το όνομα του Δρομολογητή, το μοντέλο και τον Κατασκευαστή στο κάτω μέρος της συσκευής.\r Άλλο μέρος για να κοιτάξετε είναι η Σελίδα Ρυθμίσεων του Δρομολογητή.
 DataCompareDialog_layoutDialogContent_user=Όνομα χρήστη
 DataCompareDialog_layoutDialogContent_user_help=Εισάγετε το όνομα χρήστη για τη σελίδα ρυθμίσεων...
 DataCompareDialog_layoutDialogContent_webinterface=Σελίδα Ρυθμίσεων Δρομολογητή
@@ -83,7 +83,7 @@ jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_wa
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=Ο έλεγχος IP απενεργοποιήθηκε!
 jd_nrouter_recorder_Gui_info1=Ελέγξτε την IP του Δρομολογητή και πατήστε το πλήκτρο 'Έναρξη'
 jd_nrouter_recorder_Gui_info2=Θα ανοίξει η Σελίδα Ρυθμίσεων του Δρομολογητή σας
-jd_nrouter_recorder_Gui_info3=Μετά την Επανασύνδεση πατήστε το πλήκτρο 'Διακοπή' και αποθηκεύστε
+jd_nrouter_recorder_Gui_info3=Μετά την Επανασύνδεση πατήστε το πλήκτρο 'Διακοπή' και αποθηκεύστε.
 jd_router_reconnectrecorder_Gui_icon_bad=Σφάλμα κατά την καταγραφή της Επανασύνδεσης
 jd_router_reconnectrecorder_Gui_icon_good=Η καταγραφή της Επανασύνδεσης ολοκληρώθηκε!
 jd_router_reconnectrecorder_Gui_icon_progress=Καταγραφή της Επανασύνδεσης...
