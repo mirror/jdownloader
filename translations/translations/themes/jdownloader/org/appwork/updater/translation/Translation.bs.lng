@@ -2,6 +2,7 @@ JDUpdater_start_restart_update_now_=Nadgradi i Restartuj sada!
 JDUpdater_start_updater_update_msg=Restartujte sada da izvršite nadgradnju.
 JDUpdater_start_updater_update_title=Pronađena je Nova Verzija!
 dialog_rly_cancel=Stvarno otkazati nadgradnju?
+error_service_not_available_right_now=Usluga nije dostupna. Pokušajte ponovo za 60 sek.)
 exception_title=Pojavila se greška
 exit=Zatvori
 guiless_branch_updated=Nadgradnja %s1 - %s2 Izdanje

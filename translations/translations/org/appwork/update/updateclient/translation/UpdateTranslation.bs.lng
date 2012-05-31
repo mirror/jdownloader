@@ -32,6 +32,7 @@ download_failed_retry=Download nije uspio. Pokušaj ponovo...
 ensureThatUpdaterExists_title=Oštećena instalacija!
 error_locked=%s1 Server za nadgradnju je trenutno zauzet. Pokušajte ponovo kasnije.
 error_occured=Pojavila se greška
+error_service_not_available_right_now=Usluga nije dostupna. Pokušajte ponovo za 60 sek.)
 error_unknown=%s1
 exception_msg=%s1
 exit=Zatvori
