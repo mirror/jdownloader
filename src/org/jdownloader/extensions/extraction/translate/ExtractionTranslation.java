@@ -247,4 +247,7 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Archivename" })
     String archivename();
+
+    @Default(lngs = { "en" }, values = { "Extract Files" })
+    String menu_tools_extract_files();
 }

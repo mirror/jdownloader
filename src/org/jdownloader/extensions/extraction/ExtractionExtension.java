@@ -523,7 +523,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
         if (menuAction == null) menuAction = new AppAction() {
             {
-                setName("Extract Files");
+                setName(_.menu_tools_extract_files());
                 setIconKey(ExtractionExtension.this.getIconKey());
                 this.setEnabled(true);
             }
