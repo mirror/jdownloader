@@ -159,12 +159,12 @@ public abstract class PluginForDecrypt extends Plugin {
     public ArrayList<DownloadLink> decryptLink(CrawledLink source) {
         CryptedLink cryptLink = source.getCryptedLink();
         if (cryptLink == null) return null;
-        this.currentLink = source;
         ProgressController progress = new ProgressController();
         cryptLink.setProgressController(progress);
         ArrayList<DownloadLink> tmpLinks = null;
         boolean showException = true;
         try {
+            this.currentLink = source;
             /*
              * we now lets log into plugin specific loggers with all verbose/debug on
              */
@@ -198,6 +198,8 @@ public abstract class PluginForDecrypt extends Plugin {
              * damn, something must have gone really really bad, lets keep the log
              */
             logger.log(Level.SEVERE, "Exception:" + e.getMessage(), e);
+        } finally {
+            this.currentLink = null;
         }
         if (tmpLinks == null && showException) {
             /*
