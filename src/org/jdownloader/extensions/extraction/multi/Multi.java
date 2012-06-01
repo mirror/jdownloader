@@ -542,28 +542,23 @@ public class Multi extends IExtraction {
                     ctrl.setProgress(progressInBytes / size);
                     continue;
                 }
-
+                boolean defaultCharSet = false;
                 String filename = archive.getExtractTo().getAbsoluteFile() + File.separator + path;
-
                 try {
-                    filename = new String(filename.getBytes(), Charset.defaultCharset());
-                } catch (Exception e) {
+                    filename = new String(filename.getBytes("UTF-8"), Charset.defaultCharset());
+                    defaultCharSet = true;
+                } catch (Throwable e) {
                     logger.warning("Encoding " + Charset.defaultCharset().toString() + " not supported. Using default filename.");
                 }
 
-                final File extractTo = new File(filename);
+                File extractTo = new File(filename);
 
-                if (!extractTo.exists()) {
-                    if ((!extractTo.getParentFile().exists() && !extractTo.getParentFile().mkdirs()) || !extractTo.createNewFile()) {
-                        setException(new Exception("Could not create File " + extractTo));
-                        archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
-                        return;
-                    }
-                } else {
+                if (extractTo.exists()) {
+                    /* file already exists */
                     if (archive.isOverwriteFiles()) {
                         if (!extractTo.delete()) {
-                            setException(new Exception("Could not overwrite " + extractTo));
-                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
+                            setException(new Exception("Could not overwrite(delete) " + extractTo));
+                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
                             return;
                         }
                     } else {
@@ -571,6 +566,36 @@ public class Multi extends IExtraction {
                         progressInBytes += item.getSize();
                         ctrl.setProgress(progressInBytes / size);
                         continue;
+                    }
+                }
+                if ((!extractTo.getParentFile().exists() && !extractTo.getParentFile().mkdirs())) {
+                    setException(new Exception("Could not create folder for File " + extractTo));
+                    archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
+                    return;
+                }
+                String fixedFilename = null;
+                while (true) {
+                    try {
+                        if (!extractTo.createNewFile()) {
+                            setException(new Exception("Could not create File " + extractTo));
+                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
+                            return;
+                        }
+                        break;
+                    } catch (final IOException e) {
+                        if (fixedFilename != null) {
+                            setException(e);
+                            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
+                            return;
+                        }
+                        /* Invalid Chars could have occured, try to remove them */
+                        logger.severe("Invalid Chars could have occured, try to remove them");
+                        Log.exception(e);
+                        File parent = extractTo.getParentFile();
+                        String brokenFilename = extractTo.getName();
+                        fixedFilename = brokenFilename.replaceAll("[^\\w\\s\\.\\(\\)\\[\\],]", "");
+                        logger.severe("Replaced " + brokenFilename + " with " + fixedFilename);
+                        extractTo = new File(parent, fixedFilename);
                     }
                 }
 
@@ -652,7 +677,6 @@ public class Multi extends IExtraction {
         } finally {
             controller.setProgress(100.0d);
         }
-
         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
     }
 

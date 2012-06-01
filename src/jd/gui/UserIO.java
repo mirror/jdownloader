@@ -361,7 +361,7 @@ public class UserIO {
     public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection, final File startDirectory, final Integer dialogType) {
 
         try {
-            return Dialog.getInstance().showFileChooser(id, title, fileSelectionMode == null ? -1 : fileSelectionMode, fileFilter, multiSelection == null ? false : multiSelection, dialogType == null ? -1 : dialogType, null);
+            return Dialog.getInstance().showFileChooser(id, title, fileSelectionMode == null ? -1 : fileSelectionMode, fileFilter, multiSelection == null ? false : multiSelection, dialogType == null ? -1 : dialogType, startDirectory);
         } catch (DialogCanceledException e) {
             e.printStackTrace();
         } catch (DialogClosedException e) {

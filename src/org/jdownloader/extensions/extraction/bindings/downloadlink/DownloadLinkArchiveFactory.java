@@ -151,20 +151,20 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     public String getExtractPath(Archive archive) {
         try {
             try {
-                File path = (File) ((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
-                if (path != null) { return path.getAbsolutePath(); }
+                String path = (String) ((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
+                if (path != null) { return path; }
             } catch (Throwable e) {
-
             }
-            return new File(archive.getFirstArchiveFile().getFilePath()).getParent();
         } catch (Throwable e) {
-            try {
-                File path = (File) ((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
-                if (path != null) { return path.getAbsolutePath(); }
-            } catch (Throwable e2) {
-
-            }
-
+        }
+        try {
+            return new File(archive.getFirstArchiveFile().getFilePath()).getParent();
+        } catch (final Throwable e) {
+        }
+        try {
+            String path = getDownloadLinks().get(0).getStringProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
+            if (path != null) { return path; }
+        } catch (Throwable e) {
         }
         return new File(getFilePath()).getParent();
     }
