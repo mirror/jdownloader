@@ -16,6 +16,7 @@ easycaptcha_loadcaptchas=Učitaj Captcha-e
 easycaptcha_loadcaptchas_link=Link
 easycaptcha_loadcaptchas_loaddirect=Direktno učitavanje ako je moguće (puno brže)
 easycaptcha_loadcaptchas_title=Učitaj Captcha-e
+easycaptcha_mask=Maska:
 easycaptcha_needCaptchas=Prvo trebate Captcha!
 easycaptcha_orginal=Original:
 easycaptcha_remove=Ukloni:

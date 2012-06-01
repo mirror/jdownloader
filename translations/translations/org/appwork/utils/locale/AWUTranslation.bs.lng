@@ -55,6 +55,7 @@ literally_kibibyte=%s1 KB
 literally_mebibyte=%s1 MB
 literally_tebibyte=%s1 TB
 pathchooser_browselabel=Pretraži
+pathchooser_dialog_title=Izaberite putanju!
 pathchooser_helptext=Unesite putanju...
 progress=%s3 %s1/%s2
 proxy_http=%s1:%s2 (Http Proxy)
