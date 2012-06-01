@@ -1,3 +1,4 @@
+UpdateServer_UpdaterGui_layoutGUI_details=Лог обновлений
 UpdateServer_UpdaterGui_onStateChange_failed2=%s1
 UpdateServer_UpdaterGui_onStateChange_filter=Проверка обновлений
 UpdateServer_UpdaterGui_onStateChange_hashlist=Соединение с сервером обновлений
@@ -18,6 +19,7 @@ rlyexit=Вы уверены, что хотите выйти?
 rlyrestart=Вы уверены, что хотите перезапустить приложение?
 rlyrestart_restart=Точно хотите перезагрузить?
 timer=%s1 с
+uninstalledfiles=Не установлено файлов: %s1!
 update_dialog_cancel=Отмена
 update_dialog_later=Спросить позже
 update_dialog_title_updates_available=Доступны обновления

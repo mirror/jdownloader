@@ -1,8 +1,13 @@
+exit=Закрыть
 guiless_extract=Извлечение файла(ов)
 guiless_installFinished=Установка закончена
 install_updates_later=Спросить позже!
 install_updates_now=Установить сейчас!
 restart_title=Перезапуск!
+start=Начало обновления
+udpates_found=Обновления найдены!
 update_dialog_cancel=Отмена
 update_dialog_later=Спросить позже
 update_dialog_yes=Да (рекомендуется)
+updates_are_ready_for_install_now=%s1 обновление(й) готово для установки.
+updates_ready_for_install=%s1 обновление(й) готово для установки.
