@@ -1,0 +1,8 @@
+UpdateServer_UpdaterGui_onStateChange_filter=Проверка обновлений
+close=Закрыть
+exit=Выход
+guiless_extract=Извлечение файла(ов)
+guiless_installFinished=Установка закончена
+install_updates_now=Установить сейчас!
+restart_title=Перезапуск!
+update_dialog_yes=Да (рекомендуется)

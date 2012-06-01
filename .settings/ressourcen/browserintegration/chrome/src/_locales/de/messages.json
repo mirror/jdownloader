@@ -1,0 +1,17 @@
+{
+    "name": {
+        "message": "JDownloader Integration"
+    },
+    "description": {
+        "message": "Diese Erweiterung fügt das JDownloader-Logo in die Adressleiste ein, wenn die aktuelle Seite von JD unterstützt wird. Klicke, um den Download zu starten!"
+    },
+    "buttonTitle": {
+        "message": "Download mit JDownloader starten."
+    },
+    "commentPrefix": {
+        "message": "Quelle: "
+    },
+    "commentSuffix": {
+        "message": ""
+    } 
+}

@@ -1,0 +1,11 @@
+plugins_optional_extraction_crcerrorin=Falha na extração (CRC em %s1)
+plugins_optional_extraction_error_extrfailedcrc=Falha na extração (CRC em arquivo desconhecido)
+plugins_optional_extraction_filefilter=Todos formatos suportados
+plugins_optional_extraction_filefilter_extractto=Extrair Diretório
+plugins_optional_extraction_messages=O caminho %s1 não existe.
+plugins_optional_extraction_status_extractfailedpass=Falha na extração (senha)
+plugins_optional_extraction_status_extractok=Extração concluída
+plugins_optional_extraction_status_notenoughspace=Não há espaço suficiente em disco para extrair
+plugins_optional_extraction_status_openingarchive=Abrindo arquivo...
+plugins_optional_extraction_status_passfound=Senha encontrada
+plugins_optional_extraction_status_queued=Aquardando para extrair

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry excluding="jd/plugins/optional/neembuu/|jd/plugins/optional/remoteserv/|jd/plugins/optional/remoteserv/|org/jdownloader/extensions/langfileeditor/" kind="src" path="src"/>
+	<classpathentry kind="src" path="translations"/>
+	<classpathentry kind="src" path="themes"/>
+	<classpathentry kind="src" path="tests"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="jd/ressourcen/libs/dbus"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="ressourcen/libs/hsqldb.jar" sourcepath="ressourcen/code-ressourcen/hsqsql_src.zip"/>
+	<classpathentry kind="lib" path="ressourcen/libs/irclib.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/js.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/savemytube.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/cobra.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/swingworker.jar" sourcepath="ressourcen/code-ressourcen/swing-worker-src-1.2.zip">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/jd/ressourcen/code-ressourcen/swing-worker-doc-1.2.zip!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="ressourcen/libs/clink170.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/mail.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/debug-1.0.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/jcip-annotations-1.0.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/Filters.jar" sourcepath="ressourcen/code-ressourcen/Filter_src.zip"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/JTattoo.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/looks.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/synthetica.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/jd/ressourcen/code-ressourcen/synthetica_docs.zip!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlackMoon.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlackStar.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlueIce.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlueMoon.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlueSteel.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaMauveMetallic.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaOrangeMetallic.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaSilverMoon.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaSimple2D.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaSkyMetallic.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaWhiteVision.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/jna.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/substance-swingx.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlackEye.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaGreenDream.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/image4j.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/dbus/debug-disable.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/dbus/hexdump.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/dbus/libdbus-java.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/dbus/unix.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-assert-1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-assert-1.2-sources.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-reflect-1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-reflect-1.2-sources.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-swing-1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-swing-1.2-sources.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-swing-junit-4.5-1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-swing-junit-4.5-1.2-sources.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/fest-util-1.1.2.jar" sourcepath="ressourcen/code-ressourcen/fest-util-1.1.2-sources.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/svnkit.jar" sourcepath="ressourcen/code-ressourcen/svnkitsrc.zip"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/trident.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/junit-4.8.2.jar" sourcepath="ressourcen/code-ressourcen/junit-4.8.2-src.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbinding.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/jpathwatch-0-93-rc1.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/AppleJavaExtensions.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/asc.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/swfutils.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/JDBrowser"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/AppWorkUtils"/>
+	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingWin.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/swingx.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/UpdateClient"/>
+	<classpathentry kind="lib" path="ressourcen/libs_ext/mqtt.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/substance.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/neembuu/jpfm.jar" sourcepath="ressourcen/code-ressourcen/neembuu/jpfm.src.zip"/>
+	<classpathentry kind="lib" path="ressourcen/libs/neembuu/jpfm-fs.jar" sourcepath="ressourcen/code-ressourcen/neembuu/jpfm-fs.src.zip"/>
+	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-config.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-config.src.zip"/>
+	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-diskmanager.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-diskmanager.src.zip"/>
+	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-swing.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-swing.src.zip"/>
+	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-util.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-util.src.zip"/>
+	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-util-logging.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-util-logging.src.zip"/>
+	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-util-weaklisteners.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-util-weaklisteners.src.zip"/>
+	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-vfs.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-vfs.src.zip"/>
+	<classpathentry kind="lib" path="ressourcen/libs/neembuu/rangearray.jar" sourcepath="ressourcen/code-ressourcen/neembuu/rangearray.src.zip"/>
+	<classpathentry kind="lib" path="ressourcen/libs/neembuu/com-sun-tools-visualvm-charts.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/neembuu/com-sun-tools-visualvm-uisupport.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/neembuu/org-netbeans-lib-profiler-charts.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/neembuu/org-netbeans-lib-profiler-ui.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/neembuu/org-openide-util.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/neembuu/org-openide-util-lookup.jar"/>
+	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-core.jar"/>
+	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-mapper.jar"/>
+	<classpathentry kind="lib" path="/AppWorkUtils/libs/miglayout.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/bcprov-jdk15on-147.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingLinux.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingMac.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

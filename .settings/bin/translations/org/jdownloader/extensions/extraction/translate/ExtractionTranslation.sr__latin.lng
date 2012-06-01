@@ -1,0 +1,12 @@
+plugins_optional_extraction_crcerrorin=Izvlačenje nije uspelo (CRC u %s1)
+plugins_optional_extraction_error_extrfailedcrc=Izvlačenje nije uspelo (CRC u nepoznatoj datoteci)
+plugins_optional_extraction_filefilter=Svi podržani tipovi
+plugins_optional_extraction_filefilter_extractto=Fascikla za izvlačenje
+plugins_optional_extraction_filenotfound=Izvlačenje nije uspelo (datoteka nije pronađena)
+plugins_optional_extraction_messages=Putanja %s1 ne postoji.
+plugins_optional_extraction_status_extractfailedpass=Izvlačenje nije uspelo (šifra)
+plugins_optional_extraction_status_extractok=Izvlačenje je uspelo
+plugins_optional_extraction_status_notenoughspace=Nema dovoljno prostora za izvlačenje
+plugins_optional_extraction_status_openingarchive=Otvaranje arhive...
+plugins_optional_extraction_status_passfound=Šifra je pronađena
+plugins_optional_extraction_status_queued=Zakazano za izvlačenje

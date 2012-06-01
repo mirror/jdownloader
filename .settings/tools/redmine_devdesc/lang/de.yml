@@ -1,0 +1,5 @@
+# English strings go here for Rails i18n
+de:
+   field_devdesc: "Entwicklerbeschreibung"
+   permission_devdesc_show: "Zeige Entwicklerbeschreibung"
+   permission_devdesc_form: "Erlaube Eingabe von Entwicklerbeschreibung"

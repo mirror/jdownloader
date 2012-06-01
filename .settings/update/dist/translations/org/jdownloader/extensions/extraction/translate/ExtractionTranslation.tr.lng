@@ -1,0 +1,12 @@
+plugins_optional_extraction_crcerrorin=Çıkartma başarısız (%s1 içinde CRC)
+plugins_optional_extraction_error_extrfailedcrc=Çıkartma başarısız (bilinmeyen dosyada CRC)
+plugins_optional_extraction_filefilter=Desteklenen tüm biçimler
+plugins_optional_extraction_filefilter_extractto=Çıkartma Dizini
+plugins_optional_extraction_filenotfound=Çıkartma: başarısız (dosya bulunamadı)
+plugins_optional_extraction_messages=Belirtilen yol %s1 mevcut değil
+plugins_optional_extraction_status_extractfailedpass=Çıkartma başarısız (parola)
+plugins_optional_extraction_status_extractok=Çıkartma Başarılı
+plugins_optional_extraction_status_notenoughspace=Çıkartma için yeterli yer yok
+plugins_optional_extraction_status_openingarchive=Arşiv açılıyor..
+plugins_optional_extraction_status_passfound=Parola bulundu
+plugins_optional_extraction_status_queued=Çıkartma için sırada bekliyor

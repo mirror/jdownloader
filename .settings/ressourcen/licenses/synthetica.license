@@ -1,0 +1,260 @@
+http://www.javasoft.de/jsf/public/products/synthetica/license
+
+                       JAVASOFT  SOFTWARE  ENGINEERING
+             Synthetica Single Developer Software License Agreement
+
+This  License   Agreement  (the   “Agreement”)  is   between  JAVASOFT  Software
+ Engineering  with a  principal place  of business  at St.-Martin-Weg  4, 86874
+ Tussenhausen, GERMANY (“Licensor”), and the customer ("Licensee") identified on
+ the electronic order form submitted on behalf of Licensee (the "Order Form"). 
+
+Licensor  agrees  to  license  its  Synthetica  Look  and  Feel  software   (the
+ “Software”)  to  Licensee on  the  terms and  conditions  described more  fully
+ herein. Software means a complete and unchanged copy of the object code version
+ of the Synthetica software (including images) identified in the Order Form  and
+ posted on a download page of the Synthetica website (the "Download Page")  made
+ available to Licensee immediately after payment as provided in Section 3. 
+
+By installing, copying, or otherwise using the Software, you are agreeing to  be
+ bound by the terms of this Agreement. If you do not agree to the terms of  this
+ Agreement, you are not authorized to use the software.
+
+1.License  Grant.  Licensor  grants to  Licensee a  limited, non-exclusive,  non
+ -transferable, and worldwide right  to (a)  use, publicly  perform, display and
+ support the Software, and  (b) to copy, make  derivative works of, market,  and
+ distribute any portion  of the Software  directly and indirectly  to Licensee’s
+ end user customer in connection with  or as part of a Licensee  product without
+ modifying the Software.
+
+2.Restrictions.  Licensee shall not (a) provide its end user customers (each, an
+ “End User”)  with any  versions of  the Software  on a  stand-alone basis;  (b)
+ sublicense, transfer  or assign  this License  Agreement or  any of  Licensee’s
+ rights or obligations under  this License Agreement, in  whole or in part;  (c)
+ remove or obscure any copyright and trademark notices relating to the Software;
+ (d) lease, license, use, make available,  distribute or modify all or any  part
+ of the  Software to  any third  party, except  as otherwise expressly permitted
+ herein;  (e) copy  the Software  onto any  public or  distributed network;  (f)
+ create derivate  works to  compete with  the Software;  (g) install  or use the
+ Software by more than one individual developer - each individual Java developer
+ of  a company  requires a  separate  Single  Developer License;  (h) install or 
+ use the Software by more developers as specified in the Order Form in case of a
+ Site license;  (i) buy and use Single Developer Licenses  if  Licensee  employs
+ more than  two Java developers (independent from their internal role) - in this
+ case a Site License or Source Code License is required.
+
+ You may use the  unlicensed Software within your  company or organization for a
+ trial period  of up  to 30  days from  its supply  to you.  At the  end of this
+ period, if you do not purchase a  valid license you must destroy all copies  of
+ the  Software, including  copies installed  on any  computer, and  all related
+ documentation. Without a valid license  you may not distribute any  portions of
+ the Software to any third party.
+
+3.Payments.  No later than thirty (30) days after submission of the Order  Form,
+ Licensee shall pay Licensor the license fee on the date Licensee submitted  the
+ Order Form. All payments shall be made in Euros or U.S. dollars. Licensee shall
+ be responsible for  paying all local,  state, federal and  international sales,
+ value added, excise and other taxes and duties payable in connection with  this
+ License, other than taxes based upon Licensor's net income. Licensee shall  not
+ be permitted to access the Download Page until Licensor has received payment in
+ full.
+
+4.Termination.  Licensor may terminate this License immediately if the  Licensee
+ shall breach  any of  the provisions  of this  License and  such breach remains
+ uncured 30 days  after receipt of  notice. In the  event that Licensee  becomes
+ liquidated,   dissolved,  bankrupt   or  insolvent,   whether  voluntarily   or
+ involuntarily, or shall take any action to be so declared, Licensor shall  have
+ the right to terminate this License immediately. Upon expiration,  cancellation
+ or  other  termination  of  this  License,  Licensee  shall  immediately:   (a)
+ discontinue distribution of products that include the Software; and (b) destroy
+ all  copies  of  the  Software, including  (without  limitation)  as  linked or
+ compiled in any product. Sections 3 through 11 shall survive the termination of
+ this License for any reason. 
+
+5.Support and Maintenance.
+
+(a)In  connection  with the  license  granted hereunder,  Licensor  will provide
+ Licensee with the following at no  additional charge: (a) free upgrades to  all
+ minor  revisions of  the Software  (b) bug  fixes for  errors that  render the
+ Software inoperative, that cause failure in a production environment.
+
+(b)In addition, upon Licensee’s  request, Licensor shall provide  e-mail support
+ to Licensee with regard to the Software. Licensee shall pay Licensor a  Support
+ Fee  as specified  in the  Order Form  for each  year of  support. Such  e-mail
+ support shall entitle Licensee to receive a satisfactory response from Licensor
+ within five (5) days of Licensee’s request for assistance.
+
+(c)Upgrades to Software major releases are  not part of this agreement. In  case
+ of Licensee requires a major upgrade a license agreement renewal is necessary.
+
+6.Representations and Warranties.
+
+(a)Ownership.  Licensor  hereby represents  and warrants  that: (a)  it has  the
+ right to  enter into  this Agreement;  (b) it  is the  owner of the Software or
+ otherwise has the right  to grant to Licensee  the rights and licenses  granted
+ herein; (c) that the Software and licenses granted to Licensee are free of  any
+ and all restrictions, settlements, judgments or adverse claims; (d) to the best
+ of its knowledge, the Software does not infringe, misappropriate or violate any
+ patent, copyright, trademark, trade secret  or other proprietary rights of  any
+ third party; (e) there is currently  no actual or threatened suit by  any third
+ party based on an alleged  infringement, misappropriation or violation of  such
+ rights by Licensor; and (f) no further consent from any other person or  entity
+ is or  will be  required for  Licensee to  use and  exercise the rights granted
+ related to the Software granted to it under this Agreement.
+
+(b)General  Warranties.   Licensor  hereby  represents  and  warrants  that  the
+ Software shall: (a) contain industry-standard devices or mechanisms to maintain
+ the security and integrity of the  data transmitted and stored by the  Software
+ and to protect against unauthorized access to the data stored by the  Software;
+ (b) be free of any viruses, worms, time bombs, trojan horses or other  harmful,
+ malicious or destructive code; and  (c) be free of software  disabling devices,
+ time-out devices, counter devices or devices intended to collect data regarding
+ usage of the Software without the knowledge of Licensee.
+
+(c)Software Performance  Warranty.  Licensor  represents and  warrants that  the
+ Software shall  conform in  all material  respects with  the description of the
+ Software set forth in the documentation.
+
+(d)Services Warranty.  Licensor represents and warrants that each of  Licensor’s
+ employees,  agents  and  subcontractors   assigned  to  perform  any   services
+ hereunder, including training  or maintenance services,  shall have the  proper
+ skills, training, and  professional background to  perform such services,  that
+ such  services  will  be  performed in  a  competent  and  professional manner.
+ Licensor further represents and warrants that each deliverable shall be subject
+ to each representation and warranty which applies to Software in this Section 5
+ (Representations and Warranties).
+
+(e)Disclaimer  of  Warranties.   LICENSOR  EXPRESSLY  DISCLAIMS,  AND   LICENSEE
+ EXPRESSLY  WAIVES,  ALL  WARRANTIES,  WHETHER  EXPRESS  OR  IMPLIED,  INCLUDING
+ WARRANTIES  OF   MERCHANTIBILITY,  FITNESS   FOR  A   PARTICULAR  PURPOSE,  NON
+ -INFRINGEMENT,  SYSTEM   INTEGRATION,   NON-INTERFERENCE   AND   ACCURACY    OF
+ INFORMATIONAL CONTENT.  LICENSOR DOES  NOT WARRANT  THAT THE  LICENSED SOFTWARE
+ WILL  MEET  LICENSEE'S  REQUIREMENTS  OR THAT  THE  OPERATION  OF  THE LICENSED
+ SOFTWARE WILL BE UNINTERRUPTED OR ERROR-FREE, OR THAT ERRORS WILL BE CORRECTED.
+ THE ENTIRE  RISK OF  THE LICENSED  SOFTWARE'S QUALITY  AND PERFORMANCE  IS WITH
+ LICENSEE. Without limiting the generality of the foregoing disclaimer, Licensee
+ acknowledges  that  the  Licensed   Software  is  not  specifically   designed,
+ manufactured or intended  for use in  the planning, construction,  maintenance,
+ control or direct operation of nuclear facilities, aircraft navigation, control
+ or communication systems, weapons systems or direct life support systems.
+
+7.Proprietary Rights.  Licensee agrees that the copyright, patent, trade secrets
+ and  all  other  intellectual  proprietary rights  of  whatever  nature  in the
+ Software and related documentation,  including derivative works, are  and shall
+ remain  the  exclusive property  of  Licensor and  any  third party  suppliers.
+ Nothing in this License should be construed as transferring any aspects of such
+ rights to Licensee or any third party. Licensor reserves any and all rights not
+ expressly granted herein. 
+
+8.Indemnification.  Licensee  hereby indemnifies  and agrees  to defend Licensor
+ against  any  and  all  damages,  judgments  and  costs  (including  reasonable
+ attorneys' fees) related to  any claim based upon:  (a) an allegation that  the
+ Licensee Application infringes the intellectual property of a third party;  (b)
+ use of the Software  in a manner prohibited  under this License or  in a manner
+ for which the Licensed Software was not designed; (c) integration or use of the
+ Software with the Licensee Application  (where use of the Software  alone would
+ not infringe);  (d) changes  made by  Licensee to  the Software  (where use  of
+ unmodified Software would not infringe); (e) changes made, or actions taken, by
+ Licensor upon Licensee's  direct instructions; or  (f) bodily injury,  property
+ damage or any  other damage or  injury due to  the use or  inability to use  an
+ Integrated Product.
+
+9.Limitation of Liability.  LICENSOR SHALL HAVE NO LIABILITY WITH RESPECT TO ITS
+ OBLIGATIONS UNDER  THIS AGREEMENT  OR OTHERWISE  FOR CONSEQUENTIAL,  EXEMPLARY,
+ SPECIAL,  INDIRECT,   INCIDENTAL  OR   PUNITIVE  DAMAGES,   INCLUDING  (WITHOUT
+ LIMITATION) ANY LOST PROFITS OR  LOST SAVINGS (WHETHER RESULTING FROM  IMPAIRED
+ OR LOST DATA, SOFTWARE OR COMPUTER FAILURE OR ANY OTHER CAUSE), EVEN IF IT  HAS
+ BEEN ADVISED  OF THE  POSSIBILITY OF  SUCH DAMAGES.  NOTWITHSTANDING ANY  OTHER
+ PROVISION IN THIS AGREEMENT, THE LIABILITY OF LICENSOR FOR ANY REASON AND  UPON
+ ANY CAUSE OF ACTION SHALL BE LIMITED TO THE AMOUNT PAID TO LICENSOR BY LICENSEE
+ UNDER THIS AGREEMENT. THIS  LIMITATION APPLIES TO ALL  CAUSES OF ACTION IN  THE
+ AGGREGATE,  INCLUDING  (WITHOUT  LIMITATION)  BREACH  OF  CONTRACT,  BREACH  OF
+ WARRANTY, NEGLIGENCE,  MISREPRESENTATIONS AND  OTHER TORTS.  THE PARTIES  AGREE
+ THAT THE REMEDIES AND LIMITATIONS HEREIN ALLOCATE THE RISKS BETWEEN THE PARTIES
+ AS AUTHORIZED BY  APPLICABLE LAWS. THE  LICENSE FEES ARE  SET IN RELIANCE  UPON
+ THIS ALLOCATION OF RISK  AND THE EXCLUSION OF  CERTAIN DAMAGES AS SET  FORTH IN
+ THIS AGREEMENT.
+
+10.Authority.  Each party to this Agreement represents that the person executing
+ this Agreement on such party’s  behalf is authorized to execute  this Agreement
+ and upon execution this Agreement shall be a valid and binding agreement of the
+ parties enforceable in accordance with its terms.
+
+11.Miscellaneous. 
+
+(a)Interpretation.  Failure by Licensor to exercise any right or remedy does not
+ signify acceptance of the event giving rise to such right or remedy. No  action
+ arising out of this License may be brought by Licensee more than one year after
+ the cause of action has accrued. If any part of this License is held by a court
+ of  competent jurisdiction  to be  illegal or  unenforceable, the  validity or
+ enforceability of the remainder of this License shall not be affected and  such
+ provision shall be deemed modified to the minimum extent necessary to make such
+ provision  consistent  with applicable  law  and, in  its  modified form,  such
+ provision shall be enforceable and enforced. Licensor reserves the right not to
+ accept any Order Form. Any invoice  issued by Licensor in connection with  this
+ License  shall  be deemed  a  part of  this  Agreement. To  the  extent of  any
+ inconsistency between  an Order  Form and  an invoice  issued by  Licensor, the
+ terms and conditions of the invoice shall prevail; Licensee shall be deemed  to
+ have  accepted an  invoice upon  payment of  such invoice.  In the  event that
+ Licensee  placed  an  order  by  telephone  or  through  an  authorized   sales
+ representative, the invoice issued by Licensor shall constitute the Order Form.
+ The  terms  and conditions  of  this Agreement  shall  replace and  serve  as a
+ novation of the terms and conditions of any commercial license purchased online
+ by Licensee prior to January 2008.
+
+(b)Binding.  This Agreement will be binding upon and inure to the benefit of the
+ parties, their respective successors and permitted assigns. Except, without the
+ prior written consent of Licensor, Licensee may not assign this License or  its
+ rights or obligations  under this License  to any person  or party, whether  by
+ operation of law or otherwise; any  attempt by Licensee to assign this  License
+ without Licensor's prior written consent shall  be null and void. There are  no
+ intended third party beneficiaries of this License. The parties are, and  shall
+ remain, independent contractors; nothing in this License is designed to create,
+ nor  shall  create  between  them, a  partnership,  joint  venture,  agency, or
+ employment relationship. 
+
+(c)Governing Law;  Dispute Forum.   This License  shall be  deemed to  have been
+ executed in  Germany and  shall be  governed by  the laws  of Germany,  without
+ regard to the conflict of laws provisions thereof. In no event shall the United
+ Nations Convention on Contracts for  the International Sale of Goods  apply to,
+ or govern,  this License.  In the  event that  Licensee initiates  an action in
+ connection with  this License  or any  other dispute  between the  parties, the
+ exclusive  jurisdiction   of  such   action  shall   be  in   Munich,  Germany.
+ Notwithstanding the  foregoing, either  party may  bring a  counterclaim in  an
+ action in the same jurisdiction in  which the originating claim was filed,  and
+ either party may enforce  any judgment rendered by  such court in any  court of
+ competent  jurisdiction. Licensee  shall comply  at its  own expense  with all
+ relevant and applicable laws related to use and distribution of the Software as
+ permitted in  this License.  Notwithstanding the  foregoing, Licensor  may seek
+ injunctive or other  equitable relief in  any jurisdiction in  order to protect
+ its  intellectual property  rights. The  parties have  agreed to  execute this
+ License  in the  English language,  and the  English language  version of  the
+ Agreement will control for all purposes. Any action brought under this  License
+ shall  be  conducted in  the  English or  German  language. Licensee  shall  be
+ responsible for Licensor's  attorneys fees and  other expenses associated  with
+ the enforcement of this License or the collection of any amounts due under this
+ License.
+
+(d)Notice.  Unless  otherwise agreed,  any notice  under this  License shall  be
+ delivered and addressed to Licensee at the address set forth on the Order Form,
+ and to Licensor. Notice shall be deemed  received by any party: (a) on the  day
+ given, if personally delivered or if sent by confirmed facsimile  transmission,
+ receipt verified; (b) on the third  day after deposit, if mailed by  certified,
+ first class, postage prepaid, return  receipt requested mail, or by  reputable,
+ expedited overnight courier; or (c) on the fifth day after deposit, if sent  by
+ reputable, expedited international courier. Either party may change its address
+ for notice purposes upon notice  in accordance with this Section.  Licensor may
+ identify Licensee  as a  commercial licensee,  including on  the Licensor's web
+ site.
+
+(e)Entire Agreement.  This Agreement (including the Order Form and the  invoice)
+ comprises the entire agreement, and supercedes and merges all prior  proposals,
+ understandings and agreements, oral  and written, between the  parties relating
+ to  the  subject matter  of  this License.  This  Agreement may  be  amended or
+ modified only  in a  writing executed  by both  parties. To  the extent  of any
+ conflict  or  inconsistency  between  this License  and  any  invoice  or other
+ document  submitted  by  Licensee  to  Licensor,  this  License  will  control.
+ Licensor's acceptance of any document  shall not be construed as  an acceptance
+ of provisions  which are  in any  way in  conflict or  inconsistent with, or in
+ addition to, this  License, unless such  terms are separately  and specifically
+ accepted in writing by an authorized officer of Licensor.
+

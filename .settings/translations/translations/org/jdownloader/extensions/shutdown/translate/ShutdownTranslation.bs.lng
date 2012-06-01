@@ -1,0 +1,14 @@
+addons_jdshutdown_statusmessage_disabled=Računalnik NEBO izklopljen z strani JDownloader-a
+addons_jdshutdown_statusmessage_enabled=JDownloader bo izlopil računalnik, ko se prenos konča
+gui_config_jdshutdown_close=Zatvori JDownloader
+gui_config_jdshutdown_enabledOnStart=Omogućeno na Startu
+gui_config_jdshutdown_forceshutdown=Isključi računar (Nije za sve OS)
+gui_config_jdshutdown_hibernate=Hibernate (Nije za sve OS)
+gui_config_jdshutdown_mode=Modus:
+gui_config_jdshutdown_shutdown=Ugasi računar
+gui_config_jdshutdown_standby=Standby (Nije za sve OS)
+interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader će biti zatvoren!</font></h2>
+interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Sistem će biti postavljen u hibernaciju!</font></h2>
+interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Sistem će biti isključen!</font></h2>
+interaction_shutdown_dialog_msg_standby=<h2><font color="red">Sistem će biti postavljen u pripravnost!</font></h2>
+interaction_shutdown_dialog_title_shutdown=Ugasiti računar

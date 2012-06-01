@@ -1,0 +1,4 @@
+<jDownloader>
+  <method name="wii" author="Coalado" services="wii"/>
+  <format type="png" letterNum="5"/>
+</jDownloader>

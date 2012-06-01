@@ -1,0 +1,36 @@
+<launch4jConfig>
+  <dontWrapJar>true</dontWrapJar>
+  <headerType>gui</headerType>
+  <jar>JDownloader.jar</jar>
+  <outfile>C:\workspace\JDownloader\ressourcen\JDownloader.exe</outfile>
+  <errTitle></errTitle>
+  <cmdLine></cmdLine>
+  <chdir></chdir>
+  <priority>normal</priority>
+  <downloadUrl>http://java.com/download</downloadUrl>
+  <supportUrl>http://jdownloader.org</supportUrl>
+  <customProcName>false</customProcName>
+  <stayAlive>false</stayAlive>
+  <manifest></manifest>
+  <icon>C:\workspace\JDownloader\artwork\icons\by TRazo\jdicon.ico</icon>
+  <jre>
+    <path>jre/</path>
+    <minVersion>1.6.0</minVersion>
+    <maxVersion></maxVersion>
+    <jdkPreference>preferJre</jdkPreference>
+    <maxHeapSize>512</maxHeapSize>
+    <opt>-Dsun.java2d.d3d=false</opt>
+  </jre>
+  <versionInfo>
+    <fileVersion>5.0.0.0</fileVersion>
+    <txtFileVersion>5.0.0.0</txtFileVersion>
+    <fileDescription>JDownloader 0.9</fileDescription>
+    <copyright>AppWork GmbH</copyright>
+    <productVersion>5.0.0.0</productVersion>
+    <txtProductVersion>5.0.0.0</txtProductVersion>
+    <productName>JDownloader 0.9</productName>
+    <companyName>AppWork GmbH</companyName>
+    <internalName>Jdownloader Launcher v5</internalName>
+    <originalFilename>JDownloader.exe</originalFilename>
+  </versionInfo>
+</launch4jConfig>

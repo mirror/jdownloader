@@ -1,0 +1,4 @@
+<jDownloader>
+  <method name="easycaptcha" author="DwD" />
+  <format type="jpg" letterNum="6" />
+</jDownloader>

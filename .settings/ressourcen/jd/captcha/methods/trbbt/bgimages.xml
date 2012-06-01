@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<java version="1.6.0_15" class="java.beans.XMLDecoder"> 
+ <object class="java.util.Vector"> 
+  <void method="add"> 
+   <object class="jd.captcha.easy.BackGroundImage"> 
+    <void property="backgroundImage"> 
+     <string>mask_1262695945376.png</string> 
+    </void> 
+    <void property="color"> 
+     <int>-1</int> 
+    </void> 
+    <void property="colorDistanceMode"> 
+     <byte>11</byte> 
+    </void> 
+    <void property="distance"> 
+     <int>5</int> 
+    </void> 
+   </object> 
+  </void> 
+  <void method="add"> 
+   <object class="jd.captcha.easy.BackGroundImage"> 
+    <void property="backgroundImage"> 
+     <string>mask_1262696026849.png</string> 
+    </void> 
+    <void property="color"> 
+     <int>-1</int> 
+    </void> 
+    <void property="colorDistanceMode"> 
+     <byte>11</byte> 
+    </void> 
+    <void property="distance"> 
+     <int>5</int> 
+    </void> 
+   </object> 
+  </void> 
+  <void method="add"> 
+   <object class="jd.captcha.easy.BackGroundImage"> 
+    <void property="backgroundImage"> 
+     <string>mask_1262696558826.png</string> 
+    </void> 
+    <void property="color"> 
+     <int>-1</int> 
+    </void> 
+    <void property="colorDistanceMode"> 
+     <byte>11</byte> 
+    </void> 
+    <void property="distance"> 
+     <int>5</int> 
+    </void> 
+   </object> 
+  </void> 
+  <void method="add"> 
+   <object class="jd.captcha.easy.BackGroundImage"> 
+    <void property="backgroundImage"> 
+     <string>mask_1262696646830.png</string> 
+    </void> 
+    <void property="color"> 
+     <int>-1</int> 
+    </void> 
+    <void property="colorDistanceMode"> 
+     <byte>11</byte> 
+    </void> 
+    <void property="distance"> 
+     <int>5</int> 
+    </void> 
+   </object> 
+  </void> 
+  <void method="add"> 
+   <object class="jd.captcha.easy.BackGroundImage"> 
+    <void property="backgroundImage"> 
+     <string>mask_1262696691268.png</string> 
+    </void> 
+    <void property="color"> 
+     <int>-1</int> 
+    </void> 
+    <void property="colorDistanceMode"> 
+     <byte>11</byte> 
+    </void> 
+    <void property="distance"> 
+     <int>5</int> 
+    </void> 
+   </object> 
+  </void> 
+  <void method="add"> 
+   <object class="jd.captcha.easy.BackGroundImage"> 
+    <void property="backgroundImage"> 
+     <string>mask_1262696763786.png</string> 
+    </void> 
+    <void property="color"> 
+     <int>-1</int> 
+    </void> 
+    <void property="colorDistanceMode"> 
+     <byte>11</byte> 
+    </void> 
+    <void property="distance"> 
+     <int>5</int> 
+    </void> 
+   </object> 
+  </void> 
+  <void method="add"> 
+   <object class="jd.captcha.easy.BackGroundImage"> 
+    <void property="backgroundImage"> 
+     <string>mask_1262696809848.png</string> 
+    </void> 
+    <void property="color"> 
+     <int>-1</int> 
+    </void> 
+    <void property="colorDistanceMode"> 
+     <byte>11</byte> 
+    </void> 
+    <void property="distance"> 
+     <int>5</int> 
+    </void> 
+   </object> 
+  </void> 
+  <void method="add"> 
+   <object class="jd.captcha.easy.BackGroundImage"> 
+    <void property="backgroundImage"> 
+     <string>mask_1262696864255.png</string> 
+    </void> 
+    <void property="color"> 
+     <int>-1</int> 
+    </void> 
+    <void property="colorDistanceMode"> 
+     <byte>11</byte> 
+    </void> 
+    <void property="distance"> 
+     <int>5</int> 
+    </void> 
+   </object> 
+  </void> 
+  <void method="add"> 
+   <object class="jd.captcha.easy.BackGroundImage"> 
+    <void property="backgroundImage"> 
+     <string>mask_1262696926371.png</string> 
+    </void> 
+    <void property="color"> 
+     <int>-1</int> 
+    </void> 
+    <void property="colorDistanceMode"> 
+     <byte>11</byte> 
+    </void> 
+    <void property="distance"> 
+     <int>5</int> 
+    </void> 
+   </object> 
+  </void> 
+  <void method="add"> 
+   <object class="jd.captcha.easy.BackGroundImage"> 
+    <void property="backgroundImage"> 
+     <string>mask_1262696969646.png</string> 
+    </void> 
+    <void property="color"> 
+     <int>-1</int> 
+    </void> 
+    <void property="colorDistanceMode"> 
+     <byte>11</byte> 
+    </void> 
+    <void property="distance"> 
+     <int>5</int> 
+    </void> 
+   </object> 
+  </void> 
+ </object> 
+</java> 
