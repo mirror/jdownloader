@@ -1,3 +1,5 @@
+basics_no=לא
+basics_yes=כן
 controller_packages_defaultname=לא מוגדר
 controller_status_connectionproblems=החיבור נותק
 controller_status_containererror=תקלה במאגד קישורים
