@@ -55,6 +55,7 @@ extpasswordeditorcolumn_tooltip=סיסמאתך
 extttable_disable_all=הפוך הכל ללא זמין
 extttable_enabled_all=הפוך את כולם לזמינים
 fileditcontroller_geteditor_for=בחר עורך עבור סוג קובץ '%s1'
+fileeditcontroller_exechooser_description=עורך של %s1 (ישום)
 inactive=לא פעיל
 literally_byte=%s1 B
 literally_gibibyte=%s1 GB

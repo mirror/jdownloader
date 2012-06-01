@@ -1,3 +1,4 @@
+Extraction_onShutdownRequest_msg=הפסק חילוץ?
 LinkCollector_archiv=%s1
 LinkgrabberFilterRule_duplicate=%s1 (העתק)
 basics_no=לא
@@ -53,8 +54,10 @@ gui_downloadview_statustext_jac=מזהה תמונה
 gui_javacheck_newerjavaavailable_msg=Although JDownloader can operate on your current Java version, we advise you to install the latest Java updates. \n\nJDownloader will run more stable, faster, and will look better. \n\n\n\nVisit http://jdownloader.org/download.
 gui_javacheck_newerjavaavailable_title=גרסת ג'אווה ישנה: %s1!
 gui_mainframe_title_updatemessage2=%s1 עידכונים זמינים
+gui_settings_premium_title=מנהל חשבונות
 gui_warning_reconnect_running=מבצע...
 gui_warning_reconnectunknown=חיבור מחדש לא ידוע
+pluginforhost_infogenerator_title=חשבון %s1@%s2
 plugins_error_downloadfailed=הורדה נכשלה
 plugins_errors_disconnect=להתנתק ?
 plugins_errors_error=שגיאה:
