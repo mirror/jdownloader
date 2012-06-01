@@ -1,5 +1,5 @@
 AbstractConfigPanel_addPair_enabled=Omogući/Onemogući ovu opciju
-AddContainerAction=Učitak Kontejner linkova
+AddContainerAction=Učitaj Kontejner linkova
 AddContainerAction_actionPerformed_=Učitaj Kontejner Linkova
 AddContainerAction_actionPerformed_extensions=Link Kontejner (%s1)
 AddLinksAction_=Dodaj Download-e

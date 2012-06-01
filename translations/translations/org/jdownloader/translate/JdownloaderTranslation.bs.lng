@@ -17,6 +17,7 @@ StartDownloadsAction_createTooltip_=Pokreni Download-e
 basics_browser_folder=Izaberi
 basics_no=Ne
 basics_yes=Da
+captchacontroller_cancel_dialog_allorhost=Otkazan Captcha Dijalog
 captchacontroller_cancel_dialog_allorhost_all=Otkaži sve Captcha-e koje slijede
 configheader_enabled=Omogućeno
 controller_packages_defaultname=Razne

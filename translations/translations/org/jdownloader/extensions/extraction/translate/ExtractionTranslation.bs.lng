@@ -15,6 +15,7 @@ exists=Status Linka
 filename=Ime dokumenta
 files=dokumenti
 hoster=Domaćin
+menu_tools_extract_files=Ekstraktuj Dokumente
 name=Ekstraktor Arhive
 offline=Dokument je offline ili nedostaje
 online=Link je dostupan
