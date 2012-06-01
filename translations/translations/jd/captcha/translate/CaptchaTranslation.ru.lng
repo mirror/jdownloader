@@ -51,5 +51,4 @@ jd_plugins_optional_schedule_maingui_edit=Правка
 showcaptcha_choose_file=Выбор файла изображения
 showcaptcha_chooser_title=Показывать Капчу
 train_choose_folder=Выберите папку
-train_chooser_title=JDownloader :: Обучение
 train_method=Выберите метод капчи

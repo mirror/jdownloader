@@ -1,6 +1,7 @@
 exit=Закрыть
 guiless_extract=Извлечение файла(ов)
 guiless_installFinished=Установка закончена
+guiless_you_are_up2date=Вы используете последнюю версию
 install_updates_later=Спросить позже!
 install_updates_now=Установить сейчас!
 restart_title=Перезапуск!
