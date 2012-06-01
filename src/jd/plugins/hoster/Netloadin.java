@@ -88,6 +88,7 @@ public class Netloadin extends PluginForHost {
             }
         }
         if (checkFail && "fail".equalsIgnoreCase(state)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 4 * 60 * 60 * 1000l); }
+        if (checkFail && br.containsHTML(">Error</h1>")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
     }
 
     private void checkLimit(DownloadLink downloadLink, Browser br) throws Exception {

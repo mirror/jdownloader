@@ -1018,6 +1018,7 @@ public class LinkCrawler implements IOPermission {
             boolean lctb = false;
             LinkCrawlerDistributer dist = null;
             LinkCrawler previousCrawler = null;
+            PluginForDecrypt previousPlugin = null;
             ArrayList<DownloadLink> decryptedPossibleLinks = null;
             try {
                 final ArrayList<CrawledLink> distributedLinks = new ArrayList<CrawledLink>();
@@ -1098,6 +1099,8 @@ public class LinkCrawler implements IOPermission {
                 if (lct != null) {
                     /* mark thread to be used by decrypter plugin */
                     lctb = lct.isLinkCrawlerThreadUsedbyDecrypter();
+                    previousPlugin = lct.getCurrentPlugin();
+                    lct.setCurrentPlugin(wplg);
                     lct.setLinkCrawlerThreadUsedbyDecrypter(true);
                     previousCrawler = lct.getCurrentLinkCrawler();
                     lct.setCurrentLinkCrawler(this);
@@ -1128,6 +1131,7 @@ public class LinkCrawler implements IOPermission {
                     lct.setLogger(oldLogger);
                     lct.setVerbose(oldVerbose);
                     lct.setDebug(oldDebug);
+                    lct.setCurrentPlugin(previousPlugin);
                 }
                 /* remove distributer from plugin */
                 wplg.setDistributer(null);

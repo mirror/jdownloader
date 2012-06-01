@@ -35,6 +35,7 @@ import jd.controlling.IOPermission;
 import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.captcha.CaptchaController;
+import jd.controlling.captcha.CaptchaResult;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.nutils.Formatter;
@@ -155,9 +156,11 @@ public abstract class PluginForHost extends Plugin {
             } catch (Throwable e) {
                 e.printStackTrace();
             }
-            final String cc = new CaptchaController(ioPermission, method, file, defaultValue, explain, this).getCode(flag);
+            CaptchaResult suggest = new CaptchaResult();
+            suggest.setCaptchaText(defaultValue);
+            final CaptchaResult cc = new CaptchaController(ioPermission, method, file, suggest, explain, this).getCode(flag);
             if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            return cc;
+            return cc.getCaptchaText();
         } finally {
             linkStatus.removeStatus(LinkStatus.WAITING_USERIO);
             linkStatus.setStatusText(status);

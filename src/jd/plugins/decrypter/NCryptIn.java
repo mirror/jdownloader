@@ -146,7 +146,7 @@ public class NCryptIn extends PluginForDecrypt {
                         final File captchaFile = this.getLocalCaptchaFile(".png");
                         Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://ncrypt.in/classes/captcha/circlecaptcha.php"));
                         final Point p = UserIO.getInstance().requestClickPositionDialog(captchaFile, "Click on the open circle", null);
-                        if (p == null) return decryptedLinks;
+                        if (p == null) { throw new DecrypterException(DecrypterException.CAPTCHA); }
                         allForm.put("circle.x", String.valueOf(p.x));
                         allForm.put("circle.y", String.valueOf(p.y));
                         if (allForm.containsHTML(PASSWORDTEXT)) {

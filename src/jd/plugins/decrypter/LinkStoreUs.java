@@ -89,6 +89,7 @@ public class LinkStoreUs extends PluginForDecrypt {
                     File file = this.getLocalCaptchaFile();
                     br.cloneBrowser().getDownload(file, "http://linkstore.us/captcha_cross.png");
                     Point p = UserIO.getInstance().requestClickPositionDialog(file, this.getHost(), JDL.L("plugins.decrypter.linkstoreus.captchadescription", "Please click on the open circle!"));
+                    if (p == null) { throw new DecrypterException(DecrypterException.CAPTCHA); }
                     postData = "captcha.x=" + p.x + "&captcha.y=" + p.y;
                 }
                 if (br.containsHTML(PASSWORDTEXT)) {

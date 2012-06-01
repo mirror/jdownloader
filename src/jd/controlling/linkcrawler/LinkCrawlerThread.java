@@ -3,11 +3,13 @@ package jd.controlling.linkcrawler;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.http.BrowserSettingsThread;
+import jd.plugins.PluginForDecrypt;
 
 public class LinkCrawlerThread extends BrowserSettingsThread {
     private static AtomicInteger linkCrawlerThread = new AtomicInteger(0);
     private boolean              b                 = false;
     private LinkCrawler          crawler;
+    private PluginForDecrypt     currentPlugin     = null;
 
     public LinkCrawlerThread(Runnable r) {
         super(r);
@@ -29,6 +31,20 @@ public class LinkCrawlerThread extends BrowserSettingsThread {
 
     public LinkCrawler getCurrentLinkCrawler() {
         return crawler;
+    }
+
+    /**
+     * @return the currentPlugin
+     */
+    public PluginForDecrypt getCurrentPlugin() {
+        return currentPlugin;
+    }
+
+    /**
+     * @param currentPlugin the currentPlugin to set
+     */
+    public void setCurrentPlugin(PluginForDecrypt currentPlugin) {
+        this.currentPlugin = currentPlugin;
     }
 
 }

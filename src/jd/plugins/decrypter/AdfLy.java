@@ -72,7 +72,13 @@ public class AdfLy extends PluginForDecrypt {
             }
         }
         for (int i = 0; i <= 2; i++) {
-            final String extendedProtectionPage = br.getRegex("\\'(https?://adf\\.ly/go/[^<>\"\\']*?)\\'").getMatch(0);
+            String extendedProtectionPage = br.getRegex("\\'(https?://adf\\.ly/go/[^<>\"\\']*?)\\'").getMatch(0);
+            if (extendedProtectionPage == null) {
+                extendedProtectionPage = br.getRegex("var url = '(/go/[^<>\"\\']*?)\\'").getMatch(0);
+                if (extendedProtectionPage != null) {
+                    extendedProtectionPage = "http://adf.ly" + extendedProtectionPage;
+                }
+            }
             if (extendedProtectionPage != null) {
                 int wait = 7;
                 String waittime = br.getRegex("var countdown = (\\d+);").getMatch(0);

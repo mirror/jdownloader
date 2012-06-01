@@ -24,12 +24,19 @@ import javax.swing.JFileChooser;
 import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
 
-import jd.gui.swing.dialog.ClickPositionDialog;
+import jd.controlling.captcha.CaptchaController;
+import jd.controlling.captcha.CaptchaResult;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.gui.swing.dialog.CaptchaDialogInterface;
 import jd.gui.swing.dialog.MultiSelectionDialog;
 import jd.nutils.JDFlags;
+import jd.plugins.PluginForDecrypt;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.BinaryLogic;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -100,8 +107,7 @@ public class UserIO {
      */
     public static final int RETURN_CANCEL                  = 1 << 2;
     /**
-     * don't show again flag has been set. the dialog may has been visible. if
-     * RETURN_SKIPPED_BY_DONT_SHOW is not set. the user set this flag latly
+     * don't show again flag has been set. the dialog may has been visible. if RETURN_SKIPPED_BY_DONT_SHOW is not set. the user set this flag latly
      */
     public static final int RETURN_DONT_SHOW_AGAIN         = 1 << 3;
     /**
@@ -126,8 +132,7 @@ public class UserIO {
 
     /**
      * @param countdownTime
-     *            sets the countdown time or resets it to the user-selected
-     *            value, if <code>countdownTime < 0</code>
+     *            sets the countdown time or resets it to the user-selected value, if <code>countdownTime < 0</code>
      */
     public static void setCountdownTime(int countdownTime) {
         if (countdownTime < 0) {
@@ -190,8 +195,7 @@ public class UserIO {
     }
 
     /**
-     * The flags in org.appwork.utils.swing.dialog.Dialog are different, so we
-     * need a converter
+     * The flags in org.appwork.utils.swing.dialog.Dialog are different, so we need a converter
      * 
      * @param flag
      * @return
@@ -259,29 +263,25 @@ public class UserIO {
         }
     }
 
-    // not used any more
-    // public String requestCaptchaDialog(final int flag, final String host,
-    // final File captchafile, final String suggestion, final String explain)
-    // throws DialogClosedException, DialogCanceledException {
-    // // NewUIO.I().requestCaptchaDialog(host,captchafile)
-    // return Dialog.getInstance().showDialog(new CaptchaDialog(flag |
-    // Dialog.LOGIC_COUNTDOWN, host, captchafile, suggestion, explain));
-    // }
-
     public Point requestClickPositionDialog(final File imagefile, final String title, final String explain) {
-        try {
-            return Dialog.getInstance().showDialog(new ClickPositionDialog(0, imagefile, title, explain));
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
+        Thread currentThread = Thread.currentThread();
+        if (currentThread instanceof LinkCrawlerThread) {
+            /* Crawler */
+            PluginForDecrypt plugin = ((LinkCrawlerThread) currentThread).getCurrentPlugin();
+            LinkCrawler linkCrawler = ((LinkCrawlerThread) currentThread).getCurrentLinkCrawler();
+            CaptchaController captchaController = new CaptchaController(linkCrawler, null, imagefile, null, explain, plugin);
+            captchaController.setCaptchaType(CaptchaDialogInterface.CaptchaType.CLICK);
+            CaptchaResult cc = captchaController.getCode(0);
+            if (cc != null && cc.getCaptchaClick() != null && cc.getCaptchaClick().length == 2) { return new Point(cc.getCaptchaClick()[0], cc.getCaptchaClick()[1]); }
+            return null;
+        } else {
+            Log.exception(new WTFException("DO NOT USE OUTSIDE DECRYPTER"));
         }
         return null;
     }
 
     /**
-     * Shows a combobox dialog. returns the options id if the user confirmed, or
-     * -1 if the user canceled
+     * Shows a combobox dialog. returns the options id if the user confirmed, or -1 if the user canceled
      * 
      * @param flag
      * @param title
@@ -347,8 +347,7 @@ public class UserIO {
      * @param title
      *            dialog-title or null for default
      * @param fileSelectionMode
-     *            mode for selecting files (like {@link UserIO#FILES_ONLY}) or
-     *            null for default
+     *            mode for selecting files (like {@link UserIO#FILES_ONLY}) or null for default
      * @param fileFilter
      *            filters the choosable files or null for default
      * @param multiSelection
@@ -356,8 +355,7 @@ public class UserIO {
      * @param startDirectory
      *            the start directory
      * @param dialogType
-     *            mode for the dialog type (like {@link UserIO#OPEN_DIALOG}) or
-     *            null for default
+     *            mode for the dialog type (like {@link UserIO#OPEN_DIALOG}) or null for default
      * @return an array of files or null if the user cancel the dialog
      */
     public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection, final File startDirectory, final Integer dialogType) {
@@ -418,8 +416,7 @@ public class UserIO {
     }
 
     /**
-     * Displays a Dialog with a title, a message, and an editable Textpane. USe
-     * it to give the user a dialog to enter Multilined text
+     * Displays a Dialog with a title, a message, and an editable Textpane. USe it to give the user a dialog to enter Multilined text
      * 
      * @param title
      * @param message

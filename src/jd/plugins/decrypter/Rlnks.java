@@ -191,6 +191,7 @@ public class Rlnks extends PluginForDecrypt {
                     final File captchaFile = this.getLocalCaptchaFile();
                     Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://www.relink.us/" + captchaLink));
                     final Point p = UserIO.getInstance().requestClickPositionDialog(captchaFile, "relink.us | " + String.valueOf(i + 1) + "/5", null);
+                    if (p == null) { throw new DecrypterException(DecrypterException.CAPTCHA); }
                     ALLFORM.put("button.x", String.valueOf(p.x));
                     ALLFORM.put("button.y", String.valueOf(p.y));
                 }

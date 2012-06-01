@@ -13,6 +13,7 @@ import jd.controlling.captcha.CaptchaDialogQueue;
 import jd.controlling.captcha.CaptchaDialogQueueEntry;
 import jd.controlling.captcha.CaptchaEventListener;
 import jd.controlling.captcha.CaptchaEventSender;
+import jd.controlling.captcha.CaptchaResult;
 
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.EventsAPIEvent;
@@ -80,8 +81,7 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
                 } finally {
                     try {
                         /*
-                         * we need to close the b64 stream which closes the
-                         * RemoteAPI Outputstream
+                         * we need to close the b64 stream which closes the RemoteAPI Outputstream
                          */
                         b64os.close();
                     } catch (final Throwable e) {
@@ -115,7 +115,7 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
         get(request, response, id, false);
     }
 
-    public boolean solve(long id, String result) {
+    public boolean solve(long id, CaptchaResult result) {
         CaptchaDialogQueueEntry captcha = CaptchaDialogQueue.getInstance().getCaptchabyID(id);
         if (captcha == null) return false;
         captcha.setResponse(result);

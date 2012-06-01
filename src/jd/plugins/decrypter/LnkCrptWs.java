@@ -1010,6 +1010,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                             file.deleteOnExit();
                             br.cloneBrowser().getDownload(file, url);
                             final Point p = UserIO.getInstance().requestClickPositionDialog(file, "LinkCrypt.ws | " + String.valueOf(max_attempts - attempts), capDescription);
+                            if (p == null) { throw new DecrypterException(DecrypterException.CAPTCHA); }
                             captcha.put("x", p.x + "");
                             captcha.put("y", p.y + "");
                             br.submitForm(captcha);

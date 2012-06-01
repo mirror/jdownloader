@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 
 import jd.controlling.captcha.CaptchaController;
 import jd.controlling.captcha.CaptchaEventListener;
+import jd.controlling.captcha.CaptchaResult;
 
 import com.ibm.mqtt.MqttCallback;
 import com.ibm.mqtt.MqttClient;
@@ -95,8 +96,7 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
     }
 
     /**
-     * The code keeps trying to reconnect until either a successful reconnect
-     * occurs. <br>
+     * The code keeps trying to reconnect until either a successful reconnect occurs. <br>
      * TODO: Rebuild to use JD Reconnect Events.
      */
     public void connectionLost() {
@@ -133,7 +133,9 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
         logger.info("                        DATA: " + result);
 
         if (!currentController.isEmpty()) {
-            currentController.remove(0).setResponse(result);
+            CaptchaResult resultCaptcha = new CaptchaResult();
+            resultCaptcha.setCaptchaText(result);
+            currentController.remove(0).setResponse(resultCaptcha);
 
             waiterThread.interrupt();
             waiterThread = null;

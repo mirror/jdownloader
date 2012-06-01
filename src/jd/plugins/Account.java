@@ -244,7 +244,12 @@ public class Account extends Property {
 
     // @Override
     public String toString() {
-        return user + ":" + pass + " " + enabled + " " + super.toString();
+        AccountInfo ai = this.accinfo;
+        if (ai != null) {
+            return user + ":" + pass + " " + enabled + " " + super.toString() + " AccInfo: " + ai.toString();
+        } else {
+            return user + ":" + pass + " " + enabled + " " + super.toString();
+        }
     }
 
     public boolean equals(final Account account2) {

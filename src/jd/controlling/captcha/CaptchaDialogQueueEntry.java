@@ -29,7 +29,7 @@ import org.jdownloader.controlling.UniqueSessionID;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.translate._JDT;
 
-public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeException> {
+public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeException> {
 
     private final UniqueSessionID id = new UniqueSessionID();
 
@@ -50,13 +50,13 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
     }
 
     private int           flag;
-    private String        def;
-    private String        resp         = null;
+    private CaptchaResult def;
+    private CaptchaResult resp         = null;
     private boolean       externalSet  = false;
-    private CaptchaDialog dialog;
+    private CaptchaDialog textDialog;
     private IOPermission  ioPermission = null;
 
-    public CaptchaDialogQueueEntry(CaptchaController captchaController, int flag, String def) {
+    public CaptchaDialogQueueEntry(CaptchaController captchaController, int flag, CaptchaResult def) {
         this.captchaController = captchaController;
         this.ioPermission = captchaController.getIOPermission();
         this.flag = flag;
@@ -71,14 +71,14 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
         return captchaController.getCaptchafile();
     }
 
-    public void setResponse(String resp) {
+    public void setResponse(CaptchaResult resp) {
         externalSet = true;
         this.resp = resp;
         new EDTRunner() {
             @Override
             protected void runInEDT() {
                 try {
-                    if (dialog != null && dialog.isInitialized()) dialog.dispose();
+                    if (textDialog != null && textDialog.isInitialized()) textDialog.dispose();
                 } catch (final Throwable e) {
                     Log.exception(e);
                 }
@@ -86,18 +86,17 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
         };
     }
 
-    protected String run() {
+    protected CaptchaResult run() {
         /* external response already set, no need to ask user */
         if (externalSet) return resp;
-        String ret = viaGUI();
+        CaptchaResult ret = viaGUI();
         /* external response set, return this instead */
         if (externalSet) return resp;
         return ret;
     }
 
-    private String viaGUI() {
+    private CaptchaResult viaGUI() {
         if (ioPermission != null && !ioPermission.isCaptchaAllowed(getHost().getTld())) { return null; }
-
         try {
             DialogType dialogType = null;
             JDPluginLogger logger = null;
@@ -122,12 +121,11 @@ public class CaptchaDialogQueueEntry extends QueueAction<String, RuntimeExceptio
                 logger.severe("Could not load CaptchaImage! " + captchaController.getCaptchafile().getAbsolutePath());
                 return null;
             }
-            this.dialog = new CaptchaDialog(f, dialogType, getHost(), images, def, captchaController.getExplain());
-            dialog.setPlugin(captchaController.getPlugin());
-            dialog.setMethodName(captchaController.getMethodname());
-            dialog.setCountdownTime(CaptchaSettings.CFG.getCountdown());
-            CaptchaDialogInterface answer = NewUIO.I().show(CaptchaDialogInterface.class, dialog);
-            return answer.getCaptchaCode();
+            this.textDialog = new CaptchaDialog(f, dialogType, captchaController.getCaptchaType(), getHost(), images, def, captchaController.getExplain());
+            textDialog.setPlugin(captchaController.getPlugin());
+            textDialog.setCountdownTime(CaptchaSettings.CFG.getCountdown());
+            CaptchaDialogInterface answer = NewUIO.I().show(CaptchaDialogInterface.class, textDialog);
+            return answer.getCaptchaResult();
         } catch (DialogNoAnswerException e) {
             if (resp == null) {
                 /* no external response available */

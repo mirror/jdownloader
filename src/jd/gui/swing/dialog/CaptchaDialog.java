@@ -21,6 +21,7 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -37,7 +38,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -45,6 +45,7 @@ import javax.swing.Timer;
 
 import jd.Launcher;
 import jd.captcha.utils.GifDecoder;
+import jd.controlling.captcha.CaptchaResult;
 import jd.gui.swing.laf.LAFOptions;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.Plugin;
@@ -77,34 +78,36 @@ import org.jdownloader.premium.PremiumInfoDialog;
  */
 public class CaptchaDialog extends AbstractDialog<String> implements ActionListener, WindowListener, MouseListener, CaptchaDialogInterface {
 
-    private ExtTextField textField;
+    private ExtTextField        textField;
 
-    private final String defaultValue;
+    private final CaptchaResult defaultValue;
 
-    private final String explain;
+    private final String        explain;
 
-    private DomainInfo   hosterInfo;
+    private DomainInfo          hosterInfo;
 
-    private DialogType   type;
+    private DialogType          type;
 
-    private String       methodName;
+    private JComponent          iconPanel;
 
-    private JComponent   iconPanel;
+    private Plugin              plugin;
+    private Image[]             images;
+    private int                 fps;
+    protected int               frame         = 0;
+    private Timer               paintTimer;
+    private Point               resultPoint   = null;
 
-    private Plugin       plugin;
-    private Image[]      images;
-    private int          fps;
-    protected int        frame = 0;
-    private Timer        paintTimer;
+    private CaptchaType         captchaType;
+
+    private CaptchaResult       captchaResult = new CaptchaResult();
 
     public static void main(String[] args) {
         CaptchaDialog cp;
         try {
             Application.setApplication(".jd_home");
             Launcher.statics();
-            cp = new CaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), getGifImages(new File("C:/Users/Thomas/.BuildServ/applications/beta/sources/JDownloader/src/org/jdownloader/extensions/webinterface/webinterface/themes/main/images/core/load.gif").toURI().toURL()), null, "Enter both words...");
+            cp = new CaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, CaptchaType.TEXT, DomainInfo.getInstance("wupload.com"), getGifImages(new File("C:/Users/Thomas/.BuildServ/applications/beta/sources/JDownloader/src/org/jdownloader/extensions/webinterface/webinterface/themes/main/images/core/load.gif").toURI().toURL()), null, "Enter both words...");
 
-            cp.setMethodName("filesonic.com");
             LookAndFeelController.getInstance().setUIManager();
 
             Dialog.getInstance().showDialog(cp);
@@ -117,9 +120,8 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         }
     }
 
-    public CaptchaDialog(final int flag, DialogType type, final DomainInfo DomainInfo, final Image image, final String defaultValue, final String explain) {
-        this(flag, type, DomainInfo, new Image[] { image }, defaultValue, explain);
-
+    public CaptchaDialog(final int flag, DialogType type, CaptchaType captchaType, final DomainInfo DomainInfo, final Image image, final CaptchaResult defaultValue, final String explain) {
+        this(flag, type, captchaType, DomainInfo, new Image[] { image }, defaultValue, explain);
     }
 
     /**
@@ -149,16 +151,18 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         return null;
     }
 
-    public CaptchaDialog(int flag, DialogType type, DomainInfo domainInfo, Image[] images, String defaultValue, String explain) {
-
+    public CaptchaDialog(int flag, DialogType type, CaptchaType captchaType, DomainInfo domainInfo, Image[] images, CaptchaResult defaultValue, String explain) {
         super(flag | Dialog.STYLE_HIDE_ICON, _GUI._.gui_captchaWindow_askForInput(domainInfo.getTld()), null, null, null);
+        if (CaptchaType.CLICK.equals(captchaType)) {
+            super.flagMask = flag | Dialog.BUTTONS_HIDE_OK;
+        }
         this.hosterInfo = domainInfo;
         this.images = images;
-
         fps = 24;
         this.defaultValue = defaultValue;
         this.explain = explain;
         this.type = type;
+        this.captchaType = captchaType;
     }
 
     private void adaptMethod() {
@@ -241,7 +245,6 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
             // getDialog().getContentPane().setBackground(new Color(col));
             // panel.setBackground(new Color(col));
         }
-        final ImageIcon imageIcon;
         final int size = org.jdownloader.settings.staticreferences.CFG_GUI.CAPTCHA_SCALE_FACTOR.getValue();
         if (size != 100) {
             for (int i = 0; i < images.length; i++) {
@@ -266,7 +269,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
 
         textField.setClearHelpTextOnFocus(false);
         textField.setHelpText(explain);
-        this.textField.setText(this.defaultValue);
+        if (defaultValue != null) this.textField.setText(this.defaultValue.getCaptchaText());
 
         MigPanel headerPanel = null;
         if (type == DialogType.HOSTER) {
@@ -354,6 +357,39 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
                 cancel();
             }
         });
+        if (CaptchaType.CLICK.equals(captchaType)) {
+            iconPanel.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+            iconPanel.setToolTipText(this.explain);
+            textField.setEditable(false);
+            iconPanel.addMouseListener(new MouseListener() {
+
+                @Override
+                public void mouseReleased(MouseEvent e) {
+                    resultPoint = e.getPoint();
+                    final int size = org.jdownloader.settings.staticreferences.CFG_GUI.CAPTCHA_SCALE_FACTOR.getValue();
+                    if (size != 100) {
+                        resultPoint.setLocation(resultPoint.getX() / (size / 100.0f), resultPoint.getY() / (size / 100.0f));
+                    }
+                    dispose();
+                }
+
+                @Override
+                public void mousePressed(MouseEvent e) {
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                }
+
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                }
+
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                }
+            });
+        }
         iconPanel.setPreferredSize(new Dimension(images[0].getWidth(null), images[0].getHeight(null)));
         field.add(iconPanel);
 
@@ -392,7 +428,6 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         if (paintTimer != null) {
             paintTimer.stop();
         }
-
     }
 
     public String getCrawlerStatus() {
@@ -403,10 +438,6 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
             return null;
 
         }
-    }
-
-    public String getPluginName() {
-        return plugin.getHost();
     }
 
     @Override
@@ -432,10 +463,6 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         this.cancel();
     }
 
-    public String getCaptchaCode() {
-        return textField.getText();
-    }
-
     public DomainInfo getDomainInfo() {
         return hosterInfo;
     }
@@ -448,7 +475,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         return images;
     }
 
-    public String getDefaultValue() {
+    public CaptchaResult getDefaultValue() {
         return defaultValue;
     }
 
@@ -456,18 +483,12 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         return explain;
     }
 
-    public void setMethodName(String methodname) {
-        methodName = methodname;
-    }
-
     public String getFilename() {
         switch (type) {
         case HOSTER:
             if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) return null;
             return ((PluginForHost) plugin).getDownloadLink().getName();
-
         }
-
         return null;
     }
 
@@ -476,14 +497,33 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         case HOSTER:
             if (((PluginForHost) plugin).getDownloadLink() == null) return -1;
             return ((PluginForHost) plugin).getDownloadLink().getDownloadMax();
-
         }
         return -1;
     }
 
     public void setPlugin(Plugin plugin) {
-
         this.plugin = plugin;
+    }
+
+    @Override
+    public CaptchaType getCaptchaType() {
+        return captchaType;
+    }
+
+    @Override
+    public CaptchaResult getCaptchaResult() {
+        switch (captchaType) {
+        case TEXT:
+            captchaResult.setCaptchaText(textField.getText());
+            break;
+        case CLICK:
+            Point position = resultPoint;
+            if (position != null) {
+                captchaResult.setCaptchaClick(new int[] { position.x, position.y });
+            }
+            break;
+        }
+        return captchaResult;
     }
 
 }

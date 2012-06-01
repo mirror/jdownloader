@@ -23,11 +23,11 @@ public class CaptchaDialogQueue extends Queue {
         super("CaptchaDialogQueue");
     }
 
-    public String addWait(final CaptchaDialogQueueEntry item) {
+    public CaptchaResult addWait(final CaptchaDialogQueueEntry item) {
         IOPermission io = item.getIOPermission();
         if (io != null && !io.isCaptchaAllowed(item.getHost().getTld())) return null;
         CaptchaEventSender.getInstance().fireEvent(new CaptchaTodoEvent(item.getCaptchaController()));
-        String result = null;
+        CaptchaResult result = null;
         try {
             if (item.isFinished()) {
                 result = item.getResult();

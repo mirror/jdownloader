@@ -30,35 +30,38 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.IOPermission;
 import jd.gui.UserIO;
+import jd.gui.swing.dialog.CaptchaDialogInterface;
 import jd.plugins.Plugin;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
 
 public class CaptchaController {
 
-    private static final AtomicInteger captchaCounter = new AtomicInteger(0);
+    private static final AtomicInteger         captchaCounter = new AtomicInteger(0);
 
-    private final int                  id;
-    private final String               methodname;
-    private final File                 captchafile;
-    private final String               explain;
-    private final String               suggest;
-    private final DomainInfo           host;
+    private final int                          id;
+    private final String                       methodname;
+    private final File                         captchafile;
+    private final String                       explain;
+    private final CaptchaResult                suggest;
+    private final DomainInfo                   host;
 
-    private CaptchaDialogQueueEntry    dialog         = null;
-    private String                     response       = null;
+    private CaptchaDialogQueueEntry            dialog         = null;
+    private CaptchaResult                      response       = null;
 
-    private IOPermission               ioPermission   = null;
+    private IOPermission                       ioPermission   = null;
 
-    private boolean                    responseSet    = false;
+    private boolean                            responseSet    = false;
 
-    private Plugin                     plugin;
+    private Plugin                             plugin;
+    private CaptchaDialogInterface.CaptchaType captchaType    = CaptchaDialogInterface.CaptchaType.TEXT;
 
     public Plugin getPlugin() {
         return plugin;
     }
 
-    public CaptchaController(IOPermission ioPermission, final String method, final File file, final String suggest, final String explain, Plugin plugin) {
+    public CaptchaController(IOPermission ioPermission, final String method, final File file, final CaptchaResult suggest, final String explain, Plugin plugin) {
         this.id = captchaCounter.getAndIncrement();
         this.host = DomainInfo.getInstance(plugin.getHost());
         this.methodname = method;
@@ -67,6 +70,7 @@ public class CaptchaController {
         this.suggest = suggest;
         this.ioPermission = ioPermission;
         this.plugin = plugin;
+        setCaptchaType(CaptchaDialogInterface.CaptchaType.TEXT);
     }
 
     public int getId() {
@@ -85,7 +89,7 @@ public class CaptchaController {
         return explain;
     }
 
-    public String getSuggest() {
+    public CaptchaResult getSuggest() {
         return suggest;
     }
 
@@ -99,24 +103,26 @@ public class CaptchaController {
      * @return
      */
     private boolean hasMethod() {
+        if (StringUtils.isEmpty(methodname)) return false;
         return (SubConfiguration.getConfig("JAC") != null && !SubConfiguration.getConfig("JAC").getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false)) && JACMethod.hasMethod(methodname);
     }
 
-    public String getCode(final int flag) {
+    public CaptchaResult getCode(final int flag) {
         if (!hasMethod()) { return ((flag & UserIO.NO_USER_INTERACTION) > 0) ? null : addCaptchaToQueue(flag, suggest); }
         final JAntiCaptcha jac = new JAntiCaptcha(methodname);
+        CaptchaResult captchaResult = new CaptchaResult();
         try {
             final Image captchaImage = ImageIO.read(captchafile);
-
             final Captcha captcha = jac.createCaptcha(captchaImage);
             String captchaCode = jac.checkCaptcha(captchafile, captcha);
             if (jac.isExtern()) {
                 if ((flag & UserIO.NO_USER_INTERACTION) == 0 && captchaCode == null || captchaCode.trim().length() == 0) {
-                    captchaCode = addCaptchaToQueue(flag, suggest);
+                    captchaResult = addCaptchaToQueue(flag, suggest);
+                } else {
+                    captchaResult.setCaptchaText(captchaCode);
                 }
-                return captchaCode;
+                return captchaResult;
             }
-
             final LetterComperator[] lcs = captcha.getLetterComperators();
 
             double vp = 0.0;
@@ -133,24 +139,24 @@ public class CaptchaController {
             }
 
             if (vp > SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 95)) {
-                return ((flag & UserIO.NO_USER_INTERACTION) > 0) ? captchaCode : addCaptchaToQueue(flag, captchaCode);
+                return ((flag & UserIO.NO_USER_INTERACTION) > 0) ? captchaResult : addCaptchaToQueue(flag, suggest);
             } else {
-                return captchaCode;
+                return captchaResult;
             }
         } catch (final Exception e) {
             return null;
         }
     }
 
-    public void setResponse(String code) {
+    public void setResponse(CaptchaResult code) {
         this.response = code;
         this.responseSet = true;
         if (dialog != null) dialog.setResponse(code);
     }
 
-    private String addCaptchaToQueue(final int flag, final String def) {
+    private CaptchaResult addCaptchaToQueue(final int flag, final CaptchaResult def) {
         dialog = new CaptchaDialogQueueEntry(this, flag, def);
-        String ret = CaptchaDialogQueue.getInstance().addWait(dialog);
+        CaptchaResult ret = CaptchaDialogQueue.getInstance().addWait(dialog);
         if (responseSet == false) return ret;
         return response;
     }
@@ -161,6 +167,21 @@ public class CaptchaController {
 
     public IOPermission getIOPermission() {
         return ioPermission;
+    }
+
+    /**
+     * @return the captchaType
+     */
+    public CaptchaDialogInterface.CaptchaType getCaptchaType() {
+        return captchaType;
+    }
+
+    /**
+     * @param captchaType
+     *            the captchaType to set
+     */
+    public void setCaptchaType(CaptchaDialogInterface.CaptchaType captchaType) {
+        this.captchaType = captchaType;
     }
 
 }

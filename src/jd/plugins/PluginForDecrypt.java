@@ -30,6 +30,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.JDPluginLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.captcha.CaptchaController;
+import jd.controlling.captcha.CaptchaResult;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawlerDistributer;
 import jd.http.Browser;
@@ -48,6 +49,7 @@ public abstract class PluginForDecrypt extends Plugin {
     private LinkCrawlerDistributer distributer  = null;
 
     private LazyCrawlerPlugin      lazyC        = null;
+    private CrawledLink            currentLink  = null;
 
     /**
      * @return the distributer
@@ -157,6 +159,7 @@ public abstract class PluginForDecrypt extends Plugin {
     public ArrayList<DownloadLink> decryptLink(CrawledLink source) {
         CryptedLink cryptLink = source.getCryptedLink();
         if (cryptLink == null) return null;
+        this.currentLink = source;
         ProgressController progress = new ProgressController();
         cryptLink.setProgressController(progress);
         ArrayList<DownloadLink> tmpLinks = null;
@@ -213,6 +216,10 @@ public abstract class PluginForDecrypt extends Plugin {
             ((JDPluginLogger) logger).clear();
         }
         return tmpLinks;
+    }
+
+    public CrawledLink getCurrentLink() {
+        return currentLink;
     }
 
     /**
@@ -292,9 +299,11 @@ public abstract class PluginForDecrypt extends Plugin {
      * @throws DecrypterException
      */
     protected String getCaptchaCode(String method, File file, int flag, CryptedLink link, String defaultValue, String explain) throws DecrypterException {
-        String cc = new CaptchaController(ioPermission, method, file, defaultValue, explain, this).getCode(flag);
+        CaptchaResult suggest = new CaptchaResult();
+        suggest.setCaptchaText(defaultValue);
+        CaptchaResult cc = new CaptchaController(ioPermission, method, file, suggest, explain, this).getCode(flag);
         if (cc == null) throw new DecrypterException(DecrypterException.CAPTCHA);
-        return cc;
+        return cc.getCaptchaText();
     }
 
     protected void setBrowserExclusive() {
