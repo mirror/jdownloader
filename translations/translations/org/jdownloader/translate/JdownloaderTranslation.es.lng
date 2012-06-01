@@ -99,6 +99,7 @@ gui_settings_filewriting_description=Usando la comprobación por hash, JDownload
 gui_settings_general_title=General
 gui_settings_linkgrabber_title=Filtro de LinkGrabber
 gui_settings_plugins_title=Ajustes de plugins
+gui_settings_premium_description=Ingrese y administre todas sus cuentas Premium/Gold/Platinium.
 gui_settings_premium_title=Gestor de cuentas
 gui_settings_proxy_title=Gestor de conexiones
 gui_settings_reconnect_title=Reconectar
