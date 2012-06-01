@@ -1,4 +1,6 @@
+JDGui_windowClosing_try_answer_tray=اخفاء الى اسفل الشاشة
 JDGui_windowClosing_try_asnwer_close=اغلاق البرنامج
+JDGui_windowClosing_try_title_=غلق الى اسفل الشاشة
 action_aboutaction=عن البرنامج
 action_aboutaction_tooltip=عن البرنامج
 action_add_premium_account_tooltip=اضافة حساب جديد Primium
