@@ -114,7 +114,7 @@ public class Multi extends IExtraction {
     private static final String      REGEX_ANY_DOT_R19_FILE                                      = "(?i).*\\.r\\d+$";
     private static final String      REGEX_ENDS_WITH_DOT_RAR                                     = "(?i).*\\.rar$";
     private static final String      PA_R_T_0_9_RAR$                                             = "\\.pa?r?t?\\.?[0-9]+.rar$";
-    private static final String      REGEX_FIND_PARTNUMBER_MULTIRAR                              = "\\.pa?r?t?\\.?(\\d+)\\.";
+    private static final String      REGEX_FIND_PARTNUMBER_MULTIRAR                              = "\\.pa?r?t?\\.?(\\d+)\\.rar$";
     private static final String      REGEX_FIND_MULTIPARTRAR_FULL_PART_EXTENSION_AND_PART_NUMBER = "(\\.pa?r?t?\\.?)(\\d+)\\.";
     private static final String      REGEX_ANY_7ZIP_PART                                         = "(?i).*\\.7z\\.\\d+$";
     private static final String      PATTERN_RAR_MULTI                                           = "(?i).*\\.pa?r?t?\\.?\\d+.rar$";
