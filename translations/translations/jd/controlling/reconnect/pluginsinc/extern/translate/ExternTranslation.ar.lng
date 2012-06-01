@@ -1,2 +1,3 @@
 interaction_externreconnect_command=الأمر (إستخدم مسار مجلد مطلق)
 interaction_externreconnect_parameter=Parameter (1 parameter every line)
+jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=اداة مساعدة لاعادة الاتصال
