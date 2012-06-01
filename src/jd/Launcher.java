@@ -363,7 +363,7 @@ public class Launcher {
             Launcher.LOG.severe("Instance Handling not possible!");
             Launcher.instanceStarted = true;
         }
-
+        System.out.println("Remove me");
         if (Launcher.instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
             Launcher.start(args);
         } else {
