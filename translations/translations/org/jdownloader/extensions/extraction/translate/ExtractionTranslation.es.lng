@@ -27,7 +27,6 @@ filename=Nombre de Archivo
 files=archivos
 hoster=Hosting
 local=Estado del Archivo
-menu_tools_extract_files=Extraer Archivos
 name=Extractor de archivos
 offline=Archivo eliminado o inexistente
 offline_tt=No hay enlace para esta parte en este paquete, o el enlace está fuera de línea
