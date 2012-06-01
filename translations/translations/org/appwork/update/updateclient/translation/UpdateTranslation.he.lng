@@ -1,2 +1,7 @@
+UpdateServer_UpdaterGui_onStateChange_failed2=%s1
 close=סגור
+error_unknown=%s1
+exception_msg=%s1
+guiless_updates_waiting_for_download=%s1 קבצים נחוצים להורדה
+list_optionals=- %s1
 timer=%s1 שנ'

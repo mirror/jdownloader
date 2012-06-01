@@ -23,6 +23,7 @@ easycaptcha_loadcaptchas_loaddirect=אם ניתן בצע טעינה ישירה (
 easycaptcha_loadcaptchas_threaded=טעינת תמונה בעזרת חוטונים (מהיר מאוד)
 easycaptcha_loadcaptchas_title=טען CAPTCHAS
 easycaptcha_mask=מיסוך
+easycaptcha_openCaptchaFolder=פתח תיקיית Captcha
 easycaptcha_orginal=מקורי:
 easycaptcha_remove=הסר:
 easycaptcha_settings=הגדרות:
