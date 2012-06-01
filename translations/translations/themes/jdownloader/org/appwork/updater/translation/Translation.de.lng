@@ -1,0 +1,8 @@
+error_invalid_branch=Die '%s1' Version kann momentan nicht aktualisiert weden. Bitte versuche es später nocheinmal
+guiless_branch_updated=Aktualisier %s1-%s2 Edition
+guiless_create_package=Bitte warten...Bereite Updatepaket vor.
+guiless_started_download=Beginne mit Download: %s1
+guiless_userinterrupted=Benutzer hat das Update unterbrochen !
+install_updates_now=Jetzt installieren!
+update_dialog_cancel=Abbrechen
+update_dialog_yes=Ja(empfohlen)
