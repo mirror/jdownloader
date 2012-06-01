@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "http://(www\\.)?[a-z0-9]+\\.bandcamp\\.com/album/[a-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "http://(www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/album/[a-z0-9\\-_]+" }, flags = { 0 })
 public class BandCampComDecrypter extends PluginForDecrypt {
 
     public BandCampComDecrypter(PluginWrapper wrapper) {
@@ -39,6 +39,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         Regex filenameRegex = br.getRegex("<title>(.*?) \\| (.*?)</title>");
         String[] links = br.getRegex("<div class=\"title\">[\t\n\r ]+<a href=\"(/track/.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
