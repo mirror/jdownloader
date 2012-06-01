@@ -1,5 +1,11 @@
 error_service_not_available_right_now=Hizmet mevcut değil 60 san içinde tekrar deneyin.)
 exception_title=Hata meydana geldi
+exit=Kapat
+guiless_extract=Dosya(ları) çıkart...
+install_updates_later=Daha sonra tekrar hatırlat!
+install_updates_now=Şimdi yükle!
 restart_title=Yeniden başlat!
+start=Güncelleyici'yi başlat
 udpates_found=İndirme(ler) bulundu!
 update_dialog_cancel=İptal
+update_dialog_later=Daha sonra tekrar hatırlat (sor)
