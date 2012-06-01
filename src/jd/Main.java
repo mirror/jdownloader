@@ -43,6 +43,7 @@ public class Main {
 
     public static void main(String[] args) {
         try {
+            /* FAKE Commit for coalado */
             checkLanguageSwitch(args);
             ShutdownController.getInstance().addShutdownEvent(RunUpdaterOnEndAtLeastOnceDaily.getInstance());
             jd.Launcher.mainStart(args);
