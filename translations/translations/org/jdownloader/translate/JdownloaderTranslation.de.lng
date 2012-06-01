@@ -1,3 +1,10 @@
+DownloadWatchDog_onShutdownRequest_msg=Möchten Sie die laufenden Downloads wirklich abbrechen um JDownloader zu beenden ?
+Extraction_onShutdownRequest_msg=Entpacken abbrechen ?
+Main_run_autostart_msg=Die Downloads werden in ein paar Sekunden starten
+Mainstart_now=Jetzt starten !
+SetDownloadFolderAction_no=Auswahl
+SetDownloadFolderAction_yes=Paket
+StartDownloadsAction_createTooltip_=Downloads starten
 controller_packages_defaultname=various
 controller_status_connectionproblems=Verbindung verloren
 controller_status_containererror=Container Fehler
