@@ -1,4 +1,5 @@
 AutoDetectAction_AutoDetectAction_=Automatische Konfiguration
+AutoDetectAction_run_failed=JDownloader konnte keine Reconnect Einstellungen finden. Hast du alle Informationen richtig eingegeben? Hast du eine dynamische IP Verbindung?
 DataCompareDialog_DataCompareDialog_=Router Informationen vergleichen
 DataCompareDialog_layoutDialogContent__desc=Bitte überprüfe die folgenden Informationen und versuche alle leeren Felder so gut wie möglich auszufüllen
 DataCompareDialog_layoutDialogContent_firmware=Firmware/Version

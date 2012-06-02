@@ -495,6 +495,7 @@ authtablemodel_column_username=Benutzername
 buyaction_message=Die meisten Hoster bieten einen "Premium Modus" an. Der Download ist in diesem Premiummodus viel schneller.
 buyaction_title=Einen Premium Account kaufen
 buyaction_title_buy_account=Weiter
+config_fontname=default
 downloadview_all=Alle Downloads
 downloadview_failed=Fehlgeschlagene Downloads
 downloadview_running=Laufende Downloads
