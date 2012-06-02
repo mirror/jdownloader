@@ -1,7 +1,7 @@
 DownloadWatchDog_onShutdownRequest_=¡Descargas en progreso!
 DownloadWatchDog_onShutdownRequest_nonresumable=No hay descargas que puedan ser pausadas actualmente
 DuplicateAction_DuplicateAction_=Duplicar regla
-Extraction_onShutdownRequest_=Hay una extracción en progreso!
+Extraction_onShutdownRequest_=¡La extracción aun está en proceso!
 Extraction_onShutdownRequest_msg=¿Cancelar extracción?
 ImportAction_tt=Importar Reglas desde archivos *.jdfilter (*.jdregexfilter)
 LinkCollector_addCrawledLink_offlinepackage=Archivos fuera de línea
@@ -104,6 +104,7 @@ gui_settings_linkgrabber_title=Filtro de LinkGrabber
 gui_settings_plugins_title=Ajustes de plugins
 gui_settings_premium_description=Ingrese y administre todas sus cuentas Premium/Gold/Platinium.
 gui_settings_premium_title=Gestor de cuentas
+gui_settings_proxy_description=Si se necesita un servidor proxy para conectarse a Internet, por favor introduce sus datos aquí. JDownloader puede rotar entre varios proxies para evitar los tiempos de espera. El proxy por defecto se usará en las conexiones que no estén limitadas por la IP.
 gui_settings_proxy_title=Gestor de conexiones
 gui_settings_reconnect_title=Reconectar
 gui_settings_reconnect_title_method=Método de reconexión
