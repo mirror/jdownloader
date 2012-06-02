@@ -8,13 +8,16 @@ LinkCollector_addCrawledLink_offlinepackage=Archivos fuera de línea
 LinkCollector_addCrawledLink_variouspackage=Varios archivos
 LinkCollector_archiv=%s1
 LinkCollector_onShutdownRequest_=¡LinkCollector aun se está ejecutando!
+LinkCollector_onShutdownRequest_msg=Desea detener el recolector de enlaces?
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=Archivos fuera de línea
 LinkgrabberFilterRule_duplicate=%s1 (copia)
 Main_run_autostart_=Comenzando Descargas...
 Main_run_autostart_msg=Las descargas empezarán en unos segundos...
 Mainstart_now=Comenzar ahora!
+PackagizerSettings_folderbypackage_rule_name=Crear un subdirectorio con el nombre del Paquete
 RemoveAction_actionPerformed_rly_msg=¿¿Realmente quieres eliminar todas las reglas seleccionadas??
 SetDownloadFolderAction_actionPerformed_=Paquete individuales %s1
+SetDownloadFolderAction_msg=Cambiar directorio de Descarga para todo el Paquete %s1, o solo para los enlaces seleccionados %s2
 SetDownloadFolderAction_no=Seleccion
 SetDownloadFolderAction_yes=Paquete
 StartDownloadsAction_createTooltip_=Comenzar Descargas
@@ -111,7 +114,7 @@ gui_warning_reconnectunknown=Error de reconexion
 jd_controlling_SingleDownloadController_askexists=El archivo '%s1' ya existe en el paquete '%s2'. ¿Qué desea hacer?
 jd_controlling_SingleDownloadController_askexists_title=El archivo existe
 jd_controlling_reconnect_Reconnector_progress_failed2=La reconexión ha fallado demasiadas veces y ha sido desactivada. Por favor, revisa tus ajustes.
-jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Se a elegido no reconectar</u></b><br/><p>La Reconexión es un método para evitar los tiempos de espera que imponen algunos Host a sus servicios gratuitos. <br>No sirve de nada en cuentas Premium.</p><p>Más acerca de la Reconexión<a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>aquí</a>.</p>
+jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Se ha elegido no reconectar</u></b><br/><p>La Reconexión es un método para evitar los tiempos de espera que imponen algunos Host a sus servicios gratuitos. <br>No sirve de nada en cuentas Premium.</p><p>Más acerca de la Reconexión<a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>aquí</a>.</p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=No reconectar
 literally_offline=Fuera de línea
 literally_yes=Sí
