@@ -298,15 +298,23 @@ public class TurboBitNet extends PluginForHost {
         }
         // Ticket Time
         String ttt = parseImageUrl(br.getRegex(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(null)).getMatch(0), true);
+        int maxWait = 9999, realWait = 0;
+        for (String s : br.getRegex(tb(12)).getColumn(0)) {
+            realWait = Integer.parseInt(s);
+            if (realWait != 0) {
+                if (realWait < maxWait) maxWait = realWait;
+            }
+        }
         int tt = 60;
         if (ttt != null) {
             tt = Integer.parseInt(ttt);
-            if (tt < 60 || tt > 600) {
+            tt = tt < realWait ? tt : realWait;
+            if (tt < 30 || tt > 600) {
                 ttt = parseImageUrl(tb(2) + tt + "};" + br.getRegex(tb(3)).getMatch(0), false);
                 if (ttt == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1001l); }
                 tt = Integer.parseInt(ttt);
             }
-            logger.info(" Waittime detected, waiting " + ttt + " seconds from now on...");
+            logger.info(" Waittime detected, waiting " + String.valueOf(tt) + " seconds from now on...");
             if (tt > 250) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l); }
         }
 
@@ -577,7 +585,7 @@ public class TurboBitNet extends PluginForHost {
     }
 
     private String tb(final int i) {
-        final String[] s = new String[11];
+        final String[] s = new String[12];
         s[0] = "fe8cfbfafa57cde31bc2b798df5141ab2dc171ec0852d89a1a135e3f116c83d15d8bf93a";
         s[1] = "fddbfbfafa57cdef1a90b5cedf5647ae2cc572ec0958dd981e125c68156882d65d82f869";
         s[2] = "fdd9fbf2fb05cde71a97b69edf5742f1289470bb0a5bd9c81a1b5e39116c85805982fc6e880ce26a201651b8ea211874e4232d90c59b6462ac28d2b26f0537385fa6";
@@ -589,6 +597,7 @@ public class TurboBitNet extends PluginForHost {
         s[8] = "fe8cfbfafa57cde31bc2b798df5146ad29c071b6080edbca1a135f6f156984d75982fc6e8800e338";
         s[9] = "ff88";
         s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f181b5b6f143d85d05dd9f86c8b5be73c254755b5ef741d72e5262ecdc19c";
+        s[11] = "E387A4EAA05A96BF59F8A292B43907F725F865B062379DC10476356F0875EC9650";
         /*
          * we have to load the plugin first! we must not reference a plugin class without loading it before
          */

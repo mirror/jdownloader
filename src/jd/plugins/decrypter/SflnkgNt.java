@@ -94,6 +94,7 @@ public class SflnkgNt extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<String> cryptedLinks = new ArrayList<String>();
@@ -163,7 +164,9 @@ public class SflnkgNt extends PluginForDecrypt {
                 case fancy:
                     captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     captchaBr.getPage("https://safelinking.net/includes/captcha_factory/fancycaptcha.php?hash=" + new Regex(parameter, "safelinking\\.net/p/(.+)").getMatch(0));
-                    // captchaBr.getPage("https://safelinking.net/includes/captcha_factory/fancycaptcha.php?hash=registered&sid=" + new Regex(br, "includes/captcha_factory/securimage/securimage_register\\.php\\?hash=[^\"]+sid=([a-z0-9]{32}))").getMatch(0));
+                    // captchaBr.getPage("https://safelinking.net/includes/captcha_factory/fancycaptcha.php?hash=registered&sid="
+                    // + new Regex(br,
+                    // "includes/captcha_factory/securimage/securimage_register\\.php\\?hash=[^\"]+sid=([a-z0-9]{32}))").getMatch(0));
                     data += "&fancy-captcha=" + captchaBr.toString().trim();
                     break;
                 case qaptcha:
@@ -228,6 +231,7 @@ public class SflnkgNt extends PluginForDecrypt {
 
                 if (captchaRegex.containsKey(cType) || data.contains("link-password")) {
                     post(parameter, data, true);
+                    if (br.getHttpConnection().getResponseCode() == 500) logger.warning("SafeLinking: 500 Internal Server Error. Link: " + parameter);
                 }
 
                 if (br.containsHTML(captchaRegex.get(cType)) || br.containsHTML(PASSWORDPROTECTEDTEXT)) {
@@ -271,6 +275,7 @@ public class SflnkgNt extends PluginForDecrypt {
                 if (link.matches(".*safelinking\\.net/d/.+")) {
                     get(link);
                     link = br.getRedirectLocation();
+                    link = link == null ? br.getRegex("location=\"(http[^\"]+)").getMatch(0) : link;
                     if (link == null) {
                         logger.warning("SafeLinking: Sever issues? continuing...");
                         logger.warning("SafeLinking: Please confirm via browser, and report any bugs to developement team. :" + parameter);
