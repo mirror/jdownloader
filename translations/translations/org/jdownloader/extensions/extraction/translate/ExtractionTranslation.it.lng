@@ -27,6 +27,7 @@ filename=Nome file
 files=file
 hoster=Hoster
 local=Stato file
+menu_tools_extract_files=Estrai file
 name=Estrai archivio
 offline=File offline o mancante
 offline_tt=Non è presente nessun collegamento per questa parte in questo pacchetto, o il link è offline
