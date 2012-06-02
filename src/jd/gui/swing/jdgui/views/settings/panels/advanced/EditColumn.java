@@ -8,13 +8,12 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.swing.exttable.columns.ExtComponentColumn;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 
@@ -96,8 +95,8 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
 
     public EditColumn() {
         super("Actions");
-        renderer = new JPanel(new MigLayout("ins 2", "[]", "[]"));
-        editor = new JPanel(new MigLayout("ins 2", "[]", "[]"));
+        renderer = new RendererMigPanel("ins 2", "[]", "[]");
+        editor = new RendererMigPanel("ins 2", "[]", "[]");
         editorInfo = new InfoAction();
 
         rendererInfo = new InfoAction();
