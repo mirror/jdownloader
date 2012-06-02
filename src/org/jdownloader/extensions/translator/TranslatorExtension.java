@@ -67,7 +67,8 @@ import org.tmatesoft.svn.core.wc.SVNCommitPacket;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 
 /**
- * Extensionclass. NOTE: All extensions have to follow the namescheme to end with "Extension" and have to extend AbstractExtension
+ * Extensionclass. NOTE: All extensions have to follow the namescheme to end
+ * with "Extension" and have to extend AbstractExtension
  * 
  * @author thomas
  * 
@@ -214,7 +215,8 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     /**
-     * Has to return the Extension MAIN Icon. This icon will be used,for example, in the settings pane
+     * Has to return the Extension MAIN Icon. This icon will be used,for
+     * example, in the settings pane
      */
     @Override
     public ImageIcon getIcon(int size) {
@@ -293,7 +295,8 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     /**
-     * Returns the Settingspanel for this extension. If this extension does not have a configpanel, null can be returned
+     * Returns the Settingspanel for this extension. If this extension does not
+     * have a configpanel, null can be returned
      */
     @Override
     public ExtensionConfigPanel<?> getConfigPanel() {
@@ -648,7 +651,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             for (TranslationHandler h : set) {
                 for (Method m : h.getMethods()) {
                     TranslateEntry te = map.get(m);
-                    if (te.isTranslationSet()) return true;
+                    if (te != null && te.isTranslationSet()) return true;
                 }
 
             }
