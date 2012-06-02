@@ -1,5 +1,0 @@
-<jDownloader>
-  <method name="cryptlink.ws" author="ManiacMansion" services="cryptlink.ws"/>
-  <format type="png" letterNum="3" minLetterNum="1" maxLetterNum="3" />
-
-</jDownloader>

@@ -1,9 +1,0 @@
-plugins_optional_extraction_crcerrorin=Разархивирането неуспешно (CRC грешка при %s1)
-plugins_optional_extraction_error_extrfailedcrc=Разархивирането неуспешно (CRC грешка при непознат файл)
-plugins_optional_extraction_filefilter=Всички поддържани формати
-plugins_optional_extraction_filefilter_extractto=Директория, където да бъдат разархивирани файловете
-plugins_optional_extraction_messages=Избраният път не съществува: %s1
-plugins_optional_extraction_status_extractfailedpass=Неуспешно разархивиране (парола)
-plugins_optional_extraction_status_extractok=Разархивирането успешно
-plugins_optional_extraction_status_notenoughspace=Няма достатъчно място за разархивирането.
-plugins_optional_extraction_status_passfound=Паролата намерена
