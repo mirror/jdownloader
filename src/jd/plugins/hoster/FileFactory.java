@@ -159,7 +159,7 @@ public class FileFactory extends PluginForHost {
             return ai;
         }
         this.br.getPage(COOKIE_HOST + "/member/");
-        if (!br.containsHTML("\"greenText\">Premium member until<")) {
+        if (!br.containsHTML("\"greenText\">(Premium member until<|Lifetime Member<)")) {
             ai.setStatus("Registered (free) User");
             ai.setUnlimitedTraffic();
             account.setProperty("freeAccount", true);
@@ -171,12 +171,16 @@ public class FileFactory extends PluginForHost {
             }
         } else {
             account.setProperty("freeAccount", false);
-            String expire = this.br.getMatch("Premium member until.*?datetime=\"(.*?)\"");
-            if (expire == null) {
-                account.setValid(false);
-                return ai;
+            if (br.containsHTML("\"greenText\">Lifetime Member<")) {
+                ai.setValidUntil(-1);
+            } else {
+                String expire = this.br.getMatch("Premium member until.*?datetime=\"(.*?)\"");
+                if (expire == null) {
+                    account.setValid(false);
+                    return ai;
+                }
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.UK));
             }
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.UK));
             final String loaded = this.br.getRegex("You have used (.*?)out").getMatch(0);
             String max = this.br.getRegex("limit of(.*?\\. )").getMatch(0);
             if (max != null && loaded != null) {
