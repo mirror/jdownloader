@@ -1,4 +1,4 @@
-UPNPRouterPlugin_run_mesg=Scansione di titte le schede di rete
+UPNPRouterPlugin_run_mesg=Scansione di tutte le schede di rete
 UPNPRouterPlugin_run_wizard_title=Procedura guida uPnP router
 interaction_UpnpReconnect_wanservice_ip=Protocollo internet
 interaction_UpnpReconnect_wanservice_ppp=Protocollo punto-a-punto
