@@ -6,10 +6,10 @@ import javax.swing.Box;
 
 import jd.gui.swing.laf.LookAndFeelController;
 
-import org.appwork.app.gui.MigPanel;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.MigPanel;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.Checkbox;

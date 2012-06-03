@@ -32,7 +32,7 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;

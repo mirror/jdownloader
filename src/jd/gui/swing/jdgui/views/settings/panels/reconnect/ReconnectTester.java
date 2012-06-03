@@ -19,8 +19,8 @@ import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import jd.nutils.Formatter;
 
-import org.appwork.app.gui.MigPanel;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.MigPanel;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.images.NewTheme;

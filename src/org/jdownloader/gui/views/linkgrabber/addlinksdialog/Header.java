@@ -9,7 +9,7 @@ import javax.swing.JLabel;
 import javax.swing.JSeparator;
 import javax.swing.UIManager;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 
 public abstract class Header extends MigPanel implements ActionListener {
 

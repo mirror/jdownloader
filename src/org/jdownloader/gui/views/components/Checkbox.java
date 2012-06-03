@@ -4,8 +4,8 @@ import javax.swing.Box;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 
-import org.appwork.app.gui.MigPanel;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtCheckBox;
 
 public class Checkbox extends MigPanel {

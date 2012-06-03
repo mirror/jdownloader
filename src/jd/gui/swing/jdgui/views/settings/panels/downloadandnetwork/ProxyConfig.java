@@ -18,7 +18,7 @@ import jd.controlling.proxy.ProxyEvent;
 import jd.controlling.proxy.ProxyInfo;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
 import org.appwork.utils.Regex;

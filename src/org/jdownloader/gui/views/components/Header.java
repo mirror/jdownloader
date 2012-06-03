@@ -6,8 +6,8 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 
-import org.appwork.app.gui.MigPanel;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.HeaderInterface;

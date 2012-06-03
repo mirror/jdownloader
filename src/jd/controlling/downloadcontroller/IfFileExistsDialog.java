@@ -12,8 +12,8 @@ import javax.swing.JSeparator;
 import jd.Launcher;
 import jd.gui.swing.laf.LookAndFeelController;
 
-import org.appwork.app.gui.MigPanel;
 import org.appwork.storage.JSonStorage;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.AbstractDialog;

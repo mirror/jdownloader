@@ -11,7 +11,7 @@ import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitD
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.ViewTestResultTableModel;
 import jd.gui.swing.laf.LookAndFeelController;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;

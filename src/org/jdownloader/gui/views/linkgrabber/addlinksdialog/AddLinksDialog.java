@@ -38,9 +38,9 @@ import jd.gui.swing.laf.LookAndFeelController;
 import jd.parser.html.HTMLParser;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.app.gui.MigPanel;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.swing.components.ExtTextField;

@@ -18,7 +18,7 @@ import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.ipcheck.event.IPControllListener;
 import jd.gui.swing.laf.LookAndFeelController;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.utils.StringUtils;

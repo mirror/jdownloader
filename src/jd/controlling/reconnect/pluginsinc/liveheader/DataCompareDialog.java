@@ -12,7 +12,7 @@ import javax.swing.JTextField;
 
 import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.os.CrossSystem;

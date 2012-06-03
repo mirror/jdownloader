@@ -3,7 +3,7 @@ package jd.gui.swing.jdgui.menu;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 
 public class MenuEditor extends MigPanel {
     /**

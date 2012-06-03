@@ -11,9 +11,9 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.LinkgrabberFilter;
 
-import org.appwork.app.gui.MigPanel;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtCheckBox;

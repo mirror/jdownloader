@@ -32,12 +32,12 @@ import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitD
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.test.PackagizerSingleTestTableModel;
 import jd.gui.swing.laf.LookAndFeelController;
 
-import org.appwork.app.gui.MigPanel;
 import org.appwork.app.gui.copycutpaste.CopyAction;
 import org.appwork.app.gui.copycutpaste.CutAction;
 import org.appwork.app.gui.copycutpaste.DeleteAction;
 import org.appwork.app.gui.copycutpaste.PasteAction;
 import org.appwork.app.gui.copycutpaste.SelectAction;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtSpinner;
 import org.appwork.swing.components.ExtTextField;

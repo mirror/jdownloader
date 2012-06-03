@@ -3,7 +3,7 @@ package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog;
 import java.awt.Component;
 import java.awt.event.MouseListener;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 
 public class FilterPanel extends MigPanel {
 

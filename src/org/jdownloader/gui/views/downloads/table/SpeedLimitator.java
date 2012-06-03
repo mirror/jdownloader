@@ -14,7 +14,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.SizeSpinner;
 import org.appwork.utils.formatter.SizeFormatter;

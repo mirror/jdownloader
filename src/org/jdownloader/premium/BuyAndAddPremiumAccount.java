@@ -16,7 +16,7 @@ import jd.gui.swing.dialog.AddAccountDialog;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.Account;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;

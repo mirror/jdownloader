@@ -6,7 +6,7 @@ import java.awt.Rectangle;
 
 import javax.swing.Scrollable;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 
 public class RightPanel extends MigPanel implements Scrollable {
 

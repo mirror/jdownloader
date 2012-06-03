@@ -53,7 +53,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.Application;

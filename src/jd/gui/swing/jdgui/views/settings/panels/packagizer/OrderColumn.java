@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 import javax.swing.JComponent;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.columns.ExtComponentColumn;
 import org.appwork.utils.swing.renderer.RenderLabel;

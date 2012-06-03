@@ -11,8 +11,8 @@ import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.appwork.app.gui.MigPanel;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;

@@ -35,9 +35,9 @@ import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.app.gui.MigPanel;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging.Log;

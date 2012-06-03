@@ -20,7 +20,7 @@ import jd.controlling.reconnect.ipcheck.IPConnectionState;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.ipcheck.event.IPControllListener;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;

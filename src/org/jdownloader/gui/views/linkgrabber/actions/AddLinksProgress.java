@@ -16,7 +16,7 @@ import jd.controlling.linkcrawler.LinkCrawler;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.utils.formatter.TimeFormatter;

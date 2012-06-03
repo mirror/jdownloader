@@ -19,8 +19,8 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ExceptionsRuleDialog;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.FilterRuleDialog;
 
-import org.appwork.app.gui.MigPanel;
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.swing.exttable.ExtTableModel;

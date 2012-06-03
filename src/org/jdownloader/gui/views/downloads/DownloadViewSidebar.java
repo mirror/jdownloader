@@ -4,7 +4,7 @@ import java.awt.Color;
 
 import jd.gui.swing.laf.LookAndFeelController;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 
 public class DownloadViewSidebar extends MigPanel {

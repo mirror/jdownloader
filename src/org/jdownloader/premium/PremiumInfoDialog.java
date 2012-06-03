@@ -14,7 +14,7 @@ import jd.Launcher;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.PluginForHost;
 
-import org.appwork.app.gui.MigPanel;
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.SwingUtils;
