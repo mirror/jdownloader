@@ -768,7 +768,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 Log.L.finer("Create CommitPacket");
                 final SVNCommitPacket packet = s.getCommitClient().doCollectCommitItems(new File[] { Application.getResource("translations/custom") }, false, false, SVNDepth.INFINITY, null);
                 for (SVNCommitItem ci : packet.getCommitItems()) {
-                    if (!ci.getPath().endsWith("." + getLoadedLocale().getId() + ".lng") && !ci.getPath().endsWith("." + getLoadedLocale().getId() + ".json")) {
+                    if (!ci.getPath().endsWith("." + getLoadedLocale().getId() + ".lng") && !ci.getPath().endsWith(getLoadedLocale().getId() + ".json")) {
                         packet.setCommitItemSkipped(ci, true);
                         continue;
                     }
