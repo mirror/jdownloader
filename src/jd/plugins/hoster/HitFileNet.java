@@ -255,11 +255,10 @@ public class HitFileNet extends PluginForHost {
         // Ticket Time
         String ttt = parseImageUrl(br.getRegex(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(null)).getMatch(0), true);
         int maxWait = 9999, realWait = 0;
-        for (String s : br.getRegex(hf(12)).getColumn(0)) {
+        for (String s : br.getRegex(hf(11)).getColumn(0)) {
             realWait = Integer.parseInt(s);
-            if (realWait != 0) {
-                if (realWait < maxWait) maxWait = realWait;
-            }
+            if (realWait == 0) continue;
+            if (realWait < maxWait) maxWait = realWait;
         }
         int tt = 60;
         if (ttt != null) {
@@ -270,9 +269,9 @@ public class HitFileNet extends PluginForHost {
                 if (ttt == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l); }
                 tt = Integer.parseInt(ttt);
             }
-            logger.info(" Waittime detected, waiting " + ttt + " seconds from now on...");
+            logger.info(" Waittime detected, waiting " + String.valueOf(tt) + " seconds from now on...");
+            if (tt > 250) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l); }
         }
-        if (tt > 250) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l); }
 
         boolean waittimeFail = true;
 
@@ -413,7 +412,7 @@ public class HitFileNet extends PluginForHost {
         s[8] = "fe8cfbfafa57cde31bc2b798df5146ad29c071b6080edbca1a135f6f156984d75982fc6e8800e338";
         s[9] = "ff88";
         s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f181b5b6f143d85d05dd9f86c8b5be73c254755b5ef741d72e5262f98c19a6560af75d6b4";
-        s[11] = "E387A4EAA05A96BF59F8A292B43907F725F865B062379DC10476356F0875EC9650";
+        s[11] = "f980fea5fa0ac9ef1bc7b694de0142f1289075bd0d0ddb9d1b195a6d103d82865cddff69890ae76a251b53efef711d74e07e299bc098";
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
     }
