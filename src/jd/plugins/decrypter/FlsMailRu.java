@@ -61,7 +61,7 @@ public class FlsMailRu extends PluginForDecrypt {
             return decryptedLinks;
         }
         // New kind of links
-        if (br.containsHTML(jd.plugins.hoster.FilesMailRu.DLMANAGERAVAILABLE)) {
+        if (br.containsHTML(jd.plugins.hoster.FilesMailRu.DLMANAGERPAGE)) {
             String filelink = br.getRegex(DLLINKREGEX).getMatch(0);
             String filesize = br.getRegex("</div>[\t\n\r ]+</div>[\t\n\r ]+</td>[\t\n\r ]+<td title=\"(\\d+(\\.\\d+)? [^<>\"]*?)\">").getMatch(0);
             final String filename = br.getRegex("<title>([^<>\"]*?)  скачать [^<>\"]*?@Mail\\.Ru</title>").getMatch(0);
