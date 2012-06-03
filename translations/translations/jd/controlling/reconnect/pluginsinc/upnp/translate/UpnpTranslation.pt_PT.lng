@@ -8,3 +8,4 @@ jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_ti
 literally_choose_router=Escolher dispositivo
 literally_control_url=Endereço de controlo
 literally_service_type=Tipo serviço
+malformedurl=Endereço de controlo inválido. Tentar Auto-configurador de UPNP.
