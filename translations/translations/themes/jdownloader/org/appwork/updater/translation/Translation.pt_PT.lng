@@ -26,6 +26,7 @@ guiless_locked_close_app=Impossível aceder %s2. Fechar %s1 para continuar.
 guiless_locked_closed_app=%s1 foi fechado. Continuar agora.
 guiless_noupdates=Ignorando actualizações. -noupdates está activo
 guiless_progress=Progresso: %s1% | %s2/%s3
+guiless_progress1=... Progresso: %s1%
 guiless_selfupdate=Actualizador irá actualizar-se sozinho...
 guiless_start_install=Iniciar instalação %s1 ficheiro(s)
 guiless_started_download=Iniciar descargas: %s1
