@@ -44,7 +44,7 @@ public class FilesMailRu extends PluginForHost {
     private static final String UNAVAILABLE2 = ">In process<";
     private static final String INFOREGEX    = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
     public static final String  LINKOFFLINE  = "(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>)";
-    public static final String  NEWLINK      = "class=\"download_type_choose_l\"";
+    public static final String  DLMANAGERPAGE      = "class=\"download_type_choose_l\"";
 
     public FilesMailRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -189,7 +189,7 @@ public class FilesMailRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(downloadLink.getStringProperty("folderID"));
-        if (br.containsHTML(NEWLINK)) {
+        if (br.containsHTML(DLMANAGERPAGE)) {
             if (br.containsHTML(LINKOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filesize = br.getRegex("</div>[\t\n\r ]+</div>[\t\n\r ]+</td>[\t\n\r ]+<td title=\"(\\d+(\\.\\d+)? [^<>\"]*?)\">").getMatch(0);
             final String filename = br.getRegex("<title>([^<>\"]*?)  скачать [^<>\"]*?@Mail\\.Ru</title>").getMatch(0);

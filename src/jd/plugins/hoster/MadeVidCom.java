@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,18 +27,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "madevid.com" }, urls = { "http://(www\\.)?madevid\\.com/watchvideo/[A-Z0-9]+\\-[A-Z0-9]+" }, flags = { 0 })
+public class MadeVidCom extends PluginForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wikifortio.com" }, urls = { "http://(www\\.)?wikifortio\\.com/\\d+/" }, flags = { 0 })
-public class WikiFortioCom extends PluginForHost {
-
-    public WikiFortioCom(PluginWrapper wrapper) {
+    public MadeVidCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.wikifortio.com/contact/";
+        return "http://www.madevid.com/madevid_pages/bc240d93-9";
     }
 
     @Override
@@ -47,20 +44,22 @@ public class WikiFortioCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(doesn\\'t exist or has expired and is no longer available<|>We are sorry but file \\')")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("class=\"filename\">File name: <strong>([^<>\"]*?)</strong>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<input type=\"hidden\" name=\"fileName\" value=\"([^<>\"]*?)\"/>").getMatch(0);
-        String filesize = br.getRegex("<td>Size:</td>[\t\n\r ]+<td>([^<>\"]*?)\\&nbsp;</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        if (br.getURL().contains("madevid.com/Default.aspx")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<div class=\"video_name\" >([^<>\"]*?)</div>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<meta property=\"og:title\" content=\"MADEVID \\- ([^<>\"]*?)\">").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), "act=download&fid=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0) + "&fileName=" + Encoding.urlEncode(downloadLink.getName()), true, -2);
+        final String server = br.getRegex("property=\"og:image\" content=\"(http://serv\\d+\\.madevid\\.com/)").getMatch(0);
+        String dllink = br.getRegex("<li><a href=\"javascript:start_embed\\(\\'([^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null || server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = server + "vids/" + dllink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
