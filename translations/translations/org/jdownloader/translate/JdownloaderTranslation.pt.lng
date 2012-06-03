@@ -1,4 +1,5 @@
 DownloadWatchDog_onShutdownRequest_=Descargas em andamento!
+DownloadWatchDog_onShutdownRequest_msg=Deseja parar as descargas em andamento e sair do JDownloader?
 DownloadWatchDog_onShutdownRequest_nonresumable=Sem descargas suspensíveis em andamento!
 DuplicateAction_DuplicateAction_=Duplicar regra
 Extraction_onShutdownRequest_=Extracção em andamento!
@@ -6,6 +7,8 @@ Extraction_onShutdownRequest_msg=Interromper Extracção?
 LinkCollector_addCrawledLink_offlinepackage=Ficheiros Offline
 LinkCollector_addCrawledLink_variouspackage=Vários ficheiros
 LinkCollector_archiv=%s1
+LinkCollector_onShutdownRequest_=Colector de endereços ainda está activo!
+LinkCollector_onShutdownRequest_msg=Desaja parar o Colector de Endereços?
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=Ficheiros Offline
 LinkgrabberFilterRule_duplicate=%s1 (cópia)
 Main_run_autostart_=Iniciando descargas
