@@ -1,0 +1,8 @@
+UpdateServer_UpdaterGui_onStateChange_branchlist=Cerca la versioen più recente
+UpdateServer_UpdaterGui_onStateChange_filter=Cerca aggiornamenti
+UpdateServer_UpdaterGui_runInEDT_finished=Completati - nessun aggiornamento
+guiless_progress=...Progresso: %s1%
+list_optionals=. %s1
+literally_exit=Controllo aggiornamenti completato - Esci
+log_x_files_to_update_found=Trovati:%s2file da scaricare, %s1 file da installare & %s3 file obsoleti
+update_dialog_news_button_url=http://www.jdownloader.org/changelog

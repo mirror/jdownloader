@@ -1,3 +1,6 @@
+DataCompareDialog_layoutDialogContent_firmware=Firmware/versione
+DataCompareDialog_layoutDialogContent_manufactorName=Produttore
+GetIPAction_GetIPAction_=Ottieni IP router
 gui_btn_abort=Annulla
 gui_btn_cancel=Annulla
 gui_btn_help=Aiuto
