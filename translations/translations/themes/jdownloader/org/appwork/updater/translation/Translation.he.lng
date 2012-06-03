@@ -1,8 +1,15 @@
+JDUpdater_start_updater_update_title=נמצא גרסה חדשה!
+exception_title=התרחשה שגיאה
+exit=סגור
+guiless_downloadfinished=הורדות הסתיימו.
+guiless_extract=חלץ קבצים...
 guiless_files_ready_for_install=%s1 קבצים ממתינים להתקנה!
 guiless_files_wait_for_removal=%s1 קבצים פגי תוקף יוסרו.
+guiless_installFinished=התקנה הסתיימה
 guiless_locked_closed_app=%s1 נסגר. המשך כעת.
 guiless_updates_waiting_for_download=%s1 קבצים נחוצים להורדה
 install_updates_later=שאל אותי מאוחר יותר
+install_updates_now=התקן כעת!
 update_dialog_cancel=בטל
 update_dialog_later=שאל אותי מאוחר יותר
 updates_are_ready_for_install_now=%s1 עדכונים מוכנים להתקנה.
