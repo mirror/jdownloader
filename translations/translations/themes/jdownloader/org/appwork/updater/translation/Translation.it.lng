@@ -1,11 +1,12 @@
 JDUpdater_start_updater_update_msg=Riavvia ora per effettuare l'aggiornamento.
 dialog_rly_cancel=Annullare l'aggiornamento?
 error_service_not_available_right_now=Servizio non disponibile. Riprova tra 60 secondi.
+guiless_download_data=Download pacchetto aggiornamento...
 guiless_downloaded_hashlist=Il progetto contiene %s1 file
-guiless_downloadfinished=Downlaod completato.
+guiless_downloadfinished=Download completato.
 guiless_start_install=Avvio installazione file %s1
 guiless_started_download=Avvia download: %s1
-guiless_you_are_up2date=E' installata la versione aggiornata
+guiless_you_are_up2date=La versione installata è aggiornata
 literally_exit=Controllo aggiornamenti completato - Esci
 restart_required_title=E' richiesto il riavvio
 restart_title=Riavvia!
