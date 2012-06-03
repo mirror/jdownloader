@@ -1,6 +1,10 @@
 DownloadWatchDog_onShutdownRequest_=I download sono in corso!
+DownloadWatchDog_onShutdownRequest_msg=Fermare i download in esecuzione per uscire da JDownloader?
 DuplicateAction_DuplicateAction_=Regola duplicata
 ExportAction_ExportAction_tt=Salva le regole in un file. -Backup - Condividili con altri
+LinkCollector_archiv=%s1
+LinkCollector_onShutdownRequest_msg=Fermare il collettore collegamenti?
+LinkgrabberFilterRule_duplicate=%s1 (copia)
 Main_run_autostart_=Avvio download
 Main_run_autostart_msg=I download si avvierano tra qualche secondo...
 Mainstart_now=Avvia ORA!

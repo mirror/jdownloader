@@ -78,4 +78,5 @@ progress=%s3 %s1/%s2
 proxy_direct=Diretto %s1
 proxy_http=%s1:%s2 (Http Proxy)
 proxy_none=Diretto
+proxy_socks4=%s1:%s2 (Socks4 Proxy)
 proxy_socks5=%s1:%s2 (Socks5 Proxy)
