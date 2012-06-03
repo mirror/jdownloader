@@ -1,3 +1,4 @@
+basics_yes=Sì
 captchacontroller_cancel_dialog_allorhost=Annulla finestra dialogo Captcha
 captchacontroller_cancel_dialog_allorhost_all=Annulla tutti i captcha pendenti
 captchacontroller_cancel_dialog_allorhost_cancelhost=Non visualizzare i captcha pendenti per %s1
@@ -55,9 +56,11 @@ gui_javacheck_newerjavaavailable_msg=JDownloader viene eseguito basandosi su Jav
 gui_javacheck_newerjavaavailable_title=Versione Java non aggiornata: %s1!
 gui_mainframe_title_updatemessage2=%s1 aggiornamenti disponibili
 gui_settings__gui_title=Aspetto
+gui_settings_downloadcontroll_title=Gestione download
 gui_settings_general_title=Genereale
 gui_warning_reconnect_running=in esecuzione...
 gui_warning_reconnectunknown=Riconnessione sconosciuta
+literally_yes=Sì
 plugins_error_downloadfailed=Download fallito
 plugins_errors_disconnect=Disconnettere?
 plugins_errors_error=Errore:

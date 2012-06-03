@@ -1,8 +1,17 @@
 UpdateServer_UpdaterGui_onStateChange_branchlist=Cerca la versioen più recente
+UpdateServer_UpdaterGui_onStateChange_download=Download
 UpdateServer_UpdaterGui_onStateChange_filter=Cerca aggiornamenti
+UpdateServer_UpdaterGui_onUpdaterModuleStart_download=Download %s1
 UpdateServer_UpdaterGui_runInEDT_finished=Completati - nessun aggiornamento
+UpdateServer_UpdaterGui_runInEDT_noupdates=E' installata la versione aggiornata!
+download_failed_resume=Download fallito. prova a recuperare...
+download_failed_retry=Download fallito. Riprova...
+guiless_downloadfinished=Download completato.
 guiless_progress=...Progresso: %s1%
+guiless_you_are_up2date=E' installata la versione aggiornata
 list_optionals=. %s1
 literally_exit=Controllo aggiornamenti completato - Esci
 log_x_files_to_update_found=Trovati:%s2file da scaricare, %s1 file da installare & %s3 file obsoleti
+log_you_are_up2date=E' installata la versione aggiornata
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
+update_dialog_yes=Sì (suggerito)
