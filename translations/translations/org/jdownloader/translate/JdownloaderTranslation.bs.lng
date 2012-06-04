@@ -77,6 +77,7 @@ gui_settings_advanced_description=Sve postavke ovdje su samo za Napredne korisni
 gui_settings_barrierfree_description=Sve opcije ovdje pomažu da JDownloader bude upotrebljiv i ljudima sa svim mogućnostima i hendikepima.
 gui_settings_basicauth_description=Ovdje dodajte HTTP i FTP podatke. Za osnovna logiranja, koja ne zahtijevaju posebne dodatke, može biti korištena osnovna autentifikacija .    Za Premium/Gold/Platin Naloge koristite Upravitelj Naloga!
 gui_settings_basicauth_title=Osnovna Autentifikacija
+gui_settings_general_title=Uopšteno
 gui_settings_plugins_description=JDownloader koristi 'Dodatke' za %s1 web stranica za automatizovanje download-a koji bi trajali jako dugo bez JDownloader. Neki od ovih Dodataka imaju postavke za podešavanje njihovog ponašanja.
 gui_settings_plugins_title=Postavke Dodatka
 gui_settings_premium_title=Upravitelj Naloga
