@@ -74,6 +74,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             @Override
             protected void setStringValue(String value, AdvancedConfigEntry object) {
                 object.setValue(value);
+                AdvancedValueColumn.this.getModel().getTable().repaint();
             }
         };
         register(stringColumn);
@@ -106,6 +107,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                 }, null);
                 if (newV != null) {
                     object.setValue(newV);
+                    AdvancedValueColumn.this.getModel().getTable().repaint();
                 } else {
                     if (!"null".equalsIgnoreCase(value.trim())) {
                         Dialog.getInstance().showErrorDialog("'" + value + "' is not a valid '" + object.getTypeString() + "'");
@@ -139,6 +141,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             @Override
             protected void setBooleanValue(boolean value, AdvancedConfigEntry object) {
                 object.setValue(value);
+                AdvancedValueColumn.this.getModel().getTable().repaint();
             }
         };
         register(booleanColumn);
@@ -199,6 +202,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
             @Override
             protected void setNumberValue(Number value, AdvancedConfigEntry object) {
                 object.setValue(value);
+                AdvancedValueColumn.this.getModel().getTable().repaint();
             }
 
             @Override
@@ -250,6 +254,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
                 try {
                     values = (Object[]) object.getType().getMethod("values", new Class[] {}).invoke(null, new Object[] {});
                     object.setValue(values[value]);
+                    AdvancedValueColumn.this.getModel().getTable().repaint();
                 } catch (IllegalArgumentException e) {
                     e.printStackTrace();
                 } catch (SecurityException e) {

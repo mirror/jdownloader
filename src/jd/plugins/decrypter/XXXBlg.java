@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.org" }, urls = { "http://(www\\.)?xxx-blog\\.(org|to)/((share|sto|com-|u|filefactory/|relink/)[\\w\\./-]+|.*?\\.html|blog/(dvd-rips|scenes|amateur-clips|hd-(scenes|movies)|site-rips|image-sets|games)/.+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.org" }, urls = { "http://(www\\.)?xxx-blog\\.(org|to)/((share|sto|com-|u|filefactory/|relink/)[\\w\\./-]+|.*?\\.html|(blog|typ)/(dvd-rips|scenes|amateur-clips|hd-(scenes|movies)|site-rips|image-sets|games)/.+/)" }, flags = { 0 })
 public class XXXBlg extends PluginForDecrypt {
 
     private static ArrayList<String> pwList = new ArrayList<String>();
@@ -53,11 +53,11 @@ public class XXXBlg extends PluginForDecrypt {
         parameter = parameter.substring(parameter.lastIndexOf("http://"));
         br.getPage(parameter);
         if (br.containsHTML("Fehler 404 - Seite nicht gefunden")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        if (parameter.contains("/blog/")) {
+        if (parameter.contains("/blog/") || parameter.contains("/typ/")) {
             String fpname = br.getRegex("<title>(.*?)\\| XXX-Blog").getMatch(0);
             if (fpname == null) fpname = br.getRegex("rel=\"bookmark\" title=\"(.*?)\"").getMatch(0);
             String pagepiece = br.getRegex("<strong>(.*?)</a></strong></p>").getMatch(0);
-            if (pagepiece == null) pagepiece = br.getRegex("<strong>(.*?)download=highspeed\"").getMatch(0);
+            if (pagepiece == null) pagepiece = br.getRegex("table class=\"dltable\">.*?Download:</strong(.*?)</table").getMatch(0);
             if (pagepiece == null) return null;
             String[] links = HTMLParser.getHttpLinks(pagepiece, "");
             if (links == null || links.length == 0) return null;
@@ -79,7 +79,7 @@ public class XXXBlg extends PluginForDecrypt {
                 Form form = br.getForm(0);
                 if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 dLink = createDownloadlink(form.getAction(null));
-                if (!parameter.matches("http://(www\\.)?xxx-blog\\.(org|to)/((share|sto|com-|u|filefactory/|relink/)[\\w\\./-]+|.*?\\.html|blog/(dvd-rips|scenes|amateur-clips|hd-(scenes|movies)|site-rips|image-sets|games)/.+/)")) decryptedLinks.add(createDownloadlink(parameter));
+                if (!parameter.matches("http://(www\\.)?xxx-blog\\.(org|to)/((share|sto|com-|u|filefactory/|relink/)[\\w\\./-]+|.*?\\.html|(blog|typ)/(dvd-rips|scenes|amateur-clips|hd-(scenes|movies)|site-rips|image-sets|games)/.+/)")) decryptedLinks.add(createDownloadlink(parameter));
             }
             dLink.setSourcePluginPasswordList(pwList);
             decryptedLinks.add(dLink);

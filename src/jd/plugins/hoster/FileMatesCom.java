@@ -106,17 +106,17 @@ public class FileMatesCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + "/[A-Za-z0-9]{12}/([^\"\\'<>]+)").getMatch(1);
+
+        String filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+        if (filename == null) filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + "/[A-Za-z0-9]{12}/([^\"\\'<>]+)").getMatch(1);
         if (filename == null) {
-            filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+            filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
             if (filename == null) {
-                filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                if (filename == null) {
-                    filename = new Regex(correctedBR, "(?i)(File)?name ?:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(2);
-                }
+                filename = new Regex(correctedBR, "(?i)(File)?name ?:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(2);
             }
         }
-        String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+
+        String filesize = new Regex(correctedBR, "\\(([0-9]+ b)\\)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
@@ -490,17 +490,22 @@ public class FileMatesCom extends PluginForHost {
         } else {
             dllink = link.getStringProperty("premlink");
             if (dllink != null) {
+                URLConnectionAdapter con = null;
                 try {
                     Browser br2 = br.cloneBrowser();
-                    URLConnectionAdapter con = br2.openGetConnection(dllink);
+                    con = br2.openGetConnection(dllink);
                     if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                         link.setProperty("premlink", Property.NULL);
                         dllink = null;
                     }
-                    con.disconnect();
                 } catch (Exception e) {
                     link.setProperty("premlink", Property.NULL);
                     dllink = null;
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
             if (dllink == null) {

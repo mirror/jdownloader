@@ -4,12 +4,15 @@ import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.GrayFilter;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JPanel;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.swing.exttable.columns.ExtComponentColumn;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -55,50 +58,72 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
     class ResetAction extends AbstractAction {
         private static final long   serialVersionUID = 1L;
         private AdvancedConfigEntry value;
+        private ImageIcon           reset_no         = NewTheme.I().getIcon("reset", 16);
+        private ImageIcon           reset_yes        = new ImageIcon(GrayFilter.createDisabledImage(NewTheme.I().getIcon("reset", 16).getImage()));
+        private boolean             resetable        = false;
 
         public ResetAction() {
-            super("Reset to Default", NewTheme.I().getIcon("reset", 16));
+            super("Reset to Default");
+            setEnabledIntern(true);
         }
 
         public void actionPerformed(ActionEvent e) {
-            try {
-                Dialog.getInstance().showConfirmDialog(0, "Reset to default?", "Really reset " + value.getKey() + " to " + value.getDefault());
-                value.setValue(value.getDefault());
-                EditColumn.this.getModel().fireTableDataChanged();
-            } catch (DialogClosedException e1) {
-                e1.printStackTrace();
-            } catch (DialogCanceledException e1) {
-                e1.printStackTrace();
-            }
+            if (!resetable) return;
+            EditColumn.this.stopCellEditing();
+            new EDTHelper<Void>() {
+
+                @Override
+                public Void edtRun() {
+                    try {
+                        Dialog.getInstance().showConfirmDialog(0, "Reset to default?", "Really reset " + value.getKey() + " to " + value.getDefault());
+                        value.setValue(value.getDefault());
+                        EditColumn.this.getModel().getTable().repaint();
+                    } catch (DialogClosedException e1) {
+                        e1.printStackTrace();
+                    } catch (DialogCanceledException e1) {
+                        e1.printStackTrace();
+                    }
+                    return null;
+                }
+            }.start(true);
+
         }
 
         public void setEntry(AdvancedConfigEntry value) {
             if (value.getValue() == null) {
-                setEnabled(value.getDefault() != null);
+                setEnabledIntern(value.getDefault() != null);
             } else {
-                setEnabled(!value.getValue().equals(value.getDefault()));
+                setEnabledIntern(!value.getValue().equals(value.getDefault()));
             }
-
             this.value = value;
+        }
+
+        public void setEnabledIntern(boolean b) {
+            if (b) {
+                putValue(Action.SMALL_ICON, reset_no);
+            } else {
+                putValue(Action.SMALL_ICON, reset_yes);
+            }
+            resetable = b;
+            super.setEnabled(b);
         }
 
     }
 
-    public static final int SIZE = 16;
-    private JPanel          renderer;
-    private JPanel          editor;
-    private InfoAction      editorInfo;
-    private InfoAction      rendererInfo;
-    private ResetAction     editorReset;
-    private ResetAction     rendererReset;
-    private JButton         reset;
+    public static final int  SIZE = 16;
+    private RendererMigPanel renderer;
+    private RendererMigPanel editor;
+    private InfoAction       editorInfo;
+    private InfoAction       rendererInfo;
+    private ResetAction      editorReset;
+    private ResetAction      rendererReset;
+    private JButton          reset;
 
     public EditColumn() {
         super("Actions");
         renderer = new RendererMigPanel("ins 2", "[]", "[]");
         editor = new RendererMigPanel("ins 2", "[]", "[]");
         editorInfo = new InfoAction();
-
         rendererInfo = new InfoAction();
 
         editorReset = new ResetAction();
@@ -122,9 +147,14 @@ public class EditColumn extends ExtComponentColumn<AdvancedConfigEntry> {
         renderer.setOpaque(false);
     }
 
-    private JButton getButton(AbstractAction action) {
-        final JButton bt = new JButton(action);
+    private JButton getButton(final AbstractAction action) {
+        final JButton bt = new JButton(action) {
 
+            @Override
+            public void setEnabled(boolean b) {
+            }
+
+        };
         bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         bt.setContentAreaFilled(false);
         bt.setBorderPainted(false);

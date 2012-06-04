@@ -57,6 +57,12 @@ public class VideoBashCom extends PluginForHost {
             }
         }
         DLLINK = br.getRegex("\\&video_url=(http://[^\"\\']+)\\&related_url").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("file=\".*?'(http://.*?)';").getMatch(0);
+            if (DLLINK != null) {
+                DLLINK = DLLINK.replaceAll("'| |\\+", "");
+            }
+        }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();

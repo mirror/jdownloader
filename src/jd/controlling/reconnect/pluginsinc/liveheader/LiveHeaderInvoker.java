@@ -157,6 +157,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
 
         Browser br = new Browser();
         /* set custom timeouts here because 10secs is a LONG time ;) */
+        br.setCookiesExclusive(true);
         br.setReadTimeout(10000);
         br.setConnectTimeout(10000);
         br.setProxy(HTTPProxy.NONE);
@@ -276,10 +277,8 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                         boolean ishttps = false;
                         boolean israw = false;
                         if (toDo.getChildNodes().getLength() != 1) {
-
                             LiveHeaderReconnect.LOG.severe("A REQUEST Tag is not allowed to have childTags.");
                             throw new ReconnectException("A REQUEST Tag is not allowed to have childTags.");
-
                         }
                         final NamedNodeMap attributes = toDo.getAttributes();
                         if (attributes.getNamedItem("https") != null) {
@@ -293,18 +292,13 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                             retbr = this.doRequest(feedback, toDo.getChildNodes().item(0).getNodeValue().trim(), br, ishttps, israw);
                         } catch (final Exception e2) {
                             if (e2 instanceof ReconnectFailedException) { throw e2; }
-
                             retbr = null;
-
                         }
-                        try {
-                            /* DDoS Schutz */
-                            Thread.sleep(350);
-                        } catch (final Exception e) {
-                        }
+                        /* DDoS Schutz */
+                        Thread.sleep(350);
                         if (retbr == null || !retbr.getHttpConnection().isOK()) {
                             LiveHeaderReconnect.LOG.severe("Request error!");
-                            if (feedback != null) feedback.onRequesterror(retbr.getRequest());
+                            if (feedback != null && retbr != null) feedback.onRequesterror(retbr.getRequest());
                         } else {
                             if (feedback != null) feedback.onRequestOK(retbr.getRequest());
                             br = retbr;
@@ -530,8 +524,6 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                 return null;
             }
             try {
-                br.setConnectTimeout(5000);
-                br.setReadTimeout(5000);
                 if (requestProperties != null) {
                     br.getHeaders().putAll(requestProperties);
                 }
@@ -549,7 +541,6 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                 }
                 return br;
             } catch (final IOException e) {
-
                 if (feedback != null) feedback.onRequestExceptionOccured(e, request);
                 LiveHeaderReconnect.LOG.severe("IO Error: " + e.getLocalizedMessage());
                 JDLogger.exception(e);

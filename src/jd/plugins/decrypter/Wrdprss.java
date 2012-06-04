@@ -59,12 +59,8 @@ public class Wrdprss extends PluginForDecrypt {
         for (String pattern : listType2) {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/blog\\.php\\?id=[\\d]+)");
         }
-        String[] listType3 = { "xxx-blog.org/blog" };
-        for (String pattern : listType3) {
-            completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\?p=[\\d]+)");
-        }
         completePattern.append(")");
-        JDLogger.getLogger().finest("Wrdprss: " + (10 + listType1.length + listType2.length + listType3.length) + " Pattern added!");
+        JDLogger.getLogger().finest("Wrdprss: " + (10 + listType1.length + listType2.length) + " Pattern added!");
         return new String[] { completePattern.toString() };
     }
 
@@ -87,7 +83,6 @@ public class Wrdprss extends PluginForDecrypt {
         defaultPasswords.put("doku.cc", new String[] { "doku.cc", "doku.dl.am" });
         defaultPasswords.put("hd-area.org", new String[] { "hd-area.org" });
         defaultPasswords.put("movie-blog.org", new String[] { "movie-blog.org", "movie-blog.dl.am" });
-        defaultPasswords.put("xxx-blog.org", new String[] { "xxx-blog.org", "xxx-blog.dl.am" });
         defaultPasswords.put("zeitungsjunge.info", new String[] { "www.zeitungsjunge.info" });
         defaultPasswords.put("sound-blog.org", new String[] { "sound-blog.org" });
         defaultPasswords.put("cinetopia.ws", new String[] { "cinetopia.ws" });

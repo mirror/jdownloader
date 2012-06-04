@@ -52,6 +52,7 @@ import jd.utils.locale.JDL;
 public class ShrLnksBz extends PluginForDecrypt {
 
     private static String MAINPAGE = "http://share-links.biz/";
+    private static String ua       = RandomUserAgent.generate();
 
     public ShrLnksBz(final PluginWrapper wrapper) {
         super(wrapper);
@@ -73,7 +74,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         br.getHeaders().clear();
         br.getHeaders().put("Cache-Control", null);
         br.getHeaders().put("Pragma", null);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("User-Agent", ua);
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("Accept-Language", "en-us");
         br.getHeaders().put("Accept-Encoding", "gzip,deflate");
