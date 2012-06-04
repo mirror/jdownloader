@@ -108,6 +108,7 @@ action_addcontainer=Добавить контейнер
 action_addcontainer_accelerator=-
 action_addcontainer_mnemonic=-
 action_changelog=Лог изменений
+action_clipboard_observer_tooltip=Включить или выключить наблюдение\r\n за буфером обмена
 action_exit=Выход
 action_help=Помощь
 action_log=Лог
