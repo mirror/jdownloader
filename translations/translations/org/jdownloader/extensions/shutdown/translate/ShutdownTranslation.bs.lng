@@ -1,5 +1,5 @@
 addons_jdshutdown_statusmessage_disabled=Računalnik NEBO izklopljen z strani JDownloader-a
-addons_jdshutdown_statusmessage_enabled=JDownloader bo izlopil računalnik, ko se prenos konča
+addons_jdshutdown_statusmessage_enabled=JDownloader će isključiti računar nakon završetka svih download-a!
 gui_config_jdshutdown_close=Zatvori JDownloader
 gui_config_jdshutdown_enabledOnStart=Omogućeno na Startu
 gui_config_jdshutdown_forceshutdown=Isključi računar (Nije za sve OS)
