@@ -1,3 +1,4 @@
+AutoDetectAction_run_optimize=Uyarla: %s1
 UPNPRouterPlugin_run_mesg=Tüm çalışma ağı arayüzleri taranıyor
 auto=UPNP otomatik ayarlama
 interaction_UpnpReconnect_wanservice_ip=Internet Protokolü
