@@ -92,6 +92,7 @@ plugins_error_downloadfailed=Download neuspješan
 plugins_errors_disconnect=Diskonektuj?
 plugins_errors_error=Greška:
 plugins_errors_hosteroffline=Domaćin je offline?
+plugins_errors_hosterproblem=Problem Domaćina?
 plugins_errors_pluginerror=Greška dodatka. Molimo obavijestite Podršku
 plugins_errors_wrongpassword=Pogrešna šifra
 replacer_browserurl=Zadnji završen Dokument: URL preglednika
