@@ -1,5 +1,5 @@
 AutoDetectAction_AutoDetectAction_=Otomatik Ayar
-AutoDetectAction_run_failed=JDownloader geçerli bir tekrar bağlanma betiği bulamadı. Lütfen bilgileri doğru girdiğinizden ve IPnizin değişken olduğundan emin olun.
+AutoDetectAction_run_failed=JDownloader çalışan bir LiveHeader Yeniden Bağlanma Betiği bulamadı.\n\nLütfen doğru bilgiyi girdiğinizden ve değişken bir IP bağlantısına sahip olduğunuzdan emin olun.
 DataCompareDialog_layoutDialogContent_firmware=Yazılım/Sürüm
 DataCompareDialog_layoutDialogContent_ip=IP ya da Barındırıcı Adı
 DataCompareDialog_layoutDialogContent_ip_help=Web Arayüzü Anamakine Adını girin...
