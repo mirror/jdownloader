@@ -28,6 +28,7 @@ guiless_locked_close_app=Δεν είναι δυνατή η πρόσβαση στ
 guiless_locked_closed_app=Το %s1 έχει κλείσει. Συνέχιση τώρα.
 guiless_noupdates=Παράλειψη των Ενημερώσεων. -Ορίστηκε η παράμετρος noupdates
 guiless_progress=Πρόοδος: %s1% | %s2/%s3
+guiless_progress1=...Πρόοδος: %s1%
 guiless_selfupdate=Η εφαρμογή ενημέρωσης θα ενημερωθεί...
 guiless_start_install=Έναρξη εγκατάστασης %s1 αρχείων
 guiless_started_download=Έναρξη λήψης: %s1
