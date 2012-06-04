@@ -2141,4 +2141,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "default" })
     String config_fontname();
 
+    @Default(lngs = { "en" }, values = { "Folder does not exist!" })
+    String DownloadFolderChooserDialog_handleNonExistingFolders_title_();
+
+    @Default(lngs = { "en" }, values = { "The folder %s1\r\ndoes not exist. Do you want to create it?" })
+    String DownloadFolderChooserDialog_handleNonExistingFolders_msg_(String path);
+
 }

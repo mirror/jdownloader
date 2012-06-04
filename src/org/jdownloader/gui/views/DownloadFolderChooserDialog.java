@@ -109,7 +109,8 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     }
 
     /**
-     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must exist
+     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
+     * exist
      * 
      * @param file
      * @return
@@ -148,10 +149,21 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         d.setFileSelectionMode(FileChooserSelectionMode.DIRECTORIES_ONLY);
 
         final File[] dest = Dialog.getInstance().showDialog(d);
-
+        if (!dest[0].getParentFile().exists()) handleNonExistingFolders(dest[0]);
         if (!isDownloadFolderValid(dest[0])) return null;
         DownloadPath.saveList(dest[0].getAbsolutePath());
         return dest[0];
+    }
+
+    private static void handleNonExistingFolders(File file) {
+        try {
+            Dialog.getInstance().showConfirmDialog(0, _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_title_(), _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_msg_(file.getAbsolutePath()));
+            file.mkdirs();
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
     }
 
     private void setPackageSubFolderSelectionVisible(boolean packager) {

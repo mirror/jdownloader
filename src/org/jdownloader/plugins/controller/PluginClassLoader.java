@@ -25,8 +25,8 @@ public class PluginClassLoader extends URLClassLoader {
         public boolean isUpdateRequired(String name) {
             if (!jared) return false;
             name = name.replace("/", ".");
-            synchronized (dynamicLoadableLibraries) {
-                Iterator<Entry<String, String>> it = dynamicLoadableLibraries.entrySet().iterator();
+            synchronized (DYNAMIC_LOADABLE_LOBRARIES) {
+                Iterator<Entry<String, String>> it = DYNAMIC_LOADABLE_LOBRARIES.entrySet().iterator();
                 while (it.hasNext()) {
                     Entry<String, String> next = it.next();
                     String dynamicPackage = next.getKey();
@@ -57,8 +57,8 @@ public class PluginClassLoader extends URLClassLoader {
         public Class<?> loadClass(String name) throws ClassNotFoundException {
             try {
                 if (jared) {
-                    synchronized (dynamicLoadableLibraries) {
-                        Iterator<Entry<String, String>> it = dynamicLoadableLibraries.entrySet().iterator();
+                    synchronized (DYNAMIC_LOADABLE_LOBRARIES) {
+                        Iterator<Entry<String, String>> it = DYNAMIC_LOADABLE_LOBRARIES.entrySet().iterator();
                         while (it.hasNext()) {
                             Entry<String, String> next = it.next();
                             String dynamicPackage = next.getKey();
@@ -158,10 +158,10 @@ public class PluginClassLoader extends URLClassLoader {
     // return ret;
     // }
     private static final PluginClassLoader       INSTANCE                 = new PluginClassLoader();
-    private static final HashMap<String, String> dynamicLoadableLibraries = new HashMap<String, String>();
+    private static final HashMap<String, String> DYNAMIC_LOADABLE_LOBRARIES = new HashMap<String, String>();
     static {
-        synchronized (dynamicLoadableLibraries) {
-            dynamicLoadableLibraries.put("org.bouncycastle", "bcprov-jdk15on-147.jar");
+        synchronized (DYNAMIC_LOADABLE_LOBRARIES) {
+            DYNAMIC_LOADABLE_LOBRARIES.put("org.bouncycastle", "bcprov-jdk15on-147.jar");
         }
     }
 
