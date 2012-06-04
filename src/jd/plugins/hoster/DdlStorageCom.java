@@ -321,7 +321,8 @@ public class DdlStorageCom extends PluginForHost {
             if (correctedBR.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait)").matches()) {
+        if (correctedBR.contains(">You have reached the download-limit:")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        if (correctedBR.contains("You have to wait")) {
             /** TODO: Improve those regexes */
             String tmphrs = new Regex(correctedBR, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
@@ -330,9 +331,9 @@ public class DdlStorageCom extends PluginForHost {
             String tmpsec = new Regex(correctedBR, "\\s+(\\d+)\\s+seconds?").getMatch(0);
             if (tmphrs == null && tmpmin == null && tmpsec == null) {
                 logger.info("Waittime regexes seem to be broken");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
-            } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, ((Integer.parseInt(tmphrs) * 60 * 60) + (Integer.parseInt(tmpmin) * 60) + Integer.parseInt(tmpsec)) * 1001l);
             }
         }
         if (correctedBR.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }

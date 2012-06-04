@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
@@ -30,7 +29,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "maxvideo.pl" }, urls = { "http://(www\\.)?maxvideo\\.pl/v/[A-Za-z0-9]+" }, flags = { 0 })
@@ -56,8 +54,8 @@ public class MaxVideoPl extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">Link jest błędny lub został usunięty przez użytkownika")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"videoTitle\">([^<>\"/]+) /  <a name=\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"/]+) /  • Maxvideo\\.pl</title>").getMatch(0);
+        String filename = br.getRegex("<div class=\"videoTitle\">([^<>\"]*?)<a").getMatch(0);
+        if (filename == null) filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?) • Maxvideo\\.pl\">").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
         if (br.containsHTML(ONLY4REGISTERED)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.maxvideopl.only4registered", ONLY4REGISTEREDUSERTEXT));
@@ -84,22 +82,7 @@ public class MaxVideoPl extends PluginForHost {
         }
         if (dllink == null) {
             if (br.containsHTML(ONLY4REGISTERED)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.maxvideopl.only4registered", ONLY4REGISTEREDUSERTEXT));
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                for (int i = 0; i <= 5; i++) {
-                    rc.parse();
-                    rc.load();
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, downloadLink);
-                    rc.setCode(c);
-                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) continue;
-                    break;
-                }
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            dllink = br.getRegex("file: \"(http://[^<>\"\\']+\\.flv)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://s\\d+\\.maxvideo\\.pl:\\d+/x/[^<>\"\\']+\\.flv)\"").getMatch(0);
+            // 4.bismarck
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
