@@ -1,0 +1,4 @@
+jd_plugins_optional_interfaces_jdflashgot_security_btn_allow=Разрешить!
+jd_plugins_optional_interfaces_jdflashgot_security_btn_deny=Отказать в доступе!
+jd_plugins_optional_interfaces_jdflashgot_security_message=Внешнее приложение пытается добавить ссылки
+jd_plugins_optional_interfaces_jdflashgot_security_title=Внешний запрос от %s1!
