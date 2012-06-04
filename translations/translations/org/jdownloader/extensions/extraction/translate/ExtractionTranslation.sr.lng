@@ -1,3 +1,4 @@
+offline=Датотека није доступна
 plugins_optional_extraction_crcerrorin=Извлачење није успело (CRC у %s1)
 plugins_optional_extraction_error_extrfailedcrc=Извлачење није успело (CRC у непознатој датотеци)
 plugins_optional_extraction_filefilter=Сви подржани типови
