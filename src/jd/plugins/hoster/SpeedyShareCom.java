@@ -30,7 +30,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedyshare.com" }, urls = { "http://(www\\.)?(speedyshare\\.com/(files?/)?|speedy.sh/)[A-Za-z0-9]+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedyshare.com" }, urls = { "http://(www\\.)?(speedyshare\\.com|speedy.sh)/(files?/)?[A-Za-z0-9]+" }, flags = { 0 })
 public class SpeedyShareCom extends PluginForHost {
 
     private static final String PREMIUMONLY     = "(>This paraticular file can only be downloaded after you purchase|this file can only be downloaded with SpeedyShare Premium)";
@@ -41,6 +41,11 @@ public class SpeedyShareCom extends PluginForHost {
     public SpeedyShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(2000l);
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("//(www\\.)?(speedy\\.sh|speedyshare\\.com)/(files?/)?", "//www.speedyshare.com/"));
     }
 
     @Override
@@ -61,6 +66,7 @@ public class SpeedyShareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         prepBrowser();
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
@@ -73,6 +79,7 @@ public class SpeedyShareCom extends PluginForHost {
         downloadLink.setName(Encoding.htmlDecode(filename));
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         if (br.containsHTML(PREMIUMONLY)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.speedysharecom.errors.only4premium", PREMIUMONLYTEXT));
+        br.setFollowRedirects(false);
         return AvailableStatus.TRUE;
 
     }
