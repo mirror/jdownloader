@@ -1,6 +1,6 @@
 DownloadWatchDog_onShutdownRequest_=İndirmeler devam etmekte!
 DownloadWatchDog_onShutdownRequest_nonresumable=Devam ettirilebilir olmayan indirmeler hala ilerlemekte!
-DuplicateAction_DuplicateAction_=Çoğaltma Kural
+DuplicateAction_DuplicateAction_=Çoğaltma Kuralı
 Extraction_onShutdownRequest_=Çıkartma işlemi hala yürütülüyor!
 Extraction_onShutdownRequest_msg=Çıkartma işleminden vazgeçilsin mi?
 ImportAction_tt=*.jdfilter (*.jdregexfilter) dosyalarından Kuralları içe aktar
@@ -121,7 +121,7 @@ plugins_errors_hosterproblem=Barındırıcı sorunu mu?
 plugins_errors_nointernetconn=Internet bağlantısı yok mu?
 plugins_errors_pluginerror=Eklenti hatası. Lütfen Desteğe bildirin
 plugins_errors_wrongpassword=Parola yanlış
-reconnectmanager_wizard=Yekrar Bağlanma Sihirbazı
+reconnectmanager_wizard=Yeniden Bağlanma Sihirbazı
 replacer_autopassword=Son biten paket: Otomatik Parola
 replacer_available=Son biten Dosya: Mevcut (Evet,Hayır)
 replacer_browserurl=Son biten Dosya: Tarayıcı-URL
