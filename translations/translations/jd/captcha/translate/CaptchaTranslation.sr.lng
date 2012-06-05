@@ -23,6 +23,7 @@ easycaptcha_loadcaptchas_loaddirect=Ако је могуће учитај дир
 easycaptcha_loadcaptchas_threaded=преузимање слике у низу (веома брзо)
 easycaptcha_loadcaptchas_title=Учитавање потврдних кодова
 easycaptcha_mask=Маска:
+easycaptcha_needCaptchas=Потребан вам је потврдни код!
 easycaptcha_orginal=Оригинал:
 easycaptcha_remove=уклони
 easycaptcha_settings=Поставке:

@@ -1,4 +1,9 @@
+contextmenu_main=Архиве
+contextmenu_validate_parent=Провери исправност архиве
+hoster=Домаћин
 offline=Датотека није доступна
+online=Веза је доступна
+packagename=Назив пакета
 plugins_optional_extraction_crcerrorin=Извлачење није успело (CRC у %s1)
 plugins_optional_extraction_error_extrfailedcrc=Извлачење није успело (CRC у непознатој датотеци)
 plugins_optional_extraction_filefilter=Сви подржани типови
@@ -11,3 +16,4 @@ plugins_optional_extraction_status_notenoughspace=Нема довољно про
 plugins_optional_extraction_status_openingarchive=Отварање архиве...
 plugins_optional_extraction_status_passfound=Шифра је пронађена
 plugins_optional_extraction_status_queued=Заказано за извлачење
+settings_extractto=Одредишна фасцикла за распакивање
