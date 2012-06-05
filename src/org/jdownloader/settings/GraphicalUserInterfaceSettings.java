@@ -44,6 +44,16 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @AboutConfig
     int getDialogDefaultTimeout();
 
+    @DefaultEnumValue("ALL")
+    org.jdownloader.gui.views.downloads.View getDownloadView();
+
+    @AboutConfig
+    @Description("Refreshrate in ms for the DownloadView")
+    @DefaultLongValue(500)
+    @SpinnerValidator(min = 50, max = 5000, step = 25)
+    @RequiresRestart
+    public long getDownloadViewRefresh();
+
     @AboutConfig
     @Description("Font to be used. Default value is default.")
     @DefaultStringValue("default")
@@ -56,8 +66,18 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @RequiresRestart
     int getFontScaleFactor();
 
+    FrameStatus getLastFrameStatus();
+
+    @DefaultEnumValue("SKIP_FILE")
+    IfFileExistsAction getLastIfFileExists();
+
     @AboutConfig
     String getLookAndFeel();
+
+    @AboutConfig
+    public String getPassword();
+
+    SearchCategory getSelectedDownloadSearchCategory();
 
     @DefaultStringValue("standard")
     @AboutConfig
@@ -70,35 +90,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @DefaultBooleanValue(true)
     @RequiresRestart
     boolean isAnimationEnabled();
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    boolean isBalloonNotificationEnabled();
-
-    @DefaultBooleanValue(false)
-    boolean isConfigViewVisible();
-
-    @AboutConfig
-    @Description("Enable/disable support for system DPI settings. Default value is true.")
-    @DefaultBooleanValue(true)
-    @RequiresRestart
-    boolean isFontRespectsSystemDPI();
-
-    @AboutConfig
-    @Description("Enable/Disable the Linkgrabber Sidebar")
-    @DefaultBooleanValue(true)
-    @RequiresRestart
-    boolean isLinkgrabberSidebarEnabled();
-
-    @AboutConfig
-    @Description("Enable/Disable the Linkgrabber Sidebar QuicktoggleButton")
-    @DefaultBooleanValue(true)
-    @RequiresRestart
-    boolean isLinkgrabberSidebarToggleButtonEnabled();
-
-    @DefaultBooleanValue(true)
-    @RequiresRestart
-    boolean isLinkgrabberSidebarVisible();
 
     // @AboutConfig
     // @Description("Enable/Disable the Linkgrabber Sidebar")
@@ -116,8 +107,84 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     // @RequiresRestart
     // boolean isDownloadViewSidebarVisible();
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isBalloonNotificationEnabled();
+
+    @AboutConfig
+    @Description("Enable/disable Enable/disable Clipboard monitoring")
+    @DefaultBooleanValue(true)
+    boolean isClipboardMonitored();
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @Description("If disabled, The Hostercolumn will show gray disabled icons if the link is disabled")
+    boolean isColoredIconsForDisabledHosterColumnEnabled();
+
+    @DefaultBooleanValue(false)
+    boolean isConfigViewVisible();
+
+    @AboutConfig
+    @Description("Highlight Table in Downloadview if table is filtered")
+    @DefaultBooleanValue(true)
+    @RequiresRestart
+    boolean isFilterHighlightEnabled();
+
+    @AboutConfig
+    @Description("Enable/disable support for system DPI settings. Default value is true.")
+    @DefaultBooleanValue(true)
+    @RequiresRestart
+    boolean isFontRespectsSystemDPI();
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @Description("If enabled, The User Interface will switch to Linkgrabber Tab if a new job has been added")
+    boolean isLinkgrabberAutoTabSwitchEnabled();
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @Description("If enabled, JDownloader GUI will come to top when new links are added")
+    boolean isLinkgrabberFrameToTopOnNewLinksEnabled();
+
+    @AboutConfig
+    @Description("Enable/Disable the Linkgrabber Sidebar")
+    @DefaultBooleanValue(true)
+    @RequiresRestart
+    boolean isLinkgrabberSidebarEnabled();
+
+    @AboutConfig
+    @Description("Enable/Disable the Linkgrabber Sidebar QuicktoggleButton")
+    @DefaultBooleanValue(true)
+    @RequiresRestart
+    boolean isLinkgrabberSidebarToggleButtonEnabled();
+
+    @DefaultBooleanValue(true)
+    @RequiresRestart
+    boolean isLinkgrabberSidebarVisible();
+
     @DefaultBooleanValue(false)
     boolean isLogViewVisible();
+
+    @DefaultBooleanValue(false)
+    @AboutConfig
+    public boolean isPasswordProtectionEnabled();
+
+    @AboutConfig
+    @Description("If true, ETAColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
+    boolean isPremiumAlertETAColumnEnabled();
+
+    @AboutConfig
+    @Description("If true, SpeedColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
+    boolean isPremiumAlertSpeedColumnEnabled();
+
+    @AboutConfig
+    @Description("If true, TaskColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
+    boolean isPremiumAlertTaskColumnEnabled();
+
+    @AboutConfig
+    @Description("Set to true of you want jd to remember the latest selected download view")
+    @DefaultBooleanValue(false)
+    boolean isSaveDownloadViewCrossSessionEnabled();
 
     @AboutConfig
     @Description("True if move button should be visible in downloadview")
@@ -150,31 +217,27 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isSortColumnHighlightEnabled();
 
     @AboutConfig
-    @Description("Highlight Table in Downloadview if table is filtered")
-    @DefaultBooleanValue(true)
-    @RequiresRestart
-    boolean isFilterHighlightEnabled();
-
-    void setFilterHighlightEnabled(boolean b);
-
-    @AboutConfig
     @Description("Paint all labels/text with or without antialias. Default value is false.")
     @DefaultBooleanValue(false)
     @RequiresRestart
     boolean isTextAntiAliasEnabled();
 
     @AboutConfig
+    @Description("If false, Most of the Tooltips will be disabled")
+    @DefaultBooleanValue(true)
+    boolean isTooltipEnabled();
+
+    // void setDownloadViewSidebarEnabled(boolean b);
+    //
+    // void setDownloadViewSidebarToggleButtonEnabled(boolean b);
+    //
+    // void setDownloadViewSidebarVisible(boolean b);
+
+    @AboutConfig
     @Description("Enable/disable window opacity on Java 6u10 and above. A value of 'false' disables window opacity which means that the window corner background which is visible for non-rectangular windows disappear. Furthermore the shadow for popupMenus makes use of real translucent window. Some themes like SyntheticaSimple2D support translucent titlePanes if opacity is disabled. The property is ignored on JRE's below 6u10. Note: It is recommended to activate this feature only if your graphics hardware acceleration is supported by the JVM - a value of 'false' can affect application performance. Default value is false which means the translucency feature is enabled")
     @DefaultBooleanValue(false)
     @RequiresRestart
     boolean isWindowOpaque();
-
-    @AboutConfig
-    @Description("Enable/disable Enable/disable Clipboard monitoring")
-    @DefaultBooleanValue(true)
-    boolean isClipboardMonitored();
-
-    void setClipboardMonitored(boolean b);
 
     void setActiveConfigPanel(String name);
 
@@ -184,9 +247,19 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setCaptchaScaleFactor(int b);
 
+    void setClipboardMonitored(boolean b);
+
+    void setColoredIconsForDisabledHosterColumnEnabled(boolean b);
+
     void setConfigViewVisible(boolean b);
 
     void setDialogDefaultTimeout(int value);
+
+    void setDownloadView(org.jdownloader.gui.views.downloads.View view);
+
+    public void setDownloadViewRefresh(long t);
+
+    void setFilterHighlightEnabled(boolean b);
 
     void setFontName(String name);
 
@@ -194,21 +267,38 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setFontScaleFactor(int b);
 
+    public void setLastFrameStatus(FrameStatus status);
+
+    void setLastIfFileExists(IfFileExistsAction value);
+
+    void setLinkgrabberAutoTabSwitchEnabled(boolean b);
+
+    void setLinkgrabberFrameToTopOnNewLinksEnabled(boolean b);
+
     void setLinkgrabberSidebarEnabled(boolean b);
 
     void setLinkgrabberSidebarToggleButtonEnabled(boolean b);
 
     void setLinkgrabberSidebarVisible(boolean b);
 
-    // void setDownloadViewSidebarEnabled(boolean b);
-    //
-    // void setDownloadViewSidebarToggleButtonEnabled(boolean b);
-    //
-    // void setDownloadViewSidebarVisible(boolean b);
-
     void setLogViewVisible(boolean b);
 
     void setLookAndFeel(String laf);
+
+    public void setPassword(String password);
+
+    public void setPasswordProtectionEnabled(boolean b);
+
+    void setPremiumAlertETAColumnEnabled(boolean b);
+
+    void setPremiumAlertSpeedColumnEnabled(boolean b);
+
+    void setPremiumAlertTaskColumnEnabled(boolean b);
+
+    void setSaveDownloadViewCrossSessionEnabled(boolean b);
+
+    @DefaultEnumValue("FILENAME")
+    void setSelectedDownloadSearchCategory(SearchCategory selectedCategory);
 
     void setShowMoveDownButton(boolean b);
 
@@ -224,97 +314,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setThemeID(String themeID);
 
-    void setWindowOpaque(boolean b);
-
-    @DefaultEnumValue("SKIP_FILE")
-    IfFileExistsAction getLastIfFileExists();
-
-    void setLastIfFileExists(IfFileExistsAction value);
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @Description("If enabled, The User Interface will switch to Linkgrabber Tab if a new job has been added")
-    boolean isLinkgrabberAutoTabSwitchEnabled();
-
-    void setLinkgrabberAutoTabSwitchEnabled(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @Description("If enabled, JDownloader GUI will come to top when new links are added")
-    boolean isLinkgrabberFrameToTopOnNewLinksEnabled();
-
-    void setLinkgrabberFrameToTopOnNewLinksEnabled(boolean b);
-
-    @DefaultEnumValue("FILENAME")
-    void setSelectedDownloadSearchCategory(SearchCategory selectedCategory);
-
-    SearchCategory getSelectedDownloadSearchCategory();
-
-    @DefaultEnumValue("ALL")
-    org.jdownloader.gui.views.downloads.View getDownloadView();
-
-    void setDownloadView(org.jdownloader.gui.views.downloads.View view);
-
-    @AboutConfig
-    @Description("Set to true of you want jd to remember the latest selected download view")
-    @DefaultBooleanValue(false)
-    boolean isSaveDownloadViewCrossSessionEnabled();
-
-    void setSaveDownloadViewCrossSessionEnabled(boolean b);
-
-    @AboutConfig
-    public String getPassword();
-
-    public void setPassword(String password);
-
-    @DefaultBooleanValue(false)
-    @AboutConfig
-    public boolean isPasswordProtectionEnabled();
-
-    public void setPasswordProtectionEnabled(boolean b);
-
-    @AboutConfig
-    @Description("Refreshrate in ms for the DownloadView")
-    @DefaultLongValue(500)
-    @SpinnerValidator(min = 50, max = 5000, step = 25)
-    @RequiresRestart
-    public long getDownloadViewRefresh();
-
-    public void setDownloadViewRefresh(long t);
-
-    FrameStatus getLastFrameStatus();
-
-    public void setLastFrameStatus(FrameStatus status);
-
-    @AboutConfig
-    @Description("If true, TaskColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
-    boolean isPremiumAlertTaskColumnEnabled();
-
-    void setPremiumAlertTaskColumnEnabled(boolean b);
-
-    @AboutConfig
-    @Description("If true, SpeedColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
-    boolean isPremiumAlertSpeedColumnEnabled();
-
-    void setPremiumAlertSpeedColumnEnabled(boolean b);
-
-    @AboutConfig
-    @Description("If true, ETAColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
-    boolean isPremiumAlertETAColumnEnabled();
-
-    void setPremiumAlertETAColumnEnabled(boolean b);
-
-    @AboutConfig
-    @Description("If false, Most of the Tooltips will be disabled")
-    @DefaultBooleanValue(true)
-    boolean isTooltipEnabled();
-
     void setTooltipEnabled(boolean b);
 
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @Description("If disabled, The Hostercolumn will show gray disabled icons if the link is disabled")
-    boolean isColoredIconsForDisabledHosterColumnEnabled();
+    void setWindowOpaque(boolean b);
 
-    void setColoredIconsForDisabledHosterColumnEnabled(boolean b);
+    void setLanguage(String lng);
+
+    @AboutConfig
+    String getLanguage();
 }

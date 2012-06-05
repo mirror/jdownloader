@@ -2147,4 +2147,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "The folder %s1\r\ndoes not exist. Do you want to create it?" })
     String DownloadFolderChooserDialog_handleNonExistingFolders_msg_(String path);
 
+    @Default(lngs = { "en" }, values = { "Language" })
+    String gui_config_language();
+
+    @Default(lngs = { "en" }, values = { "Restart Required!" })
+    String GUISettings_save_language_changed_restart_required_title();
+
+    @Default(lngs = { "en" }, values = { "You have to restart JDownloader for a language change. Restart now?" })
+    String GUISettings_save_language_changed_restart_required_msg();
+
 }

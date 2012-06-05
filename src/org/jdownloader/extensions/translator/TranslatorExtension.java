@@ -67,8 +67,7 @@ import org.tmatesoft.svn.core.wc.SVNCommitPacket;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 
 /**
- * Extensionclass. NOTE: All extensions have to follow the namescheme to end
- * with "Extension" and have to extend AbstractExtension
+ * Extensionclass. NOTE: All extensions have to follow the namescheme to end with "Extension" and have to extend AbstractExtension
  * 
  * @author thomas
  * 
@@ -215,8 +214,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     /**
-     * Has to return the Extension MAIN Icon. This icon will be used,for
-     * example, in the settings pane
+     * Has to return the Extension MAIN Icon. This icon will be used,for example, in the settings pane
      */
     @Override
     public ImageIcon getIcon(int size) {
@@ -295,8 +293,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     /**
-     * Returns the Settingspanel for this extension. If this extension does not
-     * have a configpanel, null can be returned
+     * Returns the Settingspanel for this extension. If this extension does not have a configpanel, null can be returned
      */
     @Override
     public ExtensionConfigPanel<?> getConfigPanel() {
@@ -348,8 +345,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
      *            TODO
      * @throws InterruptedException
      * @throws SVNException
+     * @throws IOException
      */
-    public void load(TLocale locale, boolean doRevisionCheck, boolean updateSVN) throws InterruptedException, SVNException {
+    public void load(TLocale locale, boolean doRevisionCheck, boolean updateSVN) throws InterruptedException, SVNException, IOException {
         synchronized (this) {
             if (locale == null) return;
             TLocale oldLoaded = loaded;
@@ -371,14 +369,25 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                             return;
                         }
                     } catch (SVNException e) {
-                        Log.exception(e);
-                        s.cleanUp(Application.getResource("translations/custom"), true);
-                        long rev = s.getRevisionNoException(Application.getResource("translations/custom"));
+                        try {
+                            Log.exception(e);
+                            s.cleanUp(Application.getResource("translations/custom"), true);
+                            long rev = s.getRevisionNoException(Application.getResource("translations/custom"));
 
-                        long newRev = s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
-                        if (doRevisionCheck && oldLoaded != null && oldLoaded.equals(loaded) && rev == newRev) {
-                            // NO Updates
-                            return;
+                            long newRev = s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+                            if (doRevisionCheck && oldLoaded != null && oldLoaded.equals(loaded) && rev == newRev) {
+                                // NO Updates
+                                return;
+                            }
+
+                        } catch (SVNException e2) {
+                            Files.deleteRecursiv(Application.getResource("translations/custom"));
+                            long rev = s.getRevisionNoException(Application.getResource("translations/custom"));
+                            long newRev = s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
+                            if (doRevisionCheck && oldLoaded != null && oldLoaded.equals(loaded) && rev == newRev) {
+                                // NO Updates
+                                return;
+                            }
                         }
                     }
                     s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
@@ -493,7 +502,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
         setLoggedIn(false);
 
-        if (svnUser.length() > 3 && svnPass.length() > 3) {
+        if (svnUser.length() >= 3 && svnPass.length() > 3) {
             String url = "svn://svn.jdownloader.org/jdownloader";
 
             Subversion s = null;
@@ -513,6 +522,9 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 return true;
             } catch (SVNException e) {
                 Dialog.getInstance().showMessageDialog("SVN Test Error", "Login failed. Username and/or password are not correct!\r\n\r\nServer: " + url);
+                doLogout();
+            } catch (Throwable e) {
+                Dialog.getInstance().showExceptionDialog("Error occured", e.getMessage(), e);
                 doLogout();
             } finally {
                 try {
@@ -785,7 +797,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     }
 
-    public void revert() throws SVNException, InterruptedException {
+    public void revert() throws SVNException, InterruptedException, IOException {
         synchronized (this) {
 
             Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());

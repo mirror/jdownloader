@@ -16,6 +16,11 @@ public class ConflictResolveHandler implements ResolveHandler {
 
     @Override
     public String resolveConflict(SVNInfo info, File file, String contents, int startMine, int endMine, int startTheirs, int endTheirs) {
+        if (!file.getName().endsWith(".lng")) {
+            //
+            return contents.substring(startTheirs, endTheirs).trim();
+
+        }
         Map<String, String> mine = Mapimizer.keyValue(Regex.getLines(contents.substring(startMine, endMine).trim()));
         Map<String, String> theirs = Mapimizer.keyValue(Regex.getLines(contents.substring(startTheirs, endTheirs).trim()));
 

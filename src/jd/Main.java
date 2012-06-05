@@ -18,6 +18,7 @@
 package jd;
 
 import org.appwork.shutdown.ShutdownController;
+import org.appwork.storage.JSonStorage;
 import org.appwork.txtresource.TranslationFactory;
 
 public class Main {
@@ -30,6 +31,9 @@ public class Main {
 
     public static void checkLanguageSwitch(final String[] args) {
         try {
+            String lng = JSonStorage.restoreFrom("cfg/language.json", TranslationFactory.getDesiredLanguage());
+            TranslationFactory.setDesiredLanguage(lng);
+
             for (int i = 0; i < args.length; i++) {
                 if (args[i].equalsIgnoreCase("-translatortest")) {
                     TranslationFactory.setDesiredLanguage(args[i + 1]);

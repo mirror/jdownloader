@@ -36,8 +36,14 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
 
     public ComboBox(ContentType... options) {
         super(options);
-        // this.setSelectedIndex(selection);
-
+        orgRenderer = getRenderer();
+        this.setRenderer(new ListCellRenderer() {
+            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                Component ret;
+                renderComponent(ret = orgRenderer.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus), list, (ContentType) value, index, isSelected, cellHasFocus);
+                return ret;
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")
@@ -61,9 +67,15 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
         this.setRenderer(new ListCellRenderer() {
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 if (index == -1) index = getSelectedIndex();
-                return orgRenderer.getListCellRendererComponent(list, translations[index], index, isSelected, cellHasFocus);
+                Component ret;
+                renderComponent(ret = orgRenderer.getListCellRendererComponent(list, translations[index], index, isSelected, cellHasFocus), list, (ContentType) value, index, isSelected, cellHasFocus);
+                return ret;
             }
         });
+    }
+
+    protected void renderComponent(Component component, JList list, ContentType value, int index, boolean isSelected, boolean cellHasFocus) {
+
     }
 
     public ComboBox(org.appwork.storage.config.handler.KeyHandler<ContentType> keyHandler, ContentType[] values, String[] strings) {

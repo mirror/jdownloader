@@ -16,19 +16,44 @@
 
 package jd.gui.swing.jdgui.views.settings.panels;
 
-import javax.swing.ImageIcon;
+import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
 
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JList;
+
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.Application;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.controlling.JDRestartController;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
+import org.jdownloader.gui.translate.GuiTranslation;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.translate.JdownloaderTranslation;
 import org.jdownloader.translate._JDT;
 
 public class GUISettings extends AbstractConfigPanel {
 
     private static final long serialVersionUID = 1L;
     private Spinner           captchaSize;
+    private ComboBox<String>  lng;
+    private String[]          languages;
+    private Thread            languageScanner;
 
     public String getTitle() {
         return _JDT._.gui_settings__gui_title();
@@ -38,11 +63,45 @@ public class GUISettings extends AbstractConfigPanel {
         super();
         captchaSize = new Spinner(org.jdownloader.settings.staticreferences.CFG_GUI.CAPTCHA_SCALE_FACTOR);
         captchaSize.setFormat("#'%'");
+
+        lng = new ComboBox<String>(TranslationFactory.getDesiredLanguage()) {
+
+            @Override
+            protected void renderComponent(Component lbl, JList list, String value, int index, boolean isSelected, boolean cellHasFocus) {
+                Locale loc = TranslationFactory.stringToLocale(value);
+                ((JLabel) lbl).setText(loc.getDisplayName(Locale.ENGLISH));
+
+            }
+
+        };
+
+        lng.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String newLng = (String) lng.getSelectedItem();
+
+                if (!newLng.equals(TranslationFactory.getDesiredLanguage())) {
+                    JSonStorage.saveTo(Application.getResource("cfg/language.json"), newLng);
+
+                    try {
+                        Dialog.getInstance().showConfirmDialog(0, _GUI._.GUISettings_save_language_changed_restart_required_title(), _GUI._.GUISettings_save_language_changed_restart_required_msg(), NewTheme.getInstance().getIcon("language", 32), null, null);
+                        JDRestartController.getInstance().directRestart(true);
+                    } catch (DialogClosedException e2) {
+
+                    } catch (DialogCanceledException e2) {
+
+                    }
+                }
+            }
+        });
+
         this.addHeader(getTitle(), NewTheme.I().getIcon("gui", 32));
         // this.addHeader(getTitle(),
         // NewTheme.I().getIcon("barrierfreesettings", 32));
         this.addDescription(_JDT._.gui_settings_barrierfree_description());
         this.addPair(_GUI._.gui_config_barrierfree_captchasize(), null, captchaSize);
+        this.addPair(_GUI._.gui_config_language(), null, lng);
 
     }
 
@@ -53,9 +112,40 @@ public class GUISettings extends AbstractConfigPanel {
 
     @Override
     public void save() {
+
     }
 
     @Override
     public void updateContents() {
+        // asynch loading, because listAvailableTranslations can take its time.
+        if (languages == null && languageScanner == null) {
+            languageScanner = new Thread("LanguageScanner") {
+                public void run() {
+                    List<String> list = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
+                    Collections.sort(list, new Comparator<String>() {
+
+                        @Override
+                        public int compare(String o1, String o2) {
+                            Locale lc1 = TranslationFactory.stringToLocale(o1);
+                            Locale lc2 = TranslationFactory.stringToLocale(o2);
+
+                            return lc1.getDisplayName(Locale.ENGLISH).compareToIgnoreCase(lc2.getDisplayName(Locale.ENGLISH));
+                        }
+                    });
+                    languages = list.toArray(new String[] {});
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            lng.setModel(new DefaultComboBoxModel(languages));
+                            lng.setSelectedItem(TranslationFactory.getDesiredLanguage());
+                        }
+                    };
+                    languageScanner = null;
+                }
+            };
+            languageScanner.start();
+        }
+
     }
 }
