@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -31,14 +34,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "maxvideo.pl" }, urls = { "http://(www\\.)?maxvideo\\.pl/v/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "maxvideo.pl" }, urls = { "http://(www\\.)?maxvideo\\.pl/(v|u)/[A-Za-z0-9]+" }, flags = { 0 })
 public class MaxVideoPl extends PluginForHost {
 
     public MaxVideoPl(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    private String DLLINK = null;
 
     @Override
     public String getAGBLink() {
@@ -66,9 +67,9 @@ public class MaxVideoPl extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String dllink = downloadLink.getStringProperty("freelink");
+        Browser br2 = br.cloneBrowser();
         if (dllink != null) {
             try {
-                Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty("freelink", Property.NULL);
@@ -81,8 +82,15 @@ public class MaxVideoPl extends PluginForHost {
             }
         }
         if (dllink == null) {
-            if (br.containsHTML(ONLY4REGISTERED)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.maxvideopl.only4registered", ONLY4REGISTEREDUSERTEXT));
-            // 4.bismarck
+            String encUrl = br.getRegex("(eval.*?\\;)").getMatch(0);
+            String jsFnc = br.getRegex("<script src=\"(http://maxvideo\\.pl/refresh\\d+/js/jquery[\\-\\.\\d]+\\.js)\"></script>").getMatch(0);
+            if (jsFnc != null && encUrl != null) {
+                br2.getPage(jsFnc);
+                jsFnc = br2.getRegex("(function parseStign.*?)$").getMatch(0);
+                if (jsFnc != null) {
+                    dllink = rhino(jsFnc, encUrl);
+                }
+            }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
@@ -110,4 +118,18 @@ public class MaxVideoPl extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
+
+    private String rhino(final String jsFnc, final String encUrl) {
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            engine.eval(jsFnc + encUrl);
+            result = engine.get("lnk");
+        } catch (final Throwable e) {
+            return null;
+        }
+        return result != null ? result.toString() : null;
+    }
+
 }
