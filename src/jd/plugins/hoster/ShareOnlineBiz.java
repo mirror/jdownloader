@@ -143,22 +143,28 @@ public class ShareOnlineBiz extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), waitNoFreeSlot);
         }
-        if (br.getURL().contains("failure/server")) {
+        String url = br.getURL();
+        if (url.endsWith("/free/") || url.endsWith("/free")) {
+            /* workaround when the redirect was missing */
+            String windowLocation = br.getRegex("'(http://[^']*?/failure/[^']*?)'").getMatch(0);
+            if (windowLocation != null) url = windowLocation;
+        }
+        if (url.contains("failure/server")) {
             /* server offline */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server currently Offline", 2 * 60 * 60 * 1000l);
         }
-        if (br.getURL().contains("failure/threads")) {
+        if (url.contains("failure/threads")) {
             /* already loading,too many threads */
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
         }
-        if (br.getURL().contains("failure/chunks")) {
+        if (url.contains("failure/chunks")) {
             /* max chunks reached */
-            String maxCN = new Regex(br.getURL(), "failure/chunks/(\\d+)").getMatch(0);
+            String maxCN = new Regex(url, "failure/chunks/(\\d+)").getMatch(0);
             if (maxCN != null) maxChunksnew.set(Integer.parseInt(maxCN));
             downloadLink.setChunksProgress(null);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "MaxChunks Error", 10 * 60 * 1000l);
         }
-        if (br.getURL().contains("failure/freelimit")) {
+        if (url.contains("failure/freelimit")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
@@ -166,8 +172,8 @@ public class ShareOnlineBiz extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "File too big, limited by the file owner.");
         }
-        if (br.getURL().contains("failure/bandwidth")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
-        if (br.getURL().contains("failure/filenotfound")) {
+        if (url.contains("failure/bandwidth")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); }
+        if (url.contains("failure/filenotfound")) {
             try {
                 final Browser br2 = new Browser();
                 final String id = this.getID(downloadLink);
@@ -176,12 +182,12 @@ public class ShareOnlineBiz extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.getURL().contains("failure/precheck")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l); }
-        if (br.getURL().contains("failure/invalid")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
-        if (br.getURL().contains("failure/ip")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already loading", 15 * 60 * 1000l); }
-        if (br.getURL().contains("failure/size")) { throw new PluginException(LinkStatus.ERROR_FATAL, "File too big. Premium needed!"); }
-        if (br.getURL().contains("failure/expired") || br.getURL().contains("failure/session")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait for new ticket", 60 * 1000l); }
-        if (br.getURL().contains("failure/cookie")) {
+        if (url.contains("failure/precheck")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l); }
+        if (url.contains("failure/invalid")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
+        if (url.contains("failure/ip")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already loading", 15 * 60 * 1000l); }
+        if (url.contains("failure/size")) { throw new PluginException(LinkStatus.ERROR_FATAL, "File too big. Premium needed!"); }
+        if (url.contains("failure/expired") || url.contains("failure/session")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait for new ticket", 60 * 1000l); }
+        if (url.contains("failure/cookie")) {
             synchronized (LOCK) {
                 if (acc != null) ACCOUNTINFOS.remove(acc);
             }

@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "topfiles.org" }, urls = { "http://(www\\.)?topfiles\\.org/download/[A-Za-z0-9]+/[^<>\"/]*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "topfiles.org" }, urls = { "http://(www\\.)?topfiles\\.org/(download/[A-Za-z0-9]+/[^<>\"/]*?\\.html|list/[A-Za-z0-9]+)" }, flags = { 0 })
 public class TopFilesOrg extends PluginForDecrypt {
 
     public TopFilesOrg(PluginWrapper wrapper) {
@@ -39,10 +39,22 @@ public class TopFilesOrg extends PluginForDecrypt {
         br.getHeaders().put("Referer", "http://topfiles.org/");
         br.getPage(parameter);
         // Check if its a single link (folder- and singlelinks look the same)
-        final String singleLink = br.getRedirectLocation();
+        String singleLink = br.getRedirectLocation();
         if (singleLink != null && !this.canHandle(singleLink)) {
             decryptedLinks.add(createDownloadlink(singleLink));
             return decryptedLinks;
+        }
+        if (singleLink != null) {
+            br.getPage(singleLink);
+            singleLink = br.getRedirectLocation();
+            if (singleLink != null && !this.canHandle(singleLink)) {
+                if (singleLink.contains("goo.gl")) {
+                    br.getPage(singleLink);
+                    singleLink = br.getRedirectLocation();
+                }
+                decryptedLinks.add(createDownloadlink(singleLink));
+                return decryptedLinks;
+            }
         }
         if (singleLink != null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -54,13 +66,8 @@ public class TopFilesOrg extends PluginForDecrypt {
             return null;
         }
         for (final String crLink : links) {
-            br.getPage(crLink);
-            final String fnlink = br.getRedirectLocation();
-            if (fnlink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            decryptedLinks.add(createDownloadlink(fnlink));
+            if (parameter.equalsIgnoreCase(crLink)) continue;
+            decryptedLinks.add(createDownloadlink(crLink));
         }
         return decryptedLinks;
     }

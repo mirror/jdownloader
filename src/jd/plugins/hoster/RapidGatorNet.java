@@ -165,7 +165,7 @@ public class RapidGatorNet extends PluginForHost {
                     logger.warning("Solvemedia handling broken");
                     return;
                 }
-                code = getCaptchaCode(null, captchaFile, downloadLink);
+                code = getCaptchaCode("solvemedia", captchaFile, downloadLink);
             } else {
                 URLConnectionAdapter con2 = null;
                 try {

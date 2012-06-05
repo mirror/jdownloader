@@ -115,6 +115,7 @@ public class CaptchaController {
             final Image captchaImage = ImageIO.read(captchafile);
             final Captcha captcha = jac.createCaptcha(captchaImage);
             String captchaCode = jac.checkCaptcha(captchafile, captcha);
+            captchaResult.setCaptchaText(captchaCode);
             if (jac.isExtern()) {
                 if ((flag & UserIO.NO_USER_INTERACTION) == 0 && captchaCode == null || captchaCode.trim().length() == 0) {
                     captchaResult = addCaptchaToQueue(flag, suggest);

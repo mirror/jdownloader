@@ -69,7 +69,7 @@ public class DataPortCz extends PluginForHost {
             return ai;
         }
         br.getPage(MAINPAGE);
-        String availabletraffic = br.getRegex("class=\"name\" style=\"font\\-size: 1.0em;color:white;\">\\((.*?)\\)</span>").getMatch(0);
+        String availabletraffic = br.getRegex("/credit/buy\">(.*?)</").getMatch(0);
         if (availabletraffic != null) {
             account.setValid(true);
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic.replace(" ", "")));
@@ -128,6 +128,11 @@ public class DataPortCz extends PluginForHost {
         String dllink = br.getRegex("><strong>Stažení ZDARMA</strong></a> <a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://dataport\\.cz/stahuj\\-soubor/.*?)\"").getMatch(0);
         if (dllink == null) {
+            Form form = br.getForm(2);
+            br.submitForm(form);
+            dllink = br.getRedirectLocation();
+        }
+        if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -145,8 +150,9 @@ public class DataPortCz extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(false);
         // br.getPage("");
-        br.postPage("http://dataport.cz/prihlas/", "name=" + Encoding.urlEncode(account.getUser()) + "&x=0&y=0&pass=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie(MAINPAGE, "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.postPage("http://dataport.cz/?do=loginForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&loginFormSubmit=");
+        if (br.getCookie(MAINPAGE, "PHPSESSID") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie(MAINPAGE, "nette-browser") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override

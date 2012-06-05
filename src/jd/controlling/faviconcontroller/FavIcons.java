@@ -71,8 +71,7 @@ public class FavIcons {
             protected void beforeExecute(Thread t, Runnable r) {
                 super.beforeExecute(t, r);
                 /*
-                 * WORKAROUND for stupid SUN /ORACLE way of
-                 * "how a threadpool should work" !
+                 * WORKAROUND for stupid SUN /ORACLE way of "how a threadpool should work" !
                  */
                 int working = threadPool.getActiveCount();
                 int active = threadPool.getPoolSize();
@@ -80,8 +79,7 @@ public class FavIcons {
                 if (active < max) {
                     if (working == active) {
                         /*
-                         * we can increase max pool size so new threads get
-                         * started
+                         * we can increase max pool size so new threads get started
                          */
                         threadPool.setCorePoolSize(Math.min(max, active + 1));
                     }
@@ -230,7 +228,7 @@ public class FavIcons {
         // paint
         Graphics2D g = image.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g.setFont(new Font("Helvetica", Font.BOLD, size));
+        g.setFont(new Font("Arial", Font.BOLD, size));
         RoundRectangle2D roundedRectangle = new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 5, 5);
         g.setColor(bg);
         g.fill(roundedRectangle);
@@ -293,8 +291,7 @@ public class FavIcons {
     }
 
     /*
-     * dirty hack to count number of unique colors, use only for small images
-     * like favicons!
+     * dirty hack to count number of unique colors, use only for small images like favicons!
      */
     private static int countColors(BufferedImage image) {
         HashSet<Integer> color = new HashSet<Integer>();
@@ -341,8 +338,7 @@ public class FavIcons {
             if (StringUtils.isEmpty(url)) url = favBr.getRegex("href=('|\")([^>'\"]*?)('|\")[^>]*?rel=('|\")(SHORTCUT )?ICON('|\")").getMatch(1);
             if (StringUtils.isEmpty(url)) {
                 /*
-                 * workaround for hoster with not complete url, eg
-                 * rapidshare.com
+                 * workaround for hoster with not complete url, eg rapidshare.com
                  */
                 url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=[^>]*?//([^>'\"]*?)('|\")").getMatch(3);
                 if (!StringUtils.isEmpty(url) && !url.equalsIgnoreCase(host)) url = "http://" + url;
@@ -350,8 +346,7 @@ public class FavIcons {
             if (url != null && url.equalsIgnoreCase(host)) url = null;
             if (url == null && "rapidshare.com".equalsIgnoreCase(host)) {
                 /*
-                 * hardcoded workaround for rapidshare, they use js to build the
-                 * favicon path
+                 * hardcoded workaround for rapidshare, they use js to build the favicon path
                  */
                 url = "http://images3.rapidshare.com/img/favicon.ico";
             }
@@ -393,8 +388,7 @@ public class FavIcons {
     }
 
     /**
-     * downloads a favicon from the given host, icon must be bigger than 1x1,
-     * cause some hosts have fake favicon.ico with 1x1 size
+     * downloads a favicon from the given host, icon must be bigger than 1x1, cause some hosts have fake favicon.ico with 1x1 size
      */
     public static BufferedImage downloadFavIcon(String host) {
         BufferedImage ret = null;
