@@ -11,6 +11,7 @@ close=Закрыть
 error_unknown=%s1
 exception_msg=%s1
 exit=Выход
+guiless_done=Обновление закончено.
 guiless_extract=Извлечение файла(ов)
 guiless_installFinished=Установка закончена
 guiless_you_are_up2date=Вы используете последнюю версию
