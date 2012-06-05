@@ -29,6 +29,7 @@ name=Extracteur d'archive
 offline=Fichier hors ligne ou manquant
 online=Lien disponible
 online_tt=Lien disponible
+packagename=Nom du paquet
 password=Mot de passe pour l'extraction de %s1
 plugins_optional_extraction_askForPassword=Mot de passe pour %s1 ?
 plugins_optional_extraction_crcerrorin=Extraction échouée (CRC dans %s1)
