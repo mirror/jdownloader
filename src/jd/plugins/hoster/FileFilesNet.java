@@ -50,7 +50,7 @@ public class FileFilesNet extends PluginForHost {
 
     // DEV NOTES
     // mods:
-    // non account: 6 * 1
+    // non account: 3 * 1
     // free account:
     // premium account: 6 * 1
     // protocol: has https but is fubar.
@@ -92,7 +92,7 @@ public class FileFilesNet extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">[\r\n\t ]+File not found\\![\r\n\t ]+<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String[][] fileInfo = br.getRegex("(?i)<div id=\"file_det\">[\r\n\t ]+(.+?) \\- ([\\d\\.]+ (KB|MB|GB|TB))[\r\n\t ]+").getMatches();
+        String[][] fileInfo = br.getRegex("(?i)<div id=\"file_det\">[\r\n\t ]+(.+) \\- ([\\d\\.]+ (KB|MB|GB|TB))").getMatches();
         if (fileInfo == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(fileInfo[0][0].trim()));
         link.setDownloadSize(SizeFormatter.getSize(fileInfo[0][1]));
@@ -105,13 +105,12 @@ public class FileFilesNet extends PluginForHost {
         if (dllink == null) {
             requestFileInformation(downloadLink);
             br.postPage(HOST + "/", "getDownLink=" + new Regex(downloadLink.getDownloadURL(), "net/(.*)").getMatch(0));
-            // they don't show any info about limits or waits. You seem to just
-            // get '#' instead of link.
+            // they don't show any info about limits or waits. You seem to just get '#' instead of link.
             if (br.containsHTML("#downlink\\|#")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster connection limit reached.", 10 * 60 * 1000l);
             dllink = getDllink();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -6);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -184,6 +183,7 @@ public class FileFilesNet extends PluginForHost {
                 /** Load cookies */
                 prepBrowser();
                 br.setCookiesExclusive(true);
+                prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -228,8 +228,7 @@ public class FileFilesNet extends PluginForHost {
         if (dllink == null) {
             br.postPage(HOST + "/", "getDownLink=" + new Regex(link.getDownloadURL(), "net/(.*)").getMatch(0));
             dllink = getDllink();
-            // they don't show any info about limits or waits. You seem to just
-            // get '#' instead of link.
+            // they don't show any info about limits or waits. You seem to just get '#' instead of link.
             if (br.containsHTML("#downlink\\|#")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster connection limit reached.", 10 * 60 * 1000l);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
