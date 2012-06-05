@@ -71,17 +71,7 @@ public class FlickrCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">This is not the page you\\'re looking for")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (!br.containsHTML("Signed in as <a data\\-track=")) {
-            logger.info("Cookies seem to be invalid/old, trying to force login and re-checking...");
-            br.clearCookies(MAINPAGE);
-            login(aa, true, br);
-            br.getPage(downloadLink.getDownloadURL());
-            if (!br.containsHTML("Signed in as <a data\\-track=")) {
-                logger.warning("Cookies are still bad, plugin must be broken");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
+        if (br.containsHTML("div class=\"Four04Case\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = getFilename();
         if (filename == null) {
             logger.warning("Filename not found, plugin must be broken...");
@@ -158,7 +148,6 @@ public class FlickrCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        login(account, false, this.br);
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -186,6 +175,7 @@ public class FlickrCom extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             br.setCookie(MAINPAGE, key, value);
                         }
+                        br.setCookie(MAINPAGE, "localization", "en-us%3Bde%3Bde");
                         Browser brc = br.cloneBrowser();
                         brc.getPage("http://www.flickr.com");
                         String global_dbid = brc.getRegex("global_dbid = '(\\d+)'").getMatch(0);

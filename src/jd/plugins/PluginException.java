@@ -22,7 +22,8 @@ public class PluginException extends Exception {
 
     public static final int   VALUE_ID_PREMIUM_TEMP_DISABLE = 0;
     public static final int   VALUE_ID_PREMIUM_DISABLE      = 1;
-    public static final int   VALUE_ID_PREMIUM_ONLY         = 2;
+    /* do not final it, as the compiler will replace Reference with value, no more Exceptions but broken ErrorHandling in stable */
+    public static int         VALUE_ID_PREMIUM_ONLY         = 2;
 
     private int               linkStatus                    = -1;
     private String            errorMessage                  = null;

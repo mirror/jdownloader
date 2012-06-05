@@ -44,15 +44,17 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "http://[\\w\\.]*?(share\\-online\\.biz|egoshare\\.com)/(download.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
 public class ShareOnlineBiz extends PluginForHost {
 
-    private final static HashMap<Account, HashMap<String, String>> ACCOUNTINFOS     = new HashMap<Account, HashMap<String, String>>();
-    private final static Object                                    LOCK             = new Object();
-    private final static HashMap<Long, Long>                       noFreeSlot       = new HashMap<Long, Long>();
-    private long                                                   server           = -1;
-    private final static long                                      waitNoFreeSlot   = 10 * 60 * 1000l;
-    private final static String                                    UA               = RandomUserAgent.generate();
-    private boolean                                                hideID           = true;
-    private static AtomicInteger                                   maxChunksnew     = new AtomicInteger(-2);
-    private static char[]                                          FILENAMEREPLACES = new char[] { '_', '&', 'ü' };
+    private final static HashMap<Account, HashMap<String, String>> ACCOUNTINFOS         = new HashMap<Account, HashMap<String, String>>();
+    private final static Object                                    LOCK                 = new Object();
+    private final static HashMap<Long, Long>                       noFreeSlot           = new HashMap<Long, Long>();
+    private final static HashMap<Long, Long>                       overloadedServer     = new HashMap<Long, Long>();
+    private long                                                   server               = -1;
+    private final static long                                      waitNoFreeSlot       = 10 * 60 * 1000l;
+    private final static long                                      waitOverloadedServer = 5 * 60 * 1000l;
+    private final static String                                    UA                   = RandomUserAgent.generate();
+    private boolean                                                hideID               = true;
+    private static AtomicInteger                                   maxChunksnew         = new AtomicInteger(-2);
+    private static char[]                                          FILENAMEREPLACES     = new char[] { '_', '&', 'ü' };
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -182,6 +184,14 @@ public class ShareOnlineBiz extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (url.contains("failure/overload")) {
+            if (server != -1) {
+                synchronized (overloadedServer) {
+                    overloadedServer.put(server, System.currentTimeMillis());
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", waitOverloadedServer);
+        }
         if (url.contains("failure/precheck")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l); }
         if (url.contains("failure/invalid")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l); }
         if (url.contains("failure/ip")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Already loading", 15 * 60 * 1000l); }
@@ -273,6 +283,22 @@ public class ShareOnlineBiz extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), waitNoFreeSlot);
                     } else {
                         noFreeSlot.remove(server);
+                    }
+                }
+            }
+            synchronized (overloadedServer) {
+                Long ret = overloadedServer.get(server);
+                if (ret != null) {
+                    if (System.currentTimeMillis() - ret < waitOverloadedServer) {
+                        if (downloadLink.getLinkStatus().getRetryCount() >= 5) {
+                            /*
+                             * reset counter this error does not cause plugin to stop
+                             */
+                            downloadLink.getLinkStatus().setRetryCount(0);
+                        }
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", waitNoFreeSlot);
+                    } else {
+                        overloadedServer.remove(server);
                     }
                 }
             }

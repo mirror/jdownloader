@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -541,10 +542,16 @@ public class Multi extends IExtraction {
                     ctrl.setProgress(progressInBytes / size);
                     continue;
                 }
-                String filename = archive.getExtractTo().getAbsoluteFile() + File.separator + path;
+
+                String lastTryFilename = archive.getExtractTo().getAbsoluteFile() + File.separator + path;
+                String filename = lastTryFilename;
+                try {
+                    filename = new String(filename.getBytes(), Charset.defaultCharset());
+                } catch (Exception e) {
+                    logger.warning("Encoding " + Charset.defaultCharset().toString() + " not supported. Using default filename.");
+                }
 
                 File extractTo = new File(filename);
-
                 if (extractTo.exists()) {
                     /* file already exists */
                     if (archive.isOverwriteFiles()) {
@@ -575,19 +582,28 @@ public class Multi extends IExtraction {
                         }
                         break;
                     } catch (final IOException e) {
-                        if (fixedFilename != null) {
+                        if (fixedFilename == null) {
+                            /* first try, we try again with lastTryFilename */
+                            fixedFilename = lastTryFilename;
+                            extractTo = new File(fixedFilename);
+                            continue;
+                        } else if (fixedFilename == lastTryFilename) {
+                            /* second try, we try with modified filename */
+                            /* Invalid Chars could have occured, try to remove them */
+                            logger.severe("Invalid Chars could have occured, try to remove them");
+                            Log.exception(e);
+                            File parent = extractTo.getParentFile();
+                            String brokenFilename = extractTo.getName();
+                            /* new String so == returns false */
+                            fixedFilename = new String(brokenFilename.replaceAll("[^\\w\\s\\.\\(\\)\\[\\],]", ""));
+                            logger.severe("Replaced " + brokenFilename + " with " + fixedFilename);
+                            extractTo = new File(parent, fixedFilename);
+                            continue;
+                        } else {
                             setException(e);
                             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
                             return;
                         }
-                        /* Invalid Chars could have occured, try to remove them */
-                        logger.severe("Invalid Chars could have occured, try to remove them");
-                        Log.exception(e);
-                        File parent = extractTo.getParentFile();
-                        String brokenFilename = extractTo.getName();
-                        fixedFilename = brokenFilename.replaceAll("[^\\w\\s\\.\\(\\)\\[\\],]", "");
-                        logger.severe("Replaced " + brokenFilename + " with " + fixedFilename);
-                        extractTo = new File(parent, fixedFilename);
                     }
                 }
 
