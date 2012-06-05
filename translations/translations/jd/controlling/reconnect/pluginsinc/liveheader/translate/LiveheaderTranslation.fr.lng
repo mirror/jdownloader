@@ -1,3 +1,6 @@
+DataCompareDialog_layoutDialogContent_router=Votre routeur
+LiveHeaderDetectionWizard_runOnlineScan_notalive=Service non disponible. Réessayer plus tard
+LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Service non disponible
 gui_btn_abort=Abandonner
 gui_btn_cancel=Annuler
 gui_btn_help=Aide

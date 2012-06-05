@@ -1,5 +1,6 @@
 AutoDetectAction_run_optimize=Optimisation : %s1
 UPNPReconnectInvoker_getName_=Reconnexion au routeur UPNP
+UPNPRouterPlugin_run_mesg=Scan de toutes les interfaces réseaux
 UPNPRouterPlugin_run_wizard_title=Assistant pour routeur UPNP
 auto=Installation UPNP automatique
 interaction_UpnpReconnect_wanservice_ip=Protocole internet
