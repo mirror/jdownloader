@@ -35,6 +35,11 @@ public class HelpDialog {
                     }
 
                     @Override
+                    public int[] getContentInsets() {
+                        return new int[] { 14, 14, 14, 14 };
+                    }
+
+                    @Override
                     protected boolean doExpandToRight(boolean b) {
                         if (expandToRight != null) return expandToRight;
                         return super.doExpandToRight(b);
