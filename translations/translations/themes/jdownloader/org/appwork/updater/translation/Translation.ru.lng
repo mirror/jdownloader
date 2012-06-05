@@ -1,6 +1,4 @@
-error_unknown_app=Не могу обновить %s1.                     Попробуйте позже!
 exit=Закрыть
-guiless_done=Обновление закончено.
 guiless_downloadfinished=Закачка завершена.
 guiless_extract=Извлечение файла(ов)
 guiless_installFinished=Установка закончена
@@ -10,10 +8,8 @@ install_updates_now=Установить сейчас!
 restart_title=Перезапуск!
 start=Начало обновления
 udpates_found=Обновления найдены!
-update_already_running=Обновление уже запущено
 update_dialog_cancel=Отмена
 update_dialog_later=Спросить позже
-update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_yes=Да (рекомендуется)
 updates_are_ready_for_install_now=%s1 обновление(й) готово для установки.
 updates_ready_for_install=%s1 обновление(й) готово для установки.
