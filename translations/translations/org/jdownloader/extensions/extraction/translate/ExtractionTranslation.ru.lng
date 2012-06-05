@@ -34,6 +34,7 @@ offline_tt=Нет ссылки на эту часть в упаковке, ил�
 online=Please translate: Ссылка доступна
 online_tt=Ссылка доступна
 packagename=Название пакета
+password=Пароль для распаковки %s1
 plugins_optional_extraction_askForPassword=Пароль для %s1?
 plugins_optional_extraction_crcerrorin=Не удалось распоковать (CRC в %s1)
 plugins_optional_extraction_error_extrfailedcrc=Не удалось распаковать (CRC в неизвестном файле)
