@@ -174,7 +174,6 @@ public class Rlnks extends PluginForDecrypt {
 
     private void handleCaptchaAndPassword(final String partLink, final CryptedLink param) throws Exception {
         br.getPage(partLink);
-        System.out.println(br.toString());
         ALLFORM = br.getFormbyProperty("name", "form");
         boolean b = ALLFORM == null ? true : false;
         if (b) {
