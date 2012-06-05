@@ -51,19 +51,19 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision: 16995 $", interfaceVersion = 2, names = { "xenubox.com" }, urls = { "https?://(www\\.)?xenubox\\.com/[a-z0-9]{12}" }, flags = { 2 })
+public class XenuBoxCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://ForDevsToPlayWith.com";
+    private final String         COOKIE_HOST                  = "http://xenubox.com";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
@@ -72,12 +72,13 @@ public class XFileSharingProBasic extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.4-raz
     // mods:
-    // non account: chunk * maxdl
-    // free account:
-    // premium account:
-    // protocol: no https
-    // captchatype: null 4dignum recaptcha
+    // non account: 1 * 1 (not tested
+    // free account: same as above (not tested)
+    // premium account: 20 * unlimited
+    // protocol: https not setup correctly
+    // captchatype: recaptcha
     // other: no redirects
+    // other: they break free links totally even for links under size requirement. downloads in premium just fine == dodgey hoster.
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -89,14 +90,14 @@ public class XFileSharingProBasic extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public XenuBoxCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -127,8 +128,7 @@ public class XFileSharingProBasic extends PluginForHost {
             if (filename == null) {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
-                    // filename = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                    // filename = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                    filename = new Regex(correctedBR, "File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                 }
             }
         }
@@ -159,7 +159,7 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "freelink");
+        doFree(downloadLink, false, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -576,7 +576,6 @@ public class XFileSharingProBasic extends PluginForHost {
                     }
                 }
                 getPage(COOKIE_HOST + "/login.html");
-                // Form loginform = br.getForm(0);
                 Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
@@ -615,7 +614,7 @@ public class XFileSharingProBasic extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             getPage(link.getDownloadURL());
-            doFree(link, true, 0, "freelink2");
+            doFree(link, false, 1, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {

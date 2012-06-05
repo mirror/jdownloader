@@ -54,20 +54,20 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision: 16381 $", interfaceVersion = 2, names = { "novafile.com" }, urls = { "https?://(www\\.)?novafile\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class NovaFileCom extends PluginForHost {
 
-    private String               correctedBR         = "";
-    private static final String  PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST         = "http://novafile.com";
-    private static final String  MAINTENANCE         = ">This server is in maintenance mode";
-    private static final String  MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-    private static final String  ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String  PREMIUMONLY1        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String  PREMIUMONLY2        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private String               correctedBR                  = "";
+    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private static final String  COOKIE_HOST                  = "http://novafile.com";
+    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     // note: can not be negative -x or 0 .:. [1-*]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static final Object  LOCK                = new Object();
+    private static final Object  LOCK                         = new Object();
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.1-raz
@@ -139,7 +139,7 @@ public class NovaFileCom extends PluginForHost {
             }
         }
         if (filename == null || filename.equals("")) {
-            if (correctedBR.contains("You have reached the download\\-limit")) {
+            if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
@@ -283,11 +283,11 @@ public class NovaFileCom extends PluginForHost {
             // add a download slot
             controlFree(+1);
             // start the dl
-        dl.startDownload();
+            dl.startDownload();
         } finally {
             // remove download slot
             controlFree(-1);
-    }
+        }
     }
 
     @Override
@@ -296,14 +296,14 @@ public class NovaFileCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
-     * allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download
-     * sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival
-     * does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting
-     * peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots
-     * are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -389,9 +389,9 @@ public class NovaFileCom extends PluginForHost {
             if (correctedBR.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait)").matches()) {
+        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
             // adjust this regex to catch the wait time string for COOKIE_HOST
-            String WAIT = new Regex(correctedBR, "((You have reached the download\\-limit|You have to wait)[^<>]+)").getMatch(0);
+            String WAIT = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
             String tmpmin = new Regex(WAIT, "\\s+(\\d+)\\s+minutes?").getMatch(0);
@@ -513,9 +513,9 @@ public class NovaFileCom extends PluginForHost {
         String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
         if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
         account.setValid(true);
-        String availabletraffic = new Regex(correctedBR, ">Traffic Available</td>[\r\n\t ]+<td>(\\d+ (MB|GB))</td>").getMatch(0);
+        String availabletraffic = new Regex(correctedBR, ">Traffic Available</td>[\r\n\t ]+<td>([\\-\\d\\.]+ (MB|GB))</td>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic, true, true));
         } else {
             ai.setUnlimitedTraffic();
         }
