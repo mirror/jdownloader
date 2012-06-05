@@ -1,4 +1,5 @@
 AutoDetectAction_AutoDetectAction_=Autoajuste
+DataCompareDialog_DataCompareDialog_=Comparar información de Routers
 DataCompareDialog_layoutDialogContent_firmware=Firmware/Versión
 DataCompareDialog_layoutDialogContent_firmware_help=Introduce la versión del Firmware de tu router... Dejalo en blanco si no la conoces
 DataCompareDialog_layoutDialogContent_ip=IP o Hostname
@@ -24,6 +25,7 @@ GetIPAction_getString_progress=Analizando red...
 LiveHeaderDetectionWizard_runOnlineScan_collect=Escaneando las conexión
 LiveHeaderDetectionWizard_runOnlineScan_notalive=Servicio no disponible. Prueba de nuevo más tarde.
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Servicio no disponible
+LiveHeaderDetectionWizard_runOnlineScan_warning_badhost=La IP %s1 del router es inválida!
 LiveHeaderDetectionWizard_runOnlineScan_warning_logins=Usuario y contraseña sin establecer. En la mayoria de los casos, son necesarios para la reconexión. ¿Continuar de todas formas?
 LiveHeaderDetectionWizard_sendRouter_reconnectFailed=La reconexión ha fallado. Solo puedes enviar ajustes que funcionen.
 LiveHeaderDetectionWizard_uploadData_sent_failed=Al parecer tu script ya existe en nuestra base de datos. Gracias de todas formas.
