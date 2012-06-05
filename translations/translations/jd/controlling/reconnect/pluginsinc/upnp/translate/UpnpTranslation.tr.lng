@@ -1,4 +1,5 @@
 AutoDetectAction_run_optimize=Uyarla: %s1
+UPNPReconnectInvoker_getName_=UPNP Yönlendirici yoluyla tekrar bağlanma
 UPNPRouterPlugin_run_mesg=Tüm çalışma ağı arayüzleri taranıyor
 UPNPRouterPlugin_run_wizard_title=UPNP Yönlendirici Sihirbazı
 auto=UPNP otomatik ayarlama
