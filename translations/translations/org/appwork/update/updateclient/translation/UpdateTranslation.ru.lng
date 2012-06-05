@@ -18,6 +18,7 @@ list_optionals=- %s1
 please_wait=Пожалуйста, подождите!
 restart_title=Перезапуск!
 rlyexit=Вы уверены, что хотите выйти?
+rlyexit_title=Точно выйти?
 rlyrestart=Вы уверены, что хотите перезапустить приложение?
 rlyrestart_restart=Точно хотите перезагрузить?
 timer=%s1 с
