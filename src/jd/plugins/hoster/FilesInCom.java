@@ -81,6 +81,8 @@ public class FilesInCom extends PluginForHost {
             break;
         }
         if (br.containsHTML(RECAPTCHAFAILED)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        final String reconnectWait = br.getRegex("try again after \\((\\d+)\\) Minute").getMatch(0);
+        if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(reconnectWait) + 1) * 60 * 1000l);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -44,20 +44,20 @@ public class DpstFlsCm extends PluginForDecrypt {
         // Get Pagecount //
         if (url.contains("page")) url = url.split("\\?")[0];
         br.getPage(url);
-        if (br.containsHTML("\\&gt;\\&gt;\\&gt;")) pagecount = Integer.parseInt(br.getRegex("<a href=\\\"/de/folders/[0-9A-Z]+\\?page=[0-9]+\\\">([0-9]+)</a>\\s+<a href=\\\"/de/folders/[0-9A-Z]+\\?page=[0-9]+\\\">&gt;&gt;&gt;</a>").getMatch(0));
-        //
-
-        progress.setRange(pagecount * 18);
-
+        if (br.containsHTML("\\&gt;\\&gt;\\&gt;")) {
+            final String[] pages = br.getRegex("\\?page=(\\d+)\">\\d+</a>").getColumn(0);
+            if (pages != null && pages.length != 0) {
+                for (final String currentPage : pages)
+                    if (Integer.parseInt(currentPage) > pagecount) pagecount = Integer.parseInt(currentPage);
+            }
+        }
         for (int x = 1; x <= pagecount; x++) {
             br.getPage(url + "?page=" + x + "&format=text");
             String[] finalLinks = br.getRegex("(http://depositfiles.com/files/[0-9a-z]+)").getColumn(0);
             for (String data : finalLinks) {
                 decryptedLinks.add(createDownloadlink(data));
-                progress.increase(1);
             }
         }
-
         return decryptedLinks;
     }
 

@@ -80,6 +80,10 @@ public class Rlnks extends PluginForDecrypt {
 
             /* Handle Captcha and/or password */
             handleCaptchaAndPassword(parameter, param);
+            if (!br.getURL().contains("relink.us/")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             if (ALLFORM != null && ALLFORM.getRegex("password").matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
             if (ALLFORM != null && ALLFORM.getRegex("captcha").matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
 
@@ -170,6 +174,7 @@ public class Rlnks extends PluginForDecrypt {
 
     private void handleCaptchaAndPassword(final String partLink, final CryptedLink param) throws Exception {
         br.getPage(partLink);
+        System.out.println(br.toString());
         ALLFORM = br.getFormbyProperty("name", "form");
         boolean b = ALLFORM == null ? true : false;
         if (b) {

@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relinka.net" }, urls = { "http://[\\w\\.]*?relinka\\.net/folder/[a-z0-9]{8}-[a-z0-9]{4}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relinka.net" }, urls = { "http://(www\\.)?relinka\\.net/folder/[a-z0-9]{8}\\-[a-z0-9]{4}" }, flags = { 0 })
 public class RlnkNt extends PluginForDecrypt {
 
     public RlnkNt(PluginWrapper wrapper) {
@@ -38,15 +38,19 @@ public class RlnkNt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String links[] = br.getRegex("<a href=\"http://relinka.net\\/out\\/[a-z0-9]{8}-[a-z0-9]{4}\\/(.*?)\" class=").getColumn(0);
-        String folderId = new Regex(parameter, "http://relinka.net\\/folder\\/([a-z0-9]{8}-[a-z0-9]{4})").getMatch(0);
-        if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
+        if (br.containsHTML("class=\"error\"><b>")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        final String links[] = br.getRegex("<a href=\"http://relinka.net\\/out\\/[a-z0-9]{8}-[a-z0-9]{4}\\/(.*?)\" class=").getColumn(0);
+        final String folderId = new Regex(parameter, "http://relinka.net\\/folder\\/([a-z0-9]{8}-[a-z0-9]{4})").getMatch(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String element : links) {
             String encodedLink = Encoding.htmlDecode(new Regex(br.getPage("http://relinka.net/out/" + folderId + "/" + element), "<iframe src=\"(.*)\" marginhe").getMatch(0));
-
             decryptedLinks.add(createDownloadlink(encodedLink));
-            progress.increase(1);
         }
         return decryptedLinks;
     }

@@ -22,31 +22,36 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink-it.com" }, urls = { "http://[\\w\\.]*?relink-it\\.com(/\\w\\w/|/)\\?.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink-it.com" }, urls = { "http://(www\\.)?[a-z0-9]+\\.relink\\-it\\.com" }, flags = { 0 })
 public class RlnktCm extends PluginForDecrypt {
 
     public RlnktCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         br.getPage(parameter);
-        String link = br.getRegex("iframe frameborder=\"\\d\" width=\"\\d+%\" height=\"\\d+\"  src=\"(.*?)\"></iframe>").getMatch(0);
-        if (link == null) throw new DecrypterException("Wrong Referrer");
+        final String lid = br.getRegex("getPage\\(\\'([^<>\"]*?)\\'\\);").getMatch(0);
+        if (lid == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getPage(parameter + "/include/ajax.php?action=getPage&link_id=" + lid);
+        final String link = br.getRegex("iframe frameborder=\"\\d\" width=\"\\d+%\" height=\"\\d+\"  src=\"(.*?)\"></iframe>").getMatch(0);
+        if (link == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }
