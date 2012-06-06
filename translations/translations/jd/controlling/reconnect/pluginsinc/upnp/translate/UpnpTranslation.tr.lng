@@ -15,4 +15,6 @@ literally_choose_router=Aygıtı Seçin
 literally_control_url=Denetim URL'si
 literally_router=UPNP (ETVÇ) Yönlendirici
 literally_service_type=Hizmet Türü
+malformedservicetype=Hizmet türü geçersiz. UPNP otomatik ayarlama'yı deneyin.
+malformedurl=Denetleme URL'si geçersiz. UPNP otomatik ayarlama'yı deneyin.
 try_reconnect=UPNP tekrar bağlanma yöntemini dene: %s1
