@@ -14,6 +14,7 @@ easycaptcha_foreground=Naprijed
 easycaptcha_images=Slike:
 easycaptcha_labeled=Označeno:
 easycaptcha_loadcaptchas=Učitaj Captcha-e
+easycaptcha_loadcaptchas_clickoncaptcha=Kliknite na captcha
 easycaptcha_loadcaptchas_link=Link
 easycaptcha_loadcaptchas_loaddirect=Direktno učitavanje ako je moguće (puno brže)
 easycaptcha_loadcaptchas_title=Učitaj Captcha-e
