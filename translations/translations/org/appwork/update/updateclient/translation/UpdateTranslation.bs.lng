@@ -49,6 +49,7 @@ guiless_files_ready_for_install=%s1 dokumenata čeka da bude instalirano!
 guiless_files_wait_for_removal=%s1 dokumenata je zastarilo i biće uklonjeni.
 guiless_filtering=Uporedi listu dokumenta sa instaliranim dokumentima
 guiless_installFinished=Instalacija je završena
+guiless_locked_close_app=Nije moguće pristupiti %s2. Za nastavak molimo zatvorite %s1.
 guiless_locked_closed_app=%s1 je zatvoren. Nastavi sada.
 guiless_noupdates=Obiđi  Nadgradnje. - postavljena je zastavica bez nadgradnje
 guiless_progress=...Napredak: %s1%

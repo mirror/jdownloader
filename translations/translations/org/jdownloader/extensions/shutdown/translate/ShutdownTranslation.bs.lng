@@ -13,3 +13,4 @@ interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Sistem će biti i
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">Sistem će biti postavljen u pripravnost!</font></h2>
 interaction_shutdown_dialog_title_hibernate=Hibernirati?
 interaction_shutdown_dialog_title_shutdown=Ugasiti računar
+jd_plugins_optional_jdshutdown_description=Automatski isključi, suspenduj, hiberniraj računar ili zatvroi JDownloader kada se završe svi download-i.
