@@ -542,7 +542,7 @@ public class Multi extends IExtraction {
                     continue;
                 }
                 if (CrossSystem.isWindows()) {
-                    String pathParts[] = path.split(File.separator);
+                    String pathParts[] = path.split("\\" + File.separator);
                     /* remove invalid path chars */
                     for (int pathIndex = 0; pathIndex < pathParts.length - 1; pathIndex++) {
                         pathParts[pathIndex] = CrossSystem.alleviatePathParts(pathParts[pathIndex]);
