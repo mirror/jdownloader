@@ -447,7 +447,7 @@ public class Uploadedto extends PluginForHost {
                 if (error.contains("error_traffic")) throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (br.containsHTML(">Download Blocked \\(ip\\)<")) {
+            if (br.containsHTML(">Download Blocked \\(ip\\)<") || br.containsHTML("Leider haben wir Zugriffe von zu vielen verschiedenen IPs auf Ihren Account feststellen k&#246;nnen, Account-Sharing ist laut unseren AGB strengstens untersagt")) {
                 logger.info("Download blocked (IP), disabling account...");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
