@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -43,7 +42,7 @@ public class UniBytesCom extends PluginForHost {
     private static final String CAPTCHATEXT      = "captcha\\.jpg";
     private static final String FATALSERVERERROR = "<u>The requested resource \\(\\) is not available\\.</u>";
     private static final String MAINPAGE         = "http://www.unibytes.com/";
-    private static final String UA               = RandomUserAgent.generate();
+    private static final String UA               = jd.plugins.hoster.MediafireCom.stringUserAgent();
 
     public UniBytesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -148,7 +147,7 @@ public class UniBytesCom extends PluginForHost {
         Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             AccountInfo ai = new AccountInfo();
-            String expireDate = br.getRegex("Ваш VIP-аккаунт действителен до ([0-9\\.]+)\\.<br/><br/><a").getMatch(0);
+            String expireDate = br.getRegex("(Ваш VIP-аккаунт действителен до|Your VIP account valid till) ([0-9\\.]+)\\.<").getMatch(1);
             if (expireDate != null) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd.MM.yyyy", null));
             } else {

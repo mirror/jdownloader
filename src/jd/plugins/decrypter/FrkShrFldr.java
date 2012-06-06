@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://(www\\.)?freakshare\\.(com|net)/(folder/\\d+/([a-z\\d]+\\.html)?|\\?x=folder\\&f_id=\\d+&f_md5=[a-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://(www\\.)?freakshare\\.(com|net)/(folder/\\d+/[a-z\\d]+\\.html)|\\?x=folder\\&f_id=\\d+&f_md5=[a-z0-9]+)" }, flags = { 0 })
 public class FrkShrFldr extends PluginForDecrypt {
 
     public FrkShrFldr(PluginWrapper wrapper) {
@@ -43,6 +43,10 @@ public class FrkShrFldr extends PluginForDecrypt {
         String fmd5 = fInfo.getMatch(1);
         if (fid == null) fid = fInfo2.getMatch(0);
         if (fmd5 == null) fmd5 = fInfo2.getMatch(1);
+        if (fid == null || fmd5 == null) {
+            logger.warning("could not find either fid fmd5: " + parameter);
+            return null;
+        }
         parameter = "http://freakshare.com/?x=folder&f_id=" + fid + "&f_md5=" + fmd5 + "&entrys=10000&page=0&order=";
         br.setCookiesExclusive(true);
         br.setReadTimeout(3 * 60 * 1000);
@@ -54,8 +58,8 @@ public class FrkShrFldr extends PluginForDecrypt {
         }
 
         String fpName = br.getRegex("<b>Folder:</b> ([^\r\n\t]+)").getMatch(0);
-        String totalPages = br.getRegex("(?i)Files: \\d+ \\- Pages:  (\\d+)").getMatch(0);
-        String pageURL = br.getRegex("(?i)<a href=\"([^\"]+)\"><b>1</b></a>").getMatch(0);
+        String totalPages = br.getRegex("Files: \\d+ \\- Pages:  (\\d+)").getMatch(0);
+        String pageURL = br.getRegex("<a href=\"([^\"]+)\"><b>1</b></a>").getMatch(0);
 
         // process first page
         parsePage(decryptedLinks);
