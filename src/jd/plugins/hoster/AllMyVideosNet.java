@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -46,17 +47,24 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision: 16216 $", interfaceVersion = 2, names = { "allmyvideos.net" }, urls = { "https?://(www\\.)?allmyvideos\\.net/[a-z0-9]{12}" }, flags = { 0 })
 public class AllMyVideosNet extends PluginForHost {
 
-    private String              correctedBR         = "";
-    private static final String PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private static final String COOKIE_HOST         = "http://allmyvideos.net";
-    private static final String MAINTENANCE         = ">This server is in maintenance mode";
-    private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
-    private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
+    private String               correctedBR                  = "";
+    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private static final String  COOKIE_HOST                  = "http://allmyvideos.net";
+    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    // note: can not be negative -x or 0 .:. [1-*]
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(10);
+    // don't touch
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.5.5.3-raz
+    // XfileSharingProBasic Version 2.5.6.4-raz
     // mods:
-    // non account: 1 * 1 (not tested)
+    // non account: 1 * 10 (they only allow 1*1 but they have many servers , ngnix throws 503 and jd waits 10mins when connection thresh
+    // hold is too high.)
     // free account:
     // premium account:
     // protocol: no https
@@ -101,7 +109,7 @@ public class AllMyVideosNet extends PluginForHost {
         br.setFollowRedirects(false);
         prepBrowser();
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
@@ -110,11 +118,9 @@ public class AllMyVideosNet extends PluginForHost {
         if (filename == null) {
             filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
             if (filename == null) {
-                filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                filename = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
                 if (filename == null) {
-                    // generic regex will pick up false positives (html)
-                    // adjust to make work with COOKIE_HOST
-                    filename = new Regex(correctedBR, "(?i)((File)?name|Download File) ?:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(3);
+                    filename = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
                 }
             }
         }
@@ -122,20 +128,19 @@ public class AllMyVideosNet extends PluginForHost {
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
-                // generic regex picks up false positives (premium ads above
-                // filesize)
-                // adjust accordingly to make work with COOKIE_HOST
-                filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
+                filesize = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
             }
         }
         if (filename == null || filename.equals("")) {
-            if (correctedBR.contains("You have reached the download\\-limit")) {
+            if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
             logger.warning("The filename equals null, throwing \"plugin defect\" now...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        if (md5hash != null) link.setMD5Hash(md5hash.trim());
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setProperty("plainfilename", filename);
         link.setFinalFileName(filename.trim());
@@ -146,27 +151,20 @@ public class AllMyVideosNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 1, "freelink");
+        doFree(downloadLink, true, -2, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
-        String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-        if (md5hash != null) {
-            md5hash = md5hash.trim();
-            logger.info("Found md5hash: " + md5hash);
-            downloadLink.setMD5Hash(md5hash);
-        }
-
+        // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
-         */
+        // Second, check for streaming links on the first page
+        if (dllink == null) dllink = getDllink();
+        // Third, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
-                postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=Loading+Video+...+0+seconds");
+                postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=Free+Download");
                 checkErrors(downloadLink, false, passCode);
             }
             dllink = getDllink();
@@ -174,9 +172,9 @@ public class AllMyVideosNet extends PluginForHost {
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // this is for sites with multiple f1 forms deep. This does not hurt
-            // or interfere any other sections of this script
-            for (int i = 0; i <= 3; i++) {
+            // how many forms deep do you want to try.
+            int repeat = 3;
+            for (int i = 1; i < repeat; i++) {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
@@ -184,6 +182,11 @@ public class AllMyVideosNet extends PluginForHost {
                 if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
                     password = true;
                     logger.info("The downloadlink seems to be password protected.");
+                }
+                // md5 can be on the subquent pages
+                if (downloadLink.getMD5Hash() == null) {
+                    String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+                    if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
                 }
                 /* Captcha START */
                 if (correctedBR.contains(";background:#ccc;text-align")) {
@@ -241,7 +244,7 @@ public class AllMyVideosNet extends PluginForHost {
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     dlForm = rc.getForm();
                     /** wait time is often skippable for reCaptcha handling */
-                    // skipWaittime = true;
+                    skipWaittime = true;
                 }
                 /* Captcha END */
                 if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
@@ -250,12 +253,12 @@ public class AllMyVideosNet extends PluginForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true, passCode);
                 dllink = getDllink();
-                if (dllink == null && br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\"")) {
-                    dlForm = br.getFormbyProperty("name", "F1");
-                    continue;
-                } else if (dllink == null && !br.containsHTML("(?i)<Form name=\"F1\" method=\"POST\" action=\"\"")) {
+                if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
+                    dlForm = br.getFormbyProperty("name", "F1");
+                    continue;
                 } else
                     break;
             }
@@ -271,12 +274,39 @@ public class AllMyVideosNet extends PluginForHost {
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         if (passCode != null) downloadLink.setProperty("pass", passCode);
-        dl.startDownload();
+        try {
+            // add a download slot
+            controlFree(+1);
+            // start the dl
+            dl.startDownload();
+        } finally {
+            // remove download slot
+            controlFree(-1);
+        }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return maxFree.get();
+    }
+
+    /**
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
+     * 
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * 
+     * @param controlFree
+     *            (+1|-1)
+     */
+    public synchronized void controlFree(int num) {
+        logger.info("maxFree was = " + maxFree.get());
+        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+        logger.info("maxFree now = " + maxFree.get());
     }
 
     /** Remove HTML code which could break the plugin */
@@ -285,7 +315,7 @@ public class AllMyVideosNet extends PluginForHost {
         ArrayList<String> someStuff = new ArrayList<String>();
         ArrayList<String> regexStuff = new ArrayList<String>();
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: none;\">.*?</div>)");
+        regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
         for (String aRegex : regexStuff) {
             String lolz[] = br.getRegex(aRegex).getColumn(0);
@@ -309,7 +339,7 @@ public class AllMyVideosNet extends PluginForHost {
                 if (dllink == null) {
                     dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>Click to Download").getMatch(0);
+                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
                         if (dllink == null) {
                             String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                             if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -354,9 +384,9 @@ public class AllMyVideosNet extends PluginForHost {
             if (correctedBR.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait)").matches()) {
+        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
             // adjust this regex to catch the wait time string for COOKIE_HOST
-            String WAIT = new Regex(correctedBR, "((You have reached the download\\-limit|You have to wait)[^<>]+)").getMatch(0);
+            String WAIT = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
             String tmpmin = new Regex(WAIT, "\\s+(\\d+)\\s+minutes?").getMatch(0);
@@ -382,18 +412,18 @@ public class AllMyVideosNet extends PluginForHost {
         if (correctedBR.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         if (correctedBR.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file You requested  reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
+        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.warning("As free user you can download files up to " + filesizelimit + " only");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
+                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY1 + " " + filesizelimit);
             } else {
                 logger.warning("Only downloadable via premium");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium or registered");
+                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
         }
-        if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT), 2 * 60 * 60 * 1000l);
+        if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
